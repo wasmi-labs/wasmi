@@ -59,9 +59,9 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
     }
 
     fn emit(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
-        if op.result_ty().is_none() {
+        let Some(result_ty) = op.result_ty() else {
             return Ok(());
-        }
+        };
         if matches!(
             op.kind(),
             OpClassKind::Select
@@ -71,19 +71,42 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
         ) {
             return Ok(());
         }
+        let mut fields_without_result: Vec<Field> = Vec::new();
         let indent = self.indent;
         let name = op.name();
         let fields_pattern = DisplayFieldsPattern::new(op.fields());
-        write!(
-            f,
-            "\
-            {indent}Self::{name} {{ {fields_pattern} }} => \n\
-            {indent}    <crate::op::{name} as crate::UpdateOperatorResult>::update_operator_result(\n\
-            {indent}        &crate::op::{name} {{ {fields_pattern} }},\n\
-            {indent}        new_result,\n\
-            {indent}    ).map(<Self as ::core::convert::From<<crate::op::{name} as crate::UpdateOperatorResult>::Output>>::from),\n\
-            "
-        )
+        match result_ty {
+            FieldTy::Reg => {
+                write!(
+                    f,
+                    "\
+                    {indent}Self::{name} {{ {fields_pattern} }} => \n\
+                    {indent}    <crate::op::{name} as crate::UpdateOperatorResult>::update_operator_result(\n\
+                    {indent}        &crate::op::{name} {{ {fields_pattern} }},\n\
+                    {indent}        new_result,\n\
+                    {indent}    ).map(<Self as ::core::convert::From<<crate::op::{name} as crate::UpdateOperatorResult>::Output>>::from),\n\
+                    "
+                )
+            }
+            FieldTy::Stack => {
+                fields_without_result.clear();
+                fields_without_result.extend(
+                    op.fields()
+                        .iter()
+                        .filter(|field| !matches!(field.name, FieldName::Result)),
+                );
+                let fields_without_result = DisplayFieldsPattern::new(&fields_without_result[..]);
+                write!(
+                    f,
+                    "\
+                    {indent}Self::{name} {{ {fields_without_result}, .. }} => ::core::option::Option::Some(Self::{name} {{\n\
+                    {indent}    result: new_result, {fields_without_result}\n\
+                    {indent}}}),\n\
+                    "
+                )
+            }
+            _ => unreachable!(),
+        }
     }
 }
 

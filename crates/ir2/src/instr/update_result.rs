@@ -6,56 +6,36 @@ impl crate::UpdateOperatorResult for crate::Op {
     type Output = Self;
     fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
         match *self {
-            Self::Copy1_S { result, value } => 
-                <crate::op::Copy1_S as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1_S { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1_S as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy { result, len_values } => 
-                <crate::op::Copy as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy { result, len_values },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1I32_I { result, value } => 
-                <crate::op::Copy1I32_I as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1I32_I { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1I32_I as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1I64_R { result, value } => 
-                <crate::op::Copy1I64_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1I64_R { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1I64_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1I64_I { result, value } => 
-                <crate::op::Copy1I64_I as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1I64_I { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1I64_I as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1F32_R { result, value } => 
-                <crate::op::Copy1F32_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1F32_R { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1F32_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1F32_I { result, value } => 
-                <crate::op::Copy1F32_I as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1F32_I { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1F32_I as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1F64_R { result, value } => 
-                <crate::op::Copy1F64_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1F64_R { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1F64_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::Copy1F64_I { result, value } => 
-                <crate::op::Copy1F64_I as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::Copy1F64_I { result, value },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::Copy1F64_I as crate::UpdateOperatorResult>::Output>>::from),
-            Self::GlobalGet_S { result, index } => 
-                <crate::op::GlobalGet_S as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::GlobalGet_S { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::GlobalGet_S as crate::UpdateOperatorResult>::Output>>::from),
+            Self::Copy1_S { value, .. } => ::core::option::Option::Some(Self::Copy1_S {
+                result: new_result, value
+            }),
+            Self::Copy { len_values, .. } => ::core::option::Option::Some(Self::Copy {
+                result: new_result, len_values
+            }),
+            Self::Copy1I32_I { value, .. } => ::core::option::Option::Some(Self::Copy1I32_I {
+                result: new_result, value
+            }),
+            Self::Copy1I64_R { value, .. } => ::core::option::Option::Some(Self::Copy1I64_R {
+                result: new_result, value
+            }),
+            Self::Copy1I64_I { value, .. } => ::core::option::Option::Some(Self::Copy1I64_I {
+                result: new_result, value
+            }),
+            Self::Copy1F32_R { value, .. } => ::core::option::Option::Some(Self::Copy1F32_R {
+                result: new_result, value
+            }),
+            Self::Copy1F32_I { value, .. } => ::core::option::Option::Some(Self::Copy1F32_I {
+                result: new_result, value
+            }),
+            Self::Copy1F64_R { value, .. } => ::core::option::Option::Some(Self::Copy1F64_R {
+                result: new_result, value
+            }),
+            Self::Copy1F64_I { value, .. } => ::core::option::Option::Some(Self::Copy1F64_I {
+                result: new_result, value
+            }),
+            Self::GlobalGet_S { index, .. } => ::core::option::Option::Some(Self::GlobalGet_S {
+                result: new_result, index
+            }),
             Self::GlobalGetI32_R { result, index } => 
                 <crate::op::GlobalGetI32_R as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::GlobalGetI32_R { result, index },
@@ -86,16 +66,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Popcnt_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Popcnt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Popcnt_SR { result, input } => 
-                <crate::op::I32Popcnt_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Popcnt_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Popcnt_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Popcnt_SS { result, input } => 
-                <crate::op::I32Popcnt_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Popcnt_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Popcnt_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Popcnt_SR { input, .. } => ::core::option::Option::Some(Self::I32Popcnt_SR {
+                result: new_result, input
+            }),
+            Self::I32Popcnt_SS { input, .. } => ::core::option::Option::Some(Self::I32Popcnt_SS {
+                result: new_result, input
+            }),
             Self::I64Popcnt_RR { result, input } => 
                 <crate::op::I64Popcnt_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Popcnt_RR { result, input },
@@ -106,16 +82,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Popcnt_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Popcnt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Popcnt_SR { result, input } => 
-                <crate::op::I64Popcnt_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Popcnt_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Popcnt_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Popcnt_SS { result, input } => 
-                <crate::op::I64Popcnt_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Popcnt_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Popcnt_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Popcnt_SR { input, .. } => ::core::option::Option::Some(Self::I64Popcnt_SR {
+                result: new_result, input
+            }),
+            Self::I64Popcnt_SS { input, .. } => ::core::option::Option::Some(Self::I64Popcnt_SS {
+                result: new_result, input
+            }),
             Self::I32Clz_RR { result, input } => 
                 <crate::op::I32Clz_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Clz_RR { result, input },
@@ -126,16 +98,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Clz_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Clz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Clz_SR { result, input } => 
-                <crate::op::I32Clz_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Clz_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Clz_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Clz_SS { result, input } => 
-                <crate::op::I32Clz_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Clz_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Clz_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Clz_SR { input, .. } => ::core::option::Option::Some(Self::I32Clz_SR {
+                result: new_result, input
+            }),
+            Self::I32Clz_SS { input, .. } => ::core::option::Option::Some(Self::I32Clz_SS {
+                result: new_result, input
+            }),
             Self::I64Clz_RR { result, input } => 
                 <crate::op::I64Clz_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Clz_RR { result, input },
@@ -146,16 +114,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Clz_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Clz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Clz_SR { result, input } => 
-                <crate::op::I64Clz_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Clz_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Clz_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Clz_SS { result, input } => 
-                <crate::op::I64Clz_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Clz_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Clz_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Clz_SR { input, .. } => ::core::option::Option::Some(Self::I64Clz_SR {
+                result: new_result, input
+            }),
+            Self::I64Clz_SS { input, .. } => ::core::option::Option::Some(Self::I64Clz_SS {
+                result: new_result, input
+            }),
             Self::I32Ctz_RR { result, input } => 
                 <crate::op::I32Ctz_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Ctz_RR { result, input },
@@ -166,16 +130,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Ctz_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Ctz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ctz_SR { result, input } => 
-                <crate::op::I32Ctz_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ctz_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ctz_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ctz_SS { result, input } => 
-                <crate::op::I32Ctz_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ctz_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ctz_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Ctz_SR { input, .. } => ::core::option::Option::Some(Self::I32Ctz_SR {
+                result: new_result, input
+            }),
+            Self::I32Ctz_SS { input, .. } => ::core::option::Option::Some(Self::I32Ctz_SS {
+                result: new_result, input
+            }),
             Self::I64Ctz_RR { result, input } => 
                 <crate::op::I64Ctz_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Ctz_RR { result, input },
@@ -186,16 +146,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Ctz_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Ctz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ctz_SR { result, input } => 
-                <crate::op::I64Ctz_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ctz_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ctz_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ctz_SS { result, input } => 
-                <crate::op::I64Ctz_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ctz_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ctz_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Ctz_SR { input, .. } => ::core::option::Option::Some(Self::I64Ctz_SR {
+                result: new_result, input
+            }),
+            Self::I64Ctz_SS { input, .. } => ::core::option::Option::Some(Self::I64Ctz_SS {
+                result: new_result, input
+            }),
             Self::F32Abs_RR { result, input } => 
                 <crate::op::F32Abs_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Abs_RR { result, input },
@@ -206,16 +162,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Abs_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Abs_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Abs_SR { result, input } => 
-                <crate::op::F32Abs_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Abs_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Abs_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Abs_SS { result, input } => 
-                <crate::op::F32Abs_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Abs_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Abs_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Abs_SR { input, .. } => ::core::option::Option::Some(Self::F32Abs_SR {
+                result: new_result, input
+            }),
+            Self::F32Abs_SS { input, .. } => ::core::option::Option::Some(Self::F32Abs_SS {
+                result: new_result, input
+            }),
             Self::F64Abs_RR { result, input } => 
                 <crate::op::F64Abs_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Abs_RR { result, input },
@@ -226,16 +178,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Abs_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Abs_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Abs_SR { result, input } => 
-                <crate::op::F64Abs_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Abs_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Abs_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Abs_SS { result, input } => 
-                <crate::op::F64Abs_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Abs_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Abs_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Abs_SR { input, .. } => ::core::option::Option::Some(Self::F64Abs_SR {
+                result: new_result, input
+            }),
+            Self::F64Abs_SS { input, .. } => ::core::option::Option::Some(Self::F64Abs_SS {
+                result: new_result, input
+            }),
             Self::F32Neg_RR { result, input } => 
                 <crate::op::F32Neg_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Neg_RR { result, input },
@@ -246,16 +194,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Neg_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Neg_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Neg_SR { result, input } => 
-                <crate::op::F32Neg_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Neg_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Neg_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Neg_SS { result, input } => 
-                <crate::op::F32Neg_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Neg_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Neg_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Neg_SR { input, .. } => ::core::option::Option::Some(Self::F32Neg_SR {
+                result: new_result, input
+            }),
+            Self::F32Neg_SS { input, .. } => ::core::option::Option::Some(Self::F32Neg_SS {
+                result: new_result, input
+            }),
             Self::F64Neg_RR { result, input } => 
                 <crate::op::F64Neg_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Neg_RR { result, input },
@@ -266,16 +210,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Neg_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Neg_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Neg_SR { result, input } => 
-                <crate::op::F64Neg_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Neg_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Neg_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Neg_SS { result, input } => 
-                <crate::op::F64Neg_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Neg_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Neg_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Neg_SR { input, .. } => ::core::option::Option::Some(Self::F64Neg_SR {
+                result: new_result, input
+            }),
+            Self::F64Neg_SS { input, .. } => ::core::option::Option::Some(Self::F64Neg_SS {
+                result: new_result, input
+            }),
             Self::F32Ceil_RR { result, input } => 
                 <crate::op::F32Ceil_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Ceil_RR { result, input },
@@ -286,16 +226,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Ceil_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Ceil_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ceil_SR { result, input } => 
-                <crate::op::F32Ceil_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ceil_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ceil_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ceil_SS { result, input } => 
-                <crate::op::F32Ceil_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ceil_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ceil_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Ceil_SR { input, .. } => ::core::option::Option::Some(Self::F32Ceil_SR {
+                result: new_result, input
+            }),
+            Self::F32Ceil_SS { input, .. } => ::core::option::Option::Some(Self::F32Ceil_SS {
+                result: new_result, input
+            }),
             Self::F64Ceil_RR { result, input } => 
                 <crate::op::F64Ceil_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Ceil_RR { result, input },
@@ -306,16 +242,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Ceil_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Ceil_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ceil_SR { result, input } => 
-                <crate::op::F64Ceil_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ceil_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ceil_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ceil_SS { result, input } => 
-                <crate::op::F64Ceil_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ceil_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ceil_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Ceil_SR { input, .. } => ::core::option::Option::Some(Self::F64Ceil_SR {
+                result: new_result, input
+            }),
+            Self::F64Ceil_SS { input, .. } => ::core::option::Option::Some(Self::F64Ceil_SS {
+                result: new_result, input
+            }),
             Self::F32Floor_RR { result, input } => 
                 <crate::op::F32Floor_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Floor_RR { result, input },
@@ -326,16 +258,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Floor_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Floor_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Floor_SR { result, input } => 
-                <crate::op::F32Floor_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Floor_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Floor_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Floor_SS { result, input } => 
-                <crate::op::F32Floor_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Floor_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Floor_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Floor_SR { input, .. } => ::core::option::Option::Some(Self::F32Floor_SR {
+                result: new_result, input
+            }),
+            Self::F32Floor_SS { input, .. } => ::core::option::Option::Some(Self::F32Floor_SS {
+                result: new_result, input
+            }),
             Self::F64Floor_RR { result, input } => 
                 <crate::op::F64Floor_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Floor_RR { result, input },
@@ -346,16 +274,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Floor_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Floor_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Floor_SR { result, input } => 
-                <crate::op::F64Floor_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Floor_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Floor_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Floor_SS { result, input } => 
-                <crate::op::F64Floor_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Floor_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Floor_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Floor_SR { input, .. } => ::core::option::Option::Some(Self::F64Floor_SR {
+                result: new_result, input
+            }),
+            Self::F64Floor_SS { input, .. } => ::core::option::Option::Some(Self::F64Floor_SS {
+                result: new_result, input
+            }),
             Self::F32Trunc_RR { result, input } => 
                 <crate::op::F32Trunc_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Trunc_RR { result, input },
@@ -366,16 +290,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Trunc_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Trunc_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Trunc_SR { result, input } => 
-                <crate::op::F32Trunc_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Trunc_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Trunc_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Trunc_SS { result, input } => 
-                <crate::op::F32Trunc_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Trunc_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Trunc_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Trunc_SR { input, .. } => ::core::option::Option::Some(Self::F32Trunc_SR {
+                result: new_result, input
+            }),
+            Self::F32Trunc_SS { input, .. } => ::core::option::Option::Some(Self::F32Trunc_SS {
+                result: new_result, input
+            }),
             Self::F64Trunc_RR { result, input } => 
                 <crate::op::F64Trunc_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Trunc_RR { result, input },
@@ -386,16 +306,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Trunc_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Trunc_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Trunc_SR { result, input } => 
-                <crate::op::F64Trunc_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Trunc_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Trunc_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Trunc_SS { result, input } => 
-                <crate::op::F64Trunc_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Trunc_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Trunc_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Trunc_SR { input, .. } => ::core::option::Option::Some(Self::F64Trunc_SR {
+                result: new_result, input
+            }),
+            Self::F64Trunc_SS { input, .. } => ::core::option::Option::Some(Self::F64Trunc_SS {
+                result: new_result, input
+            }),
             Self::F32Nearest_RR { result, input } => 
                 <crate::op::F32Nearest_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Nearest_RR { result, input },
@@ -406,16 +322,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Nearest_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Nearest_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Nearest_SR { result, input } => 
-                <crate::op::F32Nearest_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Nearest_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Nearest_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Nearest_SS { result, input } => 
-                <crate::op::F32Nearest_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Nearest_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Nearest_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Nearest_SR { input, .. } => ::core::option::Option::Some(Self::F32Nearest_SR {
+                result: new_result, input
+            }),
+            Self::F32Nearest_SS { input, .. } => ::core::option::Option::Some(Self::F32Nearest_SS {
+                result: new_result, input
+            }),
             Self::F64Nearest_RR { result, input } => 
                 <crate::op::F64Nearest_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Nearest_RR { result, input },
@@ -426,16 +338,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Nearest_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Nearest_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Nearest_SR { result, input } => 
-                <crate::op::F64Nearest_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Nearest_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Nearest_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Nearest_SS { result, input } => 
-                <crate::op::F64Nearest_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Nearest_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Nearest_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Nearest_SR { input, .. } => ::core::option::Option::Some(Self::F64Nearest_SR {
+                result: new_result, input
+            }),
+            Self::F64Nearest_SS { input, .. } => ::core::option::Option::Some(Self::F64Nearest_SS {
+                result: new_result, input
+            }),
             Self::F32Sqrt_RR { result, input } => 
                 <crate::op::F32Sqrt_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Sqrt_RR { result, input },
@@ -446,16 +354,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Sqrt_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Sqrt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Sqrt_SR { result, input } => 
-                <crate::op::F32Sqrt_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Sqrt_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Sqrt_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Sqrt_SS { result, input } => 
-                <crate::op::F32Sqrt_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Sqrt_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Sqrt_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Sqrt_SR { input, .. } => ::core::option::Option::Some(Self::F32Sqrt_SR {
+                result: new_result, input
+            }),
+            Self::F32Sqrt_SS { input, .. } => ::core::option::Option::Some(Self::F32Sqrt_SS {
+                result: new_result, input
+            }),
             Self::F64Sqrt_RR { result, input } => 
                 <crate::op::F64Sqrt_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Sqrt_RR { result, input },
@@ -466,16 +370,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Sqrt_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Sqrt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Sqrt_SR { result, input } => 
-                <crate::op::F64Sqrt_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Sqrt_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Sqrt_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Sqrt_SS { result, input } => 
-                <crate::op::F64Sqrt_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Sqrt_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Sqrt_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Sqrt_SR { input, .. } => ::core::option::Option::Some(Self::F64Sqrt_SR {
+                result: new_result, input
+            }),
+            Self::F64Sqrt_SS { input, .. } => ::core::option::Option::Some(Self::F64Sqrt_SS {
+                result: new_result, input
+            }),
             Self::F32Demote_RR { result, input } => 
                 <crate::op::F32Demote_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Demote_RR { result, input },
@@ -486,16 +386,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Demote_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Demote_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Demote_SR { result, input } => 
-                <crate::op::F32Demote_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Demote_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Demote_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Demote_SS { result, input } => 
-                <crate::op::F32Demote_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Demote_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Demote_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Demote_SR { input, .. } => ::core::option::Option::Some(Self::F32Demote_SR {
+                result: new_result, input
+            }),
+            Self::F32Demote_SS { input, .. } => ::core::option::Option::Some(Self::F32Demote_SS {
+                result: new_result, input
+            }),
             Self::F64Promote_RR { result, input } => 
                 <crate::op::F64Promote_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Promote_RR { result, input },
@@ -506,16 +402,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Promote_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Promote_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Promote_SR { result, input } => 
-                <crate::op::F64Promote_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Promote_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Promote_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Promote_SS { result, input } => 
-                <crate::op::F64Promote_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Promote_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Promote_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Promote_SR { input, .. } => ::core::option::Option::Some(Self::F64Promote_SR {
+                result: new_result, input
+            }),
+            Self::F64Promote_SS { input, .. } => ::core::option::Option::Some(Self::F64Promote_SS {
+                result: new_result, input
+            }),
             Self::F32ConvertI32S_RR { result, input } => 
                 <crate::op::F32ConvertI32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32ConvertI32S_RR { result, input },
@@ -526,16 +418,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32ConvertI32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32S_SR { result, input } => 
-                <crate::op::F32ConvertI32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32S_SS { result, input } => 
-                <crate::op::F32ConvertI32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32ConvertI32S_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32S_SR {
+                result: new_result, input
+            }),
+            Self::F32ConvertI32S_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32S_SS {
+                result: new_result, input
+            }),
             Self::F32ConvertI32U_RR { result, input } => 
                 <crate::op::F32ConvertI32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32ConvertI32U_RR { result, input },
@@ -546,16 +434,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32ConvertI32U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32U_SR { result, input } => 
-                <crate::op::F32ConvertI32U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32U_SS { result, input } => 
-                <crate::op::F32ConvertI32U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32ConvertI32U_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32U_SR {
+                result: new_result, input
+            }),
+            Self::F32ConvertI32U_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32U_SS {
+                result: new_result, input
+            }),
             Self::F32ConvertI64S_RR { result, input } => 
                 <crate::op::F32ConvertI64S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32ConvertI64S_RR { result, input },
@@ -566,16 +450,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32ConvertI64S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64S_SR { result, input } => 
-                <crate::op::F32ConvertI64S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64S_SS { result, input } => 
-                <crate::op::F32ConvertI64S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32ConvertI64S_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64S_SR {
+                result: new_result, input
+            }),
+            Self::F32ConvertI64S_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64S_SS {
+                result: new_result, input
+            }),
             Self::F32ConvertI64U_RR { result, input } => 
                 <crate::op::F32ConvertI64U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32ConvertI64U_RR { result, input },
@@ -586,16 +466,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32ConvertI64U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64U_SR { result, input } => 
-                <crate::op::F32ConvertI64U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64U_SS { result, input } => 
-                <crate::op::F32ConvertI64U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32ConvertI64U_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64U_SR {
+                result: new_result, input
+            }),
+            Self::F32ConvertI64U_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64U_SS {
+                result: new_result, input
+            }),
             Self::F64ConvertI32S_RR { result, input } => 
                 <crate::op::F64ConvertI32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64ConvertI32S_RR { result, input },
@@ -606,16 +482,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64ConvertI32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32S_SR { result, input } => 
-                <crate::op::F64ConvertI32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32S_SS { result, input } => 
-                <crate::op::F64ConvertI32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64ConvertI32S_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32S_SR {
+                result: new_result, input
+            }),
+            Self::F64ConvertI32S_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32S_SS {
+                result: new_result, input
+            }),
             Self::F64ConvertI32U_RR { result, input } => 
                 <crate::op::F64ConvertI32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64ConvertI32U_RR { result, input },
@@ -626,16 +498,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64ConvertI32U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32U_SR { result, input } => 
-                <crate::op::F64ConvertI32U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32U_SS { result, input } => 
-                <crate::op::F64ConvertI32U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64ConvertI32U_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32U_SR {
+                result: new_result, input
+            }),
+            Self::F64ConvertI32U_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32U_SS {
+                result: new_result, input
+            }),
             Self::F64ConvertI64S_RR { result, input } => 
                 <crate::op::F64ConvertI64S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64ConvertI64S_RR { result, input },
@@ -646,16 +514,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64ConvertI64S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64S_SR { result, input } => 
-                <crate::op::F64ConvertI64S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64S_SS { result, input } => 
-                <crate::op::F64ConvertI64S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64ConvertI64S_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64S_SR {
+                result: new_result, input
+            }),
+            Self::F64ConvertI64S_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64S_SS {
+                result: new_result, input
+            }),
             Self::F64ConvertI64U_RR { result, input } => 
                 <crate::op::F64ConvertI64U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64ConvertI64U_RR { result, input },
@@ -666,16 +530,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64ConvertI64U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64U_SR { result, input } => 
-                <crate::op::F64ConvertI64U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64U_SS { result, input } => 
-                <crate::op::F64ConvertI64U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64ConvertI64U_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64U_SR {
+                result: new_result, input
+            }),
+            Self::F64ConvertI64U_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64U_SS {
+                result: new_result, input
+            }),
             Self::I32TruncF32S_RR { result, input } => 
                 <crate::op::I32TruncF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncF32S_RR { result, input },
@@ -686,16 +546,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncF32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32S_SR { result, input } => 
-                <crate::op::I32TruncF32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32S_SS { result, input } => 
-                <crate::op::I32TruncF32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncF32S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF32S_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncF32S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF32S_SS {
+                result: new_result, input
+            }),
             Self::I32TruncF32U_RR { result, input } => 
                 <crate::op::I32TruncF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncF32U_RR { result, input },
@@ -706,16 +562,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncF32U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32U_SR { result, input } => 
-                <crate::op::I32TruncF32U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32U_SS { result, input } => 
-                <crate::op::I32TruncF32U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncF32U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF32U_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncF32U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF32U_SS {
+                result: new_result, input
+            }),
             Self::I32TruncF64S_RR { result, input } => 
                 <crate::op::I32TruncF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncF64S_RR { result, input },
@@ -726,16 +578,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncF64S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64S_SR { result, input } => 
-                <crate::op::I32TruncF64S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64S_SS { result, input } => 
-                <crate::op::I32TruncF64S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncF64S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF64S_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncF64S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF64S_SS {
+                result: new_result, input
+            }),
             Self::I32TruncF64U_RR { result, input } => 
                 <crate::op::I32TruncF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncF64U_RR { result, input },
@@ -746,16 +594,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncF64U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64U_SR { result, input } => 
-                <crate::op::I32TruncF64U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64U_SS { result, input } => 
-                <crate::op::I32TruncF64U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncF64U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF64U_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncF64U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF64U_SS {
+                result: new_result, input
+            }),
             Self::I64TruncF32S_RR { result, input } => 
                 <crate::op::I64TruncF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncF32S_RR { result, input },
@@ -766,16 +610,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncF32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32S_SR { result, input } => 
-                <crate::op::I64TruncF32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32S_SS { result, input } => 
-                <crate::op::I64TruncF32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncF32S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF32S_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncF32S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF32S_SS {
+                result: new_result, input
+            }),
             Self::I64TruncF32U_RR { result, input } => 
                 <crate::op::I64TruncF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncF32U_RR { result, input },
@@ -786,16 +626,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncF32U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32U_SR { result, input } => 
-                <crate::op::I64TruncF32U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32U_SS { result, input } => 
-                <crate::op::I64TruncF32U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncF32U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF32U_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncF32U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF32U_SS {
+                result: new_result, input
+            }),
             Self::I64TruncF64S_RR { result, input } => 
                 <crate::op::I64TruncF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncF64S_RR { result, input },
@@ -806,16 +642,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncF64S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64S_SR { result, input } => 
-                <crate::op::I64TruncF64S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64S_SS { result, input } => 
-                <crate::op::I64TruncF64S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncF64S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF64S_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncF64S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF64S_SS {
+                result: new_result, input
+            }),
             Self::I64TruncF64U_RR { result, input } => 
                 <crate::op::I64TruncF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncF64U_RR { result, input },
@@ -826,16 +658,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncF64U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64U_SR { result, input } => 
-                <crate::op::I64TruncF64U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64U_SS { result, input } => 
-                <crate::op::I64TruncF64U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncF64U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF64U_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncF64U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF64U_SS {
+                result: new_result, input
+            }),
             Self::I32TruncSatF32S_RR { result, input } => 
                 <crate::op::I32TruncSatF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncSatF32S_RR { result, input },
@@ -846,16 +674,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncSatF32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32S_SR { result, input } => 
-                <crate::op::I32TruncSatF32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32S_SS { result, input } => 
-                <crate::op::I32TruncSatF32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncSatF32S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32S_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncSatF32S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32S_SS {
+                result: new_result, input
+            }),
             Self::I32TruncSatF32U_RR { result, input } => 
                 <crate::op::I32TruncSatF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncSatF32U_RR { result, input },
@@ -866,16 +690,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncSatF32U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32U_SR { result, input } => 
-                <crate::op::I32TruncSatF32U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32U_SS { result, input } => 
-                <crate::op::I32TruncSatF32U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncSatF32U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32U_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncSatF32U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32U_SS {
+                result: new_result, input
+            }),
             Self::I32TruncSatF64S_RR { result, input } => 
                 <crate::op::I32TruncSatF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncSatF64S_RR { result, input },
@@ -886,16 +706,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncSatF64S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64S_SR { result, input } => 
-                <crate::op::I32TruncSatF64S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64S_SS { result, input } => 
-                <crate::op::I32TruncSatF64S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncSatF64S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64S_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncSatF64S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64S_SS {
+                result: new_result, input
+            }),
             Self::I32TruncSatF64U_RR { result, input } => 
                 <crate::op::I32TruncSatF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32TruncSatF64U_RR { result, input },
@@ -906,16 +722,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32TruncSatF64U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64U_SR { result, input } => 
-                <crate::op::I32TruncSatF64U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64U_SS { result, input } => 
-                <crate::op::I32TruncSatF64U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32TruncSatF64U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64U_SR {
+                result: new_result, input
+            }),
+            Self::I32TruncSatF64U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64U_SS {
+                result: new_result, input
+            }),
             Self::I64TruncSatF32S_RR { result, input } => 
                 <crate::op::I64TruncSatF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncSatF32S_RR { result, input },
@@ -926,16 +738,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncSatF32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32S_SR { result, input } => 
-                <crate::op::I64TruncSatF32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32S_SS { result, input } => 
-                <crate::op::I64TruncSatF32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncSatF32S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32S_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncSatF32S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32S_SS {
+                result: new_result, input
+            }),
             Self::I64TruncSatF32U_RR { result, input } => 
                 <crate::op::I64TruncSatF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncSatF32U_RR { result, input },
@@ -946,16 +754,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncSatF32U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32U_SR { result, input } => 
-                <crate::op::I64TruncSatF32U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32U_SS { result, input } => 
-                <crate::op::I64TruncSatF32U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncSatF32U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32U_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncSatF32U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32U_SS {
+                result: new_result, input
+            }),
             Self::I64TruncSatF64S_RR { result, input } => 
                 <crate::op::I64TruncSatF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncSatF64S_RR { result, input },
@@ -966,16 +770,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncSatF64S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64S_SR { result, input } => 
-                <crate::op::I64TruncSatF64S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64S_SS { result, input } => 
-                <crate::op::I64TruncSatF64S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncSatF64S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64S_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncSatF64S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64S_SS {
+                result: new_result, input
+            }),
             Self::I64TruncSatF64U_RR { result, input } => 
                 <crate::op::I64TruncSatF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64TruncSatF64U_RR { result, input },
@@ -986,16 +786,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64TruncSatF64U_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64U_SR { result, input } => 
-                <crate::op::I64TruncSatF64U_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64U_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64U_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64U_SS { result, input } => 
-                <crate::op::I64TruncSatF64U_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64U_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64U_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64TruncSatF64U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64U_SR {
+                result: new_result, input
+            }),
+            Self::I64TruncSatF64U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64U_SS {
+                result: new_result, input
+            }),
             Self::I32Extend8S_RR { result, input } => 
                 <crate::op::I32Extend8S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Extend8S_RR { result, input },
@@ -1006,16 +802,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Extend8S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Extend8S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend8S_SR { result, input } => 
-                <crate::op::I32Extend8S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend8S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend8S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend8S_SS { result, input } => 
-                <crate::op::I32Extend8S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend8S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend8S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Extend8S_SR { input, .. } => ::core::option::Option::Some(Self::I32Extend8S_SR {
+                result: new_result, input
+            }),
+            Self::I32Extend8S_SS { input, .. } => ::core::option::Option::Some(Self::I32Extend8S_SS {
+                result: new_result, input
+            }),
             Self::I32Extend16S_RR { result, input } => 
                 <crate::op::I32Extend16S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Extend16S_RR { result, input },
@@ -1026,16 +818,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Extend16S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Extend16S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend16S_SR { result, input } => 
-                <crate::op::I32Extend16S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend16S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend16S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend16S_SS { result, input } => 
-                <crate::op::I32Extend16S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend16S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend16S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Extend16S_SR { input, .. } => ::core::option::Option::Some(Self::I32Extend16S_SR {
+                result: new_result, input
+            }),
+            Self::I32Extend16S_SS { input, .. } => ::core::option::Option::Some(Self::I32Extend16S_SS {
+                result: new_result, input
+            }),
             Self::I64Extend8S_RR { result, input } => 
                 <crate::op::I64Extend8S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Extend8S_RR { result, input },
@@ -1046,16 +834,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Extend8S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Extend8S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend8S_SR { result, input } => 
-                <crate::op::I64Extend8S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend8S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend8S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend8S_SS { result, input } => 
-                <crate::op::I64Extend8S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend8S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend8S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Extend8S_SR { input, .. } => ::core::option::Option::Some(Self::I64Extend8S_SR {
+                result: new_result, input
+            }),
+            Self::I64Extend8S_SS { input, .. } => ::core::option::Option::Some(Self::I64Extend8S_SS {
+                result: new_result, input
+            }),
             Self::I64Extend16S_RR { result, input } => 
                 <crate::op::I64Extend16S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Extend16S_RR { result, input },
@@ -1066,16 +850,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Extend16S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Extend16S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend16S_SR { result, input } => 
-                <crate::op::I64Extend16S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend16S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend16S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend16S_SS { result, input } => 
-                <crate::op::I64Extend16S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend16S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend16S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Extend16S_SR { input, .. } => ::core::option::Option::Some(Self::I64Extend16S_SR {
+                result: new_result, input
+            }),
+            Self::I64Extend16S_SS { input, .. } => ::core::option::Option::Some(Self::I64Extend16S_SS {
+                result: new_result, input
+            }),
             Self::I64Extend32S_RR { result, input } => 
                 <crate::op::I64Extend32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Extend32S_RR { result, input },
@@ -1086,16 +866,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Extend32S_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Extend32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend32S_SR { result, input } => 
-                <crate::op::I64Extend32S_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend32S_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend32S_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend32S_SS { result, input } => 
-                <crate::op::I64Extend32S_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend32S_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend32S_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Extend32S_SR { input, .. } => ::core::option::Option::Some(Self::I64Extend32S_SR {
+                result: new_result, input
+            }),
+            Self::I64Extend32S_SS { input, .. } => ::core::option::Option::Some(Self::I64Extend32S_SS {
+                result: new_result, input
+            }),
             Self::I32WrapI64_RR { result, input } => 
                 <crate::op::I32WrapI64_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32WrapI64_RR { result, input },
@@ -1106,16 +882,12 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32WrapI64_RS { result, input },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32WrapI64_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32WrapI64_SR { result, input } => 
-                <crate::op::I32WrapI64_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32WrapI64_SR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32WrapI64_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32WrapI64_SS { result, input } => 
-                <crate::op::I32WrapI64_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32WrapI64_SS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32WrapI64_SS as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32WrapI64_SR { input, .. } => ::core::option::Option::Some(Self::I32WrapI64_SR {
+                result: new_result, input
+            }),
+            Self::I32WrapI64_SS { input, .. } => ::core::option::Option::Some(Self::I32WrapI64_SS {
+                result: new_result, input
+            }),
             Self::I32Add_RRS { result, lhs, rhs } => 
                 <crate::op::I32Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Add_RRS { result, lhs, rhs },
@@ -1136,26 +908,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Add_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_SRS { result, lhs, rhs } => 
-                <crate::op::I32Add_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_SRI { result, lhs, rhs } => 
-                <crate::op::I32Add_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_SSS { result, lhs, rhs } => 
-                <crate::op::I32Add_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_SSI { result, lhs, rhs } => 
-                <crate::op::I32Add_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64Add_RRS { result, lhs, rhs } => 
                 <crate::op::I64Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Add_RRS { result, lhs, rhs },
@@ -1176,26 +940,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Add_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_SRS { result, lhs, rhs } => 
-                <crate::op::I64Add_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_SRI { result, lhs, rhs } => 
-                <crate::op::I64Add_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_SSS { result, lhs, rhs } => 
-                <crate::op::I64Add_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_SSI { result, lhs, rhs } => 
-                <crate::op::I64Add_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32Mul_RRS { result, lhs, rhs } => 
                 <crate::op::I32Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Mul_RRS { result, lhs, rhs },
@@ -1216,26 +972,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Mul_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_SRS { result, lhs, rhs } => 
-                <crate::op::I32Mul_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_SRI { result, lhs, rhs } => 
-                <crate::op::I32Mul_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_SSS { result, lhs, rhs } => 
-                <crate::op::I32Mul_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_SSI { result, lhs, rhs } => 
-                <crate::op::I32Mul_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64Mul_RRS { result, lhs, rhs } => 
                 <crate::op::I64Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Mul_RRS { result, lhs, rhs },
@@ -1256,26 +1004,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Mul_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_SRS { result, lhs, rhs } => 
-                <crate::op::I64Mul_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_SRI { result, lhs, rhs } => 
-                <crate::op::I64Mul_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_SSS { result, lhs, rhs } => 
-                <crate::op::I64Mul_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_SSI { result, lhs, rhs } => 
-                <crate::op::I64Mul_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32BitAnd_RRS { result, lhs, rhs } => 
                 <crate::op::I32BitAnd_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32BitAnd_RRS { result, lhs, rhs },
@@ -1296,26 +1036,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32BitAnd_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_SRS { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_SRI { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_SSS { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_SSI { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32BitAnd_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitAnd_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitAnd_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitAnd_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64BitAnd_RRS { result, lhs, rhs } => 
                 <crate::op::I64BitAnd_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64BitAnd_RRS { result, lhs, rhs },
@@ -1336,26 +1068,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64BitAnd_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_SRS { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_SRI { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_SSS { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_SSI { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64BitAnd_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitAnd_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitAnd_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitAnd_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32BitOr_RRS { result, lhs, rhs } => 
                 <crate::op::I32BitOr_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32BitOr_RRS { result, lhs, rhs },
@@ -1376,26 +1100,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32BitOr_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_SRS { result, lhs, rhs } => 
-                <crate::op::I32BitOr_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_SRI { result, lhs, rhs } => 
-                <crate::op::I32BitOr_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_SSS { result, lhs, rhs } => 
-                <crate::op::I32BitOr_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_SSI { result, lhs, rhs } => 
-                <crate::op::I32BitOr_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32BitOr_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitOr_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitOr_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitOr_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64BitOr_RRS { result, lhs, rhs } => 
                 <crate::op::I64BitOr_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64BitOr_RRS { result, lhs, rhs },
@@ -1416,26 +1132,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64BitOr_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_SRS { result, lhs, rhs } => 
-                <crate::op::I64BitOr_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_SRI { result, lhs, rhs } => 
-                <crate::op::I64BitOr_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_SSS { result, lhs, rhs } => 
-                <crate::op::I64BitOr_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_SSI { result, lhs, rhs } => 
-                <crate::op::I64BitOr_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64BitOr_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitOr_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitOr_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitOr_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32BitXor_RRS { result, lhs, rhs } => 
                 <crate::op::I32BitXor_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32BitXor_RRS { result, lhs, rhs },
@@ -1456,26 +1164,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32BitXor_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_SRS { result, lhs, rhs } => 
-                <crate::op::I32BitXor_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_SRI { result, lhs, rhs } => 
-                <crate::op::I32BitXor_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_SSS { result, lhs, rhs } => 
-                <crate::op::I32BitXor_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_SSI { result, lhs, rhs } => 
-                <crate::op::I32BitXor_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32BitXor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitXor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitXor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32BitXor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64BitXor_RRS { result, lhs, rhs } => 
                 <crate::op::I64BitXor_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64BitXor_RRS { result, lhs, rhs },
@@ -1496,26 +1196,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64BitXor_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_SRS { result, lhs, rhs } => 
-                <crate::op::I64BitXor_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_SRI { result, lhs, rhs } => 
-                <crate::op::I64BitXor_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_SSS { result, lhs, rhs } => 
-                <crate::op::I64BitXor_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_SSI { result, lhs, rhs } => 
-                <crate::op::I64BitXor_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64BitXor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitXor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitXor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64BitXor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32And_RRS { result, lhs, rhs } => 
                 <crate::op::I32And_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32And_RRS { result, lhs, rhs },
@@ -1536,26 +1228,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32And_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32And_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_SRS { result, lhs, rhs } => 
-                <crate::op::I32And_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_SRI { result, lhs, rhs } => 
-                <crate::op::I32And_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_SSS { result, lhs, rhs } => 
-                <crate::op::I32And_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_SSI { result, lhs, rhs } => 
-                <crate::op::I32And_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32And_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32And_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32And_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32And_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64And_RRS { result, lhs, rhs } => 
                 <crate::op::I64And_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64And_RRS { result, lhs, rhs },
@@ -1576,26 +1260,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64And_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64And_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_SRS { result, lhs, rhs } => 
-                <crate::op::I64And_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_SRI { result, lhs, rhs } => 
-                <crate::op::I64And_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_SSS { result, lhs, rhs } => 
-                <crate::op::I64And_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_SSI { result, lhs, rhs } => 
-                <crate::op::I64And_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64And_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64And_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64And_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64And_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32Or_RRS { result, lhs, rhs } => 
                 <crate::op::I32Or_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Or_RRS { result, lhs, rhs },
@@ -1616,26 +1292,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Or_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Or_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_SRS { result, lhs, rhs } => 
-                <crate::op::I32Or_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_SRI { result, lhs, rhs } => 
-                <crate::op::I32Or_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_SSS { result, lhs, rhs } => 
-                <crate::op::I32Or_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_SSI { result, lhs, rhs } => 
-                <crate::op::I32Or_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Or_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Or_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Or_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Or_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64Or_RRS { result, lhs, rhs } => 
                 <crate::op::I64Or_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Or_RRS { result, lhs, rhs },
@@ -1656,26 +1324,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Or_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Or_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_SRS { result, lhs, rhs } => 
-                <crate::op::I64Or_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_SRI { result, lhs, rhs } => 
-                <crate::op::I64Or_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_SSS { result, lhs, rhs } => 
-                <crate::op::I64Or_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_SSI { result, lhs, rhs } => 
-                <crate::op::I64Or_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Or_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Or_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Or_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Or_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32Xor_RRS { result, lhs, rhs } => 
                 <crate::op::I32Xor_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Xor_RRS { result, lhs, rhs },
@@ -1696,26 +1356,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Xor_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Xor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_SRS { result, lhs, rhs } => 
-                <crate::op::I32Xor_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_SRI { result, lhs, rhs } => 
-                <crate::op::I32Xor_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_SSS { result, lhs, rhs } => 
-                <crate::op::I32Xor_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_SSI { result, lhs, rhs } => 
-                <crate::op::I32Xor_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Xor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Xor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Xor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Xor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64Xor_RRS { result, lhs, rhs } => 
                 <crate::op::I64Xor_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Xor_RRS { result, lhs, rhs },
@@ -1736,26 +1388,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Xor_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Xor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_SRS { result, lhs, rhs } => 
-                <crate::op::I64Xor_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_SRI { result, lhs, rhs } => 
-                <crate::op::I64Xor_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_SSS { result, lhs, rhs } => 
-                <crate::op::I64Xor_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_SSI { result, lhs, rhs } => 
-                <crate::op::I64Xor_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Xor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Xor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Xor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Xor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32Eq_RRS { result, lhs, rhs } => 
                 <crate::op::I32Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Eq_RRS { result, lhs, rhs },
@@ -1776,26 +1420,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Eq_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_SRS { result, lhs, rhs } => 
-                <crate::op::I32Eq_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_SRI { result, lhs, rhs } => 
-                <crate::op::I32Eq_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_SSS { result, lhs, rhs } => 
-                <crate::op::I32Eq_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_SSI { result, lhs, rhs } => 
-                <crate::op::I32Eq_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64Eq_RRS { result, lhs, rhs } => 
                 <crate::op::I64Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Eq_RRS { result, lhs, rhs },
@@ -1816,26 +1452,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Eq_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_SRS { result, lhs, rhs } => 
-                <crate::op::I64Eq_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_SRI { result, lhs, rhs } => 
-                <crate::op::I64Eq_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_SSS { result, lhs, rhs } => 
-                <crate::op::I64Eq_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_SSI { result, lhs, rhs } => 
-                <crate::op::I64Eq_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32Ne_RRS { result, lhs, rhs } => 
                 <crate::op::I32Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Ne_RRS { result, lhs, rhs },
@@ -1856,26 +1484,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Ne_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_SRS { result, lhs, rhs } => 
-                <crate::op::I32Ne_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_SRI { result, lhs, rhs } => 
-                <crate::op::I32Ne_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_SSS { result, lhs, rhs } => 
-                <crate::op::I32Ne_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_SSI { result, lhs, rhs } => 
-                <crate::op::I32Ne_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I32Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I64Ne_RRS { result, lhs, rhs } => 
                 <crate::op::I64Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Ne_RRS { result, lhs, rhs },
@@ -1896,26 +1516,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Ne_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_SRS { result, lhs, rhs } => 
-                <crate::op::I64Ne_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_SRI { result, lhs, rhs } => 
-                <crate::op::I64Ne_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_SSS { result, lhs, rhs } => 
-                <crate::op::I64Ne_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_SSI { result, lhs, rhs } => 
-                <crate::op::I64Ne_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::I64Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F32Add_RRS { result, lhs, rhs } => 
                 <crate::op::F32Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Add_RRS { result, lhs, rhs },
@@ -1936,26 +1548,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Add_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_SRS { result, lhs, rhs } => 
-                <crate::op::F32Add_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_SRI { result, lhs, rhs } => 
-                <crate::op::F32Add_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_SSS { result, lhs, rhs } => 
-                <crate::op::F32Add_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_SSI { result, lhs, rhs } => 
-                <crate::op::F32Add_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F64Add_RRS { result, lhs, rhs } => 
                 <crate::op::F64Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Add_RRS { result, lhs, rhs },
@@ -1976,26 +1580,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Add_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_SRS { result, lhs, rhs } => 
-                <crate::op::F64Add_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_SRI { result, lhs, rhs } => 
-                <crate::op::F64Add_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_SSS { result, lhs, rhs } => 
-                <crate::op::F64Add_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_SSI { result, lhs, rhs } => 
-                <crate::op::F64Add_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F32Mul_RRS { result, lhs, rhs } => 
                 <crate::op::F32Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Mul_RRS { result, lhs, rhs },
@@ -2016,26 +1612,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Mul_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_SRS { result, lhs, rhs } => 
-                <crate::op::F32Mul_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_SRI { result, lhs, rhs } => 
-                <crate::op::F32Mul_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_SSS { result, lhs, rhs } => 
-                <crate::op::F32Mul_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_SSI { result, lhs, rhs } => 
-                <crate::op::F32Mul_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F64Mul_RRS { result, lhs, rhs } => 
                 <crate::op::F64Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Mul_RRS { result, lhs, rhs },
@@ -2056,26 +1644,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Mul_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_SRS { result, lhs, rhs } => 
-                <crate::op::F64Mul_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_SRI { result, lhs, rhs } => 
-                <crate::op::F64Mul_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_SSS { result, lhs, rhs } => 
-                <crate::op::F64Mul_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_SSI { result, lhs, rhs } => 
-                <crate::op::F64Mul_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F32Eq_RRS { result, lhs, rhs } => 
                 <crate::op::F32Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Eq_RRS { result, lhs, rhs },
@@ -2096,26 +1676,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Eq_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_SRS { result, lhs, rhs } => 
-                <crate::op::F32Eq_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_SRI { result, lhs, rhs } => 
-                <crate::op::F32Eq_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_SSS { result, lhs, rhs } => 
-                <crate::op::F32Eq_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_SSI { result, lhs, rhs } => 
-                <crate::op::F32Eq_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F64Eq_RRS { result, lhs, rhs } => 
                 <crate::op::F64Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Eq_RRS { result, lhs, rhs },
@@ -2136,26 +1708,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Eq_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_SRS { result, lhs, rhs } => 
-                <crate::op::F64Eq_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_SRI { result, lhs, rhs } => 
-                <crate::op::F64Eq_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_SSS { result, lhs, rhs } => 
-                <crate::op::F64Eq_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_SSI { result, lhs, rhs } => 
-                <crate::op::F64Eq_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F32Ne_RRS { result, lhs, rhs } => 
                 <crate::op::F32Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Ne_RRS { result, lhs, rhs },
@@ -2176,26 +1740,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Ne_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_SRS { result, lhs, rhs } => 
-                <crate::op::F32Ne_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_SRI { result, lhs, rhs } => 
-                <crate::op::F32Ne_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_SSS { result, lhs, rhs } => 
-                <crate::op::F32Ne_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_SSI { result, lhs, rhs } => 
-                <crate::op::F32Ne_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F64Ne_RRS { result, lhs, rhs } => 
                 <crate::op::F64Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Ne_RRS { result, lhs, rhs },
@@ -2216,26 +1772,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Ne_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_SRS { result, lhs, rhs } => 
-                <crate::op::F64Ne_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_SRI { result, lhs, rhs } => 
-                <crate::op::F64Ne_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_SSS { result, lhs, rhs } => 
-                <crate::op::F64Ne_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_SSI { result, lhs, rhs } => 
-                <crate::op::F64Ne_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F32Min_RRS { result, lhs, rhs } => 
                 <crate::op::F32Min_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Min_RRS { result, lhs, rhs },
@@ -2256,26 +1804,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Min_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Min_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_SRS { result, lhs, rhs } => 
-                <crate::op::F32Min_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_SRI { result, lhs, rhs } => 
-                <crate::op::F32Min_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_SSS { result, lhs, rhs } => 
-                <crate::op::F32Min_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_SSI { result, lhs, rhs } => 
-                <crate::op::F32Min_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Min_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Min_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Min_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Min_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F64Min_RRS { result, lhs, rhs } => 
                 <crate::op::F64Min_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Min_RRS { result, lhs, rhs },
@@ -2296,26 +1836,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Min_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Min_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_SRS { result, lhs, rhs } => 
-                <crate::op::F64Min_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_SRI { result, lhs, rhs } => 
-                <crate::op::F64Min_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_SSS { result, lhs, rhs } => 
-                <crate::op::F64Min_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_SSI { result, lhs, rhs } => 
-                <crate::op::F64Min_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Min_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Min_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Min_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Min_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F32Max_RRS { result, lhs, rhs } => 
                 <crate::op::F32Max_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Max_RRS { result, lhs, rhs },
@@ -2336,26 +1868,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32Max_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32Max_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_SRS { result, lhs, rhs } => 
-                <crate::op::F32Max_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_SRI { result, lhs, rhs } => 
-                <crate::op::F32Max_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_SSS { result, lhs, rhs } => 
-                <crate::op::F32Max_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_SSI { result, lhs, rhs } => 
-                <crate::op::F32Max_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32Max_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Max_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Max_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F32Max_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::F64Max_RRS { result, lhs, rhs } => 
                 <crate::op::F64Max_RRS as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Max_RRS { result, lhs, rhs },
@@ -2376,26 +1900,18 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64Max_RSI { result, lhs, rhs },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64Max_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_SRS { result, lhs, rhs } => 
-                <crate::op::F64Max_SRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_SRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_SRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_SRI { result, lhs, rhs } => 
-                <crate::op::F64Max_SRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_SRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_SRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_SSS { result, lhs, rhs } => 
-                <crate::op::F64Max_SSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_SSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_SSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_SSI { result, lhs, rhs } => 
-                <crate::op::F64Max_SSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_SSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_SSI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64Max_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SRS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Max_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SRI {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Max_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SSS {
+                result: new_result, lhs, rhs
+            }),
+            Self::F64Max_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SSI {
+                result: new_result, lhs, rhs
+            }),
             Self::I32Load_RR { result, ptr, offset, memory } => 
                 <crate::op::I32Load_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Load_RR { result, ptr, offset, memory },
@@ -2426,21 +1942,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32LoadMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_SR { result, ptr, offset } => 
-                <crate::op::I32LoadMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32LoadMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_SS { result, ptr, offset } => 
-                <crate::op::I32LoadMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32LoadMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_SI { result, address } => 
-                <crate::op::I32LoadMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32LoadMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32LoadMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I32LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32LoadMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I32LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32LoadMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load_RR { result, ptr, offset, memory },
@@ -2471,21 +1981,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64LoadMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_SR { result, ptr, offset } => 
-                <crate::op::I64LoadMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64LoadMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_SS { result, ptr, offset } => 
-                <crate::op::I64LoadMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64LoadMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_SI { result, address } => 
-                <crate::op::I64LoadMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64LoadMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64LoadMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64LoadMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64LoadMem0_SI {
+                result: new_result, address
+            }),
             Self::F32Load_RR { result, ptr, offset, memory } => 
                 <crate::op::F32Load_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F32Load_RR { result, ptr, offset, memory },
@@ -2516,21 +2020,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F32LoadMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_SR { result, ptr, offset } => 
-                <crate::op::F32LoadMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32LoadMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_SS { result, ptr, offset } => 
-                <crate::op::F32LoadMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32LoadMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_SI { result, address } => 
-                <crate::op::F32LoadMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32LoadMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F32LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::F32LoadMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::F32LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::F32LoadMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::F32LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::F32LoadMem0_SI {
+                result: new_result, address
+            }),
             Self::F64Load_RR { result, ptr, offset, memory } => 
                 <crate::op::F64Load_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::F64Load_RR { result, ptr, offset, memory },
@@ -2561,21 +2059,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::F64LoadMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_SR { result, ptr, offset } => 
-                <crate::op::F64LoadMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64LoadMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_SS { result, ptr, offset } => 
-                <crate::op::F64LoadMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64LoadMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_SI { result, address } => 
-                <crate::op::F64LoadMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64LoadMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::F64LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::F64LoadMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::F64LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::F64LoadMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::F64LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::F64LoadMem0_SI {
+                result: new_result, address
+            }),
             Self::I32Load8S_RR { result, ptr, offset, memory } => 
                 <crate::op::I32Load8S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Load8S_RR { result, ptr, offset, memory },
@@ -2606,21 +2098,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Load8SMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_SR { result, ptr, offset } => 
-                <crate::op::I32Load8SMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8SMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_SS { result, ptr, offset } => 
-                <crate::op::I32Load8SMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8SMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_SI { result, address } => 
-                <crate::op::I32Load8SMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8SMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Load8SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8SMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load8SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8SMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load8SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load8SMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load8S_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load8S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load8S_RR { result, ptr, offset, memory },
@@ -2651,21 +2137,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Load8SMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_SR { result, ptr, offset } => 
-                <crate::op::I64Load8SMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8SMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_SS { result, ptr, offset } => 
-                <crate::op::I64Load8SMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8SMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_SI { result, address } => 
-                <crate::op::I64Load8SMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8SMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Load8SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8SMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load8SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8SMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load8SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load8SMem0_SI {
+                result: new_result, address
+            }),
             Self::I32Load8U_RR { result, ptr, offset, memory } => 
                 <crate::op::I32Load8U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Load8U_RR { result, ptr, offset, memory },
@@ -2696,21 +2176,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Load8UMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_SR { result, ptr, offset } => 
-                <crate::op::I32Load8UMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8UMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_SS { result, ptr, offset } => 
-                <crate::op::I32Load8UMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8UMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_SI { result, address } => 
-                <crate::op::I32Load8UMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8UMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Load8UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8UMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load8UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8UMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load8UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load8UMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load8U_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load8U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load8U_RR { result, ptr, offset, memory },
@@ -2741,21 +2215,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Load8UMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_SR { result, ptr, offset } => 
-                <crate::op::I64Load8UMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8UMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_SS { result, ptr, offset } => 
-                <crate::op::I64Load8UMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8UMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_SI { result, address } => 
-                <crate::op::I64Load8UMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8UMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Load8UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8UMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load8UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8UMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load8UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load8UMem0_SI {
+                result: new_result, address
+            }),
             Self::I32Load16S_RR { result, ptr, offset, memory } => 
                 <crate::op::I32Load16S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Load16S_RR { result, ptr, offset, memory },
@@ -2786,21 +2254,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Load16SMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_SR { result, ptr, offset } => 
-                <crate::op::I32Load16SMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16SMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_SS { result, ptr, offset } => 
-                <crate::op::I32Load16SMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16SMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_SI { result, address } => 
-                <crate::op::I32Load16SMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16SMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Load16SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16SMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load16SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16SMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load16SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load16SMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load16S_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load16S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load16S_RR { result, ptr, offset, memory },
@@ -2831,21 +2293,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Load16SMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_SR { result, ptr, offset } => 
-                <crate::op::I64Load16SMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16SMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_SS { result, ptr, offset } => 
-                <crate::op::I64Load16SMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16SMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_SI { result, address } => 
-                <crate::op::I64Load16SMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16SMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Load16SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16SMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load16SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16SMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load16SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load16SMem0_SI {
+                result: new_result, address
+            }),
             Self::I32Load16U_RR { result, ptr, offset, memory } => 
                 <crate::op::I32Load16U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I32Load16U_RR { result, ptr, offset, memory },
@@ -2876,21 +2332,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I32Load16UMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_SR { result, ptr, offset } => 
-                <crate::op::I32Load16UMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16UMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_SS { result, ptr, offset } => 
-                <crate::op::I32Load16UMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16UMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_SI { result, address } => 
-                <crate::op::I32Load16UMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16UMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I32Load16UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16UMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load16UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16UMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I32Load16UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load16UMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load16U_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load16U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load16U_RR { result, ptr, offset, memory },
@@ -2921,21 +2371,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Load16UMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_SR { result, ptr, offset } => 
-                <crate::op::I64Load16UMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16UMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_SS { result, ptr, offset } => 
-                <crate::op::I64Load16UMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16UMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_SI { result, address } => 
-                <crate::op::I64Load16UMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16UMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Load16UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16UMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load16UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16UMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load16UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load16UMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load32S_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load32S_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load32S_RR { result, ptr, offset, memory },
@@ -2966,21 +2410,15 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Load32SMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_SR { result, ptr, offset } => 
-                <crate::op::I64Load32SMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32SMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_SS { result, ptr, offset } => 
-                <crate::op::I64Load32SMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32SMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_SI { result, address } => 
-                <crate::op::I64Load32SMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32SMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Load32SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32SMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load32SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32SMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load32SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load32SMem0_SI {
+                result: new_result, address
+            }),
             Self::I64Load32U_RR { result, ptr, offset, memory } => 
                 <crate::op::I64Load32U_RR as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::I64Load32U_RR { result, ptr, offset, memory },
@@ -3011,46 +2449,34 @@ impl crate::UpdateOperatorResult for crate::Op {
                     &crate::op::I64Load32UMem0_RI { result, address },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_SR { result, ptr, offset } => 
-                <crate::op::I64Load32UMem0_SR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32UMem0_SR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_SR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_SS { result, ptr, offset } => 
-                <crate::op::I64Load32UMem0_SS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32UMem0_SS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_SS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_SI { result, address } => 
-                <crate::op::I64Load32UMem0_SI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32UMem0_SI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_SI as crate::UpdateOperatorResult>::Output>>::from),
+            Self::I64Load32UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32UMem0_SR {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load32UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32UMem0_SS {
+                result: new_result, ptr, offset
+            }),
+            Self::I64Load32UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load32UMem0_SI {
+                result: new_result, address
+            }),
             Self::TableSize_R { result, index } => 
                 <crate::op::TableSize_R as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::TableSize_R { result, index },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::TableSize_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::TableSize_S { result, index } => 
-                <crate::op::TableSize_S as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::TableSize_S { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::TableSize_S as crate::UpdateOperatorResult>::Output>>::from),
-            Self::TableGrow { result, delta, table } => 
-                <crate::op::TableGrow as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::TableGrow { result, delta, table },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::TableGrow as crate::UpdateOperatorResult>::Output>>::from),
+            Self::TableSize_S { index, .. } => ::core::option::Option::Some(Self::TableSize_S {
+                result: new_result, index
+            }),
+            Self::TableGrow { delta, table, .. } => ::core::option::Option::Some(Self::TableGrow {
+                result: new_result, delta, table
+            }),
             Self::MemorySize_R { result, index } => 
                 <crate::op::MemorySize_R as crate::UpdateOperatorResult>::update_operator_result(
                     &crate::op::MemorySize_R { result, index },
                     new_result,
                 ).map(<Self as ::core::convert::From<<crate::op::MemorySize_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::MemorySize_S { result, index } => 
-                <crate::op::MemorySize_S as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::MemorySize_S { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::MemorySize_S as crate::UpdateOperatorResult>::Output>>::from),
+            Self::MemorySize_S { index, .. } => ::core::option::Option::Some(Self::MemorySize_S {
+                result: new_result, index
+            }),
 
             _ => ::core::option::Option::None,
         }
