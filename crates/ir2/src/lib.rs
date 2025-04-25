@@ -29,6 +29,7 @@ pub use self::{
         UpdateOperatorResult,
     },
 };
+pub use self::utils::NoOp;
 
 /// Address to load from or store to memory.
 #[derive(Debug, Copy, Clone)]
