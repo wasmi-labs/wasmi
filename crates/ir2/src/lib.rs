@@ -9,6 +9,7 @@ mod encode;
 mod instr;
 mod utils;
 
+pub(crate) use self::utils::NoOp;
 use self::utils::RefAccess;
 pub use self::{
     decode::{Decode, Decoder},
@@ -29,7 +30,6 @@ pub use self::{
         UpdateOperatorResult,
     },
 };
-pub(crate) use self::utils::NoOp;
 
 /// Address to load from or store to memory.
 #[derive(Debug, Copy, Clone)]
