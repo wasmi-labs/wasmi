@@ -409,10 +409,11 @@ fn define_store_ops(ctx: &mut Context) {
 
 fn define_binop_ops(
     ctx: &mut Context,
-    commutative: bool,
+    kind: OpClassKind,
     ops: impl IntoIterator<Item = &'static str>,
     tys: impl IntoIterator<Item = ValTy> + Clone,
 ) {
+    let commutative = matches!(kind, OpClassKind::BinaryCommutative);
     let results = match commutative {
         true => &[Operand::Reg, Operand::Stack][..],
         false => &[Operand::Reg][..],
@@ -439,6 +440,7 @@ fn define_binop_ops(
                         let rhs_id = rhs.id();
                         ctx.push_op(op! {
                             name: format!("{name}_{result_id}{lhs_id}{rhs_id}"),
+                            kind: kind,
                             fields: [
                                 result: result.ty(ty),
                                 lhs: lhs.ty(ty),
@@ -463,7 +465,7 @@ fn define_binop_ops(
 fn define_ibinop_ops(ctx: &mut Context) {
     define_binop_ops(
         ctx,
-        true,
+        OpClassKind::BinaryCommutative,
         [
             "Add", "Mul", "BitAnd", "BitOr", "BitXor", "And", "Or", "Xor", "Eq", "Ne",
         ],
@@ -471,13 +473,13 @@ fn define_ibinop_ops(ctx: &mut Context) {
     );
     define_binop_ops(
         ctx,
-        true,
+        OpClassKind::BinaryCommutative,
         ["Add", "Mul", "Eq", "Ne", "Min", "Max"],
         [ValTy::F32, ValTy::F64],
     );
     define_binop_ops(
         ctx,
-        false,
+        OpClassKind::Binary,
         [
             "Sub", "LtS", "LtU", "LeS", "LeU", "DivS", "DivU", "RemS", "RemU", "Shl", "ShrS",
             "ShrU", "Rotl", "Rotr",
@@ -486,7 +488,7 @@ fn define_ibinop_ops(ctx: &mut Context) {
     );
     define_binop_ops(
         ctx,
-        false,
+        OpClassKind::Binary,
         ["Sub", "Div", "Copysign"],
         [ValTy::F32, ValTy::F64],
     );

@@ -137,6 +137,8 @@ pub enum OpClassKind {
     None,
     GlobalGet,
     Select,
+    Binary,
+    BinaryCommutative,
 }
 
 #[derive(Debug, Clone)]
