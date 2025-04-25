@@ -1,4 +1,4 @@
-use super::{context::OpClass, Context, FieldName, FieldTy, ImmediateTy, Op, OpClassKind, Operand, ValTy};
+use super::{context::OpClass, Context, FieldName, FieldTy, ImmediateTy, Op, OpClassKind, Operand, OperandId, ValTy};
 use std::format;
 
 pub fn define_ops(ctx: &mut Context) {
@@ -495,7 +495,7 @@ fn define_ibinop_ops(ctx: &mut Context) {
 }
 
 fn define_copy_ops(ctx: &mut Context) {
-    let stack_id = Operand::Stack.id();
+    let stack_id = OperandId::Stack;
     ctx.push_op(op! {
         name: format!("Copy1_{stack_id}"),
         fields: [
@@ -534,7 +534,7 @@ fn define_global_ops(ctx: &mut Context) {
 }
 
 fn define_global_get_ops(ctx: &mut Context) {
-    let stack_id = Operand::Stack.id();
+    let stack_id = OperandId::Stack;
     ctx.push_op(op! {
         name: format!("GlobalGet_{stack_id}"),
         kind: OpClassKind::GlobalGet,
@@ -544,7 +544,7 @@ fn define_global_get_ops(ctx: &mut Context) {
         ],
     });
     for ty in [ValTy::I32, ValTy::I64, ValTy::F32, ValTy::F64] {
-        let result_id = Operand::Reg.id();
+        let result_id = OperandId::Reg;
         ctx.push_op(op! {
             name: format!("GlobalGet{ty}_{result_id}"),
             kind: OpClassKind::GlobalGet,
@@ -557,7 +557,7 @@ fn define_global_get_ops(ctx: &mut Context) {
 }
 
 fn define_global_set_ops(ctx: &mut Context) {
-    let stack_id = Operand::Stack.id();
+    let stack_id = OperandId::Stack;
     ctx.push_op(op! {
         name: format!("GlobalSet_{stack_id}"),
         fields: [
@@ -587,7 +587,7 @@ fn define_return_ops(ctx: &mut Context) {
     });
     // Return1
     {
-        let stack_id = Operand::Stack.id();
+        let stack_id = OperandId::Stack;
         ctx.push_op(op! {
             name: format!("Return1_{stack_id}"),
             fields: [
@@ -706,7 +706,7 @@ fn define_table_size_ops(ctx: &mut Context) {
 }
 
 fn define_table_get_ops(ctx: &mut Context) {
-    let result_id = Operand::Reg.id();
+    let result_id = OperandId::Reg;
     let result_ty = Operand::Reg.ty(ValTy::I64);
     for index in [Operand::Reg, Operand::Stack, Operand::Immediate] {
         let index_id = index.id();
