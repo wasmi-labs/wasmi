@@ -84,33 +84,6 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
             {indent}    ).map(<Self as ::core::convert::From<<crate::op::{name} as crate::UpdateOperatorResult>::Output>>::from),\n\
             "
         )
-        // match result_ty {
-        //     FieldTy::Reg => {
-        //         write!(
-        //             f,
-        //             "\
-        //             {indent}Self::{name} {{ {fields_pattern} }} => \n\
-        //             {indent}    <crate::op::{name} as crate::UpdateOperatorResult>::update_operator_result(\n\
-        //             {indent}        &crate::op::{name} {{ {fields_pattern} }},\n\
-        //             {indent}        new_result,\n\
-        //             {indent}    ).map(<Self as ::core::convert::From<<crate::op::{name} as crate::UpdateOperatorResult>::Output>>::from),\n\
-        //             "
-        //         )
-        //     }
-        //     FieldTy::Stack => {
-        //         write!(
-        //             f,
-        //             "\
-        //             {indent}Self::{name} {{ {fields_pattern} }} => \n\
-        //             {indent}    <crate::op::{name} as crate::UpdateOperatorResult>::update_operator_result(\n\
-        //             {indent}        &crate::op::{name} {{ {fields_pattern} }},\n\
-        //             {indent}        new_result,\n\
-        //             {indent}    ).map(<Self as ::core::convert::From<<crate::op::{name} as crate::UpdateOperatorResult>::Output>>::from),\n\
-        //             "
-        //         )
-        //     }
-        //     _ => unreachable!(),
-        // }
     }
 }
 
