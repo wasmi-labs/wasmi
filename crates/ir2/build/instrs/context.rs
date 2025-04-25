@@ -139,6 +139,10 @@ pub enum OpClassKind {
     Select,
     Binary,
     BinaryCommutative,
+    MemorySize,
+    MemoryGrow,
+    TableGet,
+    TableSize,
 }
 
 #[derive(Debug, Clone)]

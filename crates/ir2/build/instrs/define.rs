@@ -1,4 +1,15 @@
-use super::{context::OpClass, Context, FieldName, FieldTy, ImmediateTy, Op, OpClassKind, Operand, OperandId, ValTy};
+use super::{
+    context::OpClass,
+    Context,
+    FieldName,
+    FieldTy,
+    ImmediateTy,
+    Op,
+    OpClassKind,
+    Operand,
+    OperandId,
+    ValTy,
+};
 use std::format;
 
 pub fn define_ops(ctx: &mut Context) {
@@ -697,6 +708,7 @@ fn define_table_size_ops(ctx: &mut Context) {
         let result_id = result.id();
         ctx.push_op(op! {
             name: format!("TableSize_{result_id}"),
+            kind: OpClassKind::TableSize,
             fields: [
                 result: result.ty(ValTy::I64),
                 table: ImmediateTy::Table,
@@ -712,6 +724,7 @@ fn define_table_get_ops(ctx: &mut Context) {
         let index_id = index.id();
         ctx.push_op(op! {
             name: format!("TableGet_{result_id}{index_id}"),
+            kind: OpClassKind::TableGet,
             fields: [
                 result: result_ty,
                 index: index.ty(ValTy::I64),
@@ -805,6 +818,7 @@ fn define_memory_size_ops(ctx: &mut Context) {
         let result_id = result.id();
         ctx.push_op(op! {
             name: format!("MemorySize_{result_id}"),
+            kind: OpClassKind::MemorySize,
             fields: [
                 result: result.ty(ValTy::I64),
                 memory: ImmediateTy::Memory,
@@ -816,6 +830,7 @@ fn define_memory_size_ops(ctx: &mut Context) {
 fn define_memory_grow_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "MemoryGrow",
+        kind: OpClassKind::MemoryGrow,
         fields: [
             result: FieldTy::Reg,
             delta: FieldTy::Stack,
