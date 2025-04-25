@@ -76,8 +76,8 @@ pub trait OperatorCode {
 }
 
 /// Trait implemented by all operator types.
-pub trait Operator: Copy + OperatorCode + Into<Op> + OperatorResult {}
-impl<T> Operator for T where T: Copy + OperatorCode + OperatorResult + Into<Op> {}
+pub trait Operator: Copy + OperatorCode + Into<Op> + OperatorResult + UpdateOperatorResult {}
+impl<T> Operator for T where T: Copy + OperatorCode + OperatorResult + UpdateOperatorResult + Into<Op> {}
 
 /// Indicates that the operator type alias is vacant.
 #[derive(Copy, Clone)]
