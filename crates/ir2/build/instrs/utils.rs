@@ -123,6 +123,7 @@ impl Display for ValTy {
 macro_rules! op {
     (
         name: $name:expr,
+        $( kind: $kind:expr, )?
         fields: [
             $(
                 $field_name:ident: $field_ty:expr
@@ -133,6 +134,9 @@ macro_rules! op {
     ) => {{
         #[allow(unused_mut)]
         let mut instr = Op::new($name);
+        $(
+            instr.class_kind($kind);
+        )?
         $(
             instr.push_field(ident_to_field_name!($field_name), $field_ty);
         )*

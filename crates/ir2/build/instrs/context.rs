@@ -132,9 +132,17 @@ impl Context {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum OpClassKind {
+    None,
+    GlobalGet,
+    Select,
+}
+
 #[derive(Debug, Clone)]
 pub struct Op {
     name: Box<str>,
+    kind: OpClassKind,
     fields: Vec<Field>,
 }
 
@@ -142,6 +150,7 @@ impl Op {
     pub fn new(name: impl Into<Box<str>>) -> Self {
         Self {
             name: name.into(),
+            kind: OpClassKind::None,
             fields: Vec::new(),
         }
     }
@@ -150,8 +159,16 @@ impl Op {
         &*self.name
     }
 
+    pub fn kind(&self) -> OpClassKind {
+        self.kind
+    }
+
     pub fn fields(&self) -> &[Field] {
         &self.fields[..]
+    }
+
+    pub fn class_kind(&mut self, kind: OpClassKind) {
+        self.kind = kind;
     }
 
     pub fn push_field(&mut self, name: FieldName, ty: impl Into<FieldTy>) {

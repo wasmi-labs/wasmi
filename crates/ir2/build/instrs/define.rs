@@ -1,4 +1,4 @@
-use super::{context::OpClass, Context, FieldName, FieldTy, ImmediateTy, Op, Operand, ValTy};
+use super::{context::OpClass, Context, FieldName, FieldTy, ImmediateTy, Op, OpClassKind, Operand, ValTy};
 use std::format;
 
 pub fn define_ops(ctx: &mut Context) {
@@ -535,6 +535,7 @@ fn define_global_get_ops(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_op(op! {
         name: format!("GlobalGet_{stack_id}"),
+        kind: OpClassKind::GlobalGet,
         fields: [
             result: FieldTy::Stack,
             global: ImmediateTy::Global,
@@ -544,6 +545,7 @@ fn define_global_get_ops(ctx: &mut Context) {
         let result_id = Operand::Reg.id();
         ctx.push_op(op! {
             name: format!("GlobalGet{ty}_{result_id}"),
+            kind: OpClassKind::GlobalGet,
             fields: [
                 result: Operand::Reg.ty(ty),
                 global: ImmediateTy::Global,
@@ -616,6 +618,7 @@ fn define_select_ops(ctx: &mut Context) {
     // Select without type:
     ctx.push_op(op! {
         name: "Select",
+        kind: OpClassKind::Select,
         fields: [
             result: FieldTy::Reg,
             condition: FieldTy::Stack,
@@ -662,6 +665,7 @@ fn define_select_ops(ctx: &mut Context) {
                         let rhs_ty = rhs.ty(ty);
                         ctx.push_op(op! {
                             name: format!("Select{ty}_{result_id}{condition_id}{lhs_id}{rhs_id}"),
+                            kind: OpClassKind::Select,
                             fields: [
                                 result: result_ty,
                                 condition: condition_ty,
