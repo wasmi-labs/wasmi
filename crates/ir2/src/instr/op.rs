@@ -414,7 +414,7 @@ impl ::core::convert::From<Return1F64_I> for crate::Op {
 #[repr(C, packed)]
 pub struct GlobalGet_S {
     pub result: crate::Stack,
-    pub global: crate::Global,
+    pub index: crate::Global,
 }
 impl ::core::marker::Copy for GlobalGet_S {}
 impl ::core::clone::Clone for GlobalGet_S {
@@ -426,14 +426,14 @@ impl ::core::convert::From<GlobalGet_S> for crate::Op {
     fn from(op: GlobalGet_S) -> Self {
         Self::GlobalGet_S {
             result: op.result,
-            global: op.global,
+            index: op.index,
         }
     }
 }
 #[repr(C, packed)]
 pub struct GlobalGetI32_R {
     pub result: crate::Reg,
-    pub global: crate::Global,
+    pub index: crate::Global,
 }
 impl ::core::marker::Copy for GlobalGetI32_R {}
 impl ::core::clone::Clone for GlobalGetI32_R {
@@ -445,14 +445,14 @@ impl ::core::convert::From<GlobalGetI32_R> for crate::Op {
     fn from(op: GlobalGetI32_R) -> Self {
         Self::GlobalGetI32_R {
             result: op.result,
-            global: op.global,
+            index: op.index,
         }
     }
 }
 #[repr(C, packed)]
 pub struct GlobalGetI64_R {
     pub result: crate::Reg,
-    pub global: crate::Global,
+    pub index: crate::Global,
 }
 impl ::core::marker::Copy for GlobalGetI64_R {}
 impl ::core::clone::Clone for GlobalGetI64_R {
@@ -464,14 +464,14 @@ impl ::core::convert::From<GlobalGetI64_R> for crate::Op {
     fn from(op: GlobalGetI64_R) -> Self {
         Self::GlobalGetI64_R {
             result: op.result,
-            global: op.global,
+            index: op.index,
         }
     }
 }
 #[repr(C, packed)]
 pub struct GlobalGetF32_R {
     pub result: crate::Reg,
-    pub global: crate::Global,
+    pub index: crate::Global,
 }
 impl ::core::marker::Copy for GlobalGetF32_R {}
 impl ::core::clone::Clone for GlobalGetF32_R {
@@ -483,14 +483,14 @@ impl ::core::convert::From<GlobalGetF32_R> for crate::Op {
     fn from(op: GlobalGetF32_R) -> Self {
         Self::GlobalGetF32_R {
             result: op.result,
-            global: op.global,
+            index: op.index,
         }
     }
 }
 #[repr(C, packed)]
 pub struct GlobalGetF64_R {
     pub result: crate::Reg,
-    pub global: crate::Global,
+    pub index: crate::Global,
 }
 impl ::core::marker::Copy for GlobalGetF64_R {}
 impl ::core::clone::Clone for GlobalGetF64_R {
@@ -502,7 +502,7 @@ impl ::core::convert::From<GlobalGetF64_R> for crate::Op {
     fn from(op: GlobalGetF64_R) -> Self {
         Self::GlobalGetF64_R {
             result: op.result,
-            global: op.global,
+            index: op.index,
         }
     }
 }
@@ -24424,7 +24424,7 @@ impl ::core::convert::From<SelectF64_RSII> for crate::Op {
 #[repr(C, packed)]
 pub struct TableSize_R {
     pub result: crate::Reg,
-    pub table: crate::Table,
+    pub index: crate::Table,
 }
 impl ::core::marker::Copy for TableSize_R {}
 impl ::core::clone::Clone for TableSize_R {
@@ -24436,14 +24436,14 @@ impl ::core::convert::From<TableSize_R> for crate::Op {
     fn from(op: TableSize_R) -> Self {
         Self::TableSize_R {
             result: op.result,
-            table: op.table,
+            index: op.index,
         }
     }
 }
 #[repr(C, packed)]
 pub struct TableSize_S {
     pub result: crate::Stack,
-    pub table: crate::Table,
+    pub index: crate::Table,
 }
 impl ::core::marker::Copy for TableSize_S {}
 impl ::core::clone::Clone for TableSize_S {
@@ -24455,7 +24455,7 @@ impl ::core::convert::From<TableSize_S> for crate::Op {
     fn from(op: TableSize_S) -> Self {
         Self::TableSize_S {
             result: op.result,
-            table: op.table,
+            index: op.index,
         }
     }
 }
@@ -24787,7 +24787,7 @@ impl ::core::convert::From<TableInit> for crate::Op {
 #[repr(C, packed)]
 pub struct MemorySize_R {
     pub result: crate::Reg,
-    pub memory: crate::Memory,
+    pub index: crate::Memory,
 }
 impl ::core::marker::Copy for MemorySize_R {}
 impl ::core::clone::Clone for MemorySize_R {
@@ -24799,14 +24799,14 @@ impl ::core::convert::From<MemorySize_R> for crate::Op {
     fn from(op: MemorySize_R) -> Self {
         Self::MemorySize_R {
             result: op.result,
-            memory: op.memory,
+            index: op.index,
         }
     }
 }
 #[repr(C, packed)]
 pub struct MemorySize_S {
     pub result: crate::Stack,
-    pub memory: crate::Memory,
+    pub index: crate::Memory,
 }
 impl ::core::marker::Copy for MemorySize_S {}
 impl ::core::clone::Clone for MemorySize_S {
@@ -24818,7 +24818,7 @@ impl ::core::convert::From<MemorySize_S> for crate::Op {
     fn from(op: MemorySize_S) -> Self {
         Self::MemorySize_S {
             result: op.result,
-            memory: op.memory,
+            index: op.index,
         }
     }
 }

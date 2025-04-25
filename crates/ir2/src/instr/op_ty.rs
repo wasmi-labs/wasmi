@@ -82,23 +82,23 @@ pub enum Op {
     } = 22_u16,
     GlobalGet_S {
         result: crate::Stack,
-        global: crate::Global,
+        index: crate::Global,
     } = 23_u16,
     GlobalGetI32_R {
         result: crate::Reg,
-        global: crate::Global,
+        index: crate::Global,
     } = 24_u16,
     GlobalGetI64_R {
         result: crate::Reg,
-        global: crate::Global,
+        index: crate::Global,
     } = 25_u16,
     GlobalGetF32_R {
         result: crate::Reg,
-        global: crate::Global,
+        index: crate::Global,
     } = 26_u16,
     GlobalGetF64_R {
         result: crate::Reg,
-        global: crate::Global,
+        index: crate::Global,
     } = 27_u16,
     GlobalSet_S {
         global: crate::Global,
@@ -5696,11 +5696,11 @@ pub enum Op {
     } = 1184_u16,
     TableSize_R {
         result: crate::Reg,
-        table: crate::Table,
+        index: crate::Table,
     } = 1185_u16,
     TableSize_S {
         result: crate::Stack,
-        table: crate::Table,
+        index: crate::Table,
     } = 1186_u16,
     TableGet_RR {
         result: crate::Reg,
@@ -5784,11 +5784,11 @@ pub enum Op {
     } = 1201_u16,
     MemorySize_R {
         result: crate::Reg,
-        memory: crate::Memory,
+        index: crate::Memory,
     } = 1202_u16,
     MemorySize_S {
         result: crate::Stack,
-        memory: crate::Memory,
+        index: crate::Memory,
     } = 1203_u16,
     MemoryGrow {
         result: crate::Reg,
@@ -5954,20 +5954,20 @@ impl Op {
             Self::Return1F64_I { value } => {
                 encoder.encode(crate::op::Return1F64_I { value })
             }
-            Self::GlobalGet_S { result, global } => {
-                encoder.encode(crate::op::GlobalGet_S { result, global })
+            Self::GlobalGet_S { result, index } => {
+                encoder.encode(crate::op::GlobalGet_S { result, index })
             }
-            Self::GlobalGetI32_R { result, global } => {
-                encoder.encode(crate::op::GlobalGetI32_R { result, global })
+            Self::GlobalGetI32_R { result, index } => {
+                encoder.encode(crate::op::GlobalGetI32_R { result, index })
             }
-            Self::GlobalGetI64_R { result, global } => {
-                encoder.encode(crate::op::GlobalGetI64_R { result, global })
+            Self::GlobalGetI64_R { result, index } => {
+                encoder.encode(crate::op::GlobalGetI64_R { result, index })
             }
-            Self::GlobalGetF32_R { result, global } => {
-                encoder.encode(crate::op::GlobalGetF32_R { result, global })
+            Self::GlobalGetF32_R { result, index } => {
+                encoder.encode(crate::op::GlobalGetF32_R { result, index })
             }
-            Self::GlobalGetF64_R { result, global } => {
-                encoder.encode(crate::op::GlobalGetF64_R { result, global })
+            Self::GlobalGetF64_R { result, index } => {
+                encoder.encode(crate::op::GlobalGetF64_R { result, index })
             }
             Self::GlobalSet_S { global, value } => {
                 encoder.encode(crate::op::GlobalSet_S { global, value })
@@ -9440,11 +9440,11 @@ impl Op {
             Self::SelectF64_RSII { result, condition, lhs, rhs } => {
                 encoder.encode(crate::op::SelectF64_RSII { result, condition, lhs, rhs })
             }
-            Self::TableSize_R { result, table } => {
-                encoder.encode(crate::op::TableSize_R { result, table })
+            Self::TableSize_R { result, index } => {
+                encoder.encode(crate::op::TableSize_R { result, index })
             }
-            Self::TableSize_S { result, table } => {
-                encoder.encode(crate::op::TableSize_S { result, table })
+            Self::TableSize_S { result, index } => {
+                encoder.encode(crate::op::TableSize_S { result, index })
             }
             Self::TableGet_RR { result, index, table } => {
                 encoder.encode(crate::op::TableGet_RR { result, index, table })
@@ -9491,11 +9491,11 @@ impl Op {
             Self::TableInit { dst_index, src_index, len, table, elem } => {
                 encoder.encode(crate::op::TableInit { dst_index, src_index, len, table, elem })
             }
-            Self::MemorySize_R { result, memory } => {
-                encoder.encode(crate::op::MemorySize_R { result, memory })
+            Self::MemorySize_R { result, index } => {
+                encoder.encode(crate::op::MemorySize_R { result, index })
             }
-            Self::MemorySize_S { result, memory } => {
-                encoder.encode(crate::op::MemorySize_S { result, memory })
+            Self::MemorySize_S { result, index } => {
+                encoder.encode(crate::op::MemorySize_S { result, index })
             }
             Self::MemoryGrow { result, delta, memory } => {
                 encoder.encode(crate::op::MemoryGrow { result, delta, memory })
