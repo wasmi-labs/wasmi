@@ -274,300 +274,324 @@ fn consteval_branch_never() {
         .run()
 }
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_0() {
-//     let wasm = r"
-//         (module
-//             (func (param i32)
-//                 (local.get 0)
-//                 (br_if 0)
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([Instruction::return_nez(Reg::from(0)), Instruction::Return])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_0() {
+    let wasm = r"
+        (module
+            (func (param i32)
+                (local.get 0)
+                (br_if 0)
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_ne_imm16(0, 0_i16, 1),
+            Instruction::Return,
+        ])
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_1() {
-//     let wasm = r"
-//         (module
-//             (func (param i32 i32) (result i32)
-//                 (local.get 0)
-//                 (local.get 1)
-//                 (br_if 0)
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::return_nez_reg(Reg::from(1), Reg::from(0)),
-//             Instruction::return_reg(Reg::from(0)),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_1() {
+    let wasm = r"
+        (module
+            (func (param i32 i32) (result i32)
+                (local.get 0)
+                (local.get 1)
+                (br_if 0)
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_ne_imm16(1, 0_i16, 1),
+            Instruction::return_reg(Reg::from(0)),
+        ])
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_1_imm() {
-//     fn test_for<T>(returned_value: T)
-//     where
-//         T: WasmTy,
-//         DisplayWasm<T>: Display,
-//     {
-//         let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
-//         let display_value = DisplayWasm::from(returned_value);
-//         let wasm = format!(
-//             r"
-//             (module
-//                 (func (param i32) (result {display_ty})
-//                     ({display_ty}.const {display_value})
-//                     (local.get 0) ;; br_if condition
-//                     (br_if 0)
-//                 )
-//             )",
-//         );
-//         TranslationTest::new(&wasm)
-//             .expect_func(
-//                 ExpectedFunc::new([
-//                     Instruction::return_nez_reg(Reg::from(0), Reg::from(-1)),
-//                     Instruction::return_reg(Reg::from(-1)),
-//                 ])
-//                 .consts([returned_value]),
-//             )
-//             .run()
-//     }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_1_imm() {
+    fn test_for<T>(returned_value: T)
+    where
+        T: WasmTy,
+        DisplayWasm<T>: Display,
+    {
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
+        let display_value = DisplayWasm::from(returned_value);
+        let wasm = format!(
+            r"
+            (module
+                (func (param i32) (result {display_ty})
+                    ({display_ty}.const {display_value})
+                    (local.get 0) ;; br_if condition
+                    (br_if 0)
+                )
+            )",
+        );
+        TranslationTest::new(&wasm)
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::branch_i32_eq_imm16(0, 0_i16, 3),
+                    Instruction::copy(0, -1),
+                    Instruction::branch(2),
+                    Instruction::copy(0, -1),
+                    Instruction::return_reg(0),
+                ])
+                .consts([returned_value]),
+            )
+            .run()
+    }
 
-//     test_for::<i64>(i64::from(i32::MIN) - 1);
-//     test_for::<i64>(i64::from(i32::MAX) + 1);
-//     test_for::<i64>(i64::MIN);
-//     test_for::<i64>(i64::MAX);
+    test_for::<i64>(i64::from(i32::MIN) - 1);
+    test_for::<i64>(i64::from(i32::MAX) + 1);
+    test_for::<i64>(i64::MIN);
+    test_for::<i64>(i64::MAX);
 
-//     test_for::<f64>(0.3);
-//     test_for::<f64>(-0.3);
-//     test_for::<f64>(0.123456789);
-//     test_for::<f64>(0.987654321);
-//     test_for::<f64>(-0.123456789);
-//     test_for::<f64>(-0.987654321);
-// }
+    test_for::<f64>(0.3);
+    test_for::<f64>(-0.3);
+    test_for::<f64>(0.123456789);
+    test_for::<f64>(0.987654321);
+    test_for::<f64>(-0.123456789);
+    test_for::<f64>(-0.987654321);
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_1_imm32() {
-//     fn test_for<T>(returned_value: T)
-//     where
-//         T: WasmTy + Into<AnyConst32>,
-//         DisplayWasm<T>: Display,
-//     {
-//         let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
-//         let display_value = DisplayWasm::from(returned_value);
-//         let wasm = format!(
-//             r"
-//             (module
-//                 (func (param i32) (result {display_ty})
-//                     ({display_ty}.const {display_value})
-//                     (local.get 0) ;; br_if condition
-//                     (br_if 0)
-//                 )
-//             )",
-//         );
-//         let const32: AnyConst32 = returned_value.into();
-//         TranslationTest::new(&wasm)
-//             .expect_func_instrs([
-//                 Instruction::return_nez_imm32(Reg::from(0), const32),
-//                 Instruction::return_imm32(const32),
-//             ])
-//             .run()
-//     }
-//     test_for::<i32>(0);
-//     test_for::<i32>(1);
-//     test_for::<i32>(-1);
-//     test_for::<i32>(42);
-//     test_for::<f32>(0.0);
-//     test_for::<f32>(5.5);
-//     test_for::<f32>(42.25);
-//     test_for::<f32>(f32::NAN);
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_1_imm32() {
+    fn test_for<T>(returned_value: T)
+    where
+        T: WasmTy + Into<AnyConst32>,
+        DisplayWasm<T>: Display,
+    {
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
+        let display_value = DisplayWasm::from(returned_value);
+        let wasm = format!(
+            r"
+            (module
+                (func (param i32) (result {display_ty})
+                    ({display_ty}.const {display_value})
+                    (local.get 0) ;; br_if condition
+                    (br_if 0)
+                )
+            )",
+        );
+        TranslationTest::new(&wasm)
+            .expect_func_instrs([
+                Instruction::branch_i32_eq_imm16(0, 0_i16, 3),
+                Instruction::copy_imm32(0, returned_value),
+                Instruction::branch(2),
+                Instruction::copy_imm32(0, returned_value),
+                Instruction::return_reg(0),
+            ])
+            .run()
+    }
+    test_for::<i32>(0);
+    test_for::<i32>(1);
+    test_for::<i32>(-1);
+    test_for::<i32>(42);
+    test_for::<f32>(0.0);
+    test_for::<f32>(5.5);
+    test_for::<f32>(42.25);
+    test_for::<f32>(f32::NAN);
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_1_i64imm32() {
-//     fn test_for(returned_value: i64) {
-//         let display_value = DisplayWasm::from(returned_value);
-//         let wasm = format!(
-//             r"
-//             (module
-//                 (func (param i32) (result i64)
-//                     (i64.const {display_value})
-//                     (local.get 0) ;; br_if condition
-//                     (br_if 0)
-//                 )
-//             )",
-//         );
-//         TranslationTest::new(&wasm)
-//             .expect_func_instrs([
-//                 return_nez_i64imm32_instr(Reg::from(0), returned_value),
-//                 return_i64imm32_instr(returned_value),
-//             ])
-//             .run()
-//     }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_1_i64imm32() {
+    fn test_for(returned_value: i64) {
+        let display_value = DisplayWasm::from(returned_value);
+        let wasm = format!(
+            r"
+            (module
+                (func (param i32) (result i64)
+                    (i64.const {display_value})
+                    (local.get 0) ;; br_if condition
+                    (br_if 0)
+                )
+            )",
+        );
+        let returned_value32 = i32::try_from(returned_value).unwrap();
+        TranslationTest::new(&wasm)
+            .expect_func_instrs([
+                Instruction::branch_i32_eq_imm16(0, 0_i16, 3),
+                Instruction::copy_i64imm32(0, returned_value32),
+                Instruction::branch(2),
+                Instruction::copy_i64imm32(0, returned_value32),
+                Instruction::return_reg(0),
+            ])
+            .run()
+    }
 
-//     test_for(0);
-//     test_for(1);
-//     test_for(-1);
-//     test_for(i64::from(i32::MIN) + 1);
-//     test_for(i64::from(i32::MIN));
-//     test_for(i64::from(i32::MAX) - 1);
-//     test_for(i64::from(i32::MAX));
-// }
+    test_for(0);
+    test_for(1);
+    test_for(-1);
+    test_for(i64::from(i32::MIN) + 1);
+    test_for(i64::from(i32::MIN));
+    test_for(i64::from(i32::MAX) - 1);
+    test_for(i64::from(i32::MAX));
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_1_f64imm32() {
-//     fn test_for(returned_value: f64) {
-//         let display_value = DisplayWasm::from(returned_value);
-//         let wasm = format!(
-//             r"
-//             (module
-//                 (func (param i32) (result f64)
-//                     (f64.const {display_value})
-//                     (local.get 0) ;; br_if condition
-//                     (br_if 0)
-//                 )
-//             )",
-//         );
-//         TranslationTest::new(&wasm)
-//             .expect_func_instrs([
-//                 return_nez_f64imm32_instr(Reg::from(0), returned_value),
-//                 return_f64imm32_instr(returned_value),
-//             ])
-//             .run()
-//     }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_1_f64imm32() {
+    fn test_for(returned_value: f64) {
+        let display_value = DisplayWasm::from(returned_value);
+        let wasm = format!(
+            r"
+            (module
+                (func (param i32) (result f64)
+                    (f64.const {display_value})
+                    (local.get 0) ;; br_if condition
+                    (br_if 0)
+                )
+            )",
+        );
+        let returned_value32 = returned_value as f32;
+        TranslationTest::new(&wasm)
+            .expect_func_instrs([
+                Instruction::branch_i32_eq_imm16(0, 0_i16, 3),
+                Instruction::copy_f64imm32(0, returned_value32),
+                Instruction::branch(2),
+                Instruction::copy_f64imm32(0, returned_value32),
+                Instruction::return_reg(0),
+            ])
+            .run()
+    }
 
-//     test_for(0.0);
-//     test_for(0.25);
-//     test_for(-0.25);
-//     test_for(0.5);
-//     test_for(-0.5);
-//     test_for(1.0);
-//     test_for(-1.0);
-//     test_for(f64::NEG_INFINITY);
-//     test_for(f64::INFINITY);
-//     test_for(f64::NAN);
-//     test_for(f64::EPSILON);
-// }
+    test_for(0.0);
+    test_for(0.25);
+    test_for(-0.25);
+    test_for(0.5);
+    test_for(-0.5);
+    test_for(1.0);
+    test_for(-1.0);
+    test_for(f64::NEG_INFINITY);
+    test_for(f64::INFINITY);
+    test_for(f64::NAN);
+    test_for(f64::EPSILON);
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_2() {
-//     let wasm = r"
-//         (module
-//             (func (param i32 i32 i32) (result i32 i32)
-//                 (local.get 0)
-//                 (local.get 1)
-//                 (br_if 0
-//                     (local.get 2) ;; br_if condition
-//                 )
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::return_nez_reg2_ext(Reg::from(2), 0, 1),
-//             Instruction::return_reg2_ext(0, 1),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_2() {
+    let wasm = r"
+        (module
+            (func (param i32 i32 i32) (result i32 i32)
+                (local.get 0)
+                (local.get 1)
+                (br_if 0
+                    (local.get 2) ;; br_if condition
+                )
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_ne_imm16(2, 0_i16, 1),
+            Instruction::return_reg2_ext(0, 1),
+        ])
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_2_lhs() {
-//     let wasm = r"
-//         (module
-//             (func (param i32 i32 i32) (result i32 i32)
-//                 (local.get 1)
-//                 (local.get 0)
-//                 (br_if 0
-//                     (local.get 2) ;; br_if condition
-//                 )
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::return_nez_reg2_ext(Reg::from(2), 1, 0),
-//             Instruction::return_reg2_ext(1, 0),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_2_lhs() {
+    let wasm = r"
+        (module
+            (func (param i32 i32 i32) (result i32 i32)
+                (local.get 1)
+                (local.get 0)
+                (br_if 0
+                    (local.get 2) ;; br_if condition
+                )
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_eq_imm16(2, 0_i16, 3),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), 1, 0),
+            Instruction::branch(2),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), 1, 0),
+            Instruction::return_reg2_ext(0, 1),
+        ])
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_2_imm() {
-//     let wasm = r"
-//         (module
-//             (func (param i32) (result i32 i32)
-//                 (i32.const 10)
-//                 (i32.const 20)
-//                 (br_if 0
-//                     (local.get 0) ;; br_if condition
-//                 )
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func(
-//             ExpectedFunc::new([
-//                 Instruction::return_nez_reg2_ext(Reg::from(0), -1, -2),
-//                 Instruction::return_reg2_ext(-1, -2),
-//             ])
-//             .consts([10_i32, 20]),
-//         )
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_2_imm() {
+    let wasm = r"
+        (module
+            (func (param i32) (result i32 i32)
+                (i32.const 10)
+                (i32.const 20)
+                (br_if 0
+                    (local.get 0) ;; br_if condition
+                )
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::branch_i32_eq_imm16(0, 0_i16, 3),
+                Instruction::copy2_ext(RegSpan::new(Reg::from(0)), -1, -2),
+                Instruction::branch(2),
+                Instruction::copy2_ext(RegSpan::new(Reg::from(0)), -1, -2),
+                Instruction::return_reg2_ext(0, 1),
+            ])
+            .consts([10_i32, 20]),
+        )
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_3_span() {
-//     let wasm = r"
-//         (module
-//             (func (param i32 i32 i32 i32) (result i32 i32 i32)
-//                 (local.get 0)
-//                 (local.get 1)
-//                 (local.get 2)
-//                 (br_if 0
-//                     (local.get 3) ;; br_if condition
-//                 )
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::return_nez_span(Reg::from(3), bspan(0, 3)),
-//             Instruction::return_reg3_ext(0, 1, 2),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_3_span() {
+    let wasm = r"
+        (module
+            (func (param i32 i32 i32 i32) (result i32 i32 i32)
+                (local.get 0)
+                (local.get 1)
+                (local.get 2)
+                (br_if 0
+                    (local.get 3) ;; br_if condition
+                )
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_ne_imm16(3, 0_i16, 1),
+            Instruction::return_reg3_ext(0, 1, 2),
+        ])
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_3() {
-//     let wasm = r"
-//         (module
-//             (func (param i32 i32 i32) (result i32 i32 i32)
-//                 (local.get 0)
-//                 (local.get 1)
-//                 (local.get 0)
-//                 (br_if 0
-//                     (local.get 2) ;; br_if condition
-//                 )
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::return_nez_many_ext(Reg::from(2), 0, 1),
-//             Instruction::register(0),
-//             Instruction::return_reg3_ext(0, 1, 0),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_3() {
+    let wasm = r"
+        (module
+            (func (param i32 i32 i32) (result i32 i32 i32)
+                (local.get 0)
+                (local.get 1)
+                (local.get 0)
+                (br_if 0
+                    (local.get 2) ;; br_if condition
+                )
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_eq_imm16(2, 0_i16, 3),
+            Instruction::copy(2, 0),
+            Instruction::branch(2),
+            Instruction::copy(2, 0),
+            Instruction::return_reg3_ext(0, 1, 2),
+        ])
+        .run()
+}
 
 // #[test]
 // #[cfg_attr(miri, ignore)]
