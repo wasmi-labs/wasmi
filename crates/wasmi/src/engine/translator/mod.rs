@@ -1064,6 +1064,10 @@ impl FuncTranslator {
                     &self.alloc.buffer.providers[..],
                     &fuel_info,
                 )?;
+            }
+            // Since the `block` is now sealed we can pin its end label.
+            self.alloc.instr_encoder.pin_label(frame.end_label());
+            if frame.is_branched_to() {
                 // Case: branches to this block exist so we cannot treat the
                 //       basic block as a no-op and instead have to put its
                 //       block results on top of the stack.
@@ -1074,8 +1078,6 @@ impl FuncTranslator {
                     self.alloc.stack.push_register(result)?;
                 }
             }
-            // Since the `block` is now sealed we can pin its end label.
-            self.alloc.instr_encoder.pin_label(frame.end_label());
             if self.reachable || frame.is_branched_to() {
                 // We dropped the Wasm `block` that encloses the function itself so we can return.
                 self.translate_return_with(&fuel_info)?;
