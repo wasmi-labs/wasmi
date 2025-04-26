@@ -177,79 +177,81 @@ fn fuzz_regression_10() {
         .run()
 }
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn fuzz_regression_11() {
-//     let wasm = include_str!("wat/fuzz_11.wat");
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::i32_and_imm16(Reg::from(1), Reg::from(0), 2),
-//             Instruction::i32_eq_imm16(Reg::from(0), Reg::from(0), 0),
-//             Instruction::i32_and(Reg::from(1), Reg::from(1), Reg::from(0)),
-//             Instruction::return_nez(1),
-//             Instruction::trap(TrapCode::UnreachableCodeReached),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_11() {
+    let wasm = include_str!("wat/fuzz_11.wat");
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::i32_and_imm16(Reg::from(1), Reg::from(0), 2),
+            Instruction::i32_eq_imm16(Reg::from(0), Reg::from(0), 0),
+            Instruction::branch_i32_and(Reg::from(1), Reg::from(0), 2),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
+            Instruction::Return,
+        ])
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn fuzz_regression_12_f32() {
-//     let wasm = include_str!("wat/fuzz_12_f32.wat");
-//     TranslationTest::new(wasm)
-//         .expect_func(ExpectedFunc::new([
-//             Instruction::copy_imm32(Reg::from(0), u32::MAX),
-//             Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
-//             Instruction::return_nez(1),
-//             Instruction::trap(TrapCode::UnreachableCodeReached),
-//         ]))
-//         .expect_func(ExpectedFunc::new([
-//             Instruction::copy_imm32(Reg::from(0), u32::MAX),
-//             Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
-//             Instruction::return_nez(1),
-//             Instruction::trap(TrapCode::UnreachableCodeReached),
-//         ]))
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_12_f32() {
+    let wasm = include_str!("wat/fuzz_12_f32.wat");
+    TranslationTest::new(wasm)
+        .expect_func(ExpectedFunc::new([
+            Instruction::copy_imm32(Reg::from(0), u32::MAX),
+            Instruction::branch_f32_le(Reg::from(0), Reg::from(0), 2),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
+            Instruction::Return,
+        ]))
+        .expect_func(ExpectedFunc::new([
+            Instruction::copy_imm32(Reg::from(0), u32::MAX),
+            Instruction::branch_f32_le(Reg::from(0), Reg::from(0), 2),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
+            Instruction::Return,
+        ]))
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn fuzz_regression_12_f64() {
-//     let wasm = include_str!("wat/fuzz_12_f64.wat");
-//     TranslationTest::new(wasm)
-//         .expect_func(
-//             ExpectedFunc::new([
-//                 Instruction::copy(0, -1),
-//                 Instruction::f64_le(Reg::from(1), Reg::from(0), Reg::from(0)),
-//                 Instruction::return_nez(1),
-//                 Instruction::trap(TrapCode::UnreachableCodeReached),
-//             ])
-//             .consts([u64::MAX]),
-//         )
-//         .expect_func(
-//             ExpectedFunc::new([
-//                 Instruction::copy(0, -1),
-//                 Instruction::f64_le(Reg::from(1), Reg::from(0), Reg::from(0)),
-//                 Instruction::return_nez(1),
-//                 Instruction::trap(TrapCode::UnreachableCodeReached),
-//             ])
-//             .consts([u64::MAX]),
-//         )
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_12_f64() {
+    let wasm = include_str!("wat/fuzz_12_f64.wat");
+    TranslationTest::new(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::copy(0, -1),
+                Instruction::branch_f64_le(Reg::from(0), Reg::from(0), 2),
+                Instruction::trap(TrapCode::UnreachableCodeReached),
+                Instruction::Return,
+            ])
+            .consts([u64::MAX]),
+        )
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::copy(0, -1),
+                Instruction::branch_f64_le(Reg::from(0), Reg::from(0), 2),
+                Instruction::trap(TrapCode::UnreachableCodeReached),
+                Instruction::Return,
+            ])
+            .consts([u64::MAX]),
+        )
+        .run()
+}
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn fuzz_regression_13_codegen() {
-//     let wasm = include_str!("wat/fuzz_13.wat");
-//     TranslationTest::new(wasm)
-//         .expect_func_instrs([
-//             Instruction::return_nez_many_ext(0, 0, 0),
-//             Instruction::register(0),
-//             Instruction::return_reg3_ext(0, 0, 0),
-//         ])
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_13_codegen() {
+    let wasm = include_str!("wat/fuzz_13.wat");
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_eq_imm16(0, 0_i16, 3),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(1)), 0, 0),
+            Instruction::branch(2),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(1)), 0, 0),
+            Instruction::return_reg3_ext(0, 1, 2),
+        ])
+        .run()
+}
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -484,4 +486,31 @@ fn audit_2_execution() {
         .wasm(wasm)
         .call::<i32, (i32, i32, i32, i32)>("", 1)
         .assert_results((1, 1, 1, 1));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_br_if() {
+    let wasm = r#"
+        (module
+            (func (export "") (param f32 f32) (result f32)
+                loop ;; label = @1
+                    f32.const 0
+                    local.get 1
+                    i32.reinterpret_f32
+                    br_if 1
+                    local.set 0
+                    local.get 1
+                    i32.reinterpret_f32
+                    br_if 0 (;@1;)
+                    unreachable
+                end
+                unreachable
+            )
+        )
+    "#;
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<(f32, f32), f32>("", (0.0, 0.0))
+        .assert_trap(TrapCode::UnreachableCodeReached);
 }
