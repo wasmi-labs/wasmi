@@ -153,58 +153,6 @@ impl<'engine> Executor<'engine> {
                 Instr::ReturnMany { values } => {
                     forward_return!(self.execute_return_many(store.inner_mut(), values))
                 }
-                Instr::ReturnNez { condition } => {
-                    forward_return!(self.execute_return_nez(store.inner_mut(), condition))
-                }
-                Instr::ReturnNezReg { condition, value } => {
-                    forward_return!(self.execute_return_nez_reg(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
-                }
-                Instr::ReturnNezReg2 { condition, values } => {
-                    forward_return!(self.execute_return_nez_reg2(
-                        store.inner_mut(),
-                        condition,
-                        values
-                    ))
-                }
-                Instr::ReturnNezImm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_imm32(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
-                }
-                Instr::ReturnNezI64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_i64imm32(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
-                }
-                Instr::ReturnNezF64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_f64imm32(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
-                }
-                Instr::ReturnNezSpan { condition, values } => {
-                    forward_return!(self.execute_return_nez_span(
-                        store.inner_mut(),
-                        condition,
-                        values
-                    ))
-                }
-                Instr::ReturnNezMany { condition, values } => {
-                    forward_return!(self.execute_return_nez_many(
-                        store.inner_mut(),
-                        condition,
-                        values
-                    ))
-                }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchTable0 { index, len_targets } => {
                     self.execute_branch_table_0(index, len_targets)
