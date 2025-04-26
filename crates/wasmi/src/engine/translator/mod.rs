@@ -1031,7 +1031,6 @@ impl FuncTranslator {
     /// Translates the `end` of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
-            bail_unreachable!(self);
             let fuel_info = match self.fuel_costs().cloned() {
                 None => FuelInfo::None,
                 Some(fuel_costs) => {
@@ -1077,8 +1076,11 @@ impl FuncTranslator {
             }
             // Since the `block` is now sealed we can pin its end label.
             self.alloc.instr_encoder.pin_label(frame.end_label());
-            // We dropped the Wasm `block` that encloses the function itself so we can return.
-            return self.translate_return_with(&fuel_info);
+            if self.reachable || frame.is_branched_to() {
+                // We dropped the Wasm `block` that encloses the function itself so we can return.
+                self.translate_return_with(&fuel_info)?;
+            }
+            return Ok(());
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
