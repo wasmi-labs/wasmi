@@ -648,7 +648,6 @@ impl InstrEncoder {
     /// This is used for the following n-ary instructions:
     ///
     /// - [`Instruction::ReturnMany`]
-    /// - [`Instruction::ReturnNezMany`]
     /// - [`Instruction::CopyMany`]
     /// - [`Instruction::CallInternal`]
     /// - [`Instruction::CallImported`]
