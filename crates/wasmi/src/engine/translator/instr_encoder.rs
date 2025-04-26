@@ -641,67 +641,6 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Encodes an conditional `return` instruction.
-    pub fn encode_return_nez(
-        &mut self,
-        stack: &mut ValueStack,
-        condition: Reg,
-        values: &[TypedProvider],
-        fuel_info: FuelInfo,
-    ) -> Result<(), Error> {
-        // Note: We bump fuel unconditionally even if the conditional return is not taken.
-        //       This is very conservative and may lead to more fuel costs than
-        //       actually needed for the computation. We might revisit this decision
-        //       later. An alternative solution would consume fuel during execution
-        //       time only when the return is taken.
-        let instr = match values {
-            [] => Instruction::return_nez(condition),
-            [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
-            [TypedProvider::Const(value)] => match value.ty() {
-                ValType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
-                ValType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
-                    Some(value) => Instruction::return_nez_i64imm32(condition, value),
-                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
-                },
-                ValType::F32 => Instruction::return_nez_imm32(condition, f32::from(*value)),
-                ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
-                    Some(value) => Instruction::return_nez_f64imm32(condition, value),
-                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
-                },
-                ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                    Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
-                }
-            },
-            [v0, v1] => {
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                Instruction::return_nez_reg2_ext(condition, reg0, reg1)
-            }
-            [v0, v1, rest @ ..] => {
-                debug_assert!(!rest.is_empty());
-                // Note: The fuel for return values might result in 0 charges if there aren't
-                //       enough return values to account for at least 1 fuel. Therefore we need
-                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
-                self.bump_fuel_consumption(&fuel_info, FuelCostsProvider::base)?;
-                self.bump_fuel_consumption(&fuel_info, |costs| {
-                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
-                })?;
-                if let Some(span) = BoundedRegSpan::from_providers(values) {
-                    self.push_instr(Instruction::return_nez_span(condition, span))?;
-                    return Ok(());
-                }
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                self.push_instr(Instruction::return_nez_many_ext(condition, reg0, reg1))?;
-                self.encode_register_list(stack, rest)?;
-                return Ok(());
-            }
-        };
-        self.bump_fuel_consumption(&fuel_info, FuelCostsProvider::base)?;
-        self.push_instr(instr)?;
-        Ok(())
-    }
-
     /// Encode the given slice of [`TypedProvider`] as a list of [`Reg`].
     ///
     /// # Note
