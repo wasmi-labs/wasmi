@@ -593,31 +593,35 @@ fn return_if_results_3() {
         .run()
 }
 
-// #[test]
-// #[cfg_attr(miri, ignore)]
-// fn return_if_results_3_imm() {
-//     let wasm = r"
-//         (module
-//             (func (param i32) (result i32 i32 i32)
-//                 (i32.const 10)
-//                 (i32.const 20)
-//                 (i32.const 30)
-//                 (br_if 0
-//                     (local.get 0) ;; br_if condition
-//                 )
-//             )
-//         )";
-//     TranslationTest::new(wasm)
-//         .expect_func(
-//             ExpectedFunc::new([
-//                 Instruction::return_nez_many_ext(Reg::from(0), -1, -2),
-//                 Instruction::register(-3),
-//                 Instruction::return_reg3_ext(-1, -2, -3),
-//             ])
-//             .consts([10_i32, 20, 30]),
-//         )
-//         .run()
-// }
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_results_3_imm() {
+    let wasm = r"
+        (module
+            (func (param i32) (result i32 i32 i32)
+                (i32.const 10)
+                (i32.const 20)
+                (i32.const 30)
+                (br_if 0
+                    (local.get 0) ;; br_if condition
+                )
+            )
+        )";
+    TranslationTest::new(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::branch_i32_eq_imm16(0, 0_i16, 4),
+                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(0)), -1, -2),
+                Instruction::register(-3),
+                Instruction::branch(3),
+                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(0)), -1, -2),
+                Instruction::register(-3),
+                Instruction::return_reg3_ext(0, 1, 2),
+            ])
+            .consts([10_i32, 20, 30]),
+        )
+        .run()
+}
 
 // #[test]
 // #[cfg_attr(miri, ignore)]
