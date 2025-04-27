@@ -134,16 +134,6 @@ fn return_i64imm32_instr(value: i64) -> Instruction {
     Instruction::return_i64imm32(i64imm32(value))
 }
 
-/// Creates an [`Instruction::ReturnNezI64Imm32`] from the given `i64` value.
-///
-/// # Panics
-///
-/// If the `value` cannot be converted into `i32` losslessly.
-#[track_caller]
-fn return_nez_i64imm32_instr(condition: Reg, value: i64) -> Instruction {
-    Instruction::return_nez_i64imm32(condition, i64imm32(value))
-}
-
 /// Creates an [`Instruction::ReturnF64Imm32`] from the given `f64` value.
 ///
 /// # Panics
@@ -152,16 +142,6 @@ fn return_nez_i64imm32_instr(condition: Reg, value: i64) -> Instruction {
 #[track_caller]
 fn return_f64imm32_instr(value: f64) -> Instruction {
     Instruction::return_f64imm32(f64imm32(value))
-}
-
-/// Creates an [`Instruction::ReturnNezF64Imm32`] from the given `f64` value.
-///
-/// # Panics
-///
-/// If the `value` cannot be converted into `f32` losslessly.
-#[track_caller]
-fn return_nez_f64imm32_instr(condition: Reg, value: f64) -> Instruction {
-    Instruction::return_nez_f64imm32(condition, f64imm32(value))
 }
 
 /// Creates an [`Offset16`] from the given `offset`.

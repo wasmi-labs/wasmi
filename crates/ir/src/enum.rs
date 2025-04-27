@@ -166,24 +166,6 @@ impl Instruction {
         Self::return_many([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
-    pub fn return_nez_reg2_ext(
-        condition: impl Into<Reg>,
-        value0: impl Into<Reg>,
-        value1: impl Into<Reg>,
-    ) -> Self {
-        Self::return_nez_reg2(condition, [value0.into(), value1.into()])
-    }
-
-    /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
-    pub fn return_nez_many_ext(
-        condition: impl Into<Reg>,
-        head0: impl Into<Reg>,
-        head1: impl Into<Reg>,
-    ) -> Self {
-        Self::return_nez_many(condition, [head0.into(), head1.into()])
-    }
-
     /// Creates a new [`Instruction::Copy2`].
     pub fn copy2_ext(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
         let span = FixedRegSpan::new(results).unwrap_or_else(|_| {

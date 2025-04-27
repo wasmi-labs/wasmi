@@ -796,10 +796,8 @@ impl FuncTranslator {
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.instr_encoder.new_label();
         let consume_fuel = self.make_fuel_instr()?;
-        // Note: we use a dummy `RegSpan` as placeholder.
-        //
-        // We can do this since the branch parameters of the function enclosing block
-        // are never used due to optimizations to directly return to the caller instead.
+        // Note: we use a dummy `RegSpan` as placeholder since the function enclosing
+        //       control block never has branch parameters.
         let branch_params = RegSpan::new(Reg::from(0));
         let block_frame = BlockControlFrame::new(
             block_type,
@@ -1033,7 +1031,6 @@ impl FuncTranslator {
     /// Translates the `end` of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
-            bail_unreachable!(self);
             let fuel_info = match self.fuel_costs().cloned() {
                 None => FuelInfo::None,
                 Some(fuel_costs) => {
@@ -1043,8 +1040,49 @@ impl FuncTranslator {
                     FuelInfo::some(fuel_costs, fuel_instr)
                 }
             };
-            // We dropped the Wasm `block` that encloses the function itself so we can return.
-            return self.translate_return_with(&fuel_info);
+            if self.reachable && frame.is_branched_to() {
+                // If the end of the `block` is reachable AND
+                // there are branches to the end of the `block`
+                // prior, we need to copy the results to the
+                // block result registers.
+                //
+                // # Note
+                //
+                // We can skip this step if the above condition is
+                // not met since the code at this point is either
+                // unreachable OR there is only one source of results
+                // and thus there is no need to copy the results around.
+                // self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+                let branch_params = frame.branch_params(self.engine());
+                let params = &mut self.alloc.buffer.providers;
+                self.alloc
+                    .stack
+                    .pop_n(usize::from(branch_params.len()), params);
+                self.alloc.instr_encoder.encode_copies(
+                    &mut self.alloc.stack,
+                    branch_params,
+                    &self.alloc.buffer.providers[..],
+                    &fuel_info,
+                )?;
+            }
+            // Since the `block` is now sealed we can pin its end label.
+            self.alloc.instr_encoder.pin_label(frame.end_label());
+            if frame.is_branched_to() {
+                // Case: branches to this block exist so we cannot treat the
+                //       basic block as a no-op and instead have to put its
+                //       block results on top of the stack.
+                self.alloc
+                    .stack
+                    .trunc(frame.block_height().into_u16() as usize);
+                for result in frame.branch_params(self.engine()) {
+                    self.alloc.stack.push_register(result)?;
+                }
+            }
+            if self.reachable || frame.is_branched_to() {
+                // We dropped the Wasm `block` that encloses the function itself so we can return.
+                self.translate_return_with(&fuel_info)?;
+            }
+            return Ok(());
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
@@ -2730,21 +2768,6 @@ impl FuncTranslator {
             .encode_return(&mut self.alloc.stack, values, fuel_info)?;
         self.reachable = false;
         Ok(())
-    }
-
-    /// Translates a conditional `br_if` that targets the function enclosing `block`.
-    fn translate_return_if(&mut self, condition: Reg) -> Result<(), Error> {
-        bail_unreachable!(self);
-        let len_results = self.func_type().results().len();
-        let fuel_info = self.fuel_info();
-        let values = &mut self.alloc.buffer.providers;
-        self.alloc.stack.peek_n(len_results, values);
-        self.alloc.instr_encoder.encode_return_nez(
-            &mut self.alloc.stack,
-            condition,
-            values,
-            fuel_info,
-        )
     }
 
     /// Create either [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`] depending on the inputs.

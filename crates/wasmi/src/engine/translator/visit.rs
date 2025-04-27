@@ -403,7 +403,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let fuel_info = self.fuel_info();
         let frame = match self.alloc.control_stack.acquire_target(relative_depth) {
-            AcquiredTarget::Return(_frame) => return self.translate_return_if(condition),
+            AcquiredTarget::Return(frame) => frame,
             AcquiredTarget::Branch(frame) => frame,
         };
         frame.bump_branches();
