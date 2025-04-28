@@ -3221,7 +3221,7 @@ trait BumpFuelConsumption {
 impl BumpFuelConsumption for Instruction {
     fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
         match self {
-            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Into::into),
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
             instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
         }
     }
