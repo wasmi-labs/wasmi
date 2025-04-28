@@ -54,7 +54,7 @@ fn testcase_copy_exact(ty: ValType, len: u64) -> TranslationTest {
 fn test_copy_exact16(ty: ValType, len: u64) {
     testcase_copy_exact(ty, len)
         .expect_func_instrs([
-            Instruction::table_copy_exact(Reg::from(0), Reg::from(1), u64imm16(len)),
+            Instruction::table_copy_imm(Reg::from(0), Reg::from(1), u64imm16(len)),
             Instruction::table_index(0),
             Instruction::table_index(1),
             Instruction::Return,

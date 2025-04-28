@@ -3212,7 +3212,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let len = self.as_index_type_const16(len, min_index_ty)?;
         let instr = match len {
             Provider::Register(len) => Instruction::table_copy(dst, src, len),
-            Provider::Const(len) => Instruction::table_copy_exact(dst, src, len),
+            Provider::Const(len) => Instruction::table_copy_imm(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

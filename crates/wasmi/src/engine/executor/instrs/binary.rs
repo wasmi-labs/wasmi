@@ -147,7 +147,7 @@ macro_rules! impl_fallible_binary {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) -> Result<(), Error> {
-                self.try_execute_binary(result, lhs, rhs, $op).map_err(Into::into)
+                self.try_execute_binary(result, lhs, rhs, $op).map_err(Error::from)
             }
         )*
     };
@@ -274,7 +274,7 @@ macro_rules! impl_fallible_binary_imm16_lhs {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) -> Result<(), Error> {
-                self.try_execute_binary_imm16_lhs(result, lhs, rhs, $op).map_err(Into::into)
+                self.try_execute_binary_imm16_lhs(result, lhs, rhs, $op).map_err(Error::from)
             }
         )*
     };

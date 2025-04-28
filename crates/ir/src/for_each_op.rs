@@ -4705,8 +4705,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
                 /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_exact)]
-                TableCopyExact {
+                #[snake_name(table_copy_imm)]
+                TableCopyImm {
                     /// The start index of the `dst` table.
                     dst: Reg,
                     /// The start index of the `src` table.

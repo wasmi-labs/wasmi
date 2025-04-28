@@ -153,8 +153,8 @@ impl Executor<'_> {
         self.execute_table_copy_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::TableCopyExact`].
-    pub fn execute_table_copy_exact(
+    /// Executes an [`Instruction::TableCopyImm`].
+    pub fn execute_table_copy_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
