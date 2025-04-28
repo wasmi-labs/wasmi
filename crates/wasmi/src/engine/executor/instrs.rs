@@ -1095,26 +1095,8 @@ impl<'engine> Executor<'engine> {
                 Instr::TableCopy { dst, src, len } => {
                     self.execute_table_copy(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(store.inner_mut(), dst, src, len)?
-                }
                 Instr::TableCopyExact { dst, src, len } => {
                     self.execute_table_copy_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableInit { dst, src, len } => {
                     self.execute_table_init(store.inner_mut(), dst, src, len)?

@@ -3230,34 +3230,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_table_type = *self.module.get_type_of_table(TableIdx::from(dst_table));
         let src_table_type = *self.module.get_type_of_table(TableIdx::from(src_table));
         let min_index_ty = dst_table_type.index_ty().min(&src_table_type.index_ty());
-        let dst = self.as_index_type_const16(dst, dst_table_type.index_ty())?;
-        let src = self.as_index_type_const16(src, src_table_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
+        let src = self.alloc.stack.provider2reg(&src)?;
         let len = self.as_index_type_const16(len, min_index_ty)?;
-        let instr = match (dst, src, len) {
-            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::table_copy(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_copy_exact(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::table_copy_from(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::table_copy_from_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::table_copy_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_copy_to_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::table_copy_from_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::table_copy_from_to_exact(dst, src, len)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::table_copy(dst, src, len),
+            Provider::Const(len) => Instruction::table_copy_exact(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

@@ -4693,57 +4693,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of copied elements.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` index.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_to)]
-                TableCopyTo {
-                    /// The start index of the `dst` table.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` table.
-                    src: Reg,
-                    /// The number of copied elements.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `src` index.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_from)]
-                TableCopyFrom {
-                    /// The start index of the `dst` table.
-                    dst: Reg,
-                    /// The start index of the `src` table.
-                    src: Const16<u64>,
-                    /// The number of copied elements.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` and `src` indices.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_from_to)]
-                TableCopyFromTo {
-                    /// The start index of the `dst` table.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` table.
-                    src: Const16<u64>,
-                    /// The number of copied elements.
-                    len: Reg,
-                },
                 /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` field.
                 ///
                 /// # Note
@@ -4762,69 +4711,6 @@ macro_rules! for_each_op_grouped {
                     dst: Reg,
                     /// The start index of the `src` table.
                     src: Reg,
-                    /// The number of copied elements.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `dst`.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the tables.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_to_exact)]
-                TableCopyToExact {
-                    /// The start index of the `dst` table.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` table.
-                    src: Reg,
-                    /// The number of copied elements.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the tables.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_from_exact)]
-                TableCopyFromExact {
-                    /// The start index of the `dst` table.
-                    dst: Reg,
-                    /// The start index of the `src` table.
-                    src: Const16<u64>,
-                    /// The number of copied elements.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the tables.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_from_to_exact)]
-                TableCopyFromToExact {
-                    /// The start index of the `dst` table.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` table.
-                    src: Const16<u64>,
                     /// The number of copied elements.
                     len: Const16<u64>,
                 },
