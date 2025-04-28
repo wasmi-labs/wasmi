@@ -3236,7 +3236,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let instr = match len {
             Provider::Register(len) => Instruction::table_fill(dst, len, value),
-            Provider::Const(len) => Instruction::table_fill_exact(dst, len, value),
+            Provider::Const(len) => Instruction::table_fill_imm(dst, len, value),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

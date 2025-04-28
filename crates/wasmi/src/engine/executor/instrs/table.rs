@@ -255,8 +255,8 @@ impl Executor<'_> {
         self.execute_table_fill_impl(store, dst, len, value)
     }
 
-    /// Executes an [`Instruction::TableFillExact`].
-    pub fn execute_table_fill_exact(
+    /// Executes an [`Instruction::TableFillImm`].
+    pub fn execute_table_fill_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,

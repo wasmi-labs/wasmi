@@ -4775,8 +4775,8 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
-                #[snake_name(table_fill_exact)]
-                TableFillExact {
+                #[snake_name(table_fill_imm)]
+                TableFillImm {
                     /// The start index of the table to fill.
                     dst: Reg,
                     /// The number of elements to fill.
