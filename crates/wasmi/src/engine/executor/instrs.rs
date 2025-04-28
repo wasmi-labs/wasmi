@@ -1206,26 +1206,8 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryInit { dst, src, len } => {
                     self.execute_memory_init(store.inner_mut(), dst, src, len)?
                 }
-                Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(store.inner_mut(), dst, src, len)?
-                }
                 Instr::MemoryInitExact { dst, src, len } => {
                     self.execute_memory_init_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableIndex { .. }
                 | Instr::MemoryIndex { .. }

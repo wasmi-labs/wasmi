@@ -5285,57 +5285,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of bytes to initialize.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` index.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_to)]
-                MemoryInitTo {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` data segment.
-                    src: Reg,
-                    /// The number of initialized bytes.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `src` index.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_from)]
-                MemoryInitFrom {
-                    /// The start index of the `dst` memory.
-                    dst: Reg,
-                    /// The start index of the `src` data segment.
-                    src: Const16<u32>,
-                    /// The number of initialized bytes.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` and `src` indices.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_from_to)]
-                MemoryInitFromTo {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` data segment.
-                    src: Const16<u32>,
-                    /// The number of initialized bytes.
-                    len: Reg,
-                },
                 /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` field.
                 ///
                 /// # Encoding
@@ -5350,57 +5299,6 @@ macro_rules! for_each_op_grouped {
                     dst: Reg,
                     /// The start index of the `src` data segment.
                     src: Reg,
-                    /// The number of initialized bytes.
-                    len: Const16<u32>,
-                },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_to_exact)]
-                MemoryInitToExact {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` data segment.
-                    src: Reg,
-                    /// The number of initialized bytes.
-                    len: Const16<u32>,
-                },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_from_exact)]
-                MemoryInitFromExact {
-                    /// The start index of the `dst` memory.
-                    dst: Reg,
-                    /// The start index of the `src` data segment.
-                    src: Const16<u32>,
-                    /// The number of initialized bytes.
-                    len: Const16<u32>,
-                },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_from_to_exact)]
-                MemoryInitFromToExact {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` data segment.
-                    src: Const16<u32>,
                     /// The number of initialized bytes.
                     len: Const16<u32>,
                 },
