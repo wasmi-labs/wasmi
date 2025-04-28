@@ -1095,62 +1095,20 @@ impl<'engine> Executor<'engine> {
                 Instr::TableCopy { dst, src, len } => {
                     self.execute_table_copy(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(store.inner_mut(), dst, src, len)?
-                }
                 Instr::TableCopyImm { dst, src, len } => {
                     self.execute_table_copy_imm(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableInit { dst, src, len } => {
                     self.execute_table_init(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableInitTo { dst, src, len } => {
-                    self.execute_table_init_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableInitFrom { dst, src, len } => {
-                    self.execute_table_init_from(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableInitFromTo { dst, src, len } => {
-                    self.execute_table_init_from_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableInitToExact { dst, src, len } => {
-                    self.execute_table_init_to_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableInitFromExact { dst, src, len } => {
-                    self.execute_table_init_from_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::TableInitFromToExact { dst, src, len } => {
-                    self.execute_table_init_from_to_exact(store.inner_mut(), dst, src, len)?
+                Instr::TableInitImm { dst, src, len } => {
+                    self.execute_table_init_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableFill { dst, len, value } => {
                     self.execute_table_fill(store.inner_mut(), dst, len, value)?
                 }
-                Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(store.inner_mut(), dst, len, value)?
-                }
-                Instr::TableFillExact { dst, len, value } => {
-                    self.execute_table_fill_exact(store.inner_mut(), dst, len, value)?
-                }
-                Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(store.inner_mut(), dst, len, value)?
+                Instr::TableFillImm { dst, len, value } => {
+                    self.execute_table_fill_imm(store.inner_mut(), dst, len, value)?
                 }
                 Instr::TableGrow {
                     result,
@@ -1170,38 +1128,17 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?
                 }
-                Instr::MemoryGrowBy { result, delta } => {
-                    self.execute_memory_grow_by(store, result, delta)?
+                Instr::MemoryGrowImm { result, delta } => {
+                    self.execute_memory_grow_imm(store, result, delta)?
                 }
                 Instr::MemoryCopy { dst, src, len } => {
                     self.execute_memory_copy(store.inner_mut(), dst, src, len)?
                 }
-                Instr::MemoryCopyTo { dst, src, len } => {
-                    self.execute_memory_copy_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyFrom { dst, src, len } => {
-                    self.execute_memory_copy_from(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyFromTo { dst, src, len } => {
-                    self.execute_memory_copy_from_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyToExact { dst, src, len } => {
-                    self.execute_memory_copy_to_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyFromExact { dst, src, len } => {
-                    self.execute_memory_copy_from_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyFromToExact { dst, src, len } => {
-                    self.execute_memory_copy_from_to_exact(store.inner_mut(), dst, src, len)?
+                Instr::MemoryCopyImm { dst, src, len } => {
+                    self.execute_memory_copy_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::MemoryFill { dst, value, len } => {
                     self.execute_memory_fill(store.inner_mut(), dst, value, len)?
-                }
-                Instr::MemoryFillAt { dst, value, len } => {
-                    self.execute_memory_fill_at(store.inner_mut(), dst, value, len)?
                 }
                 Instr::MemoryFillImm { dst, value, len } => {
                     self.execute_memory_fill_imm(store.inner_mut(), dst, value, len)?
@@ -1209,41 +1146,14 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryFillExact { dst, value, len } => {
                     self.execute_memory_fill_exact(store.inner_mut(), dst, value, len)?
                 }
-                Instr::MemoryFillAtImm { dst, value, len } => {
-                    self.execute_memory_fill_at_imm(store.inner_mut(), dst, value, len)?
-                }
-                Instr::MemoryFillAtExact { dst, value, len } => {
-                    self.execute_memory_fill_at_exact(store.inner_mut(), dst, value, len)?
-                }
                 Instr::MemoryFillImmExact { dst, value, len } => {
                     self.execute_memory_fill_imm_exact(store.inner_mut(), dst, value, len)?
-                }
-                Instr::MemoryFillAtImmExact { dst, value, len } => {
-                    self.execute_memory_fill_at_imm_exact(store.inner_mut(), dst, value, len)?
                 }
                 Instr::MemoryInit { dst, src, len } => {
                     self.execute_memory_init(store.inner_mut(), dst, src, len)?
                 }
-                Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(store.inner_mut(), dst, src, len)?
+                Instr::MemoryInitImm { dst, src, len } => {
+                    self.execute_memory_init_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableIndex { .. }
                 | Instr::MemoryIndex { .. }

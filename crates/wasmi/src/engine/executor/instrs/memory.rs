@@ -80,8 +80,8 @@ impl Executor<'_> {
         self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
     }
 
-    /// Executes an [`Instruction::MemoryGrowBy`].
-    pub fn execute_memory_grow_by(
+    /// Executes an [`Instruction::MemoryGrowImm`].
+    pub fn execute_memory_grow_imm(
         &mut self,
         store: &mut PrunedStore,
         result: Reg,
@@ -151,50 +151,8 @@ impl Executor<'_> {
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::MemoryCopyTo`].
-    pub fn execute_memory_copy_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFrom`].
-    pub fn execute_memory_copy_from(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u64>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFromTo`].
-    pub fn execute_memory_copy_from_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyExact`].
-    pub fn execute_memory_copy_exact(
+    /// Executes an [`Instruction::MemoryCopyImm`].
+    pub fn execute_memory_copy_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -203,48 +161,6 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyToExact`].
-    pub fn execute_memory_copy_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFromExact`].
-    pub fn execute_memory_copy_from_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u64>,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFromToExact`].
-    pub fn execute_memory_copy_from_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = src.into();
         let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
@@ -333,20 +249,6 @@ impl Executor<'_> {
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
-    /// Executes an [`Instruction::MemoryFillAt`].
-    pub fn execute_memory_fill_at(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
     /// Executes an [`Instruction::MemoryFillImm`].
     pub fn execute_memory_fill_imm(
         &mut self,
@@ -356,19 +258,6 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
-    /// Executes an [`Instruction::MemoryFillAtImm`].
-    pub fn execute_memory_fill_at_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: u8,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
         let len: u64 = self.get_register_as(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
@@ -387,20 +276,6 @@ impl Executor<'_> {
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
-    /// Executes an [`Instruction::MemoryFillAtExact`].
-    pub fn execute_memory_fill_at_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = len.into();
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
     /// Executes an [`Instruction::MemoryFillImmExact`].
     pub fn execute_memory_fill_imm_exact(
         &mut self,
@@ -410,19 +285,6 @@ impl Executor<'_> {
         len: Const16<u64>,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
-    /// Executes an [`Instruction::MemoryFillAtImmExact`].
-    pub fn execute_memory_fill_at_imm_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: u8,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
         let len: u64 = len.into();
         self.execute_memory_fill_impl(store, dst, value, len)
     }
@@ -469,50 +331,8 @@ impl Executor<'_> {
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::MemoryInitTo`].
-    pub fn execute_memory_init_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitFrom`].
-    pub fn execute_memory_init_from(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u32>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitFromTo`].
-    pub fn execute_memory_init_from_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u32>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitExact`].
-    pub fn execute_memory_init_exact(
+    /// Executes an [`Instruction::MemoryInitImm`].
+    pub fn execute_memory_init_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -521,48 +341,6 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitToExact`].
-    pub fn execute_memory_init_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitFromExact`].
-    pub fn execute_memory_init_from_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u32>,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = src.into();
-        let len: u32 = len.into();
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitFromToExact`].
-    pub fn execute_memory_init_from_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u32>,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = src.into();
         let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }

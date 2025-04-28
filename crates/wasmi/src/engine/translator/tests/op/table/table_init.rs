@@ -54,7 +54,7 @@ fn testcase_init_exact(ty: ValType, len: u32) -> TranslationTest {
 fn test_init_exact16(ty: ValType, len: u32) {
     testcase_init_exact(ty, len)
         .expect_func_instrs([
-            Instruction::table_init_exact(Reg::from(0), Reg::from(1), u32imm16(len)),
+            Instruction::table_init_imm(Reg::from(0), Reg::from(1), u32imm16(len)),
             Instruction::table_index(0),
             Instruction::elem_index(0),
             Instruction::Return,
@@ -120,12 +120,15 @@ fn testcase_init_from(ty: ValType, src: u32) -> TranslationTest {
 
 fn test_init_from16(ty: ValType, src: u32) {
     testcase_init_from(ty, src)
-        .expect_func_instrs([
-            Instruction::table_init_from(Reg::from(0), u32imm16(src), Reg::from(1)),
-            Instruction::table_index(0),
-            Instruction::elem_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_init(Reg::from(0), Reg::from(-1), Reg::from(1)),
+                Instruction::table_index(0),
+                Instruction::elem_index(0),
+                Instruction::Return,
+            ])
+            .consts([src]),
+        )
         .run()
 }
 
@@ -185,12 +188,15 @@ fn testcase_init_to(ty: ValType, dst: u64) -> TranslationTest {
 
 fn test_init_to16(ty: ValType, dst: u64) {
     testcase_init_to(ty, dst)
-        .expect_func_instrs([
-            Instruction::table_init_to(u64imm16(dst), Reg::from(0), Reg::from(1)),
-            Instruction::table_index(0),
-            Instruction::elem_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_init(Reg::from(-1), Reg::from(0), Reg::from(1)),
+                Instruction::table_index(0),
+                Instruction::elem_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst]),
+        )
         .run()
 }
 
@@ -250,12 +256,15 @@ fn testcase_init_from_to(ty: ValType, dst: u64, src: u32) -> TranslationTest {
 
 fn test_init_from_to16(ty: ValType, dst: u64, src: u32) {
     testcase_init_from_to(ty, dst, src)
-        .expect_func_instrs([
-            Instruction::table_init_from_to(u64imm16(dst), u32imm16(src), Reg::from(0)),
-            Instruction::table_index(0),
-            Instruction::elem_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_init(Reg::from(-1), Reg::from(-2), Reg::from(0)),
+                Instruction::table_index(0),
+                Instruction::elem_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst, u64::from(src)]),
+        )
         .run()
 }
 
@@ -269,6 +278,9 @@ fn init_from_to16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for src in values {
+            if dst == src {
+                continue;
+            }
             test_for(u64::from(dst), src);
         }
     }
@@ -330,12 +342,15 @@ fn testcase_init_to_exact(ty: ValType, dst: u64, len: u32) -> TranslationTest {
 
 fn test_init_to_exact16(ty: ValType, dst: u64, len: u32) {
     testcase_init_to_exact(ty, dst, len)
-        .expect_func_instrs([
-            Instruction::table_init_to_exact(u64imm16(dst), Reg::from(0), u32imm16(len)),
-            Instruction::table_index(0),
-            Instruction::elem_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_init_imm(Reg::from(-1), Reg::from(0), u32imm16(len)),
+                Instruction::table_index(0),
+                Instruction::elem_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst]),
+        )
         .run()
 }
 
@@ -410,12 +425,15 @@ fn testcase_init_from_exact(ty: ValType, src: u32, len: u32) -> TranslationTest 
 
 fn test_init_from_exact16(ty: ValType, src: u32, len: u32) {
     testcase_init_from_exact(ty, src, len)
-        .expect_func_instrs([
-            Instruction::table_init_from_exact(Reg::from(0), u32imm16(src), u32imm16(len)),
-            Instruction::table_index(0),
-            Instruction::elem_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_init_imm(Reg::from(0), Reg::from(-1), u32imm16(len)),
+                Instruction::table_index(0),
+                Instruction::elem_index(0),
+                Instruction::Return,
+            ])
+            .consts([src]),
+        )
         .run()
 }
 
@@ -490,12 +508,15 @@ fn testcase_init_from_to_exact(ty: ValType, dst: u64, src: u32, len: u32) -> Tra
 
 fn test_init_from_to_exact16(ty: ValType, dst: u64, src: u32, len: u32) {
     testcase_init_from_to_exact(ty, dst, src, len)
-        .expect_func_instrs([
-            Instruction::table_init_from_to_exact(u64imm16(dst), u32imm16(src), u32imm16(len)),
-            Instruction::table_index(0),
-            Instruction::elem_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_init_imm(Reg::from(-1), Reg::from(-2), u32imm16(len)),
+                Instruction::table_index(0),
+                Instruction::elem_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst, u64::from(src)]),
+        )
         .run()
 }
 
@@ -509,6 +530,9 @@ fn init_from_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for src in values {
+            if dst == src {
+                continue;
+            }
             for len in values {
                 test_for(u64::from(dst), src, len);
             }

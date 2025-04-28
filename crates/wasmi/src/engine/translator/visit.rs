@@ -1014,7 +1014,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         }
         let instr = match delta {
-            Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
+            Provider::Const(delta) => Instruction::memory_grow_imm(result, delta),
             Provider::Register(delta) => Instruction::memory_grow(result, delta),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
@@ -3088,36 +3088,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
-        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const16(dst, memory_type.index_ty())?;
-        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
+        let src = self.alloc.stack.provider2reg(&src)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
-        let instr = match (dst, src, len) {
-            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::memory_init(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::memory_init_exact(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::memory_init_from(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::memory_init_from_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::memory_init_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::memory_init_to_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::memory_init_from_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::memory_init_from_to_exact(dst, src, len)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::memory_init(dst, src, len),
+            Provider::Const(len) => Instruction::memory_init_imm(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
@@ -3148,35 +3125,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
         let src_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(src_mem));
         let min_index_ty = dst_memory_type.index_ty().min(&src_memory_type.index_ty());
-        let dst = self.as_index_type_const16(dst, dst_memory_type.index_ty())?;
-        let src = self.as_index_type_const16(src, src_memory_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
+        let src = self.alloc.stack.provider2reg(&src)?;
         let len = self.as_index_type_const16(len, min_index_ty)?;
 
-        let instr = match (dst, src, len) {
-            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::memory_copy(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::memory_copy_exact(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::memory_copy_from(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::memory_copy_from_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::memory_copy_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::memory_copy_to_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::memory_copy_from_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::memory_copy_from_to_exact(dst, src, len)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::memory_copy(dst, src, len),
+            Provider::Const(len) => Instruction::memory_copy_imm(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
@@ -3193,33 +3148,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, value, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const16(dst, memory_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
         let value = value.map_const(|value| u32::from(value) as u8);
         let len = self.as_index_type_const16(len, memory_type.index_ty())?;
-        let instr = match (dst, value, len) {
-            (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
+        let instr = match (value, len) {
+            (Provider::Register(value), Provider::Register(len)) => {
                 Instruction::memory_fill(dst, value, len)
             }
-            (Provider::Register(dst), Provider::Register(value), Provider::Const(len)) => {
+            (Provider::Register(value), Provider::Const(len)) => {
                 Instruction::memory_fill_exact(dst, value, len)
             }
-            (Provider::Register(dst), Provider::Const(value), Provider::Register(len)) => {
+            (Provider::Const(value), Provider::Register(len)) => {
                 Instruction::memory_fill_imm(dst, value, len)
             }
-            (Provider::Register(dst), Provider::Const(value), Provider::Const(len)) => {
+            (Provider::Const(value), Provider::Const(len)) => {
                 Instruction::memory_fill_imm_exact(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Register(value), Provider::Register(len)) => {
-                Instruction::memory_fill_at(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Register(value), Provider::Const(len)) => {
-                Instruction::memory_fill_at_exact(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Const(value), Provider::Register(len)) => {
-                Instruction::memory_fill_at_imm(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Const(value), Provider::Const(len)) => {
-                Instruction::memory_fill_at_imm_exact(dst, value, len)
             }
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
@@ -3232,35 +3175,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let dst = self.as_index_type_const16(dst, table_type.index_ty())?;
-        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
+        let src = self.alloc.stack.provider2reg(&src)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
-        let instr = match (dst, src, len) {
-            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::table_init(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_init_exact(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::table_init_from(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::table_init_from_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::table_init_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_init_to_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::table_init_from_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::table_init_from_to_exact(dst, src, len)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::table_init(dst, src, len),
+            Provider::Const(len) => Instruction::table_init_imm(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
@@ -3287,34 +3207,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_table_type = *self.module.get_type_of_table(TableIdx::from(dst_table));
         let src_table_type = *self.module.get_type_of_table(TableIdx::from(src_table));
         let min_index_ty = dst_table_type.index_ty().min(&src_table_type.index_ty());
-        let dst = self.as_index_type_const16(dst, dst_table_type.index_ty())?;
-        let src = self.as_index_type_const16(src, src_table_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
+        let src = self.alloc.stack.provider2reg(&src)?;
         let len = self.as_index_type_const16(len, min_index_ty)?;
-        let instr = match (dst, src, len) {
-            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::table_copy(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_copy_imm(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::table_copy_from(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::table_copy_from_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::table_copy_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_copy_to_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::table_copy_from_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::table_copy_from_to_exact(dst, src, len)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::table_copy(dst, src, len),
+            Provider::Const(len) => Instruction::table_copy_imm(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
@@ -3330,25 +3228,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let (dst, value, len) = self.alloc.stack.pop3();
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let dst = self.as_index_type_const16(dst, table_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
         let len = self.as_index_type_const16(len, table_type.index_ty())?;
         let value = match value {
             TypedProvider::Register(value) => value,
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
         };
-        let instr = match (dst, len) {
-            (Provider::Register(dst), Provider::Register(len)) => {
-                Instruction::table_fill(dst, len, value)
-            }
-            (Provider::Register(dst), Provider::Const(len)) => {
-                Instruction::table_fill_exact(dst, len, value)
-            }
-            (Provider::Const(dst), Provider::Register(len)) => {
-                Instruction::table_fill_at(dst, len, value)
-            }
-            (Provider::Const(dst), Provider::Const(len)) => {
-                Instruction::table_fill_at_exact(dst, len, value)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::table_fill(dst, len, value),
+            Provider::Const(len) => Instruction::table_fill_imm(dst, len, value),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

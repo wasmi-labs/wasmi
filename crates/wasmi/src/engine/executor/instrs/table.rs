@@ -153,48 +153,6 @@ impl Executor<'_> {
         self.execute_table_copy_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::TableCopyTo`].
-    pub fn execute_table_copy_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableCopyFrom`].
-    pub fn execute_table_copy_from(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u64>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableCopyFromTo`].
-    pub fn execute_table_copy_from_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
     /// Executes an [`Instruction::TableCopyImm`].
     pub fn execute_table_copy_imm(
         &mut self,
@@ -205,48 +163,6 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableCopyToExact`].
-    pub fn execute_table_copy_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableCopyFromExact`].
-    pub fn execute_table_copy_from_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u64>,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = len.into();
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableCopyFromToExact`].
-    pub fn execute_table_copy_from_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = src.into();
         let len: u64 = len.into();
         self.execute_table_copy_impl(store, dst, src, len)
     }
@@ -293,50 +209,8 @@ impl Executor<'_> {
         self.execute_table_init_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::TableInitTo`].
-    pub fn execute_table_init_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitFrom`].
-    pub fn execute_table_init_from(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u32>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitFromTo`].
-    pub fn execute_table_init_from_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u32>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitExact`].
-    pub fn execute_table_init_exact(
+    /// Executes an [`Instruction::TableInitImm`].
+    pub fn execute_table_init_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -345,48 +219,6 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitToExact`].
-    pub fn execute_table_init_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitFromExact`].
-    pub fn execute_table_init_from_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u32>,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = src.into();
-        let len: u32 = len.into();
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitFromToExact`].
-    pub fn execute_table_init_from_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u32>,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u32 = src.into();
         let len: u32 = len.into();
         self.execute_table_init_impl(store, dst, src, len)
     }
@@ -423,21 +255,8 @@ impl Executor<'_> {
         self.execute_table_fill_impl(store, dst, len, value)
     }
 
-    /// Executes an [`Instruction::TableFillAt`].
-    pub fn execute_table_fill_at(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        len: Reg,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
-    /// Executes an [`Instruction::TableFillExact`].
-    pub fn execute_table_fill_exact(
+    /// Executes an [`Instruction::TableFillImm`].
+    pub fn execute_table_fill_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -445,19 +264,6 @@ impl Executor<'_> {
         value: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
-    /// Executes an [`Instruction::TableFillAtExact`].
-    pub fn execute_table_fill_at_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        len: Const16<u64>,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
         let len: u64 = len.into();
         self.execute_table_fill_impl(store, dst, len, value)
     }

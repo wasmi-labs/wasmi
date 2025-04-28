@@ -37,7 +37,7 @@ fn test_imm32(index_ty: IndexType, memory_index: MemIdx, delta: u32) {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs(iter_filter_opts![
-            Instruction::memory_grow_by(Reg::from(0), delta),
+            Instruction::memory_grow_imm(Reg::from(0), delta),
             Instruction::memory_index(memory_index.0),
             Instruction::return_reg(Reg::from(0)),
         ])
