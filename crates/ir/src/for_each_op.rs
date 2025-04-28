@@ -4746,8 +4746,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
                 /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
-                #[snake_name(table_init_exact)]
-                TableInitExact {
+                #[snake_name(table_init_imm)]
+                TableInitImm {
                     /// The start index of the `dst` table.
                     dst: Reg,
                     /// The start index of the `src` table.

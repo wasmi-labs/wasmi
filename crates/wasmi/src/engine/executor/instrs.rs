@@ -1101,8 +1101,8 @@ impl<'engine> Executor<'engine> {
                 Instr::TableInit { dst, src, len } => {
                     self.execute_table_init(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(store.inner_mut(), dst, src, len)?
+                Instr::TableInitImm { dst, src, len } => {
+                    self.execute_table_init_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableFill { dst, len, value } => {
                     self.execute_table_fill(store.inner_mut(), dst, len, value)?

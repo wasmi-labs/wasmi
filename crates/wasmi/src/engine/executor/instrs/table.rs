@@ -209,8 +209,8 @@ impl Executor<'_> {
         self.execute_table_init_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::TableInitExact`].
-    pub fn execute_table_init_exact(
+    /// Executes an [`Instruction::TableInitImm`].
+    pub fn execute_table_init_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
