@@ -5141,8 +5141,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
                 /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_exact)]
-                MemoryCopyExact {
+                #[snake_name(memory_copy_imm)]
+                MemoryCopyImm {
                     /// The start index of the `dst` memory.
                     dst: Reg,
                     /// The start index of the `src` memory.

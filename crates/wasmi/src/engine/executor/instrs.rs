@@ -1176,8 +1176,8 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryCopy { dst, src, len } => {
                     self.execute_memory_copy(store.inner_mut(), dst, src, len)?
                 }
-                Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(store.inner_mut(), dst, src, len)?
+                Instr::MemoryCopyImm { dst, src, len } => {
+                    self.execute_memory_copy_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::MemoryFill { dst, value, len } => {
                     self.execute_memory_fill(store.inner_mut(), dst, value, len)?

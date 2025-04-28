@@ -151,8 +151,8 @@ impl Executor<'_> {
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::MemoryCopyExact`].
-    pub fn execute_memory_copy_exact(
+    /// Executes an [`Instruction::MemoryCopyImm`].
+    pub fn execute_memory_copy_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,

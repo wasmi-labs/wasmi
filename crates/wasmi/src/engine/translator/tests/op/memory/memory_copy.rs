@@ -44,7 +44,7 @@ fn testcase_copy_exact(len: u64) -> TranslationTest {
 fn test_copy_exact16(len: u64) {
     testcase_copy_exact(len)
         .expect_func_instrs([
-            Instruction::memory_copy_exact(Reg::from(0), Reg::from(1), u64imm16(len)),
+            Instruction::memory_copy_imm(Reg::from(0), Reg::from(1), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -302,7 +302,7 @@ fn test_copy_to_exact16(dst: u64, len: u64) {
     testcase_copy_to_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy_exact(Reg::from(-1), Reg::from(0), u64imm16(len)),
+                Instruction::memory_copy_imm(Reg::from(-1), Reg::from(0), u64imm16(len)),
                 Instruction::memory_index(0),
                 Instruction::memory_index(1),
                 Instruction::Return,
@@ -380,7 +380,7 @@ fn test_copy_from_exact16(src: u64, len: u64) {
     testcase_copy_from_exact(src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy_exact(Reg::from(0), Reg::from(-1), u64imm16(len)),
+                Instruction::memory_copy_imm(Reg::from(0), Reg::from(-1), u64imm16(len)),
                 Instruction::memory_index(0),
                 Instruction::memory_index(1),
                 Instruction::Return,
@@ -458,7 +458,7 @@ fn test_copy_from_to_exact16(dst: u64, src: u64, len: u64) {
     testcase_copy_from_to_exact(dst, src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy_exact(Reg::from(-1), Reg::from(-2), u64imm16(len)),
+                Instruction::memory_copy_imm(Reg::from(-1), Reg::from(-2), u64imm16(len)),
                 Instruction::memory_index(0),
                 Instruction::memory_index(1),
                 Instruction::Return,
