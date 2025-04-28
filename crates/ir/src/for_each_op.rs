@@ -5104,7 +5104,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
                 #[snake_name(memory_grow_by)]
-                MemoryGrowBy {
+                MemoryGrowImm {
                     @result: Reg,
                     /// The number of pages to add to the memory.
                     delta: Const32<u64>,

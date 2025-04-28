@@ -80,7 +80,7 @@ impl Executor<'_> {
         self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
     }
 
-    /// Executes an [`Instruction::MemoryGrowBy`].
+    /// Executes an [`Instruction::MemoryGrowImm`].
     pub fn execute_memory_grow_by(
         &mut self,
         store: &mut PrunedStore,

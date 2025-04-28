@@ -1170,7 +1170,7 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?
                 }
-                Instr::MemoryGrowBy { result, delta } => {
+                Instr::MemoryGrowImm { result, delta } => {
                     self.execute_memory_grow_by(store, result, delta)?
                 }
                 Instr::MemoryCopy { dst, src, len } => {
