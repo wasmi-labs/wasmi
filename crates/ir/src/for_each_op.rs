@@ -5293,8 +5293,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
                 /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_exact)]
-                MemoryInitExact {
+                #[snake_name(memory_init_imm)]
+                MemoryInitImm {
                     /// The start index of the `dst` memory.
                     dst: Reg,
                     /// The start index of the `src` data segment.

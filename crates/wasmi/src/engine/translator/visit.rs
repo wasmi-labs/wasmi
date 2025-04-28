@@ -3094,7 +3094,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let instr = match len {
             Provider::Register(len) => Instruction::memory_init(dst, src, len),
-            Provider::Const(len) => Instruction::memory_init_exact(dst, src, len),
+            Provider::Const(len) => Instruction::memory_init_imm(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

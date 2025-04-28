@@ -1206,8 +1206,8 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryInit { dst, src, len } => {
                     self.execute_memory_init(store.inner_mut(), dst, src, len)?
                 }
-                Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(store.inner_mut(), dst, src, len)?
+                Instr::MemoryInitImm { dst, src, len } => {
+                    self.execute_memory_init_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableIndex { .. }
                 | Instr::MemoryIndex { .. }

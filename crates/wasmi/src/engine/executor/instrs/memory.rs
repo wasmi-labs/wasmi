@@ -385,8 +385,8 @@ impl Executor<'_> {
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::MemoryInitExact`].
-    pub fn execute_memory_init_exact(
+    /// Executes an [`Instruction::MemoryInitImm`].
+    pub fn execute_memory_init_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,

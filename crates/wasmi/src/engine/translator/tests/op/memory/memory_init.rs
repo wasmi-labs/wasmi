@@ -44,7 +44,7 @@ fn testcase_init_exact(len: u32) -> TranslationTest {
 fn test_copy_exact16(len: u32) {
     testcase_init_exact(len)
         .expect_func_instrs([
-            Instruction::memory_init_exact(Reg::from(0), Reg::from(1), u32imm16(len)),
+            Instruction::memory_init_imm(Reg::from(0), Reg::from(1), u32imm16(len)),
             Instruction::memory_index(0),
             Instruction::data_index(0),
             Instruction::Return,
@@ -298,7 +298,7 @@ fn test_copy_to_exact16(dst: u64, len: u32) {
     testcase_init_to_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_init_exact(Reg::from(-1), Reg::from(0), u32imm16(len)),
+                Instruction::memory_init_imm(Reg::from(-1), Reg::from(0), u32imm16(len)),
                 Instruction::memory_index(0),
                 Instruction::data_index(0),
                 Instruction::Return,
@@ -372,7 +372,7 @@ fn test_copy_from_exact16(src: u32, len: u32) {
     testcase_init_from_exact(src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_init_exact(Reg::from(0), Reg::from(-1), u32imm16(len)),
+                Instruction::memory_init_imm(Reg::from(0), Reg::from(-1), u32imm16(len)),
                 Instruction::memory_index(0),
                 Instruction::data_index(0),
                 Instruction::Return,
@@ -446,7 +446,7 @@ fn test_copy_from_to_exact16(dst: u64, src: u32, len: u32) {
     testcase_init_from_to_exact(dst, src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_init_exact(Reg::from(-1), Reg::from(-2), u32imm16(len)),
+                Instruction::memory_init_imm(Reg::from(-1), Reg::from(-2), u32imm16(len)),
                 Instruction::memory_index(0),
                 Instruction::data_index(0),
                 Instruction::Return,
