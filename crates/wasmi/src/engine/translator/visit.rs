@@ -3148,35 +3148,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
         let src_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(src_mem));
         let min_index_ty = dst_memory_type.index_ty().min(&src_memory_type.index_ty());
-        let dst = self.as_index_type_const16(dst, dst_memory_type.index_ty())?;
-        let src = self.as_index_type_const16(src, src_memory_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
+        let src = self.alloc.stack.provider2reg(&src)?;
         let len = self.as_index_type_const16(len, min_index_ty)?;
 
-        let instr = match (dst, src, len) {
-            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::memory_copy(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::memory_copy_exact(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::memory_copy_from(dst, src, len)
-            }
-            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::memory_copy_from_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                Instruction::memory_copy_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::memory_copy_to_exact(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                Instruction::memory_copy_from_to(dst, src, len)
-            }
-            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                Instruction::memory_copy_from_to_exact(dst, src, len)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::memory_copy(dst, src, len),
+            Provider::Const(len) => Instruction::memory_copy_exact(dst, src, len),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

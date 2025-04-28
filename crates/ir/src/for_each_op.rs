@@ -5129,57 +5129,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of copied bytes.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_to)]
-                MemoryCopyTo {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` memory.
-                    src: Reg,
-                    /// The number of copied bytes.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_from)]
-                MemoryCopyFrom {
-                    /// The start index of the `dst` memory.
-                    dst: Reg,
-                    /// The start index of the `src` memory.
-                    src: Const16<u64>,
-                    /// The number of copied bytes.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_from_to)]
-                MemoryCopyFromTo {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` memory.
-                    src: Const16<u64>,
-                    /// The number of copied bytes.
-                    len: Reg,
-                },
                 /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
                 ///
                 /// # Note
@@ -5198,69 +5147,6 @@ macro_rules! for_each_op_grouped {
                     dst: Reg,
                     /// The start index of the `src` memory.
                     src: Reg,
-                    /// The number of copied bytes.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the memories.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_to_exact)]
-                MemoryCopyToExact {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` memory.
-                    src: Reg,
-                    /// The number of copied bytes.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the memories.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_from_exact)]
-                MemoryCopyFromExact {
-                    /// The start index of the `dst` memory.
-                    dst: Reg,
-                    /// The start index of the `src` memory.
-                    src: Const16<u64>,
-                    /// The number of copied bytes.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the memories.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_from_to_exact)]
-                MemoryCopyFromToExact {
-                    /// The start index of the `dst` memory.
-                    dst: Const16<u64>,
-                    /// The start index of the `src` memory.
-                    src: Const16<u64>,
                     /// The number of copied bytes.
                     len: Const16<u64>,
                 },

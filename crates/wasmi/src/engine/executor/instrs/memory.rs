@@ -151,48 +151,6 @@ impl Executor<'_> {
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::MemoryCopyTo`].
-    pub fn execute_memory_copy_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFrom`].
-    pub fn execute_memory_copy_from(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u64>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFromTo`].
-    pub fn execute_memory_copy_from_to(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
     /// Executes an [`Instruction::MemoryCopyExact`].
     pub fn execute_memory_copy_exact(
         &mut self,
@@ -203,48 +161,6 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyToExact`].
-    pub fn execute_memory_copy_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFromExact`].
-    pub fn execute_memory_copy_from_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Const16<u64>,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyFromToExact`].
-    pub fn execute_memory_copy_from_to_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let src: u64 = src.into();
         let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
