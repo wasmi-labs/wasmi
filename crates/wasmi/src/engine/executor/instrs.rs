@@ -1171,7 +1171,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_memory_grow(store, result, delta)?
                 }
                 Instr::MemoryGrowImm { result, delta } => {
-                    self.execute_memory_grow_by(store, result, delta)?
+                    self.execute_memory_grow_imm(store, result, delta)?
                 }
                 Instr::MemoryCopy { dst, src, len } => {
                     self.execute_memory_copy(store.inner_mut(), dst, src, len)?

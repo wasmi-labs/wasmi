@@ -81,7 +81,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryGrowImm`].
-    pub fn execute_memory_grow_by(
+    pub fn execute_memory_grow_imm(
         &mut self,
         store: &mut PrunedStore,
         result: Reg,

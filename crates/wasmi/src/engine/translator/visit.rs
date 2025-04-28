@@ -1014,7 +1014,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         }
         let instr = match delta {
-            Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
+            Provider::Const(delta) => Instruction::memory_grow_imm(result, delta),
             Provider::Register(delta) => Instruction::memory_grow(result, delta),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
