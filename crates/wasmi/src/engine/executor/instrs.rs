@@ -1107,14 +1107,8 @@ impl<'engine> Executor<'engine> {
                 Instr::TableFill { dst, len, value } => {
                     self.execute_table_fill(store.inner_mut(), dst, len, value)?
                 }
-                Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(store.inner_mut(), dst, len, value)?
-                }
                 Instr::TableFillExact { dst, len, value } => {
                     self.execute_table_fill_exact(store.inner_mut(), dst, len, value)?
-                }
-                Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(store.inner_mut(), dst, len, value)?
                 }
                 Instr::TableGrow {
                     result,

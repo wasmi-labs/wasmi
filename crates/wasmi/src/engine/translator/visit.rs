@@ -3228,25 +3228,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let (dst, value, len) = self.alloc.stack.pop3();
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let dst = self.as_index_type_const16(dst, table_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
         let len = self.as_index_type_const16(len, table_type.index_ty())?;
         let value = match value {
             TypedProvider::Register(value) => value,
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
         };
-        let instr = match (dst, len) {
-            (Provider::Register(dst), Provider::Register(len)) => {
-                Instruction::table_fill(dst, len, value)
-            }
-            (Provider::Register(dst), Provider::Const(len)) => {
-                Instruction::table_fill_exact(dst, len, value)
-            }
-            (Provider::Const(dst), Provider::Register(len)) => {
-                Instruction::table_fill_at(dst, len, value)
-            }
-            (Provider::Const(dst), Provider::Const(len)) => {
-                Instruction::table_fill_at_exact(dst, len, value)
-            }
+        let instr = match len {
+            Provider::Register(len) => Instruction::table_fill(dst, len, value),
+            Provider::Const(len) => Instruction::table_fill_exact(dst, len, value),
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc

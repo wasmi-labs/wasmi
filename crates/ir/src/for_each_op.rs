@@ -4770,20 +4770,6 @@ macro_rules! for_each_op_grouped {
                     /// The value of the filled elements.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` index.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
-                #[snake_name(table_fill_at)]
-                TableFillAt {
-                    /// The start index of the table to fill.
-                    dst: Const16<u64>,
-                    /// The number of elements to fill.
-                    len: Reg,
-                    /// The value of the filled elements.
-                    value: Reg,
-                },
                 /// Variant of [`Instruction::TableFill`] with 16-bit constant `len` index.
                 ///
                 /// # Encoding
@@ -4793,20 +4779,6 @@ macro_rules! for_each_op_grouped {
                 TableFillExact {
                     /// The start index of the table to fill.
                     dst: Reg,
-                    /// The number of elements to fill.
-                    len: Const16<u64>,
-                    /// The value of the filled elements.
-                    value: Reg,
-                },
-                /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` and `len` fields.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
-                #[snake_name(table_fill_at_exact)]
-                TableFillAtExact {
-                    /// The start index of the table to fill.
-                    dst: Const16<u64>,
                     /// The number of elements to fill.
                     len: Const16<u64>,
                     /// The value of the filled elements.

@@ -255,19 +255,6 @@ impl Executor<'_> {
         self.execute_table_fill_impl(store, dst, len, value)
     }
 
-    /// Executes an [`Instruction::TableFillAt`].
-    pub fn execute_table_fill_at(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        len: Reg,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let len: u64 = self.get_register_as(len);
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
     /// Executes an [`Instruction::TableFillExact`].
     pub fn execute_table_fill_exact(
         &mut self,
@@ -277,19 +264,6 @@ impl Executor<'_> {
         value: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
-    /// Executes an [`Instruction::TableFillAtExact`].
-    pub fn execute_table_fill_at_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        len: Const16<u64>,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
         let len: u64 = len.into();
         self.execute_table_fill_impl(store, dst, len, value)
     }
