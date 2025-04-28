@@ -348,7 +348,7 @@ fn test_copy_to_exact16(ty: ValType, dst: u64, len: u64) {
     testcase_copy_to_exact(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_copy_exact(Reg::from(-1), Reg::from(0), u64imm16(len)),
+                Instruction::table_copy_imm(Reg::from(-1), Reg::from(0), u64imm16(len)),
                 Instruction::table_index(0),
                 Instruction::table_index(1),
                 Instruction::Return,
@@ -435,7 +435,7 @@ fn test_copy_from_exact16(ty: ValType, src: u64, len: u64) {
     testcase_copy_from_exact(ty, src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_copy_exact(Reg::from(0), Reg::from(-1), u64imm16(len)),
+                Instruction::table_copy_imm(Reg::from(0), Reg::from(-1), u64imm16(len)),
                 Instruction::table_index(0),
                 Instruction::table_index(1),
                 Instruction::Return,
@@ -522,7 +522,7 @@ fn test_copy_from_to_exact16(ty: ValType, dst: u64, src: u64, len: u64) {
     testcase_copy_from_to_exact(ty, dst, src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_copy_exact(Reg::from(-1), Reg::from(-2), u64imm16(len)),
+                Instruction::table_copy_imm(Reg::from(-1), Reg::from(-2), u64imm16(len)),
                 Instruction::table_index(0),
                 Instruction::table_index(1),
                 Instruction::Return,
