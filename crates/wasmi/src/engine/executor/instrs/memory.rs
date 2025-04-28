@@ -249,20 +249,6 @@ impl Executor<'_> {
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
-    /// Executes an [`Instruction::MemoryFillAt`].
-    pub fn execute_memory_fill_at(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: Reg,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
     /// Executes an [`Instruction::MemoryFillImm`].
     pub fn execute_memory_fill_imm(
         &mut self,
@@ -272,19 +258,6 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let len: u64 = self.get_register_as(len);
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
-    /// Executes an [`Instruction::MemoryFillAtImm`].
-    pub fn execute_memory_fill_at_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: u8,
-        len: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
         let len: u64 = self.get_register_as(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
@@ -303,20 +276,6 @@ impl Executor<'_> {
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
-    /// Executes an [`Instruction::MemoryFillAtExact`].
-    pub fn execute_memory_fill_at_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = len.into();
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
     /// Executes an [`Instruction::MemoryFillImmExact`].
     pub fn execute_memory_fill_imm_exact(
         &mut self,
@@ -326,19 +285,6 @@ impl Executor<'_> {
         len: Const16<u64>,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
-    /// Executes an [`Instruction::MemoryFillAtImmExact`].
-    pub fn execute_memory_fill_at_imm_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Const16<u64>,
-        value: u8,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = dst.into();
         let len: u64 = len.into();
         self.execute_memory_fill_impl(store, dst, value, len)
     }

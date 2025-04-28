@@ -5167,20 +5167,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of bytes to fill.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `dst` index.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_fill_at)]
-                MemoryFillAt {
-                    /// The start index of the memory to fill.
-                    dst: Const16<u64>,
-                    /// The byte value used to fill the memory.
-                    value: Reg,
-                    /// The number of bytes to fill.
-                    len: Reg,
-                },
                 /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
                 ///
                 /// # Encoding
@@ -5209,34 +5195,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of bytes to fill.
                     len: Const16<u64>,
                 },
-                /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_fill_at_imm)]
-                MemoryFillAtImm {
-                    /// The start index of the memory to fill.
-                    dst: Const16<u64>,
-                    /// The byte value used to fill the memory.
-                    value: u8,
-                    /// The number of bytes to fill.
-                    len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `len`.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_fill_at_exact)]
-                MemoryFillAtExact {
-                    /// The start index of the memory to fill.
-                    dst: Const16<u64>,
-                    /// The byte value used to fill the memory.
-                    value: Reg,
-                    /// The number of bytes to fill.
-                    len: Const16<u64>,
-                },
                 /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
                 ///
                 /// # Encoding
@@ -5246,20 +5204,6 @@ macro_rules! for_each_op_grouped {
                 MemoryFillImmExact {
                     /// The start index of the memory to fill.
                     dst: Reg,
-                    /// The byte value used to fill the memory.
-                    value: u8,
-                    /// The number of bytes to fill.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_fill_at_imm_exact)]
-                MemoryFillAtImmExact {
-                    /// The start index of the memory to fill.
-                    dst: Const16<u64>,
                     /// The byte value used to fill the memory.
                     value: u8,
                     /// The number of bytes to fill.

@@ -3148,33 +3148,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, value, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const16(dst, memory_type.index_ty())?;
+        let dst = self.alloc.stack.provider2reg(&dst)?;
         let value = value.map_const(|value| u32::from(value) as u8);
         let len = self.as_index_type_const16(len, memory_type.index_ty())?;
-        let instr = match (dst, value, len) {
-            (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
+        let instr = match (value, len) {
+            (Provider::Register(value), Provider::Register(len)) => {
                 Instruction::memory_fill(dst, value, len)
             }
-            (Provider::Register(dst), Provider::Register(value), Provider::Const(len)) => {
+            (Provider::Register(value), Provider::Const(len)) => {
                 Instruction::memory_fill_exact(dst, value, len)
             }
-            (Provider::Register(dst), Provider::Const(value), Provider::Register(len)) => {
+            (Provider::Const(value), Provider::Register(len)) => {
                 Instruction::memory_fill_imm(dst, value, len)
             }
-            (Provider::Register(dst), Provider::Const(value), Provider::Const(len)) => {
+            (Provider::Const(value), Provider::Const(len)) => {
                 Instruction::memory_fill_imm_exact(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Register(value), Provider::Register(len)) => {
-                Instruction::memory_fill_at(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Register(value), Provider::Const(len)) => {
-                Instruction::memory_fill_at_exact(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Const(value), Provider::Register(len)) => {
-                Instruction::memory_fill_at_imm(dst, value, len)
-            }
-            (Provider::Const(dst), Provider::Const(value), Provider::Const(len)) => {
-                Instruction::memory_fill_at_imm_exact(dst, value, len)
             }
         };
         self.push_fueled_instr(instr, FuelCostsProvider::instance)?;

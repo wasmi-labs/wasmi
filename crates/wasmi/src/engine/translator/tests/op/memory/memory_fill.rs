@@ -132,11 +132,14 @@ fn testcase_fill_at(dst: u64) -> TranslationTest {
 
 fn test_fill_at16(dst: u64) {
     testcase_fill_at(dst)
-        .expect_func_instrs([
-            Instruction::memory_fill_at(u64imm16(dst), Reg::from(0), Reg::from(1)),
-            Instruction::memory_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::memory_fill(Reg::from(-1), Reg::from(0), Reg::from(1)),
+                Instruction::memory_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst]),
+        )
         .run()
 }
 
@@ -185,11 +188,14 @@ fn testcase_fill_at_imm(dst: u64, value: u64) -> TranslationTest {
 
 fn test_fill_at16_imm(dst: u64, value: u64) {
     testcase_fill_at_imm(dst, value)
-        .expect_func_instrs([
-            Instruction::memory_fill_at_imm(u64imm16(dst), value as u8, Reg::from(0)),
-            Instruction::memory_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::memory_fill_imm(Reg::from(-1), value as u8, Reg::from(0)),
+                Instruction::memory_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst]),
+        )
         .run()
 }
 
@@ -267,11 +273,14 @@ fn testcase_fill_at_exact(dst: u64, len: u64) -> TranslationTest {
 
 fn test_fill_at_exact16(dst: u64, len: u64) {
     testcase_fill_at_exact(dst, len)
-        .expect_func_instrs([
-            Instruction::memory_fill_at_exact(u64imm16(dst), Reg::from(0), u64imm16(len)),
-            Instruction::memory_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::memory_fill_exact(Reg::from(-1), Reg::from(0), u64imm16(len)),
+                Instruction::memory_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst]),
+        )
         .run()
 }
 
@@ -421,11 +430,14 @@ fn testcase_fill_at_imm_exact(dst: u64, value: u64, len: u64) -> TranslationTest
 
 fn test_fill_at_imm_exact16(dst: u64, value: u64, len: u64) {
     testcase_fill_at_imm_exact(dst, value, len)
-        .expect_func_instrs([
-            Instruction::memory_fill_at_imm_exact(u64imm16(dst), value as u8, u64imm16(len)),
-            Instruction::memory_index(0),
-            Instruction::Return,
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::memory_fill_imm_exact(Reg::from(-1), value as u8, u64imm16(len)),
+                Instruction::memory_index(0),
+                Instruction::Return,
+            ])
+            .consts([dst]),
+        )
         .run()
 }
 
