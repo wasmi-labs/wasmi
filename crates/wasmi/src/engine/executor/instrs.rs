@@ -1104,8 +1104,8 @@ impl<'engine> Executor<'engine> {
                 Instr::TableCopyFromTo { dst, src, len } => {
                     self.execute_table_copy_from_to(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableCopyExact { dst, src, len } => {
-                    self.execute_table_copy_exact(store.inner_mut(), dst, src, len)?
+                Instr::TableCopyImm { dst, src, len } => {
+                    self.execute_table_copy_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableCopyToExact { dst, src, len } => {
                     self.execute_table_copy_to_exact(store.inner_mut(), dst, src, len)?

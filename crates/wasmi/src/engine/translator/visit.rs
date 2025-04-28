@@ -3295,7 +3295,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::table_copy(dst, src, len)
             }
             (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                Instruction::table_copy_exact(dst, src, len)
+                Instruction::table_copy_imm(dst, src, len)
             }
             (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
                 Instruction::table_copy_from(dst, src, len)
