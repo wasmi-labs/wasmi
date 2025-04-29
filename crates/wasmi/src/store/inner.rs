@@ -94,11 +94,11 @@ pub struct StoreInner {
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
     extern_objects: Arena<ExternObjectIdx, ExternObjectEntity>,
-    /// The [`Engine`] in use by the [`Store`].
+    /// The [`Engine`] in use by the [`StoreInner`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
     engine: Engine,
-    /// The fuel of the [`Store`].
+    /// The fuel of the [`StoreInner`].
     pub(super) fuel: Fuel,
 }
 
@@ -180,7 +180,7 @@ impl StoreInner {
     /// # Note
     ///
     /// [`Stored<Idx>`] associates an `Idx` type with the internal store index.
-    /// This way wrapped indices cannot be misused with incorrect [`Store`] instances.
+    /// This way wrapped indices cannot be misused with incorrect [`StoreInner`] instances.
     pub(super) fn wrap_stored<Idx>(&self, entity_idx: Idx) -> Stored<Idx> {
         Stored::new(self.store_idx, entity_idx)
     }
@@ -189,7 +189,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// If the [`Stored<Idx>`] does not originate from this [`Store`].
+    /// If the [`Stored<Idx>`] does not originate from this [`StoreInner`].
     pub(super) fn unwrap_stored<Idx>(&self, stored: &Stored<Idx>) -> Idx
     where
         Idx: ArenaIndex + Debug,
@@ -260,8 +260,8 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Instance`] does not belong to the [`Store`].
-    /// - If the [`Instance`] is unknown to the [`Store`].
+    /// - If the [`Instance`] does not belong to the [`StoreInner`].
+    /// - If the [`Instance`] is unknown to the [`StoreInner`].
     /// - If the [`Instance`] has already been initialized.
     /// - If the given [`InstanceEntity`] is itself not initialized, yet.
     pub fn initialize_instance(&mut self, instance: Instance, init: InstanceEntity) {
@@ -285,7 +285,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the indexed entity does not originate from this [`Store`].
+    /// - If the indexed entity does not originate from this [`StoreInner`].
     /// - If the entity index cannot be resolved to its entity.
     fn resolve<'a, Idx, Entity>(
         &self,
@@ -324,7 +324,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
+    /// - If the [`DedupFuncType`] does not originate from this [`StoreInner`].
     /// - If the [`DedupFuncType`] cannot be resolved to its entity.
     pub fn resolve_func_type(&self, func_type: &DedupFuncType) -> FuncType {
         self.resolve_func_type_with(func_type, FuncType::clone)
@@ -334,7 +334,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
+    /// - If the [`DedupFuncType`] does not originate from this [`StoreInner`].
     /// - If the [`DedupFuncType`] cannot be resolved to its entity.
     pub fn resolve_func_type_with<R>(
         &self,
@@ -348,7 +348,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Global`] does not originate from this [`Store`].
+    /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn resolve_global(&self, global: &Global) -> &CoreGlobal {
         self.resolve(global.as_inner(), &self.globals)
@@ -358,7 +358,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Global`] does not originate from this [`Store`].
+    /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn resolve_global_mut(&mut self, global: &Global) -> &mut CoreGlobal {
         let idx = self.unwrap_stored(global.as_inner());
@@ -369,7 +369,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn resolve_table(&self, table: &Table) -> &CoreTable {
         self.resolve(table.as_inner(), &self.tables)
@@ -379,7 +379,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn resolve_table_mut(&mut self, table: &Table) -> &mut CoreTable {
         let idx = self.unwrap_stored(table.as_inner());
@@ -390,9 +390,9 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub fn resolve_table_and_element_mut(
         &mut self,
@@ -413,7 +413,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut CoreTable, &mut Fuel) {
         let idx = self.unwrap_stored(table.as_inner());
@@ -426,7 +426,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn resolve_table_pair_and_fuel(
         &mut self,
@@ -456,11 +456,11 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Instance`] does not originate from this [`Store`].
+    /// - If the [`Instance`] does not originate from this [`StoreInner`].
     /// - If the [`Instance`] cannot be resolved to its entity.
-    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub fn resolve_table_init_params(
         &mut self,
@@ -479,7 +479,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &CoreElementSegment {
         self.resolve(segment.as_inner(), &self.elems)
@@ -489,7 +489,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub fn resolve_element_segment_mut(
         &mut self,
@@ -503,7 +503,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a CoreMemory {
         self.resolve(memory.as_inner(), &self.memories)
@@ -513,7 +513,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut CoreMemory {
         let idx = self.unwrap_stored(memory.as_inner());
@@ -524,7 +524,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn resolve_memory_and_fuel_mut(&mut self, memory: &Memory) -> (&mut CoreMemory, &mut Fuel) {
         let idx = self.unwrap_stored(memory.as_inner());
@@ -546,9 +546,9 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] does not originate from this [`StoreInner`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
     pub fn resolve_memory_init_params(
         &mut self,
@@ -567,7 +567,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn resolve_memory_pair_and_fuel(
         &mut self,
@@ -587,7 +587,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] does not originate from this [`StoreInner`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
     pub fn resolve_data_segment_mut(&mut self, segment: &DataSegment) -> &mut DataSegmentEntity {
         let idx = self.unwrap_stored(segment.as_inner());
@@ -598,7 +598,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Instance`] does not originate from this [`Store`].
+    /// - If the [`Instance`] does not originate from this [`StoreInner`].
     /// - If the [`Instance`] cannot be resolved to its entity.
     pub fn resolve_instance(&self, instance: &Instance) -> &InstanceEntity {
         self.resolve(instance.as_inner(), &self.instances)
@@ -608,7 +608,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`ExternObject`] does not originate from this [`Store`].
+    /// - If the [`ExternObject`] does not originate from this [`StoreInner`].
     /// - If the [`ExternObject`] cannot be resolved to its entity.
     pub fn resolve_external_object(&self, object: &ExternObject) -> &ExternObjectEntity {
         self.resolve(object.as_inner(), &self.extern_objects)
@@ -624,7 +624,7 @@ impl StoreInner {
     ///
     /// # Panics
     ///
-    /// - If the [`Func`] does not originate from this [`Store`].
+    /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
     pub fn resolve_func(&self, func: &Func) -> &FuncEntity {
         let entity_index = self.unwrap_stored(func.as_inner());
