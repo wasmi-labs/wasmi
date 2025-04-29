@@ -154,6 +154,18 @@ pub struct TypedStoreInner<T> {
     data: Box<T>,
 }
 
+impl<T> TypedStoreInner<T> {
+    /// Creates a new [`TypedStoreInner`] from the given data of type `T`.
+    fn new(data: T) -> Self {
+        Self {
+            trampolines: Arena::new(),
+            data: Box::new(data),
+            limiter: None,
+            call_hook: None,
+        }
+    }
+}
+
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
@@ -719,12 +731,7 @@ impl<T: 'static> Store<T> {
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
-            typed: TypedStoreInner {
-                trampolines: Arena::new(),
-                data: Box::new(data),
-                limiter: None,
-                call_hook: None,
-            },
+            typed: TypedStoreInner::new(data),
             id: TypeId::of::<T>(),
             restore_pruned: RestorePrunedWrapper::new::<T>(),
         }
