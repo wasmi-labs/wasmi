@@ -179,7 +179,7 @@ impl<T> Store<T> {
     /// # Errors
     ///
     /// If the called host function returned an error.
-    pub(super) fn call_host_func(
+    fn call_host_func(
         &mut self,
         func: &HostFuncEntity,
         instance: Option<&Instance>,
