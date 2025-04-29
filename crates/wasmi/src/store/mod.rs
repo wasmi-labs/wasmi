@@ -23,83 +23,6 @@ use core::{
     fmt::{self, Debug},
 };
 
-/// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
-/// [`ResourceLimiter`]; in other words a function that one can call to retrieve
-/// a [`ResourceLimiter`] from the [`Store`] object's user data type `T`.
-///
-/// This wrapper exists both to make types a little easier to read and to
-/// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
-/// contain it.
-struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
-impl<T> Debug for ResourceLimiterQuery<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ResourceLimiterQuery<{}>(...)", type_name::<T>())
-    }
-}
-
-/// A wrapper used to store hooks added with [`Store::call_hook`], containing a
-/// boxed `FnMut(&mut T, CallHook) -> Result<(), Error>`.
-///
-/// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
-/// works for [`Store`].
-#[allow(clippy::type_complexity)]
-struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
-impl<T> Debug for CallHookWrapper<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CallHook<{}>", type_name::<T>())
-    }
-}
-
-/// Argument to the callback set by [`Store::call_hook`] to indicate why the
-/// callback was invoked.
-#[derive(Debug)]
-pub enum CallHook {
-    /// Indicates that a WebAssembly function is being called from the host.
-    CallingWasm,
-    /// Indicates that a WebAssembly function called from the host is returning.
-    ReturningFromWasm,
-    /// Indicates that a host function is being called from a WebAssembly function.
-    CallingHost,
-    /// Indicates that a host function called from a WebAssembly function is returning.
-    ReturningFromHost,
-}
-
-/// The call hook behavior when calling a host function.
-#[derive(Debug, Copy, Clone)]
-pub enum CallHooks {
-    /// Invoke the host call hooks.
-    Call,
-    /// Ignore the host call hooks.
-    Ignore,
-}
-
-/// The inner parts of the [`Store`] which are generic over a host provided `T`.
-#[derive(Debug)]
-pub struct TypedStoreInner<T> {
-    /// Stored host function trampolines.
-    trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
-    /// User provided hook to retrieve a [`ResourceLimiter`].
-    limiter: Option<ResourceLimiterQuery<T>>,
-    /// User provided callback called when a host calls a WebAssembly function
-    /// or a WebAssembly function calls a host function, or these functions
-    /// return.
-    call_hook: Option<CallHookWrapper<T>>,
-    /// User provided host data owned by the [`Store`].
-    data: Box<T>,
-}
-
-impl<T> TypedStoreInner<T> {
-    /// Creates a new [`TypedStoreInner`] from the given data of type `T`.
-    fn new(data: T) -> Self {
-        Self {
-            trampolines: Arena::new(),
-            data: Box::new(data),
-            limiter: None,
-            call_hook: None,
-        }
-    }
-}
-
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -355,6 +278,83 @@ impl<T> Store<T> {
     ) -> Result<(), Error> {
         call_hook.0(data, call_type)
     }
+}
+
+/// The inner parts of the [`Store`] which are generic over a host provided `T`.
+#[derive(Debug)]
+pub struct TypedStoreInner<T> {
+    /// Stored host function trampolines.
+    trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
+    /// User provided hook to retrieve a [`ResourceLimiter`].
+    limiter: Option<ResourceLimiterQuery<T>>,
+    /// User provided callback called when a host calls a WebAssembly function
+    /// or a WebAssembly function calls a host function, or these functions
+    /// return.
+    call_hook: Option<CallHookWrapper<T>>,
+    /// User provided host data owned by the [`Store`].
+    data: Box<T>,
+}
+
+impl<T> TypedStoreInner<T> {
+    /// Creates a new [`TypedStoreInner`] from the given data of type `T`.
+    fn new(data: T) -> Self {
+        Self {
+            trampolines: Arena::new(),
+            data: Box::new(data),
+            limiter: None,
+            call_hook: None,
+        }
+    }
+}
+
+/// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
+/// [`ResourceLimiter`]; in other words a function that one can call to retrieve
+/// a [`ResourceLimiter`] from the [`Store`] object's user data type `T`.
+///
+/// This wrapper exists both to make types a little easier to read and to
+/// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
+/// contain it.
+struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
+impl<T> Debug for ResourceLimiterQuery<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ResourceLimiterQuery<{}>(...)", type_name::<T>())
+    }
+}
+
+/// A wrapper used to store hooks added with [`Store::call_hook`], containing a
+/// boxed `FnMut(&mut T, CallHook) -> Result<(), Error>`.
+///
+/// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
+/// works for [`Store`].
+#[allow(clippy::type_complexity)]
+struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
+impl<T> Debug for CallHookWrapper<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CallHook<{}>", type_name::<T>())
+    }
+}
+
+/// Argument to the callback set by [`Store::call_hook`] to indicate why the
+/// callback was invoked.
+#[derive(Debug)]
+pub enum CallHook {
+    /// Indicates that a WebAssembly function is being called from the host.
+    CallingWasm,
+    /// Indicates that a WebAssembly function called from the host is returning.
+    ReturningFromWasm,
+    /// Indicates that a host function is being called from a WebAssembly function.
+    CallingHost,
+    /// Indicates that a host function called from a WebAssembly function is returning.
+    ReturningFromHost,
+}
+
+/// The call hook behavior when calling a host function.
+#[derive(Debug, Copy, Clone)]
+pub enum CallHooks {
+    /// Invoke the host call hooks.
+    Call,
+    /// Ignore the host call hooks.
+    Ignore,
 }
 
 #[test]
