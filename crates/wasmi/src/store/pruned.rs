@@ -1,8 +1,8 @@
-use super::{CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner, TypedStore};
-use crate::{core::hint, Error, Instance, Store};
+use super::{CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
+use crate::{core::hint, CallHook, Error, Instance, Store};
 use alloc::sync::Arc;
 use core::{
-    any::TypeId,
+    any::{type_name, TypeId},
     fmt::{self, Debug},
     mem,
 };
@@ -16,10 +16,20 @@ use crate::Engine;
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
-pub struct RestorePrunedWrapper(
-    pub(super) Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>,
-);
+pub struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
 impl RestorePrunedWrapper {
+    pub fn new<T: 'static>() -> Self {
+        Self(Arc::new(|pruned| -> &mut dyn TypedStore {
+            let Ok(store) = PrunedStore::restore::<T>(pruned) else {
+                panic!(
+                    "failed to convert `PrunedStore` back into `Store<{}>`",
+                    type_name::<T>(),
+                );
+            };
+            store
+        }))
+    }
+
     /// Restores the [`PrunedStore`] and returns a reference to it via [`TypedStore`].
     #[inline]
     fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> &'a mut dyn TypedStore {
@@ -113,7 +123,7 @@ impl PrunedStore {
     ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
-    pub(super) fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
+    fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
         if hint::unlikely(TypeId::of::<T>() != self.pruned.id) {
             return Err(PrunedStoreError);
         }
@@ -134,6 +144,49 @@ impl PrunedStore {
 /// Returned when [`PrunedStore::restore`] failed.
 #[derive(Debug)]
 pub struct PrunedStoreError;
+
+/// Methods available from [`PrunedStore`] that have been restored dynamically.
+pub trait TypedStore {
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
+    fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
+    ) -> Result<(), Error>;
+
+    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
+    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef);
+}
+
+impl<T> TypedStore for Store<T> {
+    fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
+    ) -> Result<(), Error> {
+        if matches!(call_hooks, CallHooks::Call) {
+            <Store<T>>::invoke_call_hook(self, CallHook::CallingHost)?;
+        }
+        <Store<T>>::call_host_func(self, func, instance, params_results)?;
+        if matches!(call_hooks, CallHooks::Call) {
+            <Store<T>>::invoke_call_hook(self, CallHook::ReturningFromHost)?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef) {
+        <Store<T>>::store_inner_and_resource_limiter_ref(self)
+    }
+}
 
 #[test]
 fn pruning_works() {
@@ -171,5 +224,20 @@ fn pruned_store_deref() {
     assert_eq!(
         PrunedStore::inner(pruned).fuel.get_fuel().unwrap(),
         fuel_amount * 2
+    );
+}
+
+#[test]
+fn equal_size() {
+    use super::TypedStoreInner;
+    type SmallType = ();
+    type BigType = [i64; 16];
+    // Note: `TypedStore<T>` must be of the same size for all `T` so that
+    //       `PrunedStore` works and is a safe abstraction.
+    use core::mem::size_of;
+    assert_eq!(size_of::<Store<SmallType>>(), size_of::<Store<BigType>>(),);
+    assert_eq!(
+        size_of::<TypedStoreInner<SmallType>>(),
+        size_of::<TypedStoreInner<BigType>>(),
     );
 }

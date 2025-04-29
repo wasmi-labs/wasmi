@@ -1,7 +1,7 @@
 mod pruned;
 
-pub use self::pruned::PrunedStore;
 use self::pruned::RestorePrunedWrapper;
+pub use self::pruned::{PrunedStore, TypedStore};
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::{
@@ -37,7 +37,7 @@ use crate::{
     Table,
     TableIdx,
 };
-use alloc::{boxed::Box, sync::Arc};
+use alloc::boxed::Box;
 use core::{
     any::{type_name, TypeId},
     fmt::{self, Debug},
@@ -114,49 +114,6 @@ pub enum CallHooks {
     Ignore,
 }
 
-/// Methods available from [`PrunedStore`] that have been restored dynamically.
-pub trait TypedStore {
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
-    ///
-    /// # Errors
-    ///
-    /// If the called host function returned an error.
-    fn call_host_func(
-        &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
-        params_results: FuncInOut,
-        call_hooks: CallHooks,
-    ) -> Result<(), Error>;
-
-    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
-    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef);
-}
-
-impl<T> TypedStore for Store<T> {
-    fn call_host_func(
-        &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
-        params_results: FuncInOut,
-        call_hooks: CallHooks,
-    ) -> Result<(), Error> {
-        if matches!(call_hooks, CallHooks::Call) {
-            <Store<T>>::invoke_call_hook(self, CallHook::CallingHost)?;
-        }
-        <Store<T>>::call_host_func(self, func, instance, params_results)?;
-        if matches!(call_hooks, CallHooks::Call) {
-            <Store<T>>::invoke_call_hook(self, CallHook::ReturningFromHost)?;
-        }
-        Ok(())
-    }
-
-    #[inline]
-    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef) {
-        <Store<T>>::store_inner_and_resource_limiter_ref(self)
-    }
-}
-
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -191,17 +148,6 @@ pub struct TypedStoreInner<T> {
     call_hook: Option<CallHookWrapper<T>>,
     /// User provided host data owned by the [`Store`].
     data: Box<T>,
-}
-
-#[test]
-fn equal_size() {
-    // Note: `TypedStore<T>` must be of the same size for all `T` so that
-    //       `PrunedStore` works and is a safe abstraction.
-    use core::mem::size_of;
-    assert_eq!(
-        size_of::<TypedStoreInner<()>>(),
-        size_of::<TypedStoreInner<[i64; 8]>>(),
-    );
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -776,15 +722,7 @@ impl<T: 'static> Store<T> {
                 call_hook: None,
             },
             id: TypeId::of::<T>(),
-            restore_pruned: RestorePrunedWrapper(Arc::new(|pruned| -> &mut dyn TypedStore {
-                let Ok(store) = PrunedStore::restore::<T>(pruned) else {
-                    panic!(
-                        "failed to convert `PrunedStore` back into `Store<{}>`",
-                        type_name::<T>(),
-                    );
-                };
-                store
-            })),
+            restore_pruned: RestorePrunedWrapper::new::<T>(),
         }
     }
 }
