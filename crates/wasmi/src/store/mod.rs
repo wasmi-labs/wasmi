@@ -107,18 +107,6 @@ impl<T> TypedStoreInner<T> {
     }
 }
 
-#[test]
-fn test_store_is_send_sync() {
-    const _: () = {
-        #[allow(clippy::extra_unused_type_parameters)]
-        fn assert_send<T: Send>() {}
-        #[allow(clippy::extra_unused_type_parameters)]
-        fn assert_sync<T: Sync>() {}
-        let _ = assert_send::<Store<()>>;
-        let _ = assert_sync::<Store<()>>;
-    };
-}
-
 /// Argument to the callback set by [`Store::call_hook`] to indicate why the
 /// callback was invoked.
 #[derive(Debug)]
@@ -362,4 +350,16 @@ impl<T> Store<T> {
     ) -> Result<(), Error> {
         call_hook.0(data, call_type)
     }
+}
+
+#[test]
+fn test_store_is_send_sync() {
+    const _: () = {
+        #[allow(clippy::extra_unused_type_parameters)]
+        fn assert_send<T: Send>() {}
+        #[allow(clippy::extra_unused_type_parameters)]
+        fn assert_sync<T: Sync>() {}
+        let _ = assert_send::<Store<()>>;
+        let _ = assert_sync::<Store<()>>;
+    };
 }
