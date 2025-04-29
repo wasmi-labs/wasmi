@@ -73,27 +73,6 @@ pub enum CallHooks {
     Ignore,
 }
 
-/// The store that owns all data associated to Wasm modules.
-#[derive(Debug)]
-pub struct Store<T> {
-    /// All data that is not associated to `T`.
-    ///
-    /// # Note
-    ///
-    /// This is re-exported to the rest of the crate since
-    /// it is used directly by the engine's executor.
-    pub(crate) inner: StoreInner,
-    /// The inner parts of the [`Store`] that are generic over a host provided `T`.
-    typed: TypedStoreInner<T>,
-    /// The [`TypeId`] of the `T` of the `store`.
-    ///
-    /// This is used in [`PrunedStore::restore`] to check if the
-    /// restored `T` matches the original `T` of the `store`.
-    id: TypeId,
-    /// Used to restore a [`PrunedStore`] to a [`Store<T>`].
-    restore_pruned: RestorePrunedWrapper,
-}
-
 /// The inner parts of the [`Store`] which are generic over a host provided `T`.
 #[derive(Debug)]
 pub struct TypedStoreInner<T> {
@@ -119,6 +98,27 @@ impl<T> TypedStoreInner<T> {
             call_hook: None,
         }
     }
+}
+
+/// The store that owns all data associated to Wasm modules.
+#[derive(Debug)]
+pub struct Store<T> {
+    /// All data that is not associated to `T`.
+    ///
+    /// # Note
+    ///
+    /// This is re-exported to the rest of the crate since
+    /// it is used directly by the engine's executor.
+    pub(crate) inner: StoreInner,
+    /// The inner parts of the [`Store`] that are generic over a host provided `T`.
+    typed: TypedStoreInner<T>,
+    /// The [`TypeId`] of the `T` of the `store`.
+    ///
+    /// This is used in [`PrunedStore::restore`] to check if the
+    /// restored `T` matches the original `T` of the `store`.
+    id: TypeId,
+    /// Used to restore a [`PrunedStore`] to a [`Store<T>`].
+    restore_pruned: RestorePrunedWrapper,
 }
 
 impl<T> Default for Store<T>
