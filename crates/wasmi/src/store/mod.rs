@@ -50,6 +50,20 @@ impl<T> Debug for CallHookWrapper<T> {
     }
 }
 
+/// Argument to the callback set by [`Store::call_hook`] to indicate why the
+/// callback was invoked.
+#[derive(Debug)]
+pub enum CallHook {
+    /// Indicates that a WebAssembly function is being called from the host.
+    CallingWasm,
+    /// Indicates that a WebAssembly function called from the host is returning.
+    ReturningFromWasm,
+    /// Indicates that a host function is being called from a WebAssembly function.
+    CallingHost,
+    /// Indicates that a host function called from a WebAssembly function is returning.
+    ReturningFromHost,
+}
+
 /// The call hook behavior when calling a host function.
 #[derive(Debug, Copy, Clone)]
 pub enum CallHooks {
@@ -105,20 +119,6 @@ impl<T> TypedStoreInner<T> {
             call_hook: None,
         }
     }
-}
-
-/// Argument to the callback set by [`Store::call_hook`] to indicate why the
-/// callback was invoked.
-#[derive(Debug)]
-pub enum CallHook {
-    /// Indicates that a WebAssembly function is being called from the host.
-    CallingWasm,
-    /// Indicates that a WebAssembly function called from the host is returning.
-    ReturningFromWasm,
-    /// Indicates that a host function is being called from a WebAssembly function.
-    CallingHost,
-    /// Indicates that a host function called from a WebAssembly function is returning.
-    ReturningFromHost,
 }
 
 impl<T> Default for Store<T>
