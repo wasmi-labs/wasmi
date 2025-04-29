@@ -223,6 +223,11 @@ impl<T> Store<T> {
         true
     }
 
+    /// Returns a pair of [`StoreInner`] and [`ResourceLimiterRef`].
+    ///
+    /// # Note
+    ///
+    /// This methods mostly exists to satisfy certain use cases that otherwise would conflict with the borrow checker.
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
