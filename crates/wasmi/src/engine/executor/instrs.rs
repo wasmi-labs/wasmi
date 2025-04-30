@@ -813,28 +813,28 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_rem_u_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I32BitAnd { result, lhs, rhs } => self.execute_i32_bitand(result, lhs, rhs),
-                Instr::I32Nand { result, lhs, rhs } => self.execute_i32_nand(result, lhs, rhs),
-                Instr::I32NandImm16 { result, lhs, rhs } => {
-                    self.execute_i32_nand_imm16(result, lhs, rhs)
-                }
                 Instr::I32BitAndImm16 { result, lhs, rhs } => {
                     self.execute_i32_bitand_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitOr { result, lhs, rhs } => self.execute_i32_bitor(result, lhs, rhs),
-                Instr::I32Nor { result, lhs, rhs } => self.execute_i32_nor(result, lhs, rhs),
-                Instr::I32NorImm16 { result, lhs, rhs } => {
-                    self.execute_i32_nor_imm16(result, lhs, rhs)
-                }
                 Instr::I32BitOrImm16 { result, lhs, rhs } => {
                     self.execute_i32_bitor_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitXor { result, lhs, rhs } => self.execute_i32_bitxor(result, lhs, rhs),
+                Instr::I32BitXorImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitxor_imm16(result, lhs, rhs)
+                }
+                Instr::I32Nand { result, lhs, rhs } => self.execute_i32_nand(result, lhs, rhs),
+                Instr::I32NandImm16 { result, lhs, rhs } => {
+                    self.execute_i32_nand_imm16(result, lhs, rhs)
+                }
+                Instr::I32Nor { result, lhs, rhs } => self.execute_i32_nor(result, lhs, rhs),
+                Instr::I32NorImm16 { result, lhs, rhs } => {
+                    self.execute_i32_nor_imm16(result, lhs, rhs)
+                }
                 Instr::I32Xnor { result, lhs, rhs } => self.execute_i32_xnor(result, lhs, rhs),
                 Instr::I32XnorImm16 { result, lhs, rhs } => {
                     self.execute_i32_xnor_imm16(result, lhs, rhs)
-                }
-                Instr::I32BitXorImm16 { result, lhs, rhs } => {
-                    self.execute_i32_bitxor_imm16(result, lhs, rhs)
                 }
                 Instr::I32Shl { result, lhs, rhs } => self.execute_i32_shl(result, lhs, rhs),
                 Instr::I32ShlBy { result, lhs, rhs } => self.execute_i32_shl_by(result, lhs, rhs),
