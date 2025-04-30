@@ -971,9 +971,9 @@ impl InstrEncoder {
             | I::I32BitAnd { result, .. } | I::I32BitAndImm16 { result, .. }
             | I::I32BitOr { result, .. } | I::I32BitOrImm16 { result, .. }
             | I::I32BitXor { result, .. } | I::I32BitXorImm16 { result, .. }
-            | I::I32BitAndEqz { result, .. } | I::I32BitAndEqzImm16 { result, .. }
-            | I::I32BitOrEqz { result, .. } | I::I32BitOrEqzImm16 { result, .. }
-            | I::I32BitXorEqz { result, .. } | I::I32BitXorEqzImm16 { result, .. }
+            | I::I32Nand { result, .. } | I::I32NandImm16 { result, .. }
+            | I::I32Nor { result, .. } | I::I32NorImm16 { result, .. }
+            | I::I32Xnor { result, .. } | I::I32XnorImm16 { result, .. }
             | I::I32Eq { result, .. } | I::I32EqImm16 { result, .. }
             | I::I32Ne { result, .. } | I::I32NeImm16 { result, .. }
             | I::I32LtS { result, .. } | I::I32LtSImm16Lhs { result, .. } | I::I32LtSImm16Rhs { result, .. }

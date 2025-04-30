@@ -3316,8 +3316,8 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
-                #[snake_name(i32_bitand_eqz)]
-                I32BitAndEqz {
+                #[snake_name(i32_nand)]
+                I32Nand {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3325,8 +3325,8 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-                #[snake_name(i32_bitand_eqz_imm16)]
-                I32BitAndEqzImm16 {
+                #[snake_name(i32_nand_imm16)]
+                I32NandImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3357,8 +3357,8 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
-                #[snake_name(i32_bitor_eqz)]
-                I32BitOrEqz {
+                #[snake_name(i32_nor)]
+                I32Nor {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3366,8 +3366,8 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-                #[snake_name(i32_bitor_eqz_imm16)]
-                I32BitOrEqzImm16 {
+                #[snake_name(i32_nor_imm16)]
+                I32NorImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3398,8 +3398,8 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
-                #[snake_name(i32_bitxor_eqz)]
-                I32BitXorEqz {
+                #[snake_name(i32_xnor)]
+                I32Xnor {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3407,8 +3407,8 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-                #[snake_name(i32_bitxor_eqz_imm16)]
-                I32BitXorEqzImm16 {
+                #[snake_name(i32_xnor_imm16)]
+                I32XnorImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,

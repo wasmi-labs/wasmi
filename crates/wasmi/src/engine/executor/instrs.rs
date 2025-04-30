@@ -813,31 +813,25 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_rem_u_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I32BitAnd { result, lhs, rhs } => self.execute_i32_bitand(result, lhs, rhs),
-                Instr::I32BitAndEqz { result, lhs, rhs } => {
-                    self.execute_i32_bitand_eqz(result, lhs, rhs)
-                }
-                Instr::I32BitAndEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_bitand_eqz_imm16(result, lhs, rhs)
+                Instr::I32Nand { result, lhs, rhs } => self.execute_i32_nand(result, lhs, rhs),
+                Instr::I32NandImm16 { result, lhs, rhs } => {
+                    self.execute_i32_nand_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitAndImm16 { result, lhs, rhs } => {
                     self.execute_i32_bitand_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitOr { result, lhs, rhs } => self.execute_i32_bitor(result, lhs, rhs),
-                Instr::I32BitOrEqz { result, lhs, rhs } => {
-                    self.execute_i32_bitor_eqz(result, lhs, rhs)
-                }
-                Instr::I32BitOrEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_bitor_eqz_imm16(result, lhs, rhs)
+                Instr::I32Nor { result, lhs, rhs } => self.execute_i32_nor(result, lhs, rhs),
+                Instr::I32NorImm16 { result, lhs, rhs } => {
+                    self.execute_i32_nor_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitOrImm16 { result, lhs, rhs } => {
                     self.execute_i32_bitor_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitXor { result, lhs, rhs } => self.execute_i32_bitxor(result, lhs, rhs),
-                Instr::I32BitXorEqz { result, lhs, rhs } => {
-                    self.execute_i32_bitxor_eqz(result, lhs, rhs)
-                }
-                Instr::I32BitXorEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_bitxor_eqz_imm16(result, lhs, rhs)
+                Instr::I32Xnor { result, lhs, rhs } => self.execute_i32_xnor(result, lhs, rhs),
+                Instr::I32XnorImm16 { result, lhs, rhs } => {
+                    self.execute_i32_xnor_imm16(result, lhs, rhs)
                 }
                 Instr::I32BitXorImm16 { result, lhs, rhs } => {
                     self.execute_i32_bitxor_imm16(result, lhs, rhs)
@@ -2583,25 +2577,25 @@ impl Executor<'_> {
 /// Extension method for [`UntypedVal`] required by the [`Executor`].
 trait UntypedValueExt {
     /// Executes a fused `i32.and` + `i32.eqz` instruction.
-    fn i32_bitand_eqz(x: Self, y: Self) -> bool;
+    fn i32_nand(x: Self, y: Self) -> bool;
 
     /// Executes a fused `i32.or` + `i32.eqz` instruction.
-    fn i32_bitor_eqz(x: Self, y: Self) -> bool;
+    fn i32_nor(x: Self, y: Self) -> bool;
 
     /// Executes a fused `i32.xor` + `i32.eqz` instruction.
-    fn i32_bitxor_eqz(x: Self, y: Self) -> bool;
+    fn i32_xnor(x: Self, y: Self) -> bool;
 }
 
 impl UntypedValueExt for i32 {
-    fn i32_bitand_eqz(x: Self, y: Self) -> bool {
+    fn i32_nand(x: Self, y: Self) -> bool {
         wasm::i32_bitand(x, y) == 0
     }
 
-    fn i32_bitor_eqz(x: Self, y: Self) -> bool {
+    fn i32_nor(x: Self, y: Self) -> bool {
         wasm::i32_bitor(x, y) == 0
     }
 
-    fn i32_bitxor_eqz(x: Self, y: Self) -> bool {
+    fn i32_xnor(x: Self, y: Self) -> bool {
         wasm::i32_bitxor(x, y) == 0
     }
 }
