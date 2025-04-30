@@ -319,12 +319,12 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
-    (i32, Instruction::BranchI32BitAnd, execute_branch_i32_bitand, cmp_i32_bitand),
-    (i32, Instruction::BranchI32BitOr, execute_branch_i32_bitor, cmp_i32_bitor),
-    (i32, Instruction::BranchI32BitXor, execute_branch_i32_bitxor, cmp_i32_bitxor),
-    (i32, Instruction::BranchI32BitAndEqz, execute_branch_i32_bitand_eqz, cmp_i32_bitand_eqz),
-    (i32, Instruction::BranchI32BitOrEqz, execute_branch_i32_bitor_eqz, cmp_i32_bitor_eqz),
-    (i32, Instruction::BranchI32BitXorEqz, execute_branch_i32_bitxor_eqz, cmp_i32_bitxor_eqz),
+    (i32, Instruction::BranchI32And, execute_branch_i32_and, cmp_i32_bitand),
+    (i32, Instruction::BranchI32Or, execute_branch_i32_or, cmp_i32_bitor),
+    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, cmp_i32_bitxor),
+    (i32, Instruction::BranchI32AndEqz, execute_branch_i32_and_eqz, cmp_i32_bitand_eqz),
+    (i32, Instruction::BranchI32OrEqz, execute_branch_i32_or_eqz, cmp_i32_bitor_eqz),
+    (i32, Instruction::BranchI32XorEqz, execute_branch_i32_xor_eqz, cmp_i32_bitxor_eqz),
     (i32, Instruction::BranchI32Eq, execute_branch_i32_eq, cmp_eq),
     (i32, Instruction::BranchI32Ne, execute_branch_i32_ne, cmp_ne),
     (i32, Instruction::BranchI32LtS, execute_branch_i32_lt_s, cmp_lt),
@@ -363,12 +363,12 @@ macro_rules! impl_execute_branch_binop_imm16_rhs {
     }
 }
 impl_execute_branch_binop_imm16_rhs! {
-    (i32, Instruction::BranchI32BitAndImm16, execute_branch_i32_bitand_imm16, cmp_i32_bitand),
-    (i32, Instruction::BranchI32BitOrImm16, execute_branch_i32_bitor_imm16, cmp_i32_bitor),
-    (i32, Instruction::BranchI32BitXorImm16, execute_branch_i32_bitxor_imm16, cmp_i32_bitxor),
-    (i32, Instruction::BranchI32BitAndEqzImm16, execute_branch_i32_bitand_eqz_imm16, cmp_i32_bitand_eqz),
-    (i32, Instruction::BranchI32BitOrEqzImm16, execute_branch_i32_bitor_eqz_imm16, cmp_i32_bitor_eqz),
-    (i32, Instruction::BranchI32BitXorEqzImm16, execute_branch_i32_bitxor_eqz_imm16, cmp_i32_bitxor_eqz),
+    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, cmp_i32_bitand),
+    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, cmp_i32_bitor),
+    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, cmp_i32_bitxor),
+    (i32, Instruction::BranchI32AndEqzImm16, execute_branch_i32_and_eqz_imm16, cmp_i32_bitand_eqz),
+    (i32, Instruction::BranchI32OrEqzImm16, execute_branch_i32_or_eqz_imm16, cmp_i32_bitor_eqz),
+    (i32, Instruction::BranchI32XorEqzImm16, execute_branch_i32_xor_eqz_imm16, cmp_i32_bitxor_eqz),
     (i32, Instruction::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
     (i32, Instruction::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
     (i32, Instruction::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),

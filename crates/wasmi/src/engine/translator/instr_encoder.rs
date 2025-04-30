@@ -1074,12 +1074,12 @@ impl UpdateBranchOffset for Instruction {
             _ => {}
         };
         let update_status = match self {
-            I::BranchI32BitAnd { offset, .. } |
-            I::BranchI32BitOr { offset, .. } |
-            I::BranchI32BitXor { offset, .. } |
-            I::BranchI32BitAndEqz { offset, .. } |
-            I::BranchI32BitOrEqz { offset, .. } |
-            I::BranchI32BitXorEqz { offset, .. } |
+            I::BranchI32And { offset, .. } |
+            I::BranchI32Or { offset, .. } |
+            I::BranchI32Xor { offset, .. } |
+            I::BranchI32AndEqz { offset, .. } |
+            I::BranchI32OrEqz { offset, .. } |
+            I::BranchI32XorEqz { offset, .. } |
             I::BranchI32Eq { offset, .. } |
             I::BranchI32Ne { offset, .. } |
             I::BranchI32LtS { offset, .. } |
@@ -1100,12 +1100,12 @@ impl UpdateBranchOffset for Instruction {
             I::BranchF64Ne { offset, .. } |
             I::BranchF64Lt { offset, .. } |
             I::BranchF64Le { offset, .. } |
-            I::BranchI32BitAndImm16 { offset, .. } |
-            I::BranchI32BitOrImm16 { offset, .. } |
-            I::BranchI32BitXorImm16 { offset, .. } |
-            I::BranchI32BitAndEqzImm16 { offset, .. } |
-            I::BranchI32BitOrEqzImm16 { offset, .. } |
-            I::BranchI32BitXorEqzImm16 { offset, .. } |
+            I::BranchI32AndImm16 { offset, .. } |
+            I::BranchI32OrImm16 { offset, .. } |
+            I::BranchI32XorImm16 { offset, .. } |
+            I::BranchI32AndEqzImm16 { offset, .. } |
+            I::BranchI32OrEqzImm16 { offset, .. } |
+            I::BranchI32XorEqzImm16 { offset, .. } |
             I::BranchI32EqImm16 { offset, .. } |
             I::BranchI32NeImm16 { offset, .. } |
             I::BranchI32LtSImm16Lhs { offset, .. } |

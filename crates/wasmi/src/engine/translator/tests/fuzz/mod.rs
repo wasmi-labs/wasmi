@@ -185,7 +185,7 @@ fn fuzz_regression_11() {
         .expect_func_instrs([
             Instruction::i32_bitand_imm16(Reg::from(1), Reg::from(0), 2),
             Instruction::i32_eq_imm16(Reg::from(0), Reg::from(0), 0),
-            Instruction::branch_i32_bitand(Reg::from(1), Reg::from(0), 2),
+            Instruction::branch_i32_and(Reg::from(1), Reg::from(0), 2),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::Return,
         ])
