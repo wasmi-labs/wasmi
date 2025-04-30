@@ -824,6 +824,18 @@ impl<'engine> Executor<'engine> {
                 Instr::I32BitXorImm16 { result, lhs, rhs } => {
                     self.execute_i32_bitxor_imm16(result, lhs, rhs)
                 }
+                Instr::I32And { result, lhs, rhs } => self.execute_i32_and(result, lhs, rhs),
+                Instr::I32AndImm16 { result, lhs, rhs } => {
+                    self.execute_i32_and_imm16(result, lhs, rhs)
+                }
+                Instr::I32Or { result, lhs, rhs } => self.execute_i32_or(result, lhs, rhs),
+                Instr::I32OrImm16 { result, lhs, rhs } => {
+                    self.execute_i32_or_imm16(result, lhs, rhs)
+                }
+                Instr::I32Xor { result, lhs, rhs } => self.execute_i32_xor(result, lhs, rhs),
+                Instr::I32XorImm16 { result, lhs, rhs } => {
+                    self.execute_i32_xor_imm16(result, lhs, rhs)
+                }
                 Instr::I32Nand { result, lhs, rhs } => self.execute_i32_nand(result, lhs, rhs),
                 Instr::I32NandImm16 { result, lhs, rhs } => {
                     self.execute_i32_nand_imm16(result, lhs, rhs)
@@ -2575,27 +2587,42 @@ impl Executor<'_> {
 }
 
 /// Extension method for [`UntypedVal`] required by the [`Executor`].
-trait UntypedValueExt {
+trait UntypedValueExt: Sized {
+    /// Executes a logical `i32.and` instruction.
+    fn i32_and(x: Self, y: Self) -> bool;
+
+    /// Executes a logical `i32.or` instruction.
+    fn i32_or(x: Self, y: Self) -> bool;
+
+    /// Executes a logical `i32.xor` instruction.
+    fn i32_xor(x: Self, y: Self) -> bool;
+
     /// Executes a fused `i32.and` + `i32.eqz` instruction.
-    fn i32_nand(x: Self, y: Self) -> bool;
+    fn i32_nand(x: Self, y: Self) -> bool {
+        !Self::i32_and(x, y)
+    }
 
     /// Executes a fused `i32.or` + `i32.eqz` instruction.
-    fn i32_nor(x: Self, y: Self) -> bool;
+    fn i32_nor(x: Self, y: Self) -> bool {
+        !Self::i32_or(x, y)
+    }
 
     /// Executes a fused `i32.xor` + `i32.eqz` instruction.
-    fn i32_xnor(x: Self, y: Self) -> bool;
+    fn i32_xnor(x: Self, y: Self) -> bool {
+        !Self::i32_xor(x, y)
+    }
 }
 
 impl UntypedValueExt for i32 {
-    fn i32_nand(x: Self, y: Self) -> bool {
-        wasm::i32_bitand(x, y) == 0
+    fn i32_and(x: Self, y: Self) -> bool {
+        wasm::i32_bitand(x, y) != 0
     }
 
-    fn i32_nor(x: Self, y: Self) -> bool {
-        wasm::i32_bitor(x, y) == 0
+    fn i32_or(x: Self, y: Self) -> bool {
+        wasm::i32_bitor(x, y) != 0
     }
 
-    fn i32_xnor(x: Self, y: Self) -> bool {
-        wasm::i32_bitxor(x, y) == 0
+    fn i32_xor(x: Self, y: Self) -> bool {
+        wasm::i32_bitxor(x, y) != 0
     }
 }

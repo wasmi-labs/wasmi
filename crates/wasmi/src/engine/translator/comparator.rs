@@ -6,16 +6,11 @@ use crate::{
 
 pub trait NegateCmpInstr: Sized {
     /// Negates the compare (`cmp`) [`Instruction`].
-    ///
-    /// If the user of the fused comparison [`Instruction`] is going to be a
-    /// conditional branch [`Instruction`] the `is_branch` parameter is set to
-    /// `true`. This allows for more optimizations since the result does not need
-    /// to be bit-accurate.
-    fn negate_cmp_instr(&self, is_branch: bool) -> Option<Self>;
+    fn negate_cmp_instr(&self) -> Option<Self>;
 }
 
 impl NegateCmpInstr for Instruction {
-    fn negate_cmp_instr(&self, is_branch: bool) -> Option<Self> {
+    fn negate_cmp_instr(&self) -> Option<Self> {
         use Instruction as I;
         #[rustfmt::skip]
         let negated = match *self {
@@ -43,12 +38,18 @@ impl NegateCmpInstr for Instruction {
             I::I32BitAndImm16 { result, lhs, rhs } => I::i32_nand_imm16(result, lhs, rhs),
             I::I32BitOrImm16 { result, lhs, rhs } => I::i32_nor_imm16(result, lhs, rhs),
             I::I32BitXorImm16 { result, lhs, rhs } => I::i32_xnor_imm16(result, lhs, rhs),
-            I::I32Nand { result, lhs, rhs } if is_branch => I::i32_bitand(result, lhs, rhs),
-            I::I32Nor { result, lhs, rhs } if is_branch => I::i32_bitor(result, lhs, rhs),
-            I::I32Xnor { result, lhs, rhs } if is_branch => I::i32_bitxor(result, lhs, rhs),
-            I::I32NandImm16 { result, lhs, rhs } if is_branch => I::i32_bitand_imm16(result, lhs, rhs),
-            I::I32NorImm16 { result, lhs, rhs } if is_branch => I::i32_bitor_imm16(result, lhs, rhs),
-            I::I32XnorImm16 { result, lhs, rhs } if is_branch => I::i32_bitxor_imm16(result, lhs, rhs),
+            I::I32And { result, lhs, rhs } => I::i32_nand(result, lhs, rhs),
+            I::I32Or { result, lhs, rhs } => I::i32_nor(result, lhs, rhs),
+            I::I32Xor { result, lhs, rhs } => I::i32_xnor(result, lhs, rhs),
+            I::I32AndImm16 { result, lhs, rhs } => I::i32_nand_imm16(result, lhs, rhs),
+            I::I32OrImm16 { result, lhs, rhs } => I::i32_nor_imm16(result, lhs, rhs),
+            I::I32XorImm16 { result, lhs, rhs } => I::i32_xnor_imm16(result, lhs, rhs),
+            I::I32Nand { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
+            I::I32Nor { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
+            I::I32Xnor { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
+            I::I32NandImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
+            I::I32NorImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
+            I::I32XnorImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
             // i64
             I::I64Eq { result, lhs, rhs } => I::i64_ne(result, lhs, rhs),
             I::I64Ne { result, lhs, rhs } => I::i64_eq(result, lhs, rhs),
@@ -125,12 +126,18 @@ impl TryIntoCmpBranchInstr for Instruction {
             I::I32BitAnd { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
             I::I32BitOr { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
             I::I32BitXor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
+            I::I32And { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
+            I::I32Or { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
+            I::I32Xor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
             I::I32Nand { lhs, rhs, .. } => I::branch_i32_nand(lhs, rhs, offset),
             I::I32Nor { lhs, rhs, .. } => I::branch_i32_nor(lhs, rhs, offset),
             I::I32Xnor { lhs, rhs, .. } => I::branch_i32_xnor(lhs, rhs, offset),
             I::I32BitAndImm16 { lhs, rhs, .. } => I::branch_i32_and_imm16(lhs, rhs, offset),
             I::I32BitOrImm16 { lhs, rhs, .. } => I::branch_i32_or_imm16(lhs, rhs, offset),
             I::I32BitXorImm16 { lhs, rhs, .. } => I::branch_i32_xor_imm16(lhs, rhs, offset),
+            I::I32AndImm16 { lhs, rhs, .. } => I::branch_i32_and_imm16(lhs, rhs, offset),
+            I::I32OrImm16 { lhs, rhs, .. } => I::branch_i32_or_imm16(lhs, rhs, offset),
+            I::I32XorImm16 { lhs, rhs, .. } => I::branch_i32_xor_imm16(lhs, rhs, offset),
             I::I32NandImm16 { lhs, rhs, .. } => I::branch_i32_nand_imm16(lhs, rhs, offset),
             I::I32NorImm16 { lhs, rhs, .. } => I::branch_i32_nor_imm16(lhs, rhs, offset),
             I::I32XnorImm16 { lhs, rhs, .. } => I::branch_i32_xnor_imm16(lhs, rhs, offset),

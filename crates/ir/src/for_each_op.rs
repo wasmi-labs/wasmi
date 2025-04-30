@@ -3373,6 +3373,61 @@ macro_rules! for_each_op_grouped {
                     rhs: Const16<i32>,
                 },
 
+                /// Logical `i32.and` instruction.
+                #[snake_name(i32_and)]
+                I32And {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I32And`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_and_imm16)]
+                I32AndImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+                /// Logical `i32.or` instruction.
+                #[snake_name(i32_or)]
+                I32Or {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I32Or`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_or_imm16)]
+                I32OrImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+                /// Logical `i32.xor` instruction.
+                #[snake_name(i32_xor)]
+                I32Xor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I32Xor`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_xor_imm16)]
+                I32XorImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+
                 /// Logical not-`i32.and` instruction.
                 ///
                 /// This usually is the result of fusing `i32.and` + `i32.eqz`.

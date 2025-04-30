@@ -868,7 +868,7 @@ impl InstrEncoder {
             // thus indicating that we cannot fuse the instructions.
             return false;
         }
-        let Some(negated) = last_instruction.negate_cmp_instr(false) else {
+        let Some(negated) = last_instruction.negate_cmp_instr() else {
             // Last instruction is unable to be negated.
             return false;
         };
@@ -1008,7 +1008,7 @@ impl InstrEncoder {
             return Ok(None);
         }
         let last_instruction = match negate {
-            true => match last_instruction.negate_cmp_instr(true) {
+            true => match last_instruction.negate_cmp_instr() {
                 Some(negated) => negated,
                 None => return Ok(None),
             },
