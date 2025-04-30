@@ -125,15 +125,15 @@ impl TryIntoCmpBranchInstr for Instruction {
             I::I32BitAnd { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
             I::I32BitOr { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
             I::I32BitXor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
-            I::I32BitAndEqz { lhs, rhs, .. } => I::branch_i32_and_eqz(lhs, rhs, offset),
-            I::I32BitOrEqz { lhs, rhs, .. } => I::branch_i32_or_eqz(lhs, rhs, offset),
-            I::I32BitXorEqz { lhs, rhs, .. } => I::branch_i32_xor_eqz(lhs, rhs, offset),
+            I::I32BitAndEqz { lhs, rhs, .. } => I::branch_i32_nand(lhs, rhs, offset),
+            I::I32BitOrEqz { lhs, rhs, .. } => I::branch_i32_nor(lhs, rhs, offset),
+            I::I32BitXorEqz { lhs, rhs, .. } => I::branch_i32_xnor(lhs, rhs, offset),
             I::I32BitAndImm16 { lhs, rhs, .. } => I::branch_i32_and_imm16(lhs, rhs, offset),
             I::I32BitOrImm16 { lhs, rhs, .. } => I::branch_i32_or_imm16(lhs, rhs, offset),
             I::I32BitXorImm16 { lhs, rhs, .. } => I::branch_i32_xor_imm16(lhs, rhs, offset),
-            I::I32BitAndEqzImm16 { lhs, rhs, .. } => I::branch_i32_and_eqz_imm16(lhs, rhs, offset),
-            I::I32BitOrEqzImm16 { lhs, rhs, .. } => I::branch_i32_or_eqz_imm16(lhs, rhs, offset),
-            I::I32BitXorEqzImm16 { lhs, rhs, .. } => I::branch_i32_xor_eqz_imm16(lhs, rhs, offset),
+            I::I32BitAndEqzImm16 { lhs, rhs, .. } => I::branch_i32_nand_imm16(lhs, rhs, offset),
+            I::I32BitOrEqzImm16 { lhs, rhs, .. } => I::branch_i32_nor_imm16(lhs, rhs, offset),
+            I::I32BitXorEqzImm16 { lhs, rhs, .. } => I::branch_i32_xnor_imm16(lhs, rhs, offset),
             // i64
             I::I64Eq { lhs, rhs, .. } => I::branch_i64_eq(lhs, rhs, offset),
             I::I64Ne { lhs, rhs, .. } => I::branch_i64_ne(lhs, rhs, offset),
@@ -191,9 +191,9 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchI32And { lhs, rhs, .. }
             | I::BranchI32Or { lhs, rhs, .. }
             | I::BranchI32Xor { lhs, rhs, .. }
-            | I::BranchI32AndEqz { lhs, rhs, .. }
-            | I::BranchI32OrEqz { lhs, rhs, .. }
-            | I::BranchI32XorEqz { lhs, rhs, .. }
+            | I::BranchI32Nand { lhs, rhs, .. }
+            | I::BranchI32Nor { lhs, rhs, .. }
+            | I::BranchI32Xnor { lhs, rhs, .. }
             | I::BranchI32Eq { lhs, rhs, .. }
             | I::BranchI32Ne { lhs, rhs, .. }
             | I::BranchI32LtS { lhs, rhs, .. }
@@ -217,9 +217,9 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchI32AndImm16 { lhs, rhs, .. }
             | I::BranchI32OrImm16 { lhs, rhs, .. }
             | I::BranchI32XorImm16 { lhs, rhs, .. }
-            | I::BranchI32AndEqzImm16 { lhs, rhs, .. }
-            | I::BranchI32OrEqzImm16 { lhs, rhs, .. }
-            | I::BranchI32XorEqzImm16 { lhs, rhs, .. }
+            | I::BranchI32NandImm16 { lhs, rhs, .. }
+            | I::BranchI32NorImm16 { lhs, rhs, .. }
+            | I::BranchI32XnorImm16 { lhs, rhs, .. }
             | I::BranchI32EqImm16 { lhs, rhs, .. }
             | I::BranchI32NeImm16 { lhs, rhs, .. }
             | I::BranchI32LtSImm16Rhs { lhs, rhs, .. }
@@ -294,9 +294,9 @@ fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
         | I::BranchI32And { .. } => Comparator::I32BitAnd,
         | I::BranchI32Or { .. } => Comparator::I32BitOr,
         | I::BranchI32Xor { .. } => Comparator::I32BitXor,
-        | I::BranchI32AndEqz { .. } => Comparator::I32BitAndEqz,
-        | I::BranchI32OrEqz { .. } => Comparator::I32BitOrEqz,
-        | I::BranchI32XorEqz { .. } => Comparator::I32BitXorEqz,
+        | I::BranchI32Nand { .. } => Comparator::I32BitAndEqz,
+        | I::BranchI32Nor { .. } => Comparator::I32BitOrEqz,
+        | I::BranchI32Xnor { .. } => Comparator::I32BitXorEqz,
         // i64
         | I::BranchI64Eq { .. } | I::BranchI64EqImm16 { .. } => Comparator::I64Eq,
         | I::BranchI64Ne { .. } | I::BranchI64NeImm16 { .. } => Comparator::I64Ne,

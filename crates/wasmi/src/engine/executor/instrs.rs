@@ -193,23 +193,23 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI32XorImm16 { lhs, rhs, offset } => {
                     self.execute_branch_i32_xor_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32AndEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_eqz(lhs, rhs, offset)
+                Instr::BranchI32Nand { lhs, rhs, offset } => {
+                    self.execute_branch_i32_nand(lhs, rhs, offset)
                 }
-                Instr::BranchI32AndEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_eqz_imm16(lhs, rhs, offset)
+                Instr::BranchI32NandImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_nand_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32OrEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_eqz(lhs, rhs, offset)
+                Instr::BranchI32Nor { lhs, rhs, offset } => {
+                    self.execute_branch_i32_nor(lhs, rhs, offset)
                 }
-                Instr::BranchI32OrEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_eqz_imm16(lhs, rhs, offset)
+                Instr::BranchI32NorImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_nor_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32XorEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_eqz(lhs, rhs, offset)
+                Instr::BranchI32Xnor { lhs, rhs, offset } => {
+                    self.execute_branch_i32_xnor(lhs, rhs, offset)
                 }
-                Instr::BranchI32XorEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_eqz_imm16(lhs, rhs, offset)
+                Instr::BranchI32XnorImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_xnor_imm16(lhs, rhs, offset)
                 }
                 Instr::BranchI32Eq { lhs, rhs, offset } => {
                     self.execute_branch_i32_eq(lhs, rhs, offset)

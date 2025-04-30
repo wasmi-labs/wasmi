@@ -1077,9 +1077,9 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32And { offset, .. } |
             I::BranchI32Or { offset, .. } |
             I::BranchI32Xor { offset, .. } |
-            I::BranchI32AndEqz { offset, .. } |
-            I::BranchI32OrEqz { offset, .. } |
-            I::BranchI32XorEqz { offset, .. } |
+            I::BranchI32Nand { offset, .. } |
+            I::BranchI32Nor { offset, .. } |
+            I::BranchI32Xnor { offset, .. } |
             I::BranchI32Eq { offset, .. } |
             I::BranchI32Ne { offset, .. } |
             I::BranchI32LtS { offset, .. } |
@@ -1103,9 +1103,9 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32AndImm16 { offset, .. } |
             I::BranchI32OrImm16 { offset, .. } |
             I::BranchI32XorImm16 { offset, .. } |
-            I::BranchI32AndEqzImm16 { offset, .. } |
-            I::BranchI32OrEqzImm16 { offset, .. } |
-            I::BranchI32XorEqzImm16 { offset, .. } |
+            I::BranchI32NandImm16 { offset, .. } |
+            I::BranchI32NorImm16 { offset, .. } |
+            I::BranchI32XnorImm16 { offset, .. } |
             I::BranchI32EqImm16 { offset, .. } |
             I::BranchI32NeImm16 { offset, .. } |
             I::BranchI32LtSImm16Lhs { offset, .. } |

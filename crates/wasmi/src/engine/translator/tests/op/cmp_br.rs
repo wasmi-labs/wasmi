@@ -583,9 +583,9 @@ fn if_forward_multi_value() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and_eqz);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or_eqz);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor_eqz);
+    test_for(ValType::I32, "and", Instruction::branch_i32_nand);
+    test_for(ValType::I32, "or", Instruction::branch_i32_nor);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_xnor);
     test_for(ValType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValType::I32, "ne", Instruction::branch_i32_eq);
     test_for(
@@ -668,9 +668,9 @@ fn if_forward() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and_eqz);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or_eqz);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor_eqz);
+    test_for(ValType::I32, "and", Instruction::branch_i32_nand);
+    test_for(ValType::I32, "or", Instruction::branch_i32_nor);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_xnor);
     test_for(ValType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValType::I32, "ne", Instruction::branch_i32_eq);
     test_for(
@@ -754,9 +754,9 @@ fn block_i32_eqz_fuse() {
 
     test_for("eq", Instruction::branch_i32_ne);
     test_for("ne", Instruction::branch_i32_eq);
-    test_for("and", Instruction::branch_i32_and_eqz);
-    test_for("or", Instruction::branch_i32_or_eqz);
-    test_for("xor", Instruction::branch_i32_xor_eqz);
+    test_for("and", Instruction::branch_i32_nand);
+    test_for("or", Instruction::branch_i32_nor);
+    test_for("xor", Instruction::branch_i32_xnor);
 }
 
 #[test]

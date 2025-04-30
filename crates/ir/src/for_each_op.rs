@@ -220,8 +220,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// A fused `i32.eqz(i32.and)` and branch instruction.
-                #[snake_name(branch_i32_and_eqz)]
-                BranchI32AndEqz {
+                #[snake_name(branch_i32_nand)]
+                BranchI32Nand {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -230,8 +230,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.and)` and branch instruction with 16-bit immediate `rhs` value.
-                #[snake_name(branch_i32_and_eqz_imm16)]
-                BranchI32AndEqzImm16 {
+                #[snake_name(branch_i32_nand_imm16)]
+                BranchI32NandImm16 {
                     /// The left-hand side operand to the conditional operator.
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
@@ -240,8 +240,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.or)` and branch instruction.
-                #[snake_name(branch_i32_or_eqz)]
-                BranchI32OrEqz {
+                #[snake_name(branch_i32_nor)]
+                BranchI32Nor {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -250,8 +250,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.or)` and branch instruction with 16-bit immediate `rhs` value.
-                #[snake_name(branch_i32_or_eqz_imm16)]
-                BranchI32OrEqzImm16 {
+                #[snake_name(branch_i32_nor_imm16)]
+                BranchI32NorImm16 {
                     /// The left-hand side operand to the conditional operator.
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
@@ -260,8 +260,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.xor)` and branch instruction.
-                #[snake_name(branch_i32_xor_eqz)]
-                BranchI32XorEqz {
+                #[snake_name(branch_i32_xnor)]
+                BranchI32Xnor {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -270,8 +270,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.xor)` and branch instruction with 16-bit immediate `rhs` value.
-                #[snake_name(branch_i32_xor_eqz_imm16)]
-                BranchI32XorEqzImm16 {
+                #[snake_name(branch_i32_xnor_imm16)]
+                BranchI32XnorImm16 {
                     /// The left-hand side operand to the conditional operator.
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
