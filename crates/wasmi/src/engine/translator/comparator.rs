@@ -37,18 +37,18 @@ impl NegateCmpInstr for Instruction {
             I::I32LtSImm16Lhs { result, lhs, rhs } => I::i32_le_s_imm16_rhs(result, rhs, lhs),
             I::I32LtUImm16Lhs { result, lhs, rhs } => I::i32_le_u_imm16_rhs(result, rhs, lhs),
             // i32 (special)
-            I::I32And { result, lhs, rhs } => I::i32_and_eqz(result, lhs, rhs),
-            I::I32Or { result, lhs, rhs } => I::i32_or_eqz(result, lhs, rhs),
-            I::I32Xor { result, lhs, rhs } => I::i32_xor_eqz(result, lhs, rhs),
-            I::I32AndEqz { result, lhs, rhs } if is_branch => I::i32_and(result, lhs, rhs),
-            I::I32OrEqz { result, lhs, rhs } if is_branch => I::i32_or(result, lhs, rhs),
-            I::I32XorEqz { result, lhs, rhs } if is_branch => I::i32_xor(result, lhs, rhs),
-            I::I32AndImm16 { result, lhs, rhs } => I::i32_and_eqz_imm16(result, lhs, rhs),
-            I::I32OrImm16 { result, lhs, rhs } => I::i32_or_eqz_imm16(result, lhs, rhs),
-            I::I32XorImm16 { result, lhs, rhs } => I::i32_xor_eqz_imm16(result, lhs, rhs),
-            I::I32AndEqzImm16 { result, lhs, rhs } if is_branch => I::i32_and_imm16(result, lhs, rhs),
-            I::I32OrEqzImm16 { result, lhs, rhs } if is_branch => I::i32_or_imm16(result, lhs, rhs),
-            I::I32XorEqzImm16 { result, lhs, rhs } if is_branch => I::i32_xor_imm16(result, lhs, rhs),
+            I::I32BitAnd { result, lhs, rhs } => I::i32_bitand_eqz(result, lhs, rhs),
+            I::I32BitOr { result, lhs, rhs } => I::i32_bitor_eqz(result, lhs, rhs),
+            I::I32BitXor { result, lhs, rhs } => I::i32_bitxor_eqz(result, lhs, rhs),
+            I::I32BitAndEqz { result, lhs, rhs } if is_branch => I::i32_bitand(result, lhs, rhs),
+            I::I32BitOrEqz { result, lhs, rhs } if is_branch => I::i32_bitor(result, lhs, rhs),
+            I::I32BitXorEqz { result, lhs, rhs } if is_branch => I::i32_bitxor(result, lhs, rhs),
+            I::I32BitAndImm16 { result, lhs, rhs } => I::i32_bitand_eqz_imm16(result, lhs, rhs),
+            I::I32BitOrImm16 { result, lhs, rhs } => I::i32_bitor_eqz_imm16(result, lhs, rhs),
+            I::I32BitXorImm16 { result, lhs, rhs } => I::i32_bitxor_eqz_imm16(result, lhs, rhs),
+            I::I32BitAndEqzImm16 { result, lhs, rhs } if is_branch => I::i32_bitand_imm16(result, lhs, rhs),
+            I::I32BitOrEqzImm16 { result, lhs, rhs } if is_branch => I::i32_bitor_imm16(result, lhs, rhs),
+            I::I32BitXorEqzImm16 { result, lhs, rhs } if is_branch => I::i32_bitxor_imm16(result, lhs, rhs),
             // i64
             I::I64Eq { result, lhs, rhs } => I::i64_ne(result, lhs, rhs),
             I::I64Ne { result, lhs, rhs } => I::i64_eq(result, lhs, rhs),
@@ -122,18 +122,18 @@ impl TryIntoCmpBranchInstr for Instruction {
             I::I32LtSImm16Rhs { lhs, rhs, .. } => I::branch_i32_lt_s_imm16_rhs(lhs, rhs, offset),
             I::I32LtUImm16Rhs { lhs, rhs, .. } => I::branch_i32_lt_u_imm16_rhs(lhs, rhs, offset),
             // i32 (special)
-            I::I32And { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
-            I::I32Or { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
-            I::I32Xor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
-            I::I32AndEqz { lhs, rhs, .. } => I::branch_i32_and_eqz(lhs, rhs, offset),
-            I::I32OrEqz { lhs, rhs, .. } => I::branch_i32_or_eqz(lhs, rhs, offset),
-            I::I32XorEqz { lhs, rhs, .. } => I::branch_i32_xor_eqz(lhs, rhs, offset),
-            I::I32AndImm16 { lhs, rhs, .. } => I::branch_i32_and_imm16(lhs, rhs, offset),
-            I::I32OrImm16 { lhs, rhs, .. } => I::branch_i32_or_imm16(lhs, rhs, offset),
-            I::I32XorImm16 { lhs, rhs, .. } => I::branch_i32_xor_imm16(lhs, rhs, offset),
-            I::I32AndEqzImm16 { lhs, rhs, .. } => I::branch_i32_and_eqz_imm16(lhs, rhs, offset),
-            I::I32OrEqzImm16 { lhs, rhs, .. } => I::branch_i32_or_eqz_imm16(lhs, rhs, offset),
-            I::I32XorEqzImm16 { lhs, rhs, .. } => I::branch_i32_xor_eqz_imm16(lhs, rhs, offset),
+            I::I32BitAnd { lhs, rhs, .. } => I::branch_i32_bitand(lhs, rhs, offset),
+            I::I32BitOr { lhs, rhs, .. } => I::branch_i32_bitor(lhs, rhs, offset),
+            I::I32BitXor { lhs, rhs, .. } => I::branch_i32_bitxor(lhs, rhs, offset),
+            I::I32BitAndEqz { lhs, rhs, .. } => I::branch_i32_bitand_eqz(lhs, rhs, offset),
+            I::I32BitOrEqz { lhs, rhs, .. } => I::branch_i32_bitor_eqz(lhs, rhs, offset),
+            I::I32BitXorEqz { lhs, rhs, .. } => I::branch_i32_bitxor_eqz(lhs, rhs, offset),
+            I::I32BitAndImm16 { lhs, rhs, .. } => I::branch_i32_bitand_imm16(lhs, rhs, offset),
+            I::I32BitOrImm16 { lhs, rhs, .. } => I::branch_i32_bitor_imm16(lhs, rhs, offset),
+            I::I32BitXorImm16 { lhs, rhs, .. } => I::branch_i32_bitxor_imm16(lhs, rhs, offset),
+            I::I32BitAndEqzImm16 { lhs, rhs, .. } => I::branch_i32_bitand_eqz_imm16(lhs, rhs, offset),
+            I::I32BitOrEqzImm16 { lhs, rhs, .. } => I::branch_i32_bitor_eqz_imm16(lhs, rhs, offset),
+            I::I32BitXorEqzImm16 { lhs, rhs, .. } => I::branch_i32_bitxor_eqz_imm16(lhs, rhs, offset),
             // i64
             I::I64Eq { lhs, rhs, .. } => I::branch_i64_eq(lhs, rhs, offset),
             I::I64Ne { lhs, rhs, .. } => I::branch_i64_ne(lhs, rhs, offset),
@@ -188,12 +188,12 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
         };
         #[rustfmt::skip]
         let (lhs, rhs) = match *self {
-            | I::BranchI32And { lhs, rhs, .. }
-            | I::BranchI32Or { lhs, rhs, .. }
-            | I::BranchI32Xor { lhs, rhs, .. }
-            | I::BranchI32AndEqz { lhs, rhs, .. }
-            | I::BranchI32OrEqz { lhs, rhs, .. }
-            | I::BranchI32XorEqz { lhs, rhs, .. }
+            | I::BranchI32BitAnd { lhs, rhs, .. }
+            | I::BranchI32BitOr { lhs, rhs, .. }
+            | I::BranchI32BitXor { lhs, rhs, .. }
+            | I::BranchI32BitAndEqz { lhs, rhs, .. }
+            | I::BranchI32BitOrEqz { lhs, rhs, .. }
+            | I::BranchI32BitXorEqz { lhs, rhs, .. }
             | I::BranchI32Eq { lhs, rhs, .. }
             | I::BranchI32Ne { lhs, rhs, .. }
             | I::BranchI32LtS { lhs, rhs, .. }
@@ -214,12 +214,12 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchF64Ne { lhs, rhs, .. }
             | I::BranchF64Lt { lhs, rhs, .. }
             | I::BranchF64Le { lhs, rhs, .. } => (lhs, rhs),
-            | I::BranchI32AndImm16 { lhs, rhs, .. }
-            | I::BranchI32OrImm16 { lhs, rhs, .. }
-            | I::BranchI32XorImm16 { lhs, rhs, .. }
-            | I::BranchI32AndEqzImm16 { lhs, rhs, .. }
-            | I::BranchI32OrEqzImm16 { lhs, rhs, .. }
-            | I::BranchI32XorEqzImm16 { lhs, rhs, .. }
+            | I::BranchI32BitAndImm16 { lhs, rhs, .. }
+            | I::BranchI32BitOrImm16 { lhs, rhs, .. }
+            | I::BranchI32BitXorImm16 { lhs, rhs, .. }
+            | I::BranchI32BitAndEqzImm16 { lhs, rhs, .. }
+            | I::BranchI32BitOrEqzImm16 { lhs, rhs, .. }
+            | I::BranchI32BitXorEqzImm16 { lhs, rhs, .. }
             | I::BranchI32EqImm16 { lhs, rhs, .. }
             | I::BranchI32NeImm16 { lhs, rhs, .. }
             | I::BranchI32LtSImm16Rhs { lhs, rhs, .. }
@@ -291,12 +291,12 @@ fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
         | I::BranchI32LeUImm16Lhs { .. }
         | I::BranchI32LeUImm16Rhs { .. } => Comparator::I32LeU,
         // i32 (special)
-        | I::BranchI32And { .. } => Comparator::I32And,
-        | I::BranchI32Or { .. } => Comparator::I32Or,
-        | I::BranchI32Xor { .. } => Comparator::I32Xor,
-        | I::BranchI32AndEqz { .. } => Comparator::I32AndEqz,
-        | I::BranchI32OrEqz { .. } => Comparator::I32OrEqz,
-        | I::BranchI32XorEqz { .. } => Comparator::I32XorEqz,
+        | I::BranchI32BitAnd { .. } => Comparator::I32BitAnd,
+        | I::BranchI32BitOr { .. } => Comparator::I32BitOr,
+        | I::BranchI32BitXor { .. } => Comparator::I32BitXor,
+        | I::BranchI32BitAndEqz { .. } => Comparator::I32BitAndEqz,
+        | I::BranchI32BitOrEqz { .. } => Comparator::I32BitOrEqz,
+        | I::BranchI32BitXorEqz { .. } => Comparator::I32BitXorEqz,
         // i64
         | I::BranchI64Eq { .. } | I::BranchI64EqImm16 { .. } => Comparator::I64Eq,
         | I::BranchI64Ne { .. } | I::BranchI64NeImm16 { .. } => Comparator::I64Ne,

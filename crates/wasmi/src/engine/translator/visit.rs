@@ -2187,9 +2187,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_and(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Instruction::i32_and,
-            Instruction::i32_and_imm16,
-            wasm::i32_and,
+            Instruction::i32_bitand,
+            Instruction::i32_bitand_imm16,
+            wasm::i32_bitand,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x & x` is always just `x`
@@ -2219,9 +2219,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_or(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Instruction::i32_or,
-            Instruction::i32_or_imm16,
-            wasm::i32_or,
+            Instruction::i32_bitor,
+            Instruction::i32_bitor_imm16,
+            wasm::i32_bitor,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x | x` is always just `x`
@@ -2251,9 +2251,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_xor(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Instruction::i32_xor,
-            Instruction::i32_xor_imm16,
-            wasm::i32_xor,
+            Instruction::i32_bitxor,
+            Instruction::i32_bitxor_imm16,
+            wasm::i32_bitxor,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x ^ x` is always `0`

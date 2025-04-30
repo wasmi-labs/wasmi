@@ -183,9 +183,9 @@ fn fuzz_regression_11() {
     let wasm = include_str!("wat/fuzz_11.wat");
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::i32_and_imm16(Reg::from(1), Reg::from(0), 2),
+            Instruction::i32_bitand_imm16(Reg::from(1), Reg::from(0), 2),
             Instruction::i32_eq_imm16(Reg::from(0), Reg::from(0), 0),
-            Instruction::branch_i32_and(Reg::from(1), Reg::from(0), 2),
+            Instruction::branch_i32_bitand(Reg::from(1), Reg::from(0), 2),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::Return,
         ])
@@ -270,7 +270,7 @@ fn fuzz_regression_14() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::i32_and(Reg::from(2), Reg::from(0), Reg::from(1)),
+                Instruction::i32_bitand(Reg::from(2), Reg::from(0), Reg::from(1)),
                 Instruction::return_reg2_ext(2, -1),
             ])
             .consts([0_i32]),
@@ -354,7 +354,7 @@ fn fuzz_regression_15_03() {
                 Instruction::return_reg(Reg::from(3)),
                 Instruction::i32_mul(Reg::from(2), Reg::from(2), Reg::from(3)),
                 Instruction::return_reg(Reg::from(2)),
-                Instruction::i32_xor(Reg::from(1), Reg::from(1), Reg::from(2)),
+                Instruction::i32_bitxor(Reg::from(1), Reg::from(1), Reg::from(2)),
                 Instruction::return_reg(Reg::from(1)),
             ])
             .consts([10_i32, 20_i32]),

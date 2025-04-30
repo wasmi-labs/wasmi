@@ -175,41 +175,41 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchCmpFallback { lhs, rhs, params } => {
                     self.execute_branch_cmp_fallback(lhs, rhs, params)
                 }
-                Instr::BranchI32And { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and(lhs, rhs, offset)
+                Instr::BranchI32BitAnd { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitand(lhs, rhs, offset)
                 }
-                Instr::BranchI32AndImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_imm16(lhs, rhs, offset)
+                Instr::BranchI32BitAndImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitand_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32Or { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or(lhs, rhs, offset)
+                Instr::BranchI32BitOr { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitor(lhs, rhs, offset)
                 }
-                Instr::BranchI32OrImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_imm16(lhs, rhs, offset)
+                Instr::BranchI32BitOrImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitor_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32Xor { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor(lhs, rhs, offset)
+                Instr::BranchI32BitXor { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitxor(lhs, rhs, offset)
                 }
-                Instr::BranchI32XorImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_imm16(lhs, rhs, offset)
+                Instr::BranchI32BitXorImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitxor_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32AndEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_eqz(lhs, rhs, offset)
+                Instr::BranchI32BitAndEqz { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitand_eqz(lhs, rhs, offset)
                 }
-                Instr::BranchI32AndEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_eqz_imm16(lhs, rhs, offset)
+                Instr::BranchI32BitAndEqzImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitand_eqz_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32OrEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_eqz(lhs, rhs, offset)
+                Instr::BranchI32BitOrEqz { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitor_eqz(lhs, rhs, offset)
                 }
-                Instr::BranchI32OrEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_eqz_imm16(lhs, rhs, offset)
+                Instr::BranchI32BitOrEqzImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitor_eqz_imm16(lhs, rhs, offset)
                 }
-                Instr::BranchI32XorEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_eqz(lhs, rhs, offset)
+                Instr::BranchI32BitXorEqz { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitxor_eqz(lhs, rhs, offset)
                 }
-                Instr::BranchI32XorEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_eqz_imm16(lhs, rhs, offset)
+                Instr::BranchI32BitXorEqzImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i32_bitxor_eqz_imm16(lhs, rhs, offset)
                 }
                 Instr::BranchI32Eq { lhs, rhs, offset } => {
                     self.execute_branch_i32_eq(lhs, rhs, offset)
@@ -812,29 +812,35 @@ impl<'engine> Executor<'engine> {
                 Instr::I32RemUImm16Lhs { result, lhs, rhs } => {
                     self.execute_i32_rem_u_imm16_lhs(result, lhs, rhs)?
                 }
-                Instr::I32And { result, lhs, rhs } => self.execute_i32_and(result, lhs, rhs),
-                Instr::I32AndEqz { result, lhs, rhs } => self.execute_i32_and_eqz(result, lhs, rhs),
-                Instr::I32AndEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_and_eqz_imm16(result, lhs, rhs)
+                Instr::I32BitAnd { result, lhs, rhs } => self.execute_i32_bitand(result, lhs, rhs),
+                Instr::I32BitAndEqz { result, lhs, rhs } => {
+                    self.execute_i32_bitand_eqz(result, lhs, rhs)
                 }
-                Instr::I32AndImm16 { result, lhs, rhs } => {
-                    self.execute_i32_and_imm16(result, lhs, rhs)
+                Instr::I32BitAndEqzImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitand_eqz_imm16(result, lhs, rhs)
                 }
-                Instr::I32Or { result, lhs, rhs } => self.execute_i32_or(result, lhs, rhs),
-                Instr::I32OrEqz { result, lhs, rhs } => self.execute_i32_or_eqz(result, lhs, rhs),
-                Instr::I32OrEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_or_eqz_imm16(result, lhs, rhs)
+                Instr::I32BitAndImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitand_imm16(result, lhs, rhs)
                 }
-                Instr::I32OrImm16 { result, lhs, rhs } => {
-                    self.execute_i32_or_imm16(result, lhs, rhs)
+                Instr::I32BitOr { result, lhs, rhs } => self.execute_i32_bitor(result, lhs, rhs),
+                Instr::I32BitOrEqz { result, lhs, rhs } => {
+                    self.execute_i32_bitor_eqz(result, lhs, rhs)
                 }
-                Instr::I32Xor { result, lhs, rhs } => self.execute_i32_xor(result, lhs, rhs),
-                Instr::I32XorEqz { result, lhs, rhs } => self.execute_i32_xor_eqz(result, lhs, rhs),
-                Instr::I32XorEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_xor_eqz_imm16(result, lhs, rhs)
+                Instr::I32BitOrEqzImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitor_eqz_imm16(result, lhs, rhs)
                 }
-                Instr::I32XorImm16 { result, lhs, rhs } => {
-                    self.execute_i32_xor_imm16(result, lhs, rhs)
+                Instr::I32BitOrImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitor_imm16(result, lhs, rhs)
+                }
+                Instr::I32BitXor { result, lhs, rhs } => self.execute_i32_bitxor(result, lhs, rhs),
+                Instr::I32BitXorEqz { result, lhs, rhs } => {
+                    self.execute_i32_bitxor_eqz(result, lhs, rhs)
+                }
+                Instr::I32BitXorEqzImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitxor_eqz_imm16(result, lhs, rhs)
+                }
+                Instr::I32BitXorImm16 { result, lhs, rhs } => {
+                    self.execute_i32_bitxor_imm16(result, lhs, rhs)
                 }
                 Instr::I32Shl { result, lhs, rhs } => self.execute_i32_shl(result, lhs, rhs),
                 Instr::I32ShlBy { result, lhs, rhs } => self.execute_i32_shl_by(result, lhs, rhs),
@@ -2577,25 +2583,25 @@ impl Executor<'_> {
 /// Extension method for [`UntypedVal`] required by the [`Executor`].
 trait UntypedValueExt {
     /// Executes a fused `i32.and` + `i32.eqz` instruction.
-    fn i32_and_eqz(x: Self, y: Self) -> bool;
+    fn i32_bitand_eqz(x: Self, y: Self) -> bool;
 
     /// Executes a fused `i32.or` + `i32.eqz` instruction.
-    fn i32_or_eqz(x: Self, y: Self) -> bool;
+    fn i32_bitor_eqz(x: Self, y: Self) -> bool;
 
     /// Executes a fused `i32.xor` + `i32.eqz` instruction.
-    fn i32_xor_eqz(x: Self, y: Self) -> bool;
+    fn i32_bitxor_eqz(x: Self, y: Self) -> bool;
 }
 
 impl UntypedValueExt for i32 {
-    fn i32_and_eqz(x: Self, y: Self) -> bool {
-        wasm::i32_and(x, y) == 0
+    fn i32_bitand_eqz(x: Self, y: Self) -> bool {
+        wasm::i32_bitand(x, y) == 0
     }
 
-    fn i32_or_eqz(x: Self, y: Self) -> bool {
-        wasm::i32_or(x, y) == 0
+    fn i32_bitor_eqz(x: Self, y: Self) -> bool {
+        wasm::i32_bitor(x, y) == 0
     }
 
-    fn i32_xor_eqz(x: Self, y: Self) -> bool {
-        wasm::i32_xor(x, y) == 0
+    fn i32_bitxor_eqz(x: Self, y: Self) -> bool {
+        wasm::i32_bitxor(x, y) == 0
     }
 }

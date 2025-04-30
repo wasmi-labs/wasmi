@@ -35,9 +35,9 @@ fn loop_backward() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor);
+    test_for(ValType::I32, "and", Instruction::branch_i32_bitand);
+    test_for(ValType::I32, "or", Instruction::branch_i32_bitor);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_bitxor);
     test_for(ValType::I32, "eq", Instruction::branch_i32_eq);
     test_for(ValType::I32, "ne", Instruction::branch_i32_ne);
     test_for(ValType::I32, "lt_s", Instruction::branch_i32_lt_s);
@@ -162,9 +162,9 @@ fn loop_backward_imm_rhs() {
             .run()
     }
 
-    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
-    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
-    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
+    test_for::<i32>("and", 1, Instruction::branch_i32_bitand_imm16);
+    test_for::<i32>("or", 1, Instruction::branch_i32_bitor_imm16);
+    test_for::<i32>("xor", 1, Instruction::branch_i32_bitxor_imm16);
     test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
     test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
     test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);
@@ -259,9 +259,9 @@ fn loop_backward_imm_lhs() {
             .run()
     }
 
-    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
-    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
-    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
+    test_for::<i32>("and", 1, Instruction::branch_i32_bitand_imm16);
+    test_for::<i32>("or", 1, Instruction::branch_i32_bitor_imm16);
+    test_for::<i32>("xor", 1, Instruction::branch_i32_bitxor_imm16);
     test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
     test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
     test_for::<i32>(
@@ -343,9 +343,9 @@ fn block_forward() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor);
+    test_for(ValType::I32, "and", Instruction::branch_i32_bitand);
+    test_for(ValType::I32, "or", Instruction::branch_i32_bitor);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_bitxor);
     test_for(ValType::I32, "eq", Instruction::branch_i32_eq);
     test_for(ValType::I32, "ne", Instruction::branch_i32_ne);
     test_for(ValType::I32, "lt_s", Instruction::branch_i32_lt_s);
@@ -463,9 +463,9 @@ fn block_forward_nop_copy() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor);
+    test_for(ValType::I32, "and", Instruction::branch_i32_bitand);
+    test_for(ValType::I32, "or", Instruction::branch_i32_bitor);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_bitxor);
     test_for(ValType::I32, "eq", Instruction::branch_i32_eq);
     test_for(ValType::I32, "ne", Instruction::branch_i32_ne);
     test_for(ValType::I32, "lt_s", Instruction::branch_i32_lt_s);
@@ -583,9 +583,9 @@ fn if_forward_multi_value() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and_eqz);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or_eqz);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor_eqz);
+    test_for(ValType::I32, "and", Instruction::branch_i32_bitand_eqz);
+    test_for(ValType::I32, "or", Instruction::branch_i32_bitor_eqz);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_bitxor_eqz);
     test_for(ValType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValType::I32, "ne", Instruction::branch_i32_eq);
     test_for(
@@ -668,9 +668,9 @@ fn if_forward() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and_eqz);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or_eqz);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor_eqz);
+    test_for(ValType::I32, "and", Instruction::branch_i32_bitand_eqz);
+    test_for(ValType::I32, "or", Instruction::branch_i32_bitor_eqz);
+    test_for(ValType::I32, "xor", Instruction::branch_i32_bitxor_eqz);
     test_for(ValType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValType::I32, "ne", Instruction::branch_i32_eq);
     test_for(
@@ -754,9 +754,9 @@ fn block_i32_eqz_fuse() {
 
     test_for("eq", Instruction::branch_i32_ne);
     test_for("ne", Instruction::branch_i32_eq);
-    test_for("and", Instruction::branch_i32_and_eqz);
-    test_for("or", Instruction::branch_i32_or_eqz);
-    test_for("xor", Instruction::branch_i32_xor_eqz);
+    test_for("and", Instruction::branch_i32_bitand_eqz);
+    test_for("or", Instruction::branch_i32_bitor_eqz);
+    test_for("xor", Instruction::branch_i32_bitxor_eqz);
 }
 
 #[test]
@@ -784,9 +784,9 @@ fn if_i32_eqz_fuse() {
 
     test_for("eq", Instruction::branch_i32_eq);
     test_for("ne", Instruction::branch_i32_ne);
-    test_for("and", Instruction::branch_i32_and);
-    test_for("or", Instruction::branch_i32_or);
-    test_for("xor", Instruction::branch_i32_xor);
+    test_for("and", Instruction::branch_i32_bitand);
+    test_for("or", Instruction::branch_i32_bitor);
+    test_for("xor", Instruction::branch_i32_bitxor);
 }
 
 #[test]

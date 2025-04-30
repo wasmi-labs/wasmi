@@ -38,9 +38,9 @@ fn binop_i32_eqz() {
     test_for!(
         ("i32", "eq", Instruction::i32_ne),
         ("i32", "ne", Instruction::i32_eq),
-        ("i32", "and", Instruction::i32_and_eqz),
-        ("i32", "or", Instruction::i32_or_eqz),
-        ("i32", "xor", Instruction::i32_xor_eqz),
+        ("i32", "and", Instruction::i32_bitand_eqz),
+        ("i32", "or", Instruction::i32_bitor_eqz),
+        ("i32", "xor", Instruction::i32_bitxor_eqz),
         ("i32", "lt_s", swap_ops!(Instruction::i32_le_s)),
         ("i32", "lt_u", swap_ops!(Instruction::i32_le_u)),
         ("i32", "le_s", swap_ops!(Instruction::i32_lt_s)),
@@ -112,9 +112,9 @@ fn binop_imm_i32_eqz_rhs() {
     test_for_imm!(
         (i32, "eq", Instruction::i32_ne_imm16),
         (i32, "ne", Instruction::i32_eq_imm16),
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
+        (i32, "and", Instruction::i32_bitand_eqz_imm16),
+        (i32, "or", Instruction::i32_bitor_eqz_imm16),
+        (i32, "xor", Instruction::i32_bitxor_eqz_imm16),
         (i32, "lt_s", swap_ops!(Instruction::i32_le_s_imm16_lhs)),
         (u32, "lt_u", swap_ops!(Instruction::i32_le_u_imm16_lhs)),
         (i32, "le_s", swap_ops!(Instruction::i32_lt_s_imm16_lhs)),
@@ -175,9 +175,9 @@ fn binop_imm_i32_eqz_lhs() {
     test_for_imm!(
         (i32, "eq", Instruction::i32_ne_imm16),
         (i32, "ne", Instruction::i32_eq_imm16),
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
+        (i32, "and", Instruction::i32_bitand_eqz_imm16),
+        (i32, "or", Instruction::i32_bitor_eqz_imm16),
+        (i32, "xor", Instruction::i32_bitxor_eqz_imm16),
         (i32, "lt_s", Instruction::i32_le_s_imm16_rhs),
         (u32, "lt_u", Instruction::i32_le_u_imm16_rhs),
         (i32, "le_s", Instruction::i32_lt_s_imm16_rhs),
@@ -403,9 +403,9 @@ fn binop_i32_eqz_double_invalid() {
             .run()
     }
     test_for!(
-        ("i32", "and", Instruction::i32_and_eqz),
-        ("i32", "or", Instruction::i32_or_eqz),
-        ("i32", "xor", Instruction::i32_xor_eqz),
+        ("i32", "and", Instruction::i32_bitand_eqz),
+        ("i32", "or", Instruction::i32_bitor_eqz),
+        ("i32", "xor", Instruction::i32_bitxor_eqz),
     );
 }
 
@@ -448,9 +448,9 @@ fn binop_imm_i32_eqz_rhs_double_invalid() {
             .run()
     }
     test_for_imm!(
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
+        (i32, "and", Instruction::i32_bitand_eqz_imm16),
+        (i32, "or", Instruction::i32_bitor_eqz_imm16),
+        (i32, "xor", Instruction::i32_bitxor_eqz_imm16),
     );
 }
 
@@ -493,8 +493,8 @@ fn binop_imm_i32_eqz_lhs_double_invalid() {
             .run()
     }
     test_for_imm!(
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
+        (i32, "and", Instruction::i32_bitand_eqz_imm16),
+        (i32, "or", Instruction::i32_bitor_eqz_imm16),
+        (i32, "xor", Instruction::i32_bitxor_eqz_imm16),
     );
 }
