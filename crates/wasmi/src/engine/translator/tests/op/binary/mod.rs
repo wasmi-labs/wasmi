@@ -38,11 +38,12 @@ mod i32_shr_s;
 mod i32_shr_u;
 mod i32_sub;
 mod i64_add;
-mod i64_and;
+mod i64_bitand;
+mod i64_bitor;
+mod i64_bitxor;
 mod i64_div_s;
 mod i64_div_u;
 mod i64_mul;
-mod i64_or;
 mod i64_rem_s;
 mod i64_rem_u;
 mod i64_rotl;
@@ -51,7 +52,6 @@ mod i64_shl;
 mod i64_shr_s;
 mod i64_shr_u;
 mod i64_sub;
-mod i64_xor;
 
 /// Helper to create a [`NonZeroI32`].
 fn nonzero_i32(value: i32) -> NonZeroI32 {

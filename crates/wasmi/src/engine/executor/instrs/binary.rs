@@ -24,9 +24,9 @@ impl Executor<'_> {
         (Instruction::I64Add, execute_i64_add, wasm::i64_add),
         (Instruction::I64Sub, execute_i64_sub, wasm::i64_sub),
         (Instruction::I64Mul, execute_i64_mul, wasm::i64_mul),
-        (Instruction::I64And, execute_i64_and, wasm::i64_and),
-        (Instruction::I64Or, execute_i64_or, wasm::i64_or),
-        (Instruction::I64Xor, execute_i64_xor, wasm::i64_xor),
+        (Instruction::I64BitAnd, execute_i64_bitand, wasm::i64_bitand),
+        (Instruction::I64BitOr, execute_i64_bitor, wasm::i64_bitor),
+        (Instruction::I64BitXor, execute_i64_bitxor, wasm::i64_bitxor),
 
         (Instruction::I32Shl, execute_i32_shl, wasm::i32_shl),
         (Instruction::I32ShrU, execute_i32_shr_u, wasm::i32_shr_u),
@@ -81,9 +81,9 @@ impl Executor<'_> {
 
         (i64, Instruction::I64AddImm16, execute_i64_add_imm16, wasm::i64_add),
         (i64, Instruction::I64MulImm16, execute_i64_mul_imm16, wasm::i64_mul),
-        (i64, Instruction::I64AndImm16, execute_i64_and_imm16, wasm::i64_and),
-        (i64, Instruction::I64OrImm16, execute_i64_or_imm16, wasm::i64_or),
-        (i64, Instruction::I64XorImm16, execute_i64_xor_imm16, wasm::i64_xor),
+        (i64, Instruction::I64BitAndImm16, execute_i64_bitand_imm16, wasm::i64_bitand),
+        (i64, Instruction::I64BitOrImm16, execute_i64_bitor_imm16, wasm::i64_bitor),
+        (i64, Instruction::I64BitXorImm16, execute_i64_bitxor_imm16, wasm::i64_bitxor),
     }
 }
 

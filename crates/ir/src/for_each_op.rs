@@ -3821,8 +3821,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i64` bitwise-and instruction: `r0 = r1 & r2`
-                #[snake_name(i64_and)]
-                I64And {
+                #[snake_name(i64_bitand)]
+                I64BitAnd {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3833,9 +3833,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64And`] for 16-bit constant values.
-                #[snake_name(i64_and_imm16)]
-                I64AndImm16 {
+                /// Optimized variant of [`Instruction::I64BitAnd`] for 16-bit constant values.
+                #[snake_name(i64_bitand_imm16)]
+                I64BitAndImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3844,8 +3844,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i64` bitwise-or instruction: `r0 = r1 & r2`
-                #[snake_name(i64_or)]
-                I64Or {
+                #[snake_name(i64_bitor)]
+                I64BitOr {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3856,9 +3856,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64Or`] for 16-bit constant values.
-                #[snake_name(i64_or_imm16)]
-                I64OrImm16 {
+                /// Optimized variant of [`Instruction::I64BitOr`] for 16-bit constant values.
+                #[snake_name(i64_bitor_imm16)]
+                I64BitOrImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3867,8 +3867,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
-                #[snake_name(i64_xor)]
-                I64Xor {
+                #[snake_name(i64_bitxor)]
+                I64BitXor {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3879,9 +3879,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64Xor`] for 16-bit constant values.
-                #[snake_name(i64_xor_imm16)]
-                I64XorImm16 {
+                /// Optimized variant of [`Instruction::I64BitXor`] for 16-bit constant values.
+                #[snake_name(i64_bitxor_imm16)]
+                I64BitXorImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,

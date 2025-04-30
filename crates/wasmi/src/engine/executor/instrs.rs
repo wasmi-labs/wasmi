@@ -914,17 +914,17 @@ impl<'engine> Executor<'engine> {
                 Instr::I64RemUImm16Lhs { result, lhs, rhs } => {
                     self.execute_i64_rem_u_imm16_lhs(result, lhs, rhs)?
                 }
-                Instr::I64And { result, lhs, rhs } => self.execute_i64_and(result, lhs, rhs),
-                Instr::I64AndImm16 { result, lhs, rhs } => {
-                    self.execute_i64_and_imm16(result, lhs, rhs)
+                Instr::I64BitAnd { result, lhs, rhs } => self.execute_i64_bitand(result, lhs, rhs),
+                Instr::I64BitAndImm16 { result, lhs, rhs } => {
+                    self.execute_i64_bitand_imm16(result, lhs, rhs)
                 }
-                Instr::I64Or { result, lhs, rhs } => self.execute_i64_or(result, lhs, rhs),
-                Instr::I64OrImm16 { result, lhs, rhs } => {
-                    self.execute_i64_or_imm16(result, lhs, rhs)
+                Instr::I64BitOr { result, lhs, rhs } => self.execute_i64_bitor(result, lhs, rhs),
+                Instr::I64BitOrImm16 { result, lhs, rhs } => {
+                    self.execute_i64_bitor_imm16(result, lhs, rhs)
                 }
-                Instr::I64Xor { result, lhs, rhs } => self.execute_i64_xor(result, lhs, rhs),
-                Instr::I64XorImm16 { result, lhs, rhs } => {
-                    self.execute_i64_xor_imm16(result, lhs, rhs)
+                Instr::I64BitXor { result, lhs, rhs } => self.execute_i64_bitxor(result, lhs, rhs),
+                Instr::I64BitXorImm16 { result, lhs, rhs } => {
+                    self.execute_i64_bitxor_imm16(result, lhs, rhs)
                 }
                 Instr::I64Shl { result, lhs, rhs } => self.execute_i64_shl(result, lhs, rhs),
                 Instr::I64ShlBy { result, lhs, rhs } => self.execute_i64_shl_by(result, lhs, rhs),
