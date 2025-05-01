@@ -1148,6 +1148,12 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32LtU { offset, .. } |
             I::BranchI32LeS { offset, .. } |
             I::BranchI32LeU { offset, .. } |
+            I::BranchI64And { offset, .. } |
+            I::BranchI64Or { offset, .. } |
+            I::BranchI64Xor { offset, .. } |
+            I::BranchI64Nand { offset, .. } |
+            I::BranchI64Nor { offset, .. } |
+            I::BranchI64Xnor { offset, .. } |
             I::BranchI64Eq { offset, .. } |
             I::BranchI64Ne { offset, .. } |
             I::BranchI64LtS { offset, .. } |
@@ -1178,6 +1184,12 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32LtUImm16Rhs { offset, .. } |
             I::BranchI32LeUImm16Lhs { offset, .. } |
             I::BranchI32LeUImm16Rhs { offset, .. } |
+            I::BranchI64AndImm16 { offset, .. } |
+            I::BranchI64OrImm16 { offset, .. } |
+            I::BranchI64XorImm16 { offset, .. } |
+            I::BranchI64NandImm16 { offset, .. } |
+            I::BranchI64NorImm16 { offset, .. } |
+            I::BranchI64XnorImm16 { offset, .. } |
             I::BranchI64EqImm16 { offset, .. } |
             I::BranchI64NeImm16 { offset, .. } |
             I::BranchI64LtSImm16Lhs { offset, .. } |
