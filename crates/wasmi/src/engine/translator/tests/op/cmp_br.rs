@@ -3,11 +3,7 @@ use crate::{
     core::{UntypedVal, ValType},
     ir::{index::Global, BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset},
 };
-use std::{
-    fmt,
-    fmt::{Debug, Display},
-    string::String,
-};
+use std::{fmt, fmt::Debug, string::String};
 
 #[derive(Debug, Copy, Clone)]
 pub enum CmpOp {
@@ -166,13 +162,13 @@ fn loop_backward() {
             r"
             (module
                 (func (param {input_ty} {input_ty})
-                    (loop
-                        (local.get 0)
-                        (local.get 1)
-                        ({input_ty}.{op_str})
-                        ({result_ty}.const 0)
-                        ({result_ty}.ne)
-                        (br_if 0)
+                    (loop $continue
+                        local.get 0
+                        local.get 1
+                        {input_ty}.{op_str}
+                        {result_ty}.const 0
+                        {result_ty}.ne
+                        br_if $continue
                     )
                 )
             )",
@@ -255,26 +251,27 @@ fn loop_backward() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm_rhs() {
-    fn test_for<T>(
-        op: &str,
-        value: T,
-        expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction,
-    ) where
+    fn test_for<T>(op: CmpOp, expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction)
+    where
         T: WasmTy,
         Const16<T>: TryFrom<T> + Debug,
-        DisplayWasm<T>: Display,
     {
-        let ty = T::NAME;
-        let display_value = DisplayWasm::from(value);
+        let input_ty = op.param_ty();
+        let result_ty = op.result_ty();
+        let input_ty = DisplayValueType::from(input_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let op_str = op.op_str();
         let wasm = format!(
             r"
             (module
-                (func (param {ty} {ty})
-                    (loop
-                        (local.get 0)
-                        ({ty}.const {display_value})
-                        ({ty}.{op})
-                        (br_if 0)
+                (func (param {input_ty} {input_ty})
+                    (loop $continue
+                        local.get 0
+                        {input_ty}.const 1
+                        {input_ty}.{op_str}
+                        {result_ty}.const 0
+                        {result_ty}.ne
+                        br_if $continue
                     )
                 )
             )",
@@ -283,7 +280,7 @@ fn loop_backward_imm_rhs() {
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(0),
-                    <Const16<T>>::try_from(value).ok().unwrap(),
+                    <Const16<T>>::try_from(T::from(1)).ok().unwrap(),
                     BranchOffset16::from(0),
                 ),
                 Instruction::Return,
@@ -291,60 +288,54 @@ fn loop_backward_imm_rhs() {
             .run()
     }
 
-    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
-    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
-    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
-    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
-    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
-    test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);
-    test_for::<u32>("lt_u", 1, Instruction::branch_i32_lt_u_imm16_rhs);
-    test_for::<i32>("le_s", 1, Instruction::branch_i32_le_s_imm16_rhs);
-    test_for::<u32>("le_u", 1, Instruction::branch_i32_le_u_imm16_rhs);
+    test_for::<i32>(CmpOp::I32And, Instruction::branch_i32_and_imm16);
+    test_for::<i32>(CmpOp::I32Or, Instruction::branch_i32_or_imm16);
+    test_for::<i32>(CmpOp::I32Xor, Instruction::branch_i32_xor_imm16);
+    test_for::<i32>(CmpOp::I32Eq, Instruction::branch_i32_eq_imm16);
+    test_for::<i32>(CmpOp::I32Ne, Instruction::branch_i32_ne_imm16);
+    test_for::<i32>(CmpOp::I32LtS, Instruction::branch_i32_lt_s_imm16_rhs);
+    test_for::<u32>(CmpOp::I32LtU, Instruction::branch_i32_lt_u_imm16_rhs);
+    test_for::<i32>(CmpOp::I32LeS, Instruction::branch_i32_le_s_imm16_rhs);
+    test_for::<u32>(CmpOp::I32LeU, Instruction::branch_i32_le_u_imm16_rhs);
     test_for::<i32>(
-        "gt_s",
-        1,
+        CmpOp::I32GtS,
         swap_cmp_br_ops!(Instruction::branch_i32_lt_s_imm16_lhs),
     );
     test_for::<u32>(
-        "gt_u",
-        1,
+        CmpOp::I32GtU,
         swap_cmp_br_ops!(Instruction::branch_i32_lt_u_imm16_lhs),
     );
     test_for::<i32>(
-        "ge_s",
-        1,
+        CmpOp::I32GeS,
         swap_cmp_br_ops!(Instruction::branch_i32_le_s_imm16_lhs),
     );
     test_for::<u32>(
-        "ge_u",
-        1,
+        CmpOp::I32GeU,
         swap_cmp_br_ops!(Instruction::branch_i32_le_u_imm16_lhs),
     );
-
-    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm16);
-    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm16);
-    test_for::<i64>("lt_s", 1, Instruction::branch_i64_lt_s_imm16_rhs);
-    test_for::<u64>("lt_u", 1, Instruction::branch_i64_lt_u_imm16_rhs);
-    test_for::<i64>("le_s", 1, Instruction::branch_i64_le_s_imm16_rhs);
-    test_for::<u64>("le_u", 1, Instruction::branch_i64_le_u_imm16_rhs);
+    test_for::<i64>(CmpOp::I64And, Instruction::branch_i64_and_imm16);
+    test_for::<i64>(CmpOp::I64Or, Instruction::branch_i64_or_imm16);
+    test_for::<i64>(CmpOp::I64Xor, Instruction::branch_i64_xor_imm16);
+    test_for::<i64>(CmpOp::I64Eq, Instruction::branch_i64_eq_imm16);
+    test_for::<i64>(CmpOp::I64Ne, Instruction::branch_i64_ne_imm16);
+    test_for::<i64>(CmpOp::I64LtS, Instruction::branch_i64_lt_s_imm16_rhs);
+    test_for::<u64>(CmpOp::I64LtU, Instruction::branch_i64_lt_u_imm16_rhs);
+    test_for::<i64>(CmpOp::I64LeS, Instruction::branch_i64_le_s_imm16_rhs);
+    test_for::<u64>(CmpOp::I64LeU, Instruction::branch_i64_le_u_imm16_rhs);
     test_for::<i64>(
-        "gt_s",
-        1,
+        CmpOp::I64GtS,
         swap_cmp_br_ops!(Instruction::branch_i64_lt_s_imm16_lhs),
     );
     test_for::<u64>(
-        "gt_u",
-        1,
+        CmpOp::I64GtU,
         swap_cmp_br_ops!(Instruction::branch_i64_lt_u_imm16_lhs),
     );
     test_for::<i64>(
-        "ge_s",
-        1,
+        CmpOp::I64GeS,
         swap_cmp_br_ops!(Instruction::branch_i64_le_s_imm16_lhs),
     );
     test_for::<u64>(
-        "ge_u",
-        1,
+        CmpOp::I64GeU,
         swap_cmp_br_ops!(Instruction::branch_i64_le_u_imm16_lhs),
     );
 }
@@ -352,26 +343,27 @@ fn loop_backward_imm_rhs() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm_lhs() {
-    fn test_for<T>(
-        op: &str,
-        value: T,
-        expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction,
-    ) where
+    fn test_for<T>(op: CmpOp, expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction)
+    where
         T: WasmTy,
         Const16<T>: TryFrom<T> + Debug,
-        DisplayWasm<T>: Display,
     {
-        let ty = T::NAME;
-        let display_value = DisplayWasm::from(value);
+        let input_ty = op.param_ty();
+        let result_ty = op.result_ty();
+        let input_ty = DisplayValueType::from(input_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let op_str = op.op_str();
         let wasm = format!(
             r"
             (module
-                (func (param {ty} {ty})
-                    (loop
-                        ({ty}.const {display_value})
-                        (local.get 0)
-                        ({ty}.{op})
-                        (br_if 0)
+                (func (param {input_ty} {input_ty})
+                    (loop $continue
+                        {input_ty}.const 1
+                        local.get 0
+                        {input_ty}.{op_str}
+                        {result_ty}.const 0
+                        {result_ty}.ne
+                        br_if $continue
                     )
                 )
             )",
@@ -380,7 +372,7 @@ fn loop_backward_imm_lhs() {
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(0),
-                    <Const16<T>>::try_from(value).ok().unwrap(),
+                    <Const16<T>>::try_from(T::from(1)).ok().unwrap(),
                     BranchOffset16::from(0),
                 ),
                 Instruction::Return,
@@ -388,62 +380,57 @@ fn loop_backward_imm_lhs() {
             .run()
     }
 
-    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
-    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
-    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
-    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
-    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
+    test_for::<i32>(CmpOp::I32And, Instruction::branch_i32_and_imm16);
+    test_for::<i32>(CmpOp::I32Or, Instruction::branch_i32_or_imm16);
+    test_for::<i32>(CmpOp::I32Xor, Instruction::branch_i32_xor_imm16);
+    test_for::<i32>(CmpOp::I32Eq, Instruction::branch_i32_eq_imm16);
+    test_for::<i32>(CmpOp::I32Ne, Instruction::branch_i32_ne_imm16);
     test_for::<i32>(
-        "lt_s",
-        1,
+        CmpOp::I32LtS,
         swap_cmp_br_ops!(Instruction::branch_i32_lt_s_imm16_lhs),
     );
     test_for::<u32>(
-        "lt_u",
-        1,
+        CmpOp::I32LtU,
         swap_cmp_br_ops!(Instruction::branch_i32_lt_u_imm16_lhs),
     );
     test_for::<i32>(
-        "le_s",
-        1,
+        CmpOp::I32LeS,
         swap_cmp_br_ops!(Instruction::branch_i32_le_s_imm16_lhs),
     );
     test_for::<u32>(
-        "le_u",
-        1,
+        CmpOp::I32LeU,
         swap_cmp_br_ops!(Instruction::branch_i32_le_u_imm16_lhs),
     );
-    test_for::<i32>("gt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);
-    test_for::<u32>("gt_u", 1, Instruction::branch_i32_lt_u_imm16_rhs);
-    test_for::<i32>("ge_s", 1, Instruction::branch_i32_le_s_imm16_rhs);
-    test_for::<u32>("ge_u", 1, Instruction::branch_i32_le_u_imm16_rhs);
+    test_for::<i32>(CmpOp::I32GtS, Instruction::branch_i32_lt_s_imm16_rhs);
+    test_for::<u32>(CmpOp::I32GtU, Instruction::branch_i32_lt_u_imm16_rhs);
+    test_for::<i32>(CmpOp::I32GeS, Instruction::branch_i32_le_s_imm16_rhs);
+    test_for::<u32>(CmpOp::I32GeU, Instruction::branch_i32_le_u_imm16_rhs);
 
-    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm16);
-    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm16);
+    test_for::<i64>(CmpOp::I64And, Instruction::branch_i64_and_imm16);
+    test_for::<i64>(CmpOp::I64Or, Instruction::branch_i64_or_imm16);
+    test_for::<i64>(CmpOp::I64Xor, Instruction::branch_i64_xor_imm16);
+    test_for::<i64>(CmpOp::I64Eq, Instruction::branch_i64_eq_imm16);
+    test_for::<i64>(CmpOp::I64Ne, Instruction::branch_i64_ne_imm16);
     test_for::<i64>(
-        "lt_s",
-        1,
+        CmpOp::I64LtS,
         swap_cmp_br_ops!(Instruction::branch_i64_lt_s_imm16_lhs),
     );
     test_for::<u64>(
-        "lt_u",
-        1,
+        CmpOp::I64LtU,
         swap_cmp_br_ops!(Instruction::branch_i64_lt_u_imm16_lhs),
     );
     test_for::<i64>(
-        "le_s",
-        1,
+        CmpOp::I64LeS,
         swap_cmp_br_ops!(Instruction::branch_i64_le_s_imm16_lhs),
     );
     test_for::<u64>(
-        "le_u",
-        1,
+        CmpOp::I64LeU,
         swap_cmp_br_ops!(Instruction::branch_i64_le_u_imm16_lhs),
     );
-    test_for::<i64>("gt_s", 1, Instruction::branch_i64_lt_s_imm16_rhs);
-    test_for::<u64>("gt_u", 1, Instruction::branch_i64_lt_u_imm16_rhs);
-    test_for::<i64>("ge_s", 1, Instruction::branch_i64_le_s_imm16_rhs);
-    test_for::<u64>("ge_u", 1, Instruction::branch_i64_le_u_imm16_rhs);
+    test_for::<i64>(CmpOp::I64GtS, Instruction::branch_i64_lt_s_imm16_rhs);
+    test_for::<u64>(CmpOp::I64GtU, Instruction::branch_i64_lt_u_imm16_rhs);
+    test_for::<i64>(CmpOp::I64GeS, Instruction::branch_i64_le_s_imm16_rhs);
+    test_for::<u64>(CmpOp::I64GeU, Instruction::branch_i64_le_u_imm16_rhs);
 }
 
 #[test]
