@@ -1024,6 +1024,9 @@ impl InstrEncoder {
             | I::I32BitAnd { result, .. } | I::I32BitAndImm16 { result, .. }
             | I::I32BitOr { result, .. } | I::I32BitOrImm16 { result, .. }
             | I::I32BitXor { result, .. } | I::I32BitXorImm16 { result, .. }
+            | I::I32And { result, .. } | I::I32AndImm16 { result, .. }
+            | I::I32Or { result, .. } | I::I32OrImm16 { result, .. }
+            | I::I32Xor { result, .. } | I::I32XorImm16 { result, .. }
             | I::I32Nand { result, .. } | I::I32NandImm16 { result, .. }
             | I::I32Nor { result, .. } | I::I32NorImm16 { result, .. }
             | I::I32Xnor { result, .. } | I::I32XnorImm16 { result, .. }
@@ -1033,6 +1036,12 @@ impl InstrEncoder {
             | I::I32LtU { result, .. } | I::I32LtUImm16Lhs { result, .. } | I::I32LtUImm16Rhs { result, .. }
             | I::I32LeS { result, .. } | I::I32LeSImm16Lhs { result, .. } | I::I32LeSImm16Rhs { result, .. }
             | I::I32LeU { result, .. } | I::I32LeUImm16Lhs { result, .. } | I::I32LeUImm16Rhs { result, .. }
+            | I::I64And { result, .. } | I::I64AndImm16 { result, .. }
+            | I::I64Or { result, .. } | I::I64OrImm16 { result, .. }
+            | I::I64Xor { result, .. } | I::I64XorImm16 { result, .. }
+            | I::I64Nand { result, .. } | I::I64NandImm16 { result, .. }
+            | I::I64Nor { result, .. } | I::I64NorImm16 { result, .. }
+            | I::I64Xnor { result, .. } | I::I64XnorImm16 { result, .. }
             | I::I64Eq { result, .. } | I::I64EqImm16 { result, .. }
             | I::I64Ne { result, .. } | I::I64NeImm16 { result, .. }
             | I::I64LtS { result, .. } | I::I64LtSImm16Lhs { result, .. } | I::I64LtSImm16Rhs { result, .. }

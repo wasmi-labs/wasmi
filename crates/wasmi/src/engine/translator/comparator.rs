@@ -190,8 +190,12 @@ impl LogicalizeCmpInstr for Instruction {
             I::I64XnorImm16 { .. } |
             I::F32Eq { .. } |
             I::F32Ne { .. } |
+            I::F32Lt { .. } |
+            I::F32Le { .. } |
             I::F64Eq { .. } |
-            I::F64Ne { .. } => *self,
+            I::F64Ne { .. } |
+            I::F64Lt { .. } |
+            I::F64Le { .. } => *self,
             _ => return None,
         };
         Some(logicalized)
