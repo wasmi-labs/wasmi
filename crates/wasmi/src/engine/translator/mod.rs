@@ -22,7 +22,12 @@ mod simd;
 mod tests;
 
 use self::{
-    comparator::{NegateCmpInstr, TryIntoCmpBranchFallbackInstr, TryIntoCmpBranchInstr},
+    comparator::{
+        LogicalizeCmpInstr,
+        NegateCmpInstr,
+        TryIntoCmpBranchFallbackInstr,
+        TryIntoCmpBranchInstr,
+    },
     control_frame::{
         BlockControlFrame,
         BlockHeight,

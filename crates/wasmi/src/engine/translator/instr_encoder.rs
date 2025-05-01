@@ -1,13 +1,13 @@
 use super::{
     relink_result::RelinkResult as _,
-    utils::FromProviders as _,
+    utils::{FromProviders as _, WasmInteger},
     visit_register::VisitInputRegisters as _,
     BumpFuelConsumption as _,
     FuelInfo,
     LabelRef,
     LabelRegistry,
+    LogicalizeCmpInstr,
     NegateCmpInstr,
-    Provider,
     TryIntoCmpBranchFallbackInstr,
     TryIntoCmpBranchInstr,
     TypedProvider,
@@ -839,41 +839,94 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Translates a Wasm `i32.eqz` instruction.
+    /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
     ///
-    /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.
-    /// Returns `true` if it was possible to fuse the `i32.eqz` instruction.
-    pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
-        let Provider::Register(input) = stack.peek() else {
-            // Only register inputs can be negated.
-            // Constant inputs are resolved via constant propagation.
-            return false;
-        };
+    /// Returns
+    ///
+    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(false)` if instruction fusion could not be applied.
+    /// - `Err(_)` if an error occurred.
+    pub fn fuse_eqz<T: WasmInteger>(
+        &mut self,
+        stack: &mut ValueStack,
+        lhs: Reg,
+        rhs: T,
+    ) -> Result<bool, Error> {
+        if !rhs.eq_zero() {
+            // Case: `rhs` needs to be zero to apply this optimization.
+            return Ok(false);
+        }
         let Some(last_instr) = self.last_instr else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return false;
+            return Ok(false);
         };
         let last_instruction = *self.instrs.get(last_instr);
         let Some(result) = last_instruction.result() else {
             // All negatable instructions have a single result register.
-            return false;
+            return Ok(false);
         };
         if matches!(stack.get_register_space(result), RegisterSpace::Local) {
             // The instruction stores its result into a local variable which
             // is an observable side effect which we are not allowed to mutate.
-            return false;
+            return Ok(false);
         }
-        if result != input {
-            // The result of the instruction and the current input are not equal
+        if result != lhs {
+            // The result of the instruction and the `lhs` are not equal
             // thus indicating that we cannot fuse the instructions.
-            return false;
+            return Ok(false);
         }
-        let Some(negated) = last_instruction.negate_cmp_instr(false) else {
+        let Some(negated) = last_instruction.negate_cmp_instr() else {
             // Last instruction is unable to be negated.
-            return false;
+            return Ok(false);
         };
         _ = mem::replace(self.instrs.get_mut(last_instr), negated);
-        true
+        stack.push_register(result)?;
+        Ok(true)
+    }
+
+    /// Tries to fuse a Wasm `i32.ne` instruction with 0 `rhs` value.
+    ///
+    /// Returns
+    ///
+    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(false)` if instruction fusion could not be applied.
+    /// - `Err(_)` if an error occurred.
+    pub fn fuse_nez<T: WasmInteger>(
+        &mut self,
+        stack: &mut ValueStack,
+        lhs: Reg,
+        rhs: T,
+    ) -> Result<bool, Error> {
+        if !rhs.eq_zero() {
+            // Case: `rhs` needs to be zero to apply this optimization.
+            return Ok(false);
+        }
+        let Some(last_instr) = self.last_instr else {
+            // If there is no last instruction there is no comparison instruction to negate.
+            return Ok(false);
+        };
+        let last_instruction = *self.instrs.get(last_instr);
+        let Some(result) = last_instruction.result() else {
+            // All negatable instructions have a single result register.
+            return Ok(false);
+        };
+        if matches!(stack.get_register_space(result), RegisterSpace::Local) {
+            // The instruction stores its result into a local variable which
+            // is an observable side effect which we are not allowed to mutate.
+            return Ok(false);
+        }
+        if result != lhs {
+            // The result of the instruction and the `lhs` are not equal
+            // thus indicating that we cannot fuse the instructions.
+            return Ok(false);
+        }
+        let Some(logicalized) = last_instruction.logicalize_cmp_instr() else {
+            // Last instruction is unable to be negated.
+            return Ok(false);
+        };
+        _ = mem::replace(self.instrs.get_mut(last_instr), logicalized);
+        stack.push_register(result)?;
+        Ok(true)
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].
@@ -968,18 +1021,27 @@ impl InstrEncoder {
         use Instruction as I;
         let last_instruction = *self.instrs.get(last_instr);
         let result = match last_instruction {
+            | I::I32BitAnd { result, .. } | I::I32BitAndImm16 { result, .. }
+            | I::I32BitOr { result, .. } | I::I32BitOrImm16 { result, .. }
+            | I::I32BitXor { result, .. } | I::I32BitXorImm16 { result, .. }
             | I::I32And { result, .. } | I::I32AndImm16 { result, .. }
             | I::I32Or { result, .. } | I::I32OrImm16 { result, .. }
             | I::I32Xor { result, .. } | I::I32XorImm16 { result, .. }
-            | I::I32AndEqz { result, .. } | I::I32AndEqzImm16 { result, .. }
-            | I::I32OrEqz { result, .. } | I::I32OrEqzImm16 { result, .. }
-            | I::I32XorEqz { result, .. } | I::I32XorEqzImm16 { result, .. }
+            | I::I32Nand { result, .. } | I::I32NandImm16 { result, .. }
+            | I::I32Nor { result, .. } | I::I32NorImm16 { result, .. }
+            | I::I32Xnor { result, .. } | I::I32XnorImm16 { result, .. }
             | I::I32Eq { result, .. } | I::I32EqImm16 { result, .. }
             | I::I32Ne { result, .. } | I::I32NeImm16 { result, .. }
             | I::I32LtS { result, .. } | I::I32LtSImm16Lhs { result, .. } | I::I32LtSImm16Rhs { result, .. }
             | I::I32LtU { result, .. } | I::I32LtUImm16Lhs { result, .. } | I::I32LtUImm16Rhs { result, .. }
             | I::I32LeS { result, .. } | I::I32LeSImm16Lhs { result, .. } | I::I32LeSImm16Rhs { result, .. }
             | I::I32LeU { result, .. } | I::I32LeUImm16Lhs { result, .. } | I::I32LeUImm16Rhs { result, .. }
+            | I::I64And { result, .. } | I::I64AndImm16 { result, .. }
+            | I::I64Or { result, .. } | I::I64OrImm16 { result, .. }
+            | I::I64Xor { result, .. } | I::I64XorImm16 { result, .. }
+            | I::I64Nand { result, .. } | I::I64NandImm16 { result, .. }
+            | I::I64Nor { result, .. } | I::I64NorImm16 { result, .. }
+            | I::I64Xnor { result, .. } | I::I64XnorImm16 { result, .. }
             | I::I64Eq { result, .. } | I::I64EqImm16 { result, .. }
             | I::I64Ne { result, .. } | I::I64NeImm16 { result, .. }
             | I::I64LtS { result, .. } | I::I64LtSImm16Lhs { result, .. } | I::I64LtSImm16Rhs { result, .. }
@@ -1008,7 +1070,7 @@ impl InstrEncoder {
             return Ok(None);
         }
         let last_instruction = match negate {
-            true => match last_instruction.negate_cmp_instr(true) {
+            true => match last_instruction.negate_cmp_instr() {
                 Some(negated) => negated,
                 None => return Ok(None),
             },
@@ -1077,15 +1139,21 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32And { offset, .. } |
             I::BranchI32Or { offset, .. } |
             I::BranchI32Xor { offset, .. } |
-            I::BranchI32AndEqz { offset, .. } |
-            I::BranchI32OrEqz { offset, .. } |
-            I::BranchI32XorEqz { offset, .. } |
+            I::BranchI32Nand { offset, .. } |
+            I::BranchI32Nor { offset, .. } |
+            I::BranchI32Xnor { offset, .. } |
             I::BranchI32Eq { offset, .. } |
             I::BranchI32Ne { offset, .. } |
             I::BranchI32LtS { offset, .. } |
             I::BranchI32LtU { offset, .. } |
             I::BranchI32LeS { offset, .. } |
             I::BranchI32LeU { offset, .. } |
+            I::BranchI64And { offset, .. } |
+            I::BranchI64Or { offset, .. } |
+            I::BranchI64Xor { offset, .. } |
+            I::BranchI64Nand { offset, .. } |
+            I::BranchI64Nor { offset, .. } |
+            I::BranchI64Xnor { offset, .. } |
             I::BranchI64Eq { offset, .. } |
             I::BranchI64Ne { offset, .. } |
             I::BranchI64LtS { offset, .. } |
@@ -1103,9 +1171,9 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32AndImm16 { offset, .. } |
             I::BranchI32OrImm16 { offset, .. } |
             I::BranchI32XorImm16 { offset, .. } |
-            I::BranchI32AndEqzImm16 { offset, .. } |
-            I::BranchI32OrEqzImm16 { offset, .. } |
-            I::BranchI32XorEqzImm16 { offset, .. } |
+            I::BranchI32NandImm16 { offset, .. } |
+            I::BranchI32NorImm16 { offset, .. } |
+            I::BranchI32XnorImm16 { offset, .. } |
             I::BranchI32EqImm16 { offset, .. } |
             I::BranchI32NeImm16 { offset, .. } |
             I::BranchI32LtSImm16Lhs { offset, .. } |
@@ -1116,6 +1184,12 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI32LtUImm16Rhs { offset, .. } |
             I::BranchI32LeUImm16Lhs { offset, .. } |
             I::BranchI32LeUImm16Rhs { offset, .. } |
+            I::BranchI64AndImm16 { offset, .. } |
+            I::BranchI64OrImm16 { offset, .. } |
+            I::BranchI64XorImm16 { offset, .. } |
+            I::BranchI64NandImm16 { offset, .. } |
+            I::BranchI64NorImm16 { offset, .. } |
+            I::BranchI64XnorImm16 { offset, .. } |
             I::BranchI64EqImm16 { offset, .. } |
             I::BranchI64NeImm16 { offset, .. } |
             I::BranchI64LtSImm16Lhs { offset, .. } |

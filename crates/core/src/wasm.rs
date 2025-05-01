@@ -81,12 +81,12 @@ impl_untyped_val! {
     fn i32_mul(lhs: i32, rhs: i32) -> i32 = i32::wrapping_mul;
     fn i64_mul(lhs: i64, rhs: i64) -> i64 = i64::wrapping_mul;
 
-    fn i32_and(lhs: i32, rhs: i32) -> i32 = op!(&);
-    fn i64_and(lhs: i64, rhs: i64) -> i64 = op!(&);
-    fn i32_or(lhs: i32, rhs: i32) -> i32 = op!(|);
-    fn i64_or(lhs: i64, rhs: i64) -> i64 = op!(|);
-    fn i32_xor(lhs: i32, rhs: i32) -> i32 = op!(^);
-    fn i64_xor(lhs: i64, rhs: i64) -> i64 = op!(^);
+    fn i32_bitand(lhs: i32, rhs: i32) -> i32 = op!(&);
+    fn i64_bitand(lhs: i64, rhs: i64) -> i64 = op!(&);
+    fn i32_bitor(lhs: i32, rhs: i32) -> i32 = op!(|);
+    fn i64_bitor(lhs: i64, rhs: i64) -> i64 = op!(|);
+    fn i32_bitxor(lhs: i32, rhs: i32) -> i32 = op!(^);
+    fn i64_bitxor(lhs: i64, rhs: i64) -> i64 = op!(^);
 
     fn i32_shl(lhs: i32, rhs: i32) -> i32 = Integer::shl;
     fn i64_shl(lhs: i64, rhs: i64) -> i64 = Integer::shl;

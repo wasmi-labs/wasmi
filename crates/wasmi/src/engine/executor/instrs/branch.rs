@@ -1,4 +1,4 @@
-use super::Executor;
+use super::{Executor, UntypedValueExt};
 use crate::{
     core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
@@ -281,30 +281,6 @@ where
     a <= b
 }
 
-fn cmp_i32_and(a: i32, b: i32) -> bool {
-    (a & b) != 0
-}
-
-fn cmp_i32_or(a: i32, b: i32) -> bool {
-    (a | b) != 0
-}
-
-fn cmp_i32_xor(a: i32, b: i32) -> bool {
-    (a ^ b) != 0
-}
-
-fn cmp_i32_and_eqz(a: i32, b: i32) -> bool {
-    !cmp_i32_and(a, b)
-}
-
-fn cmp_i32_or_eqz(a: i32, b: i32) -> bool {
-    !cmp_i32_or(a, b)
-}
-
-fn cmp_i32_xor_eqz(a: i32, b: i32) -> bool {
-    !cmp_i32_xor(a, b)
-}
-
 macro_rules! impl_execute_branch_binop {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
@@ -319,12 +295,12 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
-    (i32, Instruction::BranchI32And, execute_branch_i32_and, cmp_i32_and),
-    (i32, Instruction::BranchI32Or, execute_branch_i32_or, cmp_i32_or),
-    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, cmp_i32_xor),
-    (i32, Instruction::BranchI32AndEqz, execute_branch_i32_and_eqz, cmp_i32_and_eqz),
-    (i32, Instruction::BranchI32OrEqz, execute_branch_i32_or_eqz, cmp_i32_or_eqz),
-    (i32, Instruction::BranchI32XorEqz, execute_branch_i32_xor_eqz, cmp_i32_xor_eqz),
+    (i32, Instruction::BranchI32And, execute_branch_i32_and, UntypedValueExt::and),
+    (i32, Instruction::BranchI32Or, execute_branch_i32_or, UntypedValueExt::or),
+    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, UntypedValueExt::xor),
+    (i32, Instruction::BranchI32Nand, execute_branch_i32_nand, UntypedValueExt::nand),
+    (i32, Instruction::BranchI32Nor, execute_branch_i32_nor, UntypedValueExt::nor),
+    (i32, Instruction::BranchI32Xnor, execute_branch_i32_xnor, UntypedValueExt::xnor),
     (i32, Instruction::BranchI32Eq, execute_branch_i32_eq, cmp_eq),
     (i32, Instruction::BranchI32Ne, execute_branch_i32_ne, cmp_ne),
     (i32, Instruction::BranchI32LtS, execute_branch_i32_lt_s, cmp_lt),
@@ -332,6 +308,12 @@ impl_execute_branch_binop! {
     (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
     (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
 
+    (i64, Instruction::BranchI64And, execute_branch_i64_and, UntypedValueExt::and),
+    (i64, Instruction::BranchI64Or, execute_branch_i64_or, UntypedValueExt::or),
+    (i64, Instruction::BranchI64Xor, execute_branch_i64_xor, UntypedValueExt::xor),
+    (i64, Instruction::BranchI64Nand, execute_branch_i64_nand, UntypedValueExt::nand),
+    (i64, Instruction::BranchI64Nor, execute_branch_i64_nor, UntypedValueExt::nor),
+    (i64, Instruction::BranchI64Xnor, execute_branch_i64_xnor, UntypedValueExt::xnor),
     (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
     (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
     (i64, Instruction::BranchI64LtS, execute_branch_i64_lt_s, cmp_lt),
@@ -363,12 +345,12 @@ macro_rules! impl_execute_branch_binop_imm16_rhs {
     }
 }
 impl_execute_branch_binop_imm16_rhs! {
-    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, cmp_i32_and),
-    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, cmp_i32_or),
-    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, cmp_i32_xor),
-    (i32, Instruction::BranchI32AndEqzImm16, execute_branch_i32_and_eqz_imm16, cmp_i32_and_eqz),
-    (i32, Instruction::BranchI32OrEqzImm16, execute_branch_i32_or_eqz_imm16, cmp_i32_or_eqz),
-    (i32, Instruction::BranchI32XorEqzImm16, execute_branch_i32_xor_eqz_imm16, cmp_i32_xor_eqz),
+    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, UntypedValueExt::and),
+    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, UntypedValueExt::or),
+    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, UntypedValueExt::xor),
+    (i32, Instruction::BranchI32NandImm16, execute_branch_i32_nand_imm16, UntypedValueExt::nand),
+    (i32, Instruction::BranchI32NorImm16, execute_branch_i32_nor_imm16, UntypedValueExt::nor),
+    (i32, Instruction::BranchI32XnorImm16, execute_branch_i32_xnor_imm16, UntypedValueExt::xnor),
     (i32, Instruction::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
     (i32, Instruction::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
     (i32, Instruction::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),
@@ -376,6 +358,12 @@ impl_execute_branch_binop_imm16_rhs! {
     (i32, Instruction::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
     (u32, Instruction::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
 
+    (i64, Instruction::BranchI64AndImm16, execute_branch_i64_and_imm16, UntypedValueExt::and),
+    (i64, Instruction::BranchI64OrImm16, execute_branch_i64_or_imm16, UntypedValueExt::or),
+    (i64, Instruction::BranchI64XorImm16, execute_branch_i64_xor_imm16, UntypedValueExt::xor),
+    (i64, Instruction::BranchI64NandImm16, execute_branch_i64_nand_imm16, UntypedValueExt::nand),
+    (i64, Instruction::BranchI64NorImm16, execute_branch_i64_nor_imm16, UntypedValueExt::nor),
+    (i64, Instruction::BranchI64XnorImm16, execute_branch_i64_xnor_imm16, UntypedValueExt::xnor),
     (i64, Instruction::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
     (i64, Instruction::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
     (i64, Instruction::BranchI64LtSImm16Rhs, execute_branch_i64_lt_s_imm16_rhs, cmp_lt),
@@ -424,18 +412,24 @@ impl Executor<'_> {
             C::I32LtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_lt),
             C::I32LeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_le),
             C::I32LeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_le),
-            C::I32And => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and),
-            C::I32Or => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or),
-            C::I32Xor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor),
-            C::I32AndEqz => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and_eqz),
-            C::I32OrEqz => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or_eqz),
-            C::I32XorEqz => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor_eqz),
+            C::I32And => self.execute_branch_binop::<i32>(lhs, rhs, offset, UntypedValueExt::and),
+            C::I32Or => self.execute_branch_binop::<i32>(lhs, rhs, offset, UntypedValueExt::or),
+            C::I32Xor => self.execute_branch_binop::<i32>(lhs, rhs, offset, UntypedValueExt::xor),
+            C::I32Nand => self.execute_branch_binop::<i32>(lhs, rhs, offset, UntypedValueExt::nand),
+            C::I32Nor => self.execute_branch_binop::<i32>(lhs, rhs, offset, UntypedValueExt::nor),
+            C::I32Xnor => self.execute_branch_binop::<i32>(lhs, rhs, offset, UntypedValueExt::xnor),
             C::I64Eq => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_eq),
             C::I64Ne => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_ne),
             C::I64LtS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_lt),
             C::I64LtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_lt),
             C::I64LeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_le),
             C::I64LeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_le),
+            C::I64And => self.execute_branch_binop::<i64>(lhs, rhs, offset, UntypedValueExt::and),
+            C::I64Or => self.execute_branch_binop::<i64>(lhs, rhs, offset, UntypedValueExt::or),
+            C::I64Xor => self.execute_branch_binop::<i64>(lhs, rhs, offset, UntypedValueExt::xor),
+            C::I64Nand => self.execute_branch_binop::<i64>(lhs, rhs, offset, UntypedValueExt::nand),
+            C::I64Nor => self.execute_branch_binop::<i64>(lhs, rhs, offset, UntypedValueExt::nor),
+            C::I64Xnor => self.execute_branch_binop::<i64>(lhs, rhs, offset, UntypedValueExt::xnor),
             C::F32Eq => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_eq),
             C::F32Ne => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ne),
             C::F32Lt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_lt),

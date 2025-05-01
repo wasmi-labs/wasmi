@@ -158,6 +158,7 @@ macro_rules! for_each_op_grouped {
                     /// [`ComparatorAndOffset`]: crate::ComparatorAndOffset
                     params: Reg,
                 },
+
                 /// A fused `i32.and` and branch instruction.
                 #[snake_name(branch_i32_and)]
                 BranchI32And {
@@ -218,10 +219,9 @@ macro_rules! for_each_op_grouped {
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
-
                 /// A fused `i32.eqz(i32.and)` and branch instruction.
-                #[snake_name(branch_i32_and_eqz)]
-                BranchI32AndEqz {
+                #[snake_name(branch_i32_nand)]
+                BranchI32Nand {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -230,8 +230,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.and)` and branch instruction with 16-bit immediate `rhs` value.
-                #[snake_name(branch_i32_and_eqz_imm16)]
-                BranchI32AndEqzImm16 {
+                #[snake_name(branch_i32_nand_imm16)]
+                BranchI32NandImm16 {
                     /// The left-hand side operand to the conditional operator.
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
@@ -240,8 +240,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.or)` and branch instruction.
-                #[snake_name(branch_i32_or_eqz)]
-                BranchI32OrEqz {
+                #[snake_name(branch_i32_nor)]
+                BranchI32Nor {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -250,8 +250,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.or)` and branch instruction with 16-bit immediate `rhs` value.
-                #[snake_name(branch_i32_or_eqz_imm16)]
-                BranchI32OrEqzImm16 {
+                #[snake_name(branch_i32_nor_imm16)]
+                BranchI32NorImm16 {
                     /// The left-hand side operand to the conditional operator.
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
@@ -260,8 +260,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.xor)` and branch instruction.
-                #[snake_name(branch_i32_xor_eqz)]
-                BranchI32XorEqz {
+                #[snake_name(branch_i32_xnor)]
+                BranchI32Xnor {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -270,8 +270,8 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
                 /// A fused `i32.eqz(i32.xor)` and branch instruction with 16-bit immediate `rhs` value.
-                #[snake_name(branch_i32_xor_eqz_imm16)]
-                BranchI32XorEqzImm16 {
+                #[snake_name(branch_i32_xnor_imm16)]
+                BranchI32XnorImm16 {
                     /// The left-hand side operand to the conditional operator.
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
@@ -438,6 +438,127 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u32>,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+
+                /// A fused `i64.and` and branch instruction.
+                #[snake_name(branch_i64_and)]
+                BranchI64And {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.and` and branch instruction with 16-bit immediate `rhs` value.
+                #[snake_name(branch_i64_and_imm16)]
+                BranchI64AndImm16 {
+                    /// The left-hand side operand to the conditional operator.
+                    lhs: Reg,
+                    /// The right-hand side operand to the conditional operator.
+                    rhs: Const16<i64>,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.or` and branch instruction.
+                #[snake_name(branch_i64_or)]
+                BranchI64Or {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.or` and branch instruction with 16-bit immediate `rhs` value.
+                #[snake_name(branch_i64_or_imm16)]
+                BranchI64OrImm16 {
+                    /// The left-hand side operand to the conditional operator.
+                    lhs: Reg,
+                    /// The right-hand side operand to the conditional operator.
+                    rhs: Const16<i64>,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.xor` and branch instruction.
+                #[snake_name(branch_i64_xor)]
+                BranchI64Xor {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.xor` and branch instruction with 16-bit immediate `rhs` value.
+                #[snake_name(branch_i64_xor_imm16)]
+                BranchI64XorImm16 {
+                    /// The left-hand side operand to the conditional operator.
+                    lhs: Reg,
+                    /// The right-hand side operand to the conditional operator.
+                    rhs: Const16<i64>,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.eqz(i64.and)` and branch instruction.
+                #[snake_name(branch_i64_nand)]
+                BranchI64Nand {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.eqz(i64.and)` and branch instruction with 16-bit immediate `rhs` value.
+                #[snake_name(branch_i64_nand_imm16)]
+                BranchI64NandImm16 {
+                    /// The left-hand side operand to the conditional operator.
+                    lhs: Reg,
+                    /// The right-hand side operand to the conditional operator.
+                    rhs: Const16<i64>,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.eqz(i64.or)` and branch instruction.
+                #[snake_name(branch_i64_nor)]
+                BranchI64Nor {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.eqz(i64.or)` and branch instruction with 16-bit immediate `rhs` value.
+                #[snake_name(branch_i64_nor_imm16)]
+                BranchI64NorImm16 {
+                    /// The left-hand side operand to the conditional operator.
+                    lhs: Reg,
+                    /// The right-hand side operand to the conditional operator.
+                    rhs: Const16<i64>,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.eqz(i64.xor)` and branch instruction.
+                #[snake_name(branch_i64_xnor)]
+                BranchI64Xnor {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `i64.eqz(i64.xor)` and branch instruction with 16-bit immediate `rhs` value.
+                #[snake_name(branch_i64_xnor_imm16)]
+                BranchI64XnorImm16 {
+                    /// The left-hand side operand to the conditional operator.
+                    lhs: Reg,
+                    /// The right-hand side operand to the conditional operator.
+                    rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -3307,6 +3428,73 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i32` bitwise-and instruction: `r0 = r1 & r2`
+                #[snake_name(i32_bitand)]
+                I32BitAnd {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
+                ///
+                /// # Note
+                ///
+                /// Optimized variant of [`Instruction::I32BitAnd`] for 16-bit constant values.
+                #[snake_name(i32_bitand_imm16)]
+                I32BitAndImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+                /// `i32` bitwise-or instruction: `r0 = r1 & r2`
+                #[snake_name(i32_bitor)]
+                I32BitOr {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
+                ///
+                /// # Note
+                ///
+                /// Optimized variant of [`Instruction::I32BitOr`] for 16-bit constant values.
+                #[snake_name(i32_bitor_imm16)]
+                I32BitOrImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+                /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
+                #[snake_name(i32_bitxor)]
+                I32BitXor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
+                ///
+                /// # Note
+                ///
+                /// Optimized variant of [`Instruction::I32BitXor`] for 16-bit constant values.
+                #[snake_name(i32_bitxor_imm16)]
+                I32BitXorImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+
+                /// Logical `i32.and` instruction.
                 #[snake_name(i32_and)]
                 I32And {
                     @result: Reg,
@@ -3315,29 +3503,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
-                #[snake_name(i32_and_eqz)]
-                I32AndEqz {
-                    @result: Reg,
-                    /// The register holding the left-hand side value.
-                    lhs: Reg,
-                    /// The register holding the right-hand side value.
-                    rhs: Reg,
-                },
-                /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-                #[snake_name(i32_and_eqz_imm16)]
-                I32AndEqzImm16 {
-                    @result: Reg,
-                    /// The register holding one of the operands.
-                    lhs: Reg,
-                    /// The 16-bit immediate value.
-                    rhs: Const16<i32>,
-                },
-                /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
-                ///
-                /// # Note
-                ///
-                /// Optimized variant of [`Instruction::I32And`] for 16-bit constant values.
+                /// Variant of [`Instruction::I32And`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_and_imm16)]
                 I32AndImm16 {
                     @result: Reg,
@@ -3346,8 +3512,7 @@ macro_rules! for_each_op_grouped {
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
-
-                /// `i32` bitwise-or instruction: `r0 = r1 & r2`
+                /// Logical `i32.or` instruction.
                 #[snake_name(i32_or)]
                 I32Or {
                     @result: Reg,
@@ -3356,29 +3521,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
-                #[snake_name(i32_or_eqz)]
-                I32OrEqz {
-                    @result: Reg,
-                    /// The register holding the left-hand side value.
-                    lhs: Reg,
-                    /// The register holding the right-hand side value.
-                    rhs: Reg,
-                },
-                /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-                #[snake_name(i32_or_eqz_imm16)]
-                I32OrEqzImm16 {
-                    @result: Reg,
-                    /// The register holding one of the operands.
-                    lhs: Reg,
-                    /// The 16-bit immediate value.
-                    rhs: Const16<i32>,
-                },
-                /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
-                ///
-                /// # Note
-                ///
-                /// Optimized variant of [`Instruction::I32Or`] for 16-bit constant values.
+                /// Variant of [`Instruction::I32Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_or_imm16)]
                 I32OrImm16 {
                     @result: Reg,
@@ -3387,8 +3530,7 @@ macro_rules! for_each_op_grouped {
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
-
-                /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
+                /// Logical `i32.xor` instruction.
                 #[snake_name(i32_xor)]
                 I32Xor {
                     @result: Reg,
@@ -3397,31 +3539,70 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
-                #[snake_name(i32_xor_eqz)]
-                I32XorEqz {
-                    @result: Reg,
-                    /// The register holding the left-hand side value.
-                    lhs: Reg,
-                    /// The register holding the right-hand side value.
-                    rhs: Reg,
-                },
-                /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-                #[snake_name(i32_xor_eqz_imm16)]
-                I32XorEqzImm16 {
+                /// Variant of [`Instruction::I32Xor`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_xor_imm16)]
+                I32XorImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
-                /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
+
+                /// Logical not-`i32.and` instruction.
                 ///
-                /// # Note
+                /// This usually is the result of fusing `i32.and` + `i32.eqz`.
+                #[snake_name(i32_nand)]
+                I32Nand {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I32Nand`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_nand_imm16)]
+                I32NandImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+                /// Logical not-`i32.or` instruction.
                 ///
-                /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
-                #[snake_name(i32_xor_imm16)]
-                I32XorImm16 {
+                /// This usually is the result of fusing `i32.or` + `i32.eqz`.
+                #[snake_name(i32_nor)]
+                I32Nor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I32Nor`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_nor_imm16)]
+                I32NorImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i32>,
+                },
+                /// Logical not-`i32.xor` instruction.
+                ///
+                /// This usually is the result of fusing `i32.xor` + `i32.eqz`.
+                #[snake_name(i32_xnor)]
+                I32Xnor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I32Xnor`] with 16-bit `rhs` immediate.
+                #[snake_name(i32_xnor_imm16)]
+                I32XnorImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3821,8 +4002,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i64` bitwise-and instruction: `r0 = r1 & r2`
-                #[snake_name(i64_and)]
-                I64And {
+                #[snake_name(i64_bitand)]
+                I64BitAnd {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3833,9 +4014,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64And`] for 16-bit constant values.
-                #[snake_name(i64_and_imm16)]
-                I64AndImm16 {
+                /// Optimized variant of [`Instruction::I64BitAnd`] for 16-bit constant values.
+                #[snake_name(i64_bitand_imm16)]
+                I64BitAndImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3844,8 +4025,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i64` bitwise-or instruction: `r0 = r1 & r2`
-                #[snake_name(i64_or)]
-                I64Or {
+                #[snake_name(i64_bitor)]
+                I64BitOr {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3856,9 +4037,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64Or`] for 16-bit constant values.
-                #[snake_name(i64_or_imm16)]
-                I64OrImm16 {
+                /// Optimized variant of [`Instruction::I64BitOr`] for 16-bit constant values.
+                #[snake_name(i64_bitor_imm16)]
+                I64BitOrImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,
@@ -3867,8 +4048,8 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
-                #[snake_name(i64_xor)]
-                I64Xor {
+                #[snake_name(i64_bitxor)]
+                I64BitXor {
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,
@@ -3879,9 +4060,125 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64Xor`] for 16-bit constant values.
+                /// Optimized variant of [`Instruction::I64BitXor`] for 16-bit constant values.
+                #[snake_name(i64_bitxor_imm16)]
+                I64BitXorImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i64>,
+                },
+
+                /// Logical `i64.and` instruction.
+                #[snake_name(i64_and)]
+                I64And {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I64And`] with 16-bit `rhs` immediate.
+                #[snake_name(i64_and_imm16)]
+                I64AndImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i64>,
+                },
+                /// Logical `i64.or` instruction.
+                #[snake_name(i64_or)]
+                I64Or {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I64Or`] with 16-bit `rhs` immediate.
+                #[snake_name(i64_or_imm16)]
+                I64OrImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i64>,
+                },
+                /// Logical `i64.xor` instruction.
+                #[snake_name(i64_xor)]
+                I64Xor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I64Xor`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_xor_imm16)]
                 I64XorImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i64>,
+                },
+
+                /// Logical not-`i64.and` instruction.
+                ///
+                /// This usually is the result of fusing `i64.and` + `i64.eqz`.
+                #[snake_name(i64_nand)]
+                I64Nand {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I64Nand`] with 16-bit `rhs` immediate.
+                #[snake_name(i64_nand_imm16)]
+                I64NandImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i64>,
+                },
+                /// Logical not-`i64.or` instruction.
+                ///
+                /// This usually is the result of fusing `i64.or` + `i64.eqz`.
+                #[snake_name(i64_nor)]
+                I64Nor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I64Nor`] with 16-bit `rhs` immediate.
+                #[snake_name(i64_nor_imm16)]
+                I64NorImm16 {
+                    @result: Reg,
+                    /// The register holding one of the operands.
+                    lhs: Reg,
+                    /// The 16-bit immediate value.
+                    rhs: Const16<i64>,
+                },
+                /// Logical not-`i64.xor` instruction.
+                ///
+                /// This usually is the result of fusing `i64.xor` + `i64.eqz`.
+                #[snake_name(i64_xnor)]
+                I64Xnor {
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Variant of [`Instruction::I64Xnor`] with 16-bit `rhs` immediate.
+                #[snake_name(i64_xnor_imm16)]
+                I64XnorImm16 {
                     @result: Reg,
                     /// The register holding one of the operands.
                     lhs: Reg,

@@ -248,9 +248,9 @@ macro_rules! for_each_comparator {
             I32And,
             I32Or,
             I32Xor,
-            I32AndEqz,
-            I32OrEqz,
-            I32XorEqz,
+            I32Nand,
+            I32Nor,
+            I32Xnor,
 
             I64Eq,
             I64Ne,
@@ -258,6 +258,13 @@ macro_rules! for_each_comparator {
             I64LtU,
             I64LeS,
             I64LeU,
+
+            I64And,
+            I64Or,
+            I64Xor,
+            I64Nand,
+            I64Nor,
+            I64Xnor,
 
             F32Eq,
             F32Ne,

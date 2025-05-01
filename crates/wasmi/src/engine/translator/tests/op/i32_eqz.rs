@@ -38,9 +38,9 @@ fn binop_i32_eqz() {
     test_for!(
         ("i32", "eq", Instruction::i32_ne),
         ("i32", "ne", Instruction::i32_eq),
-        ("i32", "and", Instruction::i32_and_eqz),
-        ("i32", "or", Instruction::i32_or_eqz),
-        ("i32", "xor", Instruction::i32_xor_eqz),
+        ("i32", "and", Instruction::i32_nand),
+        ("i32", "or", Instruction::i32_nor),
+        ("i32", "xor", Instruction::i32_xnor),
         ("i32", "lt_s", swap_ops!(Instruction::i32_le_s)),
         ("i32", "lt_u", swap_ops!(Instruction::i32_le_u)),
         ("i32", "le_s", swap_ops!(Instruction::i32_lt_s)),
@@ -112,9 +112,9 @@ fn binop_imm_i32_eqz_rhs() {
     test_for_imm!(
         (i32, "eq", Instruction::i32_ne_imm16),
         (i32, "ne", Instruction::i32_eq_imm16),
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
+        (i32, "and", Instruction::i32_nand_imm16),
+        (i32, "or", Instruction::i32_nor_imm16),
+        (i32, "xor", Instruction::i32_xnor_imm16),
         (i32, "lt_s", swap_ops!(Instruction::i32_le_s_imm16_lhs)),
         (u32, "lt_u", swap_ops!(Instruction::i32_le_u_imm16_lhs)),
         (i32, "le_s", swap_ops!(Instruction::i32_lt_s_imm16_lhs)),
@@ -175,9 +175,9 @@ fn binop_imm_i32_eqz_lhs() {
     test_for_imm!(
         (i32, "eq", Instruction::i32_ne_imm16),
         (i32, "ne", Instruction::i32_eq_imm16),
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
+        (i32, "and", Instruction::i32_nand_imm16),
+        (i32, "or", Instruction::i32_nor_imm16),
+        (i32, "xor", Instruction::i32_xnor_imm16),
         (i32, "lt_s", Instruction::i32_le_s_imm16_rhs),
         (u32, "lt_u", Instruction::i32_le_u_imm16_rhs),
         (i32, "le_s", Instruction::i32_lt_s_imm16_rhs),
@@ -229,6 +229,9 @@ fn binop_i32_eqz_double() {
     test_for!(
         ("i32", "eq", Instruction::i32_eq),
         ("i32", "ne", Instruction::i32_ne),
+        ("i32", "and", Instruction::i32_and),
+        ("i32", "or", Instruction::i32_or),
+        ("i32", "xor", Instruction::i32_xor),
         ("i32", "lt_s", Instruction::i32_lt_s),
         ("i32", "lt_u", Instruction::i32_lt_u),
         ("i32", "le_s", Instruction::i32_le_s),
@@ -294,6 +297,9 @@ fn binop_imm_i32_eqz_rhs_double() {
     test_for_imm!(
         (i32, "eq", Instruction::i32_eq_imm16),
         (i32, "ne", Instruction::i32_ne_imm16),
+        (i32, "and", Instruction::i32_and_imm16),
+        (i32, "or", Instruction::i32_or_imm16),
+        (i32, "xor", Instruction::i32_xor_imm16),
         (i32, "lt_s", Instruction::i32_lt_s_imm16_rhs),
         (u32, "lt_u", Instruction::i32_lt_u_imm16_rhs),
         (i32, "le_s", Instruction::i32_le_s_imm16_rhs),
@@ -355,6 +361,9 @@ fn binop_imm_i32_eqz_lhs_double() {
     test_for_imm!(
         (i32, "eq", Instruction::i32_eq_imm16),
         (i32, "ne", Instruction::i32_ne_imm16),
+        (i32, "and", Instruction::i32_and_imm16),
+        (i32, "or", Instruction::i32_or_imm16),
+        (i32, "xor", Instruction::i32_xor_imm16),
         (i32, "lt_s", swap_ops!(Instruction::i32_lt_s_imm16_lhs)),
         (u32, "lt_u", swap_ops!(Instruction::i32_lt_u_imm16_lhs)),
         (i32, "le_s", swap_ops!(Instruction::i32_le_s_imm16_lhs)),
@@ -371,130 +380,5 @@ fn binop_imm_i32_eqz_lhs_double() {
         (u64, "gt_u", Instruction::i64_lt_u_imm16_rhs),
         (i64, "ge_s", Instruction::i64_le_s_imm16_rhs),
         (u64, "ge_u", Instruction::i64_le_u_imm16_rhs),
-    );
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn binop_i32_eqz_double_invalid() {
-    fn test_for(
-        input_ty: &str,
-        op: &str,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-    ) {
-        let wasm = &format!(
-            r"
-            (module
-                (func (param {input_ty} {input_ty}) (result i32)
-                    (local.get 0)
-                    (local.get 1)
-                    ({input_ty}.{op})
-                    (i32.eqz)
-                    (i32.eqz)
-                )
-            )",
-        );
-        TranslationTest::new(wasm)
-            .expect_func_instrs([
-                expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
-                Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
-                Instruction::return_reg(2),
-            ])
-            .run()
-    }
-    test_for!(
-        ("i32", "and", Instruction::i32_and_eqz),
-        ("i32", "or", Instruction::i32_or_eqz),
-        ("i32", "xor", Instruction::i32_xor_eqz),
-    );
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn binop_imm_i32_eqz_rhs_double_invalid() {
-    fn test_for<T>(
-        op: &str,
-        value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-    ) where
-        T: Display + WasmTy,
-        Const16<T>: TryFrom<T>,
-        DisplayWasm<T>: Display,
-    {
-        let input_ty = T::NAME;
-        let display_value = DisplayWasm::from(value);
-        let wasm = &format!(
-            r"
-            (module
-                (func (param {input_ty} {input_ty}) (result i32)
-                    (local.get 0)
-                    ({input_ty}.const {display_value})
-                    ({input_ty}.{op})
-                    (i32.eqz)
-                    (i32.eqz)
-                )
-            )",
-        );
-        TranslationTest::new(wasm)
-            .expect_func_instrs([
-                expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
-                    Const16::try_from(value).ok().unwrap(),
-                ),
-                Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
-                Instruction::return_reg(2),
-            ])
-            .run()
-    }
-    test_for_imm!(
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
-    );
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn binop_imm_i32_eqz_lhs_double_invalid() {
-    fn test_for<T>(
-        op: &str,
-        value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-    ) where
-        T: Display + WasmTy,
-        Const16<T>: TryFrom<T>,
-        DisplayWasm<T>: Display,
-    {
-        let input_ty = T::NAME;
-        let display_value = DisplayWasm::from(value);
-        let wasm = &format!(
-            r"
-            (module
-                (func (param {input_ty} {input_ty}) (result i32)
-                    ({input_ty}.const {display_value})
-                    (local.get 0)
-                    ({input_ty}.{op})
-                    (i32.eqz)
-                    (i32.eqz)
-                )
-            )",
-        );
-        TranslationTest::new(wasm)
-            .expect_func_instrs([
-                expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
-                    Const16::try_from(value).ok().unwrap(),
-                ),
-                Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
-                Instruction::return_reg(2),
-            ])
-            .run()
-    }
-    test_for_imm!(
-        (i32, "and", Instruction::i32_and_eqz_imm16),
-        (i32, "or", Instruction::i32_or_eqz_imm16),
-        (i32, "xor", Instruction::i32_xor_eqz_imm16),
     );
 }

@@ -6,7 +6,7 @@ use crate::{
 };
 use core::fmt::Display;
 
-pub trait WasmTy: Copy + Display + Into<UntypedVal> + From<UntypedVal> {
+pub trait WasmTy: Copy + Display + From<u16> + Into<UntypedVal> + From<UntypedVal> {
     const NAME: &'static str;
     const VALUE_TYPE: ValType;
 
