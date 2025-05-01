@@ -729,8 +729,29 @@ fn if_forward_multi_value() {
 
     test_for(CmpOp::F32Eq, Instruction::branch_f32_ne);
     test_for(CmpOp::F32Ne, Instruction::branch_f32_eq);
+    test_for(CmpOp::F32Lt, Instruction::branch_f32_not_lt);
+    test_for(CmpOp::F32Le, Instruction::branch_f32_not_le);
+    test_for(
+        CmpOp::F32Gt,
+        swap_cmp_br_ops!(Instruction::branch_f32_not_lt),
+    );
+    test_for(
+        CmpOp::F32Ge,
+        swap_cmp_br_ops!(Instruction::branch_f32_not_le),
+    );
+
     test_for(CmpOp::F64Eq, Instruction::branch_f64_ne);
     test_for(CmpOp::F64Ne, Instruction::branch_f64_eq);
+    test_for(CmpOp::F64Lt, Instruction::branch_f64_not_lt);
+    test_for(CmpOp::F64Le, Instruction::branch_f64_not_le);
+    test_for(
+        CmpOp::F64Gt,
+        swap_cmp_br_ops!(Instruction::branch_f64_not_lt),
+    );
+    test_for(
+        CmpOp::F64Ge,
+        swap_cmp_br_ops!(Instruction::branch_f64_not_le),
+    );
 }
 
 #[test]
@@ -821,8 +842,29 @@ fn if_forward() {
 
     test_for(CmpOp::F32Eq, Instruction::branch_f32_ne);
     test_for(CmpOp::F32Ne, Instruction::branch_f32_eq);
+    test_for(CmpOp::F32Lt, Instruction::branch_f32_not_lt);
+    test_for(CmpOp::F32Le, Instruction::branch_f32_not_le);
+    test_for(
+        CmpOp::F32Gt,
+        swap_cmp_br_ops!(Instruction::branch_f32_not_lt),
+    );
+    test_for(
+        CmpOp::F32Ge,
+        swap_cmp_br_ops!(Instruction::branch_f32_not_le),
+    );
+
     test_for(CmpOp::F64Eq, Instruction::branch_f64_ne);
     test_for(CmpOp::F64Ne, Instruction::branch_f64_eq);
+    test_for(CmpOp::F64Lt, Instruction::branch_f64_not_lt);
+    test_for(CmpOp::F64Le, Instruction::branch_f64_not_le);
+    test_for(
+        CmpOp::F64Gt,
+        swap_cmp_br_ops!(Instruction::branch_f64_not_lt),
+    );
+    test_for(
+        CmpOp::F64Ge,
+        swap_cmp_br_ops!(Instruction::branch_f64_not_le),
+    );
 }
 
 #[test]
