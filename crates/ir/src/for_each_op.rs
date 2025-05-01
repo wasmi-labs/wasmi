@@ -767,6 +767,27 @@ macro_rules! for_each_op_grouped {
                     offset: BranchOffset16,
                 },
 
+                /// A fused `f32.not_lt` and branch instruction.
+                #[snake_name(branch_f32_not_lt)]
+                BranchF32NotLt {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `f32.not_le` and branch instruction.
+                #[snake_name(branch_f32_not_le)]
+                BranchF32NotLe {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+
                 /// A fused `f64.eq` and branch instruction.
                 #[snake_name(branch_f64_eq)]
                 BranchF64Eq {
@@ -801,6 +822,27 @@ macro_rules! for_each_op_grouped {
                 /// A fused `f64.le` and branch instruction.
                 #[snake_name(branch_f64_le)]
                 BranchF64Le {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+
+                /// A fused `f64.not_lt` and branch instruction.
+                #[snake_name(branch_f64_not_lt)]
+                BranchF64NotLt {
+                    /// The left-hand side operand to the branch conditional.
+                    lhs: Reg,
+                    /// The right-hand side operand to the branch conditional.
+                    rhs: Reg,
+                    /// The 16-bit encoded branch offset.
+                    offset: BranchOffset16,
+                },
+                /// A fused `f64.not_le` and branch instruction.
+                #[snake_name(branch_f64_not_le)]
+                BranchF64NotLe {
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,
                     /// The right-hand side operand to the branch conditional.
@@ -3138,6 +3180,24 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
+                /// Negated Wasm `f32.lt` equivalent Wasmi instruction.
+                #[snake_name(f32_not_lt)]
+                F32NotLt{
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Negated Wasm `f32.le` equivalent Wasmi instruction.
+                #[snake_name(f32_not_le)]
+                F32NotLe{
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
 
                 /// Wasm `f64.eq` equivalent Wasmi instruction.
                 #[snake_name(f64_eq)]
@@ -3169,6 +3229,24 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `f64.le` equivalent Wasmi instruction.
                 #[snake_name(f64_le)]
                 F64Le{
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Negated Wasm `f64.lt` equivalent Wasmi instruction.
+                #[snake_name(f64_not_lt)]
+                F64NotLt{
+                    @result: Reg,
+                    /// The register holding the left-hand side value.
+                    lhs: Reg,
+                    /// The register holding the right-hand side value.
+                    rhs: Reg,
+                },
+                /// Negated Wasm `f64.le` equivalent Wasmi instruction.
+                #[snake_name(f64_not_le)]
+                F64NotLe{
                     @result: Reg,
                     /// The register holding the left-hand side value.
                     lhs: Reg,

@@ -1164,10 +1164,14 @@ impl UpdateBranchOffset for Instruction {
             I::BranchF32Ne { offset, .. } |
             I::BranchF32Lt { offset, .. } |
             I::BranchF32Le { offset, .. } |
+            I::BranchF32NotLt { offset, .. } |
+            I::BranchF32NotLe { offset, .. } |
             I::BranchF64Eq { offset, .. } |
             I::BranchF64Ne { offset, .. } |
             I::BranchF64Lt { offset, .. } |
             I::BranchF64Le { offset, .. } |
+            I::BranchF64NotLt { offset, .. } |
+            I::BranchF64NotLe { offset, .. } |
             I::BranchI32AndImm16 { offset, .. } |
             I::BranchI32OrImm16 { offset, .. } |
             I::BranchI32XorImm16 { offset, .. } |
