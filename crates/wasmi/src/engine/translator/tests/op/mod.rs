@@ -22,6 +22,7 @@ mod global_set;
 mod i32_eqz;
 mod i32_nez;
 mod i64_eqz;
+mod i64_nez;
 mod if_;
 mod load;
 mod local_preserve;
