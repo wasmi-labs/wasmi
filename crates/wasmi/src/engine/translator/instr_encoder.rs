@@ -6,6 +6,7 @@ use super::{
     FuelInfo,
     LabelRef,
     LabelRegistry,
+    LogicalizeCmpInstr,
     NegateCmpInstr,
     TryIntoCmpBranchFallbackInstr,
     TryIntoCmpBranchInstr,
@@ -879,6 +880,51 @@ impl InstrEncoder {
             return Ok(false);
         };
         _ = mem::replace(self.instrs.get_mut(last_instr), negated);
+        stack.push_register(result)?;
+        Ok(true)
+    }
+
+    /// Tries to fuse a Wasm `i32.ne` instruction with 0 `rhs` value.
+    ///
+    /// Returns
+    ///
+    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(false)` if instruction fusion could not be applied.
+    /// - `Err(_)` if an error occurred.
+    pub fn fuse_i32_nez(
+        &mut self,
+        stack: &mut ValueStack,
+        lhs: Reg,
+        rhs: i32,
+    ) -> Result<bool, Error> {
+        if rhs != 0 {
+            // Case: `rhs` needs to be zero to apply this optimization.
+            return Ok(false);
+        }
+        let Some(last_instr) = self.last_instr else {
+            // If there is no last instruction there is no comparison instruction to negate.
+            return Ok(false);
+        };
+        let last_instruction = *self.instrs.get(last_instr);
+        let Some(result) = last_instruction.result() else {
+            // All negatable instructions have a single result register.
+            return Ok(false);
+        };
+        if matches!(stack.get_register_space(result), RegisterSpace::Local) {
+            // The instruction stores its result into a local variable which
+            // is an observable side effect which we are not allowed to mutate.
+            return Ok(false);
+        }
+        if result != lhs {
+            // The result of the instruction and the `lhs` are not equal
+            // thus indicating that we cannot fuse the instructions.
+            return Ok(false);
+        }
+        let Some(logicalized) = last_instruction.logicalize_cmp_instr() else {
+            // Last instruction is unable to be negated.
+            return Ok(false);
+        };
+        _ = mem::replace(self.instrs.get_mut(last_instr), logicalized);
         stack.push_register(result)?;
         Ok(true)
     }
