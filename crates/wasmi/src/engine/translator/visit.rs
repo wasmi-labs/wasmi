@@ -1108,7 +1108,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
                 Ok(false)
             },
-            // Self::no_custom_opt,
             |this, lhs: Reg, rhs: i32| {
                 this.alloc
                     .instr_encoder
