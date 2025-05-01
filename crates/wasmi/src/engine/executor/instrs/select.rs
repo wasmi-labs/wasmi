@@ -198,7 +198,7 @@ impl<'engine> Executor<'engine> {
         self.next_instr_at(2);
     }
 
-    /// Executes a fused `cmp`+`select` instruction with immediate `rhs` parameter.
+    /// Executes a fused `cmp`+`select` instruction with immediate `lhs` parameter.
     #[inline(always)]
     fn execute_cmp_select_imm_lhs_impl<T>(
         &mut self,
