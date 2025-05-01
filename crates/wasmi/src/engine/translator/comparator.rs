@@ -98,71 +98,62 @@ impl LogicalizeCmpInstr for Instruction {
         use Instruction as I;
         #[rustfmt::skip]
         let negated = match *self {
-            // i32
-            I::I32Eq { result, lhs, rhs } => I::i32_eq(result, lhs, rhs),
-            I::I32Ne { result, lhs, rhs } => I::i32_ne(result, lhs, rhs),
-            I::I32LeS { result, lhs, rhs } => I::i32_le_s(result, lhs, rhs),
-            I::I32LeU { result, lhs, rhs } => I::i32_le_u(result, lhs, rhs),
-            I::I32LtS { result, lhs, rhs } => I::i32_lt_s(result, lhs, rhs),
-            I::I32LtU { result, lhs, rhs } => I::i32_lt_u(result, lhs, rhs),
-            I::I32EqImm16 { result, lhs, rhs } => I::i32_eq_imm16(result, lhs, rhs),
-            I::I32NeImm16 { result, lhs, rhs } => I::i32_ne_imm16(result, lhs, rhs),
-            I::I32LeSImm16Rhs { result, lhs, rhs } => I::i32_le_s_imm16_rhs(result, lhs, rhs),
-            I::I32LeUImm16Rhs { result, lhs, rhs } => I::i32_le_u_imm16_rhs(result, lhs, rhs),
-            I::I32LtSImm16Rhs { result, lhs, rhs } => I::i32_lt_s_imm16_rhs(result, lhs, rhs),
-            I::I32LtUImm16Rhs { result, lhs, rhs } => I::i32_lt_u_imm16_rhs(result, lhs, rhs),
-            I::I32LeSImm16Lhs { result, lhs, rhs } => I::i32_le_s_imm16_lhs(result, lhs, rhs),
-            I::I32LeUImm16Lhs { result, lhs, rhs } => I::i32_le_u_imm16_lhs(result, lhs, rhs),
-            I::I32LtSImm16Lhs { result, lhs, rhs } => I::i32_lt_s_imm16_lhs(result, lhs, rhs),
-            I::I32LtUImm16Lhs { result, lhs, rhs } => I::i32_lt_u_imm16_lhs(result, lhs, rhs),
-            // i32 (special)
+            // Bitwise -> Logical
             I::I32BitAnd { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
             I::I32BitOr { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
             I::I32BitXor { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
             I::I32BitAndImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
             I::I32BitOrImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
             I::I32BitXorImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
-            I::I32And { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
-            I::I32Or { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
-            I::I32Xor { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
-            I::I32AndImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
-            I::I32OrImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
-            I::I32XorImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
-            I::I32Nand { result, lhs, rhs } => I::i32_nand(result, lhs, rhs),
-            I::I32Nor { result, lhs, rhs } => I::i32_nor(result, lhs, rhs),
-            I::I32Xnor { result, lhs, rhs } => I::i32_xnor(result, lhs, rhs),
-            I::I32NandImm16 { result, lhs, rhs } => I::i32_nand_imm16(result, lhs, rhs),
-            I::I32NorImm16 { result, lhs, rhs } => I::i32_nor_imm16(result, lhs, rhs),
-            I::I32XnorImm16 { result, lhs, rhs } => I::i32_xnor_imm16(result, lhs, rhs),
-            // i64
-            I::I64Eq { result, lhs, rhs } => I::i64_ne(result, lhs, rhs),
-            I::I64Ne { result, lhs, rhs } => I::i64_eq(result, lhs, rhs),
-            I::I64LeS { result, lhs, rhs } => I::i64_le_s(result, lhs, rhs),
-            I::I64LeU { result, lhs, rhs } => I::i64_le_u(result, lhs, rhs),
-            I::I64LtS { result, lhs, rhs } => I::i64_lt_s(result, lhs, rhs),
-            I::I64LtU { result, lhs, rhs } => I::i64_lt_u(result, lhs, rhs),
-            I::I64EqImm16 { result, lhs, rhs } => I::i64_eq_imm16(result, lhs, rhs),
-            I::I64NeImm16 { result, lhs, rhs } => I::i64_ne_imm16(result, lhs, rhs),
-            I::I64LeSImm16Rhs { result, lhs, rhs } => I::i64_le_s_imm16_rhs(result, lhs, rhs),
-            I::I64LeUImm16Rhs { result, lhs, rhs } => I::i64_le_u_imm16_rhs(result, lhs, rhs),
-            I::I64LtSImm16Rhs { result, lhs, rhs } => I::i64_lt_s_imm16_rhs(result, lhs, rhs),
-            I::I64LtUImm16Rhs { result, lhs, rhs } => I::i64_lt_u_imm16_rhs(result, lhs, rhs),
-            I::I64LeSImm16Lhs { result, lhs, rhs } => I::i64_le_s_imm16_lhs(result, lhs, rhs),
-            I::I64LeUImm16Lhs { result, lhs, rhs } => I::i64_le_u_imm16_lhs(result, lhs, rhs),
-            I::I64LtSImm16Lhs { result, lhs, rhs } => I::i64_lt_s_imm16_lhs(result, lhs, rhs),
-            I::I64LtUImm16Lhs { result, lhs, rhs } => I::i64_lt_u_imm16_lhs(result, lhs, rhs),
-            // f32
-            //
-            // Note: due to NaN values always comparing as `false` we unfortunately
-            //       cannot negate `f32.{lt,le}` comparison instructions.
-            I::F32Eq { result, lhs, rhs } => I::f32_eq(result, lhs, rhs),
-            I::F32Ne { result, lhs, rhs } => I::f32_ne(result, lhs, rhs),
-            // f64
-            //
-            // Note: due to NaN values always comparing as `false` we unfortunately
-            //       cannot negate `f64.{lt,le}` comparison instructions.
-            I::F64Eq { result, lhs, rhs } => I::f64_eq(result, lhs, rhs),
-            I::F64Ne { result, lhs, rhs } => I::f64_ne(result, lhs, rhs),
+            // Logical -> Logical
+            I::I32Eq { .. } |
+            I::I32Ne { .. } |
+            I::I32LeS { .. } |
+            I::I32LeU { .. } |
+            I::I32LtS { .. } |
+            I::I32LtU { .. } |
+            I::I32EqImm16 { .. } |
+            I::I32NeImm16 { .. } |
+            I::I32LeSImm16Rhs { .. } |
+            I::I32LeUImm16Rhs { .. } |
+            I::I32LtSImm16Rhs { .. } |
+            I::I32LtUImm16Rhs { .. } |
+            I::I32LeSImm16Lhs { .. } |
+            I::I32LeUImm16Lhs { .. } |
+            I::I32LtSImm16Lhs { .. } |
+            I::I32LtUImm16Lhs { .. } |
+            I::I32And { .. } |
+            I::I32Or { .. } |
+            I::I32Xor { .. } |
+            I::I32AndImm16 { .. } |
+            I::I32OrImm16 { .. } |
+            I::I32XorImm16 { .. } |
+            I::I32Nand { .. } |
+            I::I32Nor { .. } |
+            I::I32Xnor { .. } |
+            I::I32NandImm16 { .. } |
+            I::I32NorImm16 { .. } |
+            I::I32XnorImm16 { .. } |
+            I::I64Eq { .. } |
+            I::I64Ne { .. } |
+            I::I64LeS { .. } |
+            I::I64LeU { .. } |
+            I::I64LtS { .. } |
+            I::I64LtU { .. } |
+            I::I64EqImm16 { .. } |
+            I::I64NeImm16 { .. } |
+            I::I64LeSImm16Rhs { .. } |
+            I::I64LeUImm16Rhs { .. } |
+            I::I64LtSImm16Rhs { .. } |
+            I::I64LtUImm16Rhs { .. } |
+            I::I64LeSImm16Lhs { .. } |
+            I::I64LeUImm16Lhs { .. } |
+            I::I64LtSImm16Lhs { .. } |
+            I::I64LtUImm16Lhs { .. } |
+            I::F32Eq { .. } |
+            I::F32Ne { .. } |
+            I::F64Eq { .. } |
+            I::F64Ne { .. } => *self,
             _ => return None,
         };
         Some(negated)
