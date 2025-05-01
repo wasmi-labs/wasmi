@@ -827,17 +827,22 @@ fn if_forward() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn block_i32_eqz_fuse() {
-    fn test_for(op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+fn block_eqz_fuse() {
+    fn test_for(op: CmpOp, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+        let input_ty = op.param_ty();
+        let result_ty = op.result_ty();
+        let input_ty = DisplayValueType::from(input_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let op_str = op.op_str();
         let wasm = format!(
             r"
             (module
-                (func (param i32 i32)
+                (func (param {input_ty} {input_ty})
                     (block
                         (local.get 0)
                         (local.get 1)
-                        (i32.{op})
-                        (i32.eqz)
+                        ({input_ty}.{op_str})
+                        ({result_ty}.eqz)
                         (br_if 0)
                     )
                 )
@@ -851,23 +856,39 @@ fn block_i32_eqz_fuse() {
             .run()
     }
 
-    test_for("eq", Instruction::branch_i32_ne);
-    test_for("ne", Instruction::branch_i32_eq);
-    test_for("and", Instruction::branch_i32_nand);
-    test_for("or", Instruction::branch_i32_nor);
-    test_for("xor", Instruction::branch_i32_xnor);
+    test_for(CmpOp::I32Eq, Instruction::branch_i32_ne);
+    test_for(CmpOp::I32Ne, Instruction::branch_i32_eq);
+    test_for(CmpOp::I32And, Instruction::branch_i32_nand);
+    test_for(CmpOp::I32Or, Instruction::branch_i32_nor);
+    test_for(CmpOp::I32Xor, Instruction::branch_i32_xnor);
+
+    test_for(CmpOp::I64Eq, Instruction::branch_i64_ne);
+    test_for(CmpOp::I64Ne, Instruction::branch_i64_eq);
+    test_for(CmpOp::I64And, Instruction::branch_i64_nand);
+    test_for(CmpOp::I64Or, Instruction::branch_i64_nor);
+    test_for(CmpOp::I64Xor, Instruction::branch_i64_xnor);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn if_i32_eqz_fuse() {
-    fn test_for(op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+fn if_eqz_fuse() {
+    fn test_for(op: CmpOp, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+        let input_ty = op.param_ty();
+        let result_ty = op.result_ty();
+        let input_ty = DisplayValueType::from(input_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let op_str = op.op_str();
         let wasm = format!(
             r"
             (module
-                (func (param i32 i32)
+                (func (param {input_ty} {input_ty})
                     (if
-                        (i32.eqz (i32.{op} (local.get 0) (local.get 1)))
+                        ({result_ty}.eqz
+                            ({input_ty}.{op_str}
+                                (local.get 0)
+                                (local.get 1)
+                            )
+                        )
                         (then)
                     )
                 )
@@ -881,11 +902,17 @@ fn if_i32_eqz_fuse() {
             .run()
     }
 
-    test_for("eq", Instruction::branch_i32_eq);
-    test_for("ne", Instruction::branch_i32_ne);
-    test_for("and", Instruction::branch_i32_and);
-    test_for("or", Instruction::branch_i32_or);
-    test_for("xor", Instruction::branch_i32_xor);
+    test_for(CmpOp::I32Eq, Instruction::branch_i32_eq);
+    test_for(CmpOp::I32Ne, Instruction::branch_i32_ne);
+    test_for(CmpOp::I32And, Instruction::branch_i32_and);
+    test_for(CmpOp::I32Or, Instruction::branch_i32_or);
+    test_for(CmpOp::I32Xor, Instruction::branch_i32_xor);
+
+    test_for(CmpOp::I64Eq, Instruction::branch_i64_eq);
+    test_for(CmpOp::I64Ne, Instruction::branch_i64_ne);
+    test_for(CmpOp::I64And, Instruction::branch_i64_and);
+    test_for(CmpOp::I64Or, Instruction::branch_i64_or);
+    test_for(CmpOp::I64Xor, Instruction::branch_i64_xor);
 }
 
 #[test]
