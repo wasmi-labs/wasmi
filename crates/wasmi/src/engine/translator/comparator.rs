@@ -271,6 +271,25 @@ impl TryIntoCmpBranchInstr for Instruction {
             I::I64LeUImm16Rhs { lhs, rhs, .. } => I::branch_i64_le_u_imm16_rhs(lhs, rhs, offset),
             I::I64LtSImm16Rhs { lhs, rhs, .. } => I::branch_i64_lt_s_imm16_rhs(lhs, rhs, offset),
             I::I64LtUImm16Rhs { lhs, rhs, .. } => I::branch_i64_lt_u_imm16_rhs(lhs, rhs, offset),
+            // i64 (and, or, xor)
+            I::I64BitAnd { lhs, rhs, .. } => I::branch_i64_and(lhs, rhs, offset),
+            I::I64BitOr { lhs, rhs, .. } => I::branch_i64_or(lhs, rhs, offset),
+            I::I64BitXor { lhs, rhs, .. } => I::branch_i64_xor(lhs, rhs, offset),
+            I::I64And { lhs, rhs, .. } => I::branch_i64_and(lhs, rhs, offset),
+            I::I64Or { lhs, rhs, .. } => I::branch_i64_or(lhs, rhs, offset),
+            I::I64Xor { lhs, rhs, .. } => I::branch_i64_xor(lhs, rhs, offset),
+            I::I64Nand { lhs, rhs, .. } => I::branch_i64_nand(lhs, rhs, offset),
+            I::I64Nor { lhs, rhs, .. } => I::branch_i64_nor(lhs, rhs, offset),
+            I::I64Xnor { lhs, rhs, .. } => I::branch_i64_xnor(lhs, rhs, offset),
+            I::I64BitAndImm16 { lhs, rhs, .. } => I::branch_i64_and_imm16(lhs, rhs, offset),
+            I::I64BitOrImm16 { lhs, rhs, .. } => I::branch_i64_or_imm16(lhs, rhs, offset),
+            I::I64BitXorImm16 { lhs, rhs, .. } => I::branch_i64_xor_imm16(lhs, rhs, offset),
+            I::I64AndImm16 { lhs, rhs, .. } => I::branch_i64_and_imm16(lhs, rhs, offset),
+            I::I64OrImm16 { lhs, rhs, .. } => I::branch_i64_or_imm16(lhs, rhs, offset),
+            I::I64XorImm16 { lhs, rhs, .. } => I::branch_i64_xor_imm16(lhs, rhs, offset),
+            I::I64NandImm16 { lhs, rhs, .. } => I::branch_i64_nand_imm16(lhs, rhs, offset),
+            I::I64NorImm16 { lhs, rhs, .. } => I::branch_i64_nor_imm16(lhs, rhs, offset),
+            I::I64XnorImm16 { lhs, rhs, .. } => I::branch_i64_xnor_imm16(lhs, rhs, offset),
             // f32
             I::F32Eq { lhs, rhs, .. } => I::branch_f32_eq(lhs, rhs, offset),
             I::F32Ne { lhs, rhs, .. } => I::branch_f32_ne(lhs, rhs, offset),
@@ -320,6 +339,12 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchI32LtU { lhs, rhs, .. }
             | I::BranchI32LeS { lhs, rhs, .. }
             | I::BranchI32LeU { lhs, rhs, .. }
+            | I::BranchI64And { lhs, rhs, .. }
+            | I::BranchI64Or { lhs, rhs, .. }
+            | I::BranchI64Xor { lhs, rhs, .. }
+            | I::BranchI64Nand { lhs, rhs, .. }
+            | I::BranchI64Nor { lhs, rhs, .. }
+            | I::BranchI64Xnor { lhs, rhs, .. }
             | I::BranchI64Eq { lhs, rhs, .. }
             | I::BranchI64Ne { lhs, rhs, .. }
             | I::BranchI64LtS { lhs, rhs, .. }
@@ -362,6 +387,12 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
                 let lhs = stack.alloc_const(u32::from(lhs))?;
                 (lhs, rhs)
             }
+            | I::BranchI64AndImm16 { lhs, rhs, .. }
+            | I::BranchI64OrImm16 { lhs, rhs, .. }
+            | I::BranchI64XorImm16 { lhs, rhs, .. }
+            | I::BranchI64NandImm16 { lhs, rhs, .. }
+            | I::BranchI64NorImm16 { lhs, rhs, .. }
+            | I::BranchI64XnorImm16 { lhs, rhs, .. }
             | I::BranchI64EqImm16 { lhs, rhs, .. }
             | I::BranchI64NeImm16 { lhs, rhs, .. }
             | I::BranchI64LtSImm16Rhs { lhs, rhs, .. }

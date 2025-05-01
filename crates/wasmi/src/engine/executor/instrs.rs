@@ -259,6 +259,42 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI32LeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_u_imm16_rhs(lhs, rhs, offset)
                 }
+                Instr::BranchI64And { lhs, rhs, offset } => {
+                    self.execute_branch_i64_and(lhs, rhs, offset)
+                }
+                Instr::BranchI64AndImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i64_and_imm16(lhs, rhs, offset)
+                }
+                Instr::BranchI64Or { lhs, rhs, offset } => {
+                    self.execute_branch_i64_or(lhs, rhs, offset)
+                }
+                Instr::BranchI64OrImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i64_or_imm16(lhs, rhs, offset)
+                }
+                Instr::BranchI64Xor { lhs, rhs, offset } => {
+                    self.execute_branch_i64_xor(lhs, rhs, offset)
+                }
+                Instr::BranchI64XorImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i64_xor_imm16(lhs, rhs, offset)
+                }
+                Instr::BranchI64Nand { lhs, rhs, offset } => {
+                    self.execute_branch_i64_nand(lhs, rhs, offset)
+                }
+                Instr::BranchI64NandImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i64_nand_imm16(lhs, rhs, offset)
+                }
+                Instr::BranchI64Nor { lhs, rhs, offset } => {
+                    self.execute_branch_i64_nor(lhs, rhs, offset)
+                }
+                Instr::BranchI64NorImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i64_nor_imm16(lhs, rhs, offset)
+                }
+                Instr::BranchI64Xnor { lhs, rhs, offset } => {
+                    self.execute_branch_i64_xnor(lhs, rhs, offset)
+                }
+                Instr::BranchI64XnorImm16 { lhs, rhs, offset } => {
+                    self.execute_branch_i64_xnor_imm16(lhs, rhs, offset)
+                }
                 Instr::BranchI64Eq { lhs, rhs, offset } => {
                     self.execute_branch_i64_eq(lhs, rhs, offset)
                 }

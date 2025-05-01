@@ -308,6 +308,12 @@ impl_execute_branch_binop! {
     (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
     (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
 
+    (i64, Instruction::BranchI64And, execute_branch_i64_and, <i64 as UntypedValueExt>::and),
+    (i64, Instruction::BranchI64Or, execute_branch_i64_or, <i64 as UntypedValueExt>::or),
+    (i64, Instruction::BranchI64Xor, execute_branch_i64_xor, <i64 as UntypedValueExt>::xor),
+    (i64, Instruction::BranchI64Nand, execute_branch_i64_nand, <i64 as UntypedValueExt>::nand),
+    (i64, Instruction::BranchI64Nor, execute_branch_i64_nor, <i64 as UntypedValueExt>::nor),
+    (i64, Instruction::BranchI64Xnor, execute_branch_i64_xnor, <i64 as UntypedValueExt>::xnor),
     (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
     (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
     (i64, Instruction::BranchI64LtS, execute_branch_i64_lt_s, cmp_lt),
@@ -352,6 +358,12 @@ impl_execute_branch_binop_imm16_rhs! {
     (i32, Instruction::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
     (u32, Instruction::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
 
+    (i64, Instruction::BranchI64AndImm16, execute_branch_i64_and_imm16, <i64 as UntypedValueExt>::and),
+    (i64, Instruction::BranchI64OrImm16, execute_branch_i64_or_imm16, <i64 as UntypedValueExt>::or),
+    (i64, Instruction::BranchI64XorImm16, execute_branch_i64_xor_imm16, <i64 as UntypedValueExt>::xor),
+    (i64, Instruction::BranchI64NandImm16, execute_branch_i64_nand_imm16, <i64 as UntypedValueExt>::nand),
+    (i64, Instruction::BranchI64NorImm16, execute_branch_i64_nor_imm16, <i64 as UntypedValueExt>::nor),
+    (i64, Instruction::BranchI64XnorImm16, execute_branch_i64_xnor_imm16, <i64 as UntypedValueExt>::xnor),
     (i64, Instruction::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
     (i64, Instruction::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
     (i64, Instruction::BranchI64LtSImm16Rhs, execute_branch_i64_lt_s_imm16_rhs, cmp_lt),
@@ -424,6 +436,24 @@ impl Executor<'_> {
             C::I64LtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_lt),
             C::I64LeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_le),
             C::I64LeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_le),
+            C::I64And => {
+                self.execute_branch_binop::<i64>(lhs, rhs, offset, <i64 as UntypedValueExt>::and)
+            }
+            C::I64Or => {
+                self.execute_branch_binop::<i64>(lhs, rhs, offset, <i64 as UntypedValueExt>::or)
+            }
+            C::I64Xor => {
+                self.execute_branch_binop::<i64>(lhs, rhs, offset, <i64 as UntypedValueExt>::xor)
+            }
+            C::I64Nand => {
+                self.execute_branch_binop::<i64>(lhs, rhs, offset, <i64 as UntypedValueExt>::nand)
+            }
+            C::I64Nor => {
+                self.execute_branch_binop::<i64>(lhs, rhs, offset, <i64 as UntypedValueExt>::nor)
+            }
+            C::I64Xnor => {
+                self.execute_branch_binop::<i64>(lhs, rhs, offset, <i64 as UntypedValueExt>::xnor)
+            }
             C::F32Eq => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_eq),
             C::F32Ne => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ne),
             C::F32Lt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_lt),
