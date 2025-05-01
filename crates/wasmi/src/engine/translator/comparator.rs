@@ -31,7 +31,7 @@ impl NegateCmpInstr for Instruction {
             I::I32LeUImm16Lhs { result, lhs, rhs } => I::i32_lt_u_imm16_rhs(result, rhs, lhs),
             I::I32LtSImm16Lhs { result, lhs, rhs } => I::i32_le_s_imm16_rhs(result, rhs, lhs),
             I::I32LtUImm16Lhs { result, lhs, rhs } => I::i32_le_u_imm16_rhs(result, rhs, lhs),
-            // i32 (special)
+            // i32 (and, or, xor)
             I::I32BitAnd { result, lhs, rhs } => I::i32_nand(result, lhs, rhs),
             I::I32BitOr { result, lhs, rhs } => I::i32_nor(result, lhs, rhs),
             I::I32BitXor { result, lhs, rhs } => I::i32_xnor(result, lhs, rhs),
@@ -67,6 +67,25 @@ impl NegateCmpInstr for Instruction {
             I::I64LeUImm16Lhs { result, lhs, rhs } => I::i64_lt_u_imm16_rhs(result, rhs, lhs),
             I::I64LtSImm16Lhs { result, lhs, rhs } => I::i64_le_s_imm16_rhs(result, rhs, lhs),
             I::I64LtUImm16Lhs { result, lhs, rhs } => I::i64_le_u_imm16_rhs(result, rhs, lhs),
+            // i64 (and, or, xor)
+            I::I64BitAnd { result, lhs, rhs } => I::i64_nand(result, lhs, rhs),
+            I::I64BitOr { result, lhs, rhs } => I::i64_nor(result, lhs, rhs),
+            I::I64BitXor { result, lhs, rhs } => I::i64_xnor(result, lhs, rhs),
+            I::I64BitAndImm16 { result, lhs, rhs } => I::i64_nand_imm16(result, lhs, rhs),
+            I::I64BitOrImm16 { result, lhs, rhs } => I::i64_nor_imm16(result, lhs, rhs),
+            I::I64BitXorImm16 { result, lhs, rhs } => I::i64_xnor_imm16(result, lhs, rhs),
+            I::I64And { result, lhs, rhs } => I::i64_nand(result, lhs, rhs),
+            I::I64Or { result, lhs, rhs } => I::i64_nor(result, lhs, rhs),
+            I::I64Xor { result, lhs, rhs } => I::i64_xnor(result, lhs, rhs),
+            I::I64AndImm16 { result, lhs, rhs } => I::i64_nand_imm16(result, lhs, rhs),
+            I::I64OrImm16 { result, lhs, rhs } => I::i64_nor_imm16(result, lhs, rhs),
+            I::I64XorImm16 { result, lhs, rhs } => I::i64_xnor_imm16(result, lhs, rhs),
+            I::I64Nand { result, lhs, rhs } => I::i64_and(result, lhs, rhs),
+            I::I64Nor { result, lhs, rhs } => I::i64_or(result, lhs, rhs),
+            I::I64Xnor { result, lhs, rhs } => I::i64_xor(result, lhs, rhs),
+            I::I64NandImm16 { result, lhs, rhs } => I::i64_and_imm16(result, lhs, rhs),
+            I::I64NorImm16 { result, lhs, rhs } => I::i64_or_imm16(result, lhs, rhs),
+            I::I64XnorImm16 { result, lhs, rhs } => I::i64_xor_imm16(result, lhs, rhs),
             // f32
             //
             // Note: due to NaN values always comparing as `false` we unfortunately
@@ -98,13 +117,20 @@ impl LogicalizeCmpInstr for Instruction {
         use Instruction as I;
         #[rustfmt::skip]
         let negated = match *self {
-            // Bitwise -> Logical
+            // Bitwise -> Logical: i32
             I::I32BitAnd { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
             I::I32BitOr { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
             I::I32BitXor { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
             I::I32BitAndImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
             I::I32BitOrImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
             I::I32BitXorImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
+            // Bitwise -> Logical: i64
+            I::I64BitAnd { result, lhs, rhs } => I::i64_and(result, lhs, rhs),
+            I::I64BitOr { result, lhs, rhs } => I::i64_or(result, lhs, rhs),
+            I::I64BitXor { result, lhs, rhs } => I::i64_xor(result, lhs, rhs),
+            I::I64BitAndImm16 { result, lhs, rhs } => I::i64_and_imm16(result, lhs, rhs),
+            I::I64BitOrImm16 { result, lhs, rhs } => I::i64_or_imm16(result, lhs, rhs),
+            I::I64BitXorImm16 { result, lhs, rhs } => I::i64_xor_imm16(result, lhs, rhs),
             // Logical -> Logical
             I::I32Eq { .. } |
             I::I32Ne { .. } |
@@ -150,6 +176,18 @@ impl LogicalizeCmpInstr for Instruction {
             I::I64LeUImm16Lhs { .. } |
             I::I64LtSImm16Lhs { .. } |
             I::I64LtUImm16Lhs { .. } |
+            I::I64And { .. } |
+            I::I64Or { .. } |
+            I::I64Xor { .. } |
+            I::I64AndImm16 { .. } |
+            I::I64OrImm16 { .. } |
+            I::I64XorImm16 { .. } |
+            I::I64Nand { .. } |
+            I::I64Nor { .. } |
+            I::I64Xnor { .. } |
+            I::I64NandImm16 { .. } |
+            I::I64NorImm16 { .. } |
+            I::I64XnorImm16 { .. } |
             I::F32Eq { .. } |
             I::F32Ne { .. } |
             I::F64Eq { .. } |
@@ -197,7 +235,7 @@ impl TryIntoCmpBranchInstr for Instruction {
             I::I32LeUImm16Rhs { lhs, rhs, .. } => I::branch_i32_le_u_imm16_rhs(lhs, rhs, offset),
             I::I32LtSImm16Rhs { lhs, rhs, .. } => I::branch_i32_lt_s_imm16_rhs(lhs, rhs, offset),
             I::I32LtUImm16Rhs { lhs, rhs, .. } => I::branch_i32_lt_u_imm16_rhs(lhs, rhs, offset),
-            // i32 (special)
+            // i32 (and, or, xor)
             I::I32BitAnd { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
             I::I32BitOr { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
             I::I32BitXor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
