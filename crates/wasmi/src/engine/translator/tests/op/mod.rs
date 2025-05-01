@@ -20,6 +20,7 @@ mod copy;
 mod global_get;
 mod global_set;
 mod i32_eqz;
+mod i32_nez;
 mod if_;
 mod load;
 mod local_preserve;
