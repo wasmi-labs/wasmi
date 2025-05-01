@@ -116,7 +116,7 @@ impl LogicalizeCmpInstr for Instruction {
     fn logicalize_cmp_instr(&self) -> Option<Self> {
         use Instruction as I;
         #[rustfmt::skip]
-        let negated = match *self {
+        let logicalized = match *self {
             // Bitwise -> Logical: i32
             I::I32BitAnd { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
             I::I32BitOr { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
@@ -194,7 +194,7 @@ impl LogicalizeCmpInstr for Instruction {
             I::F64Ne { .. } => *self,
             _ => return None,
         };
-        Some(negated)
+        Some(logicalized)
     }
 }
 
