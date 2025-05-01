@@ -9,19 +9,169 @@ use std::{
     string::String,
 };
 
+#[derive(Debug, Copy, Clone)]
+pub enum CmpOp {
+    // i32
+    I32And,
+    I32Or,
+    I32Xor,
+    I32Eq,
+    I32Ne,
+    I32LtS,
+    I32LtU,
+    I32LeS,
+    I32LeU,
+    I32GtS,
+    I32GtU,
+    I32GeS,
+    I32GeU,
+    // i64
+    I64And,
+    I64Or,
+    I64Xor,
+    I64Eq,
+    I64Ne,
+    I64LtS,
+    I64LtU,
+    I64LeS,
+    I64LeU,
+    I64GtS,
+    I64GtU,
+    I64GeS,
+    I64GeU,
+    // f32
+    F32Eq,
+    F32Ne,
+    F32Lt,
+    F32Le,
+    F32Gt,
+    F32Ge,
+    // f64
+    F64Eq,
+    F64Ne,
+    F64Lt,
+    F64Le,
+    F64Gt,
+    F64Ge,
+}
+
+impl CmpOp {
+    /// Returns the Wasm parameter type of the [`CmpOp`].
+    pub fn param_ty(self) -> ValType {
+        match self {
+            CmpOp::I32And
+            | CmpOp::I32Or
+            | CmpOp::I32Xor
+            | CmpOp::I32Eq
+            | CmpOp::I32Ne
+            | CmpOp::I32LtS
+            | CmpOp::I32LtU
+            | CmpOp::I32LeS
+            | CmpOp::I32LeU
+            | CmpOp::I32GtS
+            | CmpOp::I32GtU
+            | CmpOp::I32GeS
+            | CmpOp::I32GeU => ValType::I32,
+            CmpOp::I64And
+            | CmpOp::I64Or
+            | CmpOp::I64Xor
+            | CmpOp::I64Eq
+            | CmpOp::I64Ne
+            | CmpOp::I64LtS
+            | CmpOp::I64LtU
+            | CmpOp::I64LeS
+            | CmpOp::I64LeU
+            | CmpOp::I64GtS
+            | CmpOp::I64GtU
+            | CmpOp::I64GeS
+            | CmpOp::I64GeU => ValType::I64,
+            CmpOp::F32Eq
+            | CmpOp::F32Ne
+            | CmpOp::F32Lt
+            | CmpOp::F32Le
+            | CmpOp::F32Gt
+            | CmpOp::F32Ge => ValType::F32,
+            CmpOp::F64Eq
+            | CmpOp::F64Ne
+            | CmpOp::F64Lt
+            | CmpOp::F64Le
+            | CmpOp::F64Gt
+            | CmpOp::F64Ge => ValType::F64,
+        }
+    }
+
+    /// Returns the Wasm result type of the [`CmpOp`].
+    pub fn result_ty(self) -> ValType {
+        match self {
+            CmpOp::I64And | CmpOp::I64Or | CmpOp::I64Xor => ValType::I64,
+            _ => ValType::I32,
+        }
+    }
+
+    /// Returns a string representation of the Wasm operator without type annotation.
+    pub fn op_str(self) -> &'static str {
+        match self {
+            CmpOp::I32And => "and",
+            CmpOp::I32Or => "or",
+            CmpOp::I32Xor => "xor",
+            CmpOp::I32Eq => "eq",
+            CmpOp::I32Ne => "ne",
+            CmpOp::I32LtS => "lt_s",
+            CmpOp::I32LtU => "lt_u",
+            CmpOp::I32LeS => "le_s",
+            CmpOp::I32LeU => "le_u",
+            CmpOp::I32GtS => "gt_s",
+            CmpOp::I32GtU => "gt_u",
+            CmpOp::I32GeS => "ge_s",
+            CmpOp::I32GeU => "ge_u",
+            CmpOp::I64And => "and",
+            CmpOp::I64Or => "or",
+            CmpOp::I64Xor => "xor",
+            CmpOp::I64Eq => "eq",
+            CmpOp::I64Ne => "ne",
+            CmpOp::I64LtS => "lt_s",
+            CmpOp::I64LtU => "lt_u",
+            CmpOp::I64LeS => "le_s",
+            CmpOp::I64LeU => "le_u",
+            CmpOp::I64GtS => "gt_s",
+            CmpOp::I64GtU => "gt_u",
+            CmpOp::I64GeS => "ge_s",
+            CmpOp::I64GeU => "ge_u",
+            CmpOp::F32Eq => "eq",
+            CmpOp::F32Ne => "ne",
+            CmpOp::F32Lt => "lt",
+            CmpOp::F32Le => "le",
+            CmpOp::F32Gt => "gt",
+            CmpOp::F32Ge => "ge",
+            CmpOp::F64Eq => "eq",
+            CmpOp::F64Ne => "ne",
+            CmpOp::F64Lt => "lt",
+            CmpOp::F64Le => "le",
+            CmpOp::F64Gt => "gt",
+            CmpOp::F64Ge => "ge",
+        }
+    }
+}
+
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward() {
-    fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
-        let ty = DisplayValueType::from(ty);
+    fn test_for(op: CmpOp, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+        let input_ty = op.param_ty();
+        let result_ty = op.result_ty();
+        let input_ty = DisplayValueType::from(input_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let op_str = op.op_str();
         let wasm = format!(
             r"
             (module
-                (func (param {ty} {ty})
+                (func (param {input_ty} {input_ty})
                     (loop
                         (local.get 0)
                         (local.get 1)
-                        ({ty}.{op})
+                        ({input_ty}.{op_str})
+                        ({result_ty}.const 0)
+                        ({result_ty}.ne)
                         (br_if 0)
                     )
                 )
@@ -35,92 +185,71 @@ fn loop_backward() {
             .run()
     }
 
-    test_for(ValType::I32, "and", Instruction::branch_i32_and);
-    test_for(ValType::I32, "or", Instruction::branch_i32_or);
-    test_for(ValType::I32, "xor", Instruction::branch_i32_xor);
-    test_for(ValType::I32, "eq", Instruction::branch_i32_eq);
-    test_for(ValType::I32, "ne", Instruction::branch_i32_ne);
-    test_for(ValType::I32, "lt_s", Instruction::branch_i32_lt_s);
-    test_for(ValType::I32, "lt_u", Instruction::branch_i32_lt_u);
-    test_for(ValType::I32, "le_s", Instruction::branch_i32_le_s);
-    test_for(ValType::I32, "le_u", Instruction::branch_i32_le_u);
+    test_for(CmpOp::I32And, Instruction::branch_i32_and);
+    test_for(CmpOp::I32Or, Instruction::branch_i32_or);
+    test_for(CmpOp::I32Xor, Instruction::branch_i32_xor);
+    test_for(CmpOp::I32Eq, Instruction::branch_i32_eq);
+    test_for(CmpOp::I32Ne, Instruction::branch_i32_ne);
+    test_for(CmpOp::I32LtS, Instruction::branch_i32_lt_s);
+    test_for(CmpOp::I32LtU, Instruction::branch_i32_lt_u);
+    test_for(CmpOp::I32LeS, Instruction::branch_i32_le_s);
+    test_for(CmpOp::I32LeU, Instruction::branch_i32_le_u);
     test_for(
-        ValType::I32,
-        "gt_s",
+        CmpOp::I32GtS,
         swap_cmp_br_ops!(Instruction::branch_i32_lt_s),
     );
     test_for(
-        ValType::I32,
-        "gt_u",
+        CmpOp::I32GtU,
         swap_cmp_br_ops!(Instruction::branch_i32_lt_u),
     );
     test_for(
-        ValType::I32,
-        "ge_s",
+        CmpOp::I32GeS,
         swap_cmp_br_ops!(Instruction::branch_i32_le_s),
     );
     test_for(
-        ValType::I32,
-        "ge_u",
+        CmpOp::I32GeU,
         swap_cmp_br_ops!(Instruction::branch_i32_le_u),
     );
 
-    test_for(ValType::I64, "eq", Instruction::branch_i64_eq);
-    test_for(ValType::I64, "ne", Instruction::branch_i64_ne);
-    test_for(ValType::I64, "lt_s", Instruction::branch_i64_lt_s);
-    test_for(ValType::I64, "lt_u", Instruction::branch_i64_lt_u);
-    test_for(ValType::I64, "le_s", Instruction::branch_i64_le_s);
-    test_for(ValType::I64, "le_u", Instruction::branch_i64_le_u);
+    test_for(CmpOp::I64And, Instruction::branch_i64_and);
+    test_for(CmpOp::I64Or, Instruction::branch_i64_or);
+    test_for(CmpOp::I64Xor, Instruction::branch_i64_xor);
+    test_for(CmpOp::I64Eq, Instruction::branch_i64_eq);
+    test_for(CmpOp::I64Ne, Instruction::branch_i64_ne);
+    test_for(CmpOp::I64LtS, Instruction::branch_i64_lt_s);
+    test_for(CmpOp::I64LtU, Instruction::branch_i64_lt_u);
+    test_for(CmpOp::I64LeS, Instruction::branch_i64_le_s);
+    test_for(CmpOp::I64LeU, Instruction::branch_i64_le_u);
     test_for(
-        ValType::I64,
-        "gt_s",
+        CmpOp::I64GtS,
         swap_cmp_br_ops!(Instruction::branch_i64_lt_s),
     );
     test_for(
-        ValType::I64,
-        "gt_u",
+        CmpOp::I64GtU,
         swap_cmp_br_ops!(Instruction::branch_i64_lt_u),
     );
     test_for(
-        ValType::I64,
-        "ge_s",
+        CmpOp::I64GeS,
         swap_cmp_br_ops!(Instruction::branch_i64_le_s),
     );
     test_for(
-        ValType::I64,
-        "ge_u",
+        CmpOp::I64GeU,
         swap_cmp_br_ops!(Instruction::branch_i64_le_u),
     );
 
-    test_for(ValType::F32, "eq", Instruction::branch_f32_eq);
-    test_for(ValType::F32, "ne", Instruction::branch_f32_ne);
-    test_for(ValType::F32, "lt", Instruction::branch_f32_lt);
-    test_for(ValType::F32, "le", Instruction::branch_f32_le);
-    test_for(
-        ValType::F32,
-        "gt",
-        swap_cmp_br_ops!(Instruction::branch_f32_lt),
-    );
-    test_for(
-        ValType::F32,
-        "ge",
-        swap_cmp_br_ops!(Instruction::branch_f32_le),
-    );
+    test_for(CmpOp::F32Eq, Instruction::branch_f32_eq);
+    test_for(CmpOp::F32Ne, Instruction::branch_f32_ne);
+    test_for(CmpOp::F32Lt, Instruction::branch_f32_lt);
+    test_for(CmpOp::F32Le, Instruction::branch_f32_le);
+    test_for(CmpOp::F32Gt, swap_cmp_br_ops!(Instruction::branch_f32_lt));
+    test_for(CmpOp::F32Ge, swap_cmp_br_ops!(Instruction::branch_f32_le));
 
-    test_for(ValType::F64, "eq", Instruction::branch_f64_eq);
-    test_for(ValType::F64, "ne", Instruction::branch_f64_ne);
-    test_for(ValType::F64, "lt", Instruction::branch_f64_lt);
-    test_for(ValType::F64, "le", Instruction::branch_f64_le);
-    test_for(
-        ValType::F64,
-        "gt",
-        swap_cmp_br_ops!(Instruction::branch_f64_lt),
-    );
-    test_for(
-        ValType::F64,
-        "ge",
-        swap_cmp_br_ops!(Instruction::branch_f64_le),
-    );
+    test_for(CmpOp::F64Eq, Instruction::branch_f64_eq);
+    test_for(CmpOp::F64Ne, Instruction::branch_f64_ne);
+    test_for(CmpOp::F64Lt, Instruction::branch_f64_lt);
+    test_for(CmpOp::F64Le, Instruction::branch_f64_le);
+    test_for(CmpOp::F64Gt, swap_cmp_br_ops!(Instruction::branch_f64_lt));
+    test_for(CmpOp::F64Ge, swap_cmp_br_ops!(Instruction::branch_f64_le));
 }
 
 #[test]
