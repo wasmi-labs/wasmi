@@ -1111,7 +1111,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             |this, lhs: Reg, rhs: i32| {
                 this.alloc
                     .instr_encoder
-                    .fuse_i32_eqz(&mut this.alloc.stack, lhs, rhs)
+                    .fuse_eqz::<i32>(&mut this.alloc.stack, lhs, rhs)
             },
         )
     }
@@ -1132,7 +1132,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             |this, lhs: Reg, rhs: i32| {
                 this.alloc
                     .instr_encoder
-                    .fuse_i32_nez(&mut this.alloc.stack, lhs, rhs)
+                    .fuse_nez::<i32>(&mut this.alloc.stack, lhs, rhs)
             },
         )
     }
@@ -1421,7 +1421,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
                 Ok(false)
             },
-            Self::no_custom_opt,
+            |this, lhs: Reg, rhs: i64| {
+                this.alloc
+                    .instr_encoder
+                    .fuse_eqz::<i64>(&mut this.alloc.stack, lhs, rhs)
+            }
         )
     }
 
@@ -1438,7 +1442,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
                 Ok(false)
             },
-            Self::no_custom_opt,
+            |this, lhs: Reg, rhs: i64| {
+                this.alloc
+                    .instr_encoder
+                    .fuse_nez::<i64>(&mut this.alloc.stack, lhs, rhs)
+            }
         )
     }
 
