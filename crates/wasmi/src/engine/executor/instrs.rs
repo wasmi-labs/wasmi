@@ -932,6 +932,30 @@ impl<'engine> Executor<'engine> {
                 Instr::I64BitXorImm16 { result, lhs, rhs } => {
                     self.execute_i64_bitxor_imm16(result, lhs, rhs)
                 }
+                Instr::I64And { result, lhs, rhs } => self.execute_i64_and(result, lhs, rhs),
+                Instr::I64AndImm16 { result, lhs, rhs } => {
+                    self.execute_i64_and_imm16(result, lhs, rhs)
+                }
+                Instr::I64Or { result, lhs, rhs } => self.execute_i64_or(result, lhs, rhs),
+                Instr::I64OrImm16 { result, lhs, rhs } => {
+                    self.execute_i64_or_imm16(result, lhs, rhs)
+                }
+                Instr::I64Xor { result, lhs, rhs } => self.execute_i64_xor(result, lhs, rhs),
+                Instr::I64XorImm16 { result, lhs, rhs } => {
+                    self.execute_i64_xor_imm16(result, lhs, rhs)
+                }
+                Instr::I64Nand { result, lhs, rhs } => self.execute_i64_nand(result, lhs, rhs),
+                Instr::I64NandImm16 { result, lhs, rhs } => {
+                    self.execute_i64_nand_imm16(result, lhs, rhs)
+                }
+                Instr::I64Nor { result, lhs, rhs } => self.execute_i64_nor(result, lhs, rhs),
+                Instr::I64NorImm16 { result, lhs, rhs } => {
+                    self.execute_i64_nor_imm16(result, lhs, rhs)
+                }
+                Instr::I64Xnor { result, lhs, rhs } => self.execute_i64_xnor(result, lhs, rhs),
+                Instr::I64XnorImm16 { result, lhs, rhs } => {
+                    self.execute_i64_xnor_imm16(result, lhs, rhs)
+                }
                 Instr::I64Shl { result, lhs, rhs } => self.execute_i64_shl(result, lhs, rhs),
                 Instr::I64ShlBy { result, lhs, rhs } => self.execute_i64_shl_by(result, lhs, rhs),
                 Instr::I64ShlImm16 { result, lhs, rhs } => {
@@ -2588,41 +2612,55 @@ impl Executor<'_> {
 
 /// Extension method for [`UntypedVal`] required by the [`Executor`].
 trait UntypedValueExt: Sized {
-    /// Executes a logical `i32.and` instruction.
-    fn i32_and(x: Self, y: Self) -> bool;
+    /// Executes a logical `i{32,64}.and` instruction.
+    fn and(x: Self, y: Self) -> bool;
 
-    /// Executes a logical `i32.or` instruction.
-    fn i32_or(x: Self, y: Self) -> bool;
+    /// Executes a logical `i{32,64}.or` instruction.
+    fn or(x: Self, y: Self) -> bool;
 
-    /// Executes a logical `i32.xor` instruction.
-    fn i32_xor(x: Self, y: Self) -> bool;
+    /// Executes a logical `i{32,64}.xor` instruction.
+    fn xor(x: Self, y: Self) -> bool;
 
-    /// Executes a fused `i32.and` + `i32.eqz` instruction.
-    fn i32_nand(x: Self, y: Self) -> bool {
-        !Self::i32_and(x, y)
+    /// Executes a fused `i{32,64}.and` + `i{32,64}.eqz` instruction.
+    fn nand(x: Self, y: Self) -> bool {
+        !Self::and(x, y)
     }
 
-    /// Executes a fused `i32.or` + `i32.eqz` instruction.
-    fn i32_nor(x: Self, y: Self) -> bool {
-        !Self::i32_or(x, y)
+    /// Executes a fused `i{32,64}.or` + `i{32,64}.eqz` instruction.
+    fn nor(x: Self, y: Self) -> bool {
+        !Self::or(x, y)
     }
 
-    /// Executes a fused `i32.xor` + `i32.eqz` instruction.
-    fn i32_xnor(x: Self, y: Self) -> bool {
-        !Self::i32_xor(x, y)
+    /// Executes a fused `i{32,64}.xor` + `i{32,64}.eqz` instruction.
+    fn xnor(x: Self, y: Self) -> bool {
+        !Self::xor(x, y)
     }
 }
 
 impl UntypedValueExt for i32 {
-    fn i32_and(x: Self, y: Self) -> bool {
+    fn and(x: Self, y: Self) -> bool {
         wasm::i32_bitand(x, y) != 0
     }
 
-    fn i32_or(x: Self, y: Self) -> bool {
+    fn or(x: Self, y: Self) -> bool {
         wasm::i32_bitor(x, y) != 0
     }
 
-    fn i32_xor(x: Self, y: Self) -> bool {
+    fn xor(x: Self, y: Self) -> bool {
         wasm::i32_bitxor(x, y) != 0
+    }
+}
+
+impl UntypedValueExt for i64 {
+    fn and(x: Self, y: Self) -> bool {
+        wasm::i64_bitand(x, y) != 0
+    }
+
+    fn or(x: Self, y: Self) -> bool {
+        wasm::i64_bitor(x, y) != 0
+    }
+
+    fn xor(x: Self, y: Self) -> bool {
+        wasm::i64_bitxor(x, y) != 0
     }
 }
