@@ -410,10 +410,10 @@ fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
         | I::BranchI32LeU { .. }
         | I::BranchI32LeUImm16Lhs { .. }
         | I::BranchI32LeUImm16Rhs { .. } => Comparator::I32LeU,
-        // i32 (special)
-        | I::BranchI32And { .. } => Comparator::I32BitAnd,
-        | I::BranchI32Or { .. } => Comparator::I32BitOr,
-        | I::BranchI32Xor { .. } => Comparator::I32BitXor,
+        // i32 (and,or,xor)
+        | I::BranchI32And { .. } => Comparator::I32And,
+        | I::BranchI32Or { .. } => Comparator::I32Or,
+        | I::BranchI32Xor { .. } => Comparator::I32Xor,
         | I::BranchI32Nand { .. } => Comparator::I32Nand,
         | I::BranchI32Nor { .. } => Comparator::I32Nor,
         | I::BranchI32Xnor { .. } => Comparator::I32Xnor,
