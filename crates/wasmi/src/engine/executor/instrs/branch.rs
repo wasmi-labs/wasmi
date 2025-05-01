@@ -1,4 +1,4 @@
-use super::Executor;
+use super::{Executor, UntypedValueExt};
 use crate::{
     core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
@@ -281,30 +281,6 @@ where
     a <= b
 }
 
-fn cmp_i32_and(a: i32, b: i32) -> bool {
-    (a & b) != 0
-}
-
-fn cmp_i32_or(a: i32, b: i32) -> bool {
-    (a | b) != 0
-}
-
-fn cmp_i32_xor(a: i32, b: i32) -> bool {
-    (a ^ b) != 0
-}
-
-fn cmp_i32_not_and(a: i32, b: i32) -> bool {
-    !cmp_i32_and(a, b)
-}
-
-fn cmp_i32_not_or(a: i32, b: i32) -> bool {
-    !cmp_i32_or(a, b)
-}
-
-fn cmp_i32_not_xor(a: i32, b: i32) -> bool {
-    !cmp_i32_xor(a, b)
-}
-
 macro_rules! impl_execute_branch_binop {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
@@ -319,12 +295,12 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
-    (i32, Instruction::BranchI32And, execute_branch_i32_and, cmp_i32_and),
-    (i32, Instruction::BranchI32Or, execute_branch_i32_or, cmp_i32_or),
-    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, cmp_i32_xor),
-    (i32, Instruction::BranchI32Nand, execute_branch_i32_nand, cmp_i32_not_and),
-    (i32, Instruction::BranchI32Nor, execute_branch_i32_nor, cmp_i32_not_or),
-    (i32, Instruction::BranchI32Xnor, execute_branch_i32_xnor, cmp_i32_not_xor),
+    (i32, Instruction::BranchI32And, execute_branch_i32_and, <i32 as UntypedValueExt>::and),
+    (i32, Instruction::BranchI32Or, execute_branch_i32_or, <i32 as UntypedValueExt>::or),
+    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, <i32 as UntypedValueExt>::xor),
+    (i32, Instruction::BranchI32Nand, execute_branch_i32_nand, <i32 as UntypedValueExt>::nand),
+    (i32, Instruction::BranchI32Nor, execute_branch_i32_nor, <i32 as UntypedValueExt>::nor),
+    (i32, Instruction::BranchI32Xnor, execute_branch_i32_xnor, <i32 as UntypedValueExt>::xnor),
     (i32, Instruction::BranchI32Eq, execute_branch_i32_eq, cmp_eq),
     (i32, Instruction::BranchI32Ne, execute_branch_i32_ne, cmp_ne),
     (i32, Instruction::BranchI32LtS, execute_branch_i32_lt_s, cmp_lt),
@@ -363,12 +339,12 @@ macro_rules! impl_execute_branch_binop_imm16_rhs {
     }
 }
 impl_execute_branch_binop_imm16_rhs! {
-    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, cmp_i32_and),
-    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, cmp_i32_or),
-    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, cmp_i32_xor),
-    (i32, Instruction::BranchI32NandImm16, execute_branch_i32_nand_imm16, cmp_i32_not_and),
-    (i32, Instruction::BranchI32NorImm16, execute_branch_i32_nor_imm16, cmp_i32_not_or),
-    (i32, Instruction::BranchI32XnorImm16, execute_branch_i32_xnor_imm16, cmp_i32_not_xor),
+    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, <i32 as UntypedValueExt>::and),
+    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, <i32 as UntypedValueExt>::or),
+    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, <i32 as UntypedValueExt>::xor),
+    (i32, Instruction::BranchI32NandImm16, execute_branch_i32_nand_imm16, <i32 as UntypedValueExt>::nand),
+    (i32, Instruction::BranchI32NorImm16, execute_branch_i32_nor_imm16, <i32 as UntypedValueExt>::nor),
+    (i32, Instruction::BranchI32XnorImm16, execute_branch_i32_xnor_imm16, <i32 as UntypedValueExt>::xnor),
     (i32, Instruction::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
     (i32, Instruction::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
     (i32, Instruction::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),
@@ -424,12 +400,24 @@ impl Executor<'_> {
             C::I32LtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_lt),
             C::I32LeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_le),
             C::I32LeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_le),
-            C::I32And => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and),
-            C::I32Or => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or),
-            C::I32Xor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor),
-            C::I32Nand => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_not_and),
-            C::I32Nor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_not_or),
-            C::I32Xnor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_not_xor),
+            C::I32And => {
+                self.execute_branch_binop::<i32>(lhs, rhs, offset, <i32 as UntypedValueExt>::and)
+            }
+            C::I32Or => {
+                self.execute_branch_binop::<i32>(lhs, rhs, offset, <i32 as UntypedValueExt>::or)
+            }
+            C::I32Xor => {
+                self.execute_branch_binop::<i32>(lhs, rhs, offset, <i32 as UntypedValueExt>::xor)
+            }
+            C::I32Nand => {
+                self.execute_branch_binop::<i32>(lhs, rhs, offset, <i32 as UntypedValueExt>::nand)
+            }
+            C::I32Nor => {
+                self.execute_branch_binop::<i32>(lhs, rhs, offset, <i32 as UntypedValueExt>::nor)
+            }
+            C::I32Xnor => {
+                self.execute_branch_binop::<i32>(lhs, rhs, offset, <i32 as UntypedValueExt>::xnor)
+            }
             C::I64Eq => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_eq),
             C::I64Ne => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_ne),
             C::I64LtS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_lt),
