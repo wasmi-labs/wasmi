@@ -1,6 +1,6 @@
 use super::{
     relink_result::RelinkResult as _,
-    utils::FromProviders as _,
+    utils::{FromProviders as _, WasmInteger},
     visit_register::VisitInputRegisters as _,
     BumpFuelConsumption as _,
     FuelInfo,
@@ -846,13 +846,13 @@ impl InstrEncoder {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_i32_eqz(
+    pub fn fuse_eqz<T: WasmInteger>(
         &mut self,
         stack: &mut ValueStack,
         lhs: Reg,
-        rhs: i32,
+        rhs: T,
     ) -> Result<bool, Error> {
-        if rhs != 0 {
+        if !rhs.eq_zero() {
             // Case: `rhs` needs to be zero to apply this optimization.
             return Ok(false);
         }
@@ -891,13 +891,13 @@ impl InstrEncoder {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_i32_nez(
+    pub fn fuse_nez<T: WasmInteger>(
         &mut self,
         stack: &mut ValueStack,
         lhs: Reg,
-        rhs: i32,
+        rhs: T,
     ) -> Result<bool, Error> {
-        if rhs != 0 {
+        if !rhs.eq_zero() {
             // Case: `rhs` needs to be zero to apply this optimization.
             return Ok(false);
         }
