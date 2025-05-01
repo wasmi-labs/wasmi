@@ -1091,11 +1091,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_eqz(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        if self.alloc.instr_encoder.fuse_i32_eqz(&mut self.alloc.stack) {
-            // Optimization of `i32.eqz` was applied so we can bail out.
-            return Ok(());
-        }
-        // Push a zero on the value stack so we can translate `i32.eqz` as `i32.eq(x, 0)`.
         self.alloc.stack.push_const(0_i32);
         self.visit_i32_eq()
     }
@@ -1113,7 +1108,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
                 Ok(false)
             },
-            Self::no_custom_opt,
+            // Self::no_custom_opt,
+            |this, lhs: Reg, rhs: i32| {
+                this.alloc
+                    .instr_encoder
+                    .fuse_i32_eqz(&mut this.alloc.stack, lhs, rhs)
+            },
         )
     }
 

@@ -7,7 +7,6 @@ use super::{
     LabelRef,
     LabelRegistry,
     NegateCmpInstr,
-    Provider,
     TryIntoCmpBranchFallbackInstr,
     TryIntoCmpBranchInstr,
     TypedProvider,
@@ -839,41 +838,49 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Translates a Wasm `i32.eqz` instruction.
+    /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
     ///
-    /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.
-    /// Returns `true` if it was possible to fuse the `i32.eqz` instruction.
-    pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
-        let Provider::Register(input) = stack.peek() else {
-            // Only register inputs can be negated.
-            // Constant inputs are resolved via constant propagation.
-            return false;
-        };
+    /// Returns
+    ///
+    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(false)` if instruction fusion could not be applied.
+    /// - `Err(_)` if an error occurred.
+    pub fn fuse_i32_eqz(
+        &mut self,
+        stack: &mut ValueStack,
+        lhs: Reg,
+        rhs: i32,
+    ) -> Result<bool, Error> {
+        if rhs != 0 {
+            // Case: `rhs` needs to be zero to apply this optimization.
+            return Ok(false);
+        }
         let Some(last_instr) = self.last_instr else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return false;
+            return Ok(false);
         };
         let last_instruction = *self.instrs.get(last_instr);
         let Some(result) = last_instruction.result() else {
             // All negatable instructions have a single result register.
-            return false;
+            return Ok(false);
         };
         if matches!(stack.get_register_space(result), RegisterSpace::Local) {
             // The instruction stores its result into a local variable which
             // is an observable side effect which we are not allowed to mutate.
-            return false;
+            return Ok(false);
         }
-        if result != input {
-            // The result of the instruction and the current input are not equal
+        if result != lhs {
+            // The result of the instruction and the `lhs` are not equal
             // thus indicating that we cannot fuse the instructions.
-            return false;
+            return Ok(false);
         }
         let Some(negated) = last_instruction.negate_cmp_instr() else {
             // Last instruction is unable to be negated.
-            return false;
+            return Ok(false);
         };
         _ = mem::replace(self.instrs.get_mut(last_instr), negated);
-        true
+        stack.push_register(result)?;
+        Ok(true)
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].

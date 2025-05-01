@@ -380,6 +380,5 @@ fn binop_imm_i32_eqz_lhs_double() {
         (u64, "gt_u", Instruction::i64_lt_u_imm16_rhs),
         (i64, "ge_s", Instruction::i64_le_s_imm16_rhs),
         (u64, "ge_u", Instruction::i64_le_u_imm16_rhs),
-
     );
 }
