@@ -1425,7 +1425,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 this.alloc
                     .instr_encoder
                     .fuse_eqz::<i64>(&mut this.alloc.stack, lhs, rhs)
-            }
+            },
         )
     }
 
@@ -1446,7 +1446,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 this.alloc
                     .instr_encoder
                     .fuse_nez::<i64>(&mut this.alloc.stack, lhs, rhs)
-            }
+            },
         )
     }
 
