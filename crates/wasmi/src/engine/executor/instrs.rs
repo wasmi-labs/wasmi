@@ -355,6 +355,12 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchF32Le { lhs, rhs, offset } => {
                     self.execute_branch_f32_le(lhs, rhs, offset)
                 }
+                Instr::BranchF32NotLt { lhs, rhs, offset } => {
+                    self.execute_branch_f32_not_lt(lhs, rhs, offset)
+                }
+                Instr::BranchF32NotLe { lhs, rhs, offset } => {
+                    self.execute_branch_f32_not_le(lhs, rhs, offset)
+                }
                 Instr::BranchF64Eq { lhs, rhs, offset } => {
                     self.execute_branch_f64_eq(lhs, rhs, offset)
                 }
@@ -366,6 +372,12 @@ impl<'engine> Executor<'engine> {
                 }
                 Instr::BranchF64Le { lhs, rhs, offset } => {
                     self.execute_branch_f64_le(lhs, rhs, offset)
+                }
+                Instr::BranchF64NotLt { lhs, rhs, offset } => {
+                    self.execute_branch_f64_not_lt(lhs, rhs, offset)
+                }
+                Instr::BranchF64NotLe { lhs, rhs, offset } => {
+                    self.execute_branch_f64_not_le(lhs, rhs, offset)
                 }
                 Instr::Copy { result, value } => self.execute_copy(result, value),
                 Instr::Copy2 { results, values } => self.execute_copy_2(results, values),
@@ -801,10 +813,14 @@ impl<'engine> Executor<'engine> {
                 Instr::F32Ne { result, lhs, rhs } => self.execute_f32_ne(result, lhs, rhs),
                 Instr::F32Lt { result, lhs, rhs } => self.execute_f32_lt(result, lhs, rhs),
                 Instr::F32Le { result, lhs, rhs } => self.execute_f32_le(result, lhs, rhs),
+                Instr::F32NotLt { result, lhs, rhs } => self.execute_f32_not_lt(result, lhs, rhs),
+                Instr::F32NotLe { result, lhs, rhs } => self.execute_f32_not_le(result, lhs, rhs),
                 Instr::F64Eq { result, lhs, rhs } => self.execute_f64_eq(result, lhs, rhs),
                 Instr::F64Ne { result, lhs, rhs } => self.execute_f64_ne(result, lhs, rhs),
                 Instr::F64Lt { result, lhs, rhs } => self.execute_f64_lt(result, lhs, rhs),
                 Instr::F64Le { result, lhs, rhs } => self.execute_f64_le(result, lhs, rhs),
+                Instr::F64NotLt { result, lhs, rhs } => self.execute_f64_not_lt(result, lhs, rhs),
+                Instr::F64NotLe { result, lhs, rhs } => self.execute_f64_not_le(result, lhs, rhs),
                 Instr::I32Clz { result, input } => self.execute_i32_clz(result, input),
                 Instr::I32Ctz { result, input } => self.execute_i32_ctz(result, input),
                 Instr::I32Popcnt { result, input } => self.execute_i32_popcnt(result, input),
@@ -2698,5 +2714,31 @@ impl UntypedValueExt for i64 {
 
     fn xor(x: Self, y: Self) -> bool {
         wasm::i64_bitxor(x, y) != 0
+    }
+}
+
+/// Extension method for [`UntypedVal`] required by the [`Executor`].
+trait UntypedValueCmpExt: Sized {
+    fn not_le(lhs: Self, rhs: Self) -> bool;
+    fn not_lt(lhs: Self, rhs: Self) -> bool;
+}
+
+impl UntypedValueCmpExt for f32 {
+    fn not_le(x: Self, y: Self) -> bool {
+        !wasm::f32_le(x, y)
+    }
+
+    fn not_lt(x: Self, y: Self) -> bool {
+        !wasm::f32_lt(x, y)
+    }
+}
+
+impl UntypedValueCmpExt for f64 {
+    fn not_le(x: Self, y: Self) -> bool {
+        !wasm::f64_le(x, y)
+    }
+
+    fn not_lt(x: Self, y: Self) -> bool {
+        !wasm::f64_lt(x, y)
     }
 }

@@ -1,4 +1,4 @@
-use super::{Executor, UntypedValueExt};
+use super::{Executor, UntypedValueCmpExt, UntypedValueExt};
 use crate::{
     core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
@@ -325,11 +325,15 @@ impl_execute_branch_binop! {
     (f32, Instruction::BranchF32Ne, execute_branch_f32_ne, cmp_ne),
     (f32, Instruction::BranchF32Lt, execute_branch_f32_lt, cmp_lt),
     (f32, Instruction::BranchF32Le, execute_branch_f32_le, cmp_le),
+    (f32, Instruction::BranchF32NotLt, execute_branch_f32_not_lt, UntypedValueCmpExt::not_lt),
+    (f32, Instruction::BranchF32NotLe, execute_branch_f32_not_le, UntypedValueCmpExt::not_le),
 
     (f64, Instruction::BranchF64Eq, execute_branch_f64_eq, cmp_eq),
     (f64, Instruction::BranchF64Ne, execute_branch_f64_ne, cmp_ne),
     (f64, Instruction::BranchF64Lt, execute_branch_f64_lt, cmp_lt),
     (f64, Instruction::BranchF64Le, execute_branch_f64_le, cmp_le),
+    (f64, Instruction::BranchF64NotLt, execute_branch_f64_not_lt, UntypedValueCmpExt::not_lt),
+    (f64, Instruction::BranchF64NotLe, execute_branch_f64_not_le, UntypedValueCmpExt::not_le),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_rhs {
@@ -434,10 +438,22 @@ impl Executor<'_> {
             C::F32Ne => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ne),
             C::F32Lt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_lt),
             C::F32Le => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_le),
+            C::F32NotLt => {
+                self.execute_branch_binop::<f32>(lhs, rhs, offset, UntypedValueCmpExt::not_lt)
+            }
+            C::F32NotLe => {
+                self.execute_branch_binop::<f32>(lhs, rhs, offset, UntypedValueCmpExt::not_le)
+            }
             C::F64Eq => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_eq),
             C::F64Ne => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ne),
             C::F64Lt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_lt),
             C::F64Le => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_le),
+            C::F64NotLt => {
+                self.execute_branch_binop::<f64>(lhs, rhs, offset, UntypedValueCmpExt::not_lt)
+            }
+            C::F64NotLe => {
+                self.execute_branch_binop::<f64>(lhs, rhs, offset, UntypedValueCmpExt::not_le)
+            }
         };
     }
 }

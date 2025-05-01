@@ -1,4 +1,4 @@
-use super::Executor;
+use super::{Executor, UntypedValueCmpExt};
 use crate::{
     core::wasm,
     ir::{Const16, Reg},
@@ -27,11 +27,15 @@ impl Executor<'_> {
         (Instruction::F32Ne, execute_f32_ne, wasm::f32_ne),
         (Instruction::F32Lt, execute_f32_lt, wasm::f32_lt),
         (Instruction::F32Le, execute_f32_le, wasm::f32_le),
+        (Instruction::F32NotLt, execute_f32_not_lt, <f32 as UntypedValueCmpExt>::not_lt),
+        (Instruction::F32NotLe, execute_f32_not_le, <f32 as UntypedValueCmpExt>::not_le),
 
         (Instruction::F64Eq, execute_f64_eq, wasm::f64_eq),
         (Instruction::F64Ne, execute_f64_ne, wasm::f64_ne),
         (Instruction::F64Lt, execute_f64_lt, wasm::f64_lt),
         (Instruction::F64Le, execute_f64_le, wasm::f64_le),
+        (Instruction::F64NotLt, execute_f64_not_lt, <f64 as UntypedValueCmpExt>::not_lt),
+        (Instruction::F64NotLe, execute_f64_not_le, <f64 as UntypedValueCmpExt>::not_le),
     }
 }
 

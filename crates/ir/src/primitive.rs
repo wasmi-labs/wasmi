@@ -270,11 +270,15 @@ macro_rules! for_each_comparator {
             F32Ne,
             F32Lt,
             F32Le,
+            F32NotLt,
+            F32NotLe,
 
             F64Eq,
             F64Ne,
             F64Lt,
             F64Le,
+            F64NotLt,
+            F64NotLe,
         }
     };
 }

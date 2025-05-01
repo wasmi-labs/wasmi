@@ -62,8 +62,12 @@ fn binop_i32_nez() {
         ("i64", "ge_u", swap_ops!(Instruction::i64_le_u)),
         ("f32", "eq", Instruction::f32_eq),
         ("f32", "ne", Instruction::f32_ne),
+        ("f32", "lt", Instruction::f32_lt),
+        ("f32", "le", Instruction::f32_le),
         ("f64", "eq", Instruction::f64_eq),
         ("f64", "ne", Instruction::f64_ne),
+        ("f64", "lt", Instruction::f64_lt),
+        ("f64", "le", Instruction::f64_le),
     );
 }
 

@@ -87,17 +87,19 @@ impl NegateCmpInstr for Instruction {
             I::I64NorImm16 { result, lhs, rhs } => I::i64_or_imm16(result, lhs, rhs),
             I::I64XnorImm16 { result, lhs, rhs } => I::i64_xor_imm16(result, lhs, rhs),
             // f32
-            //
-            // Note: due to NaN values always comparing as `false` we unfortunately
-            //       cannot negate `f32.{lt,le}` comparison instructions.
             I::F32Eq { result, lhs, rhs } => I::f32_ne(result, lhs, rhs),
             I::F32Ne { result, lhs, rhs } => I::f32_eq(result, lhs, rhs),
+            I::F32Le { result, lhs, rhs } => I::f32_not_le(result, lhs, rhs),
+            I::F32Lt { result, lhs, rhs } => I::f32_not_lt(result, lhs, rhs),
+            I::F32NotLe { result, lhs, rhs } => I::f32_le(result, lhs, rhs),
+            I::F32NotLt { result, lhs, rhs } => I::f32_lt(result, lhs, rhs),
             // f64
-            //
-            // Note: due to NaN values always comparing as `false` we unfortunately
-            //       cannot negate `f64.{lt,le}` comparison instructions.
             I::F64Eq { result, lhs, rhs } => I::f64_ne(result, lhs, rhs),
             I::F64Ne { result, lhs, rhs } => I::f64_eq(result, lhs, rhs),
+            I::F64Le { result, lhs, rhs } => I::f64_not_le(result, lhs, rhs),
+            I::F64Lt { result, lhs, rhs } => I::f64_not_lt(result, lhs, rhs),
+            I::F64NotLe { result, lhs, rhs } => I::f64_le(result, lhs, rhs),
+            I::F64NotLt { result, lhs, rhs } => I::f64_lt(result, lhs, rhs),
             _ => return None,
         };
         Some(negated)
@@ -192,10 +194,14 @@ impl LogicalizeCmpInstr for Instruction {
             I::F32Ne { .. } |
             I::F32Lt { .. } |
             I::F32Le { .. } |
+            I::F32NotLt { .. } |
+            I::F32NotLe { .. } |
             I::F64Eq { .. } |
             I::F64Ne { .. } |
             I::F64Lt { .. } |
-            I::F64Le { .. } => *self,
+            I::F64Le { .. } |
+            I::F64NotLt { .. } |
+            I::F64NotLe { .. } => *self,
             _ => return None,
         };
         Some(logicalized)
@@ -299,11 +305,15 @@ impl TryIntoCmpBranchInstr for Instruction {
             I::F32Ne { lhs, rhs, .. } => I::branch_f32_ne(lhs, rhs, offset),
             I::F32Lt { lhs, rhs, .. } => I::branch_f32_lt(lhs, rhs, offset),
             I::F32Le { lhs, rhs, .. } => I::branch_f32_le(lhs, rhs, offset),
+            I::F32NotLt { lhs, rhs, .. } => I::branch_f32_not_lt(lhs, rhs, offset),
+            I::F32NotLe { lhs, rhs, .. } => I::branch_f32_not_le(lhs, rhs, offset),
             // f64
             I::F64Eq { lhs, rhs, .. } => I::branch_f64_eq(lhs, rhs, offset),
             I::F64Ne { lhs, rhs, .. } => I::branch_f64_ne(lhs, rhs, offset),
             I::F64Lt { lhs, rhs, .. } => I::branch_f64_lt(lhs, rhs, offset),
             I::F64Le { lhs, rhs, .. } => I::branch_f64_le(lhs, rhs, offset),
+            I::F64NotLt { lhs, rhs, .. } => I::branch_f64_not_lt(lhs, rhs, offset),
+            I::F64NotLe { lhs, rhs, .. } => I::branch_f64_not_le(lhs, rhs, offset),
             _ => return Ok(None),
         };
         Ok(Some(cmp_branch_instr))
@@ -359,10 +369,14 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchF32Ne { lhs, rhs, .. }
             | I::BranchF32Lt { lhs, rhs, .. }
             | I::BranchF32Le { lhs, rhs, .. }
+            | I::BranchF32NotLt { lhs, rhs, .. }
+            | I::BranchF32NotLe { lhs, rhs, .. }
             | I::BranchF64Eq { lhs, rhs, .. }
             | I::BranchF64Ne { lhs, rhs, .. }
             | I::BranchF64Lt { lhs, rhs, .. }
-            | I::BranchF64Le { lhs, rhs, .. } => (lhs, rhs),
+            | I::BranchF64Le { lhs, rhs, .. }
+            | I::BranchF64NotLt { lhs, rhs, .. }
+            | I::BranchF64NotLe { lhs, rhs, .. } => (lhs, rhs),
             | I::BranchI32AndImm16 { lhs, rhs, .. }
             | I::BranchI32OrImm16 { lhs, rhs, .. }
             | I::BranchI32XorImm16 { lhs, rhs, .. }
@@ -472,11 +486,15 @@ fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
         | I::BranchF32Ne { .. } => Comparator::F32Ne,
         | I::BranchF32Lt { .. } => Comparator::F32Lt,
         | I::BranchF32Le { .. } => Comparator::F32Le,
+        | I::BranchF32NotLt { .. } => Comparator::F32NotLt,
+        | I::BranchF32NotLe { .. } => Comparator::F32NotLe,
         // f64
         | I::BranchF64Eq { .. } => Comparator::F64Eq,
         | I::BranchF64Ne { .. } => Comparator::F64Ne,
         | I::BranchF64Lt { .. } => Comparator::F64Lt,
         | I::BranchF64Le { .. } => Comparator::F64Le,
+        | I::BranchF64NotLt { .. } => Comparator::F64NotLt,
+        | I::BranchF64NotLe { .. } => Comparator::F64NotLe,
         _ => return None,
     };
     Some(comparator)
