@@ -266,7 +266,7 @@ impl AssertResumable for ResumableCall {
         host_results: &[ValType],
     ) -> Self::Invocation {
         match self {
-            Self::Resumable(invocation) => {
+            Self::HostTrap(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
                 assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
@@ -278,7 +278,7 @@ impl AssertResumable for ResumableCall {
     fn assert_finish(self) -> Self::Results {
         match self {
             Self::Finished => (),
-            Self::Resumable(_) => panic!("expected the resumable call to finish"),
+            Self::HostTrap(_) => panic!("expected the resumable call to finish"),
         }
     }
 }

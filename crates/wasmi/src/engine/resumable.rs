@@ -34,7 +34,7 @@ pub enum ResumableCall {
     /// The resumable call has finished properly and returned a result.
     Finished,
     /// The resumable call encountered a host error and can be resumed.
-    Resumable(ResumableCallHostTrap),
+    HostTrap(ResumableCallHostTrap),
 }
 
 impl ResumableCall {
@@ -42,7 +42,7 @@ impl ResumableCall {
     pub(crate) fn new(call: ResumableCallBase<()>) -> Self {
         match call {
             ResumableCallBase::Finished(()) => Self::Finished,
-            ResumableCallBase::HostTrap(invocation) => Self::Resumable(invocation),
+            ResumableCallBase::HostTrap(invocation) => Self::HostTrap(invocation),
         }
     }
 }
