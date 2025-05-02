@@ -48,11 +48,11 @@ fn reg() {
             r#"
             (module
                 (func (param $condition i32)
-                      (param $lhs {display_ty})
-                      (param $rhs {display_ty})
+                      (param $true_val {display_ty})
+                      (param $false_val {display_ty})
                       (result {display_ty})
-                    local.get $lhs
-                    local.get $rhs
+                    local.get $true_val
+                    local.get $false_val
                     local.get $condition
                     {display_select}
                 )
@@ -60,13 +60,13 @@ fn reg() {
         "#,
         );
         let condition = Reg::from(0);
-        let lhs = Reg::from(1);
-        let rhs = Reg::from(2);
+        let true_val = Reg::from(1);
+        let false_val = Reg::from(2);
         let result = Reg::from(3);
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                Instruction::select(result, lhs),
-                Instruction::register2_ext(condition, rhs),
+                Instruction::select_i32_ne_imm16(result, condition, 0_i16),
+                Instruction::register2_ext(true_val, false_val),
                 Instruction::return_reg(result),
             ])
             .run();
