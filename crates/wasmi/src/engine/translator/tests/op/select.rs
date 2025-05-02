@@ -261,3 +261,208 @@ fn same_imm() {
     test_for::<f64>(9.87654321);
     test_for::<f64>(-9.87654321);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_cmp_select() {
+    fn run_test(
+        op: CmpOp,
+        kind: SelectKind,
+        result_ty: ValType,
+        expected: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+    ) {
+        let cmp_input_ty = op.param_ty();
+        let cmp_result_ty = op.result_ty();
+        let cmp_input_ty = DisplayValueType::from(cmp_input_ty);
+        let cmp_result_ty = DisplayValueType::from(cmp_result_ty);
+        let cmp_op = op.op_str();
+
+        let select_op = DisplaySelect::new(kind, result_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let wasm = format!(
+            r#"
+            (module
+                (func
+                    (param $lhs {cmp_input_ty}) (param $rhs {cmp_input_ty})
+                    (param $true_val {result_ty}) (param $false_val {result_ty})
+                    (result {result_ty})
+                    ({select_op}
+                        (local.get $true_val)
+                        (local.get $false_val)
+                        ({cmp_result_ty}.ne
+                            ({cmp_input_ty}.{cmp_op} (local.get $lhs) (local.get $rhs))
+                            ({cmp_result_ty}.const 0)
+                        )
+                    )
+                )
+            )
+        "#,
+        );
+        TranslationTest::new(&wasm)
+            .expect_func_instrs([
+                expected(Reg::from(4), Reg::from(0), Reg::from(1)),
+                Instruction::register2_ext(2, 3),
+                Instruction::return_reg(4),
+            ])
+            .run();
+    }
+
+    #[rustfmt::skip]
+    fn test_for_each_cmp(kind: SelectKind, ty: ValType) {
+        for (op, expected) in [
+            (CmpOp::I32And, Instruction::select_i32_and as fn(Reg, Reg, Reg) -> Instruction),
+            (CmpOp::I32Or, Instruction::select_i32_or),
+            (CmpOp::I32Xor, Instruction::select_i32_xor),
+            (CmpOp::I32Eq, Instruction::select_i32_eq),
+            (CmpOp::I32Ne, Instruction::select_i32_ne),
+            (CmpOp::I32LtS, Instruction::select_i32_lt_s),
+            (CmpOp::I32LtU, Instruction::select_i32_lt_u),
+            (CmpOp::I32LeS, Instruction::select_i32_le_s),
+            (CmpOp::I32LeU, Instruction::select_i32_le_u),
+            (CmpOp::I32GtS, swap_cmp_select_ops!(Instruction::select_i32_lt_s)),
+            (CmpOp::I32GtU, swap_cmp_select_ops!(Instruction::select_i32_lt_u)),
+            (CmpOp::I32GeS, swap_cmp_select_ops!(Instruction::select_i32_le_s)),
+            (CmpOp::I32GeU, swap_cmp_select_ops!(Instruction::select_i32_le_u)),
+            (CmpOp::I64And, Instruction::select_i64_and),
+            (CmpOp::I64Or, Instruction::select_i64_or),
+            (CmpOp::I64Xor, Instruction::select_i64_xor),
+            (CmpOp::I64Eq, Instruction::select_i64_eq),
+            (CmpOp::I64Ne, Instruction::select_i64_ne),
+            (CmpOp::I64LtS, Instruction::select_i64_lt_s),
+            (CmpOp::I64LtU, Instruction::select_i64_lt_u),
+            (CmpOp::I64LeS, Instruction::select_i64_le_s),
+            (CmpOp::I64LeU, Instruction::select_i64_le_u),
+            (CmpOp::I64GtS, swap_cmp_select_ops!(Instruction::select_i64_lt_s)),
+            (CmpOp::I64GtU, swap_cmp_select_ops!(Instruction::select_i64_lt_u)),
+            (CmpOp::I64GeS, swap_cmp_select_ops!(Instruction::select_i64_le_s)),
+            (CmpOp::I64GeU, swap_cmp_select_ops!(Instruction::select_i64_le_u)),
+            (CmpOp::F32Eq, Instruction::select_f32_eq),
+            (CmpOp::F32Ne, Instruction::select_f32_ne),
+            (CmpOp::F32Lt, Instruction::select_f32_lt),
+            (CmpOp::F32Le, Instruction::select_f32_le),
+            (CmpOp::F32Gt, swap_cmp_select_ops!(Instruction::select_f32_lt)),
+            (CmpOp::F32Ge, swap_cmp_select_ops!(Instruction::select_f32_le)),
+            (CmpOp::F64Eq, Instruction::select_f64_eq),
+            (CmpOp::F64Ne, Instruction::select_f64_ne),
+            (CmpOp::F64Lt, Instruction::select_f64_lt),
+            (CmpOp::F64Le, Instruction::select_f64_le),
+            (CmpOp::F64Gt, swap_cmp_select_ops!(Instruction::select_f64_lt)),
+            (CmpOp::F64Ge, swap_cmp_select_ops!(Instruction::select_f64_le)),
+        ] {
+            run_test(op, kind, ty, expected)
+        }
+    }
+
+    fn test_for(kind: SelectKind) {
+        for ty in [ValType::I32, ValType::I64, ValType::F32, ValType::F64] {
+            test_for_each_cmp(kind, ty);
+        }
+    }
+
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
+    test_for_each_cmp(SelectKind::TypedSelect, ValType::FuncRef);
+    test_for_each_cmp(SelectKind::TypedSelect, ValType::ExternRef);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_cmp_select_eqz() {
+    fn run_test(
+        op: CmpOp,
+        kind: SelectKind,
+        result_ty: ValType,
+        expected: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+    ) {
+        let cmp_input_ty = op.param_ty();
+        let cmp_result_ty = op.result_ty();
+        let cmp_input_ty = DisplayValueType::from(cmp_input_ty);
+        let cmp_result_ty = DisplayValueType::from(cmp_result_ty);
+        let cmp_op = op.op_str();
+
+        let select_op = DisplaySelect::new(kind, result_ty);
+        let result_ty = DisplayValueType::from(result_ty);
+        let wasm = format!(
+            r#"
+            (module
+                (func
+                    (param $lhs {cmp_input_ty}) (param $rhs {cmp_input_ty})
+                    (param $true_val {result_ty}) (param $false_val {result_ty})
+                    (result {result_ty})
+                    ({select_op}
+                        (local.get $true_val)
+                        (local.get $false_val)
+                        ({cmp_result_ty}.eqz
+                            ({cmp_input_ty}.{cmp_op} (local.get $lhs) (local.get $rhs))
+                        )
+                    )
+                )
+            )
+        "#,
+        );
+        TranslationTest::new(&wasm)
+            .expect_func_instrs([
+                expected(Reg::from(4), Reg::from(0), Reg::from(1)),
+                Instruction::register2_ext(2, 3),
+                Instruction::return_reg(4),
+            ])
+            .run();
+    }
+
+    #[rustfmt::skip]
+    fn test_for_each_cmp(kind: SelectKind, ty: ValType) {
+        for (op, expected) in [
+            (CmpOp::I32And, Instruction::select_i32_nand as fn(Reg, Reg, Reg) -> Instruction),
+            (CmpOp::I32Or, Instruction::select_i32_nor),
+            (CmpOp::I32Xor, Instruction::select_i32_xnor),
+            (CmpOp::I32Eq, Instruction::select_i32_ne),
+            (CmpOp::I32Ne, Instruction::select_i32_eq),
+            (CmpOp::I32LtS, swap_cmp_select_ops!(Instruction::select_i32_le_s)),
+            (CmpOp::I32LtU, swap_cmp_select_ops!(Instruction::select_i32_le_u)),
+            (CmpOp::I32LeS, swap_cmp_select_ops!(Instruction::select_i32_lt_s)),
+            (CmpOp::I32LeU, swap_cmp_select_ops!(Instruction::select_i32_lt_u)),
+            (CmpOp::I32GtS, Instruction::select_i32_le_s),
+            (CmpOp::I32GtU, Instruction::select_i32_le_u),
+            (CmpOp::I32GeS, Instruction::select_i32_lt_s),
+            (CmpOp::I32GeU, Instruction::select_i32_lt_u),
+            (CmpOp::I64And, Instruction::select_i64_nand),
+            (CmpOp::I64Or, Instruction::select_i64_nor),
+            (CmpOp::I64Xor, Instruction::select_i64_xnor),
+            (CmpOp::I64Eq, Instruction::select_i64_ne),
+            (CmpOp::I64Ne, Instruction::select_i64_eq),
+            (CmpOp::I64LtS, swap_cmp_select_ops!(Instruction::select_i64_le_s)),
+            (CmpOp::I64LtU, swap_cmp_select_ops!(Instruction::select_i64_le_u)),
+            (CmpOp::I64LeS, swap_cmp_select_ops!(Instruction::select_i64_lt_s)),
+            (CmpOp::I64LeU, swap_cmp_select_ops!(Instruction::select_i64_lt_u)),
+            (CmpOp::I64GtS, Instruction::select_i64_le_s),
+            (CmpOp::I64GtU, Instruction::select_i64_le_u),
+            (CmpOp::I64GeS, Instruction::select_i64_lt_s),
+            (CmpOp::I64GeU, Instruction::select_i64_lt_u),
+            (CmpOp::F32Eq, Instruction::select_f32_ne),
+            (CmpOp::F32Ne, Instruction::select_f32_eq),
+            (CmpOp::F32Lt, Instruction::select_f32_not_lt),
+            (CmpOp::F32Le, Instruction::select_f32_not_le),
+            (CmpOp::F32Gt, swap_cmp_select_ops!(Instruction::select_f32_not_lt)),
+            (CmpOp::F32Ge, swap_cmp_select_ops!(Instruction::select_f32_not_le)),
+            (CmpOp::F64Eq, Instruction::select_f64_ne),
+            (CmpOp::F64Ne, Instruction::select_f64_eq),
+            (CmpOp::F64Lt, Instruction::select_f64_not_lt),
+            (CmpOp::F64Le, Instruction::select_f64_not_le),
+            (CmpOp::F64Gt, swap_cmp_select_ops!(Instruction::select_f64_not_lt)),
+            (CmpOp::F64Ge, swap_cmp_select_ops!(Instruction::select_f64_not_le)),
+        ] {
+            run_test(op, kind, ty, expected)
+        }
+    }
+
+    fn test_for(kind: SelectKind) {
+        for ty in [ValType::I32, ValType::I64, ValType::F32, ValType::F64] {
+            test_for_each_cmp(kind, ty);
+        }
+    }
+
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
+    test_for_each_cmp(SelectKind::TypedSelect, ValType::FuncRef);
+    test_for_each_cmp(SelectKind::TypedSelect, ValType::ExternRef);
+}

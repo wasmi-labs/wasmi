@@ -45,6 +45,14 @@ macro_rules! swap_cmp_br_ops {
 }
 use swap_cmp_br_ops;
 
+/// Used to swap `lhs` and `rhs` operands of a fused `cmp+select` instruction.
+macro_rules! swap_cmp_select_ops {
+    ($fn_name:path) => {
+        |result, lhs, rhs| -> Instruction { $fn_name(result, rhs, lhs) }
+    };
+}
+use swap_cmp_select_ops;
+
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
 /// Uses the given [`Config`] to configure the [`Engine`] that the tests are run on.
