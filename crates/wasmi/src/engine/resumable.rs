@@ -1,8 +1,9 @@
 use super::Func;
 use crate::{
     engine::Stack,
-    func::CallResultsTuple,
+    func::{CallResultsTuple, FuncError},
     ir::RegSpan,
+    AsContext,
     AsContextMut,
     Engine,
     Error,
@@ -95,6 +96,25 @@ impl ResumableCallCommon {
     /// Returns an exclusive reference to the underlying [`Stack`].
     pub(super) fn stack_mut(&mut self) -> &mut Stack {
         &mut self.stack
+    }
+
+    /// Prepares the `outputs` buffer for call resumption.
+    ///
+    /// # Errors
+    ///
+    /// If the number of items in `outputs` does not match the number of results of the resumed function.
+    fn prepare_outputs<T>(
+        &self,
+        ctx: impl AsContext<Data = T>,
+        outputs: &mut [Val],
+    ) -> Result<(), Error> {
+        self.engine.resolve_func_type(
+            self.func.ty_dedup(ctx.as_context()),
+            |func_type| -> Result<(), Error> {
+                func_type.prepare_outputs(outputs)?;
+                Ok(())
+            },
+        )
     }
 }
 
@@ -214,6 +234,23 @@ impl ResumableCallHostTrap {
         self.caller_results
     }
 
+    /// Validates that the `inputs` types are valid for the host function resumption.
+    ///
+    /// # Errors
+    ///
+    /// If the `inputs` types do not match.
+    fn validate_inputs<T>(
+        &self,
+        ctx: impl AsContext<Data = T>,
+        inputs: &[Val],
+    ) -> Result<(), FuncError> {
+        self.common
+            .engine
+            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
+                func_type.match_results(inputs)
+            })
+    }
+
     /// Resumes the call to the [`Func`] with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer upon success.
@@ -235,18 +272,8 @@ impl ResumableCallHostTrap {
         inputs: &[Val],
         outputs: &mut [Val],
     ) -> Result<ResumableCall, Error> {
-        self.common
-            .engine
-            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
-                func_type.match_results(inputs)
-            })?;
-        self.common.engine.resolve_func_type(
-            self.common.func.ty_dedup(ctx.as_context()),
-            |func_type| -> Result<(), Error> {
-                func_type.prepare_outputs(outputs)?;
-                Ok(())
-            },
-        )?;
+        self.validate_inputs(ctx.as_context(), inputs)?;
+        self.common.prepare_outputs(ctx.as_context(), outputs)?;
         self.common
             .engine
             .clone()
@@ -317,11 +344,7 @@ impl<Results> TypedResumableCallHostTrap<Results> {
     where
         Results: WasmResults,
     {
-        self.common
-            .engine
-            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
-                func_type.match_results(inputs)
-            })?;
+        self.invocation.validate_inputs(ctx.as_context(), inputs)?;
         self.common
             .engine
             .clone()
