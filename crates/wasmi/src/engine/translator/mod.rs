@@ -2483,22 +2483,28 @@ impl FuncTranslator {
     ///
     /// - This applies constant propagation in case `condition` is a constant value.
     /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
-    /// - Properly chooses the correct `select` instruction encoding and optimizes for
-    ///   cases with 32-bit constant values.
-    fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
+    /// - Fuses compare instructions with the associated select instructions if possible.
+    fn translate_select(&mut self, _type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (lhs, rhs, condition) = self.alloc.stack.pop3();
+        let (true_val, false_val, condition) = self.alloc.stack.pop3();
+        if true_val == false_val {
+            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
+            //               thus `select` will always yield this same value irrespective of the condition.
+            //
+            // TODO: we could technically look through registers representing function local constants and
+            //       check whether they are equal to a given constant in cases where `lhs` and `rhs` are referring
+            //       to a function local register and a constant value or vice versa.
+            self.alloc.stack.push_provider(true_val)?;
+            return Ok(());
+        }
         let condition = match condition {
-            Provider::Register(condition) => {
-                // TODO: technically we could look through function local constant values here.
-                condition
-            }
+            Provider::Register(condition) => condition,
             Provider::Const(condition) => {
                 // Optimization: since condition is a constant value we can const-fold the `select`
                 //               instruction and simply push the selected value back to the provider stack.
                 let selected = match i32::from(condition) != 0 {
-                    true => lhs,
-                    false => rhs,
+                    true => true_val,
+                    false => false_val,
                 };
                 if let Provider::Register(reg) = selected {
                     if matches!(
@@ -2523,200 +2529,20 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        if lhs == rhs {
-            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
-            //               thus `select` will always yield this same value irrespective of the condition.
-            //
-            // TODO: we could technically look through registers representing function local constants and
-            //       check whether they are equal to a given constant in cases where `lhs` and `rhs` are referring
-            //       to a function local register and a constant value or vice versa.
-            self.alloc.stack.push_provider(lhs)?;
-            return Ok(());
-        }
-        let type_infer = match (lhs, rhs) {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
-                let result = self.alloc.stack.push_dynamic()?;
-                return self.translate_select_regs(result, condition, lhs, rhs);
-            }
-            (Provider::Register(_), Provider::Const(rhs)) => rhs.ty(),
-            (Provider::Const(lhs), Provider::Register(_)) => lhs.ty(),
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
-                debug_assert_eq!(lhs.ty(), rhs.ty());
-                lhs.ty()
-            }
-        };
-        if let Some(type_hint) = type_hint {
-            assert_eq!(type_hint, type_infer);
-        }
+        let true_val = self.alloc.stack.provider2reg(&true_val)?;
+        let false_val = self.alloc.stack.provider2reg(&false_val)?;
         let result = self.alloc.stack.push_dynamic()?;
-        match type_infer {
-            ValType::I32 | ValType::F32 => self.translate_select_32(result, condition, lhs, rhs),
-            ValType::I64 => self.translate_select_i64(result, condition, lhs, rhs),
-            ValType::F64 => self.translate_select_f64(result, condition, lhs, rhs),
-            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                self.translate_select_generic(result, condition, lhs, rhs)
-            }
-        }
-    }
-
-    fn translate_select_regs(
-        &mut self,
-        result: Reg,
-        condition: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    ) -> Result<(), Error> {
-        debug_assert_ne!(lhs, rhs);
-        self.push_fueled_instr(Instruction::select(result, lhs), FuelCostsProvider::base)?;
-        self.alloc
+        if self
+            .alloc
             .instr_encoder
-            .append_instr(Instruction::register2_ext(condition, rhs))?;
+            .try_fuse_select(&mut self.alloc.stack, result, condition)
+            .is_none()
+        {
+            let select_instr = Instruction::select_i32_ne_imm16(result, condition, 0_i16);
+            self.push_fueled_instr(select_instr, FuelCostsProvider::base)?;
+        };
+        self.append_instr(Instruction::register2_ext(true_val, false_val))?;
         Ok(())
-    }
-
-    fn translate_select_32(
-        &mut self,
-        result: Reg,
-        condition: Reg,
-        lhs: Provider<TypedVal>,
-        rhs: Provider<TypedVal>,
-    ) -> Result<(), Error> {
-        debug_assert_ne!(lhs, rhs);
-        let (instr, param) = match (lhs, rhs) {
-            (Provider::Register(_), Provider::Register(_)) => unreachable!(),
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
-                debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
-                (
-                    Instruction::select_imm32_rhs(result, lhs),
-                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
-                )
-            }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
-                debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
-                (
-                    Instruction::select_imm32_lhs(result, u32::from(lhs.untyped())),
-                    Instruction::register2_ext(condition, rhs),
-                )
-            }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
-                debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
-                debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
-                (
-                    Instruction::select_imm32(result, u32::from(lhs.untyped())),
-                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
-                )
-            }
-        };
-        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
-        self.append_instr(param)?;
-        Ok(())
-    }
-
-    fn translate_select_i64(
-        &mut self,
-        result: Reg,
-        condition: Reg,
-        lhs: Provider<TypedVal>,
-        rhs: Provider<TypedVal>,
-    ) -> Result<(), Error> {
-        debug_assert_ne!(lhs, rhs);
-        let lhs = match lhs {
-            Provider::Register(lhs) => Provider::Register(lhs),
-            Provider::Const(lhs) => match <Const32<i64>>::try_from(i64::from(lhs)) {
-                Ok(lhs) => Provider::Const(lhs),
-                Err(_) => Provider::Register(self.alloc.stack.alloc_const(lhs)?),
-            },
-        };
-        let rhs = match rhs {
-            Provider::Register(rhs) => Provider::Register(rhs),
-            Provider::Const(rhs) => match <Const32<i64>>::try_from(i64::from(rhs)) {
-                Ok(rhs) => Provider::Const(rhs),
-                Err(_) => Provider::Register(self.alloc.stack.alloc_const(rhs)?),
-            },
-        };
-        let (instr, param) = match (lhs, rhs) {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
-                return self.translate_select_regs(result, condition, lhs, rhs)
-            }
-            (Provider::Register(lhs), Provider::Const(rhs)) => (
-                Instruction::select_i64imm32_rhs(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
-            ),
-            (Provider::Const(lhs), Provider::Register(rhs)) => (
-                Instruction::select_i64imm32_lhs(result, lhs),
-                Instruction::register2_ext(condition, rhs),
-            ),
-            (Provider::Const(lhs), Provider::Const(rhs)) => (
-                Instruction::select_i64imm32(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
-            ),
-        };
-        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
-        self.append_instr(param)?;
-        Ok(())
-    }
-
-    fn translate_select_f64(
-        &mut self,
-        result: Reg,
-        condition: Reg,
-        lhs: Provider<TypedVal>,
-        rhs: Provider<TypedVal>,
-    ) -> Result<(), Error> {
-        debug_assert_ne!(lhs, rhs);
-        let lhs = match lhs {
-            Provider::Register(lhs) => Provider::Register(lhs),
-            Provider::Const(lhs) => match <Const32<f64>>::try_from(f64::from(lhs)) {
-                Ok(lhs) => Provider::Const(lhs),
-                Err(_) => Provider::Register(self.alloc.stack.alloc_const(lhs)?),
-            },
-        };
-        let rhs = match rhs {
-            Provider::Register(rhs) => Provider::Register(rhs),
-            Provider::Const(rhs) => match <Const32<f64>>::try_from(f64::from(rhs)) {
-                Ok(rhs) => Provider::Const(rhs),
-                Err(_) => Provider::Register(self.alloc.stack.alloc_const(rhs)?),
-            },
-        };
-        let (instr, param) = match (lhs, rhs) {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
-                return self.translate_select_regs(result, condition, lhs, rhs)
-            }
-            (Provider::Register(lhs), Provider::Const(rhs)) => (
-                Instruction::select_f64imm32_rhs(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
-            ),
-            (Provider::Const(lhs), Provider::Register(rhs)) => (
-                Instruction::select_f64imm32_lhs(result, lhs),
-                Instruction::register2_ext(condition, rhs),
-            ),
-            (Provider::Const(lhs), Provider::Const(rhs)) => (
-                Instruction::select_f64imm32(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
-            ),
-        };
-        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
-        self.append_instr(param)?;
-        Ok(())
-    }
-
-    fn translate_select_generic(
-        &mut self,
-        result: Reg,
-        condition: Reg,
-        lhs: Provider<TypedVal>,
-        rhs: Provider<TypedVal>,
-    ) -> Result<(), Error> {
-        debug_assert_ne!(lhs, rhs);
-        let lhs = match lhs {
-            Provider::Register(lhs) => lhs,
-            Provider::Const(lhs) => self.alloc.stack.alloc_const(lhs)?,
-        };
-        let rhs: Reg = match rhs {
-            Provider::Register(rhs) => rhs,
-            Provider::Const(rhs) => self.alloc.stack.alloc_const(rhs)?,
-        };
-        self.translate_select_regs(result, condition, lhs, rhs)
     }
 
     /// Translates a Wasm `reinterpret` instruction.
