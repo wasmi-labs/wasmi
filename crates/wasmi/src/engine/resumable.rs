@@ -47,9 +47,9 @@ impl ResumableCall {
     }
 }
 
-/// State required to resume a [`Func`] invocation after a host trap.
+/// Common state for resumable calls.
 #[derive(Debug)]
-pub struct ResumableCallHostTrap {
+pub struct ResumableCallCommon {
     /// The engine in use for the function invocation.
     ///
     /// # Note
@@ -65,6 +65,67 @@ pub struct ResumableCallHostTrap {
     /// The results of this function must always match with the
     /// results given when resuming the call.
     func: Func,
+    /// The value and call stack in use by the [`ResumableCallHostTrap`].
+    ///
+    /// # Note
+    ///
+    /// - We need to keep the stack around since the user might want to
+    ///   resume the execution.
+    /// - This stack is borrowed from the engine and needs to be given
+    ///   back to the engine when the [`ResumableCallHostTrap`] goes out
+    ///   of scope.
+    stack: Stack,
+}
+
+impl ResumableCallCommon {
+    /// Creates a new [`ResumableCallCommon`].
+    pub(super) fn new(engine: Engine, func: Func, stack: Stack) -> Self {
+        Self {
+            engine,
+            func,
+            stack,
+        }
+    }
+
+    /// Replaces the internal stack with an empty one that has no heap allocations.
+    pub(super) fn take_stack(&mut self) -> Stack {
+        replace(&mut self.stack, Stack::empty())
+    }
+
+    /// Returns an exclusive reference to the underlying [`Stack`].
+    pub(super) fn stack_mut(&mut self) -> &mut Stack {
+        &mut self.stack
+    }
+}
+
+impl Drop for ResumableCallCommon {
+    fn drop(&mut self) {
+        let stack = self.take_stack();
+        self.engine.recycle_stack(stack);
+    }
+}
+
+// # Safety
+//
+// `ResumableCallCommon` is not `Sync` because of the following sequence of fields:
+//
+// - `ResumableCallCommon`'s `Stack` is not `Sync`
+// - `Stack`'s `CallStack` is not `Sync`
+//     - `CallStack`'s `CallFrame` sequence is not `Sync`
+//     - `CallFrame`'s `InstructionPtr` is not `Sync`:
+//       Thi is because it is a raw pointer to an `Instruction` buffer owned by the [`Engine`].
+//
+// Since `Engine` is owned by `ResumableCallCommon` it cannot be outlived.
+// Also the `Instruction` buffers that are pointed to by the `InstructionPtr` are immutable.
+//
+// Therefore `ResumableCallCommon` can safely be assumed to be `Sync`.
+unsafe impl Sync for ResumableCallCommon {}
+
+/// State required to resume a [`Func`] invocation after a host trap.
+#[derive(Debug)]
+pub struct ResumableCallHostTrap {
+    /// Common state for resumable calls.
+    pub(super) common: ResumableCallCommon,
     /// The host function that returned a host error.
     ///
     /// # Note
@@ -90,32 +151,7 @@ pub struct ResumableCallHostTrap {
     ///
     /// This is only needed for the register-machine Wasmi engine backend.
     caller_results: RegSpan,
-    /// The value and call stack in use by the [`ResumableCallHostTrap`].
-    ///
-    /// # Note
-    ///
-    /// - We need to keep the stack around since the user might want to
-    ///   resume the execution.
-    /// - This stack is borrowed from the engine and needs to be given
-    ///   back to the engine when the [`ResumableCallHostTrap`] goes out
-    ///   of scope.
-    pub(super) stack: Stack,
 }
-
-// # Safety
-//
-// `ResumableCallHostTrap` is not `Sync` because of the following sequence of fields:
-//
-// - `ResumableCallHostTrap`'s `Stack` is not `Sync`
-// - `Stack`'s `CallStack` is not `Sync`
-// - `CallStack`'s `CallFrame` sequence is not `Sync`
-// - `CallFrame`'s `InstructionPtr` is not `Sync` because it is a raw pointer to an `Instruction` buffer owned by the [`Engine`].
-//
-// Since `Engine` is owned by `ResumableCallHostTrap` it cannot be outlived.
-// Also the `Instruction` buffers that are pointed to by the `InstructionPtr` are immutable.
-//
-// Therefore `ResumableCallHostTrap` can safely be assumed to be `Sync`.
-unsafe impl Sync for ResumableCallHostTrap {}
 
 impl ResumableCallHostTrap {
     /// Creates a new [`ResumableCallHostTrap`].
@@ -128,18 +164,11 @@ impl ResumableCallHostTrap {
         stack: Stack,
     ) -> Self {
         Self {
-            engine,
-            func,
+            common: ResumableCallCommon::new(engine, func, stack),
             host_func,
             host_error,
             caller_results,
-            stack,
         }
-    }
-
-    /// Replaces the internal stack with an empty one that has no heap allocations.
-    pub(super) fn take_stack(&mut self) -> Stack {
-        replace(&mut self.stack, Stack::empty())
     }
 
     /// Updates the [`ResumableCallHostTrap`] with the new `host_func`, `host_error` and `caller_results`.
@@ -151,13 +180,6 @@ impl ResumableCallHostTrap {
         self.host_func = host_func;
         self.host_error = host_error;
         self.caller_results = caller_results;
-    }
-}
-
-impl Drop for ResumableCallHostTrap {
-    fn drop(&mut self) {
-        let stack = self.take_stack();
-        self.engine.recycle_stack(stack);
     }
 }
 
@@ -213,18 +235,20 @@ impl ResumableCallHostTrap {
         inputs: &[Val],
         outputs: &mut [Val],
     ) -> Result<ResumableCall, Error> {
-        self.engine
+        self.common
+            .engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(inputs)
             })?;
-        self.engine.resolve_func_type(
-            self.func.ty_dedup(ctx.as_context()),
+        self.common.engine.resolve_func_type(
+            self.common.func.ty_dedup(ctx.as_context()),
             |func_type| -> Result<(), Error> {
                 func_type.prepare_outputs(outputs)?;
                 Ok(())
             },
         )?;
-        self.engine
+        self.common
+            .engine
             .clone()
             .resume_func(ctx.as_context_mut(), self, inputs, outputs)
             .map(ResumableCall::new)
@@ -293,11 +317,13 @@ impl<Results> TypedResumableCallHostTrap<Results> {
     where
         Results: WasmResults,
     {
-        self.engine
+        self.common
+            .engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(inputs)
             })?;
-        self.engine
+        self.common
+            .engine
             .clone()
             .resume_func(
                 ctx.as_context_mut(),
