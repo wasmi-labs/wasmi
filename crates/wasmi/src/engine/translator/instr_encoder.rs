@@ -1,4 +1,5 @@
 use super::{
+    comparator::TryIntoCmpSelectInstr,
     relink_result::RelinkResult as _,
     utils::{FromProviders as _, WasmInteger},
     visit_register::VisitInputRegisters as _,
@@ -927,6 +928,42 @@ impl InstrEncoder {
         _ = mem::replace(self.instrs.get_mut(last_instr), logicalized);
         stack.push_register(result)?;
         Ok(true)
+    }
+
+    /// Tries to fuse a compare instruction with a Wasm `select` instruction.
+    ///
+    /// # Returns
+    ///
+    /// - Returns `Some` if fusion was successful.
+    /// - Returns `None` if fusion could not be applied.
+    pub fn try_fuse_select(
+        &mut self,
+        stack: &mut ValueStack,
+        select_result: Reg,
+        select_condition: Reg,
+    ) -> Option<Instruction> {
+        let Some(last_instr) = self.last_instr else {
+            // If there is no last instruction there is no comparison instruction to negate.
+            return None;
+        };
+        let last_instruction = *self.instrs.get(last_instr);
+        let Some(last_result) = last_instruction.result() else {
+            // All negatable instructions have a single result register.
+            return None;
+        };
+        if matches!(stack.get_register_space(last_result), RegisterSpace::Local) {
+            // The instruction stores its result into a local variable which
+            // is an observable side effect which we are not allowed to mutate.
+            return None;
+        }
+        if last_result != select_condition {
+            // The result of the last instruction and the select's `condition`
+            // are not equal thus indicating that we cannot fuse the instructions.
+            return None;
+        }
+        let fused_select = last_instruction.try_into_cmp_select_instr(select_result)?;
+        _ = mem::replace(self.instrs.get_mut(last_instr), fused_select);
+        Some(fused_select)
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].

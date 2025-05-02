@@ -31,8 +31,8 @@ macro_rules! define_enum {
         /// This type represents all such words and for simplicity we call the type [`Instruction`], still.
         ///
         /// Most instructions are composed of a single instruction word. An example of
-        /// this is [`Instruction::I32Add`]. However, some instructions, like
-        /// [`Instruction::Select`], are composed of two or more instruction words.
+        /// this is [`Instruction::I32Add`]. However, some instructions, like the `select` instructions
+        /// are composed of two or more instruction words.
         ///
         /// The Wasmi bytecode translation makes sure that instructions always appear in valid sequences.
         /// The Wasmi executor relies on the guarantees that the Wasmi translator provides.

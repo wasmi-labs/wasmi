@@ -1,6 +1,6 @@
 use super::ValueStack;
 use crate::{
-    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Instruction},
+    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Instruction, Reg},
     Error,
 };
 
@@ -205,6 +205,107 @@ impl LogicalizeCmpInstr for Instruction {
             _ => return None,
         };
         Some(logicalized)
+    }
+}
+
+pub trait TryIntoCmpSelectInstr: Sized {
+    fn try_into_cmp_select_instr(&self, result: Reg) -> Option<Self>;
+}
+
+impl TryIntoCmpSelectInstr for Instruction {
+    fn try_into_cmp_select_instr(&self, result: Reg) -> Option<Self> {
+        use Instruction as I;
+        #[rustfmt::skip]
+        let fused = match *self {
+            // i32
+            I::I32Eq { lhs, rhs, .. } => I::select_i32_eq(result, lhs, rhs),
+            I::I32Ne { lhs, rhs, .. } => I::select_i32_ne(result, lhs, rhs),
+            I::I32LeS { lhs, rhs, .. } => I::select_i32_le_s(result, lhs, rhs),
+            I::I32LeU { lhs, rhs, .. } => I::select_i32_le_u(result, lhs, rhs),
+            I::I32LtS { lhs, rhs, .. } => I::select_i32_lt_s(result, lhs, rhs),
+            I::I32LtU { lhs, rhs, .. } => I::select_i32_lt_u(result, lhs, rhs),
+            I::I32EqImm16 { lhs, rhs, .. } => I::select_i32_eq_imm16(result, lhs, rhs),
+            I::I32NeImm16 { lhs, rhs, .. } => I::select_i32_ne_imm16(result, lhs, rhs),
+            I::I32LeSImm16Lhs { lhs, rhs, .. } => I::select_i32_le_s_imm16_lhs(result, lhs, rhs),
+            I::I32LeUImm16Lhs { lhs, rhs, .. } => I::select_i32_le_u_imm16_lhs(result, lhs, rhs),
+            I::I32LtSImm16Lhs { lhs, rhs, .. } => I::select_i32_lt_s_imm16_lhs(result, lhs, rhs),
+            I::I32LtUImm16Lhs { lhs, rhs, .. } => I::select_i32_lt_u_imm16_lhs(result, lhs, rhs),
+            I::I32LeSImm16Rhs { lhs, rhs, .. } => I::select_i32_le_s_imm16_rhs(result, lhs, rhs),
+            I::I32LeUImm16Rhs { lhs, rhs, .. } => I::select_i32_le_u_imm16_rhs(result, lhs, rhs),
+            I::I32LtSImm16Rhs { lhs, rhs, .. } => I::select_i32_lt_s_imm16_rhs(result, lhs, rhs),
+            I::I32LtUImm16Rhs { lhs, rhs, .. } => I::select_i32_lt_u_imm16_rhs(result, lhs, rhs),
+            // i32 (and, or, xor)
+            I::I32BitAnd { lhs, rhs, .. } => I::select_i32_and(result, lhs, rhs),
+            I::I32BitOr { lhs, rhs, .. } => I::select_i32_or(result, lhs, rhs),
+            I::I32BitXor { lhs, rhs, .. } => I::select_i32_xor(result, lhs, rhs),
+            I::I32And { lhs, rhs, .. } => I::select_i32_and(result, lhs, rhs),
+            I::I32Or { lhs, rhs, .. } => I::select_i32_or(result, lhs, rhs),
+            I::I32Xor { lhs, rhs, .. } => I::select_i32_xor(result, lhs, rhs),
+            I::I32Nand { lhs, rhs, .. } => I::select_i32_nand(result, lhs, rhs),
+            I::I32Nor { lhs, rhs, .. } => I::select_i32_nor(result, lhs, rhs),
+            I::I32Xnor { lhs, rhs, .. } => I::select_i32_xnor(result, lhs, rhs),
+            I::I32BitAndImm16 { lhs, rhs, .. } => I::select_i32_and_imm16(result, lhs, rhs),
+            I::I32BitOrImm16 { lhs, rhs, .. } => I::select_i32_or_imm16(result, lhs, rhs),
+            I::I32BitXorImm16 { lhs, rhs, .. } => I::select_i32_xor_imm16(result, lhs, rhs),
+            I::I32AndImm16 { lhs, rhs, .. } => I::select_i32_and_imm16(result, lhs, rhs),
+            I::I32OrImm16 { lhs, rhs, .. } => I::select_i32_or_imm16(result, lhs, rhs),
+            I::I32XorImm16 { lhs, rhs, .. } => I::select_i32_xor_imm16(result, lhs, rhs),
+            I::I32NandImm16 { lhs, rhs, .. } => I::select_i32_nand_imm16(result, lhs, rhs),
+            I::I32NorImm16 { lhs, rhs, .. } => I::select_i32_nor_imm16(result, lhs, rhs),
+            I::I32XnorImm16 { lhs, rhs, .. } => I::select_i32_xnor_imm16(result, lhs, rhs),
+            // i64
+            I::I64Eq { lhs, rhs, .. } => I::select_i64_eq(result, lhs, rhs),
+            I::I64Ne { lhs, rhs, .. } => I::select_i64_ne(result, lhs, rhs),
+            I::I64LeS { lhs, rhs, .. } => I::select_i64_le_s(result, lhs, rhs),
+            I::I64LeU { lhs, rhs, .. } => I::select_i64_le_u(result, lhs, rhs),
+            I::I64LtS { lhs, rhs, .. } => I::select_i64_lt_s(result, lhs, rhs),
+            I::I64LtU { lhs, rhs, .. } => I::select_i64_lt_u(result, lhs, rhs),
+            I::I64EqImm16 { lhs, rhs, .. } => I::select_i64_eq_imm16(result, lhs, rhs),
+            I::I64NeImm16 { lhs, rhs, .. } => I::select_i64_ne_imm16(result, lhs, rhs),
+            I::I64LeSImm16Lhs { lhs, rhs, .. } => I::select_i64_le_s_imm16_lhs(result, lhs, rhs),
+            I::I64LeUImm16Lhs { lhs, rhs, .. } => I::select_i64_le_u_imm16_lhs(result, lhs, rhs),
+            I::I64LtSImm16Lhs { lhs, rhs, .. } => I::select_i64_lt_s_imm16_lhs(result, lhs, rhs),
+            I::I64LtUImm16Lhs { lhs, rhs, .. } => I::select_i64_lt_u_imm16_lhs(result, lhs, rhs),
+            I::I64LeSImm16Rhs { lhs, rhs, .. } => I::select_i64_le_s_imm16_rhs(result, lhs, rhs),
+            I::I64LeUImm16Rhs { lhs, rhs, .. } => I::select_i64_le_u_imm16_rhs(result, lhs, rhs),
+            I::I64LtSImm16Rhs { lhs, rhs, .. } => I::select_i64_lt_s_imm16_rhs(result, lhs, rhs),
+            I::I64LtUImm16Rhs { lhs, rhs, .. } => I::select_i64_lt_u_imm16_rhs(result, lhs, rhs),
+            // i64 (and, or, xor)
+            I::I64BitAnd { lhs, rhs, .. } => I::select_i64_and(result, lhs, rhs),
+            I::I64BitOr { lhs, rhs, .. } => I::select_i64_or(result, lhs, rhs),
+            I::I64BitXor { lhs, rhs, .. } => I::select_i64_xor(result, lhs, rhs),
+            I::I64And { lhs, rhs, .. } => I::select_i64_and(result, lhs, rhs),
+            I::I64Or { lhs, rhs, .. } => I::select_i64_or(result, lhs, rhs),
+            I::I64Xor { lhs, rhs, .. } => I::select_i64_xor(result, lhs, rhs),
+            I::I64Nand { lhs, rhs, .. } => I::select_i64_nand(result, lhs, rhs),
+            I::I64Nor { lhs, rhs, .. } => I::select_i64_nor(result, lhs, rhs),
+            I::I64Xnor { lhs, rhs, .. } => I::select_i64_xnor(result, lhs, rhs),
+            I::I64BitAndImm16 { lhs, rhs, .. } => I::select_i64_and_imm16(result, lhs, rhs),
+            I::I64BitOrImm16 { lhs, rhs, .. } => I::select_i64_or_imm16(result, lhs, rhs),
+            I::I64BitXorImm16 { lhs, rhs, .. } => I::select_i64_xor_imm16(result, lhs, rhs),
+            I::I64AndImm16 { lhs, rhs, .. } => I::select_i64_and_imm16(result, lhs, rhs),
+            I::I64OrImm16 { lhs, rhs, .. } => I::select_i64_or_imm16(result, lhs, rhs),
+            I::I64XorImm16 { lhs, rhs, .. } => I::select_i64_xor_imm16(result, lhs, rhs),
+            I::I64NandImm16 { lhs, rhs, .. } => I::select_i64_nand_imm16(result, lhs, rhs),
+            I::I64NorImm16 { lhs, rhs, .. } => I::select_i64_nor_imm16(result, lhs, rhs),
+            I::I64XnorImm16 { lhs, rhs, .. } => I::select_i64_xnor_imm16(result, lhs, rhs),
+            // f32
+            I::F32Eq { lhs, rhs, .. } => I::select_f32_eq(result, lhs, rhs),
+            I::F32Ne { lhs, rhs, .. } => I::select_f32_ne(result, lhs, rhs),
+            I::F32Lt { lhs, rhs, .. } => I::select_f32_lt(result, lhs, rhs),
+            I::F32Le { lhs, rhs, .. } => I::select_f32_le(result, lhs, rhs),
+            I::F32NotLt { lhs, rhs, .. } => I::select_f32_not_lt(result, lhs, rhs),
+            I::F32NotLe { lhs, rhs, .. } => I::select_f32_not_le(result, lhs, rhs),
+            // f64
+            I::F64Eq { lhs, rhs, .. } => I::select_f64_eq(result, lhs, rhs),
+            I::F64Ne { lhs, rhs, .. } => I::select_f64_ne(result, lhs, rhs),
+            I::F64Lt { lhs, rhs, .. } => I::select_f64_lt(result, lhs, rhs),
+            I::F64Le { lhs, rhs, .. } => I::select_f64_le(result, lhs, rhs),
+            I::F64NotLt { lhs, rhs, .. } => I::select_f64_not_lt(result, lhs, rhs),
+            I::F64NotLe { lhs, rhs, .. } => I::select_f64_not_le(result, lhs, rhs),
+            _ => return None,
+        };
+        Some(fused)
     }
 }
 
