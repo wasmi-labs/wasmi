@@ -6,7 +6,7 @@ use self::{
     stack::CallFrame,
 };
 use crate::{
-    engine::{CallParams, CallResults, EngineInner, ResumableCallBase, ResumableInvocation},
+    engine::{CallParams, CallResults, EngineInner, ResumableCallBase, ResumableCallHostTrap},
     func::HostFuncEntity,
     ir::{Reg, RegSpan},
     store::CallHooks,
@@ -88,7 +88,7 @@ impl EngineInner {
                     let host_func = *error.host_func();
                     let caller_results = *error.caller_results();
                     let host_error = error.into_error();
-                    Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
+                    Ok(ResumableCallBase::HostTrap(ResumableCallHostTrap::new(
                         store.engine().clone(),
                         *func,
                         host_func,
@@ -115,7 +115,7 @@ impl EngineInner {
     pub fn resume_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        mut invocation: ResumableInvocation,
+        mut invocation: ResumableCallHostTrap,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
@@ -141,7 +141,7 @@ impl EngineInner {
                     let host_func = *error.host_func();
                     let caller_results = *error.caller_results();
                     invocation.update(host_func, error.into_error(), caller_results);
-                    Ok(ResumableCallBase::Resumable(invocation))
+                    Ok(ResumableCallBase::HostTrap(invocation))
                 }
                 Err(error) => {
                     self.stacks.lock().recycle(invocation.take_stack());

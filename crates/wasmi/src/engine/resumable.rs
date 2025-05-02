@@ -25,7 +25,7 @@ pub(crate) enum ResumableCallBase<T> {
     /// The resumable call has finished properly and returned a result.
     Finished(T),
     /// The resumable call encountered a host error and can be resumed.
-    Resumable(ResumableInvocation),
+    HostTrap(ResumableCallHostTrap),
 }
 
 /// Returned by calling a [`Func`] in a resumable way.
@@ -34,7 +34,7 @@ pub enum ResumableCall {
     /// The resumable call has finished properly and returned a result.
     Finished,
     /// The resumable call encountered a host error and can be resumed.
-    Resumable(ResumableInvocation),
+    Resumable(ResumableCallHostTrap),
 }
 
 impl ResumableCall {
@@ -42,14 +42,14 @@ impl ResumableCall {
     pub(crate) fn new(call: ResumableCallBase<()>) -> Self {
         match call {
             ResumableCallBase::Finished(()) => Self::Finished,
-            ResumableCallBase::Resumable(invocation) => Self::Resumable(invocation),
+            ResumableCallBase::HostTrap(invocation) => Self::Resumable(invocation),
         }
     }
 }
 
-/// State required to resume a [`Func`] invocation.
+/// State required to resume a [`Func`] invocation after a host trap.
 #[derive(Debug)]
-pub struct ResumableInvocation {
+pub struct ResumableCallHostTrap {
     /// The engine in use for the function invocation.
     ///
     /// # Note
@@ -90,35 +90,35 @@ pub struct ResumableInvocation {
     ///
     /// This is only needed for the register-machine Wasmi engine backend.
     caller_results: RegSpan,
-    /// The value and call stack in use by the [`ResumableInvocation`].
+    /// The value and call stack in use by the [`ResumableCallHostTrap`].
     ///
     /// # Note
     ///
     /// - We need to keep the stack around since the user might want to
     ///   resume the execution.
     /// - This stack is borrowed from the engine and needs to be given
-    ///   back to the engine when the [`ResumableInvocation`] goes out
+    ///   back to the engine when the [`ResumableCallHostTrap`] goes out
     ///   of scope.
     pub(super) stack: Stack,
 }
 
 // # Safety
 //
-// `ResumableInvocation` is not `Sync` because of the following sequence of fields:
+// `ResumableCallHostTrap` is not `Sync` because of the following sequence of fields:
 //
-// - `ResumableInvocation`'s `Stack` is not `Sync`
+// - `ResumableCallHostTrap`'s `Stack` is not `Sync`
 // - `Stack`'s `CallStack` is not `Sync`
 // - `CallStack`'s `CallFrame` sequence is not `Sync`
 // - `CallFrame`'s `InstructionPtr` is not `Sync` because it is a raw pointer to an `Instruction` buffer owned by the [`Engine`].
 //
-// Since `Engine` is owned by `ResumableInvocation` it cannot be outlived.
+// Since `Engine` is owned by `ResumableCallHostTrap` it cannot be outlived.
 // Also the `Instruction` buffers that are pointed to by the `InstructionPtr` are immutable.
 //
-// Therefore `ResumableInvocation` can safely be assumed to be `Sync`.
-unsafe impl Sync for ResumableInvocation {}
+// Therefore `ResumableCallHostTrap` can safely be assumed to be `Sync`.
+unsafe impl Sync for ResumableCallHostTrap {}
 
-impl ResumableInvocation {
-    /// Creates a new [`ResumableInvocation`].
+impl ResumableCallHostTrap {
+    /// Creates a new [`ResumableCallHostTrap`].
     pub(super) fn new(
         engine: Engine,
         func: Func,
@@ -142,7 +142,7 @@ impl ResumableInvocation {
         replace(&mut self.stack, Stack::empty())
     }
 
-    /// Updates the [`ResumableInvocation`] with the new `host_func`, `host_error` and `caller_results`.
+    /// Updates the [`ResumableCallHostTrap`] with the new `host_func`, `host_error` and `caller_results`.
     ///
     /// # Note
     ///
@@ -154,19 +154,19 @@ impl ResumableInvocation {
     }
 }
 
-impl Drop for ResumableInvocation {
+impl Drop for ResumableCallHostTrap {
     fn drop(&mut self) {
         let stack = self.take_stack();
         self.engine.recycle_stack(stack);
     }
 }
 
-impl ResumableInvocation {
+impl ResumableCallHostTrap {
     /// Returns the host [`Func`] that returned the host error.
     ///
     /// # Note
     ///
-    /// When using [`ResumableInvocation::resume`] the `inputs`
+    /// When using [`ResumableCallHostTrap::resume`] the `inputs`
     /// need to match the results of this host function so that
     /// the function invocation can properly resume. For that
     /// number and types of the values provided must match.
@@ -187,7 +187,7 @@ impl ResumableInvocation {
     ///
     /// # Note
     ///
-    /// This is `Some` only for [`ResumableInvocation`] originating from the register-machine Wasmi engine.
+    /// This is `Some` only for [`ResumableCallHostTrap`] originating from the register-machine Wasmi engine.
     pub(crate) fn caller_results(&self) -> RegSpan {
         self.caller_results
     }
@@ -239,7 +239,7 @@ pub enum TypedResumableCall<T> {
     /// The resumable call has finished properly and returned a result.
     Finished(T),
     /// The resumable call encountered a host error and can be resumed.
-    Resumable(TypedResumableInvocation<T>),
+    HostTrap(TypedResumableCallHostTrap<T>),
 }
 
 impl<Results> TypedResumableCall<Results> {
@@ -247,8 +247,8 @@ impl<Results> TypedResumableCall<Results> {
     pub(crate) fn new(call: ResumableCallBase<Results>) -> Self {
         match call {
             ResumableCallBase::Finished(results) => Self::Finished(results),
-            ResumableCallBase::Resumable(invocation) => {
-                Self::Resumable(TypedResumableInvocation::new(invocation))
+            ResumableCallBase::HostTrap(invocation) => {
+                Self::HostTrap(TypedResumableCallHostTrap::new(invocation))
             }
         }
     }
@@ -257,15 +257,15 @@ impl<Results> TypedResumableCall<Results> {
 /// State required to resume a [`TypedFunc`] invocation.
 ///
 /// [`TypedFunc`]: [`crate::TypedFunc`]
-pub struct TypedResumableInvocation<Results> {
-    invocation: ResumableInvocation,
+pub struct TypedResumableCallHostTrap<Results> {
+    invocation: ResumableCallHostTrap,
     /// The parameter and result typed encoded in Rust type system.
     results: PhantomData<fn() -> Results>,
 }
 
-impl<Results> TypedResumableInvocation<Results> {
-    /// Creates a [`TypedResumableInvocation`] wrapper for the given [`ResumableInvocation`].
-    pub(crate) fn new(invocation: ResumableInvocation) -> Self {
+impl<Results> TypedResumableCallHostTrap<Results> {
+    /// Creates a [`TypedResumableCallHostTrap`] wrapper for the given [`ResumableCallHostTrap`].
+    pub(crate) fn new(invocation: ResumableCallHostTrap) -> Self {
         Self {
             invocation,
             results: PhantomData,
@@ -309,17 +309,17 @@ impl<Results> TypedResumableInvocation<Results> {
     }
 }
 
-impl<Results> Deref for TypedResumableInvocation<Results> {
-    type Target = ResumableInvocation;
+impl<Results> Deref for TypedResumableCallHostTrap<Results> {
+    type Target = ResumableCallHostTrap;
 
     fn deref(&self) -> &Self::Target {
         &self.invocation
     }
 }
 
-impl<Results> fmt::Debug for TypedResumableInvocation<Results> {
+impl<Results> fmt::Debug for TypedResumableCallHostTrap<Results> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TypedResumableInvocation")
+        f.debug_struct("TypedResumableCallHostTrap")
             .field("invocation", &self.invocation)
             .field("results", &self.results)
             .finish()

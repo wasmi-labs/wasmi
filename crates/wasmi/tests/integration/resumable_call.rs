@@ -15,11 +15,11 @@ use wasmi::{
     Linker,
     Module,
     ResumableCall,
-    ResumableInvocation,
+    ResumableCallHostTrap,
     Store,
     TypedFunc,
     TypedResumableCall,
-    TypedResumableInvocation,
+    TypedResumableCallHostTrap,
     Val,
 };
 
@@ -70,15 +70,15 @@ fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), 
 pub trait UnwrapResumable {
     type Results;
 
-    fn unwrap_resumable(self) -> TypedResumableInvocation<Self::Results>;
+    fn unwrap_resumable(self) -> TypedResumableCallHostTrap<Self::Results>;
 }
 
 impl<Results> UnwrapResumable for Result<TypedResumableCall<Results>, Error> {
     type Results = Results;
 
-    fn unwrap_resumable(self) -> TypedResumableInvocation<Self::Results> {
+    fn unwrap_resumable(self) -> TypedResumableCallHostTrap<Self::Results> {
         match self.unwrap() {
-            TypedResumableCall::Resumable(invocation) => invocation,
+            TypedResumableCall::HostTrap(invocation) => invocation,
             TypedResumableCall::Finished(_) => panic!("expected TypedResumableCall::Resumable"),
         }
     }
@@ -99,7 +99,7 @@ fn resumable_call_smoldot_01() {
     let invocation = wasm_fn.call_resumable(&mut store, ()).unwrap_resumable();
     match invocation.resume(&mut store, &[Val::I32(42)]).unwrap() {
         TypedResumableCall::Finished(result) => assert_eq!(result, 42),
-        TypedResumableCall::Resumable(_) => panic!("expected TypeResumableCall::Finished"),
+        TypedResumableCall::HostTrap(_) => panic!("expected TypeResumableCall::Finished"),
     }
 }
 
@@ -142,7 +142,7 @@ fn resumable_call_smoldot_tail_02() {
     let invocation = wasm_fn.call_resumable(&mut store, ()).unwrap_resumable();
     match invocation.resume(&mut store, &[Val::I32(42)]).unwrap() {
         TypedResumableCall::Finished(result) => assert_eq!(result, 42),
-        TypedResumableCall::Resumable(_) => panic!("expected TypeResumableCall::Finished"),
+        TypedResumableCall::HostTrap(_) => panic!("expected TypeResumableCall::Finished"),
     }
 }
 
@@ -168,7 +168,7 @@ fn resumable_call_smoldot_02() {
     let invocation = wasm_fn.call_resumable(&mut store, ()).unwrap_resumable();
     match invocation.resume(&mut store, &[Val::I32(42)]).unwrap() {
         TypedResumableCall::Finished(result) => assert_eq!(result, 11),
-        TypedResumableCall::Resumable(_) => panic!("expected TypeResumableCall::Finished"),
+        TypedResumableCall::HostTrap(_) => panic!("expected TypeResumableCall::Finished"),
     }
 }
 
@@ -257,7 +257,7 @@ trait AssertResumable {
 
 impl AssertResumable for ResumableCall {
     type Results = ();
-    type Invocation = ResumableInvocation;
+    type Invocation = ResumableCallHostTrap;
 
     fn assert_resumable(
         self,
@@ -317,7 +317,7 @@ fn run_test(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
 
 impl<Results> AssertResumable for TypedResumableCall<Results> {
     type Results = Results;
-    type Invocation = TypedResumableInvocation<Results>;
+    type Invocation = TypedResumableCallHostTrap<Results>;
 
     fn assert_resumable(
         self,
@@ -326,7 +326,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
         host_results: &[ValType],
     ) -> Self::Invocation {
         match self {
-            Self::Resumable(invocation) => {
+            Self::HostTrap(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
                 assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
@@ -338,7 +338,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
     fn assert_finish(self) -> Self::Results {
         match self {
             Self::Finished(results) => results,
-            Self::Resumable(_) => panic!("expected the resumable call to finish"),
+            Self::HostTrap(_) => panic!("expected the resumable call to finish"),
         }
     }
 }

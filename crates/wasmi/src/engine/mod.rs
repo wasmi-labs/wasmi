@@ -37,7 +37,12 @@ pub use self::{
     config::{CompilationMode, Config},
     executor::ResumableHostError,
     limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
-    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
+    resumable::{
+        ResumableCall,
+        ResumableCallHostTrap,
+        TypedResumableCall,
+        TypedResumableCallHostTrap,
+    },
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
 };
@@ -363,7 +368,7 @@ impl Engine {
     pub(crate) fn resume_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        invocation: ResumableInvocation,
+        invocation: ResumableCallHostTrap,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
