@@ -1,3 +1,5 @@
+use crate::core::ValType;
+
 /// Macro that turns an iterator over `Option<T>` into an iterator over `T`.
 ///
 /// - Filters out all the `None` items yielded by the input iterator.
@@ -236,4 +238,148 @@ fn effective_address32(ptr: u64, offset: u64) -> Address32 {
         panic!("ptr+offset must fit in a `u32` for this testcase")
     };
     addr32
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum CmpOp {
+    // i32
+    I32And,
+    I32Or,
+    I32Xor,
+    I32Eq,
+    I32Ne,
+    I32LtS,
+    I32LtU,
+    I32LeS,
+    I32LeU,
+    I32GtS,
+    I32GtU,
+    I32GeS,
+    I32GeU,
+    // i64
+    I64And,
+    I64Or,
+    I64Xor,
+    I64Eq,
+    I64Ne,
+    I64LtS,
+    I64LtU,
+    I64LeS,
+    I64LeU,
+    I64GtS,
+    I64GtU,
+    I64GeS,
+    I64GeU,
+    // f32
+    F32Eq,
+    F32Ne,
+    F32Lt,
+    F32Le,
+    F32Gt,
+    F32Ge,
+    // f64
+    F64Eq,
+    F64Ne,
+    F64Lt,
+    F64Le,
+    F64Gt,
+    F64Ge,
+}
+
+impl CmpOp {
+    /// Returns the Wasm parameter type of the [`CmpOp`].
+    pub fn param_ty(self) -> ValType {
+        match self {
+            CmpOp::I32And
+            | CmpOp::I32Or
+            | CmpOp::I32Xor
+            | CmpOp::I32Eq
+            | CmpOp::I32Ne
+            | CmpOp::I32LtS
+            | CmpOp::I32LtU
+            | CmpOp::I32LeS
+            | CmpOp::I32LeU
+            | CmpOp::I32GtS
+            | CmpOp::I32GtU
+            | CmpOp::I32GeS
+            | CmpOp::I32GeU => ValType::I32,
+            CmpOp::I64And
+            | CmpOp::I64Or
+            | CmpOp::I64Xor
+            | CmpOp::I64Eq
+            | CmpOp::I64Ne
+            | CmpOp::I64LtS
+            | CmpOp::I64LtU
+            | CmpOp::I64LeS
+            | CmpOp::I64LeU
+            | CmpOp::I64GtS
+            | CmpOp::I64GtU
+            | CmpOp::I64GeS
+            | CmpOp::I64GeU => ValType::I64,
+            CmpOp::F32Eq
+            | CmpOp::F32Ne
+            | CmpOp::F32Lt
+            | CmpOp::F32Le
+            | CmpOp::F32Gt
+            | CmpOp::F32Ge => ValType::F32,
+            CmpOp::F64Eq
+            | CmpOp::F64Ne
+            | CmpOp::F64Lt
+            | CmpOp::F64Le
+            | CmpOp::F64Gt
+            | CmpOp::F64Ge => ValType::F64,
+        }
+    }
+
+    /// Returns the Wasm result type of the [`CmpOp`].
+    pub fn result_ty(self) -> ValType {
+        match self {
+            CmpOp::I64And | CmpOp::I64Or | CmpOp::I64Xor => ValType::I64,
+            _ => ValType::I32,
+        }
+    }
+
+    /// Returns a string representation of the Wasm operator without type annotation.
+    pub fn op_str(self) -> &'static str {
+        match self {
+            CmpOp::I32And => "and",
+            CmpOp::I32Or => "or",
+            CmpOp::I32Xor => "xor",
+            CmpOp::I32Eq => "eq",
+            CmpOp::I32Ne => "ne",
+            CmpOp::I32LtS => "lt_s",
+            CmpOp::I32LtU => "lt_u",
+            CmpOp::I32LeS => "le_s",
+            CmpOp::I32LeU => "le_u",
+            CmpOp::I32GtS => "gt_s",
+            CmpOp::I32GtU => "gt_u",
+            CmpOp::I32GeS => "ge_s",
+            CmpOp::I32GeU => "ge_u",
+            CmpOp::I64And => "and",
+            CmpOp::I64Or => "or",
+            CmpOp::I64Xor => "xor",
+            CmpOp::I64Eq => "eq",
+            CmpOp::I64Ne => "ne",
+            CmpOp::I64LtS => "lt_s",
+            CmpOp::I64LtU => "lt_u",
+            CmpOp::I64LeS => "le_s",
+            CmpOp::I64LeU => "le_u",
+            CmpOp::I64GtS => "gt_s",
+            CmpOp::I64GtU => "gt_u",
+            CmpOp::I64GeS => "ge_s",
+            CmpOp::I64GeU => "ge_u",
+            CmpOp::F32Eq => "eq",
+            CmpOp::F32Ne => "ne",
+            CmpOp::F32Lt => "lt",
+            CmpOp::F32Le => "le",
+            CmpOp::F32Gt => "gt",
+            CmpOp::F32Ge => "ge",
+            CmpOp::F64Eq => "eq",
+            CmpOp::F64Ne => "ne",
+            CmpOp::F64Lt => "lt",
+            CmpOp::F64Le => "le",
+            CmpOp::F64Gt => "gt",
+            CmpOp::F64Ge => "ge",
+        }
+    }
 }
