@@ -448,24 +448,6 @@ impl<'engine> Executor<'engine> {
                 Instr::CallIndirectImm16 { results, func_type } => {
                     self.execute_call_indirect_imm16(store, results, func_type)?
                 }
-                Instr::Select { result, lhs } => self.execute_select(result, lhs),
-                Instr::SelectImm32Rhs { result, lhs } => self.execute_select_imm32_rhs(result, lhs),
-                Instr::SelectImm32Lhs { result, lhs } => self.execute_select_imm32_lhs(result, lhs),
-                Instr::SelectImm32 { result, lhs } => self.execute_select_imm32(result, lhs),
-                Instr::SelectI64Imm32Rhs { result, lhs } => {
-                    self.execute_select_i64imm32_rhs(result, lhs)
-                }
-                Instr::SelectI64Imm32Lhs { result, lhs } => {
-                    self.execute_select_i64imm32_lhs(result, lhs)
-                }
-                Instr::SelectI64Imm32 { result, lhs } => self.execute_select_i64imm32(result, lhs),
-                Instr::SelectF64Imm32Rhs { result, lhs } => {
-                    self.execute_select_f64imm32_rhs(result, lhs)
-                }
-                Instr::SelectF64Imm32Lhs { result, lhs } => {
-                    self.execute_select_f64imm32_lhs(result, lhs)
-                }
-                Instr::SelectF64Imm32 { result, lhs } => self.execute_select_f64imm32(result, lhs),
                 Instr::SelectI32Eq { result, lhs, rhs } => {
                     self.execute_select_i32_eq(result, lhs, rhs)
                 }
