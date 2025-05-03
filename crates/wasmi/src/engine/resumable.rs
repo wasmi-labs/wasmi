@@ -77,6 +77,38 @@ impl ResumableHostTrapError {
     }
 }
 
+/// Error returned from a called host function in a resumable state.
+#[derive(Debug)]
+pub struct ResumableOutOfFuelError {
+    /// The minimum required amount of fuel to progress execution.
+    required_fuel: u64,
+}
+
+impl core::error::Error for ResumableOutOfFuelError {}
+
+impl fmt::Display for ResumableOutOfFuelError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ran out of fuel while calling a resumable function: required_fuel={}",
+            self.required_fuel
+        )
+    }
+}
+
+impl ResumableOutOfFuelError {
+    /// Creates a new [`ResumableOutOfFuelError`].
+    #[cold]
+    pub(crate) fn new(required_fuel: u64) -> Self {
+        Self { required_fuel }
+    }
+
+    /// Consumes `self` to return the underlying [`Error`].
+    pub(crate) fn required_fuel(self) -> u64 {
+        self.required_fuel
+    }
+}
+
 /// Returned by calling a [`Func`] in a resumable way.
 #[derive(Debug)]
 pub enum ResumableCall {
