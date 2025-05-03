@@ -32,6 +32,23 @@ pub(crate) enum ResumableCallBase<T> {
     OutOfFuel(ResumableCallOutOfFuel),
 }
 
+/// Any resumable error.
+#[derive(Debug)]
+pub enum ResumableError {
+    HostTrap(ResumableHostTrapError),
+    OutOfFuel(ResumableOutOfFuelError),
+}
+
+impl ResumableError {
+    /// Consumes `self` to return the underlying [`Error`].
+    pub fn into_error(self) -> Error {
+        match self {
+            ResumableError::HostTrap(error) => error.into_error(),
+            ResumableError::OutOfFuel(error) => error.into_error(),
+        }
+    }
+}
+
 /// Error returned from a called host function in a resumable state.
 #[derive(Debug)]
 pub struct ResumableHostTrapError {
@@ -290,6 +307,14 @@ impl ResumableCallHostTrap {
         self.host_error = host_error;
         self.caller_results = caller_results;
     }
+
+    /// Updates the [`ResumableCallHostTrap`] to a [`ResumableCallOutOfFuel`].
+    pub(super) fn update_to_out_of_fuel(self, required_fuel: u64) -> ResumableCallOutOfFuel {
+        ResumableCallOutOfFuel {
+            common: self.common,
+            required_fuel,
+        }
+    }
 }
 
 impl ResumableCallHostTrap {
@@ -396,6 +421,21 @@ impl ResumableCallOutOfFuel {
     /// This should only be called from the register-machine Wasmi engine backend.
     pub(super) fn update(&mut self, required_fuel: u64) {
         self.required_fuel = required_fuel;
+    }
+
+    /// Updates the [`ResumableCallHostTrap`] to a [`ResumableCallOutOfFuel`].
+    pub(super) fn update_to_host_trap(
+        self,
+        host_func: Func,
+        host_error: Error,
+        caller_results: RegSpan,
+    ) -> ResumableCallHostTrap {
+        ResumableCallHostTrap {
+            common: self.common,
+            host_func,
+            host_error,
+            caller_results,
+        }
     }
 
     /// Returns the minimum required fuel to progress execution.

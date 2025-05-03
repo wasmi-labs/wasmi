@@ -8,7 +8,7 @@ use super::errors::{
 };
 use crate::{
     core::{FuelError, HostError, MemoryError, TableError, TrapCode},
-    engine::{ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
+    engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
@@ -127,12 +127,14 @@ impl Error {
             .map(|boxed| *boxed)
     }
 
-    pub(crate) fn into_resumable(self) -> Result<ResumableHostTrapError, Error> {
-        if matches!(&*self.kind, ErrorKind::ResumableHostTrap(_)) {
-            let ErrorKind::ResumableHostTrap(error) = *self.kind else {
-                unreachable!("asserted that host error is resumable")
+    pub(crate) fn into_resumable(self) -> Result<ResumableError, Error> {
+        if matches!(self.kind(), ErrorKind::ResumableHostTrap(_)) {
+            let resumable_error = match *self.kind {
+                ErrorKind::ResumableHostTrap(error) => ResumableError::HostTrap(error),
+                ErrorKind::ResumableOutOfFuel(error) => ResumableError::OutOfFuel(error),
+                unexpected => unreachable!("unexpected error kind: {:?}", unexpected),
             };
-            return Ok(error);
+            return Ok(resumable_error);
         }
         Err(self)
     }

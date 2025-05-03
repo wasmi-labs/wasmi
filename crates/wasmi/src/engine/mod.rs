@@ -40,6 +40,7 @@ pub use self::{
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
+        ResumableError,
         ResumableHostTrapError,
         ResumableOutOfFuelError,
         TypedResumableCall,

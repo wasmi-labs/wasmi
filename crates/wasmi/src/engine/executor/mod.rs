@@ -27,7 +27,7 @@ use crate::{
 #[cfg(doc)]
 use crate::engine::StackLimits;
 
-use super::code_map::CodeMap;
+use super::{code_map::CodeMap, ResumableError};
 
 mod cache;
 mod instr_ptr;
@@ -90,7 +90,7 @@ impl EngineInner {
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(error) => match error.into_resumable() {
-                Ok(error) => {
+                Ok(ResumableError::HostTrap(error)) => {
                     let host_func = *error.host_func();
                     let caller_results = *error.caller_results();
                     let host_error = error.into_error();
@@ -101,6 +101,15 @@ impl EngineInner {
                         host_error,
                         caller_results,
                         stack,
+                    )))
+                }
+                Ok(ResumableError::OutOfFuel(error)) => {
+                    let required_fuel = error.required_fuel();
+                    Ok(ResumableCallBase::OutOfFuel(ResumableCallOutOfFuel::new(
+                        store.engine().clone(),
+                        *func,
+                        stack,
+                        required_fuel,
                     )))
                 }
                 Err(error) => {
@@ -138,11 +147,16 @@ impl EngineInner {
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(error) => match error.into_resumable() {
-                Ok(error) => {
+                Ok(ResumableError::HostTrap(error)) => {
                     let host_func = *error.host_func();
                     let caller_results = *error.caller_results();
                     invocation.update(host_func, error.into_error(), caller_results);
                     Ok(ResumableCallBase::HostTrap(invocation))
+                }
+                Ok(ResumableError::OutOfFuel(error)) => {
+                    let required_fuel = error.required_fuel();
+                    let invocation = invocation.update_to_out_of_fuel(required_fuel);
+                    Ok(ResumableCallBase::OutOfFuel(invocation))
                 }
                 Err(error) => {
                     self.stacks.lock().recycle(invocation.common.take_stack());
@@ -176,12 +190,19 @@ impl EngineInner {
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(error) => match error.into_resumable() {
-                Ok(_error) => {
-                    todo!()
-                    // let host_func = *error.host_func();
-                    // let caller_results = *error.caller_results();
-                    // invocation.update(host_func, error.into_error(), caller_results);
-                    // Ok(ResumableCallBase::HostTrap(invocation))
+                Ok(ResumableError::HostTrap(error)) => {
+                    let host_func = *error.host_func();
+                    let caller_results = *error.caller_results();
+                    let invocation = invocation.update_to_host_trap(
+                        host_func,
+                        error.into_error(),
+                        caller_results,
+                    );
+                    Ok(ResumableCallBase::HostTrap(invocation))
+                }
+                Ok(ResumableError::OutOfFuel(error)) => {
+                    invocation.update(error.required_fuel());
+                    Ok(ResumableCallBase::OutOfFuel(invocation))
                 }
                 Err(error) => {
                     self.stacks.lock().recycle(invocation.common.take_stack());
