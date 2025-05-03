@@ -43,7 +43,7 @@ pub use self::{
         ResumableCallOutOfFuel,
         TypedResumableCall,
         TypedResumableCallHostTrap,
-        // TypedResumableCallOutOfFuel,
+        TypedResumableCallOutOfFuel,
     },
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
