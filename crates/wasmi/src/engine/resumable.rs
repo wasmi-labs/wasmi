@@ -337,6 +337,15 @@ impl ResumableCallHostTrap {
         &self.host_error
     }
 
+    /// Consumes `self` and returns a the encountered host error.
+    ///
+    /// # Note
+    ///
+    /// This is guaranteed to never be a Wasm trap.
+    pub fn into_host_error(self) -> Error {
+        self.host_error
+    }
+
     /// Returns the caller results [`RegSpan`].
     ///
     /// # Note
