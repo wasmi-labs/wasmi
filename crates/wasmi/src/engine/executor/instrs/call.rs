@@ -7,6 +7,7 @@ use crate::{
         utils::unreachable_unchecked,
         EngineFunc,
         FuncInOut,
+        ResumableHostTrapError,
     },
     func::{FuncEntity, HostFuncEntity},
     ir::{index, Instruction, Reg, RegSpan},
@@ -16,7 +17,7 @@ use crate::{
     FuncRef,
     Instance,
 };
-use core::{array, fmt};
+use core::array;
 
 /// Dispatches and executes the host function.
 ///
@@ -61,52 +62,6 @@ pub enum CallKind {
     Nested,
     /// A tailing function call.
     Tail,
-}
-
-/// Error returned from a called host function in a resumable state.
-#[derive(Debug)]
-pub struct ResumableHostError {
-    /// The error returned by the called host function.
-    host_error: Error,
-    /// The host function that returned the error.
-    host_func: Func,
-    /// The result registers of the caller of the host function.
-    caller_results: RegSpan,
-}
-
-impl core::error::Error for ResumableHostError {}
-
-impl fmt::Display for ResumableHostError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.host_error.fmt(f)
-    }
-}
-
-impl ResumableHostError {
-    /// Creates a new [`ResumableHostError`].
-    #[cold]
-    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
-        Self {
-            host_error,
-            host_func,
-            caller_results,
-        }
-    }
-
-    /// Consumes `self` to return the underlying [`Error`].
-    pub(crate) fn into_error(self) -> Error {
-        self.host_error
-    }
-
-    /// Returns the [`Func`] of the [`ResumableHostError`].
-    pub(crate) fn host_func(&self) -> &Func {
-        &self.host_func
-    }
-
-    /// Returns the caller results [`RegSpan`] of the [`ResumableHostError`].
-    pub(crate) fn caller_results(&self) -> &RegSpan {
-        &self.caller_results
-    }
 }
 
 trait CallContext {
@@ -535,7 +490,7 @@ impl Executor<'_> {
         self.dispatch_host_func(store, host_func, &instance)
             .map_err(|error| match self.stack.calls.is_empty() {
                 true => error,
-                false => ResumableHostError::new(error, *func, results).into(),
+                false => ResumableHostTrapError::new(error, *func, results).into(),
             })?;
         self.cache.update(store.inner_mut(), &instance);
         let results = results.iter(len_results);

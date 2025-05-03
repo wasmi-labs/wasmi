@@ -8,7 +8,7 @@ use super::errors::{
 };
 use crate::{
     core::{FuelError, HostError, MemoryError, TableError, TrapCode},
-    engine::{ResumableHostError, TranslationError},
+    engine::{ResumableHostTrapError, TranslationError},
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
@@ -127,9 +127,9 @@ impl Error {
             .map(|boxed| *boxed)
     }
 
-    pub(crate) fn into_resumable(self) -> Result<ResumableHostError, Error> {
-        if matches!(&*self.kind, ErrorKind::ResumableHost(_)) {
-            let ErrorKind::ResumableHost(error) = *self.kind else {
+    pub(crate) fn into_resumable(self) -> Result<ResumableHostTrapError, Error> {
+        if matches!(&*self.kind, ErrorKind::ResumableHostTrap(_)) {
+            let ErrorKind::ResumableHostTrap(error) = *self.kind else {
                 unreachable!("asserted that host error is resumable")
             };
             return Ok(error);
@@ -166,7 +166,7 @@ pub enum ErrorKind {
     /// to resume a call after a host function returned an error. This should never
     /// actually reach user code thus we hide its documentation.
     #[doc(hidden)]
-    ResumableHost(ResumableHostError),
+    ResumableHostTrap(ResumableHostTrapError),
     /// A global variable error.
     Global(GlobalError),
     /// A linear memory error.
@@ -269,7 +269,7 @@ impl Display for ErrorKind {
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
             Self::Limits(error) => Display::fmt(error, f),
-            Self::ResumableHost(error) => Display::fmt(error, f),
+            Self::ResumableHostTrap(error) => Display::fmt(error, f),
             Self::Ir(error) => Display::fmt(error, f),
             #[cfg(feature = "wat")]
             Self::Wat(error) => Display::fmt(error, f),
@@ -303,7 +303,7 @@ impl_from! {
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
     impl From<EnforcedLimitsError> for Error::Limits;
-    impl From<ResumableHostError> for Error::ResumableHost;
+    impl From<ResumableHostTrapError> for Error::ResumableHostTrap;
     impl From<IrError> for Error::Ir;
 }
 #[cfg(feature = "wat")]

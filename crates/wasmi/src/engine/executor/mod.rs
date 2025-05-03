@@ -1,4 +1,3 @@
-pub use self::instrs::ResumableHostError;
 pub(crate) use self::stack::Stack;
 use self::{
     instr_ptr::InstructionPtr,

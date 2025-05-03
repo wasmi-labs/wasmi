@@ -35,12 +35,12 @@ use self::{
 pub use self::{
     code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
     config::{CompilationMode, Config},
-    executor::ResumableHostError,
     limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
     resumable::{
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
+        ResumableHostTrapError,
         TypedResumableCall,
         TypedResumableCallHostTrap,
         TypedResumableCallOutOfFuel,

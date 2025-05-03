@@ -31,6 +31,52 @@ pub(crate) enum ResumableCallBase<T> {
     OutOfFuel(ResumableCallOutOfFuel),
 }
 
+/// Error returned from a called host function in a resumable state.
+#[derive(Debug)]
+pub struct ResumableHostTrapError {
+    /// The error returned by the called host function.
+    host_error: Error,
+    /// The host function that returned the error.
+    host_func: Func,
+    /// The result registers of the caller of the host function.
+    caller_results: RegSpan,
+}
+
+impl core::error::Error for ResumableHostTrapError {}
+
+impl fmt::Display for ResumableHostTrapError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.host_error.fmt(f)
+    }
+}
+
+impl ResumableHostTrapError {
+    /// Creates a new [`ResumableHostError`].
+    #[cold]
+    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
+        Self {
+            host_error,
+            host_func,
+            caller_results,
+        }
+    }
+
+    /// Consumes `self` to return the underlying [`Error`].
+    pub(crate) fn into_error(self) -> Error {
+        self.host_error
+    }
+
+    /// Returns the [`Func`] of the [`ResumableHostError`].
+    pub(crate) fn host_func(&self) -> &Func {
+        &self.host_func
+    }
+
+    /// Returns the caller results [`RegSpan`] of the [`ResumableHostError`].
+    pub(crate) fn caller_results(&self) -> &RegSpan {
+        &self.caller_results
+    }
+}
+
 /// Returned by calling a [`Func`] in a resumable way.
 #[derive(Debug)]
 pub enum ResumableCall {

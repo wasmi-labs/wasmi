@@ -1,4 +1,4 @@
-pub use self::call::{dispatch_host_func, ResumableHostError};
+pub use self::call::dispatch_host_func;
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{hint, wasm, ReadAs, TrapCode, UntypedVal, WriteAs},
