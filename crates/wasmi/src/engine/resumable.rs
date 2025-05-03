@@ -27,6 +27,8 @@ pub(crate) enum ResumableCallBase<T> {
     Finished(T),
     /// The resumable call encountered a host error and can be resumed.
     HostTrap(ResumableCallHostTrap),
+    /// The resumable call ran out of fuel and can be resumed.
+    OutOfFuel(ResumableCallOutOfFuel),
 }
 
 /// Returned by calling a [`Func`] in a resumable way.
@@ -36,6 +38,8 @@ pub enum ResumableCall {
     Finished,
     /// The resumable call encountered a host error and can be resumed.
     HostTrap(ResumableCallHostTrap),
+    /// The resumable call ran out of fuel but can be resumed.
+    OutOfFuel(ResumableCallOutOfFuel),
 }
 
 impl ResumableCall {
@@ -44,6 +48,7 @@ impl ResumableCall {
         match call {
             ResumableCallBase::Finished(()) => Self::Finished,
             ResumableCallBase::HostTrap(invocation) => Self::HostTrap(invocation),
+            ResumableCallBase::OutOfFuel(invocation) => Self::OutOfFuel(invocation),
         }
     }
 }
@@ -277,7 +282,65 @@ impl ResumableCallHostTrap {
         self.common
             .engine
             .clone()
-            .resume_func(ctx.as_context_mut(), self, inputs, outputs)
+            .resume_func_host_trap(ctx.as_context_mut(), self, inputs, outputs)
+            .map(ResumableCall::new)
+    }
+}
+
+/// State required to resume a [`Func`] invocation after a host trap.
+#[derive(Debug)]
+pub struct ResumableCallOutOfFuel {
+    /// Common state for resumable calls.
+    pub(super) common: ResumableCallCommon,
+    /// The minimum fuel required to progress execution.
+    required_fuel: u64,
+}
+
+impl ResumableCallOutOfFuel {
+    /// Creates a new [`ResumableCallOutOfFuel`].
+    pub(super) fn new(engine: Engine, func: Func, stack: Stack, required_fuel: u64) -> Self {
+        Self {
+            common: ResumableCallCommon::new(engine, func, stack),
+            required_fuel,
+        }
+    }
+
+    /// Updates the [`ResumableCallOutOfFuel`] with the new `required_fuel`.
+    ///
+    /// # Note
+    ///
+    /// This should only be called from the register-machine Wasmi engine backend.
+    pub(super) fn update(&mut self, required_fuel: u64) {
+        self.required_fuel = required_fuel;
+    }
+
+    /// Returns the minimum required fuel to progress execution.
+    pub fn required_fuel(&self) -> u64 {
+        self.required_fuel
+    }
+
+    /// Resumes the call to the [`Func`] with the given inputs.
+    ///
+    /// The result is written back into the `outputs` buffer upon success.
+    /// Returns a resumable handle to the function invocation.
+    ///
+    /// # Errors
+    ///
+    /// - If the function resumption returned a Wasm [`Error`].
+    /// - If the types or the number of values in `inputs` does not match
+    ///   the types and number of result values of the erroneous host function.
+    /// - If the number of output values does not match the expected number of
+    ///   outputs required by the called function.
+    pub fn resume<T>(
+        self,
+        mut ctx: impl AsContextMut<Data = T>,
+        outputs: &mut [Val],
+    ) -> Result<ResumableCall, Error> {
+        self.common.prepare_outputs(ctx.as_context(), outputs)?;
+        self.common
+            .engine
+            .clone()
+            .resume_func_out_of_fuel(ctx.as_context_mut(), self, outputs)
             .map(ResumableCall::new)
     }
 }
@@ -291,6 +354,8 @@ pub enum TypedResumableCall<T> {
     Finished(T),
     /// The resumable call encountered a host error and can be resumed.
     HostTrap(TypedResumableCallHostTrap<T>),
+    /// The resumable call ran out of fuel and can be resumed.
+    OutOfFuel(TypedResumableCallOutOfFuel<T>),
 }
 
 impl<Results> TypedResumableCall<Results> {
@@ -300,6 +365,9 @@ impl<Results> TypedResumableCall<Results> {
             ResumableCallBase::Finished(results) => Self::Finished(results),
             ResumableCallBase::HostTrap(invocation) => {
                 Self::HostTrap(TypedResumableCallHostTrap::new(invocation))
+            }
+            ResumableCallBase::OutOfFuel(invocation) => {
+                Self::OutOfFuel(TypedResumableCallOutOfFuel::new(invocation))
             }
         }
     }
@@ -348,7 +416,7 @@ impl<Results> TypedResumableCallHostTrap<Results> {
         self.common
             .engine
             .clone()
-            .resume_func(
+            .resume_func_host_trap(
                 ctx.as_context_mut(),
                 self.invocation,
                 inputs,
@@ -369,6 +437,73 @@ impl<Results> Deref for TypedResumableCallHostTrap<Results> {
 impl<Results> fmt::Debug for TypedResumableCallHostTrap<Results> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TypedResumableCallHostTrap")
+            .field("invocation", &self.invocation)
+            .field("results", &self.results)
+            .finish()
+    }
+}
+
+/// State required to resume a [`TypedFunc`] invocation after running out of fuel.
+///
+/// [`TypedFunc`]: [`crate::TypedFunc`]
+pub struct TypedResumableCallOutOfFuel<Results> {
+    invocation: ResumableCallOutOfFuel,
+    /// The parameter and result typed encoded in Rust type system.
+    results: PhantomData<fn() -> Results>,
+}
+
+impl<Results> TypedResumableCallOutOfFuel<Results> {
+    /// Creates a [`TypedResumableCallHostTrap`] wrapper for the given [`ResumableCallOutOfFuel`].
+    pub(crate) fn new(invocation: ResumableCallOutOfFuel) -> Self {
+        Self {
+            invocation,
+            results: PhantomData,
+        }
+    }
+
+    /// Resumes the call to the [`TypedFunc`] with the given inputs.
+    ///
+    /// Returns a resumable handle to the function invocation upon
+    /// encountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occurred.
+    ///
+    /// # Errors
+    ///
+    /// - If the function resumption returned a Wasm [`Error`].
+    /// - If the types or the number of values in `inputs` does not match
+    ///   the types and number of result values of the erroneous host function.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    pub fn resume<T>(
+        self,
+        mut ctx: impl AsContextMut<Data = T>,
+    ) -> Result<TypedResumableCall<Results>, Error>
+    where
+        Results: WasmResults,
+    {
+        self.common
+            .engine
+            .clone()
+            .resume_func_out_of_fuel(
+                ctx.as_context_mut(),
+                self.invocation,
+                <CallResultsTuple<Results>>::default(),
+            )
+            .map(TypedResumableCall::new)
+    }
+}
+
+impl<Results> Deref for TypedResumableCallOutOfFuel<Results> {
+    type Target = ResumableCallOutOfFuel;
+
+    fn deref(&self) -> &Self::Target {
+        &self.invocation
+    }
+}
+
+impl<Results> fmt::Debug for TypedResumableCallOutOfFuel<Results> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TypedResumableCallOutOfFuel")
             .field("invocation", &self.invocation)
             .field("results", &self.results)
             .finish()
