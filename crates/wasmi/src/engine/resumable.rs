@@ -315,9 +315,7 @@ impl ResumableCallHostTrap {
             required_fuel,
         }
     }
-}
 
-impl ResumableCallHostTrap {
     /// Returns the host [`Func`] that returned the host error.
     ///
     /// # Note
