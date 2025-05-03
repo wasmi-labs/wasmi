@@ -210,9 +210,9 @@ impl ErrorKind {
     pub fn as_trap_code(&self) -> Option<TrapCode> {
         let trap_code = match self {
             | Self::TrapCode(trap_code) => *trap_code,
-            | Self::Fuel(FuelError::OutOfFuel)
-            | Self::Table(TableError::OutOfFuel)
-            | Self::Memory(MemoryError::OutOfFuel) => TrapCode::OutOfFuel,
+            | Self::Fuel(FuelError::OutOfFuel { .. })
+            | Self::Table(TableError::OutOfFuel { .. })
+            | Self::Memory(MemoryError::OutOfFuel { .. }) => TrapCode::OutOfFuel,
             | Self::Memory(MemoryError::OutOfBoundsAccess)
             | Self::Memory(MemoryError::OutOfBoundsGrowth) => TrapCode::MemoryOutOfBounds,
             | Self::Table(TableError::ElementTypeMismatch) => TrapCode::BadSignature,
@@ -220,6 +220,7 @@ impl ErrorKind {
             | Self::Table(TableError::FillOutOfBounds)
             | Self::Table(TableError::GrowOutOfBounds)
             | Self::Table(TableError::InitOutOfBounds) => TrapCode::TableOutOfBounds,
+            | Self::ResumableOutOfFuel(_) => TrapCode::OutOfFuel,
             _ => return None,
         };
         Some(trap_code)

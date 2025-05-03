@@ -8,8 +8,8 @@
 use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
     collections::arena::{Arena, ArenaIndex},
-    core::{Fuel, FuelCostsProvider, FuelError, TrapCode, UntypedVal},
-    engine::utils::unreachable_unchecked,
+    core::{Fuel, FuelCostsProvider, FuelError, UntypedVal},
+    engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     ir::{index::InternalFunc, Instruction},
     module::{FuncIdx, ModuleHeader},
     Config,
@@ -628,7 +628,9 @@ impl UncompiledFuncEntity {
         };
         if let Some(fuel) = fuel {
             match fuel.consume_fuel(compilation_fuel) {
-                Err(FuelError::OutOfFuel) => return Err(Error::from(TrapCode::OutOfFuel)),
+                Err(FuelError::OutOfFuel { required_fuel }) => {
+                    return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)))
+                }
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
             }
         }

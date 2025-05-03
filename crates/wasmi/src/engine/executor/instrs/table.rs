@@ -1,7 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::{ResourceLimiterRef, Table as CoreTable, TableError, TrapCode},
-    engine::utils::unreachable_unchecked,
+    engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     ir::{
         index::{Elem, Table},
         Const16,
@@ -333,12 +333,15 @@ impl Executor<'_> {
         let return_value = table.grow_untyped(delta, value, Some(fuel), resource_limiter);
         let return_value = match return_value {
             Ok(return_value) => return_value,
-            Err(
-                TableError::GrowOutOfBounds | TableError::OutOfFuel | TableError::OutOfSystemMemory,
-            ) => match table.ty().is_64() {
-                true => u64::MAX,
-                false => u64::from(u32::MAX),
-            },
+            Err(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory) => {
+                match table.ty().is_64() {
+                    true => u64::MAX,
+                    false => u64::from(u32::MAX),
+                }
+            }
+            Err(TableError::OutOfFuel { required_fuel }) => {
+                return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)))
+            }
             Err(TableError::ResourceLimiterDeniedAllocation) => {
                 return Err(Error::from(TrapCode::GrowthOperationLimited))
             }
