@@ -1,5 +1,6 @@
 use super::Func;
 use crate::{
+    core::TrapCode,
     engine::Stack,
     func::{CallResultsTuple, FuncError},
     ir::RegSpan,
@@ -106,6 +107,11 @@ impl ResumableOutOfFuelError {
     /// Consumes `self` to return the underlying [`Error`].
     pub(crate) fn required_fuel(self) -> u64 {
         self.required_fuel
+    }
+
+    /// Consumes `self` to return the underlying [`Error`].
+    pub(crate) fn into_error(self) -> Error {
+        Error::from(TrapCode::OutOfFuel)
     }
 }
 
