@@ -139,8 +139,9 @@ impl EngineInner {
     {
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let results = EngineExecutor::new(&self.code_map, invocation.common.stack_mut())
-            .resume_func_host_trap(ctx.store, host_func, params, caller_results, results);
+        let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
+        let results =
+            executor.resume_func_host_trap(ctx.store, host_func, params, caller_results, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.common.take_stack());
@@ -182,8 +183,8 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let results = EngineExecutor::new(&self.code_map, invocation.common.stack_mut())
-            .resume_func_out_of_fuel(ctx.store, results);
+        let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
+        let results = executor.resume_func_out_of_fuel(ctx.store, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.common.take_stack());
