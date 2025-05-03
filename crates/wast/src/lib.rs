@@ -535,14 +535,23 @@ impl WastRunner {
     fn invoke(&mut self, invoke: wast::WastInvoke) -> Result<()> {
         let export = self.get_export(invoke.module, invoke.name)?;
         let Some(func) = export.into_func() else {
-            bail!("missing function at {:?}::{}", invoke.module, invoke.name)
+            bail!(
+                "missing function export at {:?}::{}",
+                invoke.module,
+                invoke.name
+            )
         };
         self.fill_params(&invoke.args)?;
+        self.prepare_results(&func);
+        func.call(&mut self.store, &self.params, &mut self.results[..])?;
+        Ok(())
+    }
+
+    /// Prepares the results buffer for a call to `func`.
+    fn prepare_results(&mut self, func: &wasmi::Func) {
         let len_results = func.ty(&self.store).results().len();
         self.results.clear();
         self.results.resize(len_results, Val::I32(0));
-        func.call(&mut self.store, &self.params, &mut self.results[..])?;
-        Ok(())
     }
 
     /// Fills the `params` buffer with `args`.
