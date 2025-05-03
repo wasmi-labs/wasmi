@@ -8,7 +8,7 @@ use super::errors::{
 };
 use crate::{
     core::{FuelError, HostError, MemoryError, TableError, TrapCode},
-    engine::{ResumableHostTrapError, TranslationError},
+    engine::{ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
@@ -158,15 +158,24 @@ pub enum ErrorKind {
     I32ExitStatus(i32),
     /// A trap as defined by the WebAssembly specification.
     Host(Box<dyn HostError>),
-    /// An error stemming from a host function call with resumable state information.
+    /// An error returned from a resumable call when a host function traps.
     ///
     /// # Note
     ///
-    /// This variant is meant for internal uses only in order to store data necessary
-    /// to resume a call after a host function returned an error. This should never
-    /// actually reach user code thus we hide its documentation.
+    /// This error kind is meant for internal uses only in order to resume a call
+    /// after a host function trapped. This should never actually reach user code
+    /// thus we hide its documentation.
     #[doc(hidden)]
     ResumableHostTrap(ResumableHostTrapError),
+    /// An error returned by a resumable call when running out of fuel.
+    ///
+    /// # Note
+    ///
+    /// This error kind is meant for internal uses only in order to resume a call
+    /// after a running out of fuel. This should never actually reach user code
+    /// thus we hide its documentation.
+    #[doc(hidden)]
+    ResumableOutOfFuel(ResumableOutOfFuelError),
     /// A global variable error.
     Global(GlobalError),
     /// A linear memory error.
@@ -270,6 +279,7 @@ impl Display for ErrorKind {
             Self::Translation(error) => Display::fmt(error, f),
             Self::Limits(error) => Display::fmt(error, f),
             Self::ResumableHostTrap(error) => Display::fmt(error, f),
+            Self::ResumableOutOfFuel(error) => Display::fmt(error, f),
             Self::Ir(error) => Display::fmt(error, f),
             #[cfg(feature = "wat")]
             Self::Wat(error) => Display::fmt(error, f),
@@ -304,6 +314,7 @@ impl_from! {
     impl From<FuncError> for Error::Func;
     impl From<EnforcedLimitsError> for Error::Limits;
     impl From<ResumableHostTrapError> for Error::ResumableHostTrap;
+    impl From<ResumableOutOfFuelError> for Error::ResumableOutOfFuel;
     impl From<IrError> for Error::Ir;
 }
 #[cfg(feature = "wat")]
