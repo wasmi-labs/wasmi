@@ -547,13 +547,6 @@ impl WastRunner {
         Ok(())
     }
 
-    /// Prepares the results buffer for a call to `func`.
-    fn prepare_results(&mut self, func: &wasmi::Func) {
-        let len_results = func.ty(&self.store).results().len();
-        self.results.clear();
-        self.results.resize(len_results, Val::I32(0));
-    }
-
     /// Fills the `params` buffer with `args`.
     fn fill_params(&mut self, args: &[WastArg]) -> Result<()> {
         self.params.clear();
@@ -571,6 +564,13 @@ impl WastRunner {
             self.params.push(val);
         }
         Ok(())
+    }
+
+    /// Prepares the results buffer for a call to `func`.
+    fn prepare_results(&mut self, func: &wasmi::Func) {
+        let len_results = func.ty(&self.store).results().len();
+        self.results.clear();
+        self.results.resize(len_results, Val::I32(0));
     }
 }
 
