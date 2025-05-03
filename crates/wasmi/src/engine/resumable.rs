@@ -52,7 +52,7 @@ impl fmt::Display for ResumableHostTrapError {
 }
 
 impl ResumableHostTrapError {
-    /// Creates a new [`ResumableHostError`].
+    /// Creates a new [`ResumableHostTrapError`].
     #[cold]
     pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
         Self {
@@ -67,12 +67,12 @@ impl ResumableHostTrapError {
         self.host_error
     }
 
-    /// Returns the [`Func`] of the [`ResumableHostError`].
+    /// Returns the [`Func`] of the [`ResumableHostTrapError`].
     pub(crate) fn host_func(&self) -> &Func {
         &self.host_func
     }
 
-    /// Returns the caller results [`RegSpan`] of the [`ResumableHostError`].
+    /// Returns the caller results [`RegSpan`] of the [`ResumableHostTrapError`].
     pub(crate) fn caller_results(&self) -> &RegSpan {
         &self.caller_results
     }

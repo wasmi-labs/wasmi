@@ -452,11 +452,11 @@ impl Executor<'_> {
     /// # Note
     ///
     /// This uses the value stack to store parameters and results of the host function call.
-    /// Returns an [`ErrorKind::ResumableHost`] variant if the host function returned an error
+    /// Returns an [`ErrorKind::ResumableHostTrap`] variant if the host function returned an error
     /// and there are still call frames on the call stack making it possible to resume the
     /// execution at a later point in time.
     ///
-    /// [`ErrorKind::ResumableHost`]: crate::error::ErrorKind::ResumableHost
+    /// [`ErrorKind::ResumableHostTrap`]: crate::error::ErrorKind::ResumableHostTrap
     fn execute_host_func<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
