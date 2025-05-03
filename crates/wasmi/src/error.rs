@@ -128,10 +128,22 @@ impl Error {
     }
 
     pub(crate) fn into_resumable(self) -> Result<ResumableError, Error> {
-        if matches!(self.kind(), ErrorKind::ResumableHostTrap(_)) {
+        if matches!(
+            self.kind(),
+            ErrorKind::ResumableHostTrap(_)
+                | ErrorKind::ResumableOutOfFuel(_)
+                | ErrorKind::Table(TableError::OutOfFuel { .. })
+                | ErrorKind::Memory(MemoryError::OutOfFuel { .. })
+                | ErrorKind::Fuel(FuelError::OutOfFuel { .. })
+        ) {
             let resumable_error = match *self.kind {
                 ErrorKind::ResumableHostTrap(error) => ResumableError::HostTrap(error),
                 ErrorKind::ResumableOutOfFuel(error) => ResumableError::OutOfFuel(error),
+                ErrorKind::Table(TableError::OutOfFuel { required_fuel })
+                | ErrorKind::Memory(MemoryError::OutOfFuel { required_fuel })
+                | ErrorKind::Fuel(FuelError::OutOfFuel { required_fuel }) => {
+                    ResumableError::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
+                }
                 unexpected => unreachable!("unexpected error kind: {:?}", unexpected),
             };
             return Ok(resumable_error);
