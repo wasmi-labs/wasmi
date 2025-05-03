@@ -13,6 +13,7 @@ use wasmi::{
     MemoryType,
     Module,
     Mutability,
+    ResumableCall,
     Store,
     Table,
     TableType,
@@ -75,7 +76,7 @@ impl WastRunner {
         let mut linker = Linker::new(&engine);
         linker.allow_shadowing(true);
         let mut store = Store::new(&engine, ());
-        _ = store.set_fuel(1_000_000_000);
+        _ = store.set_fuel(100);
         WastRunner {
             config,
             linker,
@@ -543,7 +544,37 @@ impl WastRunner {
         };
         self.fill_params(&invoke.args)?;
         self.prepare_results(&func);
-        func.call(&mut self.store, &self.params, &mut self.results[..])?;
+        self.call_func(&func)?;
+        Ok(())
+    }
+
+    fn call_func(&mut self, func: &wasmi::Func) -> Result<()> {
+        let is_fuel_metering_enabled = self.store.get_fuel().is_ok();
+        match is_fuel_metering_enabled {
+            false => {
+                func.call(&mut self.store, &self.params, &mut self.results[..])?;
+            }
+            true => {
+                let mut invocation =
+                    func.call_resumable(&mut self.store, &self.params, &mut self.results[..])?;
+                'exec: loop {
+                    match invocation {
+                        ResumableCall::Finished => break 'exec,
+                        ResumableCall::OutOfFuel(handle) => {
+                            let required_fuel = handle.required_fuel();
+                            let cur_fuel = self.store.get_fuel().expect("fuel metering is enabled");
+                            let new_fuel = cur_fuel + required_fuel + 6000;
+                            self.store.set_fuel(new_fuel).expect("fuel metering is enabled");
+                            invocation = handle.resume(&mut self.store, &mut self.results[..])?;
+                            continue 'exec;
+                        }
+                        ResumableCall::HostTrap(handle) => {
+                            bail!(handle.into_host_error())
+                        }
+                    }
+                }
+            }
+        }
         Ok(())
     }
 
