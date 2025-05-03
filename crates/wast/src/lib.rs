@@ -564,7 +564,9 @@ impl WastRunner {
                             let required_fuel = handle.required_fuel();
                             let cur_fuel = self.store.get_fuel().expect("fuel metering is enabled");
                             let new_fuel = cur_fuel + required_fuel + 6000;
-                            self.store.set_fuel(new_fuel).expect("fuel metering is enabled");
+                            self.store
+                                .set_fuel(new_fuel)
+                                .expect("fuel metering is enabled");
                             invocation = handle.resume(&mut self.store, &mut self.results[..])?;
                             continue 'exec;
                         }
