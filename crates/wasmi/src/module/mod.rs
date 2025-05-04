@@ -85,6 +85,29 @@ struct ModuleHeaderInner {
     element_segments: Box<[ElementSegment]>,
 }
 
+#[cfg(debug_assertions)]
+impl ModuleHeader {
+    /// Returns the number of global variables in `self`.
+    pub fn len_globals(&self) -> usize {
+        self.inner.globals.len()
+    }
+
+    /// Returns the number of functions in `self`.
+    pub fn len_funcs(&self) -> usize {
+        self.inner.funcs.len()
+    }
+
+    /// Returns the number of tables in `self`.
+    pub fn len_tables(&self) -> usize {
+        self.inner.tables.len()
+    }
+
+    /// Returns the number of linear memories in `self`.
+    pub fn len_memories(&self) -> usize {
+        self.inner.memories.len()
+    }
+}
+
 impl ModuleHeader {
     /// Returns the [`Engine`] of the [`ModuleHeader`].
     pub fn engine(&self) -> &EngineWeak {
