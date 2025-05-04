@@ -70,7 +70,17 @@ pub fn execute_instrs<'engine>(
 ) -> Result<(), Error> {
     let instance = stack.calls.instance_expect();
     let cache = CachedInstance::new(store.inner_mut(), instance);
-    Executor::new(stack, code_map, cache).execute(store)
+    let mut executor = Executor::new(stack, code_map, cache);
+    if let Err(error) = executor.execute(store) {
+        executor
+            .stack
+            .calls
+            .peek_mut()
+            .expect("must have call frame upon error")
+            .update_instr_ptr(executor.ip);
+        return Err(error);
+    }
+    Ok(())
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -118,7 +128,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self, store: &mut PrunedStore) -> Result<(), Error> {
+    fn execute(&mut self, store: &mut PrunedStore) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
