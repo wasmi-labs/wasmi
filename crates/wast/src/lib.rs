@@ -563,7 +563,7 @@ impl WastRunner {
                         ResumableCall::OutOfFuel(handle) => {
                             let required_fuel = handle.required_fuel();
                             let cur_fuel = self.store.get_fuel().expect("fuel metering is enabled");
-                            let new_fuel = cur_fuel + required_fuel + 6000;
+                            let new_fuel = cur_fuel + required_fuel;
                             self.store
                                 .set_fuel(new_fuel)
                                 .expect("fuel metering is enabled");
