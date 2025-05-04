@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.44.1`] - 2025-05-04
+
+### Fixed
+
+- Fixed a bug with executing SIMD `store_lane` instructions. [#1450]
+
+[#1450]: https://github.com/wasmi-labs/wasmi/pull/1450
+
 ## [`0.44.0`] - 2025-03-29
 
 ### Added
