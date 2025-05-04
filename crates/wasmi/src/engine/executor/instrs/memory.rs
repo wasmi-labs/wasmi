@@ -1,7 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::{MemoryError, ResourceLimiterRef, TrapCode},
-    engine::utils::unreachable_unchecked,
+    engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     ir::{
         index::{Data, Memory},
         Const16,
@@ -120,14 +120,15 @@ impl Executor<'_> {
                 unsafe { self.cache.update_memory(store) };
                 return_value
             }
-            Err(
-                MemoryError::OutOfBoundsGrowth
-                | MemoryError::OutOfFuel
-                | MemoryError::OutOfSystemMemory,
-            ) => match memory.ty().is_64() {
-                true => u64::MAX,
-                false => u64::from(u32::MAX),
-            },
+            Err(MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory) => {
+                match memory.ty().is_64() {
+                    true => u64::MAX,
+                    false => u64::from(u32::MAX),
+                }
+            }
+            Err(MemoryError::OutOfFuel { required_fuel }) => {
+                return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)))
+            }
             Err(MemoryError::ResourceLimiterDeniedAllocation) => {
                 return Err(Error::from(TrapCode::GrowthOperationLimited))
             }

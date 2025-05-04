@@ -35,9 +35,18 @@ use self::{
 pub use self::{
     code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
     config::{CompilationMode, Config},
-    executor::ResumableHostError,
     limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
-    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
+    resumable::{
+        ResumableCall,
+        ResumableCallHostTrap,
+        ResumableCallOutOfFuel,
+        ResumableError,
+        ResumableHostTrapError,
+        ResumableOutOfFuelError,
+        TypedResumableCall,
+        TypedResumableCallHostTrap,
+        TypedResumableCallOutOfFuel,
+    },
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
 };
@@ -337,7 +346,7 @@ impl Engine {
             .execute_func_resumable(ctx, func, params, results)
     }
 
-    /// Resumes the given `invocation` given the `params`.
+    /// Resumes the given `invocation` after a host trap given the `params`.
     ///
     /// Stores the execution result into `results` upon a successful execution.
     /// If the execution encounters a host trap it will return a handle to the user
@@ -360,17 +369,53 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     #[inline]
-    pub(crate) fn resume_func<T, Results>(
+    pub(crate) fn resume_func_host_trap<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        invocation: ResumableInvocation,
+        invocation: ResumableCallHostTrap,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
-        self.inner.resume_func(ctx, invocation, params, results)
+        self.inner
+            .resume_func_host_trap(ctx, invocation, params, results)
+    }
+
+    /// Resumes the given `invocation` after running out of fuel given the `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    /// If the execution encounters a host trap it will return a handle to the user
+    /// that allows to resume the execution at that point.
+    ///
+    /// # Note
+    ///
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
+    ///
+    /// # Errors
+    ///
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
+    /// - If the given `results` do not match the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When `func` is a host function that traps.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    #[inline]
+    pub(crate) fn resume_func_out_of_fuel<T, Results>(
+        &self,
+        ctx: StoreContextMut<T>,
+        invocation: ResumableCallOutOfFuel,
+        results: Results,
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
+    where
+        Results: CallResults,
+    {
+        self.inner.resume_func_out_of_fuel(ctx, invocation, results)
     }
 
     /// Recycles the given [`Stack`] for reuse in the [`Engine`].

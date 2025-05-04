@@ -13,6 +13,7 @@ use wasmi::{
     MemoryType,
     Module,
     Mutability,
+    ResumableCall,
     Store,
     Table,
     TableType,
@@ -75,7 +76,7 @@ impl WastRunner {
         let mut linker = Linker::new(&engine);
         linker.allow_shadowing(true);
         let mut store = Store::new(&engine, ());
-        _ = store.set_fuel(1_000_000_000);
+        _ = store.set_fuel(0);
         WastRunner {
             config,
             linker,
@@ -321,8 +322,8 @@ impl WastRunner {
     ///
     /// Also sets the `current` instance to the `module` instance.
     fn module(&mut self, name: Option<&str>, module: &Module) -> Result<()> {
-        let instance = match self.linker.instantiate(&mut self.store, module) {
-            Ok(pre_instance) => pre_instance.start(&mut self.store)?,
+        let instance = match self.instantiate_module(module) {
+            Ok(instance) => instance,
             Err(error) => bail!("failed to instantiate module: {error}"),
         };
         if let Some(name) = name {
@@ -432,6 +433,18 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Instantiates and starts the `module` while preserving fuel.
+    fn instantiate_module(&mut self, module: &wasmi::Module) -> Result<Instance> {
+        let previous_fuel = self.store.get_fuel().ok();
+        _ = self.store.set_fuel(1_000);
+        let instance_pre = self.linker.instantiate(&mut self.store, module)?;
+        let instance = instance_pre.start(&mut self.store)?;
+        if let Some(fuel) = previous_fuel {
+            _ = self.store.set_fuel(fuel);
+        }
+        Ok(instance)
+    }
+
     /// Processes a [`WastExecute`] directive.
     fn execute_wast_execute(&mut self, execute: WastExecute) -> Result<()> {
         self.results.clear();
@@ -439,8 +452,7 @@ impl WastRunner {
             WastExecute::Invoke(invoke) => self.invoke(invoke),
             WastExecute::Wat(Wat::Module(module)) => {
                 let (_name, module) = self.module_definition(QuoteWat::Wat(Wat::Module(module)))?;
-                let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
-                instance_pre.start(&mut self.store)?;
+                self.instantiate_module(&module)?;
                 Ok(())
             }
             WastExecute::Get {
@@ -535,13 +547,47 @@ impl WastRunner {
     fn invoke(&mut self, invoke: wast::WastInvoke) -> Result<()> {
         let export = self.get_export(invoke.module, invoke.name)?;
         let Some(func) = export.into_func() else {
-            bail!("missing function at {:?}::{}", invoke.module, invoke.name)
+            bail!(
+                "missing function export at {:?}::{}",
+                invoke.module,
+                invoke.name
+            )
         };
         self.fill_params(&invoke.args)?;
-        let len_results = func.ty(&self.store).results().len();
-        self.results.clear();
-        self.results.resize(len_results, Val::I32(0));
-        func.call(&mut self.store, &self.params, &mut self.results[..])?;
+        self.prepare_results(&func);
+        self.call_func(&func)?;
+        Ok(())
+    }
+
+    fn call_func(&mut self, func: &wasmi::Func) -> Result<()> {
+        let is_fuel_metering_enabled = self.store.get_fuel().is_ok();
+        match is_fuel_metering_enabled {
+            false => {
+                func.call(&mut self.store, &self.params, &mut self.results[..])?;
+            }
+            true => {
+                let mut invocation =
+                    func.call_resumable(&mut self.store, &self.params, &mut self.results[..])?;
+                'exec: loop {
+                    match invocation {
+                        ResumableCall::Finished => break 'exec,
+                        ResumableCall::OutOfFuel(handle) => {
+                            let required_fuel = handle.required_fuel();
+                            let cur_fuel = self.store.get_fuel().expect("fuel metering is enabled");
+                            let new_fuel = cur_fuel + required_fuel;
+                            self.store
+                                .set_fuel(new_fuel)
+                                .expect("fuel metering is enabled");
+                            invocation = handle.resume(&mut self.store, &mut self.results[..])?;
+                            continue 'exec;
+                        }
+                        ResumableCall::HostTrap(handle) => {
+                            bail!(handle.into_host_error())
+                        }
+                    }
+                }
+            }
+        }
         Ok(())
     }
 
@@ -562,6 +608,13 @@ impl WastRunner {
             self.params.push(val);
         }
         Ok(())
+    }
+
+    /// Prepares the results buffer for a call to `func`.
+    fn prepare_results(&mut self, func: &wasmi::Func) {
+        let len_results = func.ty(&self.store).results().len();
+        self.results.clear();
+        self.results.resize(len_results, Val::I32(0));
     }
 }
 

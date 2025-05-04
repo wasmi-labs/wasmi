@@ -132,7 +132,7 @@ impl FuncType {
     /// This is required by an implementation detail of how function result passing is current
     /// implemented in the Wasmi execution engine and might change in the future.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// If the number of items in `outputs` does not match the number of results of the [`FuncType`].
     pub(crate) fn prepare_outputs(&self, outputs: &mut [Val]) -> Result<(), FuncError> {

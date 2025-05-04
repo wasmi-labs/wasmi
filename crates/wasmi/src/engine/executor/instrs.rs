@@ -1,4 +1,4 @@
-pub use self::call::{dispatch_host_func, ResumableHostError};
+pub use self::call::dispatch_host_func;
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{hint, wasm, ReadAs, TrapCode, UntypedVal, WriteAs},
@@ -70,7 +70,18 @@ pub fn execute_instrs<'engine>(
 ) -> Result<(), Error> {
     let instance = stack.calls.instance_expect();
     let cache = CachedInstance::new(store.inner_mut(), instance);
-    Executor::new(stack, code_map, cache).execute(store)
+    let mut executor = Executor::new(stack, code_map, cache);
+    if let Err(error) = executor.execute(store) {
+        if error.is_out_of_fuel() {
+            if let Some(frame) = executor.stack.calls.peek_mut() {
+                // Note: we need to update the instruction pointer to make it possible to
+                //       resume execution at the current instruction after running out of fuel.
+                frame.update_instr_ptr(executor.ip);
+            }
+        }
+        return Err(error);
+    }
+    Ok(())
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -118,7 +129,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self, store: &mut PrunedStore) -> Result<(), Error> {
+    fn execute(&mut self, store: &mut PrunedStore) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {

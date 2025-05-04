@@ -179,7 +179,7 @@ pub enum FuelError {
     /// Returned by some [`Fuel`] methods when fuel metering is disabled.
     FuelMeteringDisabled,
     /// Raised when trying to consume more fuel than is available.
-    OutOfFuel,
+    OutOfFuel { required_fuel: u64 },
 }
 
 impl Error for FuelError {}
@@ -188,7 +188,7 @@ impl fmt::Display for FuelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FuelMeteringDisabled => write!(f, "fuel metering is disabled"),
-            Self::OutOfFuel => write!(f, "all fuel consumed"),
+            Self::OutOfFuel { required_fuel } => write!(f, "ouf of fuel. required={required_fuel}"),
         }
     }
 }
@@ -210,8 +210,8 @@ impl FuelError {
     ///
     /// This method exists to indicate that this execution path is cold.
     #[cold]
-    pub fn out_of_fuel() -> Self {
-        Self::OutOfFuel
+    pub fn out_of_fuel(required_fuel: u64) -> Self {
+        Self::OutOfFuel { required_fuel }
     }
 }
 
@@ -295,7 +295,7 @@ impl Fuel {
         self.remaining = self
             .remaining
             .checked_sub(delta)
-            .ok_or(FuelError::OutOfFuel)?;
+            .ok_or(FuelError::out_of_fuel(delta))?;
         Ok(self.remaining)
     }
 

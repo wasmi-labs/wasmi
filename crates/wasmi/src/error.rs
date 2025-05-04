@@ -8,7 +8,7 @@ use super::errors::{
 };
 use crate::{
     core::{FuelError, HostError, MemoryError, TableError, TrapCode},
-    engine::{ResumableHostError, TranslationError},
+    engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
@@ -127,12 +127,38 @@ impl Error {
             .map(|boxed| *boxed)
     }
 
-    pub(crate) fn into_resumable(self) -> Result<ResumableHostError, Error> {
-        if matches!(&*self.kind, ErrorKind::ResumableHost(_)) {
-            let ErrorKind::ResumableHost(error) = *self.kind else {
-                unreachable!("asserted that host error is resumable")
+    /// Returns `true` if the [`Error`] represents an out-of-fuel error.
+    pub(crate) fn is_out_of_fuel(&self) -> bool {
+        matches!(
+            self.kind(),
+            ErrorKind::TrapCode(TrapCode::OutOfFuel)
+                | ErrorKind::ResumableOutOfFuel(_)
+                | ErrorKind::Memory(MemoryError::OutOfFuel { .. })
+                | ErrorKind::Table(TableError::OutOfFuel { .. })
+                | ErrorKind::Fuel(FuelError::OutOfFuel { .. })
+        )
+    }
+
+    pub(crate) fn into_resumable(self) -> Result<ResumableError, Error> {
+        if matches!(
+            self.kind(),
+            ErrorKind::ResumableHostTrap(_)
+                | ErrorKind::ResumableOutOfFuel(_)
+                | ErrorKind::Table(TableError::OutOfFuel { .. })
+                | ErrorKind::Memory(MemoryError::OutOfFuel { .. })
+                | ErrorKind::Fuel(FuelError::OutOfFuel { .. })
+        ) {
+            let resumable_error = match *self.kind {
+                ErrorKind::ResumableHostTrap(error) => ResumableError::HostTrap(error),
+                ErrorKind::ResumableOutOfFuel(error) => ResumableError::OutOfFuel(error),
+                ErrorKind::Table(TableError::OutOfFuel { required_fuel })
+                | ErrorKind::Memory(MemoryError::OutOfFuel { required_fuel })
+                | ErrorKind::Fuel(FuelError::OutOfFuel { required_fuel }) => {
+                    ResumableError::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
+                }
+                unexpected => unreachable!("unexpected error kind: {:?}", unexpected),
             };
-            return Ok(error);
+            return Ok(resumable_error);
         }
         Err(self)
     }
@@ -158,15 +184,24 @@ pub enum ErrorKind {
     I32ExitStatus(i32),
     /// A trap as defined by the WebAssembly specification.
     Host(Box<dyn HostError>),
-    /// An error stemming from a host function call with resumable state information.
+    /// An error returned from a resumable call when a host function traps.
     ///
     /// # Note
     ///
-    /// This variant is meant for internal uses only in order to store data necessary
-    /// to resume a call after a host function returned an error. This should never
-    /// actually reach user code thus we hide its documentation.
+    /// This error kind is meant for internal uses only in order to resume a call
+    /// after a host function trapped. This should never actually reach user code
+    /// thus we hide its documentation.
     #[doc(hidden)]
-    ResumableHost(ResumableHostError),
+    ResumableHostTrap(ResumableHostTrapError),
+    /// An error returned by a resumable call when running out of fuel.
+    ///
+    /// # Note
+    ///
+    /// This error kind is meant for internal uses only in order to resume a call
+    /// after a running out of fuel. This should never actually reach user code
+    /// thus we hide its documentation.
+    #[doc(hidden)]
+    ResumableOutOfFuel(ResumableOutOfFuelError),
     /// A global variable error.
     Global(GlobalError),
     /// A linear memory error.
@@ -201,9 +236,9 @@ impl ErrorKind {
     pub fn as_trap_code(&self) -> Option<TrapCode> {
         let trap_code = match self {
             | Self::TrapCode(trap_code) => *trap_code,
-            | Self::Fuel(FuelError::OutOfFuel)
-            | Self::Table(TableError::OutOfFuel)
-            | Self::Memory(MemoryError::OutOfFuel) => TrapCode::OutOfFuel,
+            | Self::Fuel(FuelError::OutOfFuel { .. })
+            | Self::Table(TableError::OutOfFuel { .. })
+            | Self::Memory(MemoryError::OutOfFuel { .. }) => TrapCode::OutOfFuel,
             | Self::Memory(MemoryError::OutOfBoundsAccess)
             | Self::Memory(MemoryError::OutOfBoundsGrowth) => TrapCode::MemoryOutOfBounds,
             | Self::Table(TableError::ElementTypeMismatch) => TrapCode::BadSignature,
@@ -211,6 +246,7 @@ impl ErrorKind {
             | Self::Table(TableError::FillOutOfBounds)
             | Self::Table(TableError::GrowOutOfBounds)
             | Self::Table(TableError::InitOutOfBounds) => TrapCode::TableOutOfBounds,
+            | Self::ResumableOutOfFuel(_) => TrapCode::OutOfFuel,
             _ => return None,
         };
         Some(trap_code)
@@ -269,7 +305,8 @@ impl Display for ErrorKind {
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
             Self::Limits(error) => Display::fmt(error, f),
-            Self::ResumableHost(error) => Display::fmt(error, f),
+            Self::ResumableHostTrap(error) => Display::fmt(error, f),
+            Self::ResumableOutOfFuel(error) => Display::fmt(error, f),
             Self::Ir(error) => Display::fmt(error, f),
             #[cfg(feature = "wat")]
             Self::Wat(error) => Display::fmt(error, f),
@@ -303,7 +340,8 @@ impl_from! {
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
     impl From<EnforcedLimitsError> for Error::Limits;
-    impl From<ResumableHostError> for Error::ResumableHost;
+    impl From<ResumableHostTrapError> for Error::ResumableHostTrap;
+    impl From<ResumableOutOfFuelError> for Error::ResumableOutOfFuel;
     impl From<IrError> for Error::Ir;
 }
 #[cfg(feature = "wat")]

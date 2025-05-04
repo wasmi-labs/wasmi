@@ -15,7 +15,7 @@ pub enum LimiterError {
     /// Returned if a [`ResourceLimiter`] denies allocation or growth.
     ResourceLimiterDeniedAllocation,
     /// Encountered when an operation ran out of fuel.
-    OutOfFuel,
+    OutOfFuel { required_fuel: u64 },
 }
 
 impl Error for LimiterError {}
@@ -26,7 +26,9 @@ impl Display for LimiterError {
             LimiterError::OutOfSystemMemory => "out of system memory",
             LimiterError::OutOfBoundsGrowth => "out of bounds growth",
             LimiterError::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
-            LimiterError::OutOfFuel => "out of fuel",
+            LimiterError::OutOfFuel { required_fuel } => {
+                return write!(f, "not enough fuel. required={required_fuel}")
+            }
         };
         write!(f, "{message}")
     }
@@ -38,7 +40,7 @@ impl From<MemoryError> for LimiterError {
             MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
             MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            MemoryError::OutOfFuel => Self::OutOfFuel,
+            MemoryError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
             error => panic!("unexpected `MemoryError`: {error}"),
         }
     }
@@ -53,7 +55,7 @@ impl From<TableError> for LimiterError {
             | TableError::FillOutOfBounds
             | TableError::InitOutOfBounds => Self::OutOfBoundsGrowth,
             TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            TableError::OutOfFuel => Self::OutOfFuel,
+            TableError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
             error => panic!("unexpected `TableError`: {error}"),
         }
     }

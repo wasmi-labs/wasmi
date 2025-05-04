@@ -21,7 +21,7 @@ pub use self::{
     error::MemoryError,
     ty::{MemoryType, MemoryTypeBuilder},
 };
-use crate::{Fuel, ResourceLimiterRef};
+use crate::{Fuel, FuelError, ResourceLimiterRef};
 
 #[cfg(feature = "simd")]
 pub use self::access::ExtendInto;
@@ -237,11 +237,10 @@ impl Memory {
             let additional_bytes = additional
                 .checked_mul(bytes_per_page)
                 .expect("additional size is within [min, max) page bounds");
-            if fuel
-                .consume_fuel_if(|costs| costs.fuel_for_copying_bytes(additional_bytes))
-                .is_err()
+            if let Err(FuelError::OutOfFuel { required_fuel }) =
+                fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(additional_bytes))
             {
-                return notify_limiter(limiter, MemoryError::OutOfFuel);
+                return notify_limiter(limiter, MemoryError::OutOfFuel { required_fuel });
             }
         }
         // At this point all checks passed to grow the linear memory:

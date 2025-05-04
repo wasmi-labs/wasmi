@@ -29,7 +29,7 @@ pub enum TableError {
     /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch,
     /// The operation ran out of fuel before completion.
-    OutOfFuel,
+    OutOfFuel { required_fuel: u64 },
 }
 
 impl Error for TableError {}
@@ -51,7 +51,9 @@ impl Display for TableError {
             Self::CopyOutOfBounds => "out of bounds table access: `table.copy`",
             Self::SetOutOfBounds => "out of bounds table access: `table.set`",
             Self::ElementTypeMismatch => "encountered mismatching table element type",
-            Self::OutOfFuel => "out of fuel",
+            Self::OutOfFuel { required_fuel } => {
+                return write!(f, "not enough fuel: required={required_fuel}")
+            }
         };
         write!(f, "{message}")
     }
@@ -63,7 +65,7 @@ impl From<LimiterError> for TableError {
             LimiterError::OutOfSystemMemory => Self::OutOfSystemMemory,
             LimiterError::OutOfBoundsGrowth => Self::GrowOutOfBounds,
             LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            LimiterError::OutOfFuel => Self::OutOfFuel,
+            LimiterError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
         }
     }
 }
@@ -71,7 +73,7 @@ impl From<LimiterError> for TableError {
 impl From<FuelError> for TableError {
     fn from(error: FuelError) -> Self {
         match error {
-            FuelError::OutOfFuel => Self::OutOfFuel,
+            FuelError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
             FuelError::FuelMeteringDisabled => panic!("fuel metering is disabled"),
         }
     }

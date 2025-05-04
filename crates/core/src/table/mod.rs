@@ -170,7 +170,9 @@ impl Table {
         if let Some(fuel) = fuel {
             match fuel.consume_fuel(|costs| costs.fuel_for_copying_values(delta)) {
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
-                Err(FuelError::OutOfFuel) => return notify_limiter(limiter, TableError::OutOfFuel),
+                Err(FuelError::OutOfFuel { required_fuel }) => {
+                    return notify_limiter(limiter, TableError::OutOfFuel { required_fuel })
+                }
             }
         }
         if self.elements.try_reserve(delta_size).is_err() {

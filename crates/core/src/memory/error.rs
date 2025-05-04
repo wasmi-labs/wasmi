@@ -21,7 +21,7 @@ pub enum MemoryError {
     /// The maximum size of the memory type overflows the system index type.
     MaximumSizeOverflow,
     /// Encountered if a `memory.grow` operation runs out of fuel.
-    OutOfFuel,
+    OutOfFuel { required_fuel: u64 },
 }
 
 impl Error for MemoryError {}
@@ -45,7 +45,9 @@ impl Display for MemoryError {
             Self::MaximumSizeOverflow => {
                 "the maximum size of the memory type overflows the system index type"
             }
-            Self::OutOfFuel => "out of fuel",
+            Self::OutOfFuel { required_fuel } => {
+                return write!(f, "not enough fuel. required={required_fuel}")
+            }
         };
         write!(f, "{message}")
     }
@@ -57,7 +59,7 @@ impl From<LimiterError> for MemoryError {
             LimiterError::OutOfSystemMemory => Self::OutOfSystemMemory,
             LimiterError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            LimiterError::OutOfFuel => Self::OutOfFuel,
+            LimiterError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
         }
     }
 }
