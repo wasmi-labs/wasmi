@@ -72,10 +72,12 @@ pub fn execute_instrs<'engine>(
     let cache = CachedInstance::new(store.inner_mut(), instance);
     let mut executor = Executor::new(stack, code_map, cache);
     if let Err(error) = executor.execute(store) {
-        if let Some(frame) = executor.stack.calls.peek_mut() {
-            // Note: we need to update the instruction pointer to make it possible to
-            //       resume execution at the current instruction after running out of fuel.
-            frame.update_instr_ptr(executor.ip);
+        if error.is_out_of_fuel() {
+            if let Some(frame) = executor.stack.calls.peek_mut() {
+                // Note: we need to update the instruction pointer to make it possible to
+                //       resume execution at the current instruction after running out of fuel.
+                frame.update_instr_ptr(executor.ip);
+            }
         }
         return Err(error);
     }
