@@ -76,7 +76,7 @@ impl WastRunner {
         let mut linker = Linker::new(&engine);
         linker.allow_shadowing(true);
         let mut store = Store::new(&engine, ());
-        _ = store.set_fuel(100);
+        _ = store.set_fuel(0);
         WastRunner {
             config,
             linker,
@@ -322,8 +322,8 @@ impl WastRunner {
     ///
     /// Also sets the `current` instance to the `module` instance.
     fn module(&mut self, name: Option<&str>, module: &Module) -> Result<()> {
-        let instance = match self.linker.instantiate(&mut self.store, module) {
-            Ok(pre_instance) => pre_instance.start(&mut self.store)?,
+        let instance = match self.instantiate_module(module) {
+            Ok(instance) => instance,
             Err(error) => bail!("failed to instantiate module: {error}"),
         };
         if let Some(name) = name {
@@ -433,6 +433,18 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Instantiates and starts the `module` while preserving fuel.
+    fn instantiate_module(&mut self, module: &wasmi::Module) -> Result<Instance> {
+        let previous_fuel = self.store.get_fuel().ok();
+        _ = self.store.set_fuel(1_000);
+        let instance_pre = self.linker.instantiate(&mut self.store, module)?;
+        let instance = instance_pre.start(&mut self.store)?;
+        if let Some(fuel) = previous_fuel {
+            _ = self.store.set_fuel(fuel);
+        }
+        Ok(instance)
+    }
+
     /// Processes a [`WastExecute`] directive.
     fn execute_wast_execute(&mut self, execute: WastExecute) -> Result<()> {
         self.results.clear();
@@ -440,8 +452,7 @@ impl WastRunner {
             WastExecute::Invoke(invoke) => self.invoke(invoke),
             WastExecute::Wat(Wat::Module(module)) => {
                 let (_name, module) = self.module_definition(QuoteWat::Wat(Wat::Module(module)))?;
-                let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
-                instance_pre.start(&mut self.store)?;
+                self.instantiate_module(&module)?;
                 Ok(())
             }
             WastExecute::Get {
