@@ -129,14 +129,14 @@ impl Error {
 
     /// Returns `true` if the [`Error`] represents an out-of-fuel error.
     pub(crate) fn is_out_of_fuel(&self) -> bool {
-        match self.kind() {
+        matches!(
+            self.kind(),
             ErrorKind::TrapCode(TrapCode::OutOfFuel)
-            | ErrorKind::ResumableOutOfFuel(_)
-            | ErrorKind::Memory(MemoryError::OutOfFuel { .. })
-            | ErrorKind::Table(TableError::OutOfFuel { .. })
-            | ErrorKind::Fuel(FuelError::OutOfFuel { .. }) => true,
-            _ => false,
-        }
+                | ErrorKind::ResumableOutOfFuel(_)
+                | ErrorKind::Memory(MemoryError::OutOfFuel { .. })
+                | ErrorKind::Table(TableError::OutOfFuel { .. })
+                | ErrorKind::Fuel(FuelError::OutOfFuel { .. })
+        )
     }
 
     pub(crate) fn into_resumable(self) -> Result<ResumableError, Error> {
