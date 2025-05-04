@@ -139,8 +139,7 @@ impl EngineInner {
     {
         let caller_results = invocation.caller_results();
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let results =
-            executor.resume_func_host_trap(ctx.store, params, caller_results, results);
+        let results = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.common.take_stack());
