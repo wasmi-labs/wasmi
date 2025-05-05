@@ -40,28 +40,6 @@ impl ModuleParser {
         unsafe { self.parse_buffered_impl(buffer) }
     }
 
-    /// Fetch next Wasm module payload and adust the `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If the parsed Wasm is malformed.
-    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<(usize, Payload<'a>), Error> {
-        match self.parser.parse(&buffer[..], true)? {
-            Chunk::Parsed { consumed, payload } => Ok((consumed, payload)),
-            Chunk::NeedMoreData(_hint) => {
-                // This is not possible since `eof` is always true.
-                unreachable!()
-            }
-        }
-    }
-
-    /// Consumes the parts of the buffer that have been processed.
-    fn consume_buffer<'a>(consumed: usize, buffer: &mut &'a [u8]) -> &'a [u8] {
-        let (consumed, remaining) = buffer.split_at(consumed);
-        *buffer = remaining;
-        consumed
-    }
-
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
@@ -194,5 +172,27 @@ impl ModuleParser {
                 invalid => self.process_invalid_payload(invalid)?,
             }
         }
+    }
+
+    /// Fetch next Wasm module payload and adust the `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// If the parsed Wasm is malformed.
+    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<(usize, Payload<'a>), Error> {
+        match self.parser.parse(&buffer[..], true)? {
+            Chunk::Parsed { consumed, payload } => Ok((consumed, payload)),
+            Chunk::NeedMoreData(_hint) => {
+                // This is not possible since `eof` is always true.
+                unreachable!()
+            }
+        }
+    }
+
+    /// Consumes the parts of the buffer that have been processed.
+    fn consume_buffer<'a>(consumed: usize, buffer: &mut &'a [u8]) -> &'a [u8] {
+        let (consumed, remaining) = buffer.split_at(consumed);
+        *buffer = remaining;
+        consumed
     }
 }
