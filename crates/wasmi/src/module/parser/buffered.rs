@@ -176,7 +176,7 @@ impl ModuleParser {
     fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<Payload<'a>, Error> {
         match self.parser.parse(&buffer[..], true)? {
             Chunk::Parsed { consumed, payload } => {
-                Self::consume_buffer(consumed, buffer);
+                *buffer = &buffer[consumed..];
                 Ok(payload)
             }
             Chunk::NeedMoreData(_hint) => {
@@ -184,12 +184,5 @@ impl ModuleParser {
                 unreachable!()
             }
         }
-    }
-
-    /// Consumes the parts of the buffer that have been processed.
-    fn consume_buffer<'a>(consumed: usize, buffer: &mut &'a [u8]) -> &'a [u8] {
-        let (consumed, remaining) = buffer.split_at(consumed);
-        *buffer = remaining;
-        consumed
     }
 }
