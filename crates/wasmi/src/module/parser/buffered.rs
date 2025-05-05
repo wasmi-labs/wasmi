@@ -174,15 +174,12 @@ impl ModuleParser {
     ///
     /// If the parsed Wasm is malformed.
     fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<Payload<'a>, Error> {
-        match self.parser.parse(&buffer[..], true)? {
-            Chunk::Parsed { consumed, payload } => {
-                *buffer = &buffer[consumed..];
-                Ok(payload)
-            }
-            Chunk::NeedMoreData(_hint) => {
-                // This is not possible since `eof` is always true.
-                unreachable!()
-            }
-        }
+        let chunk = self.parser.parse(&buffer[..], true)?;
+        let Chunk::Parsed { consumed, payload } = chunk else {
+            // Unreachable since `wasmparser` promises to return `Parsed` if `eof` is `true`.
+            unreachable!()
+        };
+        *buffer = &buffer[consumed..];
+        Ok(payload)
     }
 }
