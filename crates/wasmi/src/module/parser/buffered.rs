@@ -40,28 +40,6 @@ impl ModuleParser {
         unsafe { self.parse_buffered_impl(buffer) }
     }
 
-    /// Starts parsing and validating the Wasm bytecode stream.
-    ///
-    /// Returns the compiled and validated Wasm [`Module`] upon success.
-    ///
-    /// # Safety
-    ///
-    /// The caller is responsible to either
-    ///
-    /// 1) Populate the [`ModuleParser`] with a [`Validator`] prior to calling this method, OR;
-    /// 2) Make sure that the provided `stream` yields valid WebAssembly bytecode.
-    ///
-    /// Otherwise this method has undefined behavior.
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm bytecode stream fails to validate.
-    unsafe fn parse_buffered_impl(mut self, mut buffer: &[u8]) -> Result<Module, Error> {
-        let custom_sections = CustomSectionsBuilder::default();
-        let module = Self::parse_buffered_header(&mut self, &mut buffer, custom_sections)?;
-        Ok(module)
-    }
-
     /// Fetch next Wasm module payload and adust the `buffer`.
     ///
     /// # Errors
@@ -84,21 +62,25 @@ impl ModuleParser {
         consumed
     }
 
-    /// Parse the Wasm module header.
+    /// Starts parsing and validating the Wasm bytecode stream.
     ///
-    /// - The Wasm module header is the set of all sections that appear before
-    ///   the Wasm code section.
-    /// - We separate parsing of the Wasm module header since the information of
-    ///   the Wasm module header is required for translating the Wasm code section.
+    /// Returns the compiled and validated Wasm [`Module`] upon success.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible to either
+    ///
+    /// 1) Populate the [`ModuleParser`] with a [`Validator`] prior to calling this method, OR;
+    /// 2) Make sure that the provided `stream` yields valid WebAssembly bytecode.
+    ///
+    /// Otherwise this method has undefined behavior.
     ///
     /// # Errors
     ///
-    /// If the Wasm bytecode stream fails to parse or validate.
-    fn parse_buffered_header(
-        &mut self,
-        buffer: &mut &[u8],
-        mut custom_sections: CustomSectionsBuilder,
-    ) -> Result<Module, Error> {
+    /// If the Wasm bytecode stream fails to validate.
+    unsafe fn parse_buffered_impl(mut self, mut buffer: &[u8]) -> Result<Module, Error> {
+        let buffer = &mut buffer;
+        let mut custom_sections = CustomSectionsBuilder::default();
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
             let (consumed, payload) = self.next_payload(buffer)?;
