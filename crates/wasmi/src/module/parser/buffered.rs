@@ -57,10 +57,8 @@ impl ModuleParser {
     ///
     /// If the Wasm bytecode stream fails to validate.
     unsafe fn parse_buffered_impl(mut self, mut buffer: &[u8]) -> Result<Module, Error> {
-        let mut custom_sections = CustomSectionsBuilder::default();
-        let header = Self::parse_buffered_header(&mut self, &mut buffer, &mut custom_sections)?;
-        let builder = Self::parse_buffered_code(&mut self, &mut buffer, header, custom_sections)?;
-        let module = Self::parse_buffered_data(&mut self, &mut buffer, builder)?;
+        let custom_sections = CustomSectionsBuilder::default();
+        let module = Self::parse_buffered_header(&mut self, &mut buffer, custom_sections)?;
         Ok(module)
     }
 
@@ -99,11 +97,12 @@ impl ModuleParser {
     fn parse_buffered_header(
         &mut self,
         buffer: &mut &[u8],
-        custom_sections: &mut CustomSectionsBuilder,
-    ) -> Result<ModuleHeader, Error> {
+        mut custom_sections: CustomSectionsBuilder,
+    ) -> Result<Module, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
             let (consumed, payload) = self.next_payload(buffer)?;
+            Self::consume_buffer(consumed, buffer);
             match payload {
                 Payload::Version {
                     num,
@@ -124,19 +123,25 @@ impl ModuleParser {
                 Payload::DataCountSection { count, range } => self.process_data_count(count, range),
                 Payload::CodeSectionStart { count, range, size } => {
                     self.process_code_start(count, range, size)?;
-                    Self::consume_buffer(consumed, buffer);
-                    break;
+                    return self.parse_buffered_code(buffer, header.finish(), custom_sections);
                 }
-                Payload::DataSection(_) => break,
-                Payload::End(_) => break,
+                Payload::DataSection(data_section) => {
+                    let mut builder = ModuleBuilder::new(header.finish(), custom_sections);
+                    self.process_data(data_section, &mut builder)?;
+                    return self.parse_buffered_post_data(buffer, builder);
+                }
+                Payload::End(offset) => {
+                    self.process_end(offset)?;
+                    let module =
+                        ModuleBuilder::new(header.finish(), custom_sections).finish(&self.engine);
+                    return Ok(module);
+                }
                 Payload::CustomSection(reader) => {
-                    self.process_custom_section(custom_sections, reader)
+                    self.process_custom_section(&mut custom_sections, reader)
                 }
                 unexpected => self.process_invalid_payload(unexpected),
             }?;
-            Self::consume_buffer(consumed, buffer);
         }
-        Ok(header.finish())
     }
 
     /// Parse the Wasm code section entries.
@@ -153,26 +158,33 @@ impl ModuleParser {
         buffer: &mut &[u8],
         header: ModuleHeader,
         custom_sections: CustomSectionsBuilder,
-    ) -> Result<ModuleBuilder, Error> {
+    ) -> Result<Module, Error> {
+        let mut builder = ModuleBuilder::new(header, custom_sections);
         loop {
             let (consumed, payload) = self.next_payload(buffer)?;
+            Self::consume_buffer(consumed, buffer);
             match payload {
                 Payload::CodeSectionEntry(func_body) => {
-                    // Note: Unfortunately the `wasmparser` crate is missing an API
-                    //       to return the byte slice for the respective code section
-                    //       entry payload. Please remove this work around as soon as
-                    //       such an API becomes available.
-                    Self::consume_buffer(consumed, buffer);
                     let bytes = func_body.as_bytes();
-                    self.process_code_entry(func_body, bytes, &header)?;
+                    self.process_code_entry(func_body, bytes, &builder.header)?;
                 }
-                _ => break,
+                Payload::CustomSection(reader) => {
+                    self.process_custom_section(&mut builder.custom_sections, reader)?;
+                }
+                Payload::DataSection(data_section) => {
+                    self.process_data(data_section, &mut builder)?;
+                    return self.parse_buffered_post_data(buffer, builder);
+                }
+                Payload::End(offset) => {
+                    self.process_end(offset)?;
+                    return Ok(builder.finish(&self.engine));
+                }
+                unexpected => self.process_invalid_payload(unexpected)?,
             }
         }
-        Ok(ModuleBuilder::new(header, custom_sections))
     }
 
-    /// Parse the Wasm data section and finalize parsing.
+    /// Parse post the Wasm data section and finalize parsing.
     ///
     /// We separate parsing of the Wasm data section since it is the only Wasm
     /// section that comes after the Wasm code section that we have to separate
@@ -181,28 +193,24 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to parse or validate.
-    fn parse_buffered_data(
+    fn parse_buffered_post_data(
         &mut self,
         buffer: &mut &[u8],
         mut builder: ModuleBuilder,
     ) -> Result<Module, Error> {
         loop {
             let (consumed, payload) = self.next_payload(buffer)?;
+            Self::consume_buffer(consumed, buffer);
             match payload {
-                Payload::DataSection(section) => {
-                    self.process_data(section, &mut builder)?;
-                }
                 Payload::End(offset) => {
                     self.process_end(offset)?;
-                    break;
+                    return Ok(builder.finish(&self.engine));
                 }
                 Payload::CustomSection(reader) => {
                     self.process_custom_section(&mut builder.custom_sections, reader)?;
                 }
                 invalid => self.process_invalid_payload(invalid)?,
             }
-            Self::consume_buffer(consumed, buffer);
         }
-        Ok(builder.finish(&self.engine))
     }
 }
