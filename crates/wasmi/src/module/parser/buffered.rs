@@ -6,7 +6,7 @@ use super::{
     ModuleParser,
 };
 use crate::{Error, Module};
-use wasmparser::{Chunk, Payload, Validator};
+use wasmparser::{Chunk, DataSectionReader, Payload, Validator};
 
 impl ModuleParser {
     /// Starts parsing and validating the Wasm bytecode stream.
@@ -84,15 +84,16 @@ impl ModuleParser {
                     return self.parse_buffered_code(buffer, header.finish(), custom_sections);
                 }
                 Payload::DataSection(data_section) => {
-                    let mut builder = ModuleBuilder::new(header.finish(), custom_sections);
-                    self.process_data(data_section, &mut builder)?;
-                    return self.parse_buffered_post_data(buffer, builder);
+                    return self.parse_buffered_data(
+                        buffer,
+                        data_section,
+                        header.finish(),
+                        custom_sections,
+                    );
                 }
                 Payload::End(offset) => {
-                    self.process_end(offset)?;
-                    let module =
-                        ModuleBuilder::new(header.finish(), custom_sections).finish(&self.engine);
-                    return Ok(module);
+                    return self
+                        .finish(offset, ModuleBuilder::new(header.finish(), custom_sections))
                 }
                 Payload::CustomSection(reader) => {
                     self.process_custom_section(&mut custom_sections, reader)
@@ -115,25 +116,22 @@ impl ModuleParser {
         &mut self,
         buffer: &mut &[u8],
         header: ModuleHeader,
-        custom_sections: CustomSectionsBuilder,
+        mut custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
-        let mut builder = ModuleBuilder::new(header, custom_sections);
         loop {
             match self.next_payload(buffer)? {
                 Payload::CodeSectionEntry(func_body) => {
                     let bytes = func_body.as_bytes();
-                    self.process_code_entry(func_body, bytes, &builder.header)?;
+                    self.process_code_entry(func_body, bytes, &header)?;
                 }
                 Payload::CustomSection(reader) => {
-                    self.process_custom_section(&mut builder.custom_sections, reader)?;
+                    self.process_custom_section(&mut custom_sections, reader)?;
                 }
                 Payload::DataSection(data_section) => {
-                    self.process_data(data_section, &mut builder)?;
-                    return self.parse_buffered_post_data(buffer, builder);
+                    return self.parse_buffered_data(buffer, data_section, header, custom_sections);
                 }
                 Payload::End(offset) => {
-                    self.process_end(offset)?;
-                    return Ok(builder.finish(&self.engine));
+                    return self.finish(offset, ModuleBuilder::new(header, custom_sections))
                 }
                 unexpected => self.process_invalid_payload(unexpected)?,
             }
@@ -149,23 +147,31 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to parse or validate.
-    fn parse_buffered_post_data(
+    fn parse_buffered_data(
         &mut self,
         buffer: &mut &[u8],
-        mut builder: ModuleBuilder,
+        data_section: DataSectionReader,
+        header: ModuleHeader,
+        custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
+        let mut builder = ModuleBuilder::new(header, custom_sections);
+        self.process_data(data_section, &mut builder)?;
         loop {
             match self.next_payload(buffer)? {
-                Payload::End(offset) => {
-                    self.process_end(offset)?;
-                    return Ok(builder.finish(&self.engine));
-                }
+                Payload::End(offset) => return self.finish(offset, builder),
                 Payload::CustomSection(reader) => {
                     self.process_custom_section(&mut builder.custom_sections, reader)?;
                 }
                 invalid => self.process_invalid_payload(invalid)?,
             }
         }
+    }
+
+    /// Finish Wasm module parsing and returns the resulting [`Module`].
+    fn finish(&mut self, offset: usize, builder: ModuleBuilder) -> Result<Module, Error> {
+        self.process_end(offset)?;
+        let module = builder.finish(&self.engine);
+        Ok(module)
     }
 
     /// Fetch next Wasm module payload and adust the `buffer`.
