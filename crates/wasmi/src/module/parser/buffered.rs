@@ -61,9 +61,7 @@ impl ModuleParser {
         let mut custom_sections = CustomSectionsBuilder::default();
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
-            let (consumed, payload) = self.next_payload(buffer)?;
-            Self::consume_buffer(consumed, buffer);
-            match payload {
+            match self.next_payload(buffer)? {
                 Payload::Version {
                     num,
                     encoding,
@@ -121,9 +119,7 @@ impl ModuleParser {
     ) -> Result<Module, Error> {
         let mut builder = ModuleBuilder::new(header, custom_sections);
         loop {
-            let (consumed, payload) = self.next_payload(buffer)?;
-            Self::consume_buffer(consumed, buffer);
-            match payload {
+            match self.next_payload(buffer)? {
                 Payload::CodeSectionEntry(func_body) => {
                     let bytes = func_body.as_bytes();
                     self.process_code_entry(func_body, bytes, &builder.header)?;
@@ -159,9 +155,7 @@ impl ModuleParser {
         mut builder: ModuleBuilder,
     ) -> Result<Module, Error> {
         loop {
-            let (consumed, payload) = self.next_payload(buffer)?;
-            Self::consume_buffer(consumed, buffer);
-            match payload {
+            match self.next_payload(buffer)? {
                 Payload::End(offset) => {
                     self.process_end(offset)?;
                     return Ok(builder.finish(&self.engine));
@@ -179,9 +173,12 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the parsed Wasm is malformed.
-    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<(usize, Payload<'a>), Error> {
+    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<Payload<'a>, Error> {
         match self.parser.parse(&buffer[..], true)? {
-            Chunk::Parsed { consumed, payload } => Ok((consumed, payload)),
+            Chunk::Parsed { consumed, payload } => {
+                Self::consume_buffer(consumed, buffer);
+                Ok(payload)
+            }
             Chunk::NeedMoreData(_hint) => {
                 // This is not possible since `eof` is always true.
                 unreachable!()
