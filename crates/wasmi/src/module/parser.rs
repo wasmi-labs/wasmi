@@ -454,7 +454,7 @@ impl ModuleParser {
             }
         }
         if let Some(validator) = &mut self.validator {
-            validator.code_section_start(count, &range)?;
+            validator.code_section_start(&range)?;
         }
         Ok(())
     }
