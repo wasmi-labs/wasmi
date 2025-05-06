@@ -13,6 +13,7 @@ use wasmparser::{Chunk, Payload, Validator};
 #[derive(Debug, Default, Clone)]
 struct ParseBuffer {
     buffer: Vec<u8>,
+    eof: bool,
 }
 
 impl ParseBuffer {
@@ -47,8 +48,13 @@ impl ParseBuffer {
         self.buffer.resize(new_len, 0x0_u8);
         let read_bytes = stream.read(&mut self.buffer[len..])?;
         self.buffer.truncate(len + read_bytes);
-        let reached_end = read_bytes == 0;
-        Ok(reached_end)
+        self.eof = read_bytes == 0;
+        Ok(self.eof)
+    }
+
+    #[inline]
+    fn eof(&self) -> bool {
+        self.eof
     }
 }
 
@@ -126,9 +132,9 @@ impl ModuleParser {
     ) -> Result<Module, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
-            match self.parser.parse(buffer.bytes(), self.eof)? {
+            match self.parser.parse(buffer.bytes(), buffer.eof())? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = buffer.pull_bytes(hint, stream)?;
+                    buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -214,9 +220,9 @@ impl ModuleParser {
         mut custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
         loop {
-            match self.parser.parse(buffer.bytes(), self.eof)? {
+            match self.parser.parse(buffer.bytes(), buffer.eof())? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = buffer.pull_bytes(hint, stream)?;
+                    buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -267,9 +273,9 @@ impl ModuleParser {
         mut builder: ModuleBuilder,
     ) -> Result<Module, Error> {
         loop {
-            match self.parser.parse(buffer.bytes(), self.eof)? {
+            match self.parser.parse(buffer.bytes(), buffer.eof())? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = buffer.pull_bytes(hint, stream)?;
+                    buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
