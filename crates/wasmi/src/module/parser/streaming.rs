@@ -52,6 +52,7 @@ impl ParseBuffer {
         Ok(())
     }
 
+    /// Returns `true` if [`ParseBuffer`] reached the end of file.
     #[inline]
     fn eof(&self) -> bool {
         self.eof
