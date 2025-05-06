@@ -7,7 +7,6 @@ use super::{
 };
 use crate::{Error, Module, Read};
 use alloc::vec::Vec;
-use core::ops::{Deref, DerefMut};
 use wasmparser::{Chunk, Payload, Validator};
 
 /// A buffer for holding parsed payloads in bytes.
@@ -17,10 +16,16 @@ struct ParseBuffer {
 }
 
 impl ParseBuffer {
+    /// Returns the underlying bytes of the [`ParseBuffer`].
+    #[inline]
+    fn bytes(&self) -> &[u8] {
+        &self.buffer[..]
+    }
+
     /// Drops the first `amount` bytes from the [`ParseBuffer`] as they have been consumed.
     #[inline]
-    fn consume(buffer: &mut Self, amount: usize) {
-        buffer.drain(..amount);
+    fn consume(&mut self, amount: usize) {
+        self.buffer.drain(..amount);
     }
 
     /// Pulls more bytes from the `stream` in order to produce Wasm payload.
@@ -31,35 +36,19 @@ impl ParseBuffer {
     ///
     /// Uses `hint` to efficiently preallocate enough space for the next payload.
     #[inline]
-    fn pull_bytes(buffer: &mut Self, hint: u64, stream: &mut impl Read) -> Result<bool, Error> {
+    fn pull_bytes(&mut self, hint: u64, stream: &mut impl Read) -> Result<bool, Error> {
         // Use the hint to preallocate more space, then read
         // some more data into the buffer.
         //
         // Note that the buffer management here is not ideal,
         // but it's compact enough to fit in an example!
-        let len = buffer.len();
+        let len = self.buffer.len();
         let new_len = len + hint as usize;
-        buffer.resize(new_len, 0x0_u8);
-        let read_bytes = stream.read(&mut buffer[len..])?;
-        buffer.truncate(len + read_bytes);
+        self.buffer.resize(new_len, 0x0_u8);
+        let read_bytes = stream.read(&mut self.buffer[len..])?;
+        self.buffer.truncate(len + read_bytes);
         let reached_end = read_bytes == 0;
         Ok(reached_end)
-    }
-}
-
-impl Deref for ParseBuffer {
-    type Target = Vec<u8>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.buffer
-    }
-}
-
-impl DerefMut for ParseBuffer {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.buffer
     }
 }
 
@@ -137,7 +126,7 @@ impl ModuleParser {
     ) -> Result<Module, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
-            match self.parser.parse(&buffer[..], self.eof)? {
+            match self.parser.parse(buffer.bytes(), self.eof)? {
                 Chunk::NeedMoreData(hint) => {
                     self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
                 }
@@ -225,7 +214,7 @@ impl ModuleParser {
         mut custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
         loop {
-            match self.parser.parse(&buffer[..], self.eof)? {
+            match self.parser.parse(buffer.bytes(), self.eof)? {
                 Chunk::NeedMoreData(hint) => {
                     self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
                 }
@@ -277,7 +266,7 @@ impl ModuleParser {
         mut builder: ModuleBuilder,
     ) -> Result<Module, Error> {
         loop {
-            match self.parser.parse(&buffer[..], self.eof)? {
+            match self.parser.parse(buffer.bytes(), self.eof)? {
                 Chunk::NeedMoreData(hint) => {
                     self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
                 }
