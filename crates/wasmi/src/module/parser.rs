@@ -16,6 +16,7 @@ use crate::{
     Error,
     FuncType,
     MemoryType,
+    Module,
     TableType,
 };
 use alloc::boxed::Box;
@@ -37,7 +38,6 @@ use wasmparser::{
     TypeSectionReader,
     Validator,
 };
-use crate::Module;
 
 mod buffered;
 mod streaming;
