@@ -112,22 +112,10 @@ impl ModuleParser {
     ///
     /// If the Wasm bytecode stream fails to validate.
     unsafe fn parse_streaming_impl(mut self, mut stream: impl Read) -> Result<Module, Error> {
-        let mut custom_sections = CustomSectionsBuilder::default();
+        let custom_sections = CustomSectionsBuilder::default();
         let mut buffer = ParseBuffer::default();
-        let header = Self::parse_streaming_header(
-            &mut self,
-            &mut stream,
-            &mut buffer,
-            &mut custom_sections,
-        )?;
-        let builder = Self::parse_streaming_code(
-            &mut self,
-            &mut stream,
-            &mut buffer,
-            header,
-            custom_sections,
-        )?;
-        let module = Self::parse_streaming_data(&mut self, &mut stream, &mut buffer, builder)?;
+        let module =
+            Self::parse_streaming_module(&mut self, &mut stream, &mut buffer, custom_sections)?;
         Ok(module)
     }
 
@@ -141,20 +129,17 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to parse or validate.
-    fn parse_streaming_header(
+    fn parse_streaming_module(
         &mut self,
         stream: &mut impl Read,
         buffer: &mut ParseBuffer,
-        custom_sections: &mut CustomSectionsBuilder,
-    ) -> Result<ModuleHeader, Error> {
+        mut custom_sections: CustomSectionsBuilder,
+    ) -> Result<Module, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
                     self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
-                    if self.eof {
-                        break;
-                    }
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -192,21 +177,35 @@ impl ModuleParser {
                         Payload::CodeSectionStart { count, range, size } => {
                             self.process_code_start(count, range, size)?;
                             ParseBuffer::consume(buffer, consumed);
-                            break;
+                            return self.parse_streaming_code(
+                                stream,
+                                buffer,
+                                header.finish(),
+                                custom_sections,
+                            );
                         }
-                        Payload::DataSection(_) => break,
-                        Payload::End(_) => break,
+                        Payload::DataSection(data_section) => {
+                            let mut builder = ModuleBuilder::new(header.finish(), custom_sections);
+                            self.process_data(data_section, &mut builder)?;
+                            ParseBuffer::consume(buffer, consumed);
+                            return self.parse_streaming_data(stream, buffer, builder);
+                        }
+                        Payload::End(offset) => {
+                            ParseBuffer::consume(buffer, consumed);
+                            return self.finish(
+                                offset,
+                                ModuleBuilder::new(header.finish(), custom_sections),
+                            );
+                        }
                         Payload::CustomSection(reader) => {
-                            self.process_custom_section(custom_sections, reader)
+                            self.process_custom_section(&mut custom_sections, reader)
                         }
                         unexpected => self.process_invalid_payload(unexpected),
                     }?;
-                    // Cut away the parts from the intermediate buffer that have already been parsed.
                     ParseBuffer::consume(buffer, consumed);
                 }
             }
         }
-        Ok(header.finish())
     }
 
     /// Parse the Wasm code section entries.
@@ -223,8 +222,8 @@ impl ModuleParser {
         stream: &mut impl Read,
         buffer: &mut ParseBuffer,
         header: ModuleHeader,
-        custom_sections: CustomSectionsBuilder,
-    ) -> Result<ModuleBuilder, Error> {
+        mut custom_sections: CustomSectionsBuilder,
+    ) -> Result<Module, Error> {
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
@@ -240,14 +239,26 @@ impl ModuleParser {
                             let bytes = func_body.as_bytes();
                             self.process_code_entry(func_body, bytes, &header)?;
                         }
-                        _ => break,
+                        Payload::CustomSection(reader) => {
+                            self.process_custom_section(&mut custom_sections, reader)?;
+                        }
+                        Payload::DataSection(data_section) => {
+                            let mut builder = ModuleBuilder::new(header, custom_sections);
+                            self.process_data(data_section, &mut builder)?;
+                            ParseBuffer::consume(buffer, consumed);
+                            return self.parse_streaming_data(stream, buffer, builder);
+                        }
+                        Payload::End(offset) => {
+                            ParseBuffer::consume(buffer, consumed);
+                            return self.finish(offset, ModuleBuilder::new(header, custom_sections));
+                        }
+                        unexpected => self.process_invalid_payload(unexpected)?,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
                     ParseBuffer::consume(buffer, consumed);
                 }
             }
         }
-        Ok(ModuleBuilder::new(header, custom_sections))
     }
 
     /// Parse the Wasm data section and finalize parsing.
@@ -272,13 +283,9 @@ impl ModuleParser {
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
-                        Payload::DataSection(section) => {
-                            self.process_data(section, &mut builder)?;
-                        }
                         Payload::End(offset) => {
-                            self.process_end(offset)?;
                             ParseBuffer::consume(buffer, consumed);
-                            break;
+                            return self.finish(offset, builder);
                         }
                         Payload::CustomSection(reader) => {
                             self.process_custom_section(&mut builder.custom_sections, reader)?
@@ -290,6 +297,5 @@ impl ModuleParser {
                 }
             }
         }
-        Ok(builder.finish(&self.engine))
     }
 }
