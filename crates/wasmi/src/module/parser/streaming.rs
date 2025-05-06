@@ -251,7 +251,6 @@ impl ModuleParser {
                         }
                         unexpected => self.process_invalid_payload(unexpected)?,
                     }
-                    // Cut away the parts from the intermediate buffer that have already been parsed.
                     buffer.consume(consumed);
                 }
             }
@@ -289,7 +288,6 @@ impl ModuleParser {
                         }
                         invalid => self.process_invalid_payload(invalid)?,
                     }
-                    // Cut away the parts from the intermediate buffer that have already been parsed.
                     buffer.consume(consumed);
                 }
             }
