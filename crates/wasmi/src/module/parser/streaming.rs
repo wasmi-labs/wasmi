@@ -239,7 +239,8 @@ impl ModuleParser {
                         }
                         Payload::End(offset) => {
                             ParseBuffer::consume(buffer, consumed);
-                            return self.finish(offset, ModuleBuilder::new(header, custom_sections));
+                            return self
+                                .finish(offset, ModuleBuilder::new(header, custom_sections));
                         }
                         unexpected => self.process_invalid_payload(unexpected)?,
                     }
