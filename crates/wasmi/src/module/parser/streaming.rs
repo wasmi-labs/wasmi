@@ -128,7 +128,7 @@ impl ModuleParser {
         loop {
             match self.parser.parse(buffer.bytes(), self.eof)? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
+                    self.eof = buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -165,7 +165,7 @@ impl ModuleParser {
                         }
                         Payload::CodeSectionStart { count, range, size } => {
                             self.process_code_start(count, range, size)?;
-                            ParseBuffer::consume(buffer, consumed);
+                            buffer.consume(consumed);
                             return self.parse_streaming_code(
                                 stream,
                                 buffer,
@@ -176,11 +176,11 @@ impl ModuleParser {
                         Payload::DataSection(data_section) => {
                             let mut builder = ModuleBuilder::new(header.finish(), custom_sections);
                             self.process_data(data_section, &mut builder)?;
-                            ParseBuffer::consume(buffer, consumed);
+                            buffer.consume(consumed);
                             return self.parse_streaming_data(stream, buffer, builder);
                         }
                         Payload::End(offset) => {
-                            ParseBuffer::consume(buffer, consumed);
+                            buffer.consume(consumed);
                             return self.finish(
                                 offset,
                                 ModuleBuilder::new(header.finish(), custom_sections),
@@ -191,7 +191,7 @@ impl ModuleParser {
                         }
                         unexpected => self.process_invalid_payload(unexpected),
                     }?;
-                    ParseBuffer::consume(buffer, consumed);
+                    buffer.consume(consumed);
                 }
             }
         }
@@ -216,7 +216,7 @@ impl ModuleParser {
         loop {
             match self.parser.parse(buffer.bytes(), self.eof)? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
+                    self.eof = buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -234,18 +234,18 @@ impl ModuleParser {
                         Payload::DataSection(data_section) => {
                             let mut builder = ModuleBuilder::new(header, custom_sections);
                             self.process_data(data_section, &mut builder)?;
-                            ParseBuffer::consume(buffer, consumed);
+                            buffer.consume(consumed);
                             return self.parse_streaming_data(stream, buffer, builder);
                         }
                         Payload::End(offset) => {
-                            ParseBuffer::consume(buffer, consumed);
+                            buffer.consume(consumed);
                             return self
                                 .finish(offset, ModuleBuilder::new(header, custom_sections));
                         }
                         unexpected => self.process_invalid_payload(unexpected)?,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
-                    ParseBuffer::consume(buffer, consumed);
+                    buffer.consume(consumed);
                 }
             }
         }
@@ -269,12 +269,12 @@ impl ModuleParser {
         loop {
             match self.parser.parse(buffer.bytes(), self.eof)? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = ParseBuffer::pull_bytes(buffer, hint, stream)?;
+                    self.eof = buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
                         Payload::End(offset) => {
-                            ParseBuffer::consume(buffer, consumed);
+                            buffer.consume(consumed);
                             return self.finish(offset, builder);
                         }
                         Payload::CustomSection(reader) => {
@@ -283,7 +283,7 @@ impl ModuleParser {
                         invalid => self.process_invalid_payload(invalid)?,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
-                    ParseBuffer::consume(buffer, consumed);
+                    buffer.consume(consumed);
                 }
             }
         }
