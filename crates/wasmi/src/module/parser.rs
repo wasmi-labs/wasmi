@@ -37,8 +37,6 @@ use wasmparser::{
     TypeSectionReader,
     Validator,
 };
-
-#[cfg(doc)]
 use crate::Module;
 
 mod buffered;
@@ -70,6 +68,13 @@ impl ModuleParser {
             engine_funcs: 0,
             eof: false,
         }
+    }
+
+    /// Finish Wasm module parsing and returns the resulting [`Module`].
+    fn finish(&mut self, offset: usize, builder: ModuleBuilder) -> Result<Module, Error> {
+        self.process_end(offset)?;
+        let module = builder.finish(&self.engine);
+        Ok(module)
     }
 
     /// Processes the end of the Wasm binary.

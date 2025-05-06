@@ -167,13 +167,6 @@ impl ModuleParser {
         }
     }
 
-    /// Finish Wasm module parsing and returns the resulting [`Module`].
-    fn finish(&mut self, offset: usize, builder: ModuleBuilder) -> Result<Module, Error> {
-        self.process_end(offset)?;
-        let module = builder.finish(&self.engine);
-        Ok(module)
-    }
-
     /// Fetch next Wasm module payload and adust the `buffer`.
     ///
     /// # Errors
