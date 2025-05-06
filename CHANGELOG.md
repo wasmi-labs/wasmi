@@ -26,6 +26,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Removed most of `wasmi_core::TypedVal`'s API. [#1457]
   - The newer `wasmi_core::wasm` API is to be preferred and provides the same functionality.
 
+### Fixed
+
+- Fixed a bug that Wasmi did not make `wasmparser`'s parser aware of enabled Wasm features. [#1502]
+  - Making `wasmparser` aware of the enabled Wasm features allows it to detect malformed Wasm
+    binaries during parsing.
+
 ### Internal
 
 - Make Wasmi's executor non-generic over the `Store`'s `T`. [#1449]
@@ -60,6 +66,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1496]: https://github.com/wasmi-labs/wasmi/pull/1496
 [#1497]: https://github.com/wasmi-labs/wasmi/pull/1497
 [#1498]: https://github.com/wasmi-labs/wasmi/pull/1498
+[#1502]: https://github.com/wasmi-labs/wasmi/pull/1502
 
 ## [`0.44.1`] - 2025-05-04
 
