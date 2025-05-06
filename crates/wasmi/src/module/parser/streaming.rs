@@ -37,7 +37,7 @@ impl ParseBuffer {
     ///
     /// Uses `hint` to efficiently preallocate enough space for the next payload.
     #[inline]
-    fn pull_bytes(&mut self, hint: u64, stream: &mut impl Read) -> Result<bool, Error> {
+    fn pull_bytes(&mut self, hint: u64, stream: &mut impl Read) -> Result<(), Error> {
         // Use the hint to preallocate more space, then read
         // some more data into the buffer.
         //
@@ -49,7 +49,7 @@ impl ParseBuffer {
         let read_bytes = stream.read(&mut self.buffer[len..])?;
         self.buffer.truncate(len + read_bytes);
         self.eof = read_bytes == 0;
-        Ok(self.eof)
+        Ok(())
     }
 
     #[inline]
