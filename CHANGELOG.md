@@ -17,6 +17,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     Wasmi's fuel metering to provide amount of compute units to different Wasm execution
     threads for example.
 - Added missing `wasmi_core::simd` API functions for `relaxed-simd`. [#1447]
+- Added implementations for Rust's `Error` trait for all  `wasmi` error types on `no_std`. [#1462]
 
 ### Changed
 
@@ -43,7 +44,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Add `FuncType` [#1458]
   - Add `Fuel`, `Memory`, `Table`, `Global`, `ResourceLimiter` [#1464]
   - Replace uses in `wasmi` with `wasmi_core` definitions. [#1460]
-- All `wasmi` error types now implement Rust's `Error` trait on `no_std`. [#1462]
 
 [#1447]: https://github.com/wasmi-labs/wasmi/pull/1447
 [#1449]: https://github.com/wasmi-labs/wasmi/pull/1449
