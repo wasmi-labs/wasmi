@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.45.0`] - 2025-05-04
+## [`0.45.0`] - 2025-05-06
 
 ### Added
 
@@ -24,8 +24,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Updated `wasm-tools` dependencies to v228. [#1463]
 - Removed most of `wasmi_core::TypedVal`'s API. [#1457]
   - The newer `wasmi_core::wasm` API is to be preferred and provides the same functionality.
-
-### Fixed
 
 ### Internal
 
