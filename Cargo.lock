@@ -705,7 +705,7 @@ dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "wasm-smith",
- "wasmi 0.44.0",
+ "wasmi 0.45.0",
  "wasmi_fuzz",
  "wasmprinter 0.228.0",
 ]
@@ -1665,7 +1665,7 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "arrayvec",
  "assert_matches",
@@ -1674,7 +1674,7 @@ dependencies = [
  "smallvec",
  "spin",
  "wasmi_collections",
- "wasmi_core 0.44.0",
+ "wasmi_core 0.45.0",
  "wasmi_ir",
  "wasmparser 0.228.0",
  "wat",
@@ -1688,22 +1688,22 @@ checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
 name = "wasmi_c_api"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "wasmi_c_api_impl",
 ]
 
 [[package]]
 name = "wasmi_c_api_impl"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
- "wasmi 0.44.0",
+ "wasmi 0.45.0",
  "wasmi_c_api_macros",
 ]
 
 [[package]]
 name = "wasmi_c_api_macros"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1711,18 +1711,18 @@ dependencies = [
 
 [[package]]
 name = "wasmi_cli"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
- "wasmi 0.44.0",
+ "wasmi 0.45.0",
  "wasmi_wasi",
 ]
 
 [[package]]
 name = "wasmi_collections"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "hashbrown",
  "string-interner",
@@ -1742,7 +1742,7 @@ dependencies = [
 
 [[package]]
 name = "wasmi_core"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "downcast-rs 2.0.1",
  "libm",
@@ -1750,40 +1750,40 @@ dependencies = [
 
 [[package]]
 name = "wasmi_fuzz"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "anyhow",
  "arbitrary",
  "sha2",
  "wasm-smith",
  "wasmi 0.31.2",
- "wasmi 0.44.0",
+ "wasmi 0.45.0",
  "wasmprinter 0.228.0",
  "wasmtime",
 ]
 
 [[package]]
 name = "wasmi_ir"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
- "wasmi_core 0.44.0",
+ "wasmi_core 0.45.0",
 ]
 
 [[package]]
 name = "wasmi_wasi"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "wasi-common",
- "wasmi 0.44.0",
+ "wasmi 0.45.0",
  "wiggle",
 ]
 
 [[package]]
 name = "wasmi_wast"
-version = "0.44.0"
+version = "0.45.0"
 dependencies = [
  "anyhow",
- "wasmi 0.44.0",
+ "wasmi 0.45.0",
  "wast 228.0.0",
 ]
 

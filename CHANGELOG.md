@@ -8,6 +8,66 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.45.0`] - 2025-05-06
+
+### Added
+
+- Added support for Wasm function call resumption after running out of fuel. [#1498]
+  - This feature is very useful when using Wasmi inside a scheduler that works with
+    Wasmi's fuel metering to provide amount of compute units to different Wasm execution
+    threads for example.
+- Added missing `wasmi_core::simd` API functions for `relaxed-simd`. [#1447]
+- Added implementations for Rust's `Error` trait for all  `wasmi` error types on `no_std`. [#1462]
+
+### Changed
+
+- Avoid performing duplicate type and validation checks in `Linker::instantiate`. [#1476]
+- Updated `wasm-tools` dependencies to v228. [#1463]
+- Removed most of `wasmi_core::TypedVal`'s API. [#1457]
+  - The newer `wasmi_core::wasm` API is to be preferred and provides the same functionality.
+
+### Fixed
+
+- Fixed a bug that Wasmi did not make `wasmparser`'s parser aware of enabled Wasm features. [#1502]
+  - Making `wasmparser` aware of the enabled Wasm features allows it to detect malformed Wasm
+    binaries during parsing.
+
+### Internal
+
+- Make Wasmi's executor non-generic over the `Store`'s `T`. [#1449]
+- Changes to Wasmi's IR:
+  - Removed all conditional return instructions. [#1486]
+    - This allows Wasmi to apply its powerful cmp+branch fusion in more places.
+  - Remove most of the `bulk-memory` (and `bulk-table`) instruction variants. [#1489]
+    - Wasmi still has optimized variants for the most common cases.
+  - Add new logical-comparator instructions. [#1494]
+    - This further enhances Wasmi's powerful cmp+branch instruction fusion.
+  - Add negated `f{32,64}.{lt,le}` instructions. [#1496]
+    - This allows Wasmi to apply its cmp+nez fusion for `f{32,64}.{le,lt}` instructions as well.
+  - Re-design Wasmi's `select` instructions. [#1497]
+    - This allows to use Wasmi's powerful cmp op-code fusion for `select` instructions.
+- Moved many `wasmi` internals into `wasmi_core`:
+  - Add `FuncType` [#1458]
+  - Add `Fuel`, `Memory`, `Table`, `Global`, `ResourceLimiter` [#1464]
+  - Replace uses in `wasmi` with `wasmi_core` definitions. [#1460]
+
+[#1447]: https://github.com/wasmi-labs/wasmi/pull/1447
+[#1449]: https://github.com/wasmi-labs/wasmi/pull/1449
+[#1457]: https://github.com/wasmi-labs/wasmi/pull/1457
+[#1458]: https://github.com/wasmi-labs/wasmi/pull/1458
+[#1460]: https://github.com/wasmi-labs/wasmi/pull/1460
+[#1462]: https://github.com/wasmi-labs/wasmi/pull/1462
+[#1463]: https://github.com/wasmi-labs/wasmi/pull/1463
+[#1464]: https://github.com/wasmi-labs/wasmi/pull/1464
+[#1476]: https://github.com/wasmi-labs/wasmi/pull/1476
+[#1486]: https://github.com/wasmi-labs/wasmi/pull/1486
+[#1489]: https://github.com/wasmi-labs/wasmi/pull/1489
+[#1494]: https://github.com/wasmi-labs/wasmi/pull/1494
+[#1496]: https://github.com/wasmi-labs/wasmi/pull/1496
+[#1497]: https://github.com/wasmi-labs/wasmi/pull/1497
+[#1498]: https://github.com/wasmi-labs/wasmi/pull/1498
+[#1502]: https://github.com/wasmi-labs/wasmi/pull/1502
+
 ## [`0.44.1`] - 2025-05-04
 
 ### Fixed
