@@ -47,7 +47,7 @@ pub struct Store<T> {
 
 impl<T> Default for Store<T>
 where
-    T: Default + 'static,
+    T: Default,
 {
     fn default() -> Self {
         let engine = Engine::default();
@@ -55,7 +55,7 @@ where
     }
 }
 
-impl<T: 'static> Store<T> {
+impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {

@@ -33,7 +33,7 @@ pub struct RestorePrunedWrapper {
         fn(&mut PrunedStore) -> (&mut StoreInner, ResourceLimiterRef<'_>),
 }
 impl RestorePrunedWrapper {
-    pub fn new<T: 'static>() -> Self {
+    pub fn new<T>() -> Self {
         Self {
             call_host_func: |pruned: &mut PrunedStore,
                              func: &HostFuncEntity,
@@ -51,11 +51,14 @@ impl RestorePrunedWrapper {
                 }
                 Ok(())
             },
-            store_inner_and_resource_limiter_ref: |pruned: &mut PrunedStore| {
-                pruned
-                    .restore_or_panic::<T>()
-                    .store_inner_and_resource_limiter_ref()
-            },
+            store_inner_and_resource_limiter_ref:
+                |pruned: &mut PrunedStore| -> (&mut StoreInner, ResourceLimiterRef<'_>) {
+                    let ret: (&mut StoreInner, ResourceLimiterRef<'_>) = pruned
+                        .restore_or_panic::<T>()
+                        .store_inner_and_resource_limiter_ref();
+                    // SAFETY: todo
+                    unsafe { mem::transmute(ret) }
+                },
         }
     }
 }
