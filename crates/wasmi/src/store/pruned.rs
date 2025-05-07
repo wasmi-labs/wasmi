@@ -60,6 +60,7 @@ impl RestorePrunedWrapper {
     }
 }
 impl RestorePrunedWrapper {
+    #[inline]
     fn call_host_func(
         &self,
         pruned: &mut PrunedStore,
@@ -71,6 +72,7 @@ impl RestorePrunedWrapper {
         (self.call_host_func)(pruned, func, instance, params_results, call_hooks)
     }
 
+    #[inline]
     fn store_inner_and_resource_limiter_ref<'a>(
         &self,
         pruned: &'a mut PrunedStore,
@@ -136,6 +138,7 @@ impl PrunedStore {
     /// # Errors
     ///
     /// If the host function returns an error.
+    #[inline]
     pub fn call_host_func(
         &mut self,
         func: &HostFuncEntity,
@@ -153,6 +156,7 @@ impl PrunedStore {
     }
 
     /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
+    #[inline]
     pub fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
