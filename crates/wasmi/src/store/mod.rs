@@ -1,6 +1,7 @@
 mod context;
 mod inner;
 mod pruned;
+mod typeid;
 
 use self::pruned::RestorePrunedWrapper;
 pub use self::{
@@ -46,7 +47,7 @@ pub struct Store<T> {
 
 impl<T> Default for Store<T>
 where
-    T: Default + 'static,
+    T: Default,
 {
     fn default() -> Self {
         let engine = Engine::default();
@@ -54,13 +55,13 @@ where
     }
 }
 
-impl<T: 'static> Store<T> {
+impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
             typed: TypedStoreInner::new(data),
-            id: TypeId::of::<T>(),
+            id: typeid::of::<T>(),
             restore_pruned: RestorePrunedWrapper::new::<T>(),
         }
     }

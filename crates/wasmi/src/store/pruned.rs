@@ -1,8 +1,8 @@
-use super::{CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
+use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
 use crate::{core::hint, CallHook, Error, Instance, Store};
 use alloc::sync::Arc;
 use core::{
-    any::{type_name, TypeId},
+    any::type_name,
     fmt::{self, Debug},
     mem,
 };
@@ -18,7 +18,7 @@ use crate::Engine;
 #[derive(Clone)]
 pub struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
 impl RestorePrunedWrapper {
-    pub fn new<T: 'static>() -> Self {
+    pub fn new<T>() -> Self {
         Self(Arc::new(|pruned| -> &mut dyn TypedStore {
             let Ok(store) = PrunedStore::restore::<T>(pruned) else {
                 panic!(
@@ -123,8 +123,8 @@ impl PrunedStore {
     ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
-    fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
-        if hint::unlikely(TypeId::of::<T>() != self.pruned.id) {
+    fn restore<'a, T: 'a>(&'a mut self) -> Result<&'a mut Store<T>, PrunedStoreError> {
+        if hint::unlikely(typeid::of::<T>() != self.pruned.id) {
             return Err(PrunedStoreError);
         }
         let store = {
