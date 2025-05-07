@@ -820,8 +820,7 @@ impl InstrEncoder {
                         | Instruction::CopySpanNonOverlapping { .. }
                         | Instruction::CopyManyNonOverlapping { .. }
                 ),
-                "a preserve instruction is always a register copy instruction but found: {:?}",
-                preserved,
+                "a preserve instruction is always a register copy instruction but found: {preserved:?}",
             );
         }
         if self.notified_preservation.is_none() {

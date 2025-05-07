@@ -5,7 +5,7 @@ use crate::{
     ir::{Const16, Instruction, Reg},
 };
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Fetches two [`Reg`]s.
     fn fetch_register_2(&self) -> (Reg, Reg) {
         let mut addr: InstructionPtr = self.ip;
