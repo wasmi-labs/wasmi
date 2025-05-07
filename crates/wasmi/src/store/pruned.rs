@@ -62,7 +62,7 @@ impl RestorePrunedWrapper {
 }
 impl RestorePrunedWrapper {
     fn call_host_func(
-        &mut self,
+        &self,
         pruned: &mut PrunedStore,
         func: &HostFuncEntity,
         instance: Option<&Instance>,
@@ -73,7 +73,7 @@ impl RestorePrunedWrapper {
     }
 
     fn store_inner_and_resource_limiter_ref<'a>(
-        &mut self,
+        &self,
         pruned: &'a mut PrunedStore,
     ) -> (&'a mut StoreInner, ResourceLimiterRef<'a>) {
         (self.store_inner_and_resource_limiter_ref)(pruned)
