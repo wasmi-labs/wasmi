@@ -30,7 +30,7 @@ pub struct RestorePrunedWrapper {
     ) -> Result<(), Error>,
     /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
     store_inner_and_resource_limiter_ref:
-        for<'a> fn(&'a mut PrunedStore) -> (&'a mut StoreInner, ResourceLimiterRef<'a>),
+        fn(&mut PrunedStore) -> (&mut StoreInner, ResourceLimiterRef<'_>),
 }
 impl RestorePrunedWrapper {
     pub fn new<T: 'static>() -> Self {
