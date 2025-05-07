@@ -14,7 +14,7 @@ use crate::Engine;
 /// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 // pub struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
 pub struct RestorePrunedWrapper {
     /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
