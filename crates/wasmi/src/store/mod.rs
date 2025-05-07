@@ -7,7 +7,7 @@ use self::pruned::RestorePrunedWrapper;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
     inner::{StoreInner, Stored},
-    pruned::{PrunedStore, TypedStore},
+    pruned::PrunedStore,
 };
 use crate::{
     collections::arena::Arena,
@@ -47,7 +47,7 @@ pub struct Store<T> {
 
 impl<T> Default for Store<T>
 where
-    T: Default,
+    T: Default + 'static,
 {
     fn default() -> Self {
         let engine = Engine::default();
@@ -55,7 +55,7 @@ where
     }
 }
 
-impl<T> Store<T> {
+impl<T: 'static> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
@@ -152,9 +152,9 @@ impl<T> Store<T> {
     /// # Note
     ///
     /// This methods mostly exists to satisfy certain use cases that otherwise would conflict with the borrow checker.
-    pub(crate) fn store_inner_and_resource_limiter_ref(
-        &mut self,
-    ) -> (&mut StoreInner, ResourceLimiterRef) {
+    pub(crate) fn store_inner_and_resource_limiter_ref<'a>(
+        &'a mut self,
+    ) -> (&'a mut StoreInner, ResourceLimiterRef<'a>) {
         let resource_limiter = match &mut self.typed.limiter {
             Some(query) => {
                 let limiter = query.0(&mut self.typed.data);

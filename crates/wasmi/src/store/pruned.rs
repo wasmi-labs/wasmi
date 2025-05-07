@@ -1,6 +1,5 @@
 use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
 use crate::{core::hint, CallHook, Error, Instance, Store};
-use alloc::sync::Arc;
 use core::{
     any::type_name,
     fmt::{self, Debug},
@@ -16,24 +15,68 @@ use crate::Engine;
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
-pub struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
+// pub struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
+pub struct RestorePrunedWrapper {
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
+    call_host_func: fn(
+        /* store:*/ &mut PrunedStore,
+        /* func:*/ &HostFuncEntity,
+        /* instance:*/ Option<&Instance>,
+        /* params_results:*/ FuncInOut,
+        /* call_hooks:*/ CallHooks,
+    ) -> Result<(), Error>,
+    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
+    store_inner_and_resource_limiter_ref:
+        for<'a> fn(&'a mut PrunedStore) -> (&'a mut StoreInner, ResourceLimiterRef<'a>),
+}
 impl RestorePrunedWrapper {
-    pub fn new<T>() -> Self {
-        Self(Arc::new(|pruned| -> &mut dyn TypedStore {
-            let Ok(store) = PrunedStore::restore::<T>(pruned) else {
-                panic!(
-                    "failed to convert `PrunedStore` back into `Store<{}>`",
-                    type_name::<T>(),
-                );
-            };
-            store
-        }))
+    pub fn new<T: 'static>() -> Self {
+        Self {
+            call_host_func: |pruned: &mut PrunedStore,
+                             func: &HostFuncEntity,
+                             instance: Option<&Instance>,
+                             params_results: FuncInOut,
+                             call_hooks: CallHooks|
+             -> Result<(), Error> {
+                let store: &mut Store<T> = pruned.restore_or_panic();
+                if matches!(call_hooks, CallHooks::Call) {
+                    store.invoke_call_hook(CallHook::CallingHost)?;
+                }
+                store.call_host_func(func, instance, params_results)?;
+                if matches!(call_hooks, CallHooks::Call) {
+                    store.invoke_call_hook(CallHook::ReturningFromHost)?;
+                }
+                Ok(())
+            },
+            store_inner_and_resource_limiter_ref: |pruned: &mut PrunedStore| {
+                pruned
+                    .restore_or_panic::<T>()
+                    .store_inner_and_resource_limiter_ref()
+            },
+        }
+    }
+}
+impl RestorePrunedWrapper {
+    fn call_host_func(
+        &mut self,
+        pruned: &mut PrunedStore,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
+    ) -> Result<(), Error> {
+        (self.call_host_func)(pruned, func, instance, params_results, call_hooks)
     }
 
-    /// Restores the [`PrunedStore`] and returns a reference to it via [`TypedStore`].
-    #[inline]
-    fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> &'a mut dyn TypedStore {
-        (self.0)(pruned)
+    fn store_inner_and_resource_limiter_ref<'a>(
+        &mut self,
+        pruned: &'a mut PrunedStore,
+    ) -> (&'a mut StoreInner, ResourceLimiterRef<'a>) {
+        (self.store_inner_and_resource_limiter_ref)(pruned)
     }
 }
 impl Debug for RestorePrunedWrapper {
@@ -101,20 +144,38 @@ impl PrunedStore {
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), Error> {
-        self.typed_store()
-            .call_host_func(func, instance, params_results, call_hooks)
+        self.pruned.restore_pruned.clone().call_host_func(
+            self,
+            func,
+            instance,
+            params_results,
+            call_hooks,
+        )
     }
 
     /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
     pub fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
-        self.typed_store().store_inner_and_resource_limiter_ref()
+        self.pruned
+            .restore_pruned
+            .clone()
+            .store_inner_and_resource_limiter_ref(self)
     }
 
-    /// Returns the associated [`TypedStore`] of `self`.
-    fn typed_store(&mut self) -> &mut dyn TypedStore {
-        self.pruned.restore_pruned.clone().restore(self)
+    /// Restores `self` to a proper [`Store<T>`] if possible.
+    ///
+    /// # Panics
+    ///
+    /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
+    fn restore_or_panic<T>(&mut self) -> &mut Store<T> {
+        let Ok(store) = self.restore() else {
+            panic!(
+                "failed to convert `PrunedStore` back into `Store<{}>`",
+                type_name::<T>(),
+            );
+        };
+        store
     }
 
     /// Restores `self` to a proper [`Store<T>`] if possible.
@@ -123,7 +184,7 @@ impl PrunedStore {
     ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
-    fn restore<'a, T: 'a>(&'a mut self) -> Result<&'a mut Store<T>, PrunedStoreError> {
+    fn restore<T>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
         if hint::unlikely(typeid::of::<T>() != self.pruned.id) {
             return Err(PrunedStoreError);
         }
@@ -144,49 +205,6 @@ impl PrunedStore {
 /// Returned when [`PrunedStore::restore`] failed.
 #[derive(Debug)]
 pub struct PrunedStoreError;
-
-/// Methods available from [`PrunedStore`] that have been restored dynamically.
-pub trait TypedStore {
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
-    ///
-    /// # Errors
-    ///
-    /// If the called host function returned an error.
-    fn call_host_func(
-        &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
-        params_results: FuncInOut,
-        call_hooks: CallHooks,
-    ) -> Result<(), Error>;
-
-    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
-    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef);
-}
-
-impl<T> TypedStore for Store<T> {
-    fn call_host_func(
-        &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
-        params_results: FuncInOut,
-        call_hooks: CallHooks,
-    ) -> Result<(), Error> {
-        if matches!(call_hooks, CallHooks::Call) {
-            <Store<T>>::invoke_call_hook(self, CallHook::CallingHost)?;
-        }
-        <Store<T>>::call_host_func(self, func, instance, params_results)?;
-        if matches!(call_hooks, CallHooks::Call) {
-            <Store<T>>::invoke_call_hook(self, CallHook::ReturningFromHost)?;
-        }
-        Ok(())
-    }
-
-    #[inline]
-    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef) {
-        <Store<T>>::store_inner_and_resource_limiter_ref(self)
-    }
-}
 
 #[test]
 fn pruning_works() {
