@@ -154,9 +154,9 @@ impl PrunedStore {
     }
 
     /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
-    pub fn store_inner_and_resource_limiter_ref(
-        &mut self,
-    ) -> (&mut StoreInner, ResourceLimiterRef) {
+    pub fn store_inner_and_resource_limiter_ref<'a>(
+        &'a mut self,
+    ) -> (&'a mut StoreInner, ResourceLimiterRef<'a>) {
         self.pruned
             .restore_pruned
             .clone()
