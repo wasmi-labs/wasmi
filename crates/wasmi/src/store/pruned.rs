@@ -15,7 +15,6 @@ use crate::Engine;
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
 #[derive(Copy, Clone)]
-// pub struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
 pub struct RestorePrunedWrapper {
     /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
     ///
