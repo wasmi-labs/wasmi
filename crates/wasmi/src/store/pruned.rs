@@ -30,11 +30,11 @@ pub struct PrunedStoreVTable {
     ///
     /// If the called host function returned an error.
     call_host_func: fn(
-        /* store:         */ &mut PrunedStore,
-        /* func:          */ &HostFuncEntity,
-        /* instance:      */ Option<&Instance>,
-        /* params_results:*/ FuncInOut,
-        /* call_hooks:    */ CallHooks,
+        store: &mut PrunedStore,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
     ) -> Result<(), Error>,
     grow_memory: fn(&mut PrunedStore, memory: &Memory, delta: u64) -> Result<u64, MemoryError>,
     grow_table: fn(
