@@ -8,6 +8,22 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.46.0` - 2025-05-08
+
+### Changed
+
+- `Store<T>::new` no longer requires `T: 'static`. [#1507]
+    - The `T: 'static` requirement was introduced in `v0.45.0` in [#1449].
+- Improve host function call performance. [#1506]
+
+### Internal
+
+- Updated dependencies. [#1509]
+
+[#1506]: https://github.com/wasmi-labs/wasmi/pull/1506
+[#1507]: https://github.com/wasmi-labs/wasmi/pull/1507
+[#1509]: https://github.com/wasmi-labs/wasmi/pull/1509
+
 ## `0.45.0` - 2025-05-06
 
 ### Added
