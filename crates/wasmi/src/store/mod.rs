@@ -1,7 +1,6 @@
 mod context;
 mod inner;
 mod pruned;
-mod typeid;
 
 use self::pruned::RestorePrunedWrapper;
 pub use self::{
@@ -61,7 +60,7 @@ impl<T: 'static> Store<T> {
         Self {
             inner: StoreInner::new(engine),
             typed: TypedStoreInner::new(data),
-            id: typeid::of::<T>(),
+            id: TypeId::of::<T>(),
             restore_pruned: RestorePrunedWrapper::new::<T>(),
         }
     }

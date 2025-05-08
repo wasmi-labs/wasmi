@@ -1,7 +1,7 @@
-use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
+use super::{CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
 use crate::{core::hint, CallHook, Error, Instance, Store};
 use core::{
-    any::type_name,
+    any::{type_name, TypeId},
     fmt::{self, Debug},
     mem,
 };
@@ -22,11 +22,11 @@ pub struct RestorePrunedWrapper {
     ///
     /// If the called host function returned an error.
     call_host_func: fn(
-        /* store:*/ &mut PrunedStore,
-        /* func:*/ &HostFuncEntity,
-        /* instance:*/ Option<&Instance>,
+        /* store:         */ &mut PrunedStore,
+        /* func:          */ &HostFuncEntity,
+        /* instance:      */ Option<&Instance>,
         /* params_results:*/ FuncInOut,
-        /* call_hooks:*/ CallHooks,
+        /* call_hooks:    */ CallHooks,
     ) -> Result<(), Error>,
     /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
     store_inner_and_resource_limiter_ref:
@@ -171,7 +171,7 @@ impl PrunedStore {
     /// # Panics
     ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
-    fn restore_or_panic<T>(&mut self) -> &mut Store<T> {
+    fn restore_or_panic<T: 'static>(&mut self) -> &mut Store<T> {
         let Ok(store) = self.restore() else {
             panic!(
                 "failed to convert `PrunedStore` back into `Store<{}>`",
@@ -187,8 +187,8 @@ impl PrunedStore {
     ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
-    fn restore<T>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
-        if hint::unlikely(typeid::of::<T>() != self.pruned.id) {
+    fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
+        if hint::unlikely(TypeId::of::<T>() != self.pruned.id) {
             return Err(PrunedStoreError);
         }
         let store = {
