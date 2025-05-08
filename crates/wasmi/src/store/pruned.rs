@@ -23,7 +23,7 @@ use crate::Engine;
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
 #[derive(Copy, Clone)]
-pub struct RestorePrunedWrapper {
+pub struct PrunedStoreVTable {
     /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
     ///
     /// # Errors
@@ -44,7 +44,7 @@ pub struct RestorePrunedWrapper {
         init: UntypedVal,
     ) -> Result<u64, TableError>,
 }
-impl RestorePrunedWrapper {
+impl PrunedStoreVTable {
     pub fn new<T: 'static>() -> Self {
         Self {
             call_host_func: |pruned: &mut PrunedStore,
@@ -85,7 +85,7 @@ impl RestorePrunedWrapper {
         }
     }
 }
-impl RestorePrunedWrapper {
+impl PrunedStoreVTable {
     #[inline]
     fn call_host_func(
         &self,
@@ -119,7 +119,7 @@ impl RestorePrunedWrapper {
         (self.grow_table)(pruned, table, delta, init)
     }
 }
-impl Debug for RestorePrunedWrapper {
+impl Debug for PrunedStoreVTable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "RestorePrunedWrapper")
     }

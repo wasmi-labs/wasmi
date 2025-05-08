@@ -3,7 +3,7 @@ mod inner;
 mod pruned;
 mod typeid;
 
-use self::pruned::RestorePrunedWrapper;
+use self::pruned::PrunedStoreVTable;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
     inner::{StoreInner, Stored},
@@ -42,7 +42,7 @@ pub struct Store<T> {
     /// restored `T` matches the original `T` of the `store`.
     id: TypeId,
     /// Used to restore a [`PrunedStore`] to a [`Store<T>`].
-    restore_pruned: RestorePrunedWrapper,
+    restore_pruned: PrunedStoreVTable,
 }
 
 impl<T> Default for Store<T>
@@ -62,7 +62,7 @@ impl<T: 'static> Store<T> {
             inner: StoreInner::new(engine),
             typed: TypedStoreInner::new(data),
             id: typeid::of::<T>(),
-            restore_pruned: RestorePrunedWrapper::new::<T>(),
+            restore_pruned: PrunedStoreVTable::new::<T>(),
         }
     }
 }
