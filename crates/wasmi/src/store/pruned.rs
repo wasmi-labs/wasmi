@@ -47,7 +47,7 @@ pub struct PrunedStoreVTable {
     ) -> Result<u64, TableError>,
 }
 impl PrunedStoreVTable {
-    pub fn new<T: 'static>() -> Self {
+    pub fn new<T>() -> Self {
         Self {
             call_host_func: |pruned: &mut PrunedStore,
                              func: &HostFuncEntity,
