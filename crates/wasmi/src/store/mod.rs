@@ -6,7 +6,7 @@ use self::pruned::RestorePrunedWrapper;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
     inner::{StoreInner, Stored},
-    pruned::{PrunedStore, TypedStore},
+    pruned::PrunedStore,
 };
 use crate::{
     collections::arena::Arena,
