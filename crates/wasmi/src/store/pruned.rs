@@ -36,7 +36,9 @@ pub struct PrunedStoreVTable {
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), Error>,
+    /// Grows `memory` by `delta` pages.
     grow_memory: fn(&mut PrunedStore, memory: &Memory, delta: u64) -> Result<u64, MemoryError>,
+    /// Grows `table` by `delta` items filling with `init`.
     grow_table: fn(
         &mut PrunedStore,
         table: &Table,
