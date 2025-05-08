@@ -208,7 +208,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
         // No prefix needed since the function is not a part of the Wasm spec.
         return Ok(input);
     }
-    let prefixed_fn_name = format!("wasmi_{}", fn_name);
+    let prefixed_fn_name = format!("wasmi_{fn_name}");
     Ok(quote! {
         #[export_name = #prefixed_fn_name]
         #input
