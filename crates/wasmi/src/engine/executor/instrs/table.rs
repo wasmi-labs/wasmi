@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{ResourceLimiterRef, Table as CoreTable, TableError, TrapCode},
+    core::{Table as CoreTable, TableError, TrapCode},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     ir::{
         index::{Elem, Table},
@@ -294,8 +294,7 @@ impl Executor<'_> {
         value: Reg,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
-        let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
-        self.execute_table_grow_impl(store, result, delta, value, &mut resource_limiter)
+        self.execute_table_grow_impl(store, result, delta, value)
     }
 
     /// Executes an [`Instruction::TableGrowImm`].
@@ -307,34 +306,31 @@ impl Executor<'_> {
         value: Reg,
     ) -> Result<(), Error> {
         let delta: u64 = delta.into();
-        let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
-        self.execute_table_grow_impl(store, result, delta, value, &mut resource_limiter)
+        self.execute_table_grow_impl(store, result, delta, value)
     }
 
     /// Executes a generic `table.grow` instruction.
     #[inline(never)]
-    fn execute_table_grow_impl<'store>(
+    fn execute_table_grow_impl(
         &mut self,
-        store: &'store mut StoreInner,
+        store: &mut PrunedStore,
         result: Reg,
         delta: u64,
         value: Reg,
-        resource_limiter: &mut ResourceLimiterRef<'store>,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
-            self.execute_table_size_impl(store, result, table_index);
+            self.execute_table_size_impl(store.inner(), result, table_index);
             return self.try_next_instr_at(2);
         }
         let table = self.get_table(table_index);
         let value = self.get_register(value);
-        let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
-        let return_value = table.grow_untyped(delta, value, Some(fuel), resource_limiter);
-        let return_value = match return_value {
+        let return_value = match store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory) => {
-                match table.ty().is_64() {
+                let table_ty = store.inner().resolve_table(&table).ty();
+                match table_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
                 }

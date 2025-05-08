@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{MemoryError, ResourceLimiterRef, TrapCode},
+    core::{MemoryError, TrapCode},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     ir::{
         index::{Data, Memory},
@@ -76,8 +76,7 @@ impl Executor<'_> {
         delta: Reg,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
-        let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
-        self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
+        self.execute_memory_grow_impl(store, result, delta)
     }
 
     /// Executes an [`Instruction::MemoryGrowImm`].
@@ -87,41 +86,38 @@ impl Executor<'_> {
         result: Reg,
         delta: Const32<u64>,
     ) -> Result<(), Error> {
-        let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
         let delta = u64::from(delta);
-        self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
+        self.execute_memory_grow_impl(store, result, delta)
     }
 
     /// Executes a generic `memory.grow` instruction.
     #[inline(never)]
-    fn execute_memory_grow_impl<'store>(
+    fn execute_memory_grow_impl(
         &mut self,
-        store: &'store mut StoreInner,
+        store: &mut PrunedStore,
         result: Reg,
         delta: u64,
-        resource_limiter: &mut ResourceLimiterRef<'store>,
     ) -> Result<(), Error> {
         let memory = self.fetch_memory_index(1);
         if delta == 0 {
             // Case: growing by 0 pages means there is nothing to do
-            self.execute_memory_size_impl(store, result, memory);
+            self.execute_memory_size_impl(store.inner(), result, memory);
             return self.try_next_instr_at(2);
         }
         let memory = self.get_memory(memory);
-        let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
-        let return_value = memory.grow(delta, Some(fuel), resource_limiter);
-        let return_value = match return_value {
+        let return_value = match store.grow_memory(&memory, delta) {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
                 //
                 // Safety: the instance has not changed thus calling this is valid.
-                unsafe { self.cache.update_memory(store) };
+                unsafe { self.cache.update_memory(store.inner_mut()) };
                 return_value
             }
             Err(MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory) => {
-                match memory.ty().is_64() {
+                let memory_ty = store.inner().resolve_memory(&memory).ty();
+                match memory_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
                 }
