@@ -1,5 +1,13 @@
-use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, ResourceLimiterRef, StoreInner};
-use crate::{core::hint, CallHook, Error, Instance, Store};
+use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, StoreInner};
+use crate::{
+    core::{hint, MemoryError, TableError, UntypedVal},
+    CallHook,
+    Error,
+    Instance,
+    Memory,
+    Store,
+    Table,
+};
 use core::{
     any::type_name,
     fmt::{self, Debug},
@@ -28,9 +36,13 @@ pub struct RestorePrunedWrapper {
         /* params_results:*/ FuncInOut,
         /* call_hooks:    */ CallHooks,
     ) -> Result<(), Error>,
-    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
-    store_inner_and_resource_limiter_ref:
-        fn(&mut PrunedStore) -> (&mut StoreInner, ResourceLimiterRef<'_>),
+    grow_memory: fn(&mut PrunedStore, memory: &Memory, delta: u64) -> Result<u64, MemoryError>,
+    grow_table: fn(
+        &mut PrunedStore,
+        table: &Table,
+        delta: u64,
+        init: UntypedVal,
+    ) -> Result<u64, TableError>,
 }
 impl RestorePrunedWrapper {
     pub fn new<T: 'static>() -> Self {
@@ -51,10 +63,24 @@ impl RestorePrunedWrapper {
                 }
                 Ok(())
             },
-            store_inner_and_resource_limiter_ref: |pruned: &mut PrunedStore| {
-                pruned
-                    .restore_or_panic::<T>()
-                    .store_inner_and_resource_limiter_ref()
+            grow_memory: |pruned: &mut PrunedStore,
+                          memory: &Memory,
+                          delta: u64|
+             -> Result<u64, MemoryError> {
+                let store: &mut Store<T> = pruned.restore_or_panic();
+                let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
+                let (memory, fuel) = store.resolve_memory_and_fuel_mut(memory);
+                memory.grow(delta, Some(fuel), &mut resource_limiter)
+            },
+            grow_table: |pruned: &mut PrunedStore,
+                         table: &Table,
+                         delta: u64,
+                         init: UntypedVal|
+             -> Result<u64, TableError> {
+                let store: &mut Store<T> = pruned.restore_or_panic();
+                let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
+                let (table, fuel) = store.resolve_table_and_fuel_mut(table);
+                table.grow_untyped(delta, init, Some(fuel), &mut resource_limiter)
             },
         }
     }
@@ -73,11 +99,24 @@ impl RestorePrunedWrapper {
     }
 
     #[inline]
-    fn store_inner_and_resource_limiter_ref<'a>(
+    fn grow_memory(
         &self,
-        pruned: &'a mut PrunedStore,
-    ) -> (&'a mut StoreInner, ResourceLimiterRef<'a>) {
-        (self.store_inner_and_resource_limiter_ref)(pruned)
+        pruned: &mut PrunedStore,
+        memory: &Memory,
+        delta: u64,
+    ) -> Result<u64, MemoryError> {
+        (self.grow_memory)(pruned, memory, delta)
+    }
+
+    #[inline]
+    fn grow_table(
+        &self,
+        pruned: &mut PrunedStore,
+        table: &Table,
+        delta: u64,
+        init: UntypedVal,
+    ) -> Result<u64, TableError> {
+        (self.grow_table)(pruned, table, delta, init)
     }
 }
 impl Debug for RestorePrunedWrapper {
@@ -155,15 +194,27 @@ impl PrunedStore {
         )
     }
 
-    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
+    /// Grows the [`Memory`] by `delta` pages and returns the result.
     #[inline]
-    pub fn store_inner_and_resource_limiter_ref(
-        &mut self,
-    ) -> (&mut StoreInner, ResourceLimiterRef) {
+    pub fn grow_memory(&mut self, memory: &Memory, delta: u64) -> Result<u64, MemoryError> {
         self.pruned
             .restore_pruned
             .clone()
-            .store_inner_and_resource_limiter_ref(self)
+            .grow_memory(self, memory, delta)
+    }
+
+    /// Grows the [`Table`] by `delta` items and returns the result.
+    #[inline]
+    pub fn grow_table(
+        &mut self,
+        table: &Table,
+        delta: u64,
+        init: UntypedVal,
+    ) -> Result<u64, TableError> {
+        self.pruned
+            .restore_pruned
+            .clone()
+            .grow_table(self, table, delta, init)
     }
 
     /// Restores `self` to a proper [`Store<T>`] if possible.
