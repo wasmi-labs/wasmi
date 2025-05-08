@@ -22,11 +22,11 @@ pub struct RestorePrunedWrapper {
     ///
     /// If the called host function returned an error.
     call_host_func: fn(
-        /* store:*/ &mut PrunedStore,
-        /* func:*/ &HostFuncEntity,
-        /* instance:*/ Option<&Instance>,
+        /* store:         */ &mut PrunedStore,
+        /* func:          */ &HostFuncEntity,
+        /* instance:      */ Option<&Instance>,
         /* params_results:*/ FuncInOut,
-        /* call_hooks:*/ CallHooks,
+        /* call_hooks:    */ CallHooks,
     ) -> Result<(), Error>,
     /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
     store_inner_and_resource_limiter_ref:
