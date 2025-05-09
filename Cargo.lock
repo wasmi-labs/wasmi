@@ -1804,8 +1804,8 @@ dependencies = [
  "sha2",
  "wasm-smith",
  "wasmi 0.31.2",
- "wasmprinter 0.229.0",
  "wasmi 0.46.0",
+ "wasmprinter 0.229.0",
  "wasmtime",
 ]
 
