@@ -356,12 +356,7 @@ where
         self.pos = pos;
     }
 
-    fn finish(
-        mut self,
-        finalize: impl FnOnce(CompiledFuncEntity),
-    ) -> Result<Self::Allocations, Error> {
-        let pos = self.current_pos();
-        self.validator.finish(pos)?;
+    fn finish(self, finalize: impl FnOnce(CompiledFuncEntity)) -> Result<Self::Allocations, Error> {
         let translation = self.translator.finish(finalize)?;
         let validation = self.validator.into_allocations();
         let allocations = ReusableAllocations {
