@@ -1,12 +1,13 @@
 mod context;
 mod inner;
 mod pruned;
+mod typeid;
 
-use self::pruned::RestorePrunedWrapper;
+use self::pruned::PrunedStoreVTable;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
     inner::{StoreInner, Stored},
-    pruned::{PrunedStore, TypedStore},
+    pruned::PrunedStore,
 };
 use crate::{
     collections::arena::Arena,
@@ -41,12 +42,12 @@ pub struct Store<T> {
     /// restored `T` matches the original `T` of the `store`.
     id: TypeId,
     /// Used to restore a [`PrunedStore`] to a [`Store<T>`].
-    restore_pruned: RestorePrunedWrapper,
+    restore_pruned: PrunedStoreVTable,
 }
 
 impl<T> Default for Store<T>
 where
-    T: Default + 'static,
+    T: Default,
 {
     fn default() -> Self {
         let engine = Engine::default();
@@ -54,14 +55,14 @@ where
     }
 }
 
-impl<T: 'static> Store<T> {
+impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
             typed: TypedStoreInner::new(data),
-            id: TypeId::of::<T>(),
-            restore_pruned: RestorePrunedWrapper::new::<T>(),
+            id: typeid::of::<T>(),
+            restore_pruned: PrunedStoreVTable::new::<T>(),
         }
     }
 }

@@ -8,7 +8,83 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.44.1`] - 2025-05-04
+## `0.46.0` - 2025-05-08
+
+### Changed
+
+- `Store<T>::new` no longer requires `T: 'static`. [#1507]
+    - The `T: 'static` requirement was introduced in `v0.45.0` in [#1449].
+- Improve host function call performance. [#1506]
+
+### Internal
+
+- Updated dependencies. [#1509]
+
+[#1506]: https://github.com/wasmi-labs/wasmi/pull/1506
+[#1507]: https://github.com/wasmi-labs/wasmi/pull/1507
+[#1509]: https://github.com/wasmi-labs/wasmi/pull/1509
+
+## `0.45.0` - 2025-05-06
+
+### Added
+
+- Added support for Wasm function call resumption after running out of fuel. [#1498]
+  - This feature is very useful when using Wasmi inside a scheduler that works with
+    Wasmi's fuel metering to provide amount of compute units to different Wasm execution
+    threads for example.
+- Added missing `wasmi_core::simd` API functions for `relaxed-simd`. [#1447]
+- Added implementations for Rust's `Error` trait for all  `wasmi` error types on `no_std`. [#1462]
+
+### Changed
+
+- Avoid performing duplicate type and validation checks in `Linker::instantiate`. [#1476]
+- Updated `wasm-tools` dependencies to v228. [#1463]
+- Removed most of `wasmi_core::TypedVal`'s API. [#1457]
+  - The newer `wasmi_core::wasm` API is to be preferred and provides the same functionality.
+
+### Fixed
+
+- Fixed a bug that Wasmi did not make `wasmparser`'s parser aware of enabled Wasm features. [#1502]
+  - Making `wasmparser` aware of the enabled Wasm features allows it to detect malformed Wasm
+    binaries during parsing.
+
+### Internal
+
+- Make Wasmi's executor non-generic over the `Store`'s `T`. [#1449]
+- Changes to Wasmi's IR:
+  - Removed all conditional return instructions. [#1486]
+    - This allows Wasmi to apply its powerful cmp+branch fusion in more places.
+  - Remove most of the `bulk-memory` (and `bulk-table`) instruction variants. [#1489]
+    - Wasmi still has optimized variants for the most common cases.
+  - Add new logical-comparator instructions. [#1494]
+    - This further enhances Wasmi's powerful cmp+branch instruction fusion.
+  - Add negated `f{32,64}.{lt,le}` instructions. [#1496]
+    - This allows Wasmi to apply its cmp+nez fusion for `f{32,64}.{le,lt}` instructions as well.
+  - Re-design Wasmi's `select` instructions. [#1497]
+    - This allows to use Wasmi's powerful cmp op-code fusion for `select` instructions.
+- Moved many `wasmi` internals into `wasmi_core`:
+  - Add `FuncType` [#1458]
+  - Add `Fuel`, `Memory`, `Table`, `Global`, `ResourceLimiter` [#1464]
+  - Replace uses in `wasmi` with `wasmi_core` definitions. [#1460]
+
+[#1447]: https://github.com/wasmi-labs/wasmi/pull/1447
+[#1449]: https://github.com/wasmi-labs/wasmi/pull/1449
+[#1457]: https://github.com/wasmi-labs/wasmi/pull/1457
+[#1458]: https://github.com/wasmi-labs/wasmi/pull/1458
+[#1460]: https://github.com/wasmi-labs/wasmi/pull/1460
+[#1462]: https://github.com/wasmi-labs/wasmi/pull/1462
+[#1463]: https://github.com/wasmi-labs/wasmi/pull/1463
+[#1464]: https://github.com/wasmi-labs/wasmi/pull/1464
+[#1476]: https://github.com/wasmi-labs/wasmi/pull/1476
+[#1486]: https://github.com/wasmi-labs/wasmi/pull/1486
+[#1489]: https://github.com/wasmi-labs/wasmi/pull/1489
+[#1494]: https://github.com/wasmi-labs/wasmi/pull/1494
+[#1496]: https://github.com/wasmi-labs/wasmi/pull/1496
+[#1497]: https://github.com/wasmi-labs/wasmi/pull/1497
+[#1498]: https://github.com/wasmi-labs/wasmi/pull/1498
+[#1502]: https://github.com/wasmi-labs/wasmi/pull/1502
+
+## `0.44.1` - 2025-05-04
 
 ### Fixed
 
@@ -16,7 +92,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 [#1450]: https://github.com/wasmi-labs/wasmi/pull/1450
 
-## [`0.44.0`] - 2025-03-29
+## `0.44.0` - 2025-03-29
 
 ### Added
 
@@ -34,7 +110,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1438]: https://github.com/wasmi-labs/wasmi/pull/1438
 [#1443]: https://github.com/wasmi-labs/wasmi/pull/1443
 
-## [`0.43.1`] - 2025-03-29
+## `0.43.1` - 2025-03-29
 
 ### Fixed
 
@@ -46,7 +122,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1437]: https://github.com/wasmi-labs/wasmi/pull/1437
 [#1444]: https://github.com/wasmi-labs/wasmi/pull/1444
 
-## [`0.43.0`] - 2025-03-27
+## `0.43.0` - 2025-03-27
 
 ### Added
 
@@ -71,7 +147,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1404]: https://github.com/wasmi-labs/wasmi/pull/1404
 [#1405]: https://github.com/wasmi-labs/wasmi/pull/1405
 
-## [`0.42.1`] - 2025-03-20
+## `0.42.1` - 2025-03-20
 
 ### Fixed
 
@@ -79,7 +155,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 [#1397]: https://github.com/wasmi-labs/wasmi/pull/1397
 
-## [`0.42.0`] - 2025-03-11
+## `0.42.0` - 2025-03-11
 
 ### Added
 
@@ -99,7 +175,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1380]: https://github.com/wasmi-labs/wasmi/pull/1380
 [#1381]: https://github.com/wasmi-labs/wasmi/pull/1381
 
-## [`0.41.1`] - 2025-03-11
+## `0.41.1` - 2025-03-11
 
 ### Fixed
 
@@ -110,7 +186,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1384]: https://github.com/wasmi-labs/wasmi/pull/1384
 [#1385]: https://github.com/wasmi-labs/wasmi/pull/1385
 
-## [`0.41.0`] - 2025-03-10
+## `0.41.0` - 2025-03-10
 
 ### Added
 
@@ -162,7 +238,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1371]: https://github.com/wasmi-labs/wasmi/pull/1371
 [#1379]: https://github.com/wasmi-labs/wasmi/pull/1379
 
-## [`0.40.0`] - 2024-11-27
+## `0.40.0` - 2024-11-27
 
 This release focuses on compile time improvements for Wasmi,
 significantly reducing the time it takes to compile Wasmi and
@@ -210,7 +286,7 @@ decrease its compiled artifact size.
 [#1315]: https://github.com/wasmi-labs/wasmi/pull/1315
 [#1318]: https://github.com/wasmi-labs/wasmi/pull/1318
 
-## [`0.39.1`] - 2024-11-06
+## `0.39.1` - 2024-11-06
 
 ### Fixed
 
@@ -218,7 +294,7 @@ decrease its compiled artifact size.
 
 [#1293]: https://github.com/wasmi-labs/wasmi/pull/1293
 
-## [`0.39.0`] - 2024-11-04
+## `0.39.0` - 2024-11-04
 
 ### Added
 
@@ -266,7 +342,7 @@ decrease its compiled artifact size.
 [#1279]: https://github.com/wasmi-labs/wasmi/pull/1279
 [#1281]: https://github.com/wasmi-labs/wasmi/pull/1281
 
-## [`0.38.0`] - 2024-10-06
+## `0.38.0` - 2024-10-06
 
 ### Added
 
@@ -283,7 +359,7 @@ decrease its compiled artifact size.
 [#1224]: https://github.com/wasmi-labs/wasmi/pull/1224
 [#1225]: https://github.com/wasmi-labs/wasmi/pull/1225
 
-## [`0.37.2`] - 2024-10-04
+## `0.37.2` - 2024-10-04
 
 ### Added
 
@@ -300,7 +376,7 @@ decrease its compiled artifact size.
 [#1217]: https://github.com/wasmi-labs/wasmi/pull/1217
 [#1218]: https://github.com/wasmi-labs/wasmi/pull/1218
 
-## [`0.37.1`] - 2024-10-01
+## `0.37.1` - 2024-10-01
 
 ### Fixed
 
@@ -308,7 +384,7 @@ decrease its compiled artifact size.
 
 [#1213]: https://github.com/wasmi-labs/wasmi/pull/1213
 
-## [`0.37.0`] - 2024-09-30
+## `0.37.0` - 2024-09-30
 
 ### Added
 
@@ -355,7 +431,7 @@ decrease its compiled artifact size.
 
 [`wasmi_ir` crate]: https://crates.io/crates/wasmi_ir
 
-## [`0.36.5`] - 2024-10-11
+## `0.36.5` - 2024-10-11
 
 ### Fixed
 
@@ -363,7 +439,7 @@ decrease its compiled artifact size.
 
 [#commit-82c938]: https://github.com/wasmi-labs/wasmi/commit/82c9388f1d54e4e74e1b581f11978b4028eeaba2
 
-## [`0.36.4`] - 2024-10-03
+## `0.36.4` - 2024-10-03
 
 ### Fixed
 
@@ -371,7 +447,7 @@ decrease its compiled artifact size.
 
 [#1218]: https://github.com/wasmi-labs/wasmi/pull/1218
 
-## [`0.36.3`] - 2024-10-01
+## `0.36.3` - 2024-10-01
 
 ### Fixed
 
@@ -379,7 +455,7 @@ decrease its compiled artifact size.
 
 [#1213]: https://github.com/wasmi-labs/wasmi/pull/1213
 
-## [`0.36.2`] - 2024-09-28
+## `0.36.2` - 2024-09-28
 
 ### Fixed
 
@@ -395,7 +471,7 @@ decrease its compiled artifact size.
 [#1201]: https://github.com/wasmi-labs/wasmi/pull/1201
 [#commit-b4e78d]: https://github.com/wasmi-labs/wasmi/commit/b4e78d23451cb40a7b43404f8e6e868a362b7985
 
-## [`0.36.1`] - 2024-09-20
+## `0.36.1` - 2024-09-20
 
 ### Fixed
 
@@ -408,7 +484,7 @@ decrease its compiled artifact size.
 [#1177]: https://github.com/wasmi-labs/wasmi/pull/1177
 [#1189]: https://github.com/wasmi-labs/wasmi/pull/1189
 
-## [`0.36.0`] - 2024-07-24
+## `0.36.0` - 2024-07-24
 
 ### Added
 
@@ -428,7 +504,7 @@ decrease its compiled artifact size.
   - This was needed to support the Wasm C-API.
   - The `FuelError` is still accessible via the `Error::kind` method.
 
-## [`0.35.0`] - 2024-07-11
+## `0.35.0` - 2024-07-11
 
 ### Fixed
 
@@ -446,7 +522,7 @@ decrease its compiled artifact size.
     - This significantly improved performance for lazily compiling
       Wasm modules (e.g.  via `Module::new`) by up to 23%.
 
-## [`0.34.0`] - 2024-07-08
+## `0.34.0` - 2024-07-08
 
 ### Added
 
@@ -482,7 +558,7 @@ decrease its compiled artifact size.
 [#1115]: https://github.com/wasmi-labs/wasmi/pull/1115
 [#1116]: https://github.com/wasmi-labs/wasmi/pull/1116
 
-## [`0.33.1`] - 2024-07-01
+## `0.33.1` - 2024-07-01
 
 ### Added
 
@@ -494,7 +570,7 @@ decrease its compiled artifact size.
 - Fixed compilation for Rust versions <1.78. (https://github.com/wasmi-labs/wasmi/pull/1093)
 - Fixed nightly `clippy` warning about `map_err`. (https://github.com/wasmi-labs/wasmi/pull/1094)
 
-## [`0.33.0`] - 2024-06-24
+## `0.33.0` - 2024-06-24
 
 ### Added
 
@@ -528,27 +604,27 @@ decrease its compiled artifact size.
 - Removed `Memory::current_pages` method. (https://github.com/wasmi-labs/wasmi/pull/1082)
     - Users should use the new `Memory::size` method instead.
 
-## [`0.32.3`] - 2024-06-06
+## `0.32.3` - 2024-06-06
 
 ### Fixed
 
 - Fix overlapping reuse of local preservation slots. (https://github.com/wasmi-labs/wasmi/pull/1057)
     - Thanks again to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
 
-## [`0.32.2`] - 2024-06-03
+## `0.32.2` - 2024-06-03
 
 ### Fixed
 
 - Refine and generalize the fix for v0.32.1. (https://github.com/wasmi-labs/wasmi/pull/1054)
 
-## [`0.32.1`] - 2024-06-03
+## `0.32.1` - 2024-06-03
 
 ### Fixed
 
 - Fixes a miscompilation when merging two copy instructions where the result of the first copy is also the input to the second copy and vice versa. (https://github.com/wasmi-labs/wasmi/pull/1052)
     - Thanks to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
 
-## [`0.32.0`] - 2024-05-28
+## `0.32.0` - 2024-05-28
 
 **Note:**
 
@@ -666,7 +742,7 @@ decrease its compiled artifact size.
     - Both fuzzing strategies are applied on each commit in our CI pipeline.
 - Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/wasmi-labs/wasmi/pull/842)
 
-## [`0.31.0`] - 2023-07-31
+## `0.31.0` - 2023-07-31
 
 ### Added
 
@@ -692,7 +768,7 @@ decrease its compiled artifact size.
   - `criterion 0.4.0` -> `0.5.0`
   - `wast 0.52.0` -> `0.62.0`
 
-## [`0.30.0`] - 2023-05-28
+## `0.30.0` - 2023-05-28
 
 ### Changed
 
@@ -711,7 +787,7 @@ decrease its compiled artifact size.
   - This led to an execution performance improvement across the board but especially for
     call intense workloads of up to 30% in some test cases.
 
-## [`0.29.0`] - 2023-03-20
+## `0.29.0` - 2023-03-20
 
 ### Added
 
@@ -731,7 +807,7 @@ decrease its compiled artifact size.
     Before this change Wasmi tried to have fuel costs that more closely mirror
     the computation intensity of the respective instruction according to benchmarks.
 
-## [`0.28.0`] - 2023-03-01
+## `0.28.0` - 2023-03-01
 
 ### Added
 
@@ -769,7 +845,7 @@ decrease its compiled artifact size.
 
 [(#694)]: https://github.com/wasmi-labs/wasmi/pull/694
 
-## [`0.27.0`] - 2023-02-14
+## `0.27.0` - 2023-02-14
 
 ### Added
 
@@ -792,7 +868,7 @@ decrease its compiled artifact size.
     is deferred to after a successful run. The reason behind this is that all the affected
     operations fail fast and therefore should not cost lots of fuel in case of failure.
 
-## [`0.26.1`] - 2023-02-13
+## `0.26.1` - 2023-02-13
 
 ### Fixed
 
@@ -800,7 +876,7 @@ decrease its compiled artifact size.
   inputs could lead to incorrect behavior or runtime panics. (https://github.com/wasmi-labs/wasmi/pull/671)
     - Thanks to [Pierre Krieger (tomaka)](https://github.com/tomaka) for reporting and crafting an initial minimal test case.
 
-## [`0.26.0`] - 2023-02-11
+## `0.26.0` - 2023-02-11
 
 ### Added
 
@@ -823,7 +899,7 @@ decrease its compiled artifact size.
 - Clean up and reorganization of the `wasmi_cli` crate. (https://github.com/wasmi-labs/wasmi/pull/655)
 - Refactoring of internal host call API. (https://github.com/wasmi-labs/wasmi/pull/664)
 
-## [`0.25.0`] - 2023-02-04
+## `0.25.0` - 2023-02-04
 
 ### Added
 
@@ -848,7 +924,7 @@ decrease its compiled artifact size.
 - Resolved plenty of technical debt and improved structure of the Wasmi crate.
   - PRs: https://github.com/wasmi-labs/wasmi/pull/648, https://github.com/wasmi-labs/wasmi/pull/647, https://github.com/wasmi-labs/wasmi/pull/646, https://github.com/wasmi-labs/wasmi/pull/645, https://github.com/wasmi-labs/wasmi/pull/644, https://github.com/wasmi-labs/wasmi/pull/641
 
-## [`0.24.0`] - 2023-01-31
+## `0.24.0` - 2023-01-31
 
 ### Added
 
@@ -888,7 +964,7 @@ decrease its compiled artifact size.
 - Improve error reporting for the internal Wasm spec testsuite runner.
   - It will now show proper span information in many more cases.
 
-## [`0.23.0`] - 2023-01-19
+## `0.23.0` - 2023-01-19
 
 > **Note:** This is the Wasmtime API Compatibility update.
 
@@ -939,7 +1015,7 @@ decrease its compiled artifact size.
   - `Table` and `TableType` now operate on `u32` instead of `usize` just like in Wasmtime.
     - This affects `Table::{new, size, set, get, grow}` methods and `TableType::{new, minimum, maximum}` methods and their users.
 
-## [`0.22.0`] - 2023-01-16
+## `0.22.0` - 2023-01-16
 
 ### Added
 
@@ -973,7 +1049,7 @@ decrease its compiled artifact size.
   - This might reduce binary bloat and may have positive effects on the performance.
     In fact we measured significant performance improvements on the Wasm target.
 
-## [`0.21.0`] - 2023-01-04
+## `0.21.0` - 2023-01-04
 
 ### Added
 
@@ -1000,7 +1076,7 @@ decrease its compiled artifact size.
 - The Wasmi CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/wasmi-labs/wasmi/pull/579)
 - Improve feedback when running a Wasm module without exported function using Wasmi CLI. (https://github.com/wasmi-labs/wasmi/pull/584)
 
-## [`0.20.0`] - 2022-11-04
+## `0.20.0` - 2022-11-04
 
 ### Added
 
@@ -1033,7 +1109,7 @@ decrease its compiled artifact size.
   - https://github.com/wasmi-labs/wasmi/pull/542 https://github.com/wasmi-labs/wasmi/pull/541
   https://github.com/wasmi-labs/wasmi/pull/508 https://github.com/wasmi-labs/wasmi/pull/543
 
-## [`0.19.0`] - 2022-10-20
+## `0.19.0` - 2022-10-20
 
 ### Fixed
 
@@ -1062,7 +1138,7 @@ decrease its compiled artifact size.
   https://github.com/wasmi-labs/wasmi/pull/521
 - Add `miri` testing to Wasmi CI (https://github.com/wasmi-labs/wasmi/pull/523)
 
-## [`0.18.1`] - 2022-10-13
+## `0.18.1` - 2022-10-13
 
 ### Changed
 
@@ -1086,7 +1162,7 @@ decrease its compiled artifact size.
   (https://github.com/wasmi-labs/wasmi/pull/494, https://github.com/wasmi-labs/wasmi/pull/501,
   https://github.com/wasmi-labs/wasmi/pull/506, https://github.com/wasmi-labs/wasmi/pull/509)
 
-## [`0.18.0`] - 2022-10-02
+## `0.18.0` - 2022-10-02
 
 ### Added
 
@@ -1107,7 +1183,7 @@ decrease its compiled artifact size.
   (https://github.com/wasmi-labs/wasmi/pull/483, https://github.com/wasmi-labs/wasmi/pull/487)
   - This allows us to optimize Wasmi towards Wasm performance more easily in the future.
 
-## [`0.17.0`] - 2022-09-23
+## `0.17.0` - 2022-09-23
 
 ### Added
 
@@ -1139,7 +1215,7 @@ decrease its compiled artifact size.
 - Enabled more useful `clippy` lints for Wasmi and `wasmi_core`. (https://github.com/wasmi-labs/wasmi/pull/438)
 - Reorganized the Wasmi workspace. (https://github.com/wasmi-labs/wasmi/pull/466)
 
-## [`0.16.0`] - 2022-08-30
+## `0.16.0` - 2022-08-30
 
 ### Changed
 
@@ -1156,7 +1232,7 @@ decrease its compiled artifact size.
       Wasm to Wasmi bytecode translation performance by avoiding many
       unnecessary unpredictable branches in the process.
 
-## [`0.15.0`] - 2022-08-22
+## `0.15.0` - 2022-08-22
 
 ### Fixed
 
@@ -1204,7 +1280,7 @@ decrease its compiled artifact size.
   Wasmi bytecode translation.
   [**Link**](https://github.com/wasmi-labs/wasmi/commit/4d1f2ad6cbf07e61656185101bbd0bd5a941335f)
 
-## [`0.14.0`] - 2022-07-26
+## `0.14.0` - 2022-07-26
 
 ### Added
 
@@ -1253,17 +1329,17 @@ decrease its compiled artifact size.
   free to [open an issue](https://github.com/wasmi-labs/wasmi/issues)
   and provide us with your use case.
 
-## [`0.13.2`] - 2022-09-20
+## `0.13.2` - 2022-09-20
 
 ### Fixed
 
 - Support allocating 4GB of memory (https://github.com/wasmi-labs/wasmi/pull/452)
 
-## [`0.13.1`] - 2022-09-20
+## `0.13.1` - 2022-09-20
 
 **Note:** Yanked because of missing `wasmi_core` bump.
 
-## [`0.13.0`] - 2022-07-25
+## `0.13.0` - 2022-07-25
 
 **Note:** This is the last major release of the legacy Wasmi engine.
           Future releases are using the new Wasm execution engines
@@ -1275,7 +1351,7 @@ decrease its compiled artifact size.
 
 - Update dependency: `wasmi-validation v0.4.2 -> v0.5.0`
 
-## [`0.12.0`] - 2022-07-24
+## `0.12.0` - 2022-07-24
 
 ### Changed
 
@@ -1300,7 +1376,7 @@ decrease its compiled artifact size.
     - `rand 0.4.2 -> 0.8.2`
 - Fix some `clippy` warnings.
 
-## [`0.11.0`] - 2022-01-06
+## `0.11.0` - 2022-01-06
 
 ### Fixed
 
@@ -1323,7 +1399,7 @@ decrease its compiled artifact size.
 - Improve Rust code formatting of imports.
 - Improve debug impl of `ValueStack` so that only the live parts are printed.
 
-## [`0.10.0`] - 2021-12-14
+## `0.10.0` - 2021-12-14
 
 ### Added
 
@@ -1360,7 +1436,7 @@ decrease its compiled artifact size.
     - Check Wasm builds.
     - File test coverage reports to codecov.io.
 
-## [`0.9.1`] - 2021-09-23
+## `0.9.1` - 2021-09-23
 
 ### Changed
 
@@ -1372,7 +1448,7 @@ decrease its compiled artifact size.
 - Fixed some warnings associated to Rust edition 2021.
     - Note: The crate itself remains in Rust edition 2018.
 
-## [`0.9.0`] - 2021-05-27
+## `0.9.0` - 2021-05-27
 
 ### Changed
 
