@@ -21,6 +21,55 @@ pub struct Stack {
     last_local: Option<OperandIdx>,
     /// The maximum size of the [`Stack`].
     max_stack_height: usize,
+    /// The current phase of the [`Stack`].
+    phase: StackPhase,
+}
+
+/// The current phase of the [`Stack`].
+#[derive(Debug, Default, Copy, Clone)]
+pub enum StackPhase {
+    /// Phase that allows to define local variables.
+    #[default]
+    DefineLocals,
+    /// Phase that allows to manipulate the stack and allocate function local constants.
+    Translation,
+    /// Phase after finishing translation.
+    /// 
+    /// In this phase state changes are no longer allowed.
+    /// Only resetting the [`Stack`] is allowed in order to restart the phase cycle.
+    Finish,
+}
+
+impl StackPhase {
+    /// Resets the [`StackPhase`] to the [`StackPhase::DefineLocals`] phase.
+    pub fn reset(&mut self) {
+        *self = Self::default();
+    }
+
+    /// Ensures that the current phase is [`StackPhase::DefineLocals`].
+    pub fn assert_define_locals(&self) {
+        assert!(matches!(self, Self::DefineLocals));
+    }
+
+    /// Turns the current phase into [`StackPhase::Translation`].
+    /// 
+    /// # Panics
+    /// 
+    /// If the current phase is incompatible with this phase shift.
+    pub fn assert_translation(&mut self) {
+        assert!(matches!(self, Self::DefineLocals | Self::Translation));
+        *self = Self::Translation;
+    }
+
+    /// Turns the current phase into [`StackPhase::Finish`].
+    /// 
+    /// # Panics
+    /// 
+    /// If the current phase is incompatible with this phase shift.
+    pub fn assert_finish(&mut self) {
+        assert!(matches!(self, Self::Translation | Self::Finish));
+        *self = Self::Finish;
+    }
 }
 
 /// A [`StackOperand`] or [`Operand`] index on the [`Stack`].
