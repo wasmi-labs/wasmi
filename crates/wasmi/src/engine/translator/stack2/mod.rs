@@ -6,8 +6,8 @@ use crate::core::{TypedVal, ValType};
 use alloc::vec::Vec;
 use core::num::NonZeroUsize;
 
-#[derive(Debug, Clone)]
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
+#[derive(Debug, Default, Clone)]
 pub struct Stack {
     /// The stack of operands.
     operands: Vec<StackOperand>,

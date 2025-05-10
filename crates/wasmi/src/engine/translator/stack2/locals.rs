@@ -1,7 +1,7 @@
 use crate::core::ValType;
 use alloc::vec::Vec;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct LocalsRegistry {
     groups: Vec<LocalGroup>,
     len_locals: usize,
