@@ -23,6 +23,7 @@ pub struct Stack {
     max_stack_height: usize,
 }
 
+/// A [`StackOperand`] or [`Operand`] index on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct OperandIdx(NonZeroUsize);
 
