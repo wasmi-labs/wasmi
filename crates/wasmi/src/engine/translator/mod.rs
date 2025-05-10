@@ -10,6 +10,7 @@ mod labels;
 mod provider;
 mod relink_result;
 mod stack;
+mod stack2;
 #[macro_use]
 mod utils;
 mod visit;
