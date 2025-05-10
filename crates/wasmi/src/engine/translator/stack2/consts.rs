@@ -1,2 +1,2 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ConstRegistry {}
