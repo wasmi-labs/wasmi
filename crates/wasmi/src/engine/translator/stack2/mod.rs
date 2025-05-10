@@ -7,8 +7,8 @@ use alloc::vec::Vec;
 use core::num::NonZeroUsize;
 
 #[derive(Debug, Clone)]
-pub struct ValueStack {
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
+pub struct Stack {
     /// The stack of operands.
     operands: Vec<StackOperand>,
     /// All function local constants.
