@@ -64,8 +64,7 @@ pub trait HostError: 'static + Display + Debug + Any + Send + Sync {}
 impl dyn HostError {
     /// Returns `true` if `self` is of type `T`.
     pub fn is<T: HostError>(&self) -> bool {
-        let this: &dyn Any = self;
-        this.is::<T>()
+        (self as &dyn Any).is::<T>()
     }
 
     /// Downcasts the [`HostError`] into a shared reference to a `T` if possible.
@@ -73,8 +72,7 @@ impl dyn HostError {
     /// Returns `None` otherwise.
     #[inline]
     pub fn downcast_ref<T: HostError>(&self) -> Option<&T> {
-        let this: &dyn Any = self;
-        this.downcast_ref::<T>()
+        (self as &dyn Any).downcast_ref::<T>()
     }
 
     /// Downcasts the [`HostError`] into an exclusive reference to a `T` if possible.
@@ -82,8 +80,7 @@ impl dyn HostError {
     /// Returns `None` otherwise.
     #[inline]
     pub fn downcast_mut<T: HostError>(&mut self) -> Option<&mut T> {
-        let this: &mut dyn Any = self;
-        this.downcast_mut::<T>()
+        (self as &mut dyn Any).downcast_mut::<T>()
     }
 
     /// Consumes `self` to downcast the [`HostError`] into the `T` if possible.
@@ -94,8 +91,7 @@ impl dyn HostError {
     #[inline]
     pub fn downcast<T: HostError>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
         if self.is::<T>() {
-            let this: Box<dyn Any> = self;
-            let Ok(value) = this.downcast::<T>() else {
+            let Ok(value) = (self as Box<dyn Any>).downcast::<T>() else {
                 unreachable!(
                     "failed to downcast `HostError` to T (= {})",
                     type_name::<T>()
