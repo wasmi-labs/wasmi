@@ -34,7 +34,7 @@ pub enum StackPhase {
     /// Phase that allows to manipulate the stack and allocate function local constants.
     Translation,
     /// Phase after finishing translation.
-    /// 
+    ///
     /// In this phase state changes are no longer allowed.
     /// Only resetting the [`Stack`] is allowed in order to restart the phase cycle.
     Finish,
@@ -52,9 +52,9 @@ impl StackPhase {
     }
 
     /// Turns the current phase into [`StackPhase::Translation`].
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If the current phase is incompatible with this phase shift.
     pub fn assert_translation(&mut self) {
         assert!(matches!(self, Self::DefineLocals | Self::Translation));
@@ -62,9 +62,9 @@ impl StackPhase {
     }
 
     /// Turns the current phase into [`StackPhase::Finish`].
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If the current phase is incompatible with this phase shift.
     pub fn assert_finish(&mut self) {
         assert!(matches!(self, Self::Translation | Self::Finish));
@@ -92,7 +92,7 @@ impl From<usize> for OperandIdx {
 }
 
 /// An [`Operand`] on the [`Stack`].
-/// 
+///
 /// This is the internal version of [`Operand`] with information that shall remain
 /// hidden to the outside.
 #[derive(Debug, Copy, Clone)]
