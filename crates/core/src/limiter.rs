@@ -178,7 +178,7 @@ impl<'a> From<&'a mut dyn ResourceLimiter> for ResourceLimiterRef<'a> {
     }
 }
 
-impl<'a> ResourceLimiterRef<'a> {
+impl ResourceLimiterRef<'_> {
     /// Returns an exclusive reference to the underlying [`ResourceLimiter`] if any.
     pub fn as_resource_limiter(&mut self) -> Option<&mut dyn ResourceLimiter> {
         match self.0.as_mut() {
