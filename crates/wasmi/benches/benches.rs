@@ -366,7 +366,7 @@ impl Display for WasmCompileStackBomb {
         }
         writeln!(f, ")")?;
         for i in 0..self.locals {
-            writeln!(f, "(local.get {})", i)?;
+            writeln!(f, "(local.get {i})")?;
         }
         for i in 0..self.repetitions {
             let src = i % self.locals;
