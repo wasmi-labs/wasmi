@@ -13,11 +13,10 @@ use wasmi::{Config, StackLimits};
 #[track_caller]
 pub fn load_wasm_from_file(file_name: &str) -> Vec<u8> {
     let mut file = File::open(file_name)
-        .unwrap_or_else(|error| panic!("could not open benchmark file {}: {}", file_name, error));
+        .unwrap_or_else(|error| panic!("could not open benchmark file {file_name}: {error}"));
     let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer).unwrap_or_else(|error| {
-        panic!("could not read file at {} to buffer: {}", file_name, error)
-    });
+    file.read_to_end(&mut buffer)
+        .unwrap_or_else(|error| panic!("could not read file at {file_name} to buffer: {error}"));
     buffer
 }
 
@@ -42,10 +41,7 @@ pub fn load_module_from_file(file_name: &str) -> wasmi::Module {
     let wasm = load_wasm_from_file(file_name);
     let engine = wasmi::Engine::new(&bench_config());
     wasmi::Module::new(&engine, wasm).unwrap_or_else(|error| {
-        panic!(
-            "could not parse Wasm module from file {}: {}",
-            file_name, error
-        )
+        panic!("could not parse Wasm module from file {file_name}: {error}",)
     })
 }
 
