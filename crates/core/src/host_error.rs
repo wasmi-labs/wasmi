@@ -1,5 +1,8 @@
-use core::fmt::{Debug, Display};
-use downcast_rs::{impl_downcast, DowncastSync};
+use alloc::boxed::Box;
+use core::{
+    any::{type_name, Any},
+    fmt::{Debug, Display},
+};
 
 /// Trait that allows the host to return custom error.
 ///
@@ -56,5 +59,47 @@ use downcast_rs::{impl_downcast, DowncastSync};
 ///     _ => panic!(),
 /// }
 /// ```
-pub trait HostError: 'static + Display + Debug + DowncastSync {}
-impl_downcast!(HostError);
+pub trait HostError: 'static + Display + Debug + Any + Send + Sync {}
+
+impl dyn HostError {
+    /// Returns `true` if `self` is of type `T`.
+    pub fn is<T: HostError>(&self) -> bool {
+        (self as &dyn Any).is::<T>()
+    }
+
+    /// Downcasts the [`HostError`] into a shared reference to a `T` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast_ref<T: HostError>(&self) -> Option<&T> {
+        (self as &dyn Any).downcast_ref::<T>()
+    }
+
+    /// Downcasts the [`HostError`] into an exclusive reference to a `T` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast_mut<T: HostError>(&mut self) -> Option<&mut T> {
+        (self as &mut dyn Any).downcast_mut::<T>()
+    }
+
+    /// Consumes `self` to downcast the [`HostError`] into the `T` if possible.
+    ///
+    /// # Errors
+    ///
+    /// If `self` cannot be downcast to `T`.
+    #[inline]
+    pub fn downcast<T: HostError>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        if self.is::<T>() {
+            let Ok(value) = (self as Box<dyn Any>).downcast::<T>() else {
+                unreachable!(
+                    "failed to downcast `HostError` to T (= {})",
+                    type_name::<T>()
+                );
+            };
+            Ok(value)
+        } else {
+            Err(self)
+        }
+    }
+}
