@@ -1,3 +1,5 @@
+#![expect(unused_variables, dead_code)]
+
 mod consts;
 mod locals;
 
