@@ -1,6 +1,10 @@
 use crate::core::ValType;
 use alloc::vec::Vec;
 
+/// A local variable index.
+#[derive(Debug, Copy, Clone)]
+pub struct LocalIdx(usize);
+
 #[derive(Debug, Default, Clone)]
 pub struct LocalsRegistry {
     groups: Vec<LocalGroup>,
