@@ -8,7 +8,7 @@ use self::{
     locals::{LocalIdx, LocalsRegistry},
 };
 use crate::{
-    core::{TypedVal, ValType},
+    core::{TypedVal, UntypedVal, ValType},
     ir::Reg,
     Error,
 };
@@ -132,7 +132,7 @@ impl Stack {
     }
 
     /// Peeks the top-most [`Operand`] on the [`Stack`].
-    /// 
+    ///
     /// Returns `None` if the [`Stack`] is empty.
     pub fn peek(&self) -> Option<Operand> {
         let operand = self.operands.last().copied()?;
@@ -188,6 +188,15 @@ impl Stack {
     ///
     /// Returns `None` if the [`Reg`] is unknown to the [`Stack`].
     pub fn reg_space(&self, reg: Reg) -> Option<RegisterSpace> {
+        todo!()
+    }
+
+    /// Allocates a function local constant `value`.
+    ///
+    /// # Errors
+    ///
+    /// If too many function local constants have been allocated already.
+    pub fn alloc_const(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
         todo!()
     }
 }
