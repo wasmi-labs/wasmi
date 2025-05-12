@@ -123,6 +123,38 @@ impl Stack {
     pub fn operand_to_reg(&mut self, index: OperandIdx) -> Result<Reg, Error> {
         todo!()
     }
+
+    pub fn reg_space(&self, reg: Reg) -> Option<RegisterSpace> {
+        todo!()
+    }
+}
+
+/// The [`RegisterSpace`] of a [`Reg`].
+#[derive(Debug, Copy, Clone)]
+pub enum RegisterSpace {
+    /// Register referring to a local variable.
+    Local,
+    /// Register referring to a function local constant value.
+    Const,
+    /// Register referring to a temporary stack operand.
+    Temp,
+}
+
+impl RegisterSpace {
+    /// Returns `true` if `self` is [`RegisterSpace::Local`].
+    pub fn is_local(self) -> bool {
+        matches!(self, Self::Local)
+    }
+
+    /// Returns `true` if `self` is [`RegisterSpace::Temp`].
+    pub fn is_temp(self) -> bool {
+        matches!(self, Self::Temp)
+    }
+
+    /// Returns `true` if `self` is [`RegisterSpace::Const`].
+    pub fn is_const(self) -> bool {
+        matches!(self, Self::Const)
+    }
 }
 
 /// A [`StackOperand`] or [`Operand`] index on the [`Stack`].
