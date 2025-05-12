@@ -103,7 +103,7 @@ enum StackOperand {
     /// A local variable.
     Local {
         /// The index of the local variable.
-        index: LocalIdx,
+        local_index: LocalIdx,
         /// The previous [`StackOperand::Local`] on the [`Stack`].
         prev_local: Option<OperandIdx>,
         /// The next [`StackOperand::Local`] on the [`Stack`].
@@ -148,6 +148,15 @@ impl Operand {
         matches!(self, Self::Immediate(_))
     }
 
+    /// Returns the [`OperandIdx`] of the [`Operand`].
+    pub fn index(&self) -> OperandIdx {
+        match self {
+            Operand::Local(operand) => operand.operand_index(),
+            Operand::Temp(operand) => operand.operand_index(),
+            Operand::Immediate(operand) => operand.operand_index(),
+        }
+    }
+
     /// Returns the type of the [`Operand`].
     pub fn ty(self) -> ValType {
         match self {
@@ -161,20 +170,27 @@ impl Operand {
 /// A local variable on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
+    /// The index of the operand.
+    operand_index: OperandIdx,
     /// The index of the local variable.
-    index: LocalIdx,
+    local_index: LocalIdx,
     /// The type of the local variable.
     ty: ValType,
 }
 
 impl LocalOperand {
-    /// Returns the index of the local variable.
-    pub fn index(self) -> LocalIdx {
-        self.index
+    /// Returns the operand index of the [`LocalOperand`].
+    pub fn operand_index(&self) -> OperandIdx {
+        self.operand_index
     }
 
-    /// Returns the type of the local variable.
-    pub fn ty(self) -> ValType {
+    /// Returns the index of the [`LocalOperand`].
+    pub fn local_index(&self) -> LocalIdx {
+        self.local_index
+    }
+
+    /// Returns the type of the [`LocalOperand`].
+    pub fn ty(&self) -> ValType {
         self.ty
     }
 }
@@ -182,12 +198,19 @@ impl LocalOperand {
 /// A temporary on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct TempOperand {
+    /// The index of the operand.
+    operand_index: OperandIdx,
     /// The type of the temporary.
     ty: ValType,
 }
 
 impl TempOperand {
-    /// Returns the type of the temporary.
+    /// Returns the operand index of the [`TempOperand`].
+    pub fn operand_index(&self) -> OperandIdx {
+        self.operand_index
+    }
+
+    /// Returns the type of the [`TempOperand`].
     pub fn ty(self) -> ValType {
         self.ty
     }
@@ -196,17 +219,24 @@ impl TempOperand {
 /// An immediate value on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
+    /// The index of the operand.
+    operand_index: OperandIdx,
     /// The value and type of the immediate value.
     val: TypedVal,
 }
 
 impl ImmediateOperand {
-    /// Returns the value (and type) of the immediate value.
+    /// Returns the operand index of the [`ImmediateOperand`].
+    pub fn operand_index(&self) -> OperandIdx {
+        self.operand_index
+    }
+
+    /// Returns the immediate value (and its type) of the [`ImmediateOperand`].
     pub fn val(self) -> TypedVal {
         self.val
     }
 
-    /// Returns the type of the immediate value.
+    /// Returns the type of the [`ImmediateOperand`].
     pub fn ty(self) -> ValType {
         self.val.ty()
     }
