@@ -205,16 +205,19 @@ pub enum RegisterSpace {
 
 impl RegisterSpace {
     /// Returns `true` if `self` is [`RegisterSpace::Local`].
+    #[inline]
     pub fn is_local(self) -> bool {
         matches!(self, Self::Local)
     }
 
     /// Returns `true` if `self` is [`RegisterSpace::Temp`].
+    #[inline]
     pub fn is_temp(self) -> bool {
         matches!(self, Self::Temp)
     }
 
     /// Returns `true` if `self` is [`RegisterSpace::Const`].
+    #[inline]
     pub fn is_const(self) -> bool {
         matches!(self, Self::Const)
     }
