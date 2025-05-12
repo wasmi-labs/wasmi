@@ -131,6 +131,15 @@ impl Stack {
         todo!()
     }
 
+    /// Peeks the top-most [`Operand`] on the [`Stack`].
+    /// 
+    /// Returns `None` if the [`Stack`] is empty.
+    pub fn peek(&self) -> Option<Operand> {
+        let operand = self.operands.last().copied()?;
+        let index = OperandIdx::from(self.operands.len() - 1);
+        Some(Operand::new(index, operand, &self.locals))
+    }
+
     /// Pops the top-most [`Operand`] from the [`Stack`].
     ///
     /// Returns `None` if the [`Stack`] is empty.
