@@ -82,6 +82,17 @@ impl StackPhase {
 }
 
 impl Stack {
+    /// Resets the [`Stack`] for reuse.
+    pub fn reset(&mut self) {
+        self.operands.clear();
+        self.locals.reset();
+        self.consts.reset();
+        self.first_local = None;
+        self.last_local = None;
+        self.max_stack_height = 0;
+        self.phase = StackPhase::DefineLocals;
+    }
+
     /// Register `amount` local variables of common type `ty`.
     ///
     /// # Errors
