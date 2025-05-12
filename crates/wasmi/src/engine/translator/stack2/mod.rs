@@ -20,10 +20,10 @@ use core::num::NonZeroUsize;
 pub struct Stack {
     /// The stack of operands.
     operands: Vec<StackOperand>,
-    /// All function local constants.
-    consts: ConstRegistry,
     /// All function locals and their associated types.
     locals: LocalsRegistry,
+    /// All function local constants.
+    consts: ConstRegistry,
     /// The index of the first [`StackOperand::Local`] on the [`Stack`].
     first_local: Option<OperandIdx>,
     /// The index of the last [`StackOperand::Local`] on the [`Stack`].
