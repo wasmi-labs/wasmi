@@ -1,10 +1,14 @@
 mod consts;
 mod locals;
 
-use crate::core::{TypedVal, ValType};
 use self::{
     consts::ConstRegistry,
     locals::{LocalIdx, LocalsRegistry},
+};
+use crate::{
+    core::{TypedVal, UntypedVal, ValType},
+    ir::Reg,
+    Error,
 };
 use alloc::vec::Vec;
 use core::num::NonZeroUsize;
@@ -72,6 +76,52 @@ impl StackPhase {
     pub fn assert_finish(&mut self) {
         assert!(matches!(self, Self::Translation | Self::Finish));
         *self = Self::Finish;
+    }
+}
+
+impl Stack {
+    pub fn register_locals(&mut self, amount: u32) -> Result<(), Error> {
+        todo!()
+    }
+
+    pub fn finish_register_locals(&mut self) {
+        todo!()
+    }
+
+    pub fn push_local(&mut self, local_idx: u32) -> Result<OperandIdx, Error> {
+        todo!()
+    }
+
+    pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
+        todo!()
+    }
+
+    pub fn push_immediate<T>(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
+        todo!()
+    }
+
+    pub fn pop(&mut self) -> Option<Operand> {
+        let operand = self.operands.pop()?;
+        let index = OperandIdx::from(self.operands.len());
+        Some(Operand::new(index, operand, &self.locals))
+    }
+
+    pub fn pop2(&mut self) -> Option<(Operand, Operand)> {
+        let [o1, o2] = self.pop_some::<2>()?;
+        Some((o1, o2))
+    }
+
+    pub fn pop3(&mut self) -> Option<(Operand, Operand, Operand)> {
+        let [o1, o2, o3] = self.pop_some::<3>()?;
+        Some((o1, o2, o3))
+    }
+
+    fn pop_some<const N: usize>(&mut self) -> Option<[Operand; N]> {
+        todo!()
+    }
+
+    pub fn operand_to_reg(&mut self, index: OperandIdx) -> Result<Reg, Error> {
+        todo!()
     }
 }
 
