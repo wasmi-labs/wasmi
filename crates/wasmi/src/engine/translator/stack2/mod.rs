@@ -4,7 +4,7 @@ mod consts;
 mod locals;
 
 use self::{
-    consts::{ConstRegistry, ConstIdx},
+    consts::{ConstIdx, ConstRegistry},
     locals::{LocalIdx, LocalsRegistry},
 };
 use crate::{
