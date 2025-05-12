@@ -22,7 +22,7 @@ pub struct Stack {
     operands: Vec<StackOperand>,
     /// All function local constants.
     consts: ConstRegistry,
-    /// All function parameters and locals and their types.
+    /// All function locals and their associated types.
     locals: LocalsRegistry,
     /// The index of the first [`StackOperand::Local`] on the [`Stack`].
     first_local: Option<OperandIdx>,
