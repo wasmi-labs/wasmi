@@ -6,7 +6,7 @@ use self::{
     locals::{LocalIdx, LocalsRegistry},
 };
 use crate::{
-    core::{TypedVal, UntypedVal, ValType},
+    core::{TypedVal, ValType},
     ir::Reg,
     Error,
 };
@@ -96,7 +96,7 @@ impl Stack {
         todo!()
     }
 
-    pub fn push_immediate<T>(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
+    pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
         todo!()
     }
 
