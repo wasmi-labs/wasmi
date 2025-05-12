@@ -1,8 +1,11 @@
 mod consts;
 mod locals;
 
-use self::{consts::ConstRegistry, locals::LocalsRegistry};
 use crate::core::{TypedVal, ValType};
+use self::{
+    consts::ConstRegistry,
+    locals::{LocalIdx, LocalsRegistry},
+};
 use alloc::vec::Vec;
 use core::num::NonZeroUsize;
 
@@ -208,7 +211,3 @@ impl ImmediateOperand {
         self.val.ty()
     }
 }
-
-/// A local variable index.
-#[derive(Debug, Copy, Clone)]
-pub struct LocalIdx(usize);
