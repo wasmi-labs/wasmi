@@ -82,50 +82,102 @@ impl StackPhase {
 }
 
 impl Stack {
-    pub fn register_locals(&mut self, amount: u32) -> Result<(), Error> {
+    /// Register `amount` local variables of common type `ty`.
+    ///
+    /// # Errors
+    ///
+    /// If too many local variables are being registered.
+    pub fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
         todo!()
     }
 
-    pub fn finish_register_locals(&mut self) {
+    /// Finish registration of local variables.
+    ///
+    /// # Errors
+    ///
+    /// If the current [`StackPhase`] is not [`StackPhase::DefineLocals`].
+    pub fn finish_register_locals(&mut self) -> Result<(), Error> {
         todo!()
     }
 
+    /// Pushes a local variable with index `local_idx` to the [`Stack`].
+    ///
+    /// # Errors
+    ///
+    /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
+    /// - If too many operands have been pushed onto the [`Stack`].
+    /// - If the local with `local_idx` does not exist.
     pub fn push_local(&mut self, local_idx: u32) -> Result<OperandIdx, Error> {
         todo!()
     }
 
+    /// Pushes a temporary with type `ty` on the [`Stack`].
+    ///
+    /// # Errors
+    ///
+    /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
+    /// - If too many operands have been pushed onto the [`Stack`].
     pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
         todo!()
     }
 
+    /// Pushes an immediate `value` on the [`Stack`].
+    ///
+    /// # Errors
+    ///
+    /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
+    /// - If too many operands have been pushed onto the [`Stack`].
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
         todo!()
     }
 
+    /// Pops the top-most [`Operand`] from the [`Stack`].
+    ///
+    /// Returns `None` if the [`Stack`] is empty.
     pub fn pop(&mut self) -> Option<Operand> {
         let operand = self.operands.pop()?;
         let index = OperandIdx::from(self.operands.len());
         Some(Operand::new(index, operand, &self.locals))
     }
 
+    /// Pops the two top-most [`Operand`] from the [`Stack`].
+    ///
+    /// - Returns `None` if the [`Stack`] is empty.
+    /// - The last returned [`Operand`] is the top-most one.
     pub fn pop2(&mut self) -> Option<(Operand, Operand)> {
         let [o1, o2] = self.pop_some::<2>()?;
         Some((o1, o2))
     }
 
+    /// Pops the three top-most [`Operand`] from the [`Stack`].
+    ///
+    /// - Returns `None` if the [`Stack`] is empty.
+    /// - The last returned [`Operand`] is the top-most one.
     pub fn pop3(&mut self) -> Option<(Operand, Operand, Operand)> {
         let [o1, o2, o3] = self.pop_some::<3>()?;
         Some((o1, o2, o3))
     }
 
+    /// Pops the top-most `N` [`Operand`]s from the [`Stack`].
+    ///
+    /// - Returns `None` if the [`Stack`] is empty.
+    /// - The last returned [`Operand`] is the top-most one.
     fn pop_some<const N: usize>(&mut self) -> Option<[Operand; N]> {
         todo!()
     }
 
+    /// Converts the [`Operand`] at `index` to a [`Reg`] if possible.
+    ///
+    /// # Errors
+    ///
+    /// If the translator ran out of [`Reg`]s for the function.
     pub fn operand_to_reg(&mut self, index: OperandIdx) -> Result<Reg, Error> {
         todo!()
     }
 
+    /// Returns the [`RegisterSpace`] of the [`Reg`].
+    ///
+    /// Returns `None` if the [`Reg`] is unknown to the [`Stack`].
     pub fn reg_space(&self, reg: Reg) -> Option<RegisterSpace> {
         todo!()
     }
