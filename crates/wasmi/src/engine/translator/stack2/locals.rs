@@ -11,6 +11,12 @@ pub struct LocalsRegistry {
     len_locals: usize,
 }
 
+impl LocalsRegistry {
+    pub fn ty(&self, local_index: LocalIdx) -> Option<ValType> {
+        todo!()
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 struct LocalGroup {
     start_idx: usize,
