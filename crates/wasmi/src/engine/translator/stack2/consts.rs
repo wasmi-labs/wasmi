@@ -71,7 +71,7 @@ impl ConstRegistry {
         }
     }
 
-    /// Returns the function local constant [`UntypedVal`] of the [`Reg`] if any.
+    /// Returns the function local constant [`UntypedVal`] of the [`ConstIdx`] if any.
     pub fn get(&self, index: ConstIdx) -> Option<UntypedVal> {
         self.idx2const.get(index.0).copied()
     }
