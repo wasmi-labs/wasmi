@@ -133,6 +133,25 @@ pub enum Operand {
 }
 
 impl Operand {
+    fn new(operand_index: OperandIdx, operand: StackOperand, locals: &LocalsRegistry) -> Self {
+        match operand {
+            StackOperand::Local { local_index, .. } => {
+                let Some(ty) = locals.ty(local_index) else {
+                    panic!("failed to query type of local at: {local_index:?}");
+                };
+                Self::Local(LocalOperand {
+                    operand_index,
+                    local_index,
+                    ty,
+                })
+            }
+            StackOperand::Temp { ty } => Self::Temp(TempOperand { operand_index, ty }),
+            StackOperand::Immediate { val } => {
+                Self::Immediate(ImmediateOperand { operand_index, val })
+            }
+        }
+    }
+
     /// Returns `true` if `self` is an [`Operand::Local`].
     pub fn is_local(self) -> bool {
         matches!(self, Self::Local(_))
