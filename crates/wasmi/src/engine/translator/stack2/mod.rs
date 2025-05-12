@@ -4,7 +4,7 @@ mod consts;
 mod locals;
 
 use self::{
-    consts::ConstRegistry,
+    consts::{ConstRegistry, ConstIdx},
     locals::{LocalIdx, LocalsRegistry},
 };
 use crate::{
@@ -197,6 +197,11 @@ impl Stack {
     ///
     /// If too many function local constants have been allocated already.
     pub fn alloc_const(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
+        todo!()
+    }
+
+    /// Returns the [`Reg`] associated to the [`ConstIdx`].
+    pub fn const_idx_to_reg(&self, index: ConstIdx) -> Result<Reg, Error> {
         todo!()
     }
 }
