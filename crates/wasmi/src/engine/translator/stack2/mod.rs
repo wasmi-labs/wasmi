@@ -13,7 +13,7 @@ use crate::{
     Error,
 };
 use alloc::vec::Vec;
-use core::num::NonZeroUsize;
+use core::num::NonZero;
 
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default, Clone)]
@@ -250,7 +250,7 @@ impl RegisterSpace {
 
 /// A [`StackOperand`] or [`Operand`] index on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
-pub struct OperandIdx(NonZeroUsize);
+pub struct OperandIdx(NonZero<usize>);
 
 impl From<OperandIdx> for usize {
     fn from(value: OperandIdx) -> Self {
@@ -260,7 +260,7 @@ impl From<OperandIdx> for usize {
 
 impl From<usize> for OperandIdx {
     fn from(value: usize) -> Self {
-        let Some(operand_idx) = NonZeroUsize::new(value.wrapping_add(1)) else {
+        let Some(operand_idx) = NonZero::new(value.wrapping_add(1)) else {
             panic!("out of bounds `OperandIdx`: {value}")
         };
         Self(operand_idx)
