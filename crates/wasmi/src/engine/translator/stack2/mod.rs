@@ -57,7 +57,7 @@ impl StackPhase {
 
     /// Ensures that the current phase is [`StackPhase::DefineLocals`].
     pub fn assert_define_locals(&self) {
-        assert!(matches!(self, Self::DefineLocals));
+        debug_assert!(matches!(self, Self::DefineLocals));
     }
 
     /// Turns the current phase into [`StackPhase::Translation`].
@@ -65,9 +65,18 @@ impl StackPhase {
     /// # Panics
     ///
     /// If the current phase is incompatible with this phase shift.
-    pub fn assert_translation(&mut self) {
-        assert!(matches!(self, Self::DefineLocals | Self::Translation));
+    pub fn tranlate(&mut self) {
+        assert!(matches!(self, Self::DefineLocals));
         *self = Self::Translation;
+    }
+
+    /// Turns the current phase into [`StackPhase::Translation`].
+    ///
+    /// # Panics
+    ///
+    /// If the current phase is incompatible with this phase shift.
+    pub fn assert_translation(&self) {
+        debug_assert!(matches!(self, Self::Translation));
     }
 
     /// Turns the current phase into [`StackPhase::Finish`].
@@ -75,8 +84,8 @@ impl StackPhase {
     /// # Panics
     ///
     /// If the current phase is incompatible with this phase shift.
-    pub fn assert_finish(&mut self) {
-        assert!(matches!(self, Self::Translation | Self::Finish));
+    pub fn finish(&mut self) {
+        assert!(matches!(self, Self::Translation));
         *self = Self::Finish;
     }
 }
@@ -99,7 +108,8 @@ impl Stack {
     ///
     /// If too many local variables are being registered.
     pub fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
-        todo!()
+        self.phase.assert_define_locals();
+        self.locals.register(amount, ty)
     }
 
     /// Finish registration of local variables.
@@ -108,7 +118,8 @@ impl Stack {
     ///
     /// If the current [`StackPhase`] is not [`StackPhase::DefineLocals`].
     pub fn finish_register_locals(&mut self) -> Result<(), Error> {
-        todo!()
+        self.phase.assert_translation();
+        Ok(())
     }
 
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
@@ -119,6 +130,7 @@ impl Stack {
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
     pub fn push_local(&mut self, local_idx: u32) -> Result<OperandIdx, Error> {
+        self.phase.assert_translation();
         todo!()
     }
 
@@ -129,6 +141,7 @@ impl Stack {
     /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
     /// - If too many operands have been pushed onto the [`Stack`].
     pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
+        self.phase.assert_translation();
         todo!()
     }
 
@@ -139,6 +152,7 @@ impl Stack {
     /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
     /// - If too many operands have been pushed onto the [`Stack`].
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
+        self.phase.assert_translation();
         todo!()
     }
 
@@ -146,6 +160,7 @@ impl Stack {
     ///
     /// Returns `None` if the [`Stack`] is empty.
     pub fn peek(&self) -> Option<Operand> {
+        self.phase.assert_translation();
         let operand = self.operands.last().copied()?;
         let index = OperandIdx::from(self.operands.len() - 1);
         Some(Operand::new(index, operand, &self.locals))
@@ -155,6 +170,7 @@ impl Stack {
     ///
     /// Returns `None` if the [`Stack`] is empty.
     pub fn pop(&mut self) -> Option<Operand> {
+        self.phase.assert_translation();
         let operand = self.operands.pop()?;
         let index = OperandIdx::from(self.operands.len());
         Some(Operand::new(index, operand, &self.locals))
@@ -183,6 +199,7 @@ impl Stack {
     /// - Returns `None` if the [`Stack`] is empty.
     /// - The last returned [`Operand`] is the top-most one.
     fn pop_some<const N: usize>(&mut self) -> Option<[Operand; N]> {
+        self.phase.assert_translation();
         todo!()
     }
 
@@ -192,6 +209,7 @@ impl Stack {
     ///
     /// If the translator ran out of [`Reg`]s for the function.
     pub fn operand_to_reg(&mut self, index: OperandIdx) -> Result<Reg, Error> {
+        self.phase.assert_translation();
         todo!()
     }
 
@@ -199,6 +217,7 @@ impl Stack {
     ///
     /// Returns `None` if the [`Reg`] is unknown to the [`Stack`].
     pub fn reg_space(&self, reg: Reg) -> Option<RegisterSpace> {
+        self.phase.assert_translation();
         todo!()
     }
 
@@ -208,11 +227,13 @@ impl Stack {
     ///
     /// If too many function local constants have been allocated already.
     pub fn alloc_const(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
+        self.phase.assert_translation();
         todo!()
     }
 
     /// Returns the [`Reg`] associated to the [`ConstIdx`].
     pub fn const_idx_to_reg(&self, index: ConstIdx) -> Result<Reg, Error> {
+        self.phase.assert_translation();
         todo!()
     }
 }
