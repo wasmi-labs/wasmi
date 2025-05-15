@@ -13,7 +13,7 @@ use crate::{
     Error,
 };
 use alloc::vec::Vec;
-use core::num::NonZero;
+use core::{array, num::NonZero};
 
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default, Clone)]
@@ -156,6 +156,11 @@ impl Stack {
         todo!()
     }
 
+    /// Returns the current number of [`Operand`]s on the [`Stack`].
+    pub fn len_operands(&self) -> usize {
+        self.operands.len()
+    }
+
     /// Peeks the top-most [`Operand`] on the [`Stack`].
     ///
     /// Returns `None` if the [`Stack`] is empty.
@@ -200,7 +205,17 @@ impl Stack {
     /// - The last returned [`Operand`] is the top-most one.
     fn pop_some<const N: usize>(&mut self) -> Option<[Operand; N]> {
         self.phase.assert_translation();
-        todo!()
+        if N >= self.len_operands() {
+            return None;
+        }
+        let start = self.len_operands() - N;
+        let drained = self.operands.drain(start..);
+        let popped: [Operand; N] = array::from_fn(|i| {
+            let index = OperandIdx::from(start + i);
+            let operand = drained.as_slice()[i];
+            Operand::new(index, operand, &self.locals)
+        });
+        Some(popped)
     }
 
     /// Converts the [`Operand`] at `index` to a [`Reg`] if possible.
