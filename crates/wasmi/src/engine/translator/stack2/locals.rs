@@ -40,10 +40,15 @@ impl LocalsRegistry {
     /// # Errors
     ///
     /// If too many locals are registered.
-    pub fn register(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
+    pub fn register(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
         if amount == 0 {
             return Ok(());
         }
+        let Ok(amount) = usize::try_from(amount) else {
+            panic!(
+                "failed to register {amount} local variables of type {ty:?}: out of bounds `usize`"
+            )
+        };
         let first_local = self.len();
         if amount > 1 {
             self.first_group.get_or_insert(first_local);
@@ -183,6 +188,7 @@ mod tests {
             for ty in tys {
                 locals.register(locals_per_type, ty).unwrap();
             }
+            let locals_per_type = locals_per_type as usize;
             assert_eq!(locals.len(), locals_per_type * tys.len());
             for i in 0..locals.len() {
                 assert_eq!(locals.ty(LocalIdx(i)), Some(tys[i / locals_per_type]));
@@ -208,7 +214,7 @@ mod tests {
                 true => ValType::I32,
                 false => ValType::I64,
             };
-            assert_eq!(locals.ty(LocalIdx(i)), Some(ty));
+            assert_eq!(locals.ty(LocalIdx(i as usize)), Some(ty));
         }
     }
 }
