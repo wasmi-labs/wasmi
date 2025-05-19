@@ -5,7 +5,19 @@ use core::{cmp::Ordering, iter};
 
 /// A local variable index.
 #[derive(Debug, Copy, Clone)]
-pub struct LocalIdx(usize);
+pub struct LocalIdx(u32);
+
+impl From<u32> for LocalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl From<LocalIdx> for u32 {
+    fn from(index: LocalIdx) -> Self {
+        index.0
+    }
+}
 
 /// Stores definitions of locals.
 #[derive(Debug, Default, Clone)]
@@ -63,13 +75,23 @@ impl LocalsRegistry {
         Ok(())
     }
 
+    /// Converts `index` into a `usize` value.
+    fn local_idx_to_index(index: LocalIdx) -> usize {
+        let index = u32::from(index);
+        let Ok(index) = usize::try_from(index) else {
+            panic!("out of bounds `LocalIdx`: {index}")
+        };
+        index
+    }
+
     /// Returns the first operand for this local on the stack if any.
     ///
     /// # Panics
     ///
     /// If `index` is out of bounds.
-    fn first_operand(&self, index: LocalIdx) -> Option<OperandIdx> {
-        let Some(cell) = self.first_operands.get(index.0) else {
+    pub fn first_operand(&self, index: LocalIdx) -> Option<OperandIdx> {
+        let index = Self::local_idx_to_index(index);
+        let Some(cell) = self.first_operands.get(index) else {
             panic!("`first_operand`: out of bounds local index: {index:?}")
         };
         *cell
@@ -80,39 +102,45 @@ impl LocalsRegistry {
     /// # Panics
     ///
     /// If `index` is out of bounds.
-    fn take_first_operand(&mut self, index: LocalIdx) -> Option<OperandIdx> {
-        let Some(cell) = self.first_operands.get_mut(index.0) else {
+    pub fn take_first_operand(&mut self, index: LocalIdx) -> Option<OperandIdx> {
+        let index = Self::local_idx_to_index(index);
+        let Some(cell) = self.first_operands.get_mut(index) else {
             panic!("`first_operand`: out of bounds local index: {index:?}")
         };
         cell.take()
     }
 
-    /// Returns an exclusive reference to the first operand for this local on the stack.
+    /// Replaces the first operand for this local on the stack and returns the old one.
     ///
     /// # Panics
     ///
     /// If `index` is out of bounds.
-    fn set_first_operand(
+    pub fn replace_first_operand(
         &mut self,
         index: LocalIdx,
-        first_operand: OperandIdx,
+        first_operand: Option<OperandIdx>,
     ) -> Option<OperandIdx> {
-        let Some(cell) = self.first_operands.get_mut(index.0) else {
+        let index = Self::local_idx_to_index(index);
+        let Some(cell) = self.first_operands.get_mut(index) else {
             panic!("`first_operand`: out of bounds local index: {index:?}")
         };
-        cell.replace(first_operand)
+        match first_operand {
+            Some(first_operand) => cell.replace(first_operand),
+            None => cell.take(),
+        }
     }
 
-    /// Returns the type of the `local_index` if any.
+    /// Returns the type of the `index` if any.
     ///
-    /// Returns `None` if `local_index` does not refer to any local in `self`.
-    pub fn ty(&self, local_index: LocalIdx) -> Option<ValType> {
+    /// Returns `None` if `index` does not refer to any local in `self`.
+    pub fn ty(&self, index: LocalIdx) -> Option<ValType> {
+        let index = Self::local_idx_to_index(index);
         if let Some(first_group) = self.first_group {
-            if local_index.0 >= first_group {
-                return self.ty_slow(local_index);
+            if index >= first_group {
+                return self.ty_slow(index);
             }
         }
-        self.ty_fast(local_index)
+        self.ty_fast(index)
     }
 
     /// Returns the [`ValType`] of the local at `local_index`.
@@ -122,8 +150,8 @@ impl LocalsRegistry {
     /// This is the fast version used for locals with indices
     /// smaller than the first local group.
     #[inline]
-    fn ty_fast(&self, local_index: LocalIdx) -> Option<ValType> {
-        self.groups.get(local_index.0).map(LocalGroup::ty)
+    fn ty_fast(&self, local_index: usize) -> Option<ValType> {
+        self.groups.get(local_index).map(LocalGroup::ty)
     }
 
     /// Returns the [`ValType`] of the local at `local_index`.
@@ -133,7 +161,7 @@ impl LocalsRegistry {
     /// This is the slow version used for locals with indices
     /// equal to or greater than the first local group.
     #[cold]
-    fn ty_slow(&self, local_index: LocalIdx) -> Option<ValType> {
+    fn ty_slow(&self, local_index: usize) -> Option<ValType> {
         let Some(first_group) = self.first_group else {
             unreachable!("cannot use `ty_slow` with `first_group` being `None`");
         };
@@ -141,7 +169,6 @@ impl LocalsRegistry {
         if groups.is_empty() {
             return None;
         }
-        let local_index = local_index.0;
         let index = groups
             .binary_search_by(|group| {
                 if local_index < group.first_local {
@@ -191,7 +218,10 @@ mod tests {
             let locals_per_type = locals_per_type as usize;
             assert_eq!(locals.len(), locals_per_type * tys.len());
             for i in 0..locals.len() {
-                assert_eq!(locals.ty(LocalIdx(i)), Some(tys[i / locals_per_type]));
+                assert_eq!(
+                    locals.ty(LocalIdx(i as u32)),
+                    Some(tys[i / locals_per_type])
+                );
             }
         }
     }
@@ -214,7 +244,7 @@ mod tests {
                 true => ValType::I32,
                 false => ValType::I64,
             };
-            assert_eq!(locals.ty(LocalIdx(i as usize)), Some(ty));
+            assert_eq!(locals.ty(LocalIdx(i)), Some(ty));
         }
     }
 }
