@@ -59,17 +59,17 @@ impl Operand {
     }
 
     /// Returns `true` if `self` is an [`Operand::Local`].
-    pub fn is_local(self) -> bool {
+    pub fn is_local(&self) -> bool {
         matches!(self, Self::Local(_))
     }
 
     /// Returns `true` if `self` is an [`Operand::Temp`].
-    pub fn is_temp(self) -> bool {
+    pub fn is_temp(&self) -> bool {
         matches!(self, Self::Temp(_))
     }
 
     /// Returns `true` if `self` is an [`Operand::Immediate`].
-    pub fn is_immediate(self) -> bool {
+    pub fn is_immediate(&self) -> bool {
         matches!(self, Self::Immediate(_))
     }
 
@@ -83,7 +83,7 @@ impl Operand {
     }
 
     /// Returns the type of the [`Operand`].
-    pub fn ty(self) -> ValType {
+    pub fn ty(&self) -> ValType {
         match self {
             Self::Local(local_operand) => local_operand.ty(),
             Self::Temp(temp_operand) => temp_operand.ty(),
@@ -138,7 +138,7 @@ impl TempOperand {
     }
 
     /// Returns the type of the [`TempOperand`].
-    pub fn ty(self) -> ValType {
+    pub fn ty(&self) -> ValType {
         self.ty
     }
 
@@ -164,12 +164,12 @@ impl ImmediateOperand {
     }
 
     /// Returns the immediate value (and its type) of the [`ImmediateOperand`].
-    pub fn val(self) -> TypedVal {
+    pub fn val(&self) -> TypedVal {
         self.val
     }
 
     /// Returns the type of the [`ImmediateOperand`].
-    pub fn ty(self) -> ValType {
+    pub fn ty(&self) -> ValType {
         self.val.ty()
     }
 }
