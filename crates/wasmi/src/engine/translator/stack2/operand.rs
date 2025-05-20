@@ -4,6 +4,9 @@ use crate::{
     engine::Instr,
 };
 
+#[cfg(doc)]
+use super::Stack;
+
 /// An operand on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub enum Operand {
