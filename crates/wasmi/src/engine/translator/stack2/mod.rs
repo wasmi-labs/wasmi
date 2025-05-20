@@ -9,10 +9,9 @@ use self::{
     consts::ConstRegistry,
     locals::{LocalIdx, LocalsRegistry},
 };
-use super::Instr;
 use crate::{
     core::{TypedVal, UntypedVal, ValType},
-    engine::TranslationError,
+    engine::{Instr, TranslationError},
     ir::Reg,
     Error,
 };
