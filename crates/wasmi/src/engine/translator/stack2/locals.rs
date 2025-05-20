@@ -1,7 +1,7 @@
 use super::OperandIdx;
-use crate::{core::ValType, Error};
+use crate::{core::ValType, engine::TranslationError, Error};
 use alloc::vec::Vec;
-use core::{cmp::Ordering, iter};
+use core::{cmp, iter};
 
 /// A local variable index.
 #[derive(Debug, Copy, Clone)]
@@ -22,14 +22,10 @@ impl From<LocalIdx> for u32 {
 /// Stores definitions of locals.
 #[derive(Debug, Default, Clone)]
 pub struct LocalsRegistry {
-    /// Groups of local variables sharing a common type.
-    groups: Vec<LocalGroup>,
-    /// The index of the first local variable in a group of more than 1 locals.
-    ///
-    /// # Note
-    ///
-    /// All local indices that are smaller than this can be queried faster.
-    first_group: Option<usize>,
+    /// The types of the first defined local variables.
+    tys_first: Vec<ValType>,
+    /// The types of the remaining defined local variables.
+    tys_remaining: Vec<LocalGroup>,
     /// The first operand for the local on the stack if any.
     first_operands: Vec<Option<OperandIdx>>,
 }
@@ -37,8 +33,8 @@ pub struct LocalsRegistry {
 impl LocalsRegistry {
     /// Resets `self` for reuse.
     pub fn reset(&mut self) {
-        self.groups.clear();
-        self.first_group = None;
+        self.tys_first.clear();
+        self.tys_remaining.clear();
         self.first_operands.clear();
     }
 
@@ -46,6 +42,12 @@ impl LocalsRegistry {
     pub fn len(&self) -> usize {
         self.first_operands.len()
     }
+
+    /// The maximum number of local variables per function.
+    const LOCAL_VARIABLES_MAX: usize = 30_000;
+
+    /// The maximum number of local variables in the fast `tys_first` vector.
+    const FIRST_TYS_MAX: usize = 100;
 
     /// Registers `amount` of locals of type `ty` for `self`.
     ///
@@ -61,16 +63,18 @@ impl LocalsRegistry {
                 "failed to register {amount} local variables of type {ty:?}: out of bounds `usize`"
             )
         };
-        let first_local = self.len();
-        if amount > 1 {
-            self.first_group.get_or_insert(first_local);
+        if self.len().saturating_add(amount) > Self::LOCAL_VARIABLES_MAX {
+            return Err(Error::from(TranslationError::TooManyFunctionParams));
         }
-        let last_local = first_local + amount;
-        self.groups.push(LocalGroup {
-            first_local,
-            last_local,
-            ty,
-        });
+        let vacant_first = Self::FIRST_TYS_MAX.saturating_sub(self.tys_first.len());
+        let push_to_first = cmp::min(vacant_first, amount);
+        self.tys_first.extend(iter::repeat_n(ty, push_to_first));
+        let remaining_amount = amount - push_to_first;
+        let remaining_index = (self.len() + amount - 1) as u32;
+        if remaining_amount > 0 {
+            self.tys_remaining
+                .push(LocalGroup::new(remaining_index, ty));
+        }
         self.first_operands.extend(iter::repeat_n(None, amount));
         Ok(())
     }
@@ -90,11 +94,7 @@ impl LocalsRegistry {
     ///
     /// If `index` is out of bounds.
     pub fn first_operand(&self, index: LocalIdx) -> Option<OperandIdx> {
-        let index = Self::local_idx_to_index(index);
-        let Some(cell) = self.first_operands.get(index) else {
-            panic!("`first_operand`: out of bounds local index: {index:?}")
-        };
-        *cell
+        self.first_operands[Self::local_idx_to_index(index)]
     }
 
     /// Takes the first operand for this local from the stack if any.
@@ -104,9 +104,7 @@ impl LocalsRegistry {
     /// If `index` is out of bounds.
     pub fn take_first_operand(&mut self, index: LocalIdx) -> Option<OperandIdx> {
         let index = Self::local_idx_to_index(index);
-        let Some(cell) = self.first_operands.get_mut(index) else {
-            panic!("`first_operand`: out of bounds local index: {index:?}")
-        };
+        let cell = &mut self.first_operands[index];
         cell.take()
     }
 
@@ -121,67 +119,37 @@ impl LocalsRegistry {
         first_operand: Option<OperandIdx>,
     ) -> Option<OperandIdx> {
         let index = Self::local_idx_to_index(index);
-        let Some(cell) = self.first_operands.get_mut(index) else {
-            panic!("`first_operand`: out of bounds local index: {index:?}")
-        };
+        let cell = &mut self.first_operands[index];
         match first_operand {
             Some(first_operand) => cell.replace(first_operand),
             None => cell.take(),
         }
     }
 
-    /// Returns the type of the `index` if any.
-    ///
-    /// Returns `None` if `index` does not refer to any local in `self`.
+    /// Returns the type of the local variable at `index` if any.
     pub fn ty(&self, index: LocalIdx) -> Option<ValType> {
-        let index = Self::local_idx_to_index(index);
-        if let Some(first_group) = self.first_group {
-            if index >= first_group {
-                return self.ty_slow(index);
-            }
+        let index_sz = Self::local_idx_to_index(index);
+        match self.tys_first.get(index_sz) {
+            Some(ty) => Some(*ty),
+            None => self.ty_slow(index),
         }
-        self.ty_fast(index)
     }
 
-    /// Returns the [`ValType`] of the local at `local_index`.
+    /// Returns the type of the local variable at `index` if any.
     ///
-    /// # Note
-    ///
-    /// This is the fast version used for locals with indices
-    /// smaller than the first local group.
-    #[inline]
-    fn ty_fast(&self, local_index: usize) -> Option<ValType> {
-        self.groups.get(local_index).map(LocalGroup::ty)
-    }
-
-    /// Returns the [`ValType`] of the local at `local_index`.
-    ///
-    /// # Note
-    ///
-    /// This is the slow version used for locals with indices
-    /// equal to or greater than the first local group.
+    /// This is the slow-path for local variables that have been stored in the `remaining` buffer.
     #[cold]
-    fn ty_slow(&self, local_index: usize) -> Option<ValType> {
-        let Some(first_group) = self.first_group else {
-            unreachable!("cannot use `ty_slow` with `first_group` being `None`");
-        };
-        let groups = &self.groups[first_group..];
-        if groups.is_empty() {
+    fn ty_slow(&self, index: LocalIdx) -> Option<ValType> {
+        if self.tys_remaining.is_empty() {
             return None;
         }
-        let index = groups
-            .binary_search_by(|group| {
-                if local_index < group.first_local {
-                    Ordering::Greater
-                } else if local_index > group.last_local {
-                    Ordering::Less
-                } else {
-                    Ordering::Equal
-                }
-            })
-            .ok()?;
-        let ty = groups[index].ty();
-        Some(ty)
+        match self
+            .tys_remaining
+            .binary_search_by_key(&index.0, LocalGroup::max_index)
+        {
+            Err(i) if i == self.tys_remaining.len() => None,
+            Ok(i) | Err(i) => Some(self.tys_remaining[i].ty()),
+        }
     }
 }
 
@@ -189,14 +157,22 @@ impl LocalsRegistry {
 #[derive(Debug, Copy, Clone)]
 struct LocalGroup {
     /// The local index of the first local in the group.
-    first_local: usize,
-    /// The local index right after the last local in the group.
-    last_local: usize,
+    max_index: u32,
     /// The shared type of the locals in the local group.
     ty: ValType,
 }
 
 impl LocalGroup {
+    /// Creates a new [`LocalGroup`].
+    fn new(max_index: u32, ty: ValType) -> Self {
+        Self { max_index, ty }
+    }
+
+    /// Returns the maximum index of the local variables in the [`LocalGroup`].
+    fn max_index(&self) -> u32 {
+        self.max_index
+    }
+
     /// Returns the [`ValType`] of the [`LocalGroup`].
     fn ty(&self) -> ValType {
         self.ty
@@ -209,8 +185,9 @@ mod tests {
 
     #[test]
     fn ty_works() {
-        for locals_per_type in [1, 2, 10] {
-            let mut locals = LocalsRegistry::default();
+        let mut locals = LocalsRegistry::default();
+        for locals_per_type in [1, 2, 10, 100] {
+            locals.reset();
             let tys = [ValType::I32, ValType::I64, ValType::F32, ValType::F64];
             for ty in tys {
                 locals.register(locals_per_type, ty).unwrap();
@@ -229,22 +206,29 @@ mod tests {
     #[test]
     fn locals_followed_by_groups() {
         let mut locals = LocalsRegistry::default();
-        let len_single = 10;
-        let len_groups = 10;
-        let locals_per_group = 100;
-        let len_locals = len_single + len_groups * locals_per_group;
-        for i in 0..len_single {
-            locals.register(1, ValType::I32).unwrap();
-        }
-        for i in 0..len_groups {
-            locals.register(locals_per_group, ValType::I64).unwrap();
-        }
-        for i in 0..len_locals {
-            let ty = match i < len_single {
-                true => ValType::I32,
-                false => ValType::I64,
-            };
-            assert_eq!(locals.ty(LocalIdx(i)), Some(ty));
+        let len_single = [1, 10, 100];
+        let len_groups = [1, 10, 100];
+        let locals_per_group = [10, 100];
+        for len_single in len_single {
+            for len_groups in len_groups {
+                for locals_per_group in locals_per_group {
+                    locals.reset();
+                    let len_locals = len_single + (len_groups * locals_per_group);
+                    for i in 0..len_single {
+                        locals.register(1, ValType::I32).unwrap();
+                    }
+                    for i in 0..len_groups {
+                        locals.register(locals_per_group, ValType::I64).unwrap();
+                    }
+                    for i in 0..len_locals {
+                        let ty = match i < len_single {
+                            true => ValType::I32,
+                            false => ValType::I64,
+                        };
+                        assert_eq!(locals.ty(LocalIdx(i)), Some(ty));
+                    }
+                }
+            }
         }
     }
 }
