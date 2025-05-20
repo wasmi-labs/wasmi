@@ -394,7 +394,6 @@ impl Stack {
     /// # Panics
     ///
     /// If the `index` is out of bounds.
-    #[must_use]
     pub fn operand_to_reg(&mut self, depth: usize) -> Result<Reg, Error> {
         self.phase.assert_translation();
         let len = self.height();
@@ -417,7 +416,6 @@ impl Stack {
     /// # Errors
     ///
     /// If too many function local constants have been allocated already.
-    #[must_use]
     pub fn const_to_reg(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
         self.phase.assert_translation();
         self.consts.alloc(value.into())
@@ -428,7 +426,6 @@ impl Stack {
     /// # Errors
     ///
     /// If `index` cannot be converted into a [`Reg`].
-    #[must_use]
     fn local_to_reg(&self, index: LocalIdx) -> Result<Reg, Error> {
         self.phase.assert_translation();
         let Ok(index) = i16::try_from(u32::from(index)) else {
@@ -442,7 +439,6 @@ impl Stack {
     /// # Errors
     ///
     /// If `index` cannot be converted into a [`StackSlot`].
-    #[must_use]
     pub fn temp_to_reg(&self, index: OperandIdx) -> Result<Reg, Error> {
         self.phase.assert_translation();
         let index = usize::from(index);
