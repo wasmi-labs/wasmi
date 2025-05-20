@@ -124,7 +124,6 @@ impl Stack {
     ///
     /// # Errors
     ///
-    /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
     pub fn push_local(&mut self, local_index: LocalIdx) -> Result<OperandIdx, Error> {
@@ -148,8 +147,7 @@ impl Stack {
     ///
     /// # Errors
     ///
-    /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
-    /// - If too many operands have been pushed onto the [`Stack`].
+    /// If too many operands have been pushed onto the [`Stack`].
     pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
         let operand_index = self.next_operand_idx();
         self.operands.push(StackOperand::Temp { ty, instr });
@@ -161,8 +159,7 @@ impl Stack {
     ///
     /// # Errors
     ///
-    /// - If the current [`StackPhase`] is not [`StackPhase::Translation`].
-    /// - If too many operands have been pushed onto the [`Stack`].
+    /// If too many operands have been pushed onto the [`Stack`].
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
         let operand_index = self.next_operand_idx();
         self.operands
