@@ -521,7 +521,7 @@ pub struct OperandIdx(NonZero<usize>);
 
 impl From<OperandIdx> for usize {
     fn from(value: OperandIdx) -> Self {
-        value.0.get()
+        value.0.get().wrapping_sub(1)
     }
 }
 
