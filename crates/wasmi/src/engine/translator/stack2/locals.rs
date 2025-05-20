@@ -127,11 +127,17 @@ impl LocalsRegistry {
     }
 
     /// Returns the type of the local variable at `index` if any.
-    pub fn ty(&self, index: LocalIdx) -> Option<ValType> {
+    ///
+    /// # Panics
+    ///
+    /// If `index` is out of bounds and does not refer to a local in `self`.
+    pub fn ty(&self, index: LocalIdx) -> ValType {
         let index_sz = Self::local_idx_to_index(index);
         match self.tys_first.get(index_sz) {
-            Some(ty) => Some(*ty),
-            None => self.ty_slow(index),
+            Some(ty) => *ty,
+            None => self
+                .ty_slow(index)
+                .unwrap_or_else(|| panic!("out of bounds local index: {index:?}")),
         }
     }
 
@@ -195,10 +201,7 @@ mod tests {
             let locals_per_type = locals_per_type as usize;
             assert_eq!(locals.len(), locals_per_type * tys.len());
             for i in 0..locals.len() {
-                assert_eq!(
-                    locals.ty(LocalIdx(i as u32)),
-                    Some(tys[i / locals_per_type])
-                );
+                assert_eq!(locals.ty(LocalIdx(i as u32)), tys[i / locals_per_type]);
             }
         }
     }
@@ -225,7 +228,7 @@ mod tests {
                             true => ValType::I32,
                             false => ValType::I64,
                         };
-                        assert_eq!(locals.ty(LocalIdx(i)), Some(ty));
+                        assert_eq!(locals.ty(LocalIdx(i)), ty);
                     }
                 }
             }
