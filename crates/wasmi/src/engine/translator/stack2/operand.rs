@@ -127,7 +127,7 @@ pub struct TempOperand {
     operand_index: OperandIdx,
     /// The type of the temporary.
     ty: ValType,
-    /// The instruction which created this [`TempOperand`] as its result.
+    /// The instruction which created this [`TempOperand`] as its result if any.
     instr: Option<Instr>,
 }
 
@@ -140,6 +140,11 @@ impl TempOperand {
     /// Returns the type of the [`TempOperand`].
     pub fn ty(self) -> ValType {
         self.ty
+    }
+
+    /// Returns the instruction whcih created this [`TempOperand`] as its result if any.
+    pub fn instr(&self) -> Option<Instr> {
+        self.instr
     }
 }
 
