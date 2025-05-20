@@ -50,15 +50,6 @@ impl Stack {
         Ok(())
     }
 
-    /// Finish translation of the function body.
-    ///
-    /// # Errors
-    ///
-    /// If the current [`StackPhase`] is not [`StackPhase::Translation`].
-    pub fn finish_translation(&mut self) -> Result<(), Error> {
-        Ok(())
-    }
-
     /// Returns the current height of the [`Stack`].
     ///
     /// # Note
