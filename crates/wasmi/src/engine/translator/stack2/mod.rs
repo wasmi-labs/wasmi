@@ -1,4 +1,4 @@
-#![expect(unused_variables, dead_code)]
+#![expect(dead_code)]
 
 mod consts;
 mod locals;
@@ -380,7 +380,7 @@ impl Stack {
                 Operand::local(operand_index, local_index, &self.locals)
             }
             StackOperand::Immediate { val } => Operand::immediate(operand_index, val),
-            StackOperand::Temp { ty, instr } => return None,
+            StackOperand::Temp { .. } => return None,
         };
         self.operands[index] = StackOperand::Temp {
             ty: operand.ty(),
