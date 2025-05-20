@@ -452,7 +452,7 @@ impl Stack {
     ///
     /// # Errors
     ///
-    /// If `index` cannot be converted into a [`StackSlot`].
+    /// If `index` cannot be converted into a [`Reg`].
     pub fn temp_to_reg(&self, index: OperandIdx) -> Result<Reg, Error> {
         self.phase.assert_translation();
         let index = usize::from(index);
