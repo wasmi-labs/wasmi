@@ -28,7 +28,7 @@ pub struct Stack {
     /// All function local constants.
     consts: ConstRegistry,
     /// The index of the first [`StackOperand::Local`] on the [`Stack`].
-    max_stack_height: usize,
+    max_height: usize,
     /// The current phase of the [`Stack`].
     phase: StackPhase,
 }
@@ -95,7 +95,7 @@ impl Stack {
         self.operands.clear();
         self.locals.reset();
         self.consts.reset();
-        self.max_stack_height = 0;
+        self.max_height = 0;
         self.phase = StackPhase::DefineLocals;
     }
 
@@ -130,9 +130,22 @@ impl Stack {
         Ok(())
     }
 
-    /// Returns the current number of [`Operand`]s on the [`Stack`].
+    /// Returns the current height of the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// The height is equal to the number of [`Operand`]s on the [`Stack`].
     pub fn height(&self) -> usize {
         self.operands.len()
+    }
+
+    /// Returns the maximum height of the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// The height is equal to the number of [`Operand`]s on the [`Stack`].
+    pub fn max_height(&self) -> usize {
+        self.max_height
     }
 
     /// Truncates `self` to the target `height`.
@@ -149,7 +162,7 @@ impl Stack {
 
     /// Updates the maximum stack height if needed.
     fn update_max_stack_height(&mut self) {
-        self.max_stack_height = core::cmp::max(self.max_stack_height, self.height());
+        self.max_height = core::cmp::max(self.max_height, self.height());
     }
 
     /// Returns the [`OperandIdx`] of the next pushed operand.
