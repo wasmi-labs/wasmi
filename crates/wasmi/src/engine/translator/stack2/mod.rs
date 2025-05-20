@@ -252,9 +252,7 @@ impl Stack {
     /// If the local at `local_index` is out of bounds.
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter {
-        let Some(ty) = self.locals.ty(local_index) else {
-            panic!("out of bounds local at: {local_index:?}")
-        };
+        let ty = self.locals.ty(local_index);
         let index = self.locals.first_operand(local_index);
         PreservedLocalsIter {
             stack: self,

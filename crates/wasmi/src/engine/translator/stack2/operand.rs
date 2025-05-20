@@ -34,9 +34,7 @@ impl Operand {
         local_index: LocalIdx,
         locals: &LocalsRegistry,
     ) -> Self {
-        let Some(ty) = locals.ty(local_index) else {
-            panic!("failed to query type of local at: {local_index:?}");
-        };
+        let ty = locals.ty(local_index);
         Self::Local(LocalOperand {
             operand_index,
             local_index,
