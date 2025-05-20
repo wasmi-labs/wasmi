@@ -214,10 +214,10 @@ mod tests {
                 for locals_per_group in locals_per_group {
                     locals.reset();
                     let len_locals = len_single + (len_groups * locals_per_group);
-                    for i in 0..len_single {
+                    for _ in 0..len_single {
                         locals.register(1, ValType::I32).unwrap();
                     }
-                    for i in 0..len_groups {
+                    for _ in 0..len_groups {
                         locals.register(locals_per_group, ValType::I64).unwrap();
                     }
                     for i in 0..len_locals {
