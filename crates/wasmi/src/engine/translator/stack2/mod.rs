@@ -253,7 +253,7 @@ impl Stack {
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter {
         let ty = self.locals.ty(local_index);
-        let index = self.locals.first_operand(local_index);
+        let index = self.locals.replace_first_operand(local_index, None);
         let operands = &mut self.operands[..];
         PreservedLocalsIter {
             operands,
