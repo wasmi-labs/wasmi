@@ -97,17 +97,6 @@ impl LocalsRegistry {
         self.first_operands[Self::local_idx_to_index(index)]
     }
 
-    /// Takes the first operand for this local from the stack if any.
-    ///
-    /// # Panics
-    ///
-    /// If `index` is out of bounds.
-    pub fn take_first_operand(&mut self, index: LocalIdx) -> Option<OperandIdx> {
-        let index = Self::local_idx_to_index(index);
-        let cell = &mut self.first_operands[index];
-        cell.take()
-    }
-
     /// Replaces the first operand for this local on the stack and returns the old one.
     ///
     /// # Panics
