@@ -254,8 +254,9 @@ impl Stack {
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter {
         let ty = self.locals.ty(local_index);
         let index = self.locals.first_operand(local_index);
+        let operands = &mut self.operands[..];
         PreservedLocalsIter {
-            stack: self,
+            operands,
             index,
             ty,
         }
@@ -372,9 +373,9 @@ impl Stack {
 
 /// Iterator yielding preserved local indices while preserving them.
 #[derive(Debug)]
-pub struct PreservedLocalsIter<'a> {
+pub struct PreservedLocalsIter<'stack> {
     /// The underlying operand stack.
-    stack: &'a mut Stack,
+    operands: &'stack mut [StackOperand],
     /// The current operand index of the next preserved local if any.
     index: Option<OperandIdx>,
     /// Type of local at preserved `local_index`.
@@ -387,7 +388,7 @@ impl Iterator for PreservedLocalsIter<'_> {
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index?;
         let operand = mem::replace(
-            &mut self.stack.operands[usize::from(index)],
+            &mut self.operands[usize::from(index)],
             StackOperand::Temp {
                 ty: self.ty,
                 instr: None,
