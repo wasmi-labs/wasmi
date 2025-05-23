@@ -25,7 +25,7 @@ pub struct Stack {
     locals: LocalsRegistry,
     /// All function local constants.
     consts: ConstRegistry,
-    /// The index of the first [`StackOperand::Local`] on the [`Stack`].
+    /// The maximim number of operands on the [`Stack`] at the same time.
     max_height: usize,
 }
 
