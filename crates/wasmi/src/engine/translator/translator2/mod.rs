@@ -1,4 +1,4 @@
-#![expect(dead_code)]
+#![expect(dead_code, unused_imports, unused_variables)]
 
 #[cfg(feature = "simd")]
 mod simd;
