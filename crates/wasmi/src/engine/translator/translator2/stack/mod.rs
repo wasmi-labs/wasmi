@@ -1,5 +1,3 @@
-#![expect(dead_code)]
-
 mod consts;
 mod locals;
 mod operand;
