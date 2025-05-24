@@ -1,10 +1,23 @@
 mod consts;
+mod control;
 mod locals;
 mod operand;
 
 pub use self::operand::Operand;
 use self::{
     consts::ConstRegistry,
+    control::{
+        BlockControlFrame,
+        ControlFrame,
+        ControlFrameKind,
+        ControlStack,
+        ElseControlFrame,
+        ElseReachability,
+        IfControlFrame,
+        IfReachability,
+        LoopControlFrame,
+        UnreachableControlFrame,
+    },
     locals::{LocalIdx, LocalsRegistry},
 };
 use crate::{
@@ -31,6 +44,8 @@ pub struct Stack {
     locals: LocalsRegistry,
     /// All function local constants.
     consts: ConstRegistry,
+    /// The Wasm control stack.
+    controls: ControlStack,
     /// The maximim number of operands on the [`Stack`] at the same time.
     max_height: usize,
 }
@@ -41,6 +56,7 @@ impl Stack {
         self.operands.clear();
         self.locals.reset();
         self.consts.reset();
+        self.controls.reset();
         self.max_height = 0;
     }
 
