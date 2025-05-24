@@ -25,7 +25,7 @@ trait Reset {
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default)]
 pub struct Stack {
-    /// The stack of operands.
+    /// The Wasm value stack.
     operands: Vec<StackOperand>,
     /// All function locals and their associated types.
     locals: LocalsRegistry,
@@ -90,8 +90,13 @@ impl Stack {
     }
 
     /// Returns the [`OperandIdx`] of the next pushed operand.
-    fn next_operand_idx(&self) -> OperandIdx {
+    fn next_operand_index(&self) -> OperandIdx {
         OperandIdx::from(self.operands.len())
+    }
+
+    /// Returns the [`OperandIdx`] of the operand at `depth`.
+    fn operand_index(&self, depth: usize) -> OperandIdx {
+        OperandIdx::from(self.height() - depth - 1)
     }
 
     /// Updates the `prev_local` of the [`StackOperand::Local`] at `local_index` to `prev_index`.
@@ -101,8 +106,8 @@ impl Stack {
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
     fn update_prev_local(&mut self, local_index: OperandIdx, prev_index: Option<OperandIdx>) {
-        match self.operands.get_mut(usize::from(local_index)) {
-            Some(StackOperand::Local { prev_local, .. }) => {
+        match self.get_mut_at(local_index) {
+            StackOperand::Local { prev_local, .. } => {
                 *prev_local = prev_index;
             }
             operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
@@ -116,8 +121,8 @@ impl Stack {
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
     fn update_next_local(&mut self, local_index: OperandIdx, prev_index: Option<OperandIdx>) {
-        match self.operands.get_mut(usize::from(local_index)) {
-            Some(StackOperand::Local { next_local, .. }) => {
+        match self.get_mut_at(local_index) {
+            StackOperand::Local { next_local, .. } => {
                 *next_local = prev_index;
             }
             operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
@@ -131,7 +136,7 @@ impl Stack {
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
     pub fn push_local(&mut self, local_index: LocalIdx) -> Result<OperandIdx, Error> {
-        let operand_index = self.next_operand_idx();
+        let operand_index = self.next_operand_index();
         let next_local = self
             .locals
             .replace_first_operand(local_index, Some(operand_index));
@@ -153,7 +158,7 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
-        let operand_index = self.next_operand_idx();
+        let operand_index = self.next_operand_index();
         self.operands.push(StackOperand::Temp { ty, instr });
         self.update_max_stack_height();
         Ok(operand_index)
@@ -165,7 +170,7 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
-        let operand_index = self.next_operand_idx();
+        let operand_index = self.next_operand_index();
         self.operands
             .push(StackOperand::Immediate { val: value.into() });
         self.update_max_stack_height();
@@ -175,10 +180,10 @@ impl Stack {
     /// Peeks the top-most [`Operand`] on the [`Stack`].
     ///
     /// Returns `None` if the [`Stack`] is empty.
-    pub fn peek(&self) -> Option<Operand> {
-        let operand = self.operands.last().copied()?;
-        let index = OperandIdx::from(self.operands.len() - 1);
-        Some(Operand::new(index, operand, &self.locals))
+    pub fn peek(&self) -> Operand {
+        let index = self.operand_index(0);
+        let operand = self.get_at(index);
+        Operand::new(index, operand, &self.locals)
     }
 
     /// Pops the top-most [`Operand`] from the [`Stack`].
@@ -266,6 +271,33 @@ impl Stack {
         }
     }
 
+    /// Returns the [`StackOperand`] at `index`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    fn get_at(&self, index: OperandIdx) -> StackOperand {
+        self.operands[usize::from(index)]
+    }
+
+    /// Returns an exlusive reference to the [`StackOperand`] at `index`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    fn get_mut_at(&mut self, index: OperandIdx) -> &mut StackOperand {
+        &mut self.operands[usize::from(index)]
+    }
+
+    /// Sets the [`StackOperand`] at `index` to `operand`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    fn set_at(&mut self, index: OperandIdx, operand: StackOperand) {
+        self.operands[usize::from(index)] = operand;
+    }
+
     /// Converts and returns the [`StackOperand`] at `depth` into a [`StackOperand::Temp`].
     ///
     /// # Note
@@ -277,15 +309,8 @@ impl Stack {
     /// - If `depth` is out of bounds for the [`Stack`] of operands.
     #[must_use]
     pub fn operand_to_temp(&mut self, depth: usize) -> Option<Operand> {
-        let len = self.height();
-        if depth >= len {
-            panic!(
-                "out of bounds access: tried to access `Stack` with length {len} at depth {depth}"
-            );
-        }
-        let index = len - depth - 1;
-        let operand_index = OperandIdx::from(index);
-        let operand = match self.operands[index] {
+        let index = self.operand_index(depth);
+        let operand = match self.get_at(index) {
             StackOperand::Local {
                 local_index,
                 prev_local,
@@ -294,7 +319,7 @@ impl Stack {
                 if prev_local.is_none() {
                     // Note: if `prev_local` is `None` then this local is the first
                     //       in the linked list of locals and must be updated.
-                    debug_assert_eq!(self.locals.first_operand(local_index), Some(operand_index));
+                    debug_assert_eq!(self.locals.first_operand(local_index), Some(index));
                     self.locals.replace_first_operand(local_index, next_local);
                 }
                 if let Some(prev_local) = prev_local {
@@ -303,15 +328,18 @@ impl Stack {
                 if let Some(next_local) = next_local {
                     self.update_prev_local(next_local, prev_local);
                 }
-                Operand::local(operand_index, local_index, &self.locals)
+                Operand::local(index, local_index, &self.locals)
             }
-            StackOperand::Immediate { val } => Operand::immediate(operand_index, val),
+            StackOperand::Immediate { val } => Operand::immediate(index, val),
             StackOperand::Temp { .. } => return None,
         };
-        self.operands[index] = StackOperand::Temp {
-            ty: operand.ty(),
-            instr: None,
-        };
+        self.set_at(
+            index,
+            StackOperand::Temp {
+                ty: operand.ty(),
+                instr: None,
+            },
+        );
         Some(operand)
     }
 
@@ -321,17 +349,10 @@ impl Stack {
     ///
     /// If the `index` is out of bounds.
     pub fn operand_to_reg(&mut self, depth: usize) -> Result<Reg, Error> {
-        let len = self.height();
-        if depth >= len {
-            panic!(
-                "out of bounds access: tried to access `Stack` with length {len} at depth {depth}"
-            );
-        }
-        let index = len - depth - 1;
-        let operand = self.operands[index];
-        match operand {
+        let index = self.operand_index(depth);
+        match self.get_at(index) {
             StackOperand::Local { local_index, .. } => self.local_to_reg(local_index),
-            StackOperand::Temp { .. } => self.temp_to_reg(OperandIdx::from(index)),
+            StackOperand::Temp { .. } => self.temp_to_reg(index),
             StackOperand::Immediate { val } => self.const_to_reg(val),
         }
     }
@@ -350,7 +371,7 @@ impl Stack {
     /// # Errors
     ///
     /// If `index` cannot be converted into a [`Reg`].
-    fn local_to_reg(&self, index: LocalIdx) -> Result<Reg, Error> {
+    pub fn local_to_reg(&self, index: LocalIdx) -> Result<Reg, Error> {
         let Ok(index) = i16::try_from(u32::from(index)) else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
