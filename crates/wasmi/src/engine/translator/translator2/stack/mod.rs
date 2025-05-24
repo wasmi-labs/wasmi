@@ -16,6 +16,12 @@ use crate::{
 use alloc::vec::Vec;
 use core::{array, mem, num::NonZero};
 
+/// Implemented by types that can be reset for reuse.
+trait Reset {
+    /// Resets `self` for reuse.
+    fn reset(&mut self);
+}
+
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default)]
 pub struct Stack {

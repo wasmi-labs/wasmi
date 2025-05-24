@@ -1,4 +1,4 @@
-use super::OperandIdx;
+use super::{OperandIdx, Reset};
 use crate::{core::ValType, engine::TranslationError, Error};
 use alloc::vec::Vec;
 use core::{cmp, iter};
@@ -30,14 +30,15 @@ pub struct LocalsRegistry {
     first_operands: Vec<Option<OperandIdx>>,
 }
 
-impl LocalsRegistry {
-    /// Resets `self` for reuse.
-    pub fn reset(&mut self) {
+impl Reset for LocalsRegistry {
+    fn reset(&mut self) {
         self.tys_first.clear();
         self.tys_remaining.clear();
         self.first_operands.clear();
     }
+}
 
+impl LocalsRegistry {
     /// Returns the number of registered local variables in `self`.
     pub fn len(&self) -> usize {
         self.first_operands.len()
