@@ -1,3 +1,4 @@
+use super::Reset;
 use crate::{core::UntypedVal, engine::TranslationError, ir::Reg, Error};
 use alloc::{
     collections::{btree_map, BTreeMap},
@@ -23,14 +24,15 @@ pub struct ConstRegistry {
     next_idx: i16,
 }
 
-impl ConstRegistry {
-    /// Resets the [`ConstRegistry`] data structure.
-    pub fn reset(&mut self) {
+impl Reset for ConstRegistry {
+    fn reset(&mut self) {
         self.const2idx.clear();
         self.idx2const.clear();
         self.next_idx = Self::first_index();
     }
+}
 
+impl ConstRegistry {
     /// The maximum index for [`Reg`] referring to function local constant values.
     ///
     /// # Note
