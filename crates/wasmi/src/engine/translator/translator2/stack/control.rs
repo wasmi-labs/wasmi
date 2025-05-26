@@ -144,13 +144,27 @@ impl ControlStack {
     }
 
     /// Returns a shared reference to the [`ControlFrame`] at `depth` if any.
-    pub fn get(&self, depth: u32) -> Option<&ControlFrame> {
-        self.frames.iter().rev().nth(depth as usize)
+    pub fn get(&self, depth: u32) -> &ControlFrame {
+        let height = self.height();
+        self.frames
+            .iter()
+            .rev()
+            .nth(depth as usize)
+            .unwrap_or_else(|| {
+                panic!("out of bounds control frame at depth (={depth}) for stack of height (={height})")
+            })
     }
 
     /// Returns an exclusive reference to the [`ControlFrame`] at `depth` if any.
-    pub fn get_mut(&mut self, depth: u32) -> Option<&mut ControlFrame> {
-        self.frames.iter_mut().rev().nth(depth as usize)
+    pub fn get_mut(&mut self, depth: u32) -> &mut ControlFrame {
+        let height = self.height();
+        self.frames
+            .iter_mut()
+            .rev()
+            .nth(depth as usize)
+            .unwrap_or_else(|| {
+                panic!("out of bounds control frame at depth (={depth}) for stack of height (={height})")
+            })
     }
 }
 
@@ -178,9 +192,7 @@ impl ControlStack {
     pub fn acquire_target(&mut self, depth: u32) -> AcquiredTarget {
         let is_root = self.is_root(depth);
         let height = self.height();
-        let Some(frame) = self.get_mut(depth) else {
-            panic!("out of bounds `depth` (={depth}) for `ControlStack` with a height of {height}")
-        };
+        let frame = self.get_mut(depth);
         if is_root {
             AcquiredTarget::Return(frame)
         } else {
