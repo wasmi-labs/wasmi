@@ -143,6 +143,11 @@ impl ControlStack {
             .unwrap_or_else(|| panic!("missing operands for `else` control frame"))
     }
 
+    /// Pops the top-most [`ControlFrame`] and returns it if any.
+    pub fn pop(&mut self) -> Option<ControlFrame> {
+        self.frames.pop()
+    }
+
     /// Returns a shared reference to the [`ControlFrame`] at `depth` if any.
     pub fn get(&self, depth: u32) -> &ControlFrame {
         let height = self.height();
