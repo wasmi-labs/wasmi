@@ -1,9 +1,9 @@
 mod consts;
 mod control;
+mod layout;
 mod locals;
 mod operand;
 
-pub use self::operand::Operand;
 use self::{
     consts::ConstRegistry,
     control::{
@@ -19,6 +19,10 @@ use self::{
         UnreachableControlFrame,
     },
     locals::{LocalIdx, LocalsRegistry},
+};
+pub use self::{
+    layout::{StackLayout, StackSpace},
+    operand::Operand,
 };
 use crate::{
     core::{TypedVal, UntypedVal, ValType},
@@ -247,22 +251,6 @@ impl Stack {
         Some(popped)
     }
 
-    /// Returns the [`RegSpace`] of the [`Reg`].
-    ///
-    /// Returns `None` if the [`Reg`] is unknown to the [`Stack`].
-    #[must_use]
-    pub fn stack_space(&self, reg: Reg) -> RegSpace {
-        let index = i16::from(reg);
-        if index.is_negative() {
-            return RegSpace::Const;
-        }
-        let index = index as u16;
-        if usize::from(index) < self.locals.len() {
-            return RegSpace::Local;
-        }
-        RegSpace::Temp
-    }
-
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
     ///
     /// This is done by converting those locals to [`StackOperand::Temp`] and yielding them.
@@ -364,51 +352,13 @@ impl Stack {
     /// # Panics
     ///
     /// If the `index` is out of bounds.
-    pub fn operand_to_reg(&mut self, depth: usize) -> Result<Reg, Error> {
+    pub fn operand_to_reg(&mut self, depth: usize, layout: &mut StackLayout) -> Result<Reg, Error> {
         let index = self.operand_index(depth);
         match self.get_at(index) {
-            StackOperand::Local { local_index, .. } => self.local_to_reg(local_index),
-            StackOperand::Temp { .. } => self.temp_to_reg(index),
-            StackOperand::Immediate { val } => self.const_to_reg(val),
+            StackOperand::Local { local_index, .. } => layout.local_to_reg(local_index),
+            StackOperand::Temp { .. } => layout.temp_to_reg(index),
+            StackOperand::Immediate { val } => layout.const_to_reg(val),
         }
-    }
-
-    /// Allocates a function local constant `value`.
-    ///
-    /// # Errors
-    ///
-    /// If too many function local constants have been allocated already.
-    pub fn const_to_reg(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
-        self.consts.alloc(value.into())
-    }
-
-    /// Converts the local `index` into the associated [`Reg`].
-    ///
-    /// # Errors
-    ///
-    /// If `index` cannot be converted into a [`Reg`].
-    pub fn local_to_reg(&self, index: LocalIdx) -> Result<Reg, Error> {
-        let Ok(index) = i16::try_from(u32::from(index)) else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
-        };
-        Ok(Reg::from(index))
-    }
-
-    /// Converts the [`Operand::Temp`] `index` into the associated [`Reg`].
-    ///
-    /// # Errors
-    ///
-    /// If `index` cannot be converted into a [`Reg`].
-    pub fn temp_to_reg(&self, index: OperandIdx) -> Result<Reg, Error> {
-        let index = usize::from(index);
-        debug_assert!(matches!(&self.operands[index], StackOperand::Temp { .. },));
-        let Some(index) = index.checked_add(self.locals.len()) else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
-        };
-        let Ok(index) = i16::try_from(index) else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
-        };
-        Ok(Reg::from(index))
     }
 }
 
@@ -440,37 +390,6 @@ impl Iterator for PreservedLocalsIter<'_> {
             operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
         };
         Some(index)
-    }
-}
-
-/// The [`RegSpace`] of a [`Reg`].
-#[derive(Debug, Copy, Clone)]
-pub enum RegSpace {
-    /// Stack slot referring to a local variable.
-    Local,
-    /// Stack slot referring to a function local constant value.
-    Const,
-    /// Stack slot referring to a temporary stack operand.
-    Temp,
-}
-
-impl RegSpace {
-    /// Returns `true` if `self` is [`RegSpace::Local`].
-    #[inline]
-    pub fn is_local(self) -> bool {
-        matches!(self, Self::Local)
-    }
-
-    /// Returns `true` if `self` is [`RegSpace::Temp`].
-    #[inline]
-    pub fn is_temp(self) -> bool {
-        matches!(self, Self::Temp)
-    }
-
-    /// Returns `true` if `self` is [`RegSpace::Const`].
-    #[inline]
-    pub fn is_const(self) -> bool {
-        matches!(self, Self::Const)
     }
 }
 
