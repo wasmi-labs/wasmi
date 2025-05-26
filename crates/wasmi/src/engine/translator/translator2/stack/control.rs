@@ -64,7 +64,12 @@ impl ControlStack {
     }
 
     /// Pushes a new unreachable Wasm control frame onto the [`ControlStack`].
-    pub fn push_unreachable(&mut self, ty: BlockType, height: u32, kind: UnreachableControlFrame) {
+    pub fn push_unreachable(
+        &mut self,
+        ty: BlockType,
+        height: usize,
+        kind: UnreachableControlFrame,
+    ) {
         self.frames
             .push(ControlFrame::new_unreachable(ty, height, kind))
     }
@@ -73,7 +78,7 @@ impl ControlStack {
     pub fn push_block(
         &mut self,
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
@@ -85,7 +90,7 @@ impl ControlStack {
     pub fn push_loop(
         &mut self,
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
@@ -97,7 +102,7 @@ impl ControlStack {
     pub fn push_if(
         &mut self,
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
@@ -119,7 +124,7 @@ impl ControlStack {
     pub fn push_else(
         &mut self,
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
         reachability: ElseReachability,
@@ -198,7 +203,7 @@ pub struct ControlFrame {
     /// The block type of the [`ControlFrame`].
     ty: BlockType,
     /// The value stack height upon entering the [`ControlFrame`].
-    height: u32,
+    height: usize,
     /// The number of branches to the [`ControlFrame`].
     len_branches: usize,
     /// The [`ControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
@@ -213,7 +218,7 @@ pub struct ControlFrame {
 
 impl ControlFrame {
     /// Creates a new unreachable [`ControlFrame`] of `kind`.
-    pub fn new_unreachable(ty: BlockType, height: u32, kind: UnreachableControlFrame) -> Self {
+    pub fn new_unreachable(ty: BlockType, height: usize, kind: UnreachableControlFrame) -> Self {
         Self {
             ty,
             height,
@@ -226,7 +231,7 @@ impl ControlFrame {
     /// Creates a new Wasm `block` [`ControlFrame`].
     pub fn new_block(
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) -> Self {
@@ -242,7 +247,7 @@ impl ControlFrame {
     /// Creates a new Wasm `loop` [`ControlFrame`].
     pub fn new_loop(
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) -> Self {
@@ -258,7 +263,7 @@ impl ControlFrame {
     /// Creates a new Wasm `if` [`ControlFrame`].
     pub fn new_if(
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
@@ -278,7 +283,7 @@ impl ControlFrame {
     /// Creates a new Wasm `else` [`ControlFrame`].
     pub fn new_else(
         ty: BlockType,
-        height: u32,
+        height: usize,
         label: LabelRef,
         consume_fuel: Option<Instr>,
         reachability: ElseReachability,
@@ -298,7 +303,7 @@ impl ControlFrame {
     }
 
     /// Returns the stack height of the [`ControlFrame`].
-    pub fn height(&self) -> u32 {
+    pub fn height(&self) -> usize {
         self.height
     }
 
