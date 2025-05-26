@@ -308,14 +308,14 @@ impl Stack {
     }
 
     /// Pops the top-most control frame from the control stack and returns it.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If the control stack is empty.
-    pub fn pop_control(
-        &mut self,
-    ) -> ControlFrame {
-        self.controls.pop().unwrap_or_else(|| panic!("tried to pop control from empty control stack"))
+    pub fn pop_control(&mut self) -> ControlFrame {
+        self.controls
+            .pop()
+            .unwrap_or_else(|| panic!("tried to pop control from empty control stack"))
     }
 
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
