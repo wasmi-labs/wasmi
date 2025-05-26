@@ -26,8 +26,13 @@ pub use self::{
 };
 use crate::{
     core::{TypedVal, UntypedVal, ValType},
-    engine::{Instr, TranslationError},
+    engine::{
+        translator::{BlockType, LabelRef},
+        Instr,
+        TranslationError,
+    },
     ir::Reg,
+    Engine,
     Error,
 };
 use alloc::vec::Vec;
@@ -42,6 +47,8 @@ trait Reset {
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default)]
 pub struct Stack {
+    /// The underlying [`Engine`].
+    engine: Engine,
     /// The Wasm value stack.
     operands: Vec<StackOperand>,
     /// All function locals and their associated types.
@@ -147,6 +154,168 @@ impl Stack {
             }
             operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
         }
+    }
+
+    /// Pushes a Wasm `block` onto the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// If `consume_fuel` is `None` and fuel metering is enabled this will infer
+    /// the [`Instruction::ConsumeFuel`] from the last control frame on the [`Stack`].
+    ///
+    /// # Errors
+    ///
+    /// If the stack height exceeds the maximum height.
+    pub fn push_block(
+        &mut self,
+        ty: BlockType,
+        label: LabelRef,
+        consume_fuel: Option<Instr>,
+    ) -> Result<(), Error> {
+        let len_params = usize::from(ty.len_params(&self.engine));
+        let block_height = self.height() - len_params;
+        let fuel_metering = self.engine.config().get_consume_fuel();
+        let consume_fuel = match consume_fuel {
+            None if fuel_metering => {
+                let consume_instr = self
+                    .controls
+                    .get(0)
+                    .consume_fuel_instr()
+                    .expect("control frame must have consume instructions");
+                Some(consume_instr)
+            }
+            consume_fuel => consume_fuel,
+        };
+        self.controls
+            .push_block(ty, block_height, label, consume_fuel);
+        Ok(())
+    }
+
+    /// Pushes a Wasm `loop` onto the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// Calls `f` for every non [`StackOperand::Temp`] operand on the [`Stack`]
+    /// that is also a parameter to the pushed Wasm `loop` control frame.
+    ///
+    /// # Panics (debug)
+    ///
+    /// If `consume_fuel` is `None` and fuel metering is enabled.
+    ///
+    /// # Errors
+    ///
+    /// If the stack height exceeds the maximum height.
+    pub fn push_loop(
+        &mut self,
+        ty: BlockType,
+        label: LabelRef,
+        consume_fuel: Option<Instr>,
+        mut f: impl FnMut(Operand) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        debug_assert!(self.engine.config().get_consume_fuel() == consume_fuel.is_some());
+        let len_params = usize::from(ty.len_params(&self.engine));
+        let block_height = self.height() - len_params;
+        for depth in 0..block_height {
+            if let Some(operand) = self.operand_to_temp(depth) {
+                f(operand)?;
+            }
+        }
+        self.controls
+            .push_loop(ty, block_height, label, consume_fuel);
+        Ok(())
+    }
+
+    /// Pushes a Wasm `if` onto the [`Stack`].
+    ///
+    /// # Panics (debug)
+    ///
+    /// If `consume_fuel` is `None` and fuel metering is enabled.
+    ///
+    /// # Errors
+    ///
+    /// If the stack height exceeds the maximum height.
+    pub fn push_if(
+        &mut self,
+        ty: BlockType,
+        label: LabelRef,
+        reachability: IfReachability,
+        consume_fuel: Option<Instr>,
+    ) -> Result<(), Error> {
+        debug_assert!(self.engine.config().get_consume_fuel() == consume_fuel.is_some());
+        let len_params = usize::from(ty.len_params(&self.engine));
+        let block_height = self.height() - len_params;
+        let else_operands = self.operands.get(block_height..).unwrap_or(&[]);
+        debug_assert!(len_params == else_operands.len());
+        self.controls.push_if(
+            ty,
+            block_height,
+            label,
+            consume_fuel,
+            reachability,
+            else_operands,
+        );
+        Ok(())
+    }
+
+    /// Pushes a Wasm `else` onto the [`Stack`].
+    ///
+    /// # Panics (debug)
+    ///
+    /// If `consume_fuel` is `None` and fuel metering is enabled.
+    ///
+    /// # Errors
+    ///
+    /// If the stack height exceeds the maximum height.
+    pub fn push_else(
+        &mut self,
+        ty: BlockType,
+        label: LabelRef,
+        reachability: ElseReachability,
+        is_end_of_then_reachable: bool,
+        consume_fuel: Option<Instr>,
+    ) -> Result<(), Error> {
+        debug_assert!(self.engine.config().get_consume_fuel() == consume_fuel.is_some());
+        let len_params = usize::from(ty.len_params(&self.engine));
+        let block_height = self.height() - len_params;
+        let else_operands = self.controls.push_else(
+            ty,
+            block_height,
+            label,
+            consume_fuel,
+            reachability,
+            is_end_of_then_reachable,
+        );
+        for operand in else_operands {
+            // TODO: push `operand` to stack, resolve borrow issues
+        }
+        Ok(())
+    }
+
+    /// Pushes an unreachable Wasm control onto the [`Stack`].
+    ///
+    /// # Errors
+    ///
+    /// If the stack height exceeds the maximum height.
+    pub fn push_unreachable(
+        &mut self,
+        ty: BlockType,
+        kind: UnreachableControlFrame,
+    ) -> Result<(), Error> {
+        let len_params = usize::from(ty.len_params(&self.engine));
+        let block_height = self.height() - len_params;
+        self.controls.push_unreachable(ty, block_height, kind);
+        Ok(())
+    }
+
+    /// Pops the top-most control frame from the control stack and returns it.
+    /// 
+    /// # Panics
+    /// 
+    /// If the control stack is empty.
+    pub fn pop_control(
+        &mut self,
+    ) -> ControlFrame {
+        self.controls.pop().unwrap_or_else(|| panic!("tried to pop control from empty control stack"))
     }
 
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
