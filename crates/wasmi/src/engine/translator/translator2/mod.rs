@@ -5,7 +5,7 @@ mod simd;
 mod stack;
 mod visit;
 
-use self::stack::{Operand, OperandIdx, Stack};
+use self::stack::{Operand, OperandIdx, Stack, StackLayout};
 use crate::{
     core::FuelCostsProvider,
     engine::{translator::WasmTranslator, CompiledFuncEntity},
@@ -44,13 +44,19 @@ pub struct FuncTranslator {
     ///
     /// `None` if fuel metering is disabled.
     fuel_costs: Option<FuelCostsProvider>,
-    /// The reusable data structures of the [`FuncTranslator`].
-    alloc: FuncTranslatorAllocations,
+    /// Wasm value and control stack.
+    stack: Stack,
+    /// Wasm layout to map stack slots to Wasmi registers.
+    layout: StackLayout,
 }
 
+/// Heap allocated data structured used by the [`FuncTranslator`].
 #[derive(Debug, Default)]
 pub struct FuncTranslatorAllocations {
+    /// Wasm value and control stack.
     stack: Stack,
+    /// Wasm layout to map stack slots to Wasmi registers.
+    layout: StackLayout,
 }
 
 impl WasmTranslator<'_> for FuncTranslator {
@@ -84,5 +90,49 @@ impl WasmTranslator<'_> for FuncTranslator {
         _finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<Self::Allocations, Error> {
         todo!()
+    }
+}
+
+impl FuncTranslator {
+    /// Creates a new [`FuncTranslator`].
+    pub fn new(
+        func: FuncIdx,
+        module: ModuleHeader,
+        alloc: FuncTranslatorAllocations,
+    ) -> Result<Self, Error> {
+        let Some(engine) = module.engine().upgrade() else {
+            panic!(
+                "cannot compile function since engine does no longer exist: {:?}",
+                module.engine()
+            )
+        };
+        let config = engine.config();
+        let fuel_costs = config
+            .get_consume_fuel()
+            .then(|| config.fuel_costs())
+            .cloned();
+        let FuncTranslatorAllocations { stack, layout } = alloc;
+        Ok(Self {
+            func,
+            engine,
+            module,
+            reachable: true,
+            fuel_costs,
+            stack,
+            layout,
+        })
+    }
+
+    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
+    fn into_allocations(self) -> FuncTranslatorAllocations {
+        FuncTranslatorAllocations {
+            stack: self.stack,
+            layout: self.layout,
+        }
+    }
+
+    /// Returns the [`Engine`] for which the function is compiled.
+    fn engine(&self) -> &Engine {
+        &self.engine
     }
 }
