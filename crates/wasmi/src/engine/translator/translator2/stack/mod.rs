@@ -53,8 +53,6 @@ pub struct Stack {
     operands: Vec<StackOperand>,
     /// All function locals and their associated types.
     locals: LocalsRegistry,
-    /// All function local constants.
-    consts: ConstRegistry,
     /// The Wasm control stack.
     controls: ControlStack,
     /// The maximim number of operands on the [`Stack`] at the same time.
@@ -66,7 +64,6 @@ impl Stack {
     pub fn reset(&mut self) {
         self.operands.clear();
         self.locals.reset();
-        self.consts.reset();
         self.controls.reset();
         self.max_height = 0;
     }
