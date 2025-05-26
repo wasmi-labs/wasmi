@@ -151,16 +151,16 @@ impl ControlStack {
 
 /// An acquired branch target.
 #[derive(Debug)]
-pub enum AcquiredTarget<'a> {
+pub enum AcquiredTarget<'stack> {
     /// The branch targets the function enclosing `block` and therefore is a `return`.
-    Return(&'a mut ControlFrame),
+    Return(&'stack mut ControlFrame),
     /// The branch targets a regular [`ControlFrame`].
-    Branch(&'a mut ControlFrame),
+    Branch(&'stack mut ControlFrame),
 }
 
-impl<'a> AcquiredTarget<'a> {
+impl<'stack> AcquiredTarget<'stack> {
     /// Returns an exclusive reference to the [`ControlFrame`] of the [`AcquiredTarget`].
-    pub fn control_frame(&'a mut self) -> &'a mut ControlFrame {
+    pub fn control_frame(&'stack mut self) -> &'stack mut ControlFrame {
         match self {
             Self::Return(frame) => frame,
             Self::Branch(frame) => frame,
