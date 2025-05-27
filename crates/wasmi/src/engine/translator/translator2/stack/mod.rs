@@ -334,10 +334,10 @@ impl Stack {
     /// # Panics
     ///
     /// If `self` does not contain enough operands to pop.
-    pub fn pop2(&mut self) -> Option<(Operand, Operand)> {
+    pub fn pop2(&mut self) -> (Operand, Operand) {
         let o2 = self.pop();
         let o1 = self.pop();
-        Some((o1, o2))
+        (o1, o2)
     }
 
     /// Pops the two top-most [`Operand`] from the [`Stack`].
@@ -349,11 +349,11 @@ impl Stack {
     /// # Panics
     ///
     /// If `self` does not contain enough operands to pop.
-    pub fn pop3(&mut self) -> Option<(Operand, Operand, Operand)> {
+    pub fn pop3(&mut self) -> (Operand, Operand, Operand) {
         let o3 = self.pop();
         let o2 = self.pop();
         let o1 = self.pop();
-        Some((o1, o2, o3))
+        (o1, o2, o3)
     }
 
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
