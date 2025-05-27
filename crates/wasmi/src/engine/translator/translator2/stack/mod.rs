@@ -381,7 +381,7 @@ impl Stack {
     ///
     /// # Panics
     ///
-    /// - If `depth` is out of bounds for the [`Stack`] of operands.
+    /// If `depth` is out of bounds for the [`Stack`] of operands.
     #[must_use]
     pub fn operand_to_temp(&mut self, depth: usize) -> Option<Operand> {
         self.operands.operand_to_temp(depth)
