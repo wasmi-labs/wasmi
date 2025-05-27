@@ -1,11 +1,17 @@
 #![expect(dead_code, unused_imports, unused_variables)]
 
+mod layout;
 #[cfg(feature = "simd")]
 mod simd;
 mod stack;
+mod utils;
 mod visit;
 
-use self::stack::{Operand, OperandIdx, Stack, StackLayout};
+use self::{
+    layout::{StackLayout, StackSpace},
+    stack::{LocalIdx, Operand, OperandIdx, Stack},
+    utils::Reset,
+};
 use crate::{
     core::FuelCostsProvider,
     engine::{translator::WasmTranslator, CompiledFuncEntity},
