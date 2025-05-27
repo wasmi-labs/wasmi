@@ -7,7 +7,7 @@ use crate::{
 use alloc::vec::Vec;
 use core::{array, mem, num::NonZero, slice};
 
-/// A [`StackOperand`] or [`Operand`] index on the [`Stack`].
+/// A [`StackOperand`] or [`Operand`] index on the [`OperandStack`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct OperandIdx(NonZero<usize>);
 
@@ -26,7 +26,7 @@ impl From<usize> for OperandIdx {
     }
 }
 
-/// An [`Operand`] on the [`Stack`].
+/// An [`Operand`] on the [`OperandStack`].
 ///
 /// This is the internal version of [`Operand`] with information that shall remain
 /// hidden to the outside.
@@ -36,19 +36,19 @@ pub enum StackOperand {
     Local {
         /// The index of the local variable.
         local_index: LocalIdx,
-        /// The previous [`StackOperand::Local`] on the [`Stack`].
+        /// The previous [`StackOperand::Local`] on the [`OperandStack`].
         prev_local: Option<OperandIdx>,
-        /// The next [`StackOperand::Local`] on the [`Stack`].
+        /// The next [`StackOperand::Local`] on the [`OperandStack`].
         next_local: Option<OperandIdx>,
     },
-    /// A temporary value on the [`Stack`].
+    /// A temporary value on the [`OperandStack`].
     Temp {
         /// The type of the temporary value.
         ty: ValType,
         /// The instruction which has this [`StackOperand`] as result if any.
         instr: Option<Instr>,
     },
-    /// An immediate value on the [`Stack`].
+    /// An immediate value on the [`OperandStack`].
     Immediate {
         /// The value (and type) of the immediate value.
         val: TypedVal,
