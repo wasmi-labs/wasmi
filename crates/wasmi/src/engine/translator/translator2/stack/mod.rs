@@ -142,7 +142,7 @@ impl Stack {
     ///
     /// # Note
     ///
-    /// Calls `f` for every non [`StackOperand::Temp`] operand on the [`Stack`]
+    /// Calls `f` for every non [`Operand::Temp`] operand on the [`Stack`]
     /// that is also a parameter to the pushed Wasm `loop` control frame.
     ///
     /// # Panics (debug)
@@ -358,7 +358,7 @@ impl Stack {
 
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
     ///
-    /// This is done by converting those locals to [`StackOperand::Temp`] and yielding them.
+    /// This is done by converting those locals to [`Operand::Temp`] and yielding them.
     ///
     /// # Note
     ///
@@ -373,11 +373,11 @@ impl Stack {
         self.operands.preserve_locals(local_index)
     }
 
-    /// Converts and returns the [`StackOperand`] at `depth` into a [`StackOperand::Temp`].
+    /// Converts and returns the [`StackOperand`] at `depth` into a [`Operand::Temp`].
     ///
     /// # Note
     ///
-    /// Returns `None` if operand at `depth` is [`StackOperand::Temp`] already.
+    /// Returns `None` if operand at `depth` is [`Operand::Temp`] already.
     ///
     /// # Panics
     ///
