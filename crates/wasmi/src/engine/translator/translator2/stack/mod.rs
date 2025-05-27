@@ -39,6 +39,9 @@ use crate::{
 use alloc::vec::Vec;
 use core::{array, mem, num::NonZero};
 
+#[cfg(doc)]
+use crate::ir::Instruction;
+
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default)]
 pub struct Stack {
