@@ -1,4 +1,4 @@
-use super::{Reset, StackOperand};
+use super::{Operand, Reset};
 use crate::engine::{
     translator::{BlockType, LabelRef},
     Instr,
@@ -23,7 +23,7 @@ pub struct ElseOperands {
     /// The end indices of each `else` operands.
     ends: Vec<usize>,
     /// All operands of all allocated `else` control frames.
-    providers: Vec<StackOperand>,
+    providers: Vec<Operand>,
 }
 
 impl Reset for ElseOperands {
@@ -35,15 +35,15 @@ impl Reset for ElseOperands {
 
 impl ElseOperands {
     /// Pushes operands for a new Wasm `else` control frame.
-    pub fn push(&mut self, operands: &[StackOperand]) {
-        self.providers.extend(operands.iter().copied());
+    pub fn push(&mut self, operands: impl IntoIterator<Item = Operand>) {
+        self.providers.extend(operands);
         let end = self.providers.len();
         let index = self.ends.len();
         self.ends.push(end);
     }
 
     /// Pops the top-most Wasm `else` operands from `self` and returns it.
-    pub fn pop(&mut self) -> Option<Drain<StackOperand>> {
+    pub fn pop(&mut self) -> Option<Drain<Operand>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);
         Some(self.providers.drain(start..end))
@@ -106,7 +106,7 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
-        else_operands: &[StackOperand],
+        else_operands: impl IntoIterator<Item = Operand>,
     ) {
         self.frames.push(ControlFrame::new_if(
             ty,
@@ -129,7 +129,7 @@ impl ControlStack {
         consume_fuel: Option<Instr>,
         reachability: ElseReachability,
         is_end_of_then_reachable: bool,
-    ) -> Drain<StackOperand> {
+    ) -> Drain<Operand> {
         self.frames.push(ControlFrame::new_else(
             ty,
             height,
