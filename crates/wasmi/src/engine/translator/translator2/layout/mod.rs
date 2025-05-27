@@ -2,7 +2,12 @@ mod consts;
 
 use self::consts::ConstRegistry;
 use super::{LocalIdx, OperandIdx, Reset};
-use crate::{core::UntypedVal, engine::TranslationError, ir::Reg, Error};
+use crate::{
+    core::{UntypedVal, ValType},
+    engine::TranslationError,
+    ir::Reg,
+    Error,
+};
 
 #[cfg(doc)]
 use super::Stack;
@@ -24,6 +29,16 @@ impl Reset for StackLayout {
 }
 
 impl StackLayout {
+    /// Register `amount` local variables of common type `ty`.
+    ///
+    /// # Errors
+    ///
+    /// If too many local variables are being registered.
+    pub fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
+        self.len_locals += amount as usize;
+        Ok(())
+    }
+
     /// Returns the [`StackSpace`] of the [`Reg`].
     ///
     /// Returns `None` if the [`Reg`] is unknown to the [`Stack`].

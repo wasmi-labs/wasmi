@@ -15,7 +15,7 @@ use self::{
 use crate::{
     core::FuelCostsProvider,
     engine::{translator::WasmTranslator, CompiledFuncEntity},
-    module::{FuncIdx, ModuleHeader},
+    module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
 };
@@ -79,10 +79,13 @@ impl WasmTranslator<'_> for FuncTranslator {
 
     fn translate_locals(
         &mut self,
-        _amount: u32,
-        _value_type: wasmparser::ValType,
+        amount: u32,
+        value_type: wasmparser::ValType,
     ) -> Result<(), Error> {
-        todo!()
+        let ty = WasmiValueType::from(value_type).into_inner();
+        self.stack.register_locals(amount, ty)?;
+        self.layout.register_locals(amount, ty)?;
+        Ok(())
     }
 
     fn finish_translate_locals(&mut self) -> Result<(), Error> {
