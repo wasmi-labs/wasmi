@@ -89,7 +89,7 @@ impl WasmTranslator<'_> for FuncTranslator {
     }
 
     fn finish_translate_locals(&mut self) -> Result<(), Error> {
-        todo!()
+        Ok(())
     }
 
     fn update_pos(&mut self, _pos: usize) {}
