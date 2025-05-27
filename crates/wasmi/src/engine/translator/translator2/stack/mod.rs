@@ -295,11 +295,17 @@ impl Stack {
         self.operands.push_immediate(value)
     }
 
-    /// Peeks the top-most [`Operand`] on the [`Stack`].
+    /// Peeks the [`Operand`] at `depth`.
     ///
-    /// Returns `None` if the [`Stack`] is empty.
-    pub fn peek(&self) -> Operand {
-        self.operands.get(0)
+    /// # Note
+    ///
+    /// A depth of 0 peeks the top-most [`Operand`] on `self`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    pub fn peek(&self, depth: usize) -> Operand {
+        self.operands.get(depth)
     }
 
     /// Pops the top-most [`Operand`] from the [`Stack`].
