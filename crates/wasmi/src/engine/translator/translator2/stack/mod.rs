@@ -1,12 +1,9 @@
-mod consts;
 mod control;
-mod layout;
 mod locals;
 mod operand;
 mod operands;
 
 use self::{
-    consts::ConstRegistry,
     control::{
         BlockControlFrame,
         ControlFrame,
@@ -19,14 +16,15 @@ use self::{
         LoopControlFrame,
         UnreachableControlFrame,
     },
-    locals::{LocalIdx, LocalsRegistry},
+    locals::LocalsRegistry,
     operands::{OperandStack, StackOperand},
 };
 pub use self::{
-    layout::{StackLayout, StackSpace},
+    locals::LocalIdx,
     operand::Operand,
     operands::{OperandIdx, PreservedLocalsIter},
 };
+use super::Reset;
 use crate::{
     core::{TypedVal, UntypedVal, ValType},
     engine::{
@@ -40,12 +38,6 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::{array, mem, num::NonZero};
-
-/// Implemented by types that can be reset for reuse.
-trait Reset {
-    /// Resets `self` for reuse.
-    fn reset(&mut self);
-}
 
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug, Default)]
@@ -379,19 +371,5 @@ impl Stack {
     #[must_use]
     pub fn operand_to_temp(&mut self, depth: usize) -> Option<Operand> {
         self.operands.operand_to_temp(depth)
-    }
-
-    /// Converts the [`Operand`] at `index` to a [`Reg`] if possible.
-    ///
-    /// # Panics
-    ///
-    /// If the `index` is out of bounds.
-    pub fn operand_to_reg(&mut self, depth: usize, layout: &mut StackLayout) -> Result<Reg, Error> {
-        let operand = self.operands.get(depth);
-        match operand {
-            Operand::Local(op) => layout.local_to_reg(op.local_index()),
-            Operand::Temp(_) => layout.temp_to_reg(operand.index()),
-            Operand::Immediate(op) => layout.const_to_reg(op.val()),
-        }
     }
 }
