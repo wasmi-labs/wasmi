@@ -149,27 +149,23 @@ impl ControlStack {
     }
 
     /// Returns a shared reference to the [`ControlFrame`] at `depth` if any.
-    pub fn get(&self, depth: u32) -> &ControlFrame {
+    pub fn get(&self, depth: usize) -> &ControlFrame {
         let height = self.height();
-        self.frames
-            .iter()
-            .rev()
-            .nth(depth as usize)
-            .unwrap_or_else(|| {
-                panic!("out of bounds control frame at depth (={depth}) for stack of height (={height})")
-            })
+        self.frames.iter().rev().nth(depth).unwrap_or_else(|| {
+            panic!(
+                "out of bounds control frame at depth (={depth}) for stack of height (={height})"
+            )
+        })
     }
 
     /// Returns an exclusive reference to the [`ControlFrame`] at `depth` if any.
-    pub fn get_mut(&mut self, depth: u32) -> &mut ControlFrame {
+    pub fn get_mut(&mut self, depth: usize) -> &mut ControlFrame {
         let height = self.height();
-        self.frames
-            .iter_mut()
-            .rev()
-            .nth(depth as usize)
-            .unwrap_or_else(|| {
-                panic!("out of bounds control frame at depth (={depth}) for stack of height (={height})")
-            })
+        self.frames.iter_mut().rev().nth(depth).unwrap_or_else(|| {
+            panic!(
+                "out of bounds control frame at depth (={depth}) for stack of height (={height})"
+            )
+        })
     }
 }
 
@@ -194,7 +190,7 @@ impl<'stack> AcquiredTarget<'stack> {
 
 impl ControlStack {
     /// Acquires the target [`ControlFrame`] at the given relative `depth`.
-    pub fn acquire_target(&mut self, depth: u32) -> AcquiredTarget {
+    pub fn acquire_target(&mut self, depth: usize) -> AcquiredTarget {
         let is_root = self.is_root(depth);
         let height = self.height();
         let frame = self.get_mut(depth);
@@ -206,11 +202,11 @@ impl ControlStack {
     }
 
     /// Returns `true` if `depth` points to the first control flow frame.
-    fn is_root(&self, depth: u32) -> bool {
+    fn is_root(&self, depth: usize) -> bool {
         if self.frames.is_empty() {
             return false;
         }
-        depth as usize == self.height() - 1
+        depth == self.height() - 1
     }
 }
 
