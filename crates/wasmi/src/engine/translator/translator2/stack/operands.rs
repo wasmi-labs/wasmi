@@ -394,7 +394,7 @@ impl Iterator for PeekedOperands<'_> {
         let operand = self.operands.next().copied()?;
         let index = OperandIdx::from(self.index);
         self.index += 1;
-        Some(Operand::new(index, operand, &self.locals))
+        Some(Operand::new(index, operand, self.locals))
     }
 }
 
