@@ -95,11 +95,16 @@ impl Stack {
         self.operands.trunc(height);
     }
 
+    /// Returns `true` is fuel metering is enabled for the associated [`Engine`].
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.engine.config().get_consume_fuel()
+    }
+
     /// Pushes a Wasm `block` onto the [`Stack`].
     ///
     /// # Note
     ///
-    /// If `consume_fuel` is `None` and fuel metering is enabled this will infer
+    /// If `consume_fuel` is `None` and fuel metering is enabled this will inherit
     /// the [`Instruction::ConsumeFuel`] from the last control frame on the [`Stack`].
     ///
     /// # Errors
@@ -113,7 +118,7 @@ impl Stack {
     ) -> Result<(), Error> {
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
-        let fuel_metering = self.engine.config().get_consume_fuel();
+        let fuel_metering = self.is_fuel_metering_enabled();
         let consume_fuel = match consume_fuel {
             None if fuel_metering => {
                 let consume_instr = self
@@ -151,7 +156,7 @@ impl Stack {
         consume_fuel: Option<Instr>,
         mut f: impl FnMut(Operand) -> Result<(), Error>,
     ) -> Result<(), Error> {
-        debug_assert!(self.engine.config().get_consume_fuel() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         for depth in 0..block_height {
@@ -180,7 +185,7 @@ impl Stack {
         reachability: IfReachability,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
-        debug_assert!(self.engine.config().get_consume_fuel() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         let else_operands = self.operands.peek(len_params);
@@ -213,7 +218,7 @@ impl Stack {
         is_end_of_then_reachable: bool,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
-        debug_assert!(self.engine.config().get_consume_fuel() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         let else_operands = self.controls.push_else(
