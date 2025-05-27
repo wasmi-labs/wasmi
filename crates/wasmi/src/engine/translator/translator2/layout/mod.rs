@@ -1,4 +1,7 @@
-use super::{ConstRegistry, LocalIdx, OperandIdx, Reset};
+mod consts;
+
+use self::consts::ConstRegistry;
+use super::{LocalIdx, OperandIdx, Reset};
 use crate::{core::UntypedVal, engine::TranslationError, ir::Reg, Error};
 
 #[cfg(doc)]
