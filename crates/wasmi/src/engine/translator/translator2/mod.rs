@@ -14,7 +14,10 @@ use self::{
 };
 use crate::{
     core::FuelCostsProvider,
-    engine::{translator::WasmTranslator, CompiledFuncEntity},
+    engine::{
+        translator::{LabelRegistry, WasmTranslator},
+        CompiledFuncEntity,
+    },
     module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
@@ -54,6 +57,8 @@ pub struct FuncTranslator {
     stack: Stack,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
+    /// Registers and pins labels and tracks their users.
+    labels: LabelRegistry,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -63,6 +68,8 @@ pub struct FuncTranslatorAllocations {
     stack: Stack,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
+    /// Registers and pins labels and tracks their users.
+    labels: LabelRegistry,
 }
 
 impl WasmTranslator<'_> for FuncTranslator {
@@ -120,7 +127,11 @@ impl FuncTranslator {
             .get_consume_fuel()
             .then(|| config.fuel_costs())
             .cloned();
-        let FuncTranslatorAllocations { stack, layout } = alloc;
+        let FuncTranslatorAllocations {
+            stack,
+            layout,
+            labels,
+        } = alloc;
         Ok(Self {
             func,
             engine,
@@ -129,6 +140,7 @@ impl FuncTranslator {
             fuel_costs,
             stack,
             layout,
+            labels,
         })
     }
 
@@ -137,6 +149,7 @@ impl FuncTranslator {
         FuncTranslatorAllocations {
             stack: self.stack,
             layout: self.layout,
+            labels: self.labels,
         }
     }
 
