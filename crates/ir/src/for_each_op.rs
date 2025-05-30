@@ -1462,32 +1462,6 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                 },
-                /// A fused `i32.ne` and `select` instruction.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
-                #[snake_name(select_i32_ne)]
-                SelectI32Ne {
-                    @result: Reg,
-                    /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
-                    /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
-                },
-                /// A fused `i32.ne` and `select` instruction with 16-bit immediate `rhs` value.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
-                #[snake_name(select_i32_ne_imm16)]
-                SelectI32NeImm16 {
-                    @result: Reg,
-                    /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
-                    /// The right-hand side operand to the conditional operator.
-                    rhs: Const16<i32>,
-                },
                 /// A fused `i32.lt_s` and `select` instruction.
                 ///
                 /// # Encoding
@@ -1696,32 +1670,6 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                 },
-                /// A fused `i64.ne` and `select` instruction.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
-                #[snake_name(select_i64_ne)]
-                SelectI64Ne {
-                    @result: Reg,
-                    /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
-                    /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
-                },
-                /// A fused `i64.ne` and `select` instruction with 16-bit immediate `rhs` value.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
-                #[snake_name(select_i64_ne_imm16)]
-                SelectI64NeImm16 {
-                    @result: Reg,
-                    /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
-                    /// The right-hand side operand to the conditional operator.
-                    rhs: Const16<i64>,
-                },
                 /// A fused `i64.lt_s` and `select` instruction.
                 ///
                 /// # Encoding
@@ -1839,19 +1787,6 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the branch conditional.
                     rhs: Reg,
                 },
-                /// A fused `f32.ne` and `select` instruction.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
-                #[snake_name(select_f32_ne)]
-                SelectF32Ne {
-                    @result: Reg,
-                    /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
-                    /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
-                },
                 /// A fused `f32.lt` and `select` instruction.
                 ///
                 /// # Encoding
@@ -1886,19 +1821,6 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_eq)]
                 SelectF64Eq {
-                    @result: Reg,
-                    /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
-                    /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
-                },
-                /// A fused `f64.ne` and `select` instruction.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
-                #[snake_name(select_f64_ne)]
-                SelectF64Ne {
                     @result: Reg,
                     /// The left-hand side operand to the branch conditional.
                     lhs: Reg,

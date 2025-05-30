@@ -215,8 +215,11 @@ pub trait TryIntoCmpSelectInstr: Sized {
 impl TryIntoCmpSelectInstr for Instruction {
     fn try_into_cmp_select_instr(&self, result: Reg) -> Option<(Self, bool)> {
         use Instruction as I;
-        let swap_operands = match self {
-            I::I32LeSImm16Lhs { .. }
+        #[rustfmt::skip]
+        let swap_operands = matches!(self,
+            | I::I32Ne { .. }
+            | I::I32NeImm16 { .. }
+            | I::I32LeSImm16Lhs { .. }
             | I::I32LeUImm16Lhs { .. }
             | I::I32LtSImm16Lhs { .. }
             | I::I32LtUImm16Lhs { .. }
@@ -226,6 +229,8 @@ impl TryIntoCmpSelectInstr for Instruction {
             | I::I32NandImm16 { .. }
             | I::I32NorImm16 { .. }
             | I::I32XnorImm16 { .. }
+            | I::I64Ne { .. }
+            | I::I64NeImm16 { .. }
             | I::I64LeSImm16Lhs { .. }
             | I::I64LeUImm16Lhs { .. }
             | I::I64LtSImm16Lhs { .. }
@@ -236,23 +241,24 @@ impl TryIntoCmpSelectInstr for Instruction {
             | I::I64NandImm16 { .. }
             | I::I64NorImm16 { .. }
             | I::I64XnorImm16 { .. }
+            | I::F32Ne { .. }
+            | I::F64Ne { .. }
             | I::F32NotLt { .. }
             | I::F32NotLe { .. }
             | I::F64NotLt { .. }
-            | I::F64NotLe { .. } => true,
-            _ => false,
-        };
+            | I::F64NotLe { .. }
+        );
         #[rustfmt::skip]
         let fused = match *self {
             // i32
             I::I32Eq { lhs, rhs, .. } => I::select_i32_eq(result, lhs, rhs),
-            I::I32Ne { lhs, rhs, .. } => I::select_i32_ne(result, lhs, rhs),
+            I::I32Ne { lhs, rhs, .. } => I::select_i32_eq(result, lhs, rhs),
             I::I32LeS { lhs, rhs, .. } => I::select_i32_le_s(result, lhs, rhs),
             I::I32LeU { lhs, rhs, .. } => I::select_i32_le_u(result, lhs, rhs),
             I::I32LtS { lhs, rhs, .. } => I::select_i32_lt_s(result, lhs, rhs),
             I::I32LtU { lhs, rhs, .. } => I::select_i32_lt_u(result, lhs, rhs),
             I::I32EqImm16 { lhs, rhs, .. } => I::select_i32_eq_imm16(result, lhs, rhs),
-            I::I32NeImm16 { lhs, rhs, .. } => I::select_i32_ne_imm16(result, lhs, rhs),
+            I::I32NeImm16 { lhs, rhs, .. } => I::select_i32_eq_imm16(result, lhs, rhs),
             I::I32LeSImm16Lhs { lhs, rhs, .. } => I::select_i32_lt_s_imm16_rhs(result, rhs, lhs),
             I::I32LeUImm16Lhs { lhs, rhs, .. } => I::select_i32_lt_u_imm16_rhs(result, rhs, lhs),
             I::I32LtSImm16Lhs { lhs, rhs, .. } => I::select_i32_le_s_imm16_rhs(result, rhs, lhs),
@@ -282,13 +288,13 @@ impl TryIntoCmpSelectInstr for Instruction {
             I::I32XnorImm16 { lhs, rhs, .. } => I::select_i32_xor_imm16(result, lhs, rhs),
             // i64
             I::I64Eq { lhs, rhs, .. } => I::select_i64_eq(result, lhs, rhs),
-            I::I64Ne { lhs, rhs, .. } => I::select_i64_ne(result, lhs, rhs),
+            I::I64Ne { lhs, rhs, .. } => I::select_i64_eq(result, lhs, rhs),
             I::I64LeS { lhs, rhs, .. } => I::select_i64_le_s(result, lhs, rhs),
             I::I64LeU { lhs, rhs, .. } => I::select_i64_le_u(result, lhs, rhs),
             I::I64LtS { lhs, rhs, .. } => I::select_i64_lt_s(result, lhs, rhs),
             I::I64LtU { lhs, rhs, .. } => I::select_i64_lt_u(result, lhs, rhs),
             I::I64EqImm16 { lhs, rhs, .. } => I::select_i64_eq_imm16(result, lhs, rhs),
-            I::I64NeImm16 { lhs, rhs, .. } => I::select_i64_ne_imm16(result, lhs, rhs),
+            I::I64NeImm16 { lhs, rhs, .. } => I::select_i64_eq_imm16(result, lhs, rhs),
             I::I64LeSImm16Lhs { lhs, rhs, .. } => I::select_i64_lt_s_imm16_rhs(result, rhs, lhs),
             I::I64LeUImm16Lhs { lhs, rhs, .. } => I::select_i64_lt_u_imm16_rhs(result, rhs, lhs),
             I::I64LtSImm16Lhs { lhs, rhs, .. } => I::select_i64_le_s_imm16_rhs(result, rhs, lhs),
@@ -318,14 +324,14 @@ impl TryIntoCmpSelectInstr for Instruction {
             I::I64XnorImm16 { lhs, rhs, .. } => I::select_i64_xor_imm16(result, lhs, rhs),
             // f32
             I::F32Eq { lhs, rhs, .. } => I::select_f32_eq(result, lhs, rhs),
-            I::F32Ne { lhs, rhs, .. } => I::select_f32_ne(result, lhs, rhs),
+            I::F32Ne { lhs, rhs, .. } => I::select_f32_eq(result, lhs, rhs),
             I::F32Lt { lhs, rhs, .. } => I::select_f32_lt(result, lhs, rhs),
             I::F32Le { lhs, rhs, .. } => I::select_f32_le(result, lhs, rhs),
             I::F32NotLt { lhs, rhs, .. } => I::select_f32_lt(result, rhs, lhs),
             I::F32NotLe { lhs, rhs, .. } => I::select_f32_le(result, rhs, lhs),
             // f64
             I::F64Eq { lhs, rhs, .. } => I::select_f64_eq(result, lhs, rhs),
-            I::F64Ne { lhs, rhs, .. } => I::select_f64_ne(result, lhs, rhs),
+            I::F64Ne { lhs, rhs, .. } => I::select_f64_eq(result, lhs, rhs),
             I::F64Lt { lhs, rhs, .. } => I::select_f64_lt(result, lhs, rhs),
             I::F64Le { lhs, rhs, .. } => I::select_f64_le(result, lhs, rhs),
             I::F64NotLt { lhs, rhs, .. } => I::select_f64_lt(result, rhs, lhs),

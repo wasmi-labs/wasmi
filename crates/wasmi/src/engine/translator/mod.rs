@@ -2543,8 +2543,9 @@ impl FuncTranslator {
                 }
             }
             None => {
-                let select_instr = Instruction::select_i32_ne_imm16(result, condition, 0_i16);
+                let select_instr = Instruction::select_i32_eq_imm16(result, condition, 0_i16);
                 self.push_fueled_instr(select_instr, FuelCostsProvider::base)?;
+                mem::swap(&mut true_val, &mut false_val);
             }
         };
         self.append_instr(Instruction::register2_ext(true_val, false_val))?;

@@ -97,7 +97,6 @@ macro_rules! impl_cmp_select_imm_rhs_for {
 impl Executor<'_> {
     impl_cmp_select_for! {
         (Instruction::SelectI32Eq, execute_select_i32_eq, wasm::i32_eq),
-        (Instruction::SelectI32Ne, execute_select_i32_ne, wasm::i32_ne),
         (Instruction::SelectI32LtS, execute_select_i32_lt_s, wasm::i32_lt_s),
         (Instruction::SelectI32LtU, execute_select_i32_lt_u, wasm::i32_lt_u),
         (Instruction::SelectI32LeS, execute_select_i32_le_s, wasm::i32_le_s),
@@ -106,7 +105,6 @@ impl Executor<'_> {
         (Instruction::SelectI32Or, execute_select_i32_or, <i32 as UntypedValueExt>::or),
         (Instruction::SelectI32Xor, execute_select_i32_xor, <i32 as UntypedValueExt>::xor),
         (Instruction::SelectI64Eq, execute_select_i64_eq, wasm::i64_eq),
-        (Instruction::SelectI64Ne, execute_select_i64_ne, wasm::i64_ne),
         (Instruction::SelectI64LtS, execute_select_i64_lt_s, wasm::i64_lt_s),
         (Instruction::SelectI64LtU, execute_select_i64_lt_u, wasm::i64_lt_u),
         (Instruction::SelectI64LeS, execute_select_i64_le_s, wasm::i64_le_s),
@@ -115,18 +113,15 @@ impl Executor<'_> {
         (Instruction::SelectI64Or, execute_select_i64_or, <i64 as UntypedValueExt>::or),
         (Instruction::SelectI64Xor, execute_select_i64_xor, <i64 as UntypedValueExt>::xor),
         (Instruction::SelectF32Eq, execute_select_f32_eq, wasm::f32_eq),
-        (Instruction::SelectF32Ne, execute_select_f32_ne, wasm::f32_ne),
         (Instruction::SelectF32Lt, execute_select_f32_lt, wasm::f32_lt),
         (Instruction::SelectF32Le, execute_select_f32_le, wasm::f32_le),
         (Instruction::SelectF64Eq, execute_select_f64_eq, wasm::f64_eq),
-        (Instruction::SelectF64Ne, execute_select_f64_ne, wasm::f64_ne),
         (Instruction::SelectF64Lt, execute_select_f64_lt, wasm::f64_lt),
         (Instruction::SelectF64Le, execute_select_f64_le, wasm::f64_le),
     }
 
     impl_cmp_select_imm_rhs_for! {
         (i32, Instruction::SelectI32EqImm16, execute_select_i32_eq_imm16, wasm::i32_eq),
-        (i32, Instruction::SelectI32NeImm16, execute_select_i32_ne_imm16, wasm::i32_ne),
         (i32, Instruction::SelectI32LtSImm16Rhs, execute_select_i32_lt_s_imm16_rhs, wasm::i32_lt_s),
         (u32, Instruction::SelectI32LtUImm16Rhs, execute_select_i32_lt_u_imm16_rhs, wasm::i32_lt_u),
         (i32, Instruction::SelectI32LeSImm16Rhs, execute_select_i32_le_s_imm16_rhs, wasm::i32_le_s),
@@ -135,7 +130,6 @@ impl Executor<'_> {
         (i32, Instruction::SelectI32OrImm16, execute_select_i32_or_imm16, UntypedValueExt::or),
         (i32, Instruction::SelectI32XorImm16, execute_select_i32_xor_imm16, UntypedValueExt::xor),
         (i64, Instruction::SelectI64EqImm16, execute_select_i64_eq_imm16, wasm::i64_eq),
-        (i64, Instruction::SelectI64NeImm16, execute_select_i64_ne_imm16, wasm::i64_ne),
         (i64, Instruction::SelectI64LtSImm16Rhs, execute_select_i64_lt_s_imm16_rhs, wasm::i64_lt_s),
         (u64, Instruction::SelectI64LtUImm16Rhs, execute_select_i64_lt_u_imm16_rhs, wasm::i64_lt_u),
         (i64, Instruction::SelectI64LeSImm16Rhs, execute_select_i64_le_s_imm16_rhs, wasm::i64_le_s),

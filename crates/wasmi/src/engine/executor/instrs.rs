@@ -465,12 +465,6 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI32EqImm16 { result, lhs, rhs } => {
                     self.execute_select_i32_eq_imm16(result, lhs, rhs)
                 }
-                Instr::SelectI32Ne { result, lhs, rhs } => {
-                    self.execute_select_i32_ne(result, lhs, rhs)
-                }
-                Instr::SelectI32NeImm16 { result, lhs, rhs } => {
-                    self.execute_select_i32_ne_imm16(result, lhs, rhs)
-                }
                 Instr::SelectI32LtS { result, lhs, rhs } => {
                     self.execute_select_i32_lt_s(result, lhs, rhs)
                 }
@@ -519,12 +513,6 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI64EqImm16 { result, lhs, rhs } => {
                     self.execute_select_i64_eq_imm16(result, lhs, rhs)
                 }
-                Instr::SelectI64Ne { result, lhs, rhs } => {
-                    self.execute_select_i64_ne(result, lhs, rhs)
-                }
-                Instr::SelectI64NeImm16 { result, lhs, rhs } => {
-                    self.execute_select_i64_ne_imm16(result, lhs, rhs)
-                }
                 Instr::SelectI64LtS { result, lhs, rhs } => {
                     self.execute_select_i64_lt_s(result, lhs, rhs)
                 }
@@ -570,9 +558,6 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectF32Eq { result, lhs, rhs } => {
                     self.execute_select_f32_eq(result, lhs, rhs)
                 }
-                Instr::SelectF32Ne { result, lhs, rhs } => {
-                    self.execute_select_f32_ne(result, lhs, rhs)
-                }
                 Instr::SelectF32Lt { result, lhs, rhs } => {
                     self.execute_select_f32_lt(result, lhs, rhs)
                 }
@@ -581,9 +566,6 @@ impl<'engine> Executor<'engine> {
                 }
                 Instr::SelectF64Eq { result, lhs, rhs } => {
                     self.execute_select_f64_eq(result, lhs, rhs)
-                }
-                Instr::SelectF64Ne { result, lhs, rhs } => {
-                    self.execute_select_f64_ne(result, lhs, rhs)
                 }
                 Instr::SelectF64Lt { result, lhs, rhs } => {
                     self.execute_select_f64_lt(result, lhs, rhs)
