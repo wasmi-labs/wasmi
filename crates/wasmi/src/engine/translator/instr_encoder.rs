@@ -940,7 +940,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         select_result: Reg,
         select_condition: Reg,
-    ) -> Option<Instruction> {
+    ) -> Option<(Instruction, bool)> {
         let Some(last_instr) = self.last_instr else {
             // If there is no last instruction there is no comparison instruction to negate.
             return None;
@@ -960,9 +960,10 @@ impl InstrEncoder {
             // are not equal thus indicating that we cannot fuse the instructions.
             return None;
         }
-        let fused_select = last_instruction.try_into_cmp_select_instr(select_result)?;
+        let (fused_select, swap_operands) =
+            last_instruction.try_into_cmp_select_instr(select_result)?;
         _ = mem::replace(self.instrs.get_mut(last_instr), fused_select);
-        Some(fused_select)
+        Some((fused_select, swap_operands))
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].
