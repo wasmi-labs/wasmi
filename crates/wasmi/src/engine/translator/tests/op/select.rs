@@ -1,6 +1,9 @@
 use super::*;
 use crate::{core::ValType, engine::translator::tests::wasm_type::WasmTy};
-use core::{fmt, fmt::Display};
+use core::{
+    fmt::{self, Display},
+    mem,
+};
 
 /// Tells which kind of `select` instruction to test.
 #[derive(Debug, Copy, Clone)]
@@ -65,8 +68,8 @@ fn reg() {
         let result = Reg::from(3);
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                Instruction::select_i32_ne_imm16(result, condition, 0_i16),
-                Instruction::register2_ext(true_val, false_val),
+                Instruction::select_i32_eq_imm16(result, condition, 0_i16),
+                Instruction::register2_ext(false_val, true_val),
                 Instruction::return_reg(result),
             ])
             .run();
@@ -270,6 +273,7 @@ fn test_cmp_select() {
         kind: SelectKind,
         result_ty: ValType,
         expected: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        swap_operands: bool,
     ) {
         let cmp_input_ty = op.param_ty();
         let cmp_result_ty = op.result_ty();
@@ -298,10 +302,15 @@ fn test_cmp_select() {
             )
         "#,
         );
+        let mut true_val = Reg::from(2);
+        let mut false_val = Reg::from(3);
+        if swap_operands {
+            mem::swap(&mut true_val, &mut false_val);
+        }
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expected(Reg::from(4), Reg::from(0), Reg::from(1)),
-                Instruction::register2_ext(2, 3),
+                Instruction::register2_ext(true_val, false_val),
                 Instruction::return_reg(4),
             ])
             .run();
@@ -309,47 +318,47 @@ fn test_cmp_select() {
 
     #[rustfmt::skip]
     fn test_for_each_cmp(kind: SelectKind, ty: ValType) {
-        for (op, expected) in [
-            (CmpOp::I32And, Instruction::select_i32_and as fn(Reg, Reg, Reg) -> Instruction),
-            (CmpOp::I32Or, Instruction::select_i32_or),
-            (CmpOp::I32Xor, Instruction::select_i32_xor),
-            (CmpOp::I32Eq, Instruction::select_i32_eq),
-            (CmpOp::I32Ne, Instruction::select_i32_ne),
-            (CmpOp::I32LtS, Instruction::select_i32_lt_s),
-            (CmpOp::I32LtU, Instruction::select_i32_lt_u),
-            (CmpOp::I32LeS, Instruction::select_i32_le_s),
-            (CmpOp::I32LeU, Instruction::select_i32_le_u),
-            (CmpOp::I32GtS, swap_cmp_select_ops!(Instruction::select_i32_lt_s)),
-            (CmpOp::I32GtU, swap_cmp_select_ops!(Instruction::select_i32_lt_u)),
-            (CmpOp::I32GeS, swap_cmp_select_ops!(Instruction::select_i32_le_s)),
-            (CmpOp::I32GeU, swap_cmp_select_ops!(Instruction::select_i32_le_u)),
-            (CmpOp::I64And, Instruction::select_i64_and),
-            (CmpOp::I64Or, Instruction::select_i64_or),
-            (CmpOp::I64Xor, Instruction::select_i64_xor),
-            (CmpOp::I64Eq, Instruction::select_i64_eq),
-            (CmpOp::I64Ne, Instruction::select_i64_ne),
-            (CmpOp::I64LtS, Instruction::select_i64_lt_s),
-            (CmpOp::I64LtU, Instruction::select_i64_lt_u),
-            (CmpOp::I64LeS, Instruction::select_i64_le_s),
-            (CmpOp::I64LeU, Instruction::select_i64_le_u),
-            (CmpOp::I64GtS, swap_cmp_select_ops!(Instruction::select_i64_lt_s)),
-            (CmpOp::I64GtU, swap_cmp_select_ops!(Instruction::select_i64_lt_u)),
-            (CmpOp::I64GeS, swap_cmp_select_ops!(Instruction::select_i64_le_s)),
-            (CmpOp::I64GeU, swap_cmp_select_ops!(Instruction::select_i64_le_u)),
-            (CmpOp::F32Eq, Instruction::select_f32_eq),
-            (CmpOp::F32Ne, Instruction::select_f32_ne),
-            (CmpOp::F32Lt, Instruction::select_f32_lt),
-            (CmpOp::F32Le, Instruction::select_f32_le),
-            (CmpOp::F32Gt, swap_cmp_select_ops!(Instruction::select_f32_lt)),
-            (CmpOp::F32Ge, swap_cmp_select_ops!(Instruction::select_f32_le)),
-            (CmpOp::F64Eq, Instruction::select_f64_eq),
-            (CmpOp::F64Ne, Instruction::select_f64_ne),
-            (CmpOp::F64Lt, Instruction::select_f64_lt),
-            (CmpOp::F64Le, Instruction::select_f64_le),
-            (CmpOp::F64Gt, swap_cmp_select_ops!(Instruction::select_f64_lt)),
-            (CmpOp::F64Ge, swap_cmp_select_ops!(Instruction::select_f64_le)),
+        for (op, expected, swap_operands) in [
+            (CmpOp::I32And, Instruction::select_i32_and as fn(Reg, Reg, Reg) -> Instruction, false),
+            (CmpOp::I32Or, Instruction::select_i32_or, false),
+            (CmpOp::I32Xor, Instruction::select_i32_xor, false),
+            (CmpOp::I32Eq, Instruction::select_i32_eq, false),
+            (CmpOp::I32Ne, Instruction::select_i32_eq, true),
+            (CmpOp::I32LtS, Instruction::select_i32_lt_s, false),
+            (CmpOp::I32LtU, Instruction::select_i32_lt_u, false),
+            (CmpOp::I32LeS, Instruction::select_i32_le_s, false),
+            (CmpOp::I32LeU, Instruction::select_i32_le_u, false),
+            (CmpOp::I32GtS, swap_cmp_select_ops!(Instruction::select_i32_lt_s), false),
+            (CmpOp::I32GtU, swap_cmp_select_ops!(Instruction::select_i32_lt_u), false),
+            (CmpOp::I32GeS, swap_cmp_select_ops!(Instruction::select_i32_le_s), false),
+            (CmpOp::I32GeU, swap_cmp_select_ops!(Instruction::select_i32_le_u), false),
+            (CmpOp::I64And, Instruction::select_i64_and, false),
+            (CmpOp::I64Or, Instruction::select_i64_or, false),
+            (CmpOp::I64Xor, Instruction::select_i64_xor, false),
+            (CmpOp::I64Eq, Instruction::select_i64_eq, false),
+            (CmpOp::I64Ne, Instruction::select_i64_eq, true),
+            (CmpOp::I64LtS, Instruction::select_i64_lt_s, false),
+            (CmpOp::I64LtU, Instruction::select_i64_lt_u, false),
+            (CmpOp::I64LeS, Instruction::select_i64_le_s, false),
+            (CmpOp::I64LeU, Instruction::select_i64_le_u, false),
+            (CmpOp::I64GtS, swap_cmp_select_ops!(Instruction::select_i64_lt_s), false),
+            (CmpOp::I64GtU, swap_cmp_select_ops!(Instruction::select_i64_lt_u), false),
+            (CmpOp::I64GeS, swap_cmp_select_ops!(Instruction::select_i64_le_s), false),
+            (CmpOp::I64GeU, swap_cmp_select_ops!(Instruction::select_i64_le_u), false),
+            (CmpOp::F32Eq, Instruction::select_f32_eq, false),
+            (CmpOp::F32Ne, Instruction::select_f32_eq, true),
+            (CmpOp::F32Lt, Instruction::select_f32_lt, false),
+            (CmpOp::F32Le, Instruction::select_f32_le, false),
+            (CmpOp::F32Gt, swap_cmp_select_ops!(Instruction::select_f32_lt), false),
+            (CmpOp::F32Ge, swap_cmp_select_ops!(Instruction::select_f32_le), false),
+            (CmpOp::F64Eq, Instruction::select_f64_eq, false),
+            (CmpOp::F64Ne, Instruction::select_f64_eq, true),
+            (CmpOp::F64Lt, Instruction::select_f64_lt, false),
+            (CmpOp::F64Le, Instruction::select_f64_le, false),
+            (CmpOp::F64Gt, swap_cmp_select_ops!(Instruction::select_f64_lt), false),
+            (CmpOp::F64Ge, swap_cmp_select_ops!(Instruction::select_f64_le), false),
         ] {
-            run_test(op, kind, ty, expected)
+            run_test(op, kind, ty, expected, swap_operands)
         }
     }
 
@@ -373,6 +382,7 @@ fn test_cmp_select_eqz() {
         kind: SelectKind,
         result_ty: ValType,
         expected: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        swap_operands: bool,
     ) {
         let cmp_input_ty = op.param_ty();
         let cmp_result_ty = op.result_ty();
@@ -400,10 +410,15 @@ fn test_cmp_select_eqz() {
             )
         "#,
         );
+        let mut true_val = Reg::from(2);
+        let mut false_val = Reg::from(3);
+        if swap_operands {
+            mem::swap(&mut true_val, &mut false_val);
+        }
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expected(Reg::from(4), Reg::from(0), Reg::from(1)),
-                Instruction::register2_ext(2, 3),
+                Instruction::register2_ext(true_val, false_val),
                 Instruction::return_reg(4),
             ])
             .run();
@@ -411,47 +426,47 @@ fn test_cmp_select_eqz() {
 
     #[rustfmt::skip]
     fn test_for_each_cmp(kind: SelectKind, ty: ValType) {
-        for (op, expected) in [
-            (CmpOp::I32And, Instruction::select_i32_nand as fn(Reg, Reg, Reg) -> Instruction),
-            (CmpOp::I32Or, Instruction::select_i32_nor),
-            (CmpOp::I32Xor, Instruction::select_i32_xnor),
-            (CmpOp::I32Eq, Instruction::select_i32_ne),
-            (CmpOp::I32Ne, Instruction::select_i32_eq),
-            (CmpOp::I32LtS, swap_cmp_select_ops!(Instruction::select_i32_le_s)),
-            (CmpOp::I32LtU, swap_cmp_select_ops!(Instruction::select_i32_le_u)),
-            (CmpOp::I32LeS, swap_cmp_select_ops!(Instruction::select_i32_lt_s)),
-            (CmpOp::I32LeU, swap_cmp_select_ops!(Instruction::select_i32_lt_u)),
-            (CmpOp::I32GtS, Instruction::select_i32_le_s),
-            (CmpOp::I32GtU, Instruction::select_i32_le_u),
-            (CmpOp::I32GeS, Instruction::select_i32_lt_s),
-            (CmpOp::I32GeU, Instruction::select_i32_lt_u),
-            (CmpOp::I64And, Instruction::select_i64_nand),
-            (CmpOp::I64Or, Instruction::select_i64_nor),
-            (CmpOp::I64Xor, Instruction::select_i64_xnor),
-            (CmpOp::I64Eq, Instruction::select_i64_ne),
-            (CmpOp::I64Ne, Instruction::select_i64_eq),
-            (CmpOp::I64LtS, swap_cmp_select_ops!(Instruction::select_i64_le_s)),
-            (CmpOp::I64LtU, swap_cmp_select_ops!(Instruction::select_i64_le_u)),
-            (CmpOp::I64LeS, swap_cmp_select_ops!(Instruction::select_i64_lt_s)),
-            (CmpOp::I64LeU, swap_cmp_select_ops!(Instruction::select_i64_lt_u)),
-            (CmpOp::I64GtS, Instruction::select_i64_le_s),
-            (CmpOp::I64GtU, Instruction::select_i64_le_u),
-            (CmpOp::I64GeS, Instruction::select_i64_lt_s),
-            (CmpOp::I64GeU, Instruction::select_i64_lt_u),
-            (CmpOp::F32Eq, Instruction::select_f32_ne),
-            (CmpOp::F32Ne, Instruction::select_f32_eq),
-            (CmpOp::F32Lt, Instruction::select_f32_not_lt),
-            (CmpOp::F32Le, Instruction::select_f32_not_le),
-            (CmpOp::F32Gt, swap_cmp_select_ops!(Instruction::select_f32_not_lt)),
-            (CmpOp::F32Ge, swap_cmp_select_ops!(Instruction::select_f32_not_le)),
-            (CmpOp::F64Eq, Instruction::select_f64_ne),
-            (CmpOp::F64Ne, Instruction::select_f64_eq),
-            (CmpOp::F64Lt, Instruction::select_f64_not_lt),
-            (CmpOp::F64Le, Instruction::select_f64_not_le),
-            (CmpOp::F64Gt, swap_cmp_select_ops!(Instruction::select_f64_not_lt)),
-            (CmpOp::F64Ge, swap_cmp_select_ops!(Instruction::select_f64_not_le)),
+        for (op, expected, swap_operands) in [
+            (CmpOp::I32And, Instruction::select_i32_and as fn(Reg, Reg, Reg) -> Instruction, true),
+            (CmpOp::I32Or, Instruction::select_i32_or, true),
+            (CmpOp::I32Xor, Instruction::select_i32_xor, true),
+            (CmpOp::I32Eq, Instruction::select_i32_eq, true),
+            (CmpOp::I32Ne, Instruction::select_i32_eq, false),
+            (CmpOp::I32LtS, swap_cmp_select_ops!(Instruction::select_i32_le_s), false),
+            (CmpOp::I32LtU, swap_cmp_select_ops!(Instruction::select_i32_le_u), false),
+            (CmpOp::I32LeS, swap_cmp_select_ops!(Instruction::select_i32_lt_s), false),
+            (CmpOp::I32LeU, swap_cmp_select_ops!(Instruction::select_i32_lt_u), false),
+            (CmpOp::I32GtS, Instruction::select_i32_le_s, false),
+            (CmpOp::I32GtU, Instruction::select_i32_le_u, false),
+            (CmpOp::I32GeS, Instruction::select_i32_lt_s, false),
+            (CmpOp::I32GeU, Instruction::select_i32_lt_u, false),
+            (CmpOp::I64And, Instruction::select_i64_and, true),
+            (CmpOp::I64Or, Instruction::select_i64_or, true),
+            (CmpOp::I64Xor, Instruction::select_i64_xor, true),
+            (CmpOp::I64Eq, Instruction::select_i64_eq, true),
+            (CmpOp::I64Ne, Instruction::select_i64_eq, false),
+            (CmpOp::I64LtS, swap_cmp_select_ops!(Instruction::select_i64_le_s), false),
+            (CmpOp::I64LtU, swap_cmp_select_ops!(Instruction::select_i64_le_u), false),
+            (CmpOp::I64LeS, swap_cmp_select_ops!(Instruction::select_i64_lt_s), false),
+            (CmpOp::I64LeU, swap_cmp_select_ops!(Instruction::select_i64_lt_u), false),
+            (CmpOp::I64GtS, Instruction::select_i64_le_s, false),
+            (CmpOp::I64GtU, Instruction::select_i64_le_u, false),
+            (CmpOp::I64GeS, Instruction::select_i64_lt_s, false),
+            (CmpOp::I64GeU, Instruction::select_i64_lt_u, false),
+            (CmpOp::F32Eq, Instruction::select_f32_eq, true),
+            (CmpOp::F32Ne, Instruction::select_f32_eq, false),
+            (CmpOp::F32Lt, swap_cmp_select_ops!(Instruction::select_f32_lt), true),
+            (CmpOp::F32Le, swap_cmp_select_ops!(Instruction::select_f32_le), true),
+            (CmpOp::F32Gt, Instruction::select_f32_lt, true),
+            (CmpOp::F32Ge, Instruction::select_f32_le, true),
+            (CmpOp::F64Eq, Instruction::select_f64_eq, true),
+            (CmpOp::F64Ne, Instruction::select_f64_eq, false),
+            (CmpOp::F64Lt, swap_cmp_select_ops!(Instruction::select_f64_lt), true),
+            (CmpOp::F64Le, swap_cmp_select_ops!(Instruction::select_f64_le), true),
+            (CmpOp::F64Gt, Instruction::select_f64_lt, true),
+            (CmpOp::F64Ge, Instruction::select_f64_le, true),
         ] {
-            run_test(op, kind, ty, expected)
+            run_test(op, kind, ty, expected, swap_operands)
         }
     }
 
