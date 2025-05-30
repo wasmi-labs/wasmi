@@ -1,5 +1,6 @@
 #![expect(dead_code, unused_imports, unused_variables)]
 
+mod instrs;
 mod layout;
 #[cfg(feature = "simd")]
 mod simd;
@@ -8,6 +9,7 @@ mod utils;
 mod visit;
 
 use self::{
+    instrs::InstrEncoder,
     layout::{StackLayout, StackSpace},
     stack::{LocalIdx, Operand, OperandIdx, Stack},
     utils::Reset,
@@ -15,7 +17,7 @@ use self::{
 use crate::{
     core::FuelCostsProvider,
     engine::{
-        translator::{LabelRegistry, WasmTranslator},
+        translator::{Instr, LabelRegistry, WasmTranslator},
         CompiledFuncEntity,
     },
     module::{FuncIdx, ModuleHeader, WasmiValueType},
@@ -59,6 +61,8 @@ pub struct FuncTranslator {
     layout: StackLayout,
     /// Registers and pins labels and tracks their users.
     labels: LabelRegistry,
+    /// Constructs and encodes function instructions.
+    instrs: InstrEncoder,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -70,6 +74,8 @@ pub struct FuncTranslatorAllocations {
     layout: StackLayout,
     /// Registers and pins labels and tracks their users.
     labels: LabelRegistry,
+    /// Constructs and encodes function instructions.
+    instrs: InstrEncoder,
 }
 
 impl WasmTranslator<'_> for FuncTranslator {
@@ -141,6 +147,7 @@ impl FuncTranslator {
             stack,
             layout,
             labels,
+            instrs,
         })
     }
 
@@ -150,6 +157,7 @@ impl FuncTranslator {
             stack: self.stack,
             layout: self.layout,
             labels: self.labels,
+            instrs: self.instrs,
         }
     }
 
