@@ -78,6 +78,15 @@ pub struct FuncTranslatorAllocations {
     instrs: InstrEncoder,
 }
 
+impl Reset for FuncTranslatorAllocations {
+    fn reset(&mut self) {
+        self.stack.reset();
+        self.layout.reset();
+        self.labels.reset();
+        self.instrs.reset();
+    }
+}
+
 impl WasmTranslator<'_> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
@@ -137,7 +146,12 @@ impl FuncTranslator {
             stack,
             layout,
             labels,
-        } = alloc;
+            instrs,
+        } = {
+            let mut alloc = alloc;
+            alloc.reset();
+            alloc
+        };
         Ok(Self {
             func,
             engine,
