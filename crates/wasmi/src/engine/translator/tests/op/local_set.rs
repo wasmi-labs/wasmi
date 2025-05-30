@@ -147,8 +147,8 @@ fn overwrite_select_result_1() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::select_i32_ne_imm16(Reg::from(0), Reg::from(0), 0_i16),
-                Instruction::register2_ext(-1, -2),
+                Instruction::select_i32_eq_imm16(Reg::from(0), Reg::from(0), 0_i16),
+                Instruction::register2_ext(-2, -1),
                 Instruction::return_reg(Reg::from(0)),
             ])
             .consts([10, 20]),
