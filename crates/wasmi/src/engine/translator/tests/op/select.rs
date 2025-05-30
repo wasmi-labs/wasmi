@@ -410,7 +410,6 @@ fn test_cmp_select_eqz() {
             )
         "#,
         );
-        std::println!("wasm = {}", wasm);
         let mut true_val = Reg::from(2);
         let mut false_val = Reg::from(3);
         if swap_operands {
