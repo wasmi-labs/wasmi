@@ -8,6 +8,24 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.47.0` - 2025-05-30
+
+### Changed
+
+- Remove the `downcast-rs` dependency from Wasmi crates. [#1517]
+- Bump the minimum supported Rust version (MSRV) to Rust 1.86. [#1518]
+  - This change was necessitated by the removal of `downcast-rs`.
+
+### Internal
+
+- Lower `select` instructions more aggressively. [#1526]
+  - This significantly reduced the number of different `select` instruction
+    variants and thus might have positive affects on Wasmi's execution performance.
+
+[#1517]: https://github.com/wasmi-labs/wasmi/pull/1517
+[#1518]: https://github.com/wasmi-labs/wasmi/pull/1518
+[#1526]: https://github.com/wasmi-labs/wasmi/pull/1526
+
 ## `0.46.0` - 2025-05-08
 
 ### Changed
