@@ -1,11 +1,12 @@
 #![expect(dead_code, unused_imports, unused_variables)]
 
+#[macro_use]
+mod utils;
 mod instrs;
 mod layout;
 #[cfg(feature = "simd")]
 mod simd;
 mod stack;
-mod utils;
 mod visit;
 
 use self::{
@@ -18,8 +19,10 @@ use crate::{
     core::FuelCostsProvider,
     engine::{
         translator::{Instr, LabelRegistry, WasmTranslator},
+        BlockType,
         CompiledFuncEntity,
     },
+    ir::Instruction,
     module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
@@ -143,15 +146,22 @@ impl FuncTranslator {
             .then(|| config.fuel_costs())
             .cloned();
         let FuncTranslatorAllocations {
-            stack,
+            mut stack,
             layout,
-            labels,
-            instrs,
+            mut labels,
+            mut instrs,
         } = {
             let mut alloc = alloc;
             alloc.reset();
             alloc
         };
+        let func_ty = module.get_type_of_func(func);
+        let block_ty = BlockType::func_type(func_ty);
+        let end_label = labels.new_label();
+        let consume_fuel = fuel_costs
+            .as_ref()
+            .map(|_| instrs.push_instr(Instruction::consume_fuel(1)));
+        stack.push_block(block_ty, end_label, consume_fuel)?;
         Ok(Self {
             func,
             engine,
