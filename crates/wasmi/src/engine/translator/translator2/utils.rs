@@ -16,7 +16,15 @@ macro_rules! bail_unreachable {
 }
 
 /// Implemented by types that can be reset for reuse.
-pub trait Reset {
+pub trait Reset: Sized {
     /// Resets `self` for reuse.
     fn reset(&mut self);
+
+    /// Returns `self` in resetted state.
+    #[must_use]
+    fn into_reset(self) -> Self {
+        let mut this = self;
+        this.reset();
+        this
+    }
 }
