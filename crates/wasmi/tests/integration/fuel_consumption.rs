@@ -6,6 +6,7 @@ use wasmi::{Config, Engine, Error, Func, Linker, Module, Store};
 fn test_setup() -> (Store<()>, Linker<()>) {
     let mut config = Config::default();
     config.consume_fuel(true);
+    config.compilation_mode(wasmi::CompilationMode::Eager);
     let engine = Engine::new(&config);
     let store = Store::new(&engine, ());
     let linker = Linker::new(&engine);
