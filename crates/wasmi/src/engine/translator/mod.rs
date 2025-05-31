@@ -393,6 +393,17 @@ macro_rules! impl_visit_operator {
     ( @bulk_memory $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
+    ( @reference_types TypedSelectMulti { tys: $tys_type:ty } => $visit:ident $_ann:tt $($rest:tt)* ) => {
+        fn $visit(&mut self, tys: $tys_type) -> Self::Output {
+            let offset = self.current_pos();
+            let tys_cloned = tys.clone();
+            self.validate_then_translate(
+                move |validator| validator.visitor(offset).$visit(tys_cloned),
+                move |translator| translator.$visit(tys),
+            )
+        }
+        impl_visit_operator!($($rest)*);
+    };
     ( @reference_types $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
