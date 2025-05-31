@@ -26,6 +26,7 @@ use crate::{
     module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
+    FuncType,
 };
 use wasmparser::WasmFeatures;
 
@@ -146,23 +147,12 @@ impl FuncTranslator {
             .then(|| config.fuel_costs())
             .cloned();
         let FuncTranslatorAllocations {
-            mut stack,
+            stack,
             layout,
-            mut labels,
-            mut instrs,
-        } = {
-            let mut alloc = alloc;
-            alloc.reset();
-            alloc
-        };
-        let func_ty = module.get_type_of_func(func);
-        let block_ty = BlockType::func_type(func_ty);
-        let end_label = labels.new_label();
-        let consume_fuel = fuel_costs
-            .as_ref()
-            .map(|_| instrs.push_instr(Instruction::consume_fuel(1)));
-        stack.push_block(block_ty, end_label, consume_fuel)?;
-        Ok(Self {
+            labels,
+            instrs,
+        } = alloc.into_reset();
+        let mut translator = Self {
             func,
             engine,
             module,
@@ -172,7 +162,39 @@ impl FuncTranslator {
             layout,
             labels,
             instrs,
-        })
+        };
+        translator.init_func_body_block()?;
+        translator.init_func_params()?;
+        Ok(translator)
+    }
+
+    /// Initializes the function body enclosing control block.
+    fn init_func_body_block(&mut self) -> Result<(), Error> {
+        let func_ty = self.module.get_type_of_func(self.func);
+        let block_ty = BlockType::func_type(func_ty);
+        let end_label = self.labels.new_label();
+        let consume_fuel = self
+            .fuel_costs
+            .as_ref()
+            .map(|_| self.instrs.push_instr(Instruction::consume_fuel(1)));
+        self.stack.push_block(block_ty, end_label, consume_fuel)?;
+        Ok(())
+    }
+
+    /// Initializes the function's parameters.
+    fn init_func_params(&mut self) -> Result<(), Error> {
+        for ty in self.func_type().params() {
+            self.stack.register_locals(1, *ty)?;
+            self.layout.register_locals(1, *ty)?;
+        }
+        Ok(())
+    }
+
+    /// Returns the [`FuncType`] of the function that is currently translated.
+    fn func_type(&self) -> FuncType {
+        let dedup_func_type = self.module.get_type_of_func(self.func);
+        self.engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
