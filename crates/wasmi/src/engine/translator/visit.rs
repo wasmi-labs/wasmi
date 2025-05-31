@@ -13,11 +13,12 @@ use super::{
     FuncTranslator,
     TypedVal,
 };
+use alloc::vec::Vec;
 use crate::{
     core::{wasm, FuelCostsProvider, TrapCode, ValType, F32, F64},
     engine::{
         translator::{AcquiredTarget, Provider},
-        BlockType,
+        BlockType, TranslationError,
     },
     ir::{
         self,
@@ -627,6 +628,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
         let type_hint = WasmiValueType::from(ty).into_inner();
         self.translate_select(Some(type_hint))
+    }
+
+    fn visit_typed_select_multi(&mut self, _ty: Vec<wasmparser::ValType>) -> Self::Output {
+        Err(Error::from(TranslationError::InvalidMultiSelectInstruction))
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {

@@ -311,7 +311,7 @@ impl ConstExpr {
             };
         }
         reader
-            .ensure_end()
+            .finish()
             .expect("due to Wasm validation this is guaranteed to succeed");
         let op = stack
             .pop()
