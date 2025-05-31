@@ -465,20 +465,11 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI32EqImm16 { result, lhs, rhs } => {
                     self.execute_select_i32_eq_imm16(result, lhs, rhs)
                 }
-                Instr::SelectI32Ne { result, lhs, rhs } => {
-                    self.execute_select_i32_ne(result, lhs, rhs)
-                }
-                Instr::SelectI32NeImm16 { result, lhs, rhs } => {
-                    self.execute_select_i32_ne_imm16(result, lhs, rhs)
-                }
                 Instr::SelectI32LtS { result, lhs, rhs } => {
                     self.execute_select_i32_lt_s(result, lhs, rhs)
                 }
                 Instr::SelectI32LtSImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i32_lt_s_imm16_rhs(result, lhs, rhs)
-                }
-                Instr::SelectI32LtSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i32_lt_s_imm16_lhs(result, lhs, rhs)
                 }
                 Instr::SelectI32LtU { result, lhs, rhs } => {
                     self.execute_select_i32_lt_u(result, lhs, rhs)
@@ -486,26 +477,17 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI32LtUImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i32_lt_u_imm16_rhs(result, lhs, rhs)
                 }
-                Instr::SelectI32LtUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i32_lt_u_imm16_lhs(result, lhs, rhs)
-                }
                 Instr::SelectI32LeS { result, lhs, rhs } => {
                     self.execute_select_i32_le_s(result, lhs, rhs)
                 }
                 Instr::SelectI32LeSImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i32_le_s_imm16_rhs(result, lhs, rhs)
                 }
-                Instr::SelectI32LeSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i32_le_s_imm16_lhs(result, lhs, rhs)
-                }
                 Instr::SelectI32LeU { result, lhs, rhs } => {
                     self.execute_select_i32_le_u(result, lhs, rhs)
                 }
                 Instr::SelectI32LeUImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i32_le_u_imm16_rhs(result, lhs, rhs)
-                }
-                Instr::SelectI32LeUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i32_le_u_imm16_lhs(result, lhs, rhs)
                 }
                 Instr::SelectI32And { result, lhs, rhs } => {
                     self.execute_select_i32_and(result, lhs, rhs)
@@ -525,35 +507,11 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI32XorImm16 { result, lhs, rhs } => {
                     self.execute_select_i32_xor_imm16(result, lhs, rhs)
                 }
-                Instr::SelectI32Nand { result, lhs, rhs } => {
-                    self.execute_select_i32_nand(result, lhs, rhs)
-                }
-                Instr::SelectI32NandImm16 { result, lhs, rhs } => {
-                    self.execute_select_i32_nand_imm16(result, lhs, rhs)
-                }
-                Instr::SelectI32Nor { result, lhs, rhs } => {
-                    self.execute_select_i32_nor(result, lhs, rhs)
-                }
-                Instr::SelectI32NorImm16 { result, lhs, rhs } => {
-                    self.execute_select_i32_nor_imm16(result, lhs, rhs)
-                }
-                Instr::SelectI32Xnor { result, lhs, rhs } => {
-                    self.execute_select_i32_xnor(result, lhs, rhs)
-                }
-                Instr::SelectI32XnorImm16 { result, lhs, rhs } => {
-                    self.execute_select_i32_xnor_imm16(result, lhs, rhs)
-                }
                 Instr::SelectI64Eq { result, lhs, rhs } => {
                     self.execute_select_i64_eq(result, lhs, rhs)
                 }
                 Instr::SelectI64EqImm16 { result, lhs, rhs } => {
                     self.execute_select_i64_eq_imm16(result, lhs, rhs)
-                }
-                Instr::SelectI64Ne { result, lhs, rhs } => {
-                    self.execute_select_i64_ne(result, lhs, rhs)
-                }
-                Instr::SelectI64NeImm16 { result, lhs, rhs } => {
-                    self.execute_select_i64_ne_imm16(result, lhs, rhs)
                 }
                 Instr::SelectI64LtS { result, lhs, rhs } => {
                     self.execute_select_i64_lt_s(result, lhs, rhs)
@@ -561,17 +519,11 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI64LtSImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i64_lt_s_imm16_rhs(result, lhs, rhs)
                 }
-                Instr::SelectI64LtSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i64_lt_s_imm16_lhs(result, lhs, rhs)
-                }
                 Instr::SelectI64LtU { result, lhs, rhs } => {
                     self.execute_select_i64_lt_u(result, lhs, rhs)
                 }
                 Instr::SelectI64LtUImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i64_lt_u_imm16_rhs(result, lhs, rhs)
-                }
-                Instr::SelectI64LtUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i64_lt_u_imm16_lhs(result, lhs, rhs)
                 }
                 Instr::SelectI64LeS { result, lhs, rhs } => {
                     self.execute_select_i64_le_s(result, lhs, rhs)
@@ -579,17 +531,11 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI64LeSImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i64_le_s_imm16_rhs(result, lhs, rhs)
                 }
-                Instr::SelectI64LeSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i64_le_s_imm16_lhs(result, lhs, rhs)
-                }
                 Instr::SelectI64LeU { result, lhs, rhs } => {
                     self.execute_select_i64_le_u(result, lhs, rhs)
                 }
                 Instr::SelectI64LeUImm16Rhs { result, lhs, rhs } => {
                     self.execute_select_i64_le_u_imm16_rhs(result, lhs, rhs)
-                }
-                Instr::SelectI64LeUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_select_i64_le_u_imm16_lhs(result, lhs, rhs)
                 }
                 Instr::SelectI64And { result, lhs, rhs } => {
                     self.execute_select_i64_and(result, lhs, rhs)
@@ -609,29 +555,8 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectI64XorImm16 { result, lhs, rhs } => {
                     self.execute_select_i64_xor_imm16(result, lhs, rhs)
                 }
-                Instr::SelectI64Nand { result, lhs, rhs } => {
-                    self.execute_select_i64_nand(result, lhs, rhs)
-                }
-                Instr::SelectI64NandImm16 { result, lhs, rhs } => {
-                    self.execute_select_i64_nand_imm16(result, lhs, rhs)
-                }
-                Instr::SelectI64Nor { result, lhs, rhs } => {
-                    self.execute_select_i64_nor(result, lhs, rhs)
-                }
-                Instr::SelectI64NorImm16 { result, lhs, rhs } => {
-                    self.execute_select_i64_nor_imm16(result, lhs, rhs)
-                }
-                Instr::SelectI64Xnor { result, lhs, rhs } => {
-                    self.execute_select_i64_xnor(result, lhs, rhs)
-                }
-                Instr::SelectI64XnorImm16 { result, lhs, rhs } => {
-                    self.execute_select_i64_xnor_imm16(result, lhs, rhs)
-                }
                 Instr::SelectF32Eq { result, lhs, rhs } => {
                     self.execute_select_f32_eq(result, lhs, rhs)
-                }
-                Instr::SelectF32Ne { result, lhs, rhs } => {
-                    self.execute_select_f32_ne(result, lhs, rhs)
                 }
                 Instr::SelectF32Lt { result, lhs, rhs } => {
                     self.execute_select_f32_lt(result, lhs, rhs)
@@ -639,29 +564,14 @@ impl<'engine> Executor<'engine> {
                 Instr::SelectF32Le { result, lhs, rhs } => {
                     self.execute_select_f32_le(result, lhs, rhs)
                 }
-                Instr::SelectF32NotLt { result, lhs, rhs } => {
-                    self.execute_select_f32_not_lt(result, lhs, rhs)
-                }
-                Instr::SelectF32NotLe { result, lhs, rhs } => {
-                    self.execute_select_f32_not_le(result, lhs, rhs)
-                }
                 Instr::SelectF64Eq { result, lhs, rhs } => {
                     self.execute_select_f64_eq(result, lhs, rhs)
-                }
-                Instr::SelectF64Ne { result, lhs, rhs } => {
-                    self.execute_select_f64_ne(result, lhs, rhs)
                 }
                 Instr::SelectF64Lt { result, lhs, rhs } => {
                     self.execute_select_f64_lt(result, lhs, rhs)
                 }
                 Instr::SelectF64Le { result, lhs, rhs } => {
                     self.execute_select_f64_le(result, lhs, rhs)
-                }
-                Instr::SelectF64NotLt { result, lhs, rhs } => {
-                    self.execute_select_f64_not_lt(result, lhs, rhs)
-                }
-                Instr::SelectF64NotLe { result, lhs, rhs } => {
-                    self.execute_select_f64_not_le(result, lhs, rhs)
                 }
                 Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
                 Instr::GlobalGet { result, global } => {

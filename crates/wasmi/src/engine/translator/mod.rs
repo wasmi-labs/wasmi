@@ -2524,17 +2524,24 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        let true_val = self.alloc.stack.provider2reg(&true_val)?;
-        let false_val = self.alloc.stack.provider2reg(&false_val)?;
+        let mut true_val = self.alloc.stack.provider2reg(&true_val)?;
+        let mut false_val = self.alloc.stack.provider2reg(&false_val)?;
         let result = self.alloc.stack.push_dynamic()?;
-        if self
+        match self
             .alloc
             .instr_encoder
             .try_fuse_select(&mut self.alloc.stack, result, condition)
-            .is_none()
         {
-            let select_instr = Instruction::select_i32_ne_imm16(result, condition, 0_i16);
-            self.push_fueled_instr(select_instr, FuelCostsProvider::base)?;
+            Some((_, swap_operands)) => {
+                if swap_operands {
+                    mem::swap(&mut true_val, &mut false_val);
+                }
+            }
+            None => {
+                let select_instr = Instruction::select_i32_eq_imm16(result, condition, 0_i16);
+                self.push_fueled_instr(select_instr, FuelCostsProvider::base)?;
+                mem::swap(&mut true_val, &mut false_val);
+            }
         };
         self.append_instr(Instruction::register2_ext(true_val, false_val))?;
         Ok(())
@@ -2651,9 +2658,9 @@ impl FuncTranslator {
 
     /// Convenience method to allow inspecting the provider buffer while manipulating `self` circumventing the borrow checker.
     fn apply_providers_buffer<R>(&mut self, f: impl FnOnce(&mut Self, &[TypedProvider]) -> R) -> R {
-        let values = core::mem::take(&mut self.alloc.buffer.providers);
+        let values = mem::take(&mut self.alloc.buffer.providers);
         let result = f(self, &values[..]);
-        let _ = core::mem::replace(&mut self.alloc.buffer.providers, values);
+        let _ = mem::replace(&mut self.alloc.buffer.providers, values);
         result
     }
 

@@ -15,12 +15,11 @@ exclude.workspace = true
 
 [dependencies]
 libm = { version = "0.2.11", default-features = false }
-downcast-rs = { version = "2.0.1", default-features = false, features = ["sync"] }
 
 [features]
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
-std = ["downcast-rs/std"]
+std = []
 # Enables the Wasm `simd` proposal.
 #
 # This also changes the size of `UntypedVal` from 64-bit to 128-bit

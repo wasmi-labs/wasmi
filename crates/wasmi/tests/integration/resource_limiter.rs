@@ -43,16 +43,15 @@ impl Test {
     fn new(mem_pages: i32, table_elts: i32, limits: StoreLimits) -> Result<Self, Error> {
         let wasm = format!(
             r#"
-        (module
-            (memory {})
-            (table {} funcref)
-            (func (export "memory_grow") (param $pages i32) (result i32) (memory.grow (local.get $pages)))
-            (func (export "memory_size") (result i32) (memory.size))
-            (func (export "table_grow") (param $elts i32) (result i32) (table.grow (ref.func 0) (local.get $elts)))
-            (func (export "table_size") (result i32) (table.size))
-        )
-        "#,
-            mem_pages, table_elts
+            (module
+                (memory {mem_pages})
+                (table {table_elts} funcref)
+                (func (export "memory_grow") (param $pages i32) (result i32) (memory.grow (local.get $pages)))
+                (func (export "memory_size") (result i32) (memory.size))
+                (func (export "table_grow") (param $elts i32) (result i32) (table.grow (ref.func 0) (local.get $elts)))
+                (func (export "table_size") (result i32) (table.size))
+            )
+            "#
         );
         let (mut store, linker) = test_setup(limits);
         let module = create_module(&store, wasm.as_bytes())?;

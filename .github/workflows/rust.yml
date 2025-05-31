@@ -13,7 +13,7 @@ concurrency:
 
 env:
   # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-  RUST_NIGHTLY_VERSION: nightly-2025-03-30
+  RUST_NIGHTLY_VERSION: nightly-2025-05-10
 
 jobs:
   check:
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.83.0
+      - uses: dtolnay/rust-toolchain@1.86.0
       - uses: Swatinem/rust-cache@v2
       - run: >-
           cargo check
@@ -369,7 +369,7 @@ jobs:
         run: |
           cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v5.4.0
+        uses: codecov/codecov-action@v5.4.3
         with:
           token: ${{secrets.CODECOV_TOKEN}}
           fail_ci_if_error: true
