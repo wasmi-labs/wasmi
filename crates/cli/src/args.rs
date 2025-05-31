@@ -82,8 +82,8 @@ pub struct Args {
     #[clap(long = "invoke", value_name = "FUNCTION")]
     invoke: Option<String>,
 
-    /// Enable lazy Wasm compilation.
-    #[clap(long = "compilation-mode", value_enum, default_value_t=CompilationMode::Eager)]
+    /// Select Wasmi's mode of compilation.
+    #[clap(long = "compilation-mode", value_enum, default_value_t=CompilationMode::LazyTranslation)]
     compilation_mode: CompilationMode,
 
     /// Enable execution fiel metering with N units of fuel.
@@ -104,8 +104,8 @@ pub struct Args {
 /// The chosen Wasmi compilation mode.
 #[derive(Debug, Default, Copy, Clone, ValueEnum)]
 enum CompilationMode {
-    #[default]
     Eager,
+    #[default]
     LazyTranslation,
     Lazy,
 }
