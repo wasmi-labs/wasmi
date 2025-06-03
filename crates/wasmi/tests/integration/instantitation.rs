@@ -10,7 +10,7 @@ fn instantiate_out_of_memory() {
         )
     "#;
     let engine = Engine::default();
-    let module = Module::new(&engine, &wasm).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let mut store = Store::new(&engine, ());
     Instance::new(&mut store, &module, &[]).unwrap_err();
 }
