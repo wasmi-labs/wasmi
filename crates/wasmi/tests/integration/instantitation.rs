@@ -1,6 +1,4 @@
-use wasmi::{
-    Engine, Instance, Module, Store
-};
+use wasmi::{Engine, Instance, Module, Store};
 
 #[test]
 fn instantiate_out_of_memory() {
