@@ -21,6 +21,7 @@ use crate::{
         translator::{Instr, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
+        TranslationError,
     },
     ir::Instruction,
     module::{FuncIdx, ModuleHeader, WasmiValueType},
@@ -121,10 +122,18 @@ impl WasmTranslator<'_> for FuncTranslator {
     fn update_pos(&mut self, _pos: usize) {}
 
     fn finish(
-        self,
-        _finalize: impl FnOnce(CompiledFuncEntity),
+        mut self,
+        finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<Self::Allocations, Error> {
-        todo!()
+        let Ok(max_height) = u16::try_from(self.stack.max_height()) else {
+            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
+        };
+        finalize(CompiledFuncEntity::new(
+            max_height,
+            self.instrs.drain(),
+            self.layout.consts(),
+        ));
+        Ok(self.into_allocations())
     }
 }
 

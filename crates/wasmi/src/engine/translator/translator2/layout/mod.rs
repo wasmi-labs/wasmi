@@ -1,6 +1,6 @@
 mod consts;
 
-use self::consts::ConstRegistry;
+use self::consts::{ConstRegistry, ConstRegistryIter};
 use super::{LocalIdx, OperandIdx, Reset};
 use crate::{
     core::{UntypedVal, ValType},
@@ -98,6 +98,15 @@ impl StackLayout {
     /// If too many function local constants have been allocated already.
     pub fn const_to_reg(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
         self.consts.alloc(value.into())
+    }
+
+    /// Returns an iterator yielding all function local constants.
+    ///
+    /// # Note
+    ///
+    /// The function local constant are yielded in reverse order of allocation.
+    pub fn consts(&self) -> ConstRegistryIter {
+        self.consts.iter()
     }
 }
 

@@ -1,6 +1,6 @@
 use super::{Instr, Reset};
 use crate::ir::Instruction;
-use alloc::vec::Vec;
+use alloc::vec::{self, Vec};
 
 /// Creates and encodes the list of [`Instruction`]s for a function.
 #[derive(Debug, Default)]
@@ -46,5 +46,37 @@ impl InstrEncoder {
     /// If `instr` is out of bounds for `self`.
     pub fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
+    }
+
+    /// Returns an iterator yielding all [`Instruction`]s of the [`InstrEncoder`].
+    ///
+    /// # Note
+    ///
+    /// The [`InstrEncoder`] will be empty after this operation.
+    pub fn drain(&mut self) -> InstrEncoderIter {
+        InstrEncoderIter {
+            iter: self.instrs.drain(..),
+        }
+    }
+}
+
+/// Iterator yielding all [`Instruction`]s of the [`InstrEncoder`].
+#[derive(Debug)]
+pub struct InstrEncoderIter<'a> {
+    /// The underlying iterator.
+    iter: vec::Drain<'a, Instruction>,
+}
+
+impl<'a> Iterator for InstrEncoderIter<'a> {
+    type Item = Instruction;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl ExactSizeIterator for InstrEncoderIter<'_> {
+    fn len(&self) -> usize {
+        self.iter.len()
     }
 }
