@@ -7,7 +7,7 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
-    core::UntypedVal,
+    core::{MemoryError, UntypedVal},
     error::ErrorKind,
     func::WasmFuncEntity,
     memory::DataSegment,
@@ -368,10 +368,12 @@ impl Module {
                     offset,
                     bytes,
                 } => {
-                    let offset =
-                        u32::from(Self::eval_init_expr(context.as_context(), builder, offset))
-                            as usize;
                     let memory = builder.get_memory(memory_index.into_u32());
+                    let offset = Self::eval_init_expr(context.as_context(), builder, offset);
+                    let offset = match usize::try_from(u64::from(offset)) {
+                        Ok(offset) => offset,
+                        Err(_) => return Err(Error::from(MemoryError::OutOfBoundsAccess)),
+                    };
                     memory.write(context.as_context_mut(), offset, bytes)?;
                     DataSegment::new_active(context.as_context_mut())
                 }
