@@ -4,7 +4,7 @@ use super::LabelRef;
 #[cfg(doc)]
 use super::ValueStack;
 use crate::{
-    engine::{BlockType, translator::Instr, TranslationError},
+    engine::{translator::Instr, BlockType, TranslationError},
     ir::{BoundedRegSpan, RegSpan},
     Engine,
     Error,

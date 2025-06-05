@@ -4,7 +4,7 @@ use crate::{
         FuelCostsProvider,
         V128,
     },
-    engine::translator::{provider::Provider, FuncTranslator},
+    engine::translator::{func::provider::Provider, FuncTranslator},
     ir::{Const32, Instruction, Reg},
 };
 use core::array;

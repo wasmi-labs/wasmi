@@ -1,5 +1,5 @@
-use super::ValueStack;
 use crate::{
+    engine::translator::func::ValueStack,
     ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Instruction, Reg},
     Error,
 };
