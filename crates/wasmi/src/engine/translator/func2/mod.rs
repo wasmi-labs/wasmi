@@ -12,7 +12,7 @@ mod visit;
 use self::{
     instrs::InstrEncoder,
     layout::{StackLayout, StackSpace},
-    stack::{LocalIdx, Operand, OperandIdx, Stack},
+    stack::{LocalIdx, Operand, OperandIdx, Stack, StackAllocations},
     utils::Reset,
 };
 use crate::{
@@ -74,7 +74,7 @@ pub struct FuncTranslator {
 #[derive(Debug, Default)]
 pub struct FuncTranslatorAllocations {
     /// Wasm value and control stack.
-    stack: Stack,
+    stack: StackAllocations,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
     /// Registers and pins labels and tracks their users.
@@ -161,6 +161,7 @@ impl FuncTranslator {
             labels,
             instrs,
         } = alloc.into_reset();
+        let stack = Stack::new(&engine, stack);
         let mut translator = Self {
             func,
             engine,
@@ -209,7 +210,7 @@ impl FuncTranslator {
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
     fn into_allocations(self) -> FuncTranslatorAllocations {
         FuncTranslatorAllocations {
-            stack: self.stack,
+            stack: self.stack.into_allocations(),
             layout: self.layout,
             labels: self.labels,
             instrs: self.instrs,
