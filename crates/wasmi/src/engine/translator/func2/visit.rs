@@ -1,5 +1,5 @@
-use super::FuncTranslator;
-use crate::Error;
+use super::{FuncTranslator, LocalIdx};
+use crate::{core::wasm, ir::Instruction, Error};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -125,7 +125,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        self.stack.push_local(LocalIdx::from(local_index))?;
+        Ok(())
     }
 
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
@@ -245,7 +247,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        self.stack.push_immediate(value)?;
+        Ok(())
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Self::Output {
@@ -409,7 +413,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, i32>(
+            Instruction::i32_add,
+            Instruction::i32_add_imm16,
+            wasm::i32_add,
+        )
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {
