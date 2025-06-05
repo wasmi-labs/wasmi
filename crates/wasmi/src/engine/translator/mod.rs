@@ -11,6 +11,9 @@ mod visit_register;
 #[cfg(test)]
 mod tests;
 
+#[cfg(doc)]
+use crate::Engine;
+
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
