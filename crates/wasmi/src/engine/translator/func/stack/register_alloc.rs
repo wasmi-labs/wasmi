@@ -12,7 +12,7 @@ use core::{
 use multi_stash::{Key, Key as StashKey, MultiStash};
 
 #[cfg(doc)]
-use crate::engine::translator::InstrEncoder;
+use crate::engine::translator::func::InstrEncoder;
 
 /// The register allocator using during translation.
 ///

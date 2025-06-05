@@ -48,7 +48,7 @@ pub use self::{
         TypedResumableCallOutOfFuel,
     },
     traits::{CallParams, CallResults},
-    translator::{Instr, TranslationError},
+    translator::TranslationError,
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},

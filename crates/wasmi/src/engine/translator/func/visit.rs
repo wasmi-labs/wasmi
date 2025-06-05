@@ -16,7 +16,7 @@ use super::{
 use crate::{
     core::{wasm, FuelCostsProvider, TrapCode, ValType, F32, F64},
     engine::{
-        translator::{AcquiredTarget, Provider},
+        translator::func::{AcquiredTarget, Provider},
         BlockType,
     },
     ir::{

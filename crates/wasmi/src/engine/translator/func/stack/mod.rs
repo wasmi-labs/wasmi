@@ -13,7 +13,7 @@ use super::{PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
-        translator::{Provider, UntypedProvider},
+        translator::func::{Provider, UntypedProvider},
         TranslationError,
     },
     ir::{Reg, RegSpan},
