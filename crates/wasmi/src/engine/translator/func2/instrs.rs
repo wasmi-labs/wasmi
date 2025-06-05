@@ -18,7 +18,7 @@ impl Reset for InstrEncoder {
 impl InstrEncoder {
     /// Returns the next [`Instr`].
     #[must_use]
-    fn next_instr(&self) -> Instr {
+    pub fn next_instr(&self) -> Instr {
         Instr::from_usize(self.instrs.len())
     }
 
