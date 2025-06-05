@@ -136,27 +136,44 @@ impl Stack {
         self.engine.config().get_consume_fuel()
     }
 
-    /// Pushes a Wasm `block` onto the [`Stack`].
+    /// Pushes the function enclosing Wasm `block` onto the [`Stack`].
     ///
     /// # Note
     ///
-    /// If `consume_fuel` is `None` and fuel metering is enabled this will inherit
-    /// the [`Instruction::ConsumeFuel`] from the last control frame on the [`Stack`].
+    /// - If `consume_fuel` is `None` fuel metering is expected to be disabled.
+    /// - If `consume_fuel` is `Some` fuel metering is expected to be enabled.
     ///
     /// # Errors
     ///
     /// If the stack height exceeds the maximum height.
-    pub fn push_block(
+    pub fn push_func_block(
         &mut self,
         ty: BlockType,
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
+        debug_assert!(self.controls.is_empty());
+        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
+        self.controls.push_block(ty, 0, label, consume_fuel);
+        Ok(())
+    }
+
+    /// Pushes a Wasm `block` onto the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// This inherits the `consume_fuel` [`Instr`] from the parent [`ControlFrame`].
+    ///
+    /// # Errors
+    ///
+    /// If the stack height exceeds the maximum height.
+    pub fn push_block(&mut self, ty: BlockType, label: LabelRef) -> Result<(), Error> {
+        debug_assert!(!self.controls.is_empty());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         let fuel_metering = self.is_fuel_metering_enabled();
-        let consume_fuel = match consume_fuel {
-            None if fuel_metering => {
+        let consume_fuel = match fuel_metering {
+            true => {
                 let consume_instr = self
                     .controls
                     .get(0)
@@ -164,7 +181,7 @@ impl Stack {
                     .expect("control frame must have consume instructions");
                 Some(consume_instr)
             }
-            consume_fuel => consume_fuel,
+            false => None,
         };
         self.controls
             .push_block(ty, block_height, label, consume_fuel);
@@ -192,6 +209,7 @@ impl Stack {
         consume_fuel: Option<Instr>,
         mut f: impl FnMut(Operand) -> Result<(), Error>,
     ) -> Result<(), Error> {
+        debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
@@ -221,6 +239,7 @@ impl Stack {
         reachability: IfReachability,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
+        debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
