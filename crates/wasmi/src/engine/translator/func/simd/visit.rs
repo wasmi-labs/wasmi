@@ -1,10 +1,11 @@
+use super::FuncTranslator;
 use crate::{
     core::{
         simd::{self, ImmLaneIdx32},
         FuelCostsProvider,
         V128,
     },
-    engine::translator::{func::provider::Provider, FuncTranslator},
+    engine::translator::func::provider::Provider,
     ir::{Const32, Instruction, Reg},
 };
 use core::array;
