@@ -1,7 +1,7 @@
 use super::{Operand, Reset};
 use crate::engine::{
-    translator::{BlockType, LabelRef},
-    Instr,
+    translator::{Instr, LabelRef},
+    BlockType,
 };
 use alloc::vec::{Drain, Vec};
 
