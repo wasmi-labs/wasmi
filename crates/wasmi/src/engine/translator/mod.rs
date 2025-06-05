@@ -13,10 +13,16 @@ mod visit_register;
 #[cfg(doc)]
 use crate::Engine;
 
+#[cfg(not(feature = "experimental-translator"))]
+pub use self::func::{FuncTranslator, FuncTranslatorAllocations};
+
+#[cfg(feature = "experimental-translator")]
+pub use self::func2::{FuncTranslator, FuncTranslatorAllocations};
+
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
-    func::{FuncTranslator, FuncTranslatorAllocations},
+    utils::Instr,
     labels::{LabelRef, LabelRegistry},
 };
 use super::code_map::CompiledFuncEntity;

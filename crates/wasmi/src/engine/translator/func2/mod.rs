@@ -1,4 +1,4 @@
-#![expect(dead_code, unused_imports, unused_variables)]
+#![expect(dead_code, unused_imports, unused_variables, unused_macros)]
 
 #[macro_use]
 mod utils;
