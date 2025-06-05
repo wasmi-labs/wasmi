@@ -16,10 +16,16 @@ mod tests;
 #[cfg(doc)]
 use crate::Engine;
 
+#[cfg(not(feature = "experimental-translator"))]
+pub use self::func::{FuncTranslator, FuncTranslatorAllocations};
+
+#[cfg(feature = "experimental-translator")]
+pub use self::func2::{FuncTranslator, FuncTranslatorAllocations};
+
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
-    func::{FuncTranslator, FuncTranslatorAllocations, Instr},
+    func::Instr,
     labels::{LabelRef, LabelRegistry},
 };
 use super::code_map::CompiledFuncEntity;
