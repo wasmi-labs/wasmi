@@ -3,9 +3,9 @@
 mod driver;
 mod error;
 mod func;
+mod func2;
 mod labels;
 mod relink_result;
-mod translator2;
 mod utils;
 mod visit_register;
 
