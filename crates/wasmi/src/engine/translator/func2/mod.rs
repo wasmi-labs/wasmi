@@ -1,4 +1,4 @@
-#![expect(dead_code, unused_imports, unused_variables, unused_macros)]
+#![expect(dead_code, unused_imports, unused_variables)]
 
 #[macro_use]
 mod utils;
@@ -16,14 +16,14 @@ use self::{
     utils::Reset,
 };
 use crate::{
-    core::FuelCostsProvider,
+    core::{FuelCostsProvider, Typed, TypedVal},
     engine::{
         translator::{Instr, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
         TranslationError,
     },
-    ir::Instruction,
+    ir::{Const16, Instruction, Reg},
     module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
@@ -221,5 +221,52 @@ impl FuncTranslator {
     /// Returns the [`Engine`] for which the function is compiled.
     fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Translates a commutative binary Wasm operator to Wasmi bytecode.
+    fn translate_binary_commutative<T, R>(
+        &mut self,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        consteval: fn(T, T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: Copy + From<TypedVal> + TryInto<Const16<T>>,
+        R: Into<TypedVal> + Typed,
+    {
+        bail_unreachable!(self);
+        match self.stack.pop2() {
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
+                let value = consteval(lhs.val().into(), rhs.val().into());
+                self.stack.push_immediate(value)?;
+                return Ok(());
+            }
+            (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
+                let lhs = self.layout.operand_to_reg(val)?;
+                let iidx = self.instrs.next_instr();
+                let result = self
+                    .layout
+                    .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
+                let instr = match T::from(imm.val()).try_into() {
+                    Ok(rhs) => make_instr_imm16(result, lhs, rhs),
+                    Err(_) => {
+                        let rhs = self.layout.const_to_reg(imm.val())?;
+                        make_instr(result, lhs, rhs)
+                    }
+                };
+                assert_eq!(self.instrs.push_instr(instr), iidx);
+                Ok(())
+            }
+            (lhs, rhs) => {
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                let iidx = self.instrs.next_instr();
+                let result = self
+                    .layout
+                    .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
+                assert_eq!(self.instrs.push_instr(make_instr(result, lhs, rhs)), iidx);
+                Ok(())
+            }
+        }
     }
 }
