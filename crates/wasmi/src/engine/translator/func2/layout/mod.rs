@@ -1,7 +1,7 @@
 mod consts;
 
 use self::consts::{ConstRegistry, ConstRegistryIter};
-use super::{LocalIdx, OperandIdx, Reset};
+use super::{LocalIdx, Operand, OperandIdx, Reset};
 use crate::{
     core::{UntypedVal, ValType},
     engine::TranslationError,
@@ -53,6 +53,27 @@ impl StackLayout {
             return StackSpace::Local;
         }
         StackSpace::Temp
+    }
+
+    /// Converts the `operand` into the associated [`Reg`].
+    ///
+    /// # Note
+    ///
+    /// Forwards to one of
+    ///
+    /// - [`StackLayout::local_to_reg`]
+    /// - [`StackLayout::temp_to_reg`]
+    /// - [`StackLayout::const_to_reg`]
+    ///
+    /// # Errors
+    ///
+    /// If the forwarded method returned an error.
+    pub fn operand_to_reg(&mut self, operand: Operand) -> Result<Reg, Error> {
+        match operand {
+            Operand::Local(operand) => self.local_to_reg(operand.local_index()),
+            Operand::Temp(operand) => self.temp_to_reg(operand.operand_index()),
+            Operand::Immediate(operand) => self.const_to_reg(operand.val()),
+        }
     }
 
     /// Converts the local `index` into the associated [`Reg`].
