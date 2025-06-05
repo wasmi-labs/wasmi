@@ -28,8 +28,8 @@ use super::Reset;
 use crate::{
     core::{TypedVal, UntypedVal, ValType},
     engine::{
-        translator::{BlockType, LabelRef},
-        Instr,
+        translator::{Instr, LabelRef},
+        BlockType,
         TranslationError,
     },
     ir::Reg,

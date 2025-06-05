@@ -5,6 +5,7 @@ mod error;
 mod func;
 mod labels;
 mod relink_result;
+mod translator2;
 mod utils;
 mod visit_register;
 
@@ -18,6 +19,7 @@ pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
     func::{FuncTranslator, FuncTranslatorAllocations, Instr},
+    labels::{LabelRef, LabelRegistry},
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
