@@ -58,6 +58,11 @@ impl Reset for ControlStack {
 }
 
 impl ControlStack {
+    /// Returns `true` if `self` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.height() == 0
+    }
+
     /// Returns the height of the [`ControlStack`].
     pub fn height(&self) -> usize {
         self.frames.len()
