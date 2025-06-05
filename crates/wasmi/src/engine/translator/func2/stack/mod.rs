@@ -43,7 +43,7 @@ use core::{array, mem, num::NonZero};
 use crate::ir::Instruction;
 
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Stack {
     /// The underlying [`Engine`].
     engine: Engine,
@@ -53,7 +53,37 @@ pub struct Stack {
     controls: ControlStack,
 }
 
+/// Reusable heap allocations for the [`Stack`].
+#[derive(Debug, Default)]
+pub struct StackAllocations {
+    /// The Wasm value stack.
+    operands: OperandStack,
+    /// The Wasm control stack.
+    controls: ControlStack,
+}
+
+impl Reset for StackAllocations {
+    fn reset(&mut self) {
+        self.operands.reset();
+        self.controls.reset();
+    }
+}
+
 impl Stack {
+    /// Creates a new empty [`Stack`] from the given `engine`.
+    pub fn new(engine: &Engine, alloc: StackAllocations) -> Self {
+        Self {
+            engine: engine.clone(),
+            operands: alloc.operands,
+            controls: alloc.controls,
+        }
+    }
+
+    /// Returns the reusable [`StackAllocations`] of `self`.
+    pub fn into_allocations(self) -> StackAllocations {
+        StackAllocations { operands: self.operands, controls: self.controls }
+    }
+
     /// Resets the [`Stack`] for reuse.
     pub fn reset(&mut self) {
         self.operands.reset();
