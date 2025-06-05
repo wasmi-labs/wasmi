@@ -77,10 +77,6 @@ impl StackLayout {
     ///
     /// If `index` cannot be converted into a [`Reg`].
     pub fn temp_to_reg(&self, index: OperandIdx) -> Result<Reg, Error> {
-        debug_assert!(
-            usize::from(index) >= self.len_locals,
-            "index must refer to a temporary operand"
-        );
         let index = usize::from(index);
         let Some(index) = index.checked_add(self.len_locals) else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
