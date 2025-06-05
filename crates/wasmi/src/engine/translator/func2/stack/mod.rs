@@ -81,7 +81,10 @@ impl Stack {
 
     /// Returns the reusable [`StackAllocations`] of `self`.
     pub fn into_allocations(self) -> StackAllocations {
-        StackAllocations { operands: self.operands, controls: self.controls }
+        StackAllocations {
+            operands: self.operands,
+            controls: self.controls,
+        }
     }
 
     /// Resets the [`Stack`] for reuse.
