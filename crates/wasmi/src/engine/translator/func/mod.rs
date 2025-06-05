@@ -1,5 +1,8 @@
 //! Function translation for the register-machine bytecode based Wasmi engine.
 
+// Note: needed for debugging of the new stack-based FuncTranslator
+#![cfg_attr(feature = "experimental-translator", expect(dead_code))]
+
 mod comparator;
 mod control_frame;
 mod control_stack;
