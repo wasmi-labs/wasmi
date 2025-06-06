@@ -3,26 +3,23 @@ mod locals;
 mod operand;
 mod operands;
 
-use self::{
+pub use self::{
     control::{
         BlockControlFrame,
         ControlFrame,
-        ControlFrameKind,
-        ControlStack,
         ElseControlFrame,
-        ElseReachability,
         IfControlFrame,
-        IfReachability,
         LoopControlFrame,
         UnreachableControlFrame,
     },
-    locals::LocalsRegistry,
-    operands::{OperandStack, StackOperand},
-};
-pub use self::{
     locals::LocalIdx,
     operand::Operand,
     operands::{OperandIdx, PreservedLocalsIter},
+};
+use self::{
+    control::{ControlStack, ElseReachability, IfReachability},
+    locals::LocalsRegistry,
+    operands::{OperandStack, StackOperand},
 };
 use super::Reset;
 use crate::{
@@ -310,9 +307,7 @@ impl Stack {
         ty: BlockType,
         kind: UnreachableControlFrame,
     ) -> Result<(), Error> {
-        let len_params = usize::from(ty.len_params(&self.engine));
-        let block_height = self.height() - len_params;
-        self.controls.push_unreachable(ty, block_height, kind);
+        self.controls.push_unreachable(kind);
         Ok(())
     }
 
