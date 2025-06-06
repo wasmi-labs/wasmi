@@ -69,14 +69,8 @@ impl ControlStack {
     }
 
     /// Pushes a new unreachable Wasm control frame onto the [`ControlStack`].
-    pub fn push_unreachable(
-        &mut self,
-        ty: BlockType,
-        height: usize,
-        kind: UnreachableControlFrame,
-    ) {
-        self.frames
-            .push(ControlFrame::new_unreachable(ty, height, kind))
+    pub fn push_unreachable(&mut self, kind: UnreachableControlFrame) {
+        self.frames.push(ControlFrame::from(kind))
     }
 
     /// Pushes a new Wasm `block` onto the [`ControlStack`].
@@ -87,8 +81,13 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
-        self.frames
-            .push(ControlFrame::new_block(ty, height, label, consume_fuel))
+        self.frames.push(ControlFrame::from(BlockControlFrame {
+            ty,
+            height,
+            is_branched_to: false,
+            consume_fuel,
+            label,
+        }))
     }
 
     /// Pushes a new Wasm `loop` onto the [`ControlStack`].
@@ -99,8 +98,13 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
-        self.frames
-            .push(ControlFrame::new_loop(ty, height, label, consume_fuel))
+        self.frames.push(ControlFrame::from(LoopControlFrame {
+            ty,
+            height,
+            is_branched_to: false,
+            consume_fuel,
+            label,
+        }))
     }
 
     /// Pushes a new Wasm `if` onto the [`ControlStack`].
@@ -113,13 +117,14 @@ impl ControlStack {
         reachability: IfReachability,
         else_operands: impl IntoIterator<Item = Operand>,
     ) {
-        self.frames.push(ControlFrame::new_if(
+        self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
             height,
-            label,
+            is_branched_to: false,
             consume_fuel,
+            label,
             reachability,
-        ));
+        }));
         self.else_operands.push(else_operands);
     }
 
@@ -135,14 +140,15 @@ impl ControlStack {
         reachability: ElseReachability,
         is_end_of_then_reachable: bool,
     ) -> Drain<Operand> {
-        self.frames.push(ControlFrame::new_else(
+        self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height,
-            label,
+            is_branched_to: false,
             consume_fuel,
+            label,
             reachability,
             is_end_of_then_reachable,
-        ));
+        }));
         self.else_operands
             .pop()
             .unwrap_or_else(|| panic!("missing operands for `else` control frame"))
@@ -217,165 +223,141 @@ impl ControlStack {
 
 /// A Wasm control frame.
 #[derive(Debug)]
-pub struct ControlFrame {
-    /// The block type of the [`ControlFrame`].
-    ty: BlockType,
-    /// The value stack height upon entering the [`ControlFrame`].
-    height: usize,
-    /// The number of branches to the [`ControlFrame`].
-    len_branches: usize,
-    /// The [`ControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
-    ///
-    /// # Note
-    ///
-    /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Instr>,
-    /// The kind of [`ControlFrame`] with associated data.
-    kind: ControlFrameKind,
+pub enum ControlFrame {
+    /// A Wasm `block` control frame.
+    Block(BlockControlFrame),
+    /// A Wasm `loop` control frame.
+    Loop(LoopControlFrame),
+    /// A Wasm `if` control frame.
+    If(IfControlFrame),
+    /// A Wasm `else` control frame.
+    Else(ElseControlFrame),
+    /// A generic unreachable control frame.
+    Unreachable(UnreachableControlFrame),
+}
+
+impl From<BlockControlFrame> for ControlFrame {
+    fn from(frame: BlockControlFrame) -> Self {
+        Self::Block(frame)
+    }
+}
+
+impl From<LoopControlFrame> for ControlFrame {
+    fn from(frame: LoopControlFrame) -> Self {
+        Self::Loop(frame)
+    }
+}
+
+impl From<IfControlFrame> for ControlFrame {
+    fn from(frame: IfControlFrame) -> Self {
+        Self::If(frame)
+    }
+}
+
+impl From<ElseControlFrame> for ControlFrame {
+    fn from(frame: ElseControlFrame) -> Self {
+        Self::Else(frame)
+    }
+}
+
+impl From<UnreachableControlFrame> for ControlFrame {
+    fn from(frame: UnreachableControlFrame) -> Self {
+        Self::Unreachable(frame)
+    }
 }
 
 impl ControlFrame {
-    /// Creates a new unreachable [`ControlFrame`] of `kind`.
-    pub fn new_unreachable(ty: BlockType, height: usize, kind: UnreachableControlFrame) -> Self {
-        Self {
-            ty,
-            height,
-            len_branches: 0,
-            consume_fuel: None,
-            kind: ControlFrameKind::Unreachable(kind),
-        }
-    }
-
-    /// Creates a new Wasm `block` [`ControlFrame`].
-    pub fn new_block(
-        ty: BlockType,
-        height: usize,
-        label: LabelRef,
-        consume_fuel: Option<Instr>,
-    ) -> Self {
-        Self {
-            ty,
-            height,
-            len_branches: 0,
-            consume_fuel,
-            kind: ControlFrameKind::Block(BlockControlFrame { label }),
-        }
-    }
-
-    /// Creates a new Wasm `loop` [`ControlFrame`].
-    pub fn new_loop(
-        ty: BlockType,
-        height: usize,
-        label: LabelRef,
-        consume_fuel: Option<Instr>,
-    ) -> Self {
-        Self {
-            ty,
-            height,
-            len_branches: 0,
-            consume_fuel,
-            kind: ControlFrameKind::Loop(LoopControlFrame { label }),
-        }
-    }
-
-    /// Creates a new Wasm `if` [`ControlFrame`].
-    pub fn new_if(
-        ty: BlockType,
-        height: usize,
-        label: LabelRef,
-        consume_fuel: Option<Instr>,
-        reachability: IfReachability,
-    ) -> Self {
-        Self {
-            ty,
-            height,
-            len_branches: 0,
-            consume_fuel,
-            kind: ControlFrameKind::If(IfControlFrame {
-                label,
-                reachability,
-            }),
-        }
-    }
-
-    /// Creates a new Wasm `else` [`ControlFrame`].
-    pub fn new_else(
-        ty: BlockType,
-        height: usize,
-        label: LabelRef,
-        consume_fuel: Option<Instr>,
-        reachability: ElseReachability,
-        is_end_of_then_reachable: bool,
-    ) -> Self {
-        Self {
-            ty,
-            height,
-            len_branches: 0,
-            consume_fuel,
-            kind: ControlFrameKind::Else(ElseControlFrame {
-                label,
-                reachability,
-                is_end_of_then_reachable,
-            }),
-        }
-    }
-
-    /// Returns the stack height of the [`ControlFrame`].
-    pub fn height(&self) -> usize {
-        self.height
-    }
-
-    /// Returns the [`BlockType`] of the [`ControlFrame`].
-    pub fn block_type(&self) -> BlockType {
-        self.ty
-    }
-
     /// Returns `true` if at least one branch targets the [`ControlFrame`].
     pub fn is_branched_to(&self) -> bool {
-        self.len_branches() >= 1
+        match self {
+            ControlFrame::Block(frame) => frame.is_branched_to(),
+            ControlFrame::Loop(frame) => frame.is_branched_to(),
+            ControlFrame::If(frame) => frame.is_branched_to(),
+            ControlFrame::Else(frame) => frame.is_branched_to(),
+            ControlFrame::Unreachable(frame) => {
+                panic!(
+                    "invalid query for unreachable control frame: `ControlFrame::is_branched_to`"
+                )
+            }
+        }
     }
 
-    /// Returns the number of branches to the [`ControlFrame`].
-    fn len_branches(&self) -> usize {
-        self.len_branches
-    }
-
-    /// Bumps the number of branches to the [`ControlFrame`] by 1.
-    fn bump_branches(&mut self) {
-        self.len_branches += 1;
+    /// Makes the [`ControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
+        match self {
+            ControlFrame::Block(frame) => frame.branch_to(),
+            ControlFrame::Loop(frame) => frame.branch_to(),
+            ControlFrame::If(frame) => frame.branch_to(),
+            ControlFrame::Else(frame) => frame.branch_to(),
+            ControlFrame::Unreachable(frame) => {
+                panic!("invalid query for unreachable control frame: `ControlFrame::branch_to`")
+            }
+        }
     }
 
     /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        self.consume_fuel
+        match self {
+            ControlFrame::Block(frame) => frame.consume_fuel_instr(),
+            ControlFrame::Loop(frame) => frame.consume_fuel_instr(),
+            ControlFrame::If(frame) => frame.consume_fuel_instr(),
+            ControlFrame::Else(frame) => frame.consume_fuel_instr(),
+            ControlFrame::Unreachable(frame) => {
+                panic!("invalid query for unreachable control frame: `ControlFrame::consume_fuel_instr`")
+            }
+        }
     }
-}
-
-/// A Wasm control frame kind.
-#[derive(Debug)]
-pub enum ControlFrameKind {
-    /// A Wasm `block` control frame.
-    Block(BlockControlFrame),
-    /// A Wasm `loop` control frame.
-    Loop(LoopControlFrame),
-    /// A Wasm `if` control frame, including `then`.
-    If(IfControlFrame),
-    /// A Wasm `else` control frame, as part of `if`.
-    Else(ElseControlFrame),
-    /// A generic unreachable Wasm control frame.
-    Unreachable(UnreachableControlFrame),
 }
 
 /// A Wasm `block` control frame.
 #[derive(Debug)]
 pub struct BlockControlFrame {
+    /// The block type of the [`BlockControlFrame`].
+    ty: BlockType,
+    /// The value stack height upon entering the [`BlockControlFrame`].
+    height: usize,
+    /// This is `true` if there is at least one branch to this [`BlockControlFrame`].
+    is_branched_to: bool,
+    /// The [`BlockControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This is `Some` if fuel metering is enabled and `None` otherwise.
+    consume_fuel: Option<Instr>,
     /// The label used to branch to the [`BlockControlFrame`].
     label: LabelRef,
 }
 
 impl BlockControlFrame {
+    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
+    pub fn ty(&self) -> BlockType {
+        self.ty
+    }
+
+    /// Returns the height of the [`BlockControlFrame`].
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    /// Returns `true` if there are branches to this [`BlockControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.is_branched_to
+    }
+
+    /// Makes the [`BlockControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
+        self.is_branched_to = true;
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
+    }
+
     /// Returns the branch label of the [`BlockControlFrame`].
     pub fn label(&self) -> LabelRef {
         self.label
@@ -385,20 +367,71 @@ impl BlockControlFrame {
 /// A Wasm `loop` control frame.
 #[derive(Debug)]
 pub struct LoopControlFrame {
+    /// The block type of the [`LoopControlFrame`].
+    ty: BlockType,
+    /// The value stack height upon entering the [`LoopControlFrame`].
+    height: usize,
+    /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
+    is_branched_to: bool,
+    /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This is `Some` if fuel metering is enabled and `None` otherwise.
+    consume_fuel: Option<Instr>,
     /// The label used to branch to the [`LoopControlFrame`].
     label: LabelRef,
 }
 
 impl LoopControlFrame {
+    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
+    pub fn ty(&self) -> BlockType {
+        self.ty
+    }
+
+    /// Returns the height of the [`LoopControlFrame`].
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    /// Returns `true` if there are branches to this [`LoopControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.is_branched_to
+    }
+
+    /// Makes the [`LoopControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
+        self.is_branched_to = true;
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`LoopControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
+    }
+
     /// Returns the branch label of the [`LoopControlFrame`].
     pub fn label(&self) -> LabelRef {
         self.label
     }
 }
 
-/// A Wasm `if` control frame including `then`.
+/// A Wasm `if` control frame including its `then` part.
 #[derive(Debug)]
 pub struct IfControlFrame {
+    /// The block type of the [`LoopControlFrame`].
+    ty: BlockType,
+    /// The value stack height upon entering the [`LoopControlFrame`].
+    height: usize,
+    /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
+    is_branched_to: bool,
+    /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This is `Some` if fuel metering is enabled and `None` otherwise.
+    consume_fuel: Option<Instr>,
     /// The label used to branch to the [`IfControlFrame`].
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
@@ -406,6 +439,33 @@ pub struct IfControlFrame {
 }
 
 impl IfControlFrame {
+    /// Returns the [`BlockType`] of the [`IfControlFrame`].
+    pub fn ty(&self) -> BlockType {
+        self.ty
+    }
+
+    /// Returns the height of the [`IfControlFrame`].
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    /// Returns `true` if there are branches to this [`IfControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.is_branched_to
+    }
+
+    /// Makes the [`IfControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
+        self.is_branched_to = true;
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`IfControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
+    }
+
     /// Returns the branch label of the [`IfControlFrame`].
     pub fn label(&self) -> LabelRef {
         self.label
@@ -472,6 +532,18 @@ pub enum IfReachability {
 /// A Wasm `else` control frame part of Wasm `if`.
 #[derive(Debug)]
 pub struct ElseControlFrame {
+    /// The block type of the [`LoopControlFrame`].
+    ty: BlockType,
+    /// The value stack height upon entering the [`LoopControlFrame`].
+    height: usize,
+    /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
+    is_branched_to: bool,
+    /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This is `Some` if fuel metering is enabled and `None` otherwise.
+    consume_fuel: Option<Instr>,
     /// The label used to branch to the [`ElseControlFrame`].
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
@@ -510,7 +582,34 @@ pub enum ElseReachability {
 }
 
 impl ElseControlFrame {
-    /// Returns the branch label of the [`IfControlFrame`].
+    /// Returns the [`BlockType`] of the [`ElseControlFrame`].
+    pub fn ty(&self) -> BlockType {
+        self.ty
+    }
+
+    /// Returns the height of the [`ElseControlFrame`].
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    /// Returns `true` if there are branches to this [`ElseControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.is_branched_to
+    }
+
+    /// Makes the [`ElseControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
+        self.is_branched_to = true;
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ElseControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
+    }
+
+    /// Returns the branch label of the [`ElseControlFrame`].
     pub fn label(&self) -> LabelRef {
         self.label
     }
@@ -540,7 +639,6 @@ impl ElseControlFrame {
     }
 
     /// Returns `true` if the end of the `then` branch is reachable.
-    #[track_caller]
     pub fn is_end_of_then_reachable(&self) -> bool {
         self.is_end_of_then_reachable
     }
