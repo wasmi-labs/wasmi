@@ -239,7 +239,7 @@ impl FuncTranslator {
             (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
                 let value = consteval(lhs.val().into(), rhs.val().into());
                 self.stack.push_immediate(value)?;
-                return Ok(());
+                Ok(())
             }
             (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
                 let lhs = self.layout.operand_to_reg(val)?;
