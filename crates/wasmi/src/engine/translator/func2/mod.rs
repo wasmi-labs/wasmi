@@ -12,13 +12,25 @@ mod visit;
 use self::{
     instrs::InstrEncoder,
     layout::{StackLayout, StackSpace},
-    stack::{LocalIdx, Operand, OperandIdx, Stack, StackAllocations},
+    stack::{
+        BlockControlFrame,
+        ControlFrame,
+        ElseControlFrame,
+        IfControlFrame,
+        LocalIdx,
+        LoopControlFrame,
+        Operand,
+        OperandIdx,
+        Stack,
+        StackAllocations,
+        UnreachableControlFrame,
+    },
     utils::Reset,
 };
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal},
     engine::{
-        translator::{Instr, LabelRegistry, WasmTranslator},
+        translator::{Instr, LabelRef, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
         TranslationError,
@@ -221,6 +233,31 @@ impl FuncTranslator {
     /// Returns the [`Engine`] for which the function is compiled.
     fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Translates the end of a Wasm `block` control frame.
+    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
+        todo!()
+    }
+
+    /// Translates the end of a Wasm `loop` control frame.
+    fn translate_end_loop(&mut self, frame: LoopControlFrame) -> Result<(), Error> {
+        todo!()
+    }
+
+    /// Translates the end of a Wasm `if` control frame.
+    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
+        todo!()
+    }
+
+    /// Translates the end of a Wasm `else` control frame.
+    fn translate_end_else(&mut self, frame: ElseControlFrame) -> Result<(), Error> {
+        todo!()
+    }
+
+    /// Translates the end of an unreachable Wasm control frame.
+    fn translate_end_unreachable(&mut self, frame: UnreachableControlFrame) -> Result<(), Error> {
+        todo!()
     }
 
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.

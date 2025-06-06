@@ -1,4 +1,4 @@
-use super::{FuncTranslator, LocalIdx};
+use super::{ControlFrame, FuncTranslator, LocalIdx};
 use crate::{core::wasm, ir::Instruction, Error};
 use wasmparser::VisitOperator;
 
@@ -89,7 +89,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_end(&mut self) -> Self::Output {
-        todo!()
+        match self.stack.pop_control() {
+            ControlFrame::Block(frame) => self.translate_end_block(frame),
+            ControlFrame::Loop(frame) => self.translate_end_loop(frame),
+            ControlFrame::If(frame) => self.translate_end_if(frame),
+            ControlFrame::Else(frame) => self.translate_end_else(frame),
+            ControlFrame::Unreachable(frame) => self.translate_end_unreachable(frame),
+        }
     }
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
