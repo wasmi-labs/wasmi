@@ -267,21 +267,6 @@ impl From<UnreachableControlFrame> for ControlFrame {
 }
 
 impl ControlFrame {
-    /// Returns `true` if at least one branch targets the [`ControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
-        match self {
-            ControlFrame::Block(frame) => frame.is_branched_to(),
-            ControlFrame::Loop(frame) => frame.is_branched_to(),
-            ControlFrame::If(frame) => frame.is_branched_to(),
-            ControlFrame::Else(frame) => frame.is_branched_to(),
-            ControlFrame::Unreachable(frame) => {
-                panic!(
-                    "invalid query for unreachable control frame: `ControlFrame::is_branched_to`"
-                )
-            }
-        }
-    }
-
     /// Makes the [`ControlFrame`] aware that there is a branch to it.
     pub fn branch_to(&mut self) {
         match self {
