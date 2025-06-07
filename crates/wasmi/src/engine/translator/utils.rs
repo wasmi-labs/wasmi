@@ -6,6 +6,9 @@ use crate::{
     FuncRef,
 };
 
+#[cfg(doc)]
+use crate::ir::Instruction;
+
 macro_rules! impl_typed_for {
     ( $( $ty:ident ),* $(,)? ) => {
         $(
@@ -151,7 +154,7 @@ pub enum FuelInfo {
     Some {
         /// The [`FuelCostsProvider`] for the function translation.
         costs: FuelCostsProvider,
-        /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
+        /// Index to the current [`Instruction::ConsumeFuel`] of a parent Wasm control frame.
         instr: Instr,
     },
 }
