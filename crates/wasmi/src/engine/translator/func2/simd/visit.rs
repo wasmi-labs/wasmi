@@ -2,155 +2,155 @@ use super::FuncTranslator;
 use wasmparser::VisitSimdOperator;
 
 impl VisitSimdOperator<'_> for FuncTranslator {
-    fn visit_v128_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load8x8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load8x8_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load8x8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load8x8_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load16x4_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load16x4_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load16x4_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load16x4_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load32x2_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load32x2_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load32x2_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load32x2_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load8_splat(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load8_splat(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load16_splat(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load16_splat(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load32_splat(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load32_splat(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load64_splat(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load64_splat(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load32_zero(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load32_zero(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load64_zero(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_load64_zero(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_v128_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load8_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_load8_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load16_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_load16_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load32_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_load32_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_load64_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_load64_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_store8_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_store8_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_store16_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_store16_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_store32_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_store32_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_store64_lane(&mut self, memarg: wasmparser::MemArg, lane: u8) -> Self::Output {
+    fn visit_v128_store64_lane(&mut self, _memarg: wasmparser::MemArg, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_v128_const(&mut self, value: wasmparser::V128) -> Self::Output {
+    fn visit_v128_const(&mut self, _value: wasmparser::V128) -> Self::Output {
         todo!()
     }
 
-    fn visit_i8x16_shuffle(&mut self, lanes: [u8; 16]) -> Self::Output {
+    fn visit_i8x16_shuffle(&mut self, _lanes: [u8; 16]) -> Self::Output {
         todo!()
     }
 
-    fn visit_i8x16_extract_lane_s(&mut self, lane: u8) -> Self::Output {
+    fn visit_i8x16_extract_lane_s(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i8x16_extract_lane_u(&mut self, lane: u8) -> Self::Output {
+    fn visit_i8x16_extract_lane_u(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i8x16_replace_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_i8x16_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i16x8_extract_lane_s(&mut self, lane: u8) -> Self::Output {
+    fn visit_i16x8_extract_lane_s(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i16x8_extract_lane_u(&mut self, lane: u8) -> Self::Output {
+    fn visit_i16x8_extract_lane_u(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i16x8_replace_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_i16x8_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_i32x4_extract_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32x4_replace_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_i32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_i64x2_extract_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64x2_replace_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_i64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_f32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_f32x4_extract_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_f32x4_replace_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_f32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_f64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_f64x2_extract_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_f64x2_replace_lane(&mut self, lane: u8) -> Self::Output {
+    fn visit_f64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
