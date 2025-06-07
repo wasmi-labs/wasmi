@@ -1,5 +1,6 @@
+use super::Instr;
 use crate::{
-    core::{Typed, TypedVal, ValType},
+    core::{FuelCostsProvider, Typed, TypedVal, ValType},
     ir::{Const16, Sign},
     ExternRef,
     FuncRef,
@@ -139,4 +140,25 @@ impl_wrap_for! {
     u64 => u8,
     u64 => u16,
     u64 => u32,
+}
+
+/// Fuel metering information for a certain translation state.
+#[derive(Debug, Clone)]
+pub enum FuelInfo {
+    /// Fuel metering is disabled.
+    None,
+    /// Fuel metering is enabled with the following information.
+    Some {
+        /// The [`FuelCostsProvider`] for the function translation.
+        costs: FuelCostsProvider,
+        /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
+        instr: Instr,
+    },
+}
+
+impl FuelInfo {
+    /// Create a new [`FuelInfo`] for enabled fuel metering.
+    pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
+        Self::Some { costs, instr }
+    }
 }

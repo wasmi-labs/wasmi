@@ -45,7 +45,7 @@ use crate::{
         code_map::CompiledFuncEntity,
         translator::{
             labels::{LabelRef, LabelRegistry},
-            utils::{WasmFloat, WasmInteger, Wrap},
+            utils::{FuelInfo, WasmFloat, WasmInteger, Wrap},
             WasmTranslator,
         },
         BlockType,
@@ -225,27 +225,6 @@ impl WasmTranslator<'_> for FuncTranslator {
         let instrs = self.alloc.instr_encoder.drain_instrs();
         finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         Ok(self.into_allocations())
-    }
-}
-
-/// Fuel metering information for a certain translation state.
-#[derive(Debug, Clone)]
-pub enum FuelInfo {
-    /// Fuel metering is disabled.
-    None,
-    /// Fuel metering is enabled with the following information.
-    Some {
-        /// The [`FuelCostsProvider`] for the function translation.
-        costs: FuelCostsProvider,
-        /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
-        instr: Instr,
-    },
-}
-
-impl FuelInfo {
-    /// Create a new [`FuelInfo`] for enabled fuel metering.
-    pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
-        Self::Some { costs, instr }
     }
 }
 
