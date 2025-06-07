@@ -30,7 +30,7 @@ use self::{
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal},
     engine::{
-        translator::{Instr, LabelRef, LabelRegistry, WasmTranslator},
+        translator::{utils::FuelInfo, Instr, LabelRef, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
         TranslationError,
@@ -235,6 +235,11 @@ impl FuncTranslator {
         &self.engine
     }
 
+    /// Returns `true` if fuel metering is enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.engine.config().get_consume_fuel()
+    }
+
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.stack.is_control_empty() {
@@ -245,6 +250,13 @@ impl FuncTranslator {
 
     /// Translates the end of the Wasm function enclosing Wasm `block`.
     fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
+        let fuel_info = match (frame.consume_fuel_instr(), &self.fuel_costs) {
+            (Some(consume_fuel), Some(fuel_costs)) => {
+                FuelInfo::some(fuel_costs.clone(), consume_fuel)
+            }
+            (None, None) => FuelInfo::None,
+            _ => unreachable!(),
+        };
         todo!()
     }
 
