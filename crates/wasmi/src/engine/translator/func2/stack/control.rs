@@ -23,22 +23,21 @@ pub struct ElseOperands {
     /// The end indices of each `else` operands.
     ends: Vec<usize>,
     /// All operands of all allocated `else` control frames.
-    providers: Vec<Operand>,
+    operands: Vec<Operand>,
 }
 
 impl Reset for ElseOperands {
     fn reset(&mut self) {
         self.ends.clear();
-        self.providers.clear();
+        self.operands.clear();
     }
 }
 
 impl ElseOperands {
     /// Pushes operands for a new Wasm `else` control frame.
     pub fn push(&mut self, operands: impl IntoIterator<Item = Operand>) {
-        self.providers.extend(operands);
-        let end = self.providers.len();
-        let index = self.ends.len();
+        self.operands.extend(operands);
+        let end = self.operands.len();
         self.ends.push(end);
     }
 
@@ -46,7 +45,7 @@ impl ElseOperands {
     pub fn pop(&mut self) -> Option<Drain<Operand>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);
-        Some(self.providers.drain(start..end))
+        Some(self.operands.drain(start..end))
     }
 }
 
@@ -203,7 +202,6 @@ impl ControlStack {
     /// Acquires the target [`ControlFrame`] at the given relative `depth`.
     pub fn acquire_target(&mut self, depth: usize) -> AcquiredTarget {
         let is_root = self.is_root(depth);
-        let height = self.height();
         let frame = self.get_mut(depth);
         if is_root {
             AcquiredTarget::Return(frame)
@@ -274,7 +272,7 @@ impl ControlFrame {
             ControlFrame::Loop(frame) => frame.branch_to(),
             ControlFrame::If(frame) => frame.branch_to(),
             ControlFrame::Else(frame) => frame.branch_to(),
-            ControlFrame::Unreachable(frame) => {
+            ControlFrame::Unreachable(_) => {
                 panic!("invalid query for unreachable control frame: `ControlFrame::branch_to`")
             }
         }
@@ -289,7 +287,7 @@ impl ControlFrame {
             ControlFrame::Loop(frame) => frame.consume_fuel_instr(),
             ControlFrame::If(frame) => frame.consume_fuel_instr(),
             ControlFrame::Else(frame) => frame.consume_fuel_instr(),
-            ControlFrame::Unreachable(frame) => {
+            ControlFrame::Unreachable(_) => {
                 panic!("invalid query for unreachable control frame: `ControlFrame::consume_fuel_instr`")
             }
         }

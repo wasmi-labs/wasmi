@@ -1,4 +1,4 @@
-#![expect(dead_code, unused_imports, unused_variables)]
+#![expect(dead_code, unused_imports)]
 
 #[macro_use]
 mod utils;
@@ -250,7 +250,7 @@ impl FuncTranslator {
 
     /// Translates the end of the Wasm function enclosing Wasm `block`.
     fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        let fuel_info = match (&self.fuel_costs, frame.consume_fuel_instr()) {
+        let _fuel_info = match (&self.fuel_costs, frame.consume_fuel_instr()) {
             (Some(fuel_costs), Some(consume_fuel)) => {
                 FuelInfo::some(fuel_costs.clone(), consume_fuel)
             }
@@ -351,7 +351,7 @@ impl FuncTranslator {
                 };
                 self.instrs.push_instr(instr);
             }
-            n => {
+            _ => {
                 let height = frame.height();
                 let result = self.layout.temp_to_reg(OperandIdx::from(height - 1))?;
                 let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
@@ -362,22 +362,22 @@ impl FuncTranslator {
     }
 
     /// Translates the end of a Wasm `loop` control frame.
-    fn translate_end_loop(&mut self, frame: LoopControlFrame) -> Result<(), Error> {
+    fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), Error> {
         todo!()
     }
 
     /// Translates the end of a Wasm `if` control frame.
-    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
+    fn translate_end_if(&mut self, _frame: IfControlFrame) -> Result<(), Error> {
         todo!()
     }
 
     /// Translates the end of a Wasm `else` control frame.
-    fn translate_end_else(&mut self, frame: ElseControlFrame) -> Result<(), Error> {
+    fn translate_end_else(&mut self, _frame: ElseControlFrame) -> Result<(), Error> {
         todo!()
     }
 
     /// Translates the end of an unreachable Wasm control frame.
-    fn translate_end_unreachable(&mut self, frame: UnreachableControlFrame) -> Result<(), Error> {
+    fn translate_end_unreachable(&mut self, _frame: UnreachableControlFrame) -> Result<(), Error> {
         todo!()
     }
 
