@@ -237,6 +237,14 @@ impl FuncTranslator {
 
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
+        if self.stack.is_control_empty() {
+            return self.translate_end_func(frame);
+        }
+        todo!()
+    }
+
+    /// Translates the end of the Wasm function enclosing Wasm `block`.
+    fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         todo!()
     }
 
