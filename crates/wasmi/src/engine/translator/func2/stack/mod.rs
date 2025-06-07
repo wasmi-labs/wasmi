@@ -99,6 +99,11 @@ impl Stack {
         self.operands.register_locals(amount, ty)
     }
 
+    /// Returns `true` if the control stack is empty.
+    pub fn is_control_empty(&self) -> bool {
+        self.controls.is_empty()
+    }
+
     /// Returns the current height of the [`Stack`].
     ///
     /// # Note
