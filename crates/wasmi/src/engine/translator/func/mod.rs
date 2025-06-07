@@ -34,7 +34,7 @@ use self::{
     utils::FromProviders as _,
 };
 pub use self::{
-    control_frame::{ControlFrame, ControlFrameKind},
+    control_frame::ControlFrame,
     control_stack::ControlStack,
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,

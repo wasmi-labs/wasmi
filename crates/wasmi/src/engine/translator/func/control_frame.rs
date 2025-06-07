@@ -481,32 +481,13 @@ impl IfControlFrame {
 
 /// An unreachable control flow frame of any kind.
 #[derive(Debug, Copy, Clone)]
-pub struct UnreachableControlFrame {
-    /// The kind of the unreachable control flow frame.
-    pub kind: ControlFrameKind,
-}
-
-/// The kind of a control flow frame.
-#[derive(Debug, Copy, Clone)]
-pub enum ControlFrameKind {
+pub enum UnreachableControlFrame {
     /// A basic `block` control flow frame.
     Block,
     /// A `loop` control flow frame.
     Loop,
     /// An `if` and `else` block control flow frame.
     If,
-}
-
-impl UnreachableControlFrame {
-    /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
-    pub fn new(kind: ControlFrameKind) -> Self {
-        Self { kind }
-    }
-
-    /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].
-    pub fn kind(&self) -> ControlFrameKind {
-        self.kind
-    }
 }
 
 /// A control flow frame.
