@@ -34,7 +34,7 @@ impl StackLayout {
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
+    pub fn register_locals(&mut self, amount: u32, _ty: ValType) -> Result<(), Error> {
         self.len_locals += amount as usize;
         Ok(())
     }
