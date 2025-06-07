@@ -25,7 +25,6 @@ impl InstrEncoder {
     /// Pushes an [`Instruction`] to the [`InstrEncoder`].
     ///
     /// Returns an [`Instr`] that refers to the pushed [`Instruction`].
-    #[must_use]
     pub fn push_instr(&mut self, instruction: Instruction) -> Instr {
         let instr = self.next_instr();
         self.instrs.push(instruction);
