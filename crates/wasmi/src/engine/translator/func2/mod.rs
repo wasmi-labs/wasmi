@@ -1,4 +1,4 @@
-#![expect(dead_code, unused_imports)]
+#![expect(dead_code)]
 
 #[macro_use]
 mod utils;
@@ -11,7 +11,7 @@ mod visit;
 
 use self::{
     instrs::InstrEncoder,
-    layout::{StackLayout, StackSpace},
+    layout::StackLayout,
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -30,7 +30,7 @@ use self::{
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal, ValType},
     engine::{
-        translator::{utils::FuelInfo, Instr, LabelRef, LabelRegistry, WasmTranslator},
+        translator::{utils::FuelInfo, Instr, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
         TranslationError,
