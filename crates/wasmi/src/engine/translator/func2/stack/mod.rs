@@ -23,18 +23,14 @@ use self::{
 };
 use super::Reset;
 use crate::{
-    core::{TypedVal, UntypedVal, ValType},
+    core::{TypedVal, ValType},
     engine::{
         translator::{Instr, LabelRef},
         BlockType,
-        TranslationError,
     },
-    ir::Reg,
     Engine,
     Error,
 };
-use alloc::vec::Vec;
-use core::{array, mem, num::NonZero};
 
 #[cfg(doc)]
 use crate::ir::Instruction;
