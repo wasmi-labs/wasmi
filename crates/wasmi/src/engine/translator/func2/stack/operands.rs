@@ -5,7 +5,7 @@ use crate::{
     Error,
 };
 use alloc::vec::Vec;
-use core::{array, mem, num::NonZero, slice};
+use core::{num::NonZero, slice};
 
 /// A [`StackOperand`] or [`Operand`] index on the [`OperandStack`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
