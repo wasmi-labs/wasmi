@@ -307,11 +307,7 @@ impl Stack {
     /// # Errors
     ///
     /// If the stack height exceeds the maximum height.
-    pub fn push_unreachable(
-        &mut self,
-        ty: BlockType,
-        kind: UnreachableControlFrame,
-    ) -> Result<(), Error> {
+    pub fn push_unreachable(&mut self, kind: UnreachableControlFrame) -> Result<(), Error> {
         self.controls.push_unreachable(kind);
         Ok(())
     }

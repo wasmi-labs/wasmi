@@ -72,15 +72,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_block(&mut self, blockty: wasmparser::BlockType) -> Self::Output {
+    fn visit_block(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
         todo!()
     }
 
-    fn visit_loop(&mut self, blockty: wasmparser::BlockType) -> Self::Output {
+    fn visit_loop(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
         todo!()
     }
 
-    fn visit_if(&mut self, blockty: wasmparser::BlockType) -> Self::Output {
+    fn visit_if(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
         todo!()
     }
 
@@ -98,15 +98,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
     }
 
-    fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
+    fn visit_br(&mut self, _relative_depth: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_br_if(&mut self, relative_depth: u32) -> Self::Output {
+    fn visit_br_if(&mut self, _relative_depth: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
+    fn visit_br_table(&mut self, _targets: wasmparser::BrTable<'a>) -> Self::Output {
         todo!()
     }
 
@@ -114,11 +114,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_call(&mut self, function_index: u32) -> Self::Output {
+    fn visit_call(&mut self, _function_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+    fn visit_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
         todo!()
     }
 
@@ -136,119 +136,119 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
+    fn visit_local_set(&mut self, _local_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
+    fn visit_local_tee(&mut self, _local_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_global_get(&mut self, global_index: u32) -> Self::Output {
+    fn visit_global_get(&mut self, _global_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
+    fn visit_global_set(&mut self, _global_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_f32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_f32_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_f64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_f64_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_load8_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_load8_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_load16_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_load16_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load8_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load8_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load16_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load16_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load32_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load32_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_load32_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_load32_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_f32_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_f64_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_store8(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i32_store16(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_store8(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_store16(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+    fn visit_i64_store32(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
         todo!()
     }
 
-    fn visit_memory_size(&mut self, mem: u32) -> Self::Output {
+    fn visit_memory_size(&mut self, _mem: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_memory_grow(&mut self, mem: u32) -> Self::Output {
+    fn visit_memory_grow(&mut self, _mem: u32) -> Self::Output {
         todo!()
     }
 
@@ -258,15 +258,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_i64_const(&mut self, value: i64) -> Self::Output {
+    fn visit_i64_const(&mut self, _value: i64) -> Self::Output {
         todo!()
     }
 
-    fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
+    fn visit_f32_const(&mut self, _value: wasmparser::Ieee32) -> Self::Output {
         todo!()
     }
 
-    fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Self::Output {
+    fn visit_f64_const(&mut self, _value: wasmparser::Ieee64) -> Self::Output {
         todo!()
     }
 
@@ -818,39 +818,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
+    fn visit_memory_init(&mut self, _data_index: u32, _mem: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
+    fn visit_data_drop(&mut self, _data_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
+    fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
+    fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
+    fn visit_table_init(&mut self, _elem_index: u32, _table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
+    fn visit_elem_drop(&mut self, _elem_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
+    fn visit_table_copy(&mut self, _dst_table: u32, _src_table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
+    fn visit_typed_select(&mut self, _ty: wasmparser::ValType) -> Self::Output {
         todo!()
     }
 
-    fn visit_ref_null(&mut self, hty: wasmparser::HeapType) -> Self::Output {
+    fn visit_ref_null(&mut self, _hty: wasmparser::HeapType) -> Self::Output {
         todo!()
     }
 
@@ -858,35 +858,35 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
+    fn visit_ref_func(&mut self, _function_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_fill(&mut self, table: u32) -> Self::Output {
+    fn visit_table_fill(&mut self, _table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_get(&mut self, table: u32) -> Self::Output {
+    fn visit_table_get(&mut self, _table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_set(&mut self, table: u32) -> Self::Output {
+    fn visit_table_set(&mut self, _table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_grow(&mut self, table: u32) -> Self::Output {
+    fn visit_table_grow(&mut self, _table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_table_size(&mut self, table: u32) -> Self::Output {
+    fn visit_table_size(&mut self, _table: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
+    fn visit_return_call(&mut self, _function_index: u32) -> Self::Output {
         todo!()
     }
 
-    fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+    fn visit_return_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
         todo!()
     }
 
