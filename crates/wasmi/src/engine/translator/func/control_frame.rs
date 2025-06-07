@@ -1,14 +1,13 @@
-#![allow(dead_code)] // TODO: remove
-
 use super::LabelRef;
-#[cfg(doc)]
-use super::ValueStack;
 use crate::{
     engine::{translator::Instr, BlockType, TranslationError},
     ir::{BoundedRegSpan, RegSpan},
     Engine,
     Error,
 };
+
+#[cfg(doc)]
+use super::ValueStack;
 
 /// The height of the [`ValueStack`] upon entering the control frame without its parameters.
 ///
@@ -151,8 +150,6 @@ pub struct LoopControlFrame {
     block_type: BlockType,
     /// The number of branches to this [`BlockControlFrame`].
     len_branches: usize,
-    /// The value stack height upon entering the [`LoopControlFrame`].
-    stack_height: BlockHeight,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelRef,
     /// The branch parameters of the [`LoopControlFrame`].
@@ -176,28 +173,16 @@ impl LoopControlFrame {
     pub fn new(
         block_type: BlockType,
         head_label: LabelRef,
-        stack_height: BlockHeight,
         branch_params: RegSpan,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
             block_type,
             len_branches: 0,
-            stack_height,
             head_label,
             branch_params,
             consume_fuel,
         }
-    }
-
-    /// Returns `true` if at least one branch targets this [`LoopControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
-        self.len_branches() >= 1
-    }
-
-    /// Returns the number of branches to this [`LoopControlFrame`].
-    fn len_branches(&self) -> usize {
-        self.len_branches
     }
 
     /// Bumps the number of branches to this [`LoopControlFrame`] by 1.
@@ -217,11 +202,6 @@ impl LoopControlFrame {
     /// Branches to [`LoopControlFrame`] jump to the head of the loop.
     pub fn branch_destination(&self) -> LabelRef {
         self.head_label
-    }
-
-    /// Returns the [`BlockHeight`] of the [`LoopControlFrame`].
-    pub fn block_height(&self) -> BlockHeight {
-        self.stack_height
     }
 
     /// Returns the [`BlockType`] of the [`LoopControlFrame`].
@@ -512,8 +492,6 @@ impl IfControlFrame {
 /// An unreachable control flow frame of any kind.
 #[derive(Debug, Copy, Clone)]
 pub struct UnreachableControlFrame {
-    /// The non-SSA input and output types of the unreachable control frame.
-    pub block_type: BlockType,
     /// The kind of the unreachable control flow frame.
     pub kind: ControlFrameKind,
 }
@@ -531,18 +509,13 @@ pub enum ControlFrameKind {
 
 impl UnreachableControlFrame {
     /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
-    pub fn new(kind: ControlFrameKind, block_type: BlockType) -> Self {
-        Self { block_type, kind }
+    pub fn new(kind: ControlFrameKind) -> Self {
+        Self { kind }
     }
 
     /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].
     pub fn kind(&self) -> ControlFrameKind {
         self.kind
-    }
-
-    /// Returns the [`BlockType`] of the [`IfControlFrame`].
-    pub fn block_type(&self) -> BlockType {
-        self.block_type
     }
 }
 
@@ -584,16 +557,6 @@ impl From<UnreachableControlFrame> for ControlFrame {
 }
 
 impl ControlFrame {
-    /// Returns the [`ControlFrameKind`] of the [`ControlFrame`].
-    pub fn kind(&self) -> ControlFrameKind {
-        match self {
-            ControlFrame::Block(_) => ControlFrameKind::Block,
-            ControlFrame::Loop(_) => ControlFrameKind::Loop,
-            ControlFrame::If(_) => ControlFrameKind::If,
-            ControlFrame::Unreachable(frame) => frame.kind(),
-        }
-    }
-
     /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         match self {
@@ -618,18 +581,6 @@ impl ControlFrame {
         }
     }
 
-    /// Returns `true` if at least one branch targets this [`ControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
-        match self {
-            Self::Block(frame) => frame.is_branched_to(),
-            Self::Loop(frame) => frame.is_branched_to(),
-            Self::If(frame) => frame.is_branched_to(),
-            Self::Unreachable(frame) => {
-                panic!("tried to call `is_branched_to` for an unreachable control frame: {frame:?}")
-            }
-        }
-    }
-
     /// Bumps the number of branches to this [`ControlFrame`] by 1.
     pub fn bump_branches(&mut self) {
         match self {
@@ -640,52 +591,6 @@ impl ControlFrame {
                 panic!("tried to `bump_branches` on an unreachable control frame: {frame:?}")
             }
         }
-    }
-
-    /// Returns a label which should be resolved at the `End` Wasm opcode.
-    ///
-    /// # Note
-    ///
-    /// The [`LoopControlFrame`] does not have an `end_label` since all
-    /// branches targeting it are branching to the loop header instead.
-    /// Exiting a [`LoopControlFrame`] is simply done by leaving its scope
-    /// or branching to a parent [`ControlFrame`].
-    pub fn end_label(&self) -> Option<LabelRef> {
-        match self {
-            Self::Block(frame) => Some(frame.end_label()),
-            Self::If(frame) => Some(frame.end_label()),
-            Self::Loop(_frame) => None,
-            Self::Unreachable(_frame) => None,
-        }
-    }
-
-    /// Returns the [`BlockHeight`] upon entering the control flow frame.
-    ///
-    /// # Note
-    ///
-    /// The [`UnreachableControlFrame`] does not need or have a [`BlockHeight`].
-    pub fn block_height(&self) -> Option<BlockHeight> {
-        match self {
-            Self::Block(frame) => Some(frame.block_height()),
-            Self::Loop(frame) => Some(frame.block_height()),
-            Self::If(frame) => Some(frame.block_height()),
-            Self::Unreachable(_frame) => None,
-        }
-    }
-
-    /// Returns the [`BlockType`] of the control flow frame.
-    pub fn block_type(&self) -> BlockType {
-        match self {
-            Self::Block(frame) => frame.block_type(),
-            Self::Loop(frame) => frame.block_type(),
-            Self::If(frame) => frame.block_type(),
-            Self::Unreachable(frame) => frame.block_type(),
-        }
-    }
-
-    /// Returns `true` if the control flow frame is reachable.
-    pub fn is_reachable(&self) -> bool {
-        !matches!(self, ControlFrame::Unreachable(_))
     }
 
     /// Returns a reference to the [`ConsumeFuel`] instruction of the [`ControlFrame`] if any.

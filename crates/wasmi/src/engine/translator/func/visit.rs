@@ -111,10 +111,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // frames and precisely know when the code is reachable again.
             self.alloc
                 .control_stack
-                .push_frame(UnreachableControlFrame::new(
-                    ControlFrameKind::Block,
-                    block_type,
-                ));
+                .push_frame(UnreachableControlFrame::new(ControlFrameKind::Block));
             return Ok(());
         }
         self.preserve_locals()?;
@@ -146,10 +143,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // See `visit_block` for rational of tracking unreachable control flow.
             self.alloc
                 .control_stack
-                .push_frame(UnreachableControlFrame::new(
-                    ControlFrameKind::Loop,
-                    block_type,
-                ));
+                .push_frame(UnreachableControlFrame::new(ControlFrameKind::Loop));
             return Ok(());
         }
         self.preserve_locals()?;
@@ -172,7 +166,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         )?;
         self.alloc.instr_encoder.reset_last_instr();
         // Create loop header label and immediately pin it.
-        let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         let header = self.alloc.instr_encoder.new_label();
         self.alloc.instr_encoder.pin_label(header);
         // Optionally create the loop's [`Instruction::ConsumeFuel`].
@@ -186,7 +179,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.alloc.control_stack.push_frame(LoopControlFrame::new(
             block_type,
             header,
-            stack_height,
             branch_params,
             consume_fuel,
         ));
@@ -201,10 +193,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // frames and precisely know when the code is reachable again.
             self.alloc
                 .control_stack
-                .push_frame(UnreachableControlFrame::new(
-                    ControlFrameKind::If,
-                    block_type,
-                ));
+                .push_frame(UnreachableControlFrame::new(ControlFrameKind::If));
             return Ok(());
         }
         let condition = self.alloc.stack.pop();
