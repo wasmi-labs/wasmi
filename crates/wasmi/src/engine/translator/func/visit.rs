@@ -309,7 +309,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     .instr_encoder
                     .try_resolve_label(frame.end_label())?;
                 // We are jumping to the end of the `if` so technically we need to bump branches.
-                frame.bump_branches();
+                frame.branch_to();
                 self.push_base_instr(Instruction::branch(end_offset))?;
             }
             self.reachable = true;
@@ -395,7 +395,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             AcquiredTarget::Return(frame) => frame,
             AcquiredTarget::Branch(frame) => frame,
         };
-        frame.bump_branches();
+        frame.branch_to();
         let branch_dst = frame.branch_destination();
         let branch_params = frame.branch_params(&engine);
         if branch_params.is_empty() {

@@ -2109,7 +2109,7 @@ impl FuncTranslator {
         match self.alloc.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.translate_return(),
             AcquiredTarget::Branch(frame) => {
-                frame.bump_branches();
+                frame.branch_to();
                 let branch_dst = frame.branch_destination();
                 let branch_params = frame.branch_params(&engine);
                 self.translate_copy_branch_params(branch_params)?;
@@ -2222,7 +2222,7 @@ impl FuncTranslator {
                     )?;
                 }
                 AcquiredTarget::Branch(frame) => {
-                    frame.bump_branches();
+                    frame.branch_to();
                     let branch_params = frame.branch_params(&engine);
                     let branch_dst = frame.branch_destination();
                     let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;

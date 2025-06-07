@@ -43,8 +43,8 @@ impl BlockHeight {
 pub struct BlockControlFrame {
     /// The type of the [`BlockControlFrame`].
     block_type: BlockType,
-    /// The number of branches to this [`BlockControlFrame`].
-    len_branches: usize,
+    /// This is `true` if there is at leat one branch to the [`BlockControlFrame`].
+    is_branched_to: bool,
     /// The value stack height upon entering the [`BlockControlFrame`].
     stack_height: BlockHeight,
     /// Label representing the end of the [`BlockControlFrame`].
@@ -77,7 +77,7 @@ impl BlockControlFrame {
     ) -> Self {
         Self {
             block_type,
-            len_branches: 0,
+            is_branched_to: false,
             stack_height,
             end_label,
             branch_params,
@@ -87,17 +87,12 @@ impl BlockControlFrame {
 
     /// Returns `true` if at least one branch targets this [`BlockControlFrame`].
     pub fn is_branched_to(&self) -> bool {
-        self.len_branches() >= 1
+        self.is_branched_to
     }
 
-    /// Returns the number of branches to this [`BlockControlFrame`].
-    fn len_branches(&self) -> usize {
-        self.len_branches
-    }
-
-    /// Bumps the number of branches to this [`BlockControlFrame`] by 1.
-    fn bump_branches(&mut self) {
-        self.len_branches += 1;
+    /// Makes the [`BlockControlFrame`] aware that there is a branch to it.
+    fn branch_to(&mut self) {
+        self.is_branched_to = true;
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
@@ -148,8 +143,8 @@ impl BlockControlFrame {
 pub struct LoopControlFrame {
     /// The type of the [`LoopControlFrame`].
     block_type: BlockType,
-    /// The number of branches to this [`BlockControlFrame`].
-    len_branches: usize,
+    /// This is `true` if there is at leat one branch to the [`LoopControlFrame`].
+    is_branched_to: bool,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelRef,
     /// The branch parameters of the [`LoopControlFrame`].
@@ -178,16 +173,16 @@ impl LoopControlFrame {
     ) -> Self {
         Self {
             block_type,
-            len_branches: 0,
+            is_branched_to: false,
             head_label,
             branch_params,
             consume_fuel,
         }
     }
 
-    /// Bumps the number of branches to this [`LoopControlFrame`] by 1.
-    fn bump_branches(&mut self) {
-        self.len_branches += 1;
+    /// Makes the [`BlockControlFrame`] aware that there is a branch to it.
+    fn branch_to(&mut self) {
+        self.is_branched_to = true;
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
@@ -224,8 +219,8 @@ impl LoopControlFrame {
 pub struct IfControlFrame {
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
-    /// The number of branches to this [`BlockControlFrame`].
-    len_branches: usize,
+    /// This is `true` if there is at leat one branch to the [`IfControlFrame`].
+    is_branched_to: bool,
     /// The value stack height upon entering the [`IfControlFrame`].
     stack_height: BlockHeight,
     /// Label representing the end of the [`IfControlFrame`].
@@ -328,7 +323,7 @@ impl IfControlFrame {
         };
         Self {
             block_type,
-            len_branches: 0,
+            is_branched_to: false,
             stack_height,
             end_label,
             branch_params,
@@ -341,17 +336,12 @@ impl IfControlFrame {
 
     /// Returns `true` if at least one branch targets this [`IfControlFrame`].
     pub fn is_branched_to(&self) -> bool {
-        self.len_branches() >= 1
+        self.is_branched_to
     }
 
-    /// Returns the number of branches to this [`IfControlFrame`].
-    fn len_branches(&self) -> usize {
-        self.len_branches
-    }
-
-    /// Bumps the number of branches to this [`IfControlFrame`] by 1.
-    pub fn bump_branches(&mut self) {
-        self.len_branches += 1;
+    /// Makes the [`IfControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
+        self.is_branched_to = true;
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
@@ -581,12 +571,12 @@ impl ControlFrame {
         }
     }
 
-    /// Bumps the number of branches to this [`ControlFrame`] by 1.
-    pub fn bump_branches(&mut self) {
+    /// Makes the [`ControlFrame`] aware that there is a branch to it.
+    pub fn branch_to(&mut self) {
         match self {
-            ControlFrame::Block(frame) => frame.bump_branches(),
-            ControlFrame::Loop(frame) => frame.bump_branches(),
-            ControlFrame::If(frame) => frame.bump_branches(),
+            ControlFrame::Block(frame) => frame.branch_to(),
+            ControlFrame::Loop(frame) => frame.branch_to(),
+            ControlFrame::If(frame) => frame.branch_to(),
             Self::Unreachable(frame) => {
                 panic!("tried to `bump_branches` on an unreachable control frame: {frame:?}")
             }
