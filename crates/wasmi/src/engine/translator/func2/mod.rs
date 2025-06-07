@@ -250,6 +250,9 @@ impl FuncTranslator {
 
     /// Translates the end of the Wasm function enclosing Wasm `block`.
     fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
+        if !self.reachable {
+            return Ok(());
+        }
         let _fuel_info = match (&self.fuel_costs, frame.consume_fuel_instr()) {
             (Some(fuel_costs), Some(consume_fuel)) => {
                 FuelInfo::some(fuel_costs.clone(), consume_fuel)
@@ -258,7 +261,7 @@ impl FuncTranslator {
             _ => unreachable!(),
         };
         let len_results = frame.ty().len_results(&self.engine);
-        if self.reachable && frame.is_branched_to() && len_results > 1 {
+        if frame.is_branched_to() && len_results > 1 {
             let height = frame.height();
             let len_results = usize::from(len_results);
             for depth in 0..len_results {
