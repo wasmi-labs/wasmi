@@ -4,7 +4,6 @@ use crate::{
         func::{
             stack::RegisterSpace,
             utils::FromProviders as _,
-            FuelInfo,
             LabelRef,
             LabelRegistry,
             LogicalizeCmpInstr,
@@ -16,7 +15,7 @@ use crate::{
             ValueStack,
         },
         relink_result::RelinkResult as _,
-        utils::WasmInteger,
+        utils::{FuelInfo, WasmInteger},
         visit_register::VisitInputRegisters as _,
         BumpFuelConsumption as _,
     },

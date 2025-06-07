@@ -34,7 +34,7 @@ use self::{
     utils::FromProviders as _,
 };
 pub use self::{
-    control_frame::{ControlFrame, ControlFrameKind},
+    control_frame::ControlFrame,
     control_stack::ControlStack,
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
@@ -45,7 +45,7 @@ use crate::{
         code_map::CompiledFuncEntity,
         translator::{
             labels::{LabelRef, LabelRegistry},
-            utils::{WasmFloat, WasmInteger, Wrap},
+            utils::{FuelInfo, WasmFloat, WasmInteger, Wrap},
             WasmTranslator,
         },
         BlockType,
@@ -225,27 +225,6 @@ impl WasmTranslator<'_> for FuncTranslator {
         let instrs = self.alloc.instr_encoder.drain_instrs();
         finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         Ok(self.into_allocations())
-    }
-}
-
-/// Fuel metering information for a certain translation state.
-#[derive(Debug, Clone)]
-pub enum FuelInfo {
-    /// Fuel metering is disabled.
-    None,
-    /// Fuel metering is enabled with the following information.
-    Some {
-        /// The [`FuelCostsProvider`] for the function translation.
-        costs: FuelCostsProvider,
-        /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
-        instr: Instr,
-    },
-}
-
-impl FuelInfo {
-    /// Create a new [`FuelInfo`] for enabled fuel metering.
-    pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
-        Self::Some { costs, instr }
     }
 }
 
@@ -532,58 +511,7 @@ impl FuncTranslator {
     /// Translates the `end` of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
-            let fuel_info = match self.fuel_costs().cloned() {
-                None => FuelInfo::None,
-                Some(fuel_costs) => {
-                    let fuel_instr = frame
-                        .consume_fuel_instr()
-                        .expect("must have fuel instruction if fuel metering is enabled");
-                    FuelInfo::some(fuel_costs, fuel_instr)
-                }
-            };
-            if self.reachable && frame.is_branched_to() {
-                // If the end of the `block` is reachable AND
-                // there are branches to the end of the `block`
-                // prior, we need to copy the results to the
-                // block result registers.
-                //
-                // # Note
-                //
-                // We can skip this step if the above condition is
-                // not met since the code at this point is either
-                // unreachable OR there is only one source of results
-                // and thus there is no need to copy the results around.
-                // self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
-                let branch_params = frame.branch_params(self.engine());
-                let params = &mut self.alloc.buffer.providers;
-                self.alloc
-                    .stack
-                    .pop_n(usize::from(branch_params.len()), params);
-                self.alloc.instr_encoder.encode_copies(
-                    &mut self.alloc.stack,
-                    branch_params,
-                    &self.alloc.buffer.providers[..],
-                    &fuel_info,
-                )?;
-            }
-            // Since the `block` is now sealed we can pin its end label.
-            self.alloc.instr_encoder.pin_label(frame.end_label());
-            if frame.is_branched_to() {
-                // Case: branches to this block exist so we cannot treat the
-                //       basic block as a no-op and instead have to put its
-                //       block results on top of the stack.
-                self.alloc
-                    .stack
-                    .trunc(frame.block_height().into_u16() as usize);
-                for result in frame.branch_params(self.engine()) {
-                    self.alloc.stack.push_register(result)?;
-                }
-            }
-            if self.reachable || frame.is_branched_to() {
-                // We dropped the Wasm `block` that encloses the function itself so we can return.
-                self.translate_return_with(&fuel_info)?;
-            }
-            return Ok(());
+            return self.translate_end_func(frame);
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
@@ -614,6 +542,62 @@ impl FuncTranslator {
         }
         // We reset reachability in case the end of the `block` was reachable.
         self.reachable = self.reachable || frame.is_branched_to();
+        Ok(())
+    }
+
+    /// Translates the `end` of the function enclosing Wasm `block`.
+    fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
+        let fuel_info = match self.fuel_costs().cloned() {
+            None => FuelInfo::None,
+            Some(fuel_costs) => {
+                let fuel_instr = frame
+                    .consume_fuel_instr()
+                    .expect("must have fuel instruction if fuel metering is enabled");
+                FuelInfo::some(fuel_costs, fuel_instr)
+            }
+        };
+        if self.reachable && frame.is_branched_to() {
+            // If the end of the `block` is reachable AND
+            // there are branches to the end of the `block`
+            // prior, we need to copy the results to the
+            // block result registers.
+            //
+            // # Note
+            //
+            // We can skip this step if the above condition is
+            // not met since the code at this point is either
+            // unreachable OR there is only one source of results
+            // and thus there is no need to copy the results around.
+            // self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            let branch_params = frame.branch_params(self.engine());
+            let params = &mut self.alloc.buffer.providers;
+            self.alloc
+                .stack
+                .pop_n(usize::from(branch_params.len()), params);
+            self.alloc.instr_encoder.encode_copies(
+                &mut self.alloc.stack,
+                branch_params,
+                &self.alloc.buffer.providers[..],
+                &fuel_info,
+            )?;
+        }
+        // Since the `block` is now sealed we can pin its end label.
+        self.alloc.instr_encoder.pin_label(frame.end_label());
+        if frame.is_branched_to() {
+            // Case: branches to this block exist so we cannot treat the
+            //       basic block as a no-op and instead have to put its
+            //       block results on top of the stack.
+            self.alloc
+                .stack
+                .trunc(frame.block_height().into_u16() as usize);
+            for result in frame.branch_params(self.engine()) {
+                self.alloc.stack.push_register(result)?;
+            }
+        }
+        if self.reachable || frame.is_branched_to() {
+            // We dropped the Wasm `block` that encloses the function itself so we can return.
+            self.translate_return_with(&fuel_info)?;
+        }
         Ok(())
     }
 
@@ -2125,7 +2109,7 @@ impl FuncTranslator {
         match self.alloc.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.translate_return(),
             AcquiredTarget::Branch(frame) => {
-                frame.bump_branches();
+                frame.branch_to();
                 let branch_dst = frame.branch_destination();
                 let branch_params = frame.branch_params(&engine);
                 self.translate_copy_branch_params(branch_params)?;
@@ -2238,7 +2222,7 @@ impl FuncTranslator {
                     )?;
                 }
                 AcquiredTarget::Branch(frame) => {
-                    frame.bump_branches();
+                    frame.branch_to();
                     let branch_params = frame.branch_params(&engine);
                     let branch_dst = frame.branch_destination();
                     let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;

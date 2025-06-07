@@ -9,7 +9,6 @@ use super::{
         UnreachableControlFrame,
     },
     stack::TypedProvider,
-    ControlFrameKind,
     FuncTranslator,
     TypedVal,
 };
@@ -111,10 +110,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // frames and precisely know when the code is reachable again.
             self.alloc
                 .control_stack
-                .push_frame(UnreachableControlFrame::new(
-                    ControlFrameKind::Block,
-                    block_type,
-                ));
+                .push_frame(UnreachableControlFrame::Block);
             return Ok(());
         }
         self.preserve_locals()?;
@@ -146,10 +142,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // See `visit_block` for rational of tracking unreachable control flow.
             self.alloc
                 .control_stack
-                .push_frame(UnreachableControlFrame::new(
-                    ControlFrameKind::Loop,
-                    block_type,
-                ));
+                .push_frame(UnreachableControlFrame::Loop);
             return Ok(());
         }
         self.preserve_locals()?;
@@ -172,7 +165,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         )?;
         self.alloc.instr_encoder.reset_last_instr();
         // Create loop header label and immediately pin it.
-        let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         let header = self.alloc.instr_encoder.new_label();
         self.alloc.instr_encoder.pin_label(header);
         // Optionally create the loop's [`Instruction::ConsumeFuel`].
@@ -186,7 +178,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.alloc.control_stack.push_frame(LoopControlFrame::new(
             block_type,
             header,
-            stack_height,
             branch_params,
             consume_fuel,
         ));
@@ -201,10 +192,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // frames and precisely know when the code is reachable again.
             self.alloc
                 .control_stack
-                .push_frame(UnreachableControlFrame::new(
-                    ControlFrameKind::If,
-                    block_type,
-                ));
+                .push_frame(UnreachableControlFrame::If);
             return Ok(());
         }
         let condition = self.alloc.stack.pop();
@@ -291,7 +279,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_else(&mut self) -> Self::Output {
         let mut frame = match self.alloc.control_stack.pop_frame() {
             ControlFrame::If(frame) => frame,
-            ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
+            ControlFrame::Unreachable(frame @ UnreachableControlFrame::If) => {
                 // Case: `else` branch for unreachable `if` block.
                 //
                 // In this case we can simply ignore the entire `else`
@@ -320,7 +308,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     .instr_encoder
                     .try_resolve_label(frame.end_label())?;
                 // We are jumping to the end of the `if` so technically we need to bump branches.
-                frame.bump_branches();
+                frame.branch_to();
                 self.push_base_instr(Instruction::branch(end_offset))?;
             }
             self.reachable = true;
@@ -406,7 +394,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             AcquiredTarget::Return(frame) => frame,
             AcquiredTarget::Branch(frame) => frame,
         };
-        frame.bump_branches();
+        frame.branch_to();
         let branch_dst = frame.branch_destination();
         let branch_params = frame.branch_params(&engine);
         if branch_params.is_empty() {
