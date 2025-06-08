@@ -32,17 +32,17 @@ impl FuncTranslator {
         T: From<TypedVal> + Wrap<Wrapped>,
     {
         bail_unreachable!(self);
-        let value = self.alloc.stack.pop();
+        let value = self.stack.pop();
         let value = match value {
             Provider::Register(value) => value,
             Provider::Const(value) => {
                 let value = T::from(value).wrap();
                 let result = const_eval(value);
-                self.alloc.stack.push_const(result);
+                self.stack.push_const(result);
                 return Ok(());
             }
         };
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, value), FuelCostsProvider::simd)?;
         Ok(())
     }
@@ -61,16 +61,16 @@ impl FuncTranslator {
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}")
         };
-        let input = self.alloc.stack.pop();
+        let input = self.stack.pop();
         let input = match input {
             Provider::Register(input) => input,
             Provider::Const(input) => {
                 let result = const_eval(input.into(), lane);
-                self.alloc.stack.push_const(result);
+                self.stack.push_const(result);
                 return Ok(());
             }
         };
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, input, lane), FuelCostsProvider::simd)?;
         Ok(())
     }
@@ -85,17 +85,17 @@ impl FuncTranslator {
         T: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        let input = self.alloc.stack.pop();
+        let input = self.stack.pop();
         let input = match input {
             Provider::Register(input) => input,
             Provider::Const(input) => {
                 // Case: the input is an immediate so we can const-eval the result.
                 let result = const_eval(input.into());
-                self.alloc.stack.push_const(result);
+                self.stack.push_const(result);
                 return Ok(());
             }
         };
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::simd)?;
         Ok(())
     }
@@ -107,16 +107,16 @@ impl FuncTranslator {
         const_eval: fn(lhs: V128, rhs: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (lhs, rhs) = self.alloc.stack.pop2();
+        let (lhs, rhs) = self.stack.pop2();
         if let (Provider::Const(lhs), Provider::Const(rhs)) = (lhs, rhs) {
             // Case: both inputs are immediates so we can const-eval the result.
             let result = const_eval(lhs.into(), rhs.into());
-            self.alloc.stack.push_const(result);
+            self.stack.push_const(result);
             return Ok(());
         }
-        let result = self.alloc.stack.push_dynamic()?;
-        let lhs = self.alloc.stack.provider2reg(&lhs)?;
-        let rhs = self.alloc.stack.provider2reg(&rhs)?;
+        let result = self.stack.push_dynamic()?;
+        let lhs = self.stack.provider2reg(&lhs)?;
+        let rhs = self.stack.provider2reg(&rhs)?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::simd)?;
         Ok(())
     }
@@ -128,17 +128,17 @@ impl FuncTranslator {
         const_eval: fn(lhas: V128, b: V128, c: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (a, b, c) = self.alloc.stack.pop3();
+        let (a, b, c) = self.stack.pop3();
         if let (Provider::Const(lhs), Provider::Const(rhs), Provider::Const(c)) = (a, b, c) {
             // Case: all inputs are immediates so we can const-eval the result.
             let result = const_eval(lhs.into(), rhs.into(), c.into());
-            self.alloc.stack.push_const(result);
+            self.stack.push_const(result);
             return Ok(());
         }
-        let result = self.alloc.stack.push_dynamic()?;
-        let lhs = self.alloc.stack.provider2reg(&a)?;
-        let rhs = self.alloc.stack.provider2reg(&b)?;
-        let selector = self.alloc.stack.provider2reg(&c)?;
+        let result = self.stack.push_dynamic()?;
+        let lhs = self.stack.provider2reg(&a)?;
+        let rhs = self.stack.provider2reg(&b)?;
+        let selector = self.stack.provider2reg(&c)?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::simd)?;
         self.append_instr(Instruction::register(selector))?;
         Ok(())
@@ -159,28 +159,28 @@ impl FuncTranslator {
         T: IntoShiftAmount<Input: From<TypedVal>>,
     {
         bail_unreachable!(self);
-        let (lhs, rhs) = self.alloc.stack.pop2();
+        let (lhs, rhs) = self.stack.pop2();
         if let (Provider::Const(lhs), Provider::Const(rhs)) = (lhs, rhs) {
             // Case: both inputs are immediates so we can const-eval the result.
             let result = const_eval(lhs.into(), rhs.into());
-            self.alloc.stack.push_const(result);
+            self.stack.push_const(result);
             return Ok(());
         }
-        let lhs = self.alloc.stack.provider2reg(&lhs)?;
+        let lhs = self.stack.provider2reg(&lhs)?;
         let rhs = match rhs {
             Provider::Register(rhs) => rhs,
             Provider::Const(rhs) => {
                 let Some(rhs) = T::into_shift_amount(rhs.into()) else {
                     // Case: the shift operation is a no-op
-                    self.alloc.stack.push_register(lhs)?;
+                    self.stack.push_register(lhs)?;
                     return Ok(());
                 };
-                let result = self.alloc.stack.push_dynamic()?;
+                let result = self.stack.push_dynamic()?;
                 self.push_fueled_instr(make_instr_imm(result, lhs, rhs), FuelCostsProvider::simd)?;
                 return Ok(());
             }
         };
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::simd)?;
         Ok(())
     }
@@ -207,14 +207,14 @@ impl FuncTranslator {
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}");
         };
-        let (input, value) = self.alloc.stack.pop2();
+        let (input, value) = self.stack.pop2();
         if let (Provider::Const(x), Provider::Const(item)) = (input, value) {
             let result = const_eval(x.into(), lane, item.into());
-            self.alloc.stack.push_const(result);
+            self.stack.push_const(result);
             return Ok(());
         }
-        let input = self.alloc.stack.provider2reg(&input)?;
-        let result = self.alloc.stack.push_dynamic()?;
+        let input = self.stack.provider2reg(&input)?;
+        let result = self.stack.push_dynamic()?;
         let (instr, param) = match value {
             Provider::Register(value) => (
                 make_instr(result, input, lane),
@@ -254,7 +254,7 @@ impl FuncTranslator {
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}");
         };
-        let (ptr, v128) = self.alloc.stack.pop2();
+        let (ptr, v128) = self.stack.pop2();
         let v128 = match v128 {
             Provider::Register(v128) => v128,
             Provider::Const(v128) => {
@@ -282,7 +282,7 @@ impl FuncTranslator {
                 // Case: we cannot use specialized encoding and thus have to fall back
                 //       to the general case where `ptr` is zero and `offset` stores the
                 //       `ptr+offset` address value.
-                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                let zero_ptr = self.stack.alloc_const(0_u64)?;
                 (zero_ptr, u64::from(address))
             }
         };
@@ -374,8 +374,8 @@ impl FuncTranslator {
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane: {lane}");
         };
-        let (ptr, x) = self.alloc.stack.pop2();
-        let x = self.alloc.stack.provider2reg(&x)?;
+        let (ptr, x) = self.stack.pop2();
+        let x = self.stack.provider2reg(&x)?;
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
@@ -391,12 +391,12 @@ impl FuncTranslator {
                         make_instr_at,
                     );
                 }
-                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                let zero_ptr = self.stack.alloc_const(0_u64)?;
                 (zero_ptr, u64::from(address))
             }
         };
         let (offset_hi, offset_lo) = Offset64::split(offset);
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::load)?;
         self.append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
         self.append_instr(Instruction::register_and_lane(x, lane))?;
@@ -417,7 +417,7 @@ impl FuncTranslator {
     where
         LaneType: Into<u8>,
     {
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         let instr = make_instr_at(result, address);
         let param = Instruction::register_and_lane(x, lane);
         self.push_fueled_instr(instr, FuelCostsProvider::load)?;
