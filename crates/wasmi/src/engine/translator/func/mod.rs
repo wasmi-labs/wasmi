@@ -24,6 +24,7 @@ use self::{
     control_frame::{
         BlockControlFrame,
         BlockHeight,
+        ControlFrameBase,
         IfControlFrame,
         LoopControlFrame,
         UnreachableControlFrame,
@@ -348,12 +349,28 @@ impl FuncTranslator {
     ///
     /// Returns [`FuelInfo::None`] if fuel metering is disabled.
     fn fuel_info(&self) -> FuelInfo {
+        self.fuel_info_with(FuncTranslator::fuel_instr)
+    }
+
+    /// Returns the [`FuelInfo`] for the given `frame`.
+    ///
+    /// Returns [`FuelInfo::None`] if fuel metering is disabled.
+    fn fuel_info_for(&self, frame: &impl ControlFrameBase) -> FuelInfo {
+        self.fuel_info_with(|_| frame.consume_fuel_instr())
+    }
+
+    /// Returns the [`FuelInfo`] for the current translation state.
+    ///
+    /// Returns [`FuelInfo::None`] if fuel metering is disabled.
+    fn fuel_info_with(
+        &self,
+        fuel_instr: impl FnOnce(&FuncTranslator) -> Option<Instr>,
+    ) -> FuelInfo {
         let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
             return FuelInfo::None;
         };
-        let fuel_instr = self
-            .fuel_instr()
+        let fuel_instr = fuel_instr(self)
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
         FuelInfo::some(fuel_costs.clone(), fuel_instr)
     }
@@ -489,12 +506,23 @@ impl FuncTranslator {
     }
 
     /// Convenience function to copy the parameters when branching to a control frame.
-    fn translate_copy_branch_params(&mut self, branch_params: BoundedRegSpan) -> Result<(), Error> {
+    fn translate_copy_branch_params(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let branch_params = frame.branch_params(&self.engine);
+        let consume_fuel_instr = frame.consume_fuel_instr();
+        self.translate_copy_branch_params_impl(branch_params, consume_fuel_instr)
+    }
+
+    /// Convenience function to copy the parameters when branching to a control frame.
+    fn translate_copy_branch_params_impl(
+        &mut self,
+        branch_params: BoundedRegSpan,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
-        let fuel_info = self.fuel_info();
+        let fuel_info = self.fuel_info_with(|_| consume_fuel_instr);
         let params = &mut self.alloc.buffer.providers;
         self.alloc
             .stack
@@ -510,22 +538,9 @@ impl FuncTranslator {
 
     /// Translates the `end` of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        if self.alloc.control_stack.is_empty() {
-            return self.translate_end_func(frame);
-        }
+        let is_func_block = self.alloc.control_stack.is_empty();
         if self.reachable && frame.is_branched_to() {
-            // If the end of the `block` is reachable AND
-            // there are branches to the end of the `block`
-            // prior, we need to copy the results to the
-            // block result registers.
-            //
-            // # Note
-            //
-            // We can skip this step if the above condition is
-            // not met since the code at this point is either
-            // unreachable OR there is only one source of results
-            // and thus there is no need to copy the results around.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // Since the `block` is now sealed we can pin its end label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
@@ -540,63 +555,10 @@ impl FuncTranslator {
                 self.alloc.stack.push_register(result)?;
             }
         }
-        // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = self.reachable || frame.is_branched_to();
-        Ok(())
-    }
-
-    /// Translates the `end` of the function enclosing Wasm `block`.
-    fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        let fuel_info = match self.fuel_costs().cloned() {
-            None => FuelInfo::None,
-            Some(fuel_costs) => {
-                let fuel_instr = frame
-                    .consume_fuel_instr()
-                    .expect("must have fuel instruction if fuel metering is enabled");
-                FuelInfo::some(fuel_costs, fuel_instr)
-            }
-        };
-        if self.reachable && frame.is_branched_to() {
-            // If the end of the `block` is reachable AND
-            // there are branches to the end of the `block`
-            // prior, we need to copy the results to the
-            // block result registers.
-            //
-            // # Note
-            //
-            // We can skip this step if the above condition is
-            // not met since the code at this point is either
-            // unreachable OR there is only one source of results
-            // and thus there is no need to copy the results around.
-            // self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
-            let branch_params = frame.branch_params(self.engine());
-            let params = &mut self.alloc.buffer.providers;
-            self.alloc
-                .stack
-                .pop_n(usize::from(branch_params.len()), params);
-            self.alloc.instr_encoder.encode_copies(
-                &mut self.alloc.stack,
-                branch_params,
-                &self.alloc.buffer.providers[..],
-                &fuel_info,
-            )?;
-        }
-        // Since the `block` is now sealed we can pin its end label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
-        if frame.is_branched_to() {
-            // Case: branches to this block exist so we cannot treat the
-            //       basic block as a no-op and instead have to put its
-            //       block results on top of the stack.
-            self.alloc
-                .stack
-                .trunc(frame.block_height().into_u16() as usize);
-            for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
-            }
-        }
-        if self.reachable || frame.is_branched_to() {
+        self.reachable |= frame.is_branched_to();
+        if self.reachable && is_func_block {
             // We dropped the Wasm `block` that encloses the function itself so we can return.
-            self.translate_return_with(&fuel_info)?;
+            self.translate_return_with(&frame)?;
         }
         Ok(())
     }
@@ -711,7 +673,7 @@ impl FuncTranslator {
             // not met since the code at this point is either
             // unreachable OR there is only one source of results
             // and thus there is no need to copy the results around.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // Since the `if` is now sealed we can pin its `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
@@ -762,7 +724,7 @@ impl FuncTranslator {
             // Since the end of `else` is reachable we need to properly
             // write the `else` block results back to were the `if` expects
             // its results to reside upon exit.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
@@ -792,7 +754,7 @@ impl FuncTranslator {
             // from the `then` block back to were the `if` control frame expects
             // its results afterwards.
             // Furthermore we need to encode the branch to the `if` end label.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
             let end_offset = self
                 .alloc
                 .instr_encoder
@@ -822,7 +784,7 @@ impl FuncTranslator {
                     self.alloc.stack.dec_register_usage(register);
                 }
             }
-            self.translate_copy_branch_params(frame.branch_params(&engine))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
@@ -2072,11 +2034,17 @@ impl FuncTranslator {
     /// Translates an unconditional `return` instruction.
     fn translate_return(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
-        self.translate_return_with(&fuel_info)
+        self.translate_return_impl(&fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    fn translate_return_with(&mut self, fuel_info: &FuelInfo) -> Result<(), Error> {
+    fn translate_return_with(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let fuel_info = self.fuel_info_for(frame);
+        self.translate_return_impl(&fuel_info)
+    }
+
+    /// Translates an unconditional `return` instruction given fuel information.
+    fn translate_return_impl(&mut self, fuel_info: &FuelInfo) -> Result<(), Error> {
         let func_type = self.func_type();
         let results = func_type.results();
         let values = &mut self.alloc.buffer.providers;
@@ -2112,7 +2080,8 @@ impl FuncTranslator {
                 frame.branch_to();
                 let branch_dst = frame.branch_destination();
                 let branch_params = frame.branch_params(&engine);
-                self.translate_copy_branch_params(branch_params)?;
+                let consume_fuel_instr = frame.consume_fuel_instr();
+                self.translate_copy_branch_params_impl(branch_params, consume_fuel_instr)?;
                 let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                 self.push_base_instr(Instruction::branch(branch_offset))?;
                 self.reachable = false;

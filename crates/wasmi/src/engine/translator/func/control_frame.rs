@@ -9,6 +9,19 @@ use crate::{
 #[cfg(doc)]
 use super::ValueStack;
 
+/// Base API implemented by all concrete [`ControlFrame`] types.
+pub trait ControlFrameBase {
+    /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
+    fn branch_params(&self, engine: &Engine) -> BoundedRegSpan;
+
+    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`ControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
+    fn consume_fuel_instr(&self) -> Option<Instr>;
+}
+
 /// The height of the [`ValueStack`] upon entering the control frame without its parameters.
 ///
 /// # Note
@@ -95,11 +108,6 @@ impl BlockControlFrame {
         self.is_branched_to = true;
     }
 
-    /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
-    }
-
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
     ///
     /// # Note
@@ -123,17 +131,14 @@ impl BlockControlFrame {
     pub fn block_type(&self) -> BlockType {
         self.block_type
     }
+}
 
-    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`BlockControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    ///
-    /// # Note
-    ///
-    /// A [`BlockControlFrame`] might share its [`ConsumeFuel`] instruction with its child [`BlockControlFrame`].
-    ///
-    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+impl ControlFrameBase for BlockControlFrame {
+    fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
         self.consume_fuel
     }
 }
@@ -185,11 +190,6 @@ impl LoopControlFrame {
         self.is_branched_to = true;
     }
 
-    /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        BoundedRegSpan::new(self.branch_params, self.block_type().len_params(engine))
-    }
-
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
     ///
     /// # Note
@@ -203,13 +203,14 @@ impl LoopControlFrame {
     pub fn block_type(&self) -> BlockType {
         self.block_type
     }
+}
 
-    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`BlockControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    ///
-    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+impl ControlFrameBase for LoopControlFrame {
+    fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_params(engine))
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
         self.consume_fuel
     }
 }
@@ -344,11 +345,6 @@ impl IfControlFrame {
         self.is_branched_to = true;
     }
 
-    /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
-    }
-
     /// Returns the label for the branch destination of the [`IfControlFrame`].
     ///
     /// # Note
@@ -441,22 +437,6 @@ impl IfControlFrame {
         self.block_type
     }
 
-    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`IfControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    ///
-    /// # Note
-    ///
-    /// This returns the [`ConsumeFuel`] instruction for both `then` and `else` blocks.
-    /// When entering the `if` block it represents the [`ConsumeFuel`] instruction until
-    /// the `else` block entered. This is possible because only one of them is needed
-    /// at the same time during translation.
-    ///
-    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        self.consume_fuel
-    }
-
     /// Updates the [`ConsumeFuel`] instruction for when the `else` block is entered.
     ///
     /// # Note
@@ -476,6 +456,16 @@ impl IfControlFrame {
             "can only update the consume fuel instruction if it existed before"
         );
         self.consume_fuel = Some(instr);
+    }
+}
+
+impl ControlFrameBase for IfControlFrame {
+    fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 
@@ -528,18 +518,6 @@ impl From<UnreachableControlFrame> for ControlFrame {
 }
 
 impl ControlFrame {
-    /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        match self {
-            Self::Block(frame) => frame.branch_params(engine),
-            Self::Loop(frame) => frame.branch_params(engine),
-            Self::If(frame) => frame.branch_params(engine),
-            Self::Unreachable(frame) => {
-                panic!("tried to get `branch_params` for an unreachable control frame: {frame:?}")
-            }
-        }
-    }
-
     /// Returns the label for the branch destination of the [`ControlFrame`].
     pub fn branch_destination(&self) -> LabelRef {
         match self {
@@ -563,13 +541,21 @@ impl ControlFrame {
             }
         }
     }
+}
 
-    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`ControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    ///
-    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+impl ControlFrameBase for ControlFrame {
+    fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        match self {
+            Self::Block(frame) => frame.branch_params(engine),
+            Self::Loop(frame) => frame.branch_params(engine),
+            Self::If(frame) => frame.branch_params(engine),
+            Self::Unreachable(frame) => {
+                panic!("tried to get `branch_params` for an unreachable control frame: {frame:?}")
+            }
+        }
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
         match self {
             ControlFrame::Block(frame) => frame.consume_fuel_instr(),
             ControlFrame::Loop(frame) => frame.consume_fuel_instr(),

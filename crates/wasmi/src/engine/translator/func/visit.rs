@@ -3,6 +3,7 @@ use super::{
         BlockControlFrame,
         BlockHeight,
         ControlFrame,
+        ControlFrameBase,
         IfControlFrame,
         IfReachability,
         LoopControlFrame,
@@ -300,9 +301,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // Case: the `if` control frame has reachable `then` and `else` branches.
             debug_assert!(frame.is_then_reachable());
             debug_assert!(frame.is_else_reachable());
-            let branch_params = frame.branch_params(self.engine());
             if self.reachable {
-                self.translate_copy_branch_params(branch_params)?;
+                self.translate_copy_branch_params(&frame)?;
                 let end_offset = self
                     .alloc
                     .instr_encoder
