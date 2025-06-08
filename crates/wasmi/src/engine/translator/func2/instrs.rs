@@ -1,5 +1,10 @@
 use super::{Instr, Reset};
-use crate::ir::Instruction;
+use crate::{
+    core::FuelCostsProvider,
+    engine::translator::{utils::FuelInfo, BumpFuelConsumption},
+    ir::Instruction,
+    Error,
+};
 use alloc::vec::{self, Vec};
 
 /// Creates and encodes the list of [`Instruction`]s for a function.
@@ -45,6 +50,33 @@ impl InstrEncoder {
     /// If `instr` is out of bounds for `self`.
     pub fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
+    }
+
+    /// Returns an exclusive reference to the [`Instruction`] associated to [`Instr`].
+    ///
+    /// # Panics
+    ///
+    /// If `instr` is out of bounds for `self`.
+    pub fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
+        &mut self.instrs[instr.into_usize()]
+    }
+
+    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
+    ///
+    /// # Errors
+    ///
+    /// If consumed fuel is out of bounds after this operation.
+    pub fn bump_fuel_consumption<F>(&mut self, fuel_info: &FuelInfo, f: F) -> Result<(), Error>
+    where
+        F: FnOnce(&FuelCostsProvider) -> u64,
+    {
+        let FuelInfo::Some { costs, instr } = fuel_info else {
+            // Fuel metering is disabled so we can bail out.
+            return Ok(());
+        };
+        let fuel_consumed = f(costs);
+        self.get_mut(*instr).bump_fuel_consumption(fuel_consumed)?;
+        Ok(())
     }
 
     /// Returns an iterator yielding all [`Instruction`]s of the [`InstrEncoder`].
