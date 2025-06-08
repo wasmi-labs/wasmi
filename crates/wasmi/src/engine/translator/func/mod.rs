@@ -683,7 +683,7 @@ impl FuncTranslator {
             //       block results on top of the stack.
             self.alloc
                 .stack
-                .trunc(frame.block_height().into_u16() as usize);
+                .trunc(usize::from(frame.block_height().into_u16()));
             for result in frame.branch_params(self.engine()) {
                 self.alloc.stack.push_register(result)?;
             }
@@ -719,7 +719,7 @@ impl FuncTranslator {
                 .else_label()
                 .expect("must have `else` label since `else` is reachable"),
         );
-        let if_height = frame.block_height().into_u16() as usize;
+        let if_height = usize::from(frame.block_height().into_u16());
         if end_of_else_reachable {
             // Since the end of `else` is reachable we need to properly
             // write the `else` block results back to were the `if` expects
@@ -769,7 +769,7 @@ impl FuncTranslator {
                 .expect("must have `else` label since `else` is reachable"),
         );
         let engine = self.engine().clone();
-        let if_height = frame.block_height().into_u16() as usize;
+        let if_height = usize::from(frame.block_height().into_u16());
         let else_providers = self.alloc.control_stack.pop_else_providers();
         if has_results {
             // We haven't visited the `else` block and thus the `else`
