@@ -253,13 +253,7 @@ impl FuncTranslator {
         if !self.reachable {
             return Ok(());
         }
-        let _fuel_info = match (&self.fuel_costs, frame.consume_fuel_instr()) {
-            (Some(fuel_costs), Some(consume_fuel)) => {
-                FuelInfo::some(fuel_costs.clone(), consume_fuel)
-            }
-            (None, None) => FuelInfo::None,
-            _ => unreachable!(),
-        };
+        // let _fuel_info = self.fuel_info();
         let len_results = frame.ty().len_results(&self.engine);
         if frame.is_branched_to() && len_results > 1 {
             let height = frame.height();
@@ -309,13 +303,8 @@ impl FuncTranslator {
                 }
             }
         }
-        self.labels
-            .pin_label(frame.label(), self.instrs.next_instr())
-            .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
-        match len_results {
-            0 => {
-                self.instrs.push_instr(Instruction::Return);
-            }
+        let return_instr = match len_results {
+            0 => self.instrs.push_instr(Instruction::Return),
             1 => {
                 let instr = match self.stack.peek(0) {
                     Operand::Local(operand) => {
@@ -352,15 +341,18 @@ impl FuncTranslator {
                         }
                     }
                 };
-                self.instrs.push_instr(instr);
+                self.instrs.push_instr(instr)
             }
             _ => {
                 let height = frame.height();
                 let result = self.layout.temp_to_reg(OperandIdx::from(height - 1))?;
                 let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
-                self.instrs.push_instr(Instruction::return_span(values));
+                self.instrs.push_instr(Instruction::return_span(values))
             }
-        }
+        };
+        self.labels
+            .pin_label(frame.label(), return_instr)
+            .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
         Ok(())
     }
 
