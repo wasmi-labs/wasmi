@@ -550,7 +550,7 @@ impl FuncTranslator {
             //       block results on top of the stack.
             self.alloc
                 .stack
-                .trunc(frame.block_height().into_u16() as usize);
+                .trunc(usize::from(frame.block_height().into_u16()));
             for result in frame.branch_params(self.engine()) {
                 self.alloc.stack.push_register(result)?;
             }
