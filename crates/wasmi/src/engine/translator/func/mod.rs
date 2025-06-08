@@ -24,6 +24,7 @@ use self::{
     control_frame::{
         BlockControlFrame,
         BlockHeight,
+        ControlFrameBase,
         IfControlFrame,
         LoopControlFrame,
         UnreachableControlFrame,
@@ -124,6 +125,12 @@ impl TranslationBuffers {
         self.br_table_targets.clear();
         self.preserved.clear();
     }
+
+    /// Resets `self` and returns it.
+    fn into_reset(mut self) -> Self {
+        self.reset();
+        self
+    }
 }
 
 impl FuncTranslatorAllocations {
@@ -133,6 +140,12 @@ impl FuncTranslatorAllocations {
         self.instr_encoder.reset();
         self.control_stack.reset();
         self.buffer.reset();
+    }
+
+    /// Resets `self` and returns it.
+    fn into_reset(mut self) -> Self {
+        self.reset();
+        self
     }
 }
 
@@ -164,8 +177,18 @@ pub struct FuncTranslator {
     ///
     /// `None` if fuel metering is disabled.
     fuel_costs: Option<FuelCostsProvider>,
-    /// The reusable data structures of the [`FuncTranslator`].
-    alloc: FuncTranslatorAllocations,
+    /// The emulated value stack.
+    stack: ValueStack,
+    /// The instruction sequence encoder.
+    instr_encoder: InstrEncoder,
+    /// The control stack.
+    control_stack: ControlStack,
+    /// Buffer to temporarily hold a bunch of [`TypedProvider`] when bulk-popped from the [`ValueStack`].
+    providers: Vec<TypedProvider>,
+    /// Buffer to temporarily hold `br_table` target depths.
+    br_table_targets: Vec<u32>,
+    /// Buffer to temporarily hold a bunch of preserved [`Reg`] locals.
+    preserved: Vec<PreservedLocal>,
 }
 
 impl WasmTranslator<'_> for FuncTranslator {
@@ -185,11 +208,11 @@ impl WasmTranslator<'_> for FuncTranslator {
         amount: u32,
         _value_type: wasmparser::ValType,
     ) -> Result<(), Error> {
-        self.alloc.stack.register_locals(amount)
+        self.stack.register_locals(amount)
     }
 
     fn finish_translate_locals(&mut self) -> Result<(), Error> {
-        self.alloc.stack.finish_register_locals();
+        self.stack.finish_register_locals();
         Ok(())
     }
 
@@ -199,13 +222,9 @@ impl WasmTranslator<'_> for FuncTranslator {
         mut self,
         finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<Self::Allocations, Error> {
-        self.alloc
-            .instr_encoder
-            .defrag_registers(&mut self.alloc.stack)?;
-        self.alloc
-            .instr_encoder
-            .update_branch_offsets(&mut self.alloc.stack)?;
-        let len_registers = self.alloc.stack.len_registers();
+        self.instr_encoder.defrag_registers(&mut self.stack)?;
+        self.instr_encoder.update_branch_offsets(&mut self.stack)?;
+        let len_registers = self.stack.len_registers();
         if let Some(fuel_costs) = self.fuel_costs() {
             // Note: Fuel metering is enabled so we need to bump the fuel
             //       of the function enclosing Wasm `block` by an amount
@@ -215,14 +234,13 @@ impl WasmTranslator<'_> for FuncTranslator {
             //       the instruction at the 0th index if fuel metering is enabled.
             let fuel_instr = Instr::from_u32(0);
             let fuel_info = FuelInfo::some(fuel_costs.clone(), fuel_instr);
-            self.alloc
-                .instr_encoder
+            self.instr_encoder
                 .bump_fuel_consumption(&fuel_info, |costs| {
                     costs.fuel_for_copying_values(u64::from(len_registers))
                 })?;
         }
-        let func_consts = self.alloc.stack.func_local_consts();
-        let instrs = self.alloc.instr_encoder.drain_instrs();
+        let func_consts = self.stack.func_local_consts();
+        let instrs = self.instr_encoder.drain_instrs();
         finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         Ok(self.into_allocations())
     }
@@ -246,13 +264,29 @@ impl FuncTranslator {
             .get_consume_fuel()
             .then(|| config.fuel_costs())
             .cloned();
+        let FuncTranslatorAllocations {
+            stack,
+            instr_encoder,
+            control_stack,
+            buffer,
+        } = alloc.into_reset();
+        let TranslationBuffers {
+            providers,
+            br_table_targets,
+            preserved,
+        } = buffer.into_reset();
         Self {
             func,
             engine,
             module: res,
             reachable: true,
             fuel_costs,
-            alloc,
+            stack,
+            instr_encoder,
+            control_stack,
+            providers,
+            br_table_targets,
+            preserved,
         }
         .init()
     }
@@ -264,7 +298,6 @@ impl FuncTranslator {
 
     /// Initializes a newly constructed [`FuncTranslator`].
     fn init(mut self) -> Result<Self, Error> {
-        self.alloc.reset();
         self.init_func_body_block()?;
         self.init_func_params()?;
         Ok(self)
@@ -274,7 +307,7 @@ impl FuncTranslator {
     fn init_func_body_block(&mut self) -> Result<(), Error> {
         let func_type = self.module.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
-        let end_label = self.alloc.instr_encoder.new_label();
+        let end_label = self.instr_encoder.new_label();
         let consume_fuel = self.make_fuel_instr()?;
         // Note: we use a dummy `RegSpan` as placeholder since the function enclosing
         //       control block never has branch parameters.
@@ -286,21 +319,30 @@ impl FuncTranslator {
             BlockHeight::default(),
             consume_fuel,
         );
-        self.alloc.control_stack.push_frame(block_frame);
+        self.control_stack.push_frame(block_frame);
         Ok(())
     }
 
     /// Registers the function parameters in the emulated value stack.
     fn init_func_params(&mut self) -> Result<(), Error> {
         for _param_type in self.func_type().params() {
-            self.alloc.stack.register_locals(1)?;
+            self.stack.register_locals(1)?;
         }
         Ok(())
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
     fn into_allocations(self) -> FuncTranslatorAllocations {
-        self.alloc
+        FuncTranslatorAllocations {
+            stack: self.stack,
+            instr_encoder: self.instr_encoder,
+            control_stack: self.control_stack,
+            buffer: TranslationBuffers {
+                providers: self.providers,
+                br_table_targets: self.br_table_targets,
+                preserved: self.preserved,
+            },
+        }
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
@@ -341,19 +383,35 @@ impl FuncTranslator {
     ///
     /// Returns `None` if fuel metering is disabled.
     fn fuel_instr(&self) -> Option<Instr> {
-        self.alloc.control_stack.last().consume_fuel_instr()
+        self.control_stack.last().consume_fuel_instr()
     }
 
     /// Returns the [`FuelInfo`] for the current translation state.
     ///
     /// Returns [`FuelInfo::None`] if fuel metering is disabled.
     fn fuel_info(&self) -> FuelInfo {
+        self.fuel_info_with(FuncTranslator::fuel_instr)
+    }
+
+    /// Returns the [`FuelInfo`] for the given `frame`.
+    ///
+    /// Returns [`FuelInfo::None`] if fuel metering is disabled.
+    fn fuel_info_for(&self, frame: &impl ControlFrameBase) -> FuelInfo {
+        self.fuel_info_with(|_| frame.consume_fuel_instr())
+    }
+
+    /// Returns the [`FuelInfo`] for the current translation state.
+    ///
+    /// Returns [`FuelInfo::None`] if fuel metering is disabled.
+    fn fuel_info_with(
+        &self,
+        fuel_instr: impl FnOnce(&FuncTranslator) -> Option<Instr>,
+    ) -> FuelInfo {
         let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
             return FuelInfo::None;
         };
-        let fuel_instr = self
-            .fuel_instr()
+        let fuel_instr = fuel_instr(self)
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
         FuelInfo::some(fuel_costs.clone(), fuel_instr)
     }
@@ -369,7 +427,7 @@ impl FuncTranslator {
         let base = u32::try_from(fuel_costs.base())
             .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
         let fuel_instr = Instruction::consume_fuel(base);
-        let instr = self.alloc.instr_encoder.push_instr(fuel_instr)?;
+        let instr = self.instr_encoder.push_instr(fuel_instr)?;
         Ok(Some(instr))
     }
 
@@ -381,9 +439,7 @@ impl FuncTranslator {
         F: FnOnce(&FuelCostsProvider) -> u64,
     {
         let fuel_info = self.fuel_info();
-        self.alloc
-            .instr_encoder
-            .bump_fuel_consumption(&fuel_info, f)?;
+        self.instr_encoder.bump_fuel_consumption(&fuel_info, f)?;
         Ok(())
     }
 
@@ -397,12 +453,12 @@ impl FuncTranslator {
         F: FnOnce(&FuelCostsProvider) -> u64,
     {
         self.bump_fuel_consumption(f)?;
-        self.alloc.instr_encoder.push_instr(instr)
+        self.instr_encoder.push_instr(instr)
     }
 
     /// Convenience method for appending an [`Instruction`] parameter.
     fn append_instr(&mut self, instr: Instruction) -> Result<(), Error> {
-        self.alloc.instr_encoder.append_instr(instr)?;
+        self.instr_encoder.append_instr(instr)?;
         Ok(())
     }
 
@@ -429,9 +485,9 @@ impl FuncTranslator {
     /// of their uses would be too costly.
     fn preserve_locals(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
-        let preserved = &mut self.alloc.buffer.preserved;
+        let preserved = &mut self.preserved;
         preserved.clear();
-        self.alloc.stack.preserve_all_locals(|preserved_local| {
+        self.stack.preserve_all_locals(|preserved_local| {
             preserved.push(preserved_local);
             Ok(())
         })?;
@@ -455,7 +511,7 @@ impl FuncTranslator {
                 )
             });
             let results = BoundedRegSpan::new(RegSpan::new(copy_group[0].preserved), len);
-            let providers = &mut self.alloc.buffer.providers;
+            let providers = &mut self.providers;
             providers.clear();
             providers.extend(
                 copy_group
@@ -463,14 +519,14 @@ impl FuncTranslator {
                     .map(|p| p.local)
                     .map(TypedProvider::Register),
             );
-            let instr = self.alloc.instr_encoder.encode_copies(
-                &mut self.alloc.stack,
+            let instr = self.instr_encoder.encode_copies(
+                &mut self.stack,
                 results,
                 &providers[..],
                 &fuel_info,
             )?;
             if let Some(instr) = instr {
-                self.alloc.instr_encoder.notify_preserved_register(instr)
+                self.instr_encoder.notify_preserved_register(instr)
             }
         }
         Ok(())
@@ -489,20 +545,29 @@ impl FuncTranslator {
     }
 
     /// Convenience function to copy the parameters when branching to a control frame.
-    fn translate_copy_branch_params(&mut self, branch_params: BoundedRegSpan) -> Result<(), Error> {
+    fn translate_copy_branch_params(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let branch_params = frame.branch_params(&self.engine);
+        let consume_fuel_instr = frame.consume_fuel_instr();
+        self.translate_copy_branch_params_impl(branch_params, consume_fuel_instr)
+    }
+
+    /// Convenience function to copy the parameters when branching to a control frame.
+    fn translate_copy_branch_params_impl(
+        &mut self,
+        branch_params: BoundedRegSpan,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
-        let fuel_info = self.fuel_info();
-        let params = &mut self.alloc.buffer.providers;
-        self.alloc
-            .stack
-            .pop_n(usize::from(branch_params.len()), params);
-        self.alloc.instr_encoder.encode_copies(
-            &mut self.alloc.stack,
+        let fuel_info = self.fuel_info_with(|_| consume_fuel_instr);
+        let params = &mut self.providers;
+        self.stack.pop_n(usize::from(branch_params.len()), params);
+        self.instr_encoder.encode_copies(
+            &mut self.stack,
             branch_params,
-            &self.alloc.buffer.providers[..],
+            &self.providers[..],
             &fuel_info,
         )?;
         Ok(())
@@ -510,93 +575,26 @@ impl FuncTranslator {
 
     /// Translates the `end` of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        if self.alloc.control_stack.is_empty() {
-            return self.translate_end_func(frame);
-        }
+        let is_func_block = self.control_stack.is_empty();
         if self.reachable && frame.is_branched_to() {
-            // If the end of the `block` is reachable AND
-            // there are branches to the end of the `block`
-            // prior, we need to copy the results to the
-            // block result registers.
-            //
-            // # Note
-            //
-            // We can skip this step if the above condition is
-            // not met since the code at this point is either
-            // unreachable OR there is only one source of results
-            // and thus there is no need to copy the results around.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // Since the `block` is now sealed we can pin its end label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
+        self.instr_encoder.pin_label(frame.end_label());
         if frame.is_branched_to() {
             // Case: branches to this block exist so we cannot treat the
             //       basic block as a no-op and instead have to put its
             //       block results on top of the stack.
-            self.alloc
-                .stack
-                .trunc(frame.block_height().into_u16() as usize);
+            self.stack
+                .trunc(usize::from(frame.block_height().into_u16()));
             for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
+                self.stack.push_register(result)?;
             }
         }
-        // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = self.reachable || frame.is_branched_to();
-        Ok(())
-    }
-
-    /// Translates the `end` of the function enclosing Wasm `block`.
-    fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        let fuel_info = match self.fuel_costs().cloned() {
-            None => FuelInfo::None,
-            Some(fuel_costs) => {
-                let fuel_instr = frame
-                    .consume_fuel_instr()
-                    .expect("must have fuel instruction if fuel metering is enabled");
-                FuelInfo::some(fuel_costs, fuel_instr)
-            }
-        };
-        if self.reachable && frame.is_branched_to() {
-            // If the end of the `block` is reachable AND
-            // there are branches to the end of the `block`
-            // prior, we need to copy the results to the
-            // block result registers.
-            //
-            // # Note
-            //
-            // We can skip this step if the above condition is
-            // not met since the code at this point is either
-            // unreachable OR there is only one source of results
-            // and thus there is no need to copy the results around.
-            // self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
-            let branch_params = frame.branch_params(self.engine());
-            let params = &mut self.alloc.buffer.providers;
-            self.alloc
-                .stack
-                .pop_n(usize::from(branch_params.len()), params);
-            self.alloc.instr_encoder.encode_copies(
-                &mut self.alloc.stack,
-                branch_params,
-                &self.alloc.buffer.providers[..],
-                &fuel_info,
-            )?;
-        }
-        // Since the `block` is now sealed we can pin its end label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
-        if frame.is_branched_to() {
-            // Case: branches to this block exist so we cannot treat the
-            //       basic block as a no-op and instead have to put its
-            //       block results on top of the stack.
-            self.alloc
-                .stack
-                .trunc(frame.block_height().into_u16() as usize);
-            for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
-            }
-        }
-        if self.reachable || frame.is_branched_to() {
+        self.reachable |= frame.is_branched_to();
+        if self.reachable && is_func_block {
             // We dropped the Wasm `block` that encloses the function itself so we can return.
-            self.translate_return_with(&fuel_info)?;
+            self.translate_return_with(&frame)?;
         }
         Ok(())
     }
@@ -604,7 +602,7 @@ impl FuncTranslator {
     /// Translates the `end` of a Wasm `loop` control frame.
     fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), Error> {
         debug_assert!(
-            !self.alloc.control_stack.is_empty(),
+            !self.control_stack.is_empty(),
             "control stack must not be empty since its first element is always a `block`"
         );
         // # Note
@@ -622,7 +620,7 @@ impl FuncTranslator {
     /// Translates the `end` of a Wasm `if` control frame.
     fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(
-            !self.alloc.control_stack.is_empty(),
+            !self.control_stack.is_empty(),
             "control stack must not be empty since its first element is always a `block`"
         );
         match (frame.is_then_reachable(), frame.is_else_reachable()) {
@@ -711,19 +709,18 @@ impl FuncTranslator {
             // not met since the code at this point is either
             // unreachable OR there is only one source of results
             // and thus there is no need to copy the results around.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // Since the `if` is now sealed we can pin its `end` label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
+        self.instr_encoder.pin_label(frame.end_label());
         if frame.is_branched_to() {
             // Case: branches to this block exist so we cannot treat the
             //       basic block as a no-op and instead have to put its
             //       block results on top of the stack.
-            self.alloc
-                .stack
-                .trunc(frame.block_height().into_u16() as usize);
+            self.stack
+                .trunc(usize::from(frame.block_height().into_u16()));
             for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
+                self.stack.push_register(result)?;
             }
         }
         // We reset reachability in case the end of the `block` was reachable.
@@ -752,26 +749,26 @@ impl FuncTranslator {
             (false, false) => frame.is_branched_to(),
             _ => true,
         };
-        self.alloc.instr_encoder.pin_label_if_unpinned(
+        self.instr_encoder.pin_label_if_unpinned(
             frame
                 .else_label()
                 .expect("must have `else` label since `else` is reachable"),
         );
-        let if_height = frame.block_height().into_u16() as usize;
+        let if_height = usize::from(frame.block_height().into_u16());
         if end_of_else_reachable {
             // Since the end of `else` is reachable we need to properly
             // write the `else` block results back to were the `if` expects
             // its results to reside upon exit.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
+        self.instr_encoder.pin_label(frame.end_label());
         if reachable {
             // In case the code following the `if` is reachable we need
             // to clean up and prepare the value stack.
-            self.alloc.stack.trunc(if_height);
+            self.stack.trunc(if_height);
             for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
+                self.stack.push_register(result)?;
             }
         }
         self.reachable = reachable;
@@ -792,45 +789,41 @@ impl FuncTranslator {
             // from the `then` block back to were the `if` control frame expects
             // its results afterwards.
             // Furthermore we need to encode the branch to the `if` end label.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
-            let end_offset = self
-                .alloc
-                .instr_encoder
-                .try_resolve_label(frame.end_label())?;
-            self.alloc
-                .instr_encoder
+            self.translate_copy_branch_params(&frame)?;
+            let end_offset = self.instr_encoder.try_resolve_label(frame.end_label())?;
+            self.instr_encoder
                 .push_instr(Instruction::branch(end_offset))?;
         }
-        self.alloc.instr_encoder.pin_label_if_unpinned(
+        self.instr_encoder.pin_label_if_unpinned(
             frame
                 .else_label()
                 .expect("must have `else` label since `else` is reachable"),
         );
         let engine = self.engine().clone();
-        let if_height = frame.block_height().into_u16() as usize;
-        let else_providers = self.alloc.control_stack.pop_else_providers();
+        let if_height = usize::from(frame.block_height().into_u16());
+        let else_providers = self.control_stack.pop_else_providers();
         if has_results {
             // We haven't visited the `else` block and thus the `else`
             // providers are still on the auxiliary stack and need to
             // be popped. We use them to restore the stack to the state
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
-            self.alloc.stack.trunc(if_height);
+            self.stack.trunc(if_height);
             for provider in else_providers {
-                self.alloc.stack.push_provider(provider)?;
+                self.stack.push_provider(provider)?;
                 if let TypedProvider::Register(register) = provider {
-                    self.alloc.stack.dec_register_usage(register);
+                    self.stack.dec_register_usage(register);
                 }
             }
-            self.translate_copy_branch_params(frame.branch_params(&engine))?;
+            self.translate_copy_branch_params(&frame)?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
+        self.instr_encoder.pin_label(frame.end_label());
         // Without `else` block the code after the `if` is always reachable and
         // thus we need to clean up and prepare the value stack for the following code.
-        self.alloc.stack.trunc(if_height);
+        self.stack.trunc(if_height);
         for result in frame.branch_params(&engine) {
-            self.alloc.stack.push_register(result)?;
+            self.stack.push_register(result)?;
         }
         self.reachable = true;
         Ok(())
@@ -874,18 +867,13 @@ impl FuncTranslator {
         len_block_params: u16,
         len_branch_params: u16,
     ) -> Result<RegSpan, Error> {
-        let params = &mut self.alloc.buffer.providers;
+        let params = &mut self.providers;
         // Pop the block parameters off the stack.
-        self.alloc
-            .stack
-            .pop_n(usize::from(len_block_params), params);
+        self.stack.pop_n(usize::from(len_block_params), params);
         // Peek the branch parameter registers which are going to be returned.
-        let branch_params = self
-            .alloc
-            .stack
-            .peek_dynamic_n(usize::from(len_branch_params))?;
+        let branch_params = self.stack.peek_dynamic_n(usize::from(len_branch_params))?;
         // Push the block parameters onto the stack again as if nothing happened.
-        self.alloc.stack.push_n(params)?;
+        self.stack.push_n(params)?;
         params.clear();
         Ok(branch_params)
     }
@@ -897,7 +885,7 @@ impl FuncTranslator {
         rhs: Reg,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
     ) -> Result<(), Error> {
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
@@ -920,7 +908,7 @@ impl FuncTranslator {
     {
         if let Ok(rhs) = rhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
-            let result = self.alloc.stack.push_dynamic()?;
+            let result = self.stack.push_dynamic()?;
             self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCostsProvider::base)?;
             return Ok(true);
         }
@@ -939,7 +927,7 @@ impl FuncTranslator {
     {
         if let Ok(lhs) = lhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
-            let result = self.alloc.stack.push_dynamic()?;
+            let result = self.stack.push_dynamic()?;
             self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCostsProvider::base)?;
             return Ok(true);
         }
@@ -957,8 +945,7 @@ impl FuncTranslator {
         T: From<TypedVal>,
         R: Into<TypedVal>,
     {
-        self.alloc
-            .stack
+        self.stack
             .push_const(consteval(lhs.into(), rhs.into()).into());
         Ok(())
     }
@@ -978,8 +965,8 @@ impl FuncTranslator {
     where
         T: Into<UntypedVal>,
     {
-        let result = self.alloc.stack.push_dynamic()?;
-        let rhs = self.alloc.stack.alloc_const(rhs)?;
+        let result = self.stack.push_dynamic()?;
+        let rhs = self.stack.alloc_const(rhs)?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
@@ -999,8 +986,8 @@ impl FuncTranslator {
     where
         T: Into<UntypedVal>,
     {
-        let result = self.alloc.stack.push_dynamic()?;
-        let lhs = self.alloc.stack.alloc_const(lhs)?;
+        let result = self.stack.push_dynamic()?;
+        let lhs = self.stack.alloc_const(lhs)?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
@@ -1050,7 +1037,7 @@ impl FuncTranslator {
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
@@ -1121,7 +1108,7 @@ impl FuncTranslator {
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
@@ -1136,7 +1123,7 @@ impl FuncTranslator {
                 }
                 if T::from(rhs).is_nan() {
                     // Optimization: non-canonicalized NaN propagation.
-                    self.alloc.stack.push_const(rhs);
+                    self.stack.push_const(rhs);
                     return Ok(());
                 }
                 self.push_binary_instr_imm(lhs, rhs, make_instr)
@@ -1148,7 +1135,7 @@ impl FuncTranslator {
                 }
                 if T::from(lhs).is_nan() {
                     // Optimization: non-canonicalized NaN propagation.
-                    self.alloc.stack.push_const(lhs);
+                    self.stack.push_const(lhs);
                     return Ok(());
                 }
                 self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
@@ -1175,20 +1162,19 @@ impl FuncTranslator {
         T: WasmFloat,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if lhs == rhs {
                     // Optimization: `copysign x x` is always just `x`
-                    self.alloc.stack.push_register(lhs)?;
+                    self.stack.push_register(lhs)?;
                     return Ok(());
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 let sign = T::from(rhs).sign();
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
+                let result = self.stack.push_dynamic()?;
+                self.instr_encoder
                     .push_instr(make_instr_imm(result, lhs, sign))?;
                 Ok(())
             }
@@ -1234,7 +1220,7 @@ impl FuncTranslator {
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
@@ -1292,7 +1278,7 @@ impl FuncTranslator {
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
@@ -1308,7 +1294,7 @@ impl FuncTranslator {
                 }
                 if T::from(imm_in).is_nan() {
                     // Optimization: non-canonicalized NaN propagation.
-                    self.alloc.stack.push_const(T::from(imm_in));
+                    self.stack.push_const(T::from(imm_in));
                     return Ok(());
                 }
                 self.push_binary_instr_imm(reg_in, imm_in, make_instr)
@@ -1353,17 +1339,17 @@ impl FuncTranslator {
         Const16<T>: From<i16>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 let Some(rhs) = T::into_shift_amount(rhs.into()) else {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
-                    self.alloc.stack.push_register(lhs)?;
+                    self.stack.push_register(lhs)?;
                     return Ok(());
                 };
-                let result = self.alloc.stack.push_dynamic()?;
+                let result = self.stack.push_dynamic()?;
                 self.push_fueled_instr(make_instr_by(result, lhs, rhs), FuelCostsProvider::base)?;
                 Ok(())
             }
@@ -1374,7 +1360,7 @@ impl FuncTranslator {
                 }
                 if T::from(lhs).eq_zero() {
                     // Optimization: Shifting or rotating a zero value is a no-op.
-                    self.alloc.stack.push_const(lhs);
+                    self.stack.push_const(lhs);
                     return Ok(());
                 }
                 if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16)? {
@@ -1420,7 +1406,7 @@ impl FuncTranslator {
         NonZeroT: Copy + TryFrom<T> + TryInto<Const16<NonZeroT>>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop2() {
+        match self.stack.pop2() {
             (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Custom optimization was applied: return early
@@ -1454,7 +1440,7 @@ impl FuncTranslator {
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 match consteval(lhs.into(), rhs.into()) {
                     Ok(result) => {
-                        self.alloc.stack.push_const(result);
+                        self.stack.push_const(result);
                         Ok(())
                     }
                     Err(trap_code) => self.translate_trap(trap_code),
@@ -1479,14 +1465,14 @@ impl FuncTranslator {
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop() {
+        match self.stack.pop() {
             TypedProvider::Register(input) => {
-                let result = self.alloc.stack.push_dynamic()?;
+                let result = self.stack.push_dynamic()?;
                 self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::base)?;
                 Ok(())
             }
             TypedProvider::Const(input) => {
-                self.alloc.stack.push_const(consteval(input.into()).into());
+                self.stack.push_const(consteval(input.into()).into());
                 Ok(())
             }
         }
@@ -1503,15 +1489,15 @@ impl FuncTranslator {
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        match self.alloc.stack.pop() {
+        match self.stack.pop() {
             TypedProvider::Register(input) => {
-                let result = self.alloc.stack.push_dynamic()?;
+                let result = self.stack.push_dynamic()?;
                 self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::base)?;
                 Ok(())
             }
             TypedProvider::Const(input) => match consteval(input.into()) {
                 Ok(result) => {
-                    self.alloc.stack.push_const(result);
+                    self.stack.push_const(result);
                     Ok(())
                 }
                 Err(trap_code) => self.translate_trap(trap_code),
@@ -1584,7 +1570,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
-        let ptr = self.alloc.stack.pop();
+        let ptr = self.stack.pop();
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
@@ -1592,14 +1578,13 @@ impl FuncTranslator {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = Address32::try_from(address) {
-                    let result = self.alloc.stack.push_dynamic()?;
+                    let result = self.stack.push_dynamic()?;
                     self.push_fueled_instr(
                         make_instr_at(result, address),
                         FuelCostsProvider::load,
                     )?;
                     if !memory.is_default() {
-                        self.alloc
-                            .instr_encoder
+                        self.instr_encoder
                             .append_instr(Instruction::memory_index(memory))?;
                     }
                     return Ok(());
@@ -1607,11 +1592,11 @@ impl FuncTranslator {
                 // Case: we cannot use specialized encoding and thus have to fall back
                 //       to the general case where `ptr` is zero and `offset` stores the
                 //       `ptr+offset` address value.
-                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                let zero_ptr = self.stack.alloc_const(0_u64)?;
                 (zero_ptr, u64::from(address))
             }
         };
-        let result = self.alloc.stack.push_dynamic()?;
+        let result = self.stack.push_dynamic()?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_fueled_instr(
@@ -1623,12 +1608,10 @@ impl FuncTranslator {
         }
         let (offset_hi, offset_lo) = Offset64::split(offset);
         self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::load)?;
-        self.alloc
-            .instr_encoder
+        self.instr_encoder
             .append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
         if !memory.is_default() {
-            self.alloc
-                .instr_encoder
+            self.instr_encoder
                 .append_instr(Instruction::memory_index(memory))?;
         }
         Ok(())
@@ -1693,7 +1676,7 @@ impl FuncTranslator {
         Field: TryFrom<Wrapped> + Into<AnyConst16>,
     {
         bail_unreachable!(self);
-        let (ptr, value) = self.alloc.stack.pop2();
+        let (ptr, value) = self.stack.pop2();
         self.translate_istore_wrap_impl::<Src, Wrapped, Field>(
             memarg,
             ptr,
@@ -1744,7 +1727,7 @@ impl FuncTranslator {
                 // Case: we cannot use specialized encoding and thus have to fall back
                 //       to the general case where `ptr` is zero and `offset` stores the
                 //       `ptr+offset` address value.
-                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                let zero_ptr = self.stack.alloc_const(0_u64)?;
                 (zero_ptr, u64::from(address))
             }
         };
@@ -1772,18 +1755,14 @@ impl FuncTranslator {
                 ),
                 None => (
                     make_instr(ptr, offset_lo),
-                    Instruction::register_and_offset_hi(
-                        self.alloc.stack.alloc_const(value)?,
-                        offset_hi,
-                    ),
+                    Instruction::register_and_offset_hi(self.stack.alloc_const(value)?, offset_hi),
                 ),
             },
         };
         self.push_fueled_instr(instr, FuelCostsProvider::store)?;
         self.append_instr(param)?;
         if !memory.is_default() {
-            self.alloc
-                .instr_encoder
+            self.instr_encoder
                 .append_instr(Instruction::memory_index(memory))?;
         }
         Ok(())
@@ -1817,7 +1796,7 @@ impl FuncTranslator {
                         FuelCostsProvider::store,
                     )?;
                 } else {
-                    let value = self.alloc.stack.alloc_const(value)?;
+                    let value = self.stack.alloc_const(value)?;
                     self.push_fueled_instr(
                         make_instr_at(value, address),
                         FuelCostsProvider::store,
@@ -1826,8 +1805,7 @@ impl FuncTranslator {
             }
         }
         if !memory.is_default() {
-            self.alloc
-                .instr_encoder
+            self.instr_encoder
                 .append_instr(Instruction::memory_index(memory))?;
         }
         Ok(())
@@ -1866,7 +1844,7 @@ impl FuncTranslator {
                     FuelCostsProvider::store,
                 )?,
                 Err(_) => {
-                    let value = self.alloc.stack.alloc_const(value)?;
+                    let value = self.stack.alloc_const(value)?;
                     self.push_fueled_instr(
                         make_instr_offset16(ptr, offset16, value),
                         FuelCostsProvider::store,
@@ -1898,7 +1876,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
-        let (ptr, value) = self.alloc.stack.pop2();
+        let (ptr, value) = self.stack.pop2();
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
@@ -1908,12 +1886,12 @@ impl FuncTranslator {
                 if let Ok(address) = Address32::try_from(address) {
                     return self.translate_fstore_at(memory, address, value, make_instr_at);
                 }
-                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                let zero_ptr = self.stack.alloc_const(0_u64)?;
                 (zero_ptr, u64::from(address))
             }
         };
         let (offset_hi, offset_lo) = Offset64::split(offset);
-        let value = self.alloc.stack.provider2reg(&value)?;
+        let value = self.stack.provider2reg(&value)?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_fueled_instr(
@@ -1924,12 +1902,10 @@ impl FuncTranslator {
             }
         }
         self.push_fueled_instr(make_instr(ptr, offset_lo), FuelCostsProvider::store)?;
-        self.alloc
-            .instr_encoder
+        self.instr_encoder
             .append_instr(Instruction::register_and_offset_hi(value, offset_hi))?;
         if !memory.is_default() {
-            self.alloc
-                .instr_encoder
+            self.instr_encoder
                 .append_instr(Instruction::memory_index(memory))?;
         }
         Ok(())
@@ -1947,11 +1923,10 @@ impl FuncTranslator {
         value: TypedProvider,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
-        let value = self.alloc.stack.provider2reg(&value)?;
+        let value = self.stack.provider2reg(&value)?;
         self.push_fueled_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
         if !memory.is_default() {
-            self.alloc
-                .instr_encoder
+            self.instr_encoder
                 .append_instr(Instruction::memory_index(memory))?;
         }
         Ok(())
@@ -1966,7 +1941,7 @@ impl FuncTranslator {
     /// - Fuses compare instructions with the associated select instructions if possible.
     fn translate_select(&mut self, _type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (true_val, false_val, condition) = self.alloc.stack.pop3();
+        let (true_val, false_val, condition) = self.stack.pop3();
         if true_val == false_val {
             // Optimization: both `lhs` and `rhs` either are the same register or constant values and
             //               thus `select` will always yield this same value irrespective of the condition.
@@ -1974,7 +1949,7 @@ impl FuncTranslator {
             // TODO: we could technically look through registers representing function local constants and
             //       check whether they are equal to a given constant in cases where `lhs` and `rhs` are referring
             //       to a function local register and a constant value or vice versa.
-            self.alloc.stack.push_provider(true_val)?;
+            self.stack.push_provider(true_val)?;
             return Ok(());
         }
         let condition = match condition {
@@ -1988,16 +1963,16 @@ impl FuncTranslator {
                 };
                 if let Provider::Register(reg) = selected {
                     if matches!(
-                        self.alloc.stack.get_register_space(reg),
+                        self.stack.get_register_space(reg),
                         RegisterSpace::Dynamic | RegisterSpace::Preserve
                     ) {
                         // Case: constant propagating a dynamic or preserved register might overwrite it in
                         //       future instruction translation steps and thus we may require a copy instruction
                         //       to prevent this from happening.
-                        let result = self.alloc.stack.push_dynamic()?;
+                        let result = self.stack.push_dynamic()?;
                         let fuel_info = self.fuel_info();
-                        self.alloc.instr_encoder.encode_copy(
-                            &mut self.alloc.stack,
+                        self.instr_encoder.encode_copy(
+                            &mut self.stack,
                             result,
                             selected,
                             &fuel_info,
@@ -2005,17 +1980,16 @@ impl FuncTranslator {
                         return Ok(());
                     }
                 }
-                self.alloc.stack.push_provider(selected)?;
+                self.stack.push_provider(selected)?;
                 return Ok(());
             }
         };
-        let mut true_val = self.alloc.stack.provider2reg(&true_val)?;
-        let mut false_val = self.alloc.stack.provider2reg(&false_val)?;
-        let result = self.alloc.stack.push_dynamic()?;
+        let mut true_val = self.stack.provider2reg(&true_val)?;
+        let mut false_val = self.stack.provider2reg(&false_val)?;
+        let result = self.stack.push_dynamic()?;
         match self
-            .alloc
             .instr_encoder
-            .try_fuse_select(&mut self.alloc.stack, result, condition)
+            .try_fuse_select(&mut self.stack, result, condition)
         {
             Some((_, swap_operands)) => {
                 if swap_operands {
@@ -2035,7 +2009,7 @@ impl FuncTranslator {
     /// Translates a Wasm `reinterpret` instruction.
     fn translate_reinterpret(&mut self, ty: ValType) -> Result<(), Error> {
         bail_unreachable!(self);
-        if let TypedProvider::Register(_) = self.alloc.stack.peek() {
+        if let TypedProvider::Register(_) = self.stack.peek() {
             // Nothing to do.
             //
             // We try to not manipulate the emulation stack if not needed.
@@ -2043,17 +2017,17 @@ impl FuncTranslator {
         }
         // Case: At this point we know that the top-most stack item is a constant value.
         //       We pop it, change its type and push it back onto the stack.
-        let TypedProvider::Const(value) = self.alloc.stack.pop() else {
+        let TypedProvider::Const(value) = self.stack.pop() else {
             panic!("the top-most stack item was asserted to be a constant value but a register was found")
         };
-        self.alloc.stack.push_const(value.reinterpret(ty));
+        self.stack.push_const(value.reinterpret(ty));
         Ok(())
     }
 
     /// Translates a Wasm `i64.extend_i32_u` instruction.
     fn translate_i64_extend_i32_u(&mut self) -> Result<(), Error> {
         bail_unreachable!(self);
-        if let TypedProvider::Register(_) = self.alloc.stack.peek() {
+        if let TypedProvider::Register(_) = self.stack.peek() {
             // Nothing to do.
             //
             // We try to not manipulate the emulation stack if not needed.
@@ -2061,29 +2035,34 @@ impl FuncTranslator {
         }
         // Case: At this point we know that the top-most stack item is a constant value.
         //       We pop it, change its type and push it back onto the stack.
-        let TypedProvider::Const(value) = self.alloc.stack.pop() else {
+        let TypedProvider::Const(value) = self.stack.pop() else {
             panic!("the top-most stack item was asserted to be a constant value but a register was found")
         };
         debug_assert_eq!(value.ty(), ValType::I32);
-        self.alloc.stack.push_const(u64::from(u32::from(value)));
+        self.stack.push_const(u64::from(u32::from(value)));
         Ok(())
     }
 
     /// Translates an unconditional `return` instruction.
     fn translate_return(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
-        self.translate_return_with(&fuel_info)
+        self.translate_return_impl(&fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    fn translate_return_with(&mut self, fuel_info: &FuelInfo) -> Result<(), Error> {
+    fn translate_return_with(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let fuel_info = self.fuel_info_for(frame);
+        self.translate_return_impl(&fuel_info)
+    }
+
+    /// Translates an unconditional `return` instruction given fuel information.
+    fn translate_return_impl(&mut self, fuel_info: &FuelInfo) -> Result<(), Error> {
         let func_type = self.func_type();
         let results = func_type.results();
-        let values = &mut self.alloc.buffer.providers;
-        self.alloc.stack.pop_n(results.len(), values);
-        self.alloc
-            .instr_encoder
-            .encode_return(&mut self.alloc.stack, values, fuel_info)?;
+        let values = &mut self.providers;
+        self.stack.pop_n(results.len(), values);
+        self.instr_encoder
+            .encode_return(&mut self.stack, values, fuel_info)?;
         self.reachable = false;
         Ok(())
     }
@@ -2106,14 +2085,15 @@ impl FuncTranslator {
     /// Translates a Wasm `br` instruction with its `relative_depth`.
     fn translate_br(&mut self, relative_depth: u32) -> Result<(), Error> {
         let engine = self.engine().clone();
-        match self.alloc.control_stack.acquire_target(relative_depth) {
+        match self.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.translate_return(),
             AcquiredTarget::Branch(frame) => {
                 frame.branch_to();
                 let branch_dst = frame.branch_destination();
                 let branch_params = frame.branch_params(&engine);
-                self.translate_copy_branch_params(branch_params)?;
-                let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                let consume_fuel_instr = frame.consume_fuel_instr();
+                self.translate_copy_branch_params_impl(branch_params, consume_fuel_instr)?;
+                let branch_offset = self.instr_encoder.try_resolve_label(branch_dst)?;
                 self.push_base_instr(Instruction::branch(branch_offset))?;
                 self.reachable = false;
                 Ok(())
@@ -2143,16 +2123,16 @@ impl FuncTranslator {
 
     /// Convenience method to allow inspecting the provider buffer while manipulating `self` circumventing the borrow checker.
     fn apply_providers_buffer<R>(&mut self, f: impl FnOnce(&mut Self, &[TypedProvider]) -> R) -> R {
-        let values = mem::take(&mut self.alloc.buffer.providers);
+        let values = mem::take(&mut self.providers);
         let result = f(self, &values[..]);
-        let _ = mem::replace(&mut self.alloc.buffer.providers, values);
+        let _ = mem::replace(&mut self.providers, values);
         result
     }
 
     /// Translates a Wasm `br_table` instruction with its branching targets.
     fn translate_br_table(&mut self, table: wasmparser::BrTable) -> Result<(), Error> {
         let engine = self.engine().clone();
-        let index = self.alloc.stack.pop();
+        let index = self.stack.pop();
         let default_target = table.default();
         if table.is_empty() {
             // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
@@ -2171,7 +2151,7 @@ impl FuncTranslator {
                 return self.translate_br(chosen_target);
             }
         };
-        let targets = &mut self.alloc.buffer.br_table_targets;
+        let targets = &mut self.br_table_targets;
         Self::populate_br_table_buffer(targets, &table)?;
         if targets.iter().all(|&target| target == default_target) {
             // Case: all targets are the same and thus the `br_table` is equal to a `br`.
@@ -2181,7 +2161,6 @@ impl FuncTranslator {
         //       Wasm value stack the same. This implies for Wasmi that all `br_table`
         //       targets have the same branch parameter arity.
         let branch_params = self
-            .alloc
             .control_stack
             .acquire_target(default_target)
             .control_frame()
@@ -2211,21 +2190,18 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         let engine = self.engine().clone();
         let fuel_info = self.fuel_info();
-        let targets = &self.alloc.buffer.br_table_targets;
+        let targets = &self.br_table_targets;
         for &target in targets {
-            match self.alloc.control_stack.acquire_target(target) {
+            match self.control_stack.acquire_target(target) {
                 AcquiredTarget::Return(_) => {
-                    self.alloc.instr_encoder.encode_return(
-                        &mut self.alloc.stack,
-                        values,
-                        &fuel_info,
-                    )?;
+                    self.instr_encoder
+                        .encode_return(&mut self.stack, values, &fuel_info)?;
                 }
                 AcquiredTarget::Branch(frame) => {
                     frame.branch_to();
                     let branch_params = frame.branch_params(&engine);
                     let branch_dst = frame.branch_destination();
-                    let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                    let branch_offset = self.instr_encoder.try_resolve_label(branch_dst)?;
                     let instr = match branch_params.len() {
                         0 => Instruction::branch(branch_offset),
                         1..=3 => {
@@ -2233,7 +2209,7 @@ impl FuncTranslator {
                         }
                         _ => make_target(branch_params, branch_offset),
                     };
-                    self.alloc.instr_encoder.append_instr(instr)?;
+                    self.instr_encoder.append_instr(instr)?;
                 }
             }
         }
@@ -2242,9 +2218,9 @@ impl FuncTranslator {
 
     /// Translates a Wasm `br_table` instruction without inputs.
     fn translate_br_table_0(&mut self, index: Reg) -> Result<(), Error> {
-        let targets = &self.alloc.buffer.br_table_targets;
+        let targets = &self.br_table_targets;
         let len_targets = targets.len() as u32;
-        self.alloc.instr_encoder.push_fueled_instr(
+        self.instr_encoder.push_fueled_instr(
             Instruction::branch_table_0(index, len_targets),
             &self.fuel_info(),
             FuelCostsProvider::base,
@@ -2256,15 +2232,15 @@ impl FuncTranslator {
 
     /// Translates a Wasm `br_table` instruction with a single input.
     fn translate_br_table_1(&mut self, index: Reg) -> Result<(), Error> {
-        let targets = &self.alloc.buffer.br_table_targets;
+        let targets = &self.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
-        self.alloc.instr_encoder.push_fueled_instr(
+        self.instr_encoder.push_fueled_instr(
             Instruction::branch_table_1(index, len_targets),
             &fuel_info,
             FuelCostsProvider::base,
         )?;
-        let stack = &mut self.alloc.stack;
+        let stack = &mut self.stack;
         let value = stack.pop();
         let param_instr = match value {
             TypedProvider::Register(register) => Instruction::register(register),
@@ -2273,19 +2249,19 @@ impl FuncTranslator {
                 ValType::I64 => match <Const32<i64>>::try_from(i64::from(immediate)) {
                     Ok(value) => Instruction::i64const32(value),
                     Err(_) => {
-                        let register = self.alloc.stack.provider2reg(&value)?;
+                        let register = self.stack.provider2reg(&value)?;
                         Instruction::register(register)
                     }
                 },
                 ValType::F64 => match <Const32<f64>>::try_from(f64::from(immediate)) {
                     Ok(value) => Instruction::f64const32(value),
                     Err(_) => {
-                        let register = self.alloc.stack.provider2reg(&value)?;
+                        let register = self.stack.provider2reg(&value)?;
                         Instruction::register(register)
                     }
                 },
                 ValType::V128 | ValType::ExternRef | ValType::FuncRef => {
-                    let register = self.alloc.stack.provider2reg(&value)?;
+                    let register = self.stack.provider2reg(&value)?;
                     Instruction::register(register)
                 }
             },
@@ -2298,22 +2274,20 @@ impl FuncTranslator {
 
     /// Translates a Wasm `br_table` instruction with exactly two inputs.
     fn translate_br_table_2(&mut self, index: Reg) -> Result<(), Error> {
-        let targets = &self.alloc.buffer.br_table_targets;
+        let targets = &self.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
-        self.alloc.instr_encoder.push_fueled_instr(
+        self.instr_encoder.push_fueled_instr(
             Instruction::branch_table_2(index, len_targets),
             &fuel_info,
             FuelCostsProvider::base,
         )?;
-        let stack = &mut self.alloc.stack;
+        let stack = &mut self.stack;
         let (v0, v1) = stack.pop2();
-        self.alloc
-            .instr_encoder
-            .append_instr(Instruction::register2_ext(
-                stack.provider2reg(&v0)?,
-                stack.provider2reg(&v1)?,
-            ))?;
+        self.instr_encoder.append_instr(Instruction::register2_ext(
+            stack.provider2reg(&v0)?,
+            stack.provider2reg(&v1)?,
+        ))?;
         self.translate_br_table_targets_simple(&[v0, v1])?;
         self.reachable = false;
         Ok(())
@@ -2321,23 +2295,21 @@ impl FuncTranslator {
 
     /// Translates a Wasm `br_table` instruction with exactly three inputs.
     fn translate_br_table_3(&mut self, index: Reg) -> Result<(), Error> {
-        let targets = &self.alloc.buffer.br_table_targets;
+        let targets = &self.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
-        self.alloc.instr_encoder.push_fueled_instr(
+        self.instr_encoder.push_fueled_instr(
             Instruction::branch_table_3(index, len_targets),
             &fuel_info,
             FuelCostsProvider::base,
         )?;
-        let stack = &mut self.alloc.stack;
+        let stack = &mut self.stack;
         let (v0, v1, v2) = stack.pop3();
-        self.alloc
-            .instr_encoder
-            .append_instr(Instruction::register3_ext(
-                stack.provider2reg(&v0)?,
-                stack.provider2reg(&v1)?,
-                stack.provider2reg(&v2)?,
-            ))?;
+        self.instr_encoder.append_instr(Instruction::register3_ext(
+            stack.provider2reg(&v0)?,
+            stack.provider2reg(&v1)?,
+            stack.provider2reg(&v2)?,
+        ))?;
         self.translate_br_table_targets_simple(&[v0, v1, v2])?;
         self.reachable = false;
         Ok(())
@@ -2346,8 +2318,8 @@ impl FuncTranslator {
     /// Translates a Wasm `br_table` instruction with 4 or more inputs.
     fn translate_br_table_n(&mut self, index: Reg, len_values: u16) -> Result<(), Error> {
         debug_assert!(len_values > 3);
-        let values = &mut self.alloc.buffer.providers;
-        self.alloc.stack.pop_n(usize::from(len_values), values);
+        let values = &mut self.providers;
+        self.stack.pop_n(usize::from(len_values), values);
         match BoundedRegSpan::from_providers(values) {
             Some(span) => self.translate_br_table_span(index, span),
             None => self.translate_br_table_many(index),
@@ -2358,15 +2330,14 @@ impl FuncTranslator {
     fn translate_br_table_span(&mut self, index: Reg, values: BoundedRegSpan) -> Result<(), Error> {
         debug_assert!(values.len() > 3);
         let fuel_info = self.fuel_info();
-        let targets = &mut self.alloc.buffer.br_table_targets;
+        let targets = &mut self.br_table_targets;
         let len_targets = targets.len() as u32;
-        self.alloc.instr_encoder.push_fueled_instr(
+        self.instr_encoder.push_fueled_instr(
             Instruction::branch_table_span(index, len_targets),
             &fuel_info,
             FuelCostsProvider::base,
         )?;
-        self.alloc
-            .instr_encoder
+        self.instr_encoder
             .append_instr(Instruction::register_span(values))?;
         self.apply_providers_buffer(|this, buffer| {
             this.translate_br_table_targets(buffer, |branch_params, branch_offset| {
@@ -2388,20 +2359,18 @@ impl FuncTranslator {
 
     /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`RegSpan`].
     fn translate_br_table_many(&mut self, index: Reg) -> Result<(), Error> {
-        let targets = &mut self.alloc.buffer.br_table_targets;
+        let targets = &mut self.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
-        self.alloc.instr_encoder.push_fueled_instr(
+        self.instr_encoder.push_fueled_instr(
             Instruction::branch_table_many(index, len_targets),
             &fuel_info,
             FuelCostsProvider::base,
         )?;
-        let stack = &mut self.alloc.stack;
-        let values = &self.alloc.buffer.providers[..];
+        let stack = &mut self.stack;
+        let values = &self.providers[..];
         debug_assert!(values.len() > 3);
-        self.alloc
-            .instr_encoder
-            .encode_register_list(stack, values)?;
+        self.instr_encoder.encode_register_list(stack, values)?;
         self.apply_providers_buffer(|this, values| {
             this.translate_br_table_targets(&[], |branch_params, branch_offset| {
                 let make_instr = match InstrEncoder::has_overlapping_copies(branch_params, values) {
@@ -2422,8 +2391,8 @@ impl FuncTranslator {
         const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (rhs_lo, rhs_hi) = self.alloc.stack.pop2();
-        let (lhs_lo, lhs_hi) = self.alloc.stack.pop2();
+        let (rhs_lo, rhs_hi) = self.stack.pop2();
+        let (lhs_lo, lhs_hi) = self.stack.pop2();
         if let (
             Provider::Const(lhs_lo),
             Provider::Const(lhs_hi),
@@ -2433,34 +2402,33 @@ impl FuncTranslator {
         {
             let (result_lo, result_hi) =
                 const_eval(lhs_lo.into(), lhs_hi.into(), rhs_lo.into(), rhs_hi.into());
-            self.alloc.stack.push_const(result_lo);
-            self.alloc.stack.push_const(result_hi);
+            self.stack.push_const(result_lo);
+            self.stack.push_const(result_hi);
             return Ok(());
         }
         let rhs_lo = match rhs_lo {
             Provider::Register(reg) => reg,
-            Provider::Const(rhs_lo) => self.alloc.stack.alloc_const(rhs_lo)?,
+            Provider::Const(rhs_lo) => self.stack.alloc_const(rhs_lo)?,
         };
         let rhs_hi = match rhs_hi {
             Provider::Register(reg) => reg,
-            Provider::Const(rhs_hi) => self.alloc.stack.alloc_const(rhs_hi)?,
+            Provider::Const(rhs_hi) => self.stack.alloc_const(rhs_hi)?,
         };
         let lhs_lo = match lhs_lo {
             Provider::Register(reg) => reg,
-            Provider::Const(lhs_lo) => self.alloc.stack.alloc_const(lhs_lo)?,
+            Provider::Const(lhs_lo) => self.stack.alloc_const(lhs_lo)?,
         };
         let lhs_hi = match lhs_hi {
             Provider::Register(reg) => reg,
-            Provider::Const(lhs_hi) => self.alloc.stack.alloc_const(lhs_hi)?,
+            Provider::Const(lhs_hi) => self.stack.alloc_const(lhs_hi)?,
         };
-        let result_lo = self.alloc.stack.push_dynamic()?;
-        let result_hi = self.alloc.stack.push_dynamic()?;
+        let result_lo = self.stack.push_dynamic()?;
+        let result_hi = self.stack.push_dynamic()?;
         self.push_fueled_instr(
             make_instr([result_lo, result_hi], lhs_lo),
             FuelCostsProvider::base,
         )?;
-        self.alloc
-            .instr_encoder
+        self.instr_encoder
             .append_instr(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
@@ -2472,31 +2440,31 @@ impl FuncTranslator {
         const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (lhs, rhs) = self.alloc.stack.pop2();
+        let (lhs, rhs) = self.stack.pop2();
         let (lhs, rhs) = match (lhs, rhs) {
             (Provider::Register(lhs), Provider::Register(rhs)) => (lhs, rhs),
             (Provider::Register(lhs), Provider::Const(rhs)) => {
                 if self.try_opt_i64_mul_wide_sx(lhs, rhs)? {
                     return Ok(());
                 }
-                let rhs = self.alloc.stack.alloc_const(rhs)?;
+                let rhs = self.stack.alloc_const(rhs)?;
                 (lhs, rhs)
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
                 if self.try_opt_i64_mul_wide_sx(rhs, lhs)? {
                     return Ok(());
                 }
-                let lhs = self.alloc.stack.alloc_const(lhs)?;
+                let lhs = self.stack.alloc_const(lhs)?;
                 (lhs, rhs)
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 let (result_lo, result_hi) = const_eval(lhs.into(), rhs.into());
-                self.alloc.stack.push_const(result_lo);
-                self.alloc.stack.push_const(result_hi);
+                self.stack.push_const(result_lo);
+                self.stack.push_const(result_hi);
                 return Ok(());
             }
         };
-        let results = self.alloc.stack.push_dynamic_n(2)?;
+        let results = self.stack.push_dynamic_n(2)?;
         let results = <FixedRegSpan<2>>::new(results).unwrap_or_else(|_| {
             panic!("`i64.mul_wide_sx` requires 2 results but found: {results:?}")
         });
@@ -2512,14 +2480,14 @@ impl FuncTranslator {
         let imm_in = i64::from(imm_in);
         if imm_in == 0 {
             // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.
-            self.alloc.stack.push_const(0_i64); // lo-bits
-            self.alloc.stack.push_const(0_i64); // hi-bits
+            self.stack.push_const(0_i64); // lo-bits
+            self.stack.push_const(0_i64); // hi-bits
             return Ok(true);
         }
         if imm_in == 1 {
             // Case: `mul(x, 1)` or `mul(0, x)` always evaluates to just `x`.
-            self.alloc.stack.push_register(reg_in)?; // lo-bits
-            self.alloc.stack.push_const(0_i64); // hi-bits
+            self.stack.push_register(reg_in)?; // lo-bits
+            self.stack.push_const(0_i64); // hi-bits
             return Ok(true);
         }
         Ok(false)

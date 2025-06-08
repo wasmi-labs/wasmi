@@ -78,7 +78,7 @@ impl super::FuncTranslator {
                 }
             }
         }
-        let register = self.alloc.stack.alloc_const(value)?;
+        let register = self.stack.alloc_const(value)?;
         Ok(Provider::Register(register))
     }
 
@@ -108,7 +108,7 @@ impl super::FuncTranslator {
                 return Ok(Provider::Const(<Const32<u64>>::cast(value)));
             }
         }
-        let register = self.alloc.stack.alloc_const(value)?;
+        let register = self.stack.alloc_const(value)?;
         Ok(Provider::Register(register))
     }
 }
