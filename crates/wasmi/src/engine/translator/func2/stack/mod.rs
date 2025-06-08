@@ -319,6 +319,15 @@ impl Stack {
             .unwrap_or_else(|| panic!("tried to pop control from empty control stack"))
     }
 
+    /// Returns a shared reference to the [`ControlFrame`] at `depth`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    pub fn peek_control(&self, depth: usize) -> &ControlFrame {
+        self.controls.get(depth)
+    }
+
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
     ///
     /// # Errors
