@@ -126,7 +126,10 @@ impl Stack {
     ///
     /// If `height` is greater than the current height of `self`.
     pub fn trunc(&mut self, height: usize) {
-        self.operands.trunc(height);
+        debug_assert!(height <= self.height());
+        while self.height() > height {
+            self.pop();
+        }
     }
 
     /// Returns `true` is fuel metering is enabled for the associated [`Engine`].
