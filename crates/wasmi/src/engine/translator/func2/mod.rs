@@ -213,6 +213,16 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
+    fn into_allocations(self) -> FuncTranslatorAllocations {
+        FuncTranslatorAllocations {
+            stack: self.stack.into_allocations(),
+            layout: self.layout,
+            labels: self.labels,
+            instrs: self.instrs,
+        }
+    }
+
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         self.func_type_with(FuncType::clone)
@@ -222,16 +232,6 @@ impl FuncTranslator {
     fn func_type_with<R>(&self, f: impl FnOnce(&FuncType) -> R) -> R {
         let dedup_func_type = self.module.get_type_of_func(self.func);
         self.engine().resolve_func_type(dedup_func_type, f)
-    }
-
-    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
-    fn into_allocations(self) -> FuncTranslatorAllocations {
-        FuncTranslatorAllocations {
-            stack: self.stack.into_allocations(),
-            layout: self.layout,
-            labels: self.labels,
-            instrs: self.instrs,
-        }
     }
 
     /// Returns the [`Engine`] for which the function is compiled.
