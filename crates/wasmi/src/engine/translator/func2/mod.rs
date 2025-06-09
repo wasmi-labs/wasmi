@@ -244,14 +244,31 @@ impl FuncTranslator {
         self.fuel_costs.is_some()
     }
 
-    /// Convert all [`Operand`]s up to `depth` into [`Operand::Temp`]s by copying if necessary.
+    /// Convert all branch params up to `depth` to [`Operand::Temp`].
     ///
     /// # Note
     ///
-    /// Does nothing if an [`Operand`] is already an [`Operand::Temp`].
+    /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
+    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
+    fn copy_branch_params(&mut self, depth: usize) -> Result<(), Error> {
+        for n in 0..depth {
+            let operand = self.stack.operand_to_temp(n);
+            self.copy_operand_to_temp(operand)?;
+        }
+        Ok(())
+    }
+
+    /// Copy all [`Operand`]s up to `depth` into [`Operand::Temp`]s by copying if necessary.
+    ///
+    ///
+    /// # Note
+    ///
+    /// - This does _not_ manipulate the [`Stack`].
+    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
     fn copy_operands_to_temp(&mut self, depth: usize) -> Result<(), Error> {
         for n in 0..depth {
-            self.copy_operand_to_temp(n)?;
+            let operand = self.stack.peek(n);
+            self.copy_operand_to_temp(operand)?;
         }
         Ok(())
     }
@@ -261,8 +278,8 @@ impl FuncTranslator {
     /// # Note
     ///
     /// Does nothing if the [`Operand`] is already an [`Operand::Temp`].
-    fn copy_operand_to_temp(&mut self, depth: usize) -> Result<(), Error> {
-        let instr = match self.stack.peek(depth) {
+    fn copy_operand_to_temp(&mut self, operand: Operand) -> Result<(), Error> {
+        let instr = match operand {
             Operand::Temp(_) => return Ok(()),
             Operand::Local(operand) => {
                 let result = self.layout.temp_to_reg(operand.operand_index())?;
@@ -361,8 +378,8 @@ impl FuncTranslator {
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let len_values = frame.len_branch_params(&self.engine);
-        if self.reachable && frame.is_branched_to() && len_values > 1 {
-            self.copy_operands_to_temp(usize::from(len_values))?;
+        if self.reachable && frame.is_branched_to() {
+            self.copy_branch_params(usize::from(len_values))?;
         }
         if let Err(err) = self
             .labels
@@ -373,7 +390,6 @@ impl FuncTranslator {
         if self.stack.is_control_empty() {
             self.translate_return()?;
         }
-        self.stack.trunc(frame.height());
         Ok(())
     }
 
