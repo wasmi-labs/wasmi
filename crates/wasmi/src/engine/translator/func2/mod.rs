@@ -387,7 +387,8 @@ impl FuncTranslator {
         {
             panic!("failed to pin label: {err}")
         }
-        if self.stack.is_control_empty() {
+        self.reachable |= frame.is_branched_to();
+        if self.reachable && self.stack.is_control_empty() {
             self.translate_return()?;
         }
         Ok(())
