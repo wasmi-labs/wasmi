@@ -373,6 +373,7 @@ impl FuncTranslator {
         if self.stack.is_control_empty() {
             self.translate_return()?;
         }
+        self.stack.trunc(frame.height());
         Ok(())
     }
 
