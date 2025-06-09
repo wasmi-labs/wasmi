@@ -215,9 +215,7 @@ impl Stack {
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         for depth in 0..block_height {
-            if let Some(operand) = self.operand_to_temp(depth) {
-                f(operand)?;
-            }
+            f(self.operand_to_temp(depth))?;
         }
         self.controls
             .push_loop(ty, block_height, label, consume_fuel);
@@ -429,17 +427,17 @@ impl Stack {
         self.operands.preserve_locals(local_index)
     }
 
-    /// Converts and returns the [`StackOperand`] at `depth` into a [`Operand::Temp`].
+    /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].
     ///
     /// # Note
     ///
-    /// Returns `None` if operand at `depth` is [`Operand::Temp`] already.
+    /// Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
     ///
     /// # Panics
     ///
     /// If `depth` is out of bounds for the [`Stack`] of operands.
     #[must_use]
-    pub fn operand_to_temp(&mut self, depth: usize) -> Option<Operand> {
+    pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
         self.operands.operand_to_temp(depth)
     }
 }

@@ -229,20 +229,20 @@ impl OperandStack {
         self.operands[usize::from(index)]
     }
 
-    /// Converts and returns the [`StackOperand`] at `depth` into a [`Operand::Temp`].
+    /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].
     ///
     /// # Note
     ///
-    /// Returns `None` if operand at `depth` is [`Operand::Temp`] already.
+    /// Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
     ///
     /// # Panics
     ///
-    /// If `depth` is out of bounds for `self`.
+    /// If `depth` is out of bounds for the [`Stack`] of operands.
     #[must_use]
-    pub fn operand_to_temp(&mut self, depth: usize) -> Option<Operand> {
+    pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
         let index = self.depth_to_index(depth);
-        let operand = self.operand_to_temp_at(index)?;
-        Some(Operand::new(index, operand, &self.locals))
+        let operand = self.operand_to_temp_at(index);
+        Operand::new(index, operand, &self.locals)
     }
 
     /// Converts and returns the [`StackOperand`] at `index` into a [`StackOperand::Temp`].
@@ -255,16 +255,16 @@ impl OperandStack {
     ///
     /// If `index` is out of bounds for `self`.
     #[must_use]
-    fn operand_to_temp_at(&mut self, index: OperandIdx) -> Option<StackOperand> {
+    fn operand_to_temp_at(&mut self, index: OperandIdx) -> StackOperand {
         let operand = self.get_at(index);
         match operand {
-            StackOperand::Temp { .. } => return None,
+            StackOperand::Temp { ty, .. } => ty,
             StackOperand::Immediate { val } => val.ty(),
             StackOperand::Local { local_index, .. } => self.locals.ty(local_index),
         };
         self.unlink_local(operand);
         self.operands[usize::from(index)] = operand;
-        Some(operand)
+        operand
     }
 
     /// Preserve all locals on the [`OperandStack`] that refer to `local_index`.
@@ -360,10 +360,7 @@ impl Iterator for PreservedLocalsIter<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index?;
-        let operand = self
-            .operands
-            .operand_to_temp_at(index)
-            .expect("local operand in linked list");
+        let operand = self.operands.operand_to_temp_at(index);
         self.index = match operand {
             StackOperand::Local { next_local, .. } => next_local,
             op => panic!("expected `StackOperand::Local` but found: {op:?}"),
