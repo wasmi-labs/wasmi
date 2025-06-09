@@ -364,9 +364,12 @@ impl FuncTranslator {
         if self.reachable && frame.is_branched_to() && len_values > 1 {
             self.copy_operands_to_temp(usize::from(len_values))?;
         }
-        self.labels
+        if let Err(err) = self
+            .labels
             .pin_label(frame.label(), self.instrs.next_instr())
-            .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
+        {
+            panic!("failed to pin label: {err}")
+        }
         if self.stack.is_control_empty() {
             self.translate_return()?;
         }
