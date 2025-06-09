@@ -241,7 +241,7 @@ impl FuncTranslator {
 
     /// Returns `true` if fuel metering is enabled.
     fn is_fuel_metering_enabled(&self) -> bool {
-        self.engine.config().get_consume_fuel()
+        self.fuel_costs.is_some()
     }
 
     /// Convert all [`Operand`]s up to `depth` into [`Operand::Temp`]s by copying if necessary.
