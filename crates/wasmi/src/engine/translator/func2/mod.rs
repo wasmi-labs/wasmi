@@ -30,7 +30,7 @@ use self::{
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal, ValType},
     engine::{
-        translator::{utils::FuelInfo, Instr, LabelRegistry, WasmTranslator},
+        translator::{Instr, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
         TranslationError,
@@ -215,9 +215,13 @@ impl FuncTranslator {
 
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
+        self.func_type_with(FuncType::clone)
+    }
+
+    /// Applies `f` to the [`FuncType`] of the function that is currently translated.
+    fn func_type_with<R>(&self, f: impl FnOnce(&FuncType) -> R) -> R {
         let dedup_func_type = self.module.get_type_of_func(self.func);
-        self.engine()
-            .resolve_func_type(dedup_func_type, Clone::clone)
+        self.engine().resolve_func_type(dedup_func_type, f)
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
@@ -240,119 +244,132 @@ impl FuncTranslator {
         self.engine.config().get_consume_fuel()
     }
 
-    /// Translates the end of a Wasm `block` control frame.
-    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        if self.stack.is_control_empty() {
-            return self.translate_end_func(frame);
+    /// Convert all [`Operand`]s up to `depth` into [`Operand::Temp`]s by copying if necessary.
+    ///
+    /// # Note
+    ///
+    /// Does nothing if an [`Operand`] is already an [`Operand::Temp`].
+    fn copy_operands_to_temp(&mut self, depth: usize) -> Result<(), Error> {
+        for n in 0..depth {
+            self.copy_operand_to_temp(n)?;
         }
-        todo!()
+        Ok(())
     }
 
-    /// Translates the end of the Wasm function enclosing Wasm `block`.
-    fn translate_end_func(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        if !self.reachable {
-            return Ok(());
-        }
-        // let _fuel_info = self.fuel_info();
-        let len_results = frame.ty().len_results(&self.engine);
-        if frame.is_branched_to() && len_results > 1 {
-            let height = frame.height();
-            let len_results = usize::from(len_results);
-            for depth in 0..len_results {
-                let result = self
-                    .layout
-                    .temp_to_reg(OperandIdx::from(height + len_results - depth - 1))?;
-                match self.stack.operand_to_temp(depth) {
-                    Some(Operand::Local(operand)) => {
-                        let value = self.layout.local_to_reg(operand.local_index())?;
-                        self.instrs.push_instr(Instruction::copy(result, value));
-                    }
-                    Some(Operand::Immediate(operand)) => {
-                        let val = operand.val();
-                        let instr = match operand.ty() {
-                            ValType::I32 => Instruction::copy_imm32(result, i32::from(val)),
-                            ValType::I64 => {
-                                let val = i64::from(val);
-                                match <Const32<i64>>::try_from(val) {
-                                    Ok(value) => Instruction::copy_i64imm32(result, value),
-                                    Err(_) => {
-                                        let value = self.layout.const_to_reg(val)?;
-                                        Instruction::copy(result, value)
-                                    }
-                                }
-                            }
-                            ValType::F32 => Instruction::copy_imm32(result, f32::from(val)),
-                            ValType::F64 => {
-                                let val = f64::from(val);
-                                match <Const32<f64>>::try_from(val) {
-                                    Ok(value) => Instruction::copy_f64imm32(result, value),
-                                    Err(_) => {
-                                        let value = self.layout.const_to_reg(val)?;
-                                        Instruction::copy(result, value)
-                                    }
-                                }
-                            }
-                            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+    /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
+    ///
+    /// # Note
+    ///
+    /// Does nothing if the [`Operand`] is already an [`Operand::Temp`].
+    fn copy_operand_to_temp(&mut self, depth: usize) -> Result<(), Error> {
+        let instr = match self.stack.operand_to_temp(depth) {
+            Some(Operand::Local(operand)) => {
+                let result = self.layout.temp_to_reg(operand.operand_index())?;
+                let value = self.layout.local_to_reg(operand.local_index())?;
+                Instruction::copy(result, value)
+            }
+            Some(Operand::Immediate(operand)) => {
+                let result = self.layout.temp_to_reg(operand.operand_index())?;
+                let val = operand.val();
+                match operand.ty() {
+                    ValType::I32 => Instruction::copy_imm32(result, i32::from(val)),
+                    ValType::I64 => {
+                        let val = i64::from(val);
+                        match <Const32<i64>>::try_from(val) {
+                            Ok(value) => Instruction::copy_i64imm32(result, value),
+                            Err(_) => {
                                 let value = self.layout.const_to_reg(val)?;
                                 Instruction::copy(result, value)
                             }
-                        };
-                        self.instrs.push_instr(instr);
+                        }
                     }
-                    _ => {}
-                }
-            }
-        }
-        let return_instr = match len_results {
-            0 => self.instrs.push_instr(Instruction::Return),
-            1 => {
-                let instr = match self.stack.peek(0) {
-                    Operand::Local(operand) => {
-                        let value = self.layout.local_to_reg(operand.local_index())?;
-                        Instruction::return_reg(value)
-                    }
-                    Operand::Temp(operand) => {
-                        let value = self.layout.temp_to_reg(operand.operand_index())?;
-                        Instruction::return_reg(value)
-                    }
-                    Operand::Immediate(operand) => {
-                        let val = operand.val();
-                        match operand.ty() {
-                            ValType::I32 => Instruction::return_imm32(i32::from(val)),
-                            ValType::I64 => match <Const32<i64>>::try_from(i64::from(val)) {
-                                Ok(value) => Instruction::return_i64imm32(value),
-                                Err(_) => {
-                                    let value = self.layout.const_to_reg(val)?;
-                                    Instruction::return_reg(value)
-                                }
-                            },
-                            ValType::F32 => Instruction::return_imm32(f32::from(val)),
-                            ValType::F64 => match <Const32<f64>>::try_from(f64::from(val)) {
-                                Ok(value) => Instruction::return_f64imm32(value),
-                                Err(_) => {
-                                    let value = self.layout.const_to_reg(val)?;
-                                    Instruction::return_reg(value)
-                                }
-                            },
-                            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                    ValType::F32 => Instruction::copy_imm32(result, f32::from(val)),
+                    ValType::F64 => {
+                        let val = f64::from(val);
+                        match <Const32<f64>>::try_from(val) {
+                            Ok(value) => Instruction::copy_f64imm32(result, value),
+                            Err(_) => {
                                 let value = self.layout.const_to_reg(val)?;
-                                Instruction::return_reg(value)
+                                Instruction::copy(result, value)
                             }
                         }
                     }
-                };
-                self.instrs.push_instr(instr)
+                    ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                        let value = self.layout.const_to_reg(val)?;
+                        Instruction::copy(result, value)
+                    }
+                }
             }
+            _ => return Ok(()),
+        };
+        self.instrs.push_instr(instr);
+        Ok(())
+    }
+
+    /// Translates a generic return instruction.
+    fn translate_return(&mut self) -> Result<Instr, Error> {
+        let len_results = self.func_type_with(FuncType::len_results);
+        let instr = match len_results {
+            0 => Instruction::Return,
+            1 => match self.stack.pop() {
+                Operand::Local(operand) => {
+                    let value = self.layout.local_to_reg(operand.local_index())?;
+                    Instruction::return_reg(value)
+                }
+                Operand::Temp(operand) => {
+                    let value = self.layout.temp_to_reg(operand.operand_index())?;
+                    Instruction::return_reg(value)
+                }
+                Operand::Immediate(operand) => {
+                    let val = operand.val();
+                    match operand.ty() {
+                        ValType::I32 => Instruction::return_imm32(i32::from(val)),
+                        ValType::I64 => match <Const32<i64>>::try_from(i64::from(val)) {
+                            Ok(value) => Instruction::return_i64imm32(value),
+                            Err(_) => {
+                                let value = self.layout.const_to_reg(val)?;
+                                Instruction::return_reg(value)
+                            }
+                        },
+                        ValType::F32 => Instruction::return_imm32(f32::from(val)),
+                        ValType::F64 => match <Const32<f64>>::try_from(f64::from(val)) {
+                            Ok(value) => Instruction::return_f64imm32(value),
+                            Err(_) => {
+                                let value = self.layout.const_to_reg(val)?;
+                                Instruction::return_reg(value)
+                            }
+                        },
+                        ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                            let value = self.layout.const_to_reg(val)?;
+                            Instruction::return_reg(value)
+                        }
+                    }
+                }
+            },
             _ => {
-                let height = frame.height();
-                let result = self.layout.temp_to_reg(OperandIdx::from(height - 1))?;
+                let depth = usize::from(len_results);
+                self.copy_operands_to_temp(depth)?;
+                let first_idx = self.stack.peek(depth).index();
+                let result = self.layout.temp_to_reg(first_idx)?;
                 let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
-                self.instrs.push_instr(Instruction::return_span(values))
+                Instruction::return_span(values)
             }
         };
+        Ok(self.instrs.push_instr(instr))
+    }
+
+    /// Translates the end of a Wasm `block` control frame.
+    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
+        let len_values = frame.len_branch_params(&self.engine);
+        if self.reachable && frame.is_branched_to() && len_values > 1 {
+            self.copy_operands_to_temp(usize::from(len_values))?;
+        }
         self.labels
-            .pin_label(frame.label(), return_instr)
+            .pin_label(frame.label(), self.instrs.next_instr())
             .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
+        if self.stack.is_control_empty() {
+            self.translate_return()?;
+        }
         Ok(())
     }
 
