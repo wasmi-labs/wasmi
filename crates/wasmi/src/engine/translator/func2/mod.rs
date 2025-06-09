@@ -311,7 +311,7 @@ impl FuncTranslator {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
             0 => Instruction::Return,
-            1 => match self.stack.pop() {
+            1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_reg(operand.local_index())?;
                     Instruction::return_reg(value)
