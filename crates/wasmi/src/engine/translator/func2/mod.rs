@@ -263,6 +263,7 @@ impl FuncTranslator {
     /// Does nothing if the [`Operand`] is already an [`Operand::Temp`].
     fn copy_operand_to_temp(&mut self, depth: usize) -> Result<(), Error> {
         let instr = match self.stack.peek(depth) {
+            Operand::Temp(_) => return Ok(()),
             Operand::Local(operand) => {
                 let result = self.layout.temp_to_reg(operand.operand_index())?;
                 let value = self.layout.local_to_reg(operand.local_index())?;
@@ -300,7 +301,6 @@ impl FuncTranslator {
                     }
                 }
             }
-            Operand::Temp(_) => return Ok(()),
         };
         self.instrs.push_instr(instr);
         Ok(())
