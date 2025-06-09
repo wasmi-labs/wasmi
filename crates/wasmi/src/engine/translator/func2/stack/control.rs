@@ -1,7 +1,10 @@
 use super::{Operand, Reset};
-use crate::engine::{
-    translator::{Instr, LabelRef},
-    BlockType,
+use crate::{
+    engine::{
+        translator::{Instr, LabelRef},
+        BlockType,
+    },
+    Engine,
 };
 use alloc::vec::{Drain, Vec};
 
@@ -278,6 +281,19 @@ impl ControlFrame {
         }
     }
 
+    /// Returns the number of operands required for branching to the [`ControlFrame`].
+    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
+        match self {
+            ControlFrame::Block(frame) => frame.len_branch_params(engine),
+            ControlFrame::Loop(frame) => frame.len_branch_params(engine),
+            ControlFrame::If(frame) => frame.len_branch_params(engine),
+            ControlFrame::Else(frame) => frame.len_branch_params(engine),
+            ControlFrame::Unreachable(_) => {
+                panic!("invalid query for unreachable control frame: `ControlFrame::len_branch_params`")
+            }
+        }
+    }
+
     /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
@@ -317,6 +333,11 @@ impl BlockControlFrame {
     /// Returns the [`BlockType`] of the [`BlockControlFrame`].
     pub fn ty(&self) -> BlockType {
         self.ty
+    }
+
+    /// Returns the number of operands required for branching to the [`BlockControlFrame`].
+    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_results(engine)
     }
 
     /// Returns the height of the [`BlockControlFrame`].
@@ -372,6 +393,11 @@ impl LoopControlFrame {
         self.ty
     }
 
+    /// Returns the number of operands required for branching to the [`LoopControlFrame`].
+    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_params(engine)
+    }
+
     /// Returns the height of the [`LoopControlFrame`].
     pub fn height(&self) -> usize {
         self.height
@@ -425,6 +451,11 @@ impl IfControlFrame {
     /// Returns the [`BlockType`] of the [`IfControlFrame`].
     pub fn ty(&self) -> BlockType {
         self.ty
+    }
+
+    /// Returns the number of operands required for branching to the [`IfControlFrame`].
+    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_results(engine)
     }
 
     /// Returns the height of the [`IfControlFrame`].
@@ -568,6 +599,11 @@ impl ElseControlFrame {
     /// Returns the [`BlockType`] of the [`ElseControlFrame`].
     pub fn ty(&self) -> BlockType {
         self.ty
+    }
+
+    /// Returns the number of operands required for branching to the [`ElseControlFrame`].
+    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_results(engine)
     }
 
     /// Returns the height of the [`ElseControlFrame`].
