@@ -237,7 +237,7 @@ impl OperandStack {
     ///
     /// # Panics
     ///
-    /// If `depth` is out of bounds for the [`Stack`] of operands.
+    /// If `depth` is out of bounds for the [`OperandStack`] of operands.
     #[must_use]
     pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
         let index = self.depth_to_index(depth);
