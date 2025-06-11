@@ -10,7 +10,7 @@ mod stack;
 mod visit;
 
 use self::{
-    instrs::InstrEncoder,
+    instrs::{InstrEncoder, InstrEncoderAllocations},
     layout::StackLayout,
     stack::{
         BlockControlFrame,
@@ -92,7 +92,7 @@ pub struct FuncTranslatorAllocations {
     /// Registers and pins labels and tracks their users.
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
-    instrs: InstrEncoder,
+    instrs: InstrEncoderAllocations,
 }
 
 impl Reset for FuncTranslatorAllocations {
@@ -149,6 +149,19 @@ impl WasmTranslator<'_> for FuncTranslator {
     }
 }
 
+impl ReusableAllocations for FuncTranslator {
+    type Allocations = FuncTranslatorAllocations;
+
+    fn into_allocations(self) -> Self::Allocations {
+        Self::Allocations {
+            stack: self.stack.into_allocations(),
+            layout: self.layout,
+            labels: self.labels,
+            instrs: self.instrs.into_allocations(),
+        }
+    }
+}
+
 impl FuncTranslator {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
@@ -174,6 +187,7 @@ impl FuncTranslator {
             instrs,
         } = alloc.into_reset();
         let stack = Stack::new(&engine, stack);
+        let instrs = InstrEncoder::new(&engine, instrs);
         let mut translator = Self {
             func,
             engine,
@@ -211,16 +225,6 @@ impl FuncTranslator {
             self.layout.register_locals(1, *ty)?;
         }
         Ok(())
-    }
-
-    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
-    fn into_allocations(self) -> FuncTranslatorAllocations {
-        FuncTranslatorAllocations {
-            stack: self.stack.into_allocations(),
-            layout: self.layout,
-            labels: self.labels,
-            instrs: self.instrs,
-        }
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
