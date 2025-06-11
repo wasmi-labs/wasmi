@@ -1,5 +1,5 @@
-use super::{ControlFrame, FuncTranslator, LocalIdx};
-use crate::{core::wasm, ir::Instruction, Error};
+use super::{ControlFrame, FuncTranslator, LocalIdx, UnreachableControlFrame};
+use crate::{core::wasm, engine::BlockType, ir::Instruction, Error};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -72,8 +72,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_block(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
-        todo!()
+    fn visit_block(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
+        if !self.reachable {
+            self.stack
+                .push_unreachable(UnreachableControlFrame::Block)?;
+            return Ok(());
+        }
+        let block_ty = BlockType::new(block_ty, &self.module);
+        let end_label = self.labels.new_label();
+        self.stack.push_block(block_ty, end_label)?;
+        Ok(())
     }
 
     fn visit_loop(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
