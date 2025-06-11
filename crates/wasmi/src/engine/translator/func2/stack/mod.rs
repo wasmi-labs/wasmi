@@ -21,7 +21,7 @@ use self::{
     locals::LocalsRegistry,
     operands::{OperandStack, StackOperand},
 };
-use super::Reset;
+use super::{Reset, ReusableAllocations};
 use crate::{
     core::{TypedVal, ValType},
     engine::{
@@ -62,28 +62,26 @@ impl Reset for StackAllocations {
     }
 }
 
-impl Stack {
-    /// Creates a new empty [`Stack`] from the given `engine`.
-    pub fn new(engine: &Engine, alloc: StackAllocations) -> Self {
-        Self {
-            engine: engine.clone(),
-            operands: alloc.operands,
-            controls: alloc.controls,
-        }
-    }
+impl ReusableAllocations for Stack {
+    type Allocations = StackAllocations;
 
-    /// Returns the reusable [`StackAllocations`] of `self`.
-    pub fn into_allocations(self) -> StackAllocations {
+    fn into_allocations(self) -> StackAllocations {
         StackAllocations {
             operands: self.operands,
             controls: self.controls,
         }
     }
+}
 
-    /// Resets the [`Stack`] for reuse.
-    pub fn reset(&mut self) {
-        self.operands.reset();
-        self.controls.reset();
+impl Stack {
+    /// Creates a new empty [`Stack`] from the given `engine`.
+    pub fn new(engine: &Engine, alloc: StackAllocations) -> Self {
+        let StackAllocations { operands, controls } = alloc.into_reset();
+        Self {
+            engine: engine.clone(),
+            operands,
+            controls,
+        }
     }
 
     /// Register `amount` local variables of common type `ty`.
