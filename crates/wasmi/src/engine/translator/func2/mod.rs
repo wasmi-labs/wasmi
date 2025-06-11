@@ -25,7 +25,7 @@ use self::{
         StackAllocations,
         UnreachableControlFrame,
     },
-    utils::Reset,
+    utils::{Reset, ReusableAllocations},
 };
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal, ValType},

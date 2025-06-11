@@ -28,3 +28,12 @@ pub trait Reset: Sized {
         this
     }
 }
+
+/// Types that have reusable heap allocations.
+pub trait ReusableAllocations {
+    /// The type of the reusable heap allocations.
+    type Allocations: Default + Reset;
+
+    /// Returns the reusable heap allocations of `self`.
+    fn into_allocations(self) -> Self::Allocations;
+}
