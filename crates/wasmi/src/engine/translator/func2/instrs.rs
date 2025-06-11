@@ -14,7 +14,9 @@ pub struct InstrEncoder {
     /// The list of constructed instructions and their parameters.
     instrs: Vec<Instruction>,
     /// The fuel costs of instructions.
-    fuel_costs: FuelCostsProvider,
+    ///
+    /// This is `Some` if fuel metering is enabled, otherwise `None`.
+    fuel_costs: Option<FuelCostsProvider>,
 }
 
 impl ReusableAllocations for InstrEncoder {
@@ -49,9 +51,14 @@ impl Reset for InstrEncoder {
 impl InstrEncoder {
     /// Creates a new [`InstrEncoder`].
     pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
+        let config = engine.config();
+        let fuel_costs = config
+            .get_consume_fuel()
+            .then(|| config.fuel_costs())
+            .cloned();
         Self {
             instrs: alloc.instrs,
-            fuel_costs: engine.config().fuel_costs().clone(),
+            fuel_costs,
         }
     }
 
@@ -66,14 +73,17 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The pushes [`Instruction::ConsumeFuel`] is initialized with base fuel costs.
-    pub fn push_consume_fuel_instr(&mut self) -> Result<Instr, Error> {
-        let base_costs = self.fuel_costs.base();
+    pub fn push_consume_fuel_instr(&mut self) -> Result<Option<Instr>, Error> {
+        let Some(fuel_costs) = &self.fuel_costs else {
+            return Ok(None);
+        };
+        let base_costs = fuel_costs.base();
         let Ok(base_costs) = u32::try_from(base_costs) else {
             panic!("out of  bounds base fuel costs: {base_costs}");
         };
         let instr = self.next_instr();
         self.instrs.push(Instruction::consume_fuel(base_costs));
-        Ok(instr)
+        Ok(Some(instr))
     }
 
     /// Pushes an [`Instruction`] to the [`InstrEncoder`].
@@ -126,10 +136,17 @@ impl InstrEncoder {
         consume_fuel: Option<Instr>,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
-        let Some(consume_fuel) = consume_fuel else {
-            return Ok(());
+        let (fuel_costs, consume_fuel) = match (&self.fuel_costs, consume_fuel) {
+            (None, None) => return Ok(()),
+            (Some(fuel_costs), Some(consume_fuel)) => (fuel_costs, consume_fuel),
+            _ => {
+                panic!(
+                    "fuel metering state mismatch: fuel_costs: {:?}, fuel_instr: {:?}",
+                    self.fuel_costs, consume_fuel,
+                );
+            }
         };
-        let fuel_consumed = f(&self.fuel_costs);
+        let fuel_consumed = f(fuel_costs);
         self.get_mut(consume_fuel)
             .bump_fuel_consumption(fuel_consumed)?;
         Ok(())
