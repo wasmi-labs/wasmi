@@ -84,8 +84,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_loop(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
-        todo!()
+    fn visit_loop(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
+        if !self.reachable {
+            self.stack.push_unreachable(UnreachableControlFrame::Loop)?;
+            return Ok(());
+        }
+        let block_ty = BlockType::new(block_ty, &self.module);
+        let len_params = block_ty.len_params(&self.engine);
+        let continue_label = self.labels.new_label();
+        let consume_fuel = self.stack.consume_fuel_instr();
+        self.copy_branch_params(usize::from(len_params), consume_fuel)?;
+        self.pin_label(continue_label);
+        let consume_fuel = self.instrs.push_consume_fuel_instr()?;
+        self.stack
+            .push_loop(block_ty, continue_label, consume_fuel)?;
+        Ok(())
     }
 
     fn visit_if(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
