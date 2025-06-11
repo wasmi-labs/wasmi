@@ -1,7 +1,7 @@
 use super::{Instr, Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::translator::{utils::FuelInfo, BumpFuelConsumption},
+    engine::translator::BumpFuelConsumption,
     ir::Instruction,
     Engine,
     Error,
@@ -79,10 +79,16 @@ impl InstrEncoder {
     /// Pushes an [`Instruction`] to the [`InstrEncoder`].
     ///
     /// Returns an [`Instr`] that refers to the pushed [`Instruction`].
-    pub fn push_instr(&mut self, instruction: Instruction) -> Instr {
+    pub fn push_instr(
+        &mut self,
+        instruction: Instruction,
+        consume_fuel: Option<Instr>,
+        f: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<Instr, Error> {
+        self.bump_fuel_consumption(consume_fuel, f)?;
         let instr = self.next_instr();
         self.instrs.push(instruction);
-        instr
+        Ok(instr)
     }
 
     /// Pushes an [`Instruction`] parameter to the [`InstrEncoder`].
@@ -115,16 +121,17 @@ impl InstrEncoder {
     /// # Errors
     ///
     /// If consumed fuel is out of bounds after this operation.
-    pub fn bump_fuel_consumption<F>(&mut self, fuel_info: &FuelInfo, f: F) -> Result<(), Error>
-    where
-        F: FnOnce(&FuelCostsProvider) -> u64,
-    {
-        let FuelInfo::Some { costs, instr } = fuel_info else {
-            // Fuel metering is disabled so we can bail out.
+    pub fn bump_fuel_consumption(
+        &mut self,
+        consume_fuel: Option<Instr>,
+        f: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        let Some(consume_fuel) = consume_fuel else {
             return Ok(());
         };
-        let fuel_consumed = f(costs);
-        self.get_mut(*instr).bump_fuel_consumption(fuel_consumed)?;
+        let fuel_consumed = f(&self.fuel_costs);
+        self.get_mut(consume_fuel)
+            .bump_fuel_consumption(fuel_consumed)?;
         Ok(())
     }
 
