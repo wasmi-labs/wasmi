@@ -440,7 +440,6 @@ impl Stack {
     ///
     /// Returns `None` otherwise.
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        std::println!("self.controls = {:?}", self.controls);
         debug_assert!(!self.controls.is_empty());
         self.controls.get(0).consume_fuel_instr()
     }
