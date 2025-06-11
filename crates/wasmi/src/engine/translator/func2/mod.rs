@@ -255,10 +255,14 @@ impl FuncTranslator {
     ///
     /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn copy_branch_params(&mut self, depth: usize) -> Result<(), Error> {
+    fn copy_branch_params(
+        &mut self,
+        depth: usize,
+        consume_fuel: Option<Instr>,
+    ) -> Result<(), Error> {
         for n in 0..depth {
             let operand = self.stack.operand_to_temp(n);
-            self.copy_operand_to_temp(operand)?;
+            self.copy_operand_to_temp(operand, consume_fuel)?;
         }
         Ok(())
     }
@@ -271,9 +275,10 @@ impl FuncTranslator {
     /// - This does _not_ manipulate the [`Stack`].
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
     fn copy_operands_to_temp(&mut self, depth: usize) -> Result<(), Error> {
+        let consume_fuel = self.stack.consume_fuel_instr();
         for n in 0..depth {
             let operand = self.stack.peek(n);
-            self.copy_operand_to_temp(operand)?;
+            self.copy_operand_to_temp(operand, consume_fuel)?;
         }
         Ok(())
     }
@@ -283,7 +288,11 @@ impl FuncTranslator {
     /// # Note
     ///
     /// Does nothing if the [`Operand`] is already an [`Operand::Temp`].
-    fn copy_operand_to_temp(&mut self, operand: Operand) -> Result<(), Error> {
+    fn copy_operand_to_temp(
+        &mut self,
+        operand: Operand,
+        consume_fuel: Option<Instr>,
+    ) -> Result<(), Error> {
         let instr = match operand {
             Operand::Temp(_) => return Ok(()),
             Operand::Local(operand) => {
@@ -324,12 +333,13 @@ impl FuncTranslator {
                 }
             }
         };
-        self.instrs.push_instr(instr);
+        self.instrs
+            .push_instr(instr, consume_fuel, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Translates a generic return instruction.
-    fn translate_return(&mut self) -> Result<Instr, Error> {
+    fn translate_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
             0 => Instruction::Return,
@@ -377,14 +387,18 @@ impl FuncTranslator {
                 Instruction::return_span(values)
             }
         };
-        Ok(self.instrs.push_instr(instr))
+        let instr = self
+            .instrs
+            .push_instr(instr, consume_fuel, FuelCostsProvider::base)?;
+        Ok(instr)
     }
 
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let len_values = frame.len_branch_params(&self.engine);
+        let consume_fuel_instr = frame.consume_fuel_instr();
         if self.reachable && frame.is_branched_to() {
-            self.copy_branch_params(usize::from(len_values))?;
+            self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
         }
         if let Err(err) = self
             .labels
@@ -394,7 +408,7 @@ impl FuncTranslator {
         }
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
-            self.translate_return()?;
+            self.translate_return(consume_fuel_instr)?;
         }
         Ok(())
     }
@@ -436,6 +450,7 @@ impl FuncTranslator {
         R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
+        let consume_fuel = self.stack.consume_fuel_instr();
         match self.stack.pop2() {
             (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
                 let value = consteval(lhs.val().into(), rhs.val().into());
@@ -455,7 +470,11 @@ impl FuncTranslator {
                         make_instr(result, lhs, rhs)
                     }
                 };
-                assert_eq!(self.instrs.push_instr(instr), iidx);
+                assert_eq!(
+                    self.instrs
+                        .push_instr(instr, consume_fuel, FuelCostsProvider::base)?,
+                    iidx
+                );
                 Ok(())
             }
             (lhs, rhs) => {
@@ -465,7 +484,14 @@ impl FuncTranslator {
                 let result = self
                     .layout
                     .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
-                assert_eq!(self.instrs.push_instr(make_instr(result, lhs, rhs)), iidx);
+                assert_eq!(
+                    self.instrs.push_instr(
+                        make_instr(result, lhs, rhs),
+                        consume_fuel,
+                        FuelCostsProvider::base
+                    )?,
+                    iidx
+                );
                 Ok(())
             }
         }
