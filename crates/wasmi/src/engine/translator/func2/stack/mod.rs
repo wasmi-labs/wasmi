@@ -189,14 +189,10 @@ impl Stack {
 
     /// Pushes a Wasm `loop` onto the [`Stack`].
     ///
-    /// # Note
-    ///
-    /// Calls `f` for every non [`Operand::Temp`] operand on the [`Stack`]
-    /// that is also a parameter to the pushed Wasm `loop` control frame.
-    ///
     /// # Panics (debug)
     ///
-    /// If `consume_fuel` is `None` and fuel metering is enabled.
+    /// - If `consume_fuel` is `None` and fuel metering is enabled.
+    /// - If any of the Wasm `loop` operand parameters are _not_ [`Operand::Temp`].
     ///
     /// # Errors
     ///
@@ -206,15 +202,15 @@ impl Stack {
         ty: BlockType,
         label: LabelRef,
         consume_fuel: Option<Instr>,
-        mut f: impl FnMut(Operand) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
-        for depth in 0..block_height {
-            f(self.operand_to_temp(depth))?;
-        }
+        debug_assert!(self
+            .operands
+            .peek(len_params)
+            .all(|operand| operand.is_temp()));
         self.controls
             .push_loop(ty, block_height, label, consume_fuel);
         Ok(())
