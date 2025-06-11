@@ -270,13 +270,9 @@ impl OperandStack {
     #[must_use]
     fn operand_to_temp_at(&mut self, index: OperandIdx) -> StackOperand {
         let operand = self.get_at(index);
-        match operand {
-            StackOperand::Temp { ty, .. } => ty,
-            StackOperand::Immediate { val } => val.ty(),
-            StackOperand::Local { local_index, .. } => self.locals.ty(local_index),
-        };
+        let ty = operand.ty(&self.locals);
         self.unlink_local(operand);
-        self.operands[usize::from(index)] = operand;
+        self.operands[usize::from(index)] = StackOperand::Temp { ty, instr: None };
         operand
     }
 
