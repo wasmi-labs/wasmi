@@ -438,4 +438,13 @@ impl Stack {
     pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
         self.operands.operand_to_temp(depth)
     }
+
+    /// Returns the current [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    ///
+    /// Returns `None` otherwise.
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        std::println!("self.controls = {:?}", self.controls);
+        debug_assert!(!self.controls.is_empty());
+        self.controls.get(0).consume_fuel_instr()
+    }
 }
