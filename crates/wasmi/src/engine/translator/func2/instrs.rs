@@ -3,6 +3,7 @@ use crate::{
     core::FuelCostsProvider,
     engine::translator::{utils::FuelInfo, BumpFuelConsumption},
     ir::Instruction,
+    Engine,
     Error,
 };
 use alloc::vec::{self, Vec};
@@ -12,6 +13,8 @@ use alloc::vec::{self, Vec};
 pub struct InstrEncoder {
     /// The list of constructed instructions and their parameters.
     instrs: Vec<Instruction>,
+    /// The fuel costs of instructions.
+    fuel_costs: FuelCostsProvider,
 }
 
 impl ReusableAllocations for InstrEncoder {
@@ -48,6 +51,7 @@ impl InstrEncoder {
     pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
         Self {
             instrs: alloc.instrs,
+            fuel_costs: engine.config().fuel_costs().clone(),
         }
     }
 
