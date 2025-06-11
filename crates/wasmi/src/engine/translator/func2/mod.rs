@@ -209,11 +209,7 @@ impl FuncTranslator {
         let func_ty = self.module.get_type_of_func(self.func);
         let block_ty = BlockType::func_type(func_ty);
         let end_label = self.labels.new_label();
-        let consume_fuel = self
-            .fuel_costs
-            .as_ref()
-            .map(|_| self.instrs.push_consume_fuel_instr())
-            .transpose()?;
+        let consume_fuel = self.instrs.push_consume_fuel_instr()?;
         self.stack
             .push_func_block(block_ty, end_label, consume_fuel)?;
         Ok(())
