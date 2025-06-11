@@ -425,7 +425,8 @@ impl Stack {
     ///
     /// # Note
     ///
-    /// Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
+    /// - Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
+    /// - [`Operand::Temp`] will have their optional `instr` set to `None`.
     ///
     /// # Panics
     ///
