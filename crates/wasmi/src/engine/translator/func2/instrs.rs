@@ -62,9 +62,9 @@ impl InstrEncoder {
     }
 
     /// Pushes an [`Instruction::ConsumeFuel`] instruction to `self`.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The pushes [`Instruction::ConsumeFuel`] is initialized with base fuel costs.
     pub fn push_consume_fuel_instr(&mut self) -> Result<Instr, Error> {
         let base_costs = self.fuel_costs.base();
