@@ -61,6 +61,21 @@ impl InstrEncoder {
         Instr::from_usize(self.instrs.len())
     }
 
+    /// Pushes an [`Instruction::ConsumeFuel`] instruction to `self`.
+    /// 
+    /// # Note
+    /// 
+    /// The pushes [`Instruction::ConsumeFuel`] is initialized with base fuel costs.
+    pub fn push_consume_fuel_instr(&mut self) -> Result<Instr, Error> {
+        let base_costs = self.fuel_costs.base();
+        let Ok(base_costs) = u32::try_from(base_costs) else {
+            panic!("out of  bounds base fuel costs: {base_costs}");
+        };
+        let instr = self.next_instr();
+        self.instrs.push(Instruction::consume_fuel(base_costs));
+        Ok(instr)
+    }
+
     /// Pushes an [`Instruction`] to the [`InstrEncoder`].
     ///
     /// Returns an [`Instr`] that refers to the pushed [`Instruction`].
