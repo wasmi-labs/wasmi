@@ -212,7 +212,8 @@ impl FuncTranslator {
         let consume_fuel = self
             .fuel_costs
             .as_ref()
-            .map(|_| self.instrs.push_instr(Instruction::consume_fuel(1)));
+            .map(|_| self.instrs.push_consume_fuel_instr())
+            .transpose()?;
         self.stack
             .push_func_block(block_ty, end_label, consume_fuel)?;
         Ok(())
