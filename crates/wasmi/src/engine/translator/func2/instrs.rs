@@ -1,4 +1,4 @@
-use super::{Instr, Reset};
+use super::{Instr, Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
     engine::translator::{utils::FuelInfo, BumpFuelConsumption},
@@ -14,6 +14,29 @@ pub struct InstrEncoder {
     instrs: Vec<Instruction>,
 }
 
+impl ReusableAllocations for InstrEncoder {
+    type Allocations = InstrEncoderAllocations;
+
+    fn into_allocations(self) -> Self::Allocations {
+        Self::Allocations {
+            instrs: self.instrs,
+        }
+    }
+}
+
+/// The reusable heap allocations of the [`InstrEncoder`].
+#[derive(Debug, Default)]
+pub struct InstrEncoderAllocations {
+    /// The list of constructed instructions and their parameters.
+    instrs: Vec<Instruction>,
+}
+
+impl Reset for InstrEncoderAllocations {
+    fn reset(&mut self) {
+        self.instrs.clear();
+    }
+}
+
 impl Reset for InstrEncoder {
     fn reset(&mut self) {
         self.instrs.clear();
@@ -21,6 +44,13 @@ impl Reset for InstrEncoder {
 }
 
 impl InstrEncoder {
+    /// Creates a new [`InstrEncoder`].
+    pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
+        Self {
+            instrs: alloc.instrs,
+        }
+    }
+
     /// Returns the next [`Instr`].
     #[must_use]
     pub fn next_instr(&self) -> Instr {
