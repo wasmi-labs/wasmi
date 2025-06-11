@@ -233,7 +233,8 @@ impl OperandStack {
     ///
     /// # Note
     ///
-    /// Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
+    /// - Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
+    /// - [`Operand::Temp`] will have their optional `instr` set to `None`.
     ///
     /// # Panics
     ///
@@ -249,7 +250,8 @@ impl OperandStack {
     ///
     /// # Note
     ///
-    /// Returns `None` if operand at `index` is [`StackOperand::Temp`] already.
+    /// - Returns the [`Operand`] at `index` before being converted to an [`Operand::Temp`].
+    /// - [`Operand::Temp`] will have their optional `instr` set to `None`.
     ///
     /// # Panics
     ///
