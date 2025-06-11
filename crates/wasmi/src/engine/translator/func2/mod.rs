@@ -30,7 +30,7 @@ use self::{
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal, ValType},
     engine::{
-        translator::{Instr, LabelRegistry, WasmTranslator},
+        translator::{Instr, LabelRef, LabelRegistry, WasmTranslator},
         BlockType,
         CompiledFuncEntity,
         TranslationError,
@@ -277,6 +277,13 @@ impl FuncTranslator {
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
         Ok(())
+    }
+
+    /// Pins the `label` to the next [`Instr`].
+    fn pin_label(&mut self, label: LabelRef) {
+        self.labels
+            .pin_label(label, self.instrs.next_instr())
+            .unwrap_or_else(|err| panic!("failed to pin label to next instruction: {err}"));
     }
 
     /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
