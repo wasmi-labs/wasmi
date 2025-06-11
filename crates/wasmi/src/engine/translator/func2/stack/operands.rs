@@ -55,6 +55,17 @@ pub enum StackOperand {
     },
 }
 
+impl StackOperand {
+    /// Returns the [`ValType`] of the [`StackOperand`].
+    pub fn ty(&self, locals: &LocalsRegistry) -> ValType {
+        match self {
+            StackOperand::Temp { ty, .. } => *ty,
+            StackOperand::Immediate { val } => val.ty(),
+            StackOperand::Local { local_index, .. } => locals.ty(*local_index),
+        }
+    }
+}
+
 /// The Wasm operand (or value) stack.
 #[derive(Debug, Default)]
 pub struct OperandStack {
