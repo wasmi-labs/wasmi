@@ -127,7 +127,9 @@ impl ControlStack {
             label,
             reachability,
         }));
-        self.else_operands.push(else_operands);
+        if matches!(reachability, IfReachability::Both { .. }) {
+            self.else_operands.push(else_operands);
+        }
     }
 
     /// Pushes a new Wasm `else` onto the [`ControlStack`].
