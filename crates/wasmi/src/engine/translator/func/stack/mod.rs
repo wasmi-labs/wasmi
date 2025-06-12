@@ -420,3 +420,9 @@ impl ValueStack {
         self.reg_alloc.dec_register_usage(register)
     }
 }
+
+impl AllocConst for ValueStack {
+    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error> {
+        self.consts.alloc(value.into())
+    }
+}
