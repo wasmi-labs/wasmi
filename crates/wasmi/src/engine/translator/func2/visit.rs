@@ -1,5 +1,13 @@
 use super::{ControlFrame, FuncTranslator, LocalIdx, UnreachableControlFrame};
-use crate::{core::wasm, engine::BlockType, ir::Instruction, Error};
+use crate::{
+    core::wasm,
+    engine::{
+        translator::func2::{stack::IfReachability, Operand},
+        BlockType,
+    },
+    ir::Instruction,
+    Error,
+};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -102,6 +110,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_if(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
+        if !self.reachable {
+            self.stack.push_unreachable(UnreachableControlFrame::If)?;
+            return Ok(());
+        }
+        let end_label = self.labels.new_label();
+        let condition = self.stack.pop();
+        let (reachability, consume_fuel_instr) = match condition {
+            Operand::Immediate(operand) => {
+                let condition = i32::from(operand.val());
+                let reachability = match condition {
+                    0 => {
+                        self.reachable = false;
+                        IfReachability::OnlyElse
+                    }
+                    _ => IfReachability::OnlyThen,
+                };
+                let consume_fuel_instr = self.stack.consume_fuel_instr();
+                (reachability, consume_fuel_instr)
+            }
+            operand => {
+                let else_label = self.labels.new_label();
+                let reachability = IfReachability::Both { else_label };
+                todo!()
+            }
+        };
         todo!()
     }
 
