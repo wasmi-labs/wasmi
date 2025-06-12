@@ -9,11 +9,14 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };
-use super::{comparator::AllocConst, PreservedLocal, TypedVal};
+use super::{PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
-        translator::func::{Provider, UntypedProvider},
+        translator::{
+            comparator::AllocConst,
+            func::{Provider, UntypedProvider},
+        },
         TranslationError,
     },
     ir::{Reg, RegSpan},

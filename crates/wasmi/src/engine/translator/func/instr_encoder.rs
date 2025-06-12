@@ -1,16 +1,18 @@
 use crate::{
     core::{FuelCostsProvider, UntypedVal, ValType},
     engine::translator::{
-        func::{
-            stack::RegisterSpace,
-            utils::FromProviders as _,
-            LabelRef,
-            LabelRegistry,
+        comparator::{
             LogicalizeCmpInstr,
             NegateCmpInstr,
             TryIntoCmpBranchFallbackInstr,
             TryIntoCmpBranchInstr,
             TryIntoCmpSelectInstr,
+        },
+        func::{
+            stack::RegisterSpace,
+            utils::FromProviders as _,
+            LabelRef,
+            LabelRegistry,
             TypedProvider,
             ValueStack,
         },

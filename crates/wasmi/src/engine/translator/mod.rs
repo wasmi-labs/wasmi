@@ -1,5 +1,6 @@
 //! Function translation for the register-machine bytecode based Wasmi engine.
 
+mod comparator;
 mod driver;
 mod error;
 mod func;
