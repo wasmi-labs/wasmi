@@ -9,7 +9,7 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };
-use super::{PreservedLocal, TypedVal};
+use super::{comparator::AllocConst, PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
