@@ -3,23 +3,25 @@ mod locals;
 mod operand;
 mod operands;
 
+use self::{
+    control::ControlStack,
+    locals::LocalsRegistry,
+    operands::{OperandStack, StackOperand},
+};
 pub use self::{
     control::{
         BlockControlFrame,
         ControlFrame,
         ElseControlFrame,
+        ElseReachability,
         IfControlFrame,
+        IfReachability,
         LoopControlFrame,
         UnreachableControlFrame,
     },
     locals::LocalIdx,
     operand::Operand,
     operands::{OperandIdx, PreservedLocalsIter},
-};
-use self::{
-    control::{ControlStack, ElseReachability, IfReachability},
-    locals::LocalsRegistry,
-    operands::{OperandStack, StackOperand},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
