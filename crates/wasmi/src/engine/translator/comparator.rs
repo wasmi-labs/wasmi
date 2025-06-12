@@ -1,8 +1,26 @@
 use crate::{
-    engine::translator::func::ValueStack,
+    core::UntypedVal,
     ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Instruction, Reg},
     Error,
 };
+
+/// Types able to allocate function local constant values.
+///
+/// # Note
+///
+/// This allows to cheaply convert immediate values to [`Reg`]s.
+///
+/// # Errors
+///
+/// If the function local constant allocation from immediate value to [`Reg`] failed.
+pub trait AllocConst {
+    /// Allocates a new function local constant value and returns its [`Reg`].
+    ///
+    /// # Note
+    ///
+    /// Constant values allocated this way are deduplicated and return shared [`Reg`].
+    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error>;
+}
 
 pub trait NegateCmpInstr: Sized {
     /// Negates the compare (`cmp`) [`Instruction`].
@@ -346,7 +364,7 @@ pub trait TryIntoCmpBranchInstr: Sized {
     fn try_into_cmp_branch_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Self>, Error>;
 }
 
@@ -354,7 +372,7 @@ impl TryIntoCmpBranchInstr for Instruction {
     fn try_into_cmp_branch_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Self>, Error> {
         use Instruction as I;
         let Ok(offset) = BranchOffset16::try_from(offset) else {
@@ -458,7 +476,7 @@ pub trait TryIntoCmpBranchFallbackInstr {
     fn try_into_cmp_branch_fallback_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Instruction>, Error>;
 }
 
@@ -466,7 +484,7 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
     fn try_into_cmp_branch_fallback_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Instruction>, Error> {
         use Instruction as I;
         debug_assert!(BranchOffset16::try_from(offset).is_err());

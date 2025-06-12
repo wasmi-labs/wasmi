@@ -1,6 +1,5 @@
 //! Function translation for the register-machine bytecode based Wasmi engine.
 
-mod comparator;
 mod control_frame;
 mod control_stack;
 mod instr_encoder;
@@ -13,14 +12,13 @@ mod visit;
 #[cfg(feature = "simd")]
 mod simd;
 
+pub use self::{
+    control_frame::ControlFrame,
+    control_stack::ControlStack,
+    instr_encoder::{Instr, InstrEncoder},
+    stack::TypedProvider,
+};
 use self::{
-    comparator::{
-        LogicalizeCmpInstr,
-        NegateCmpInstr,
-        TryIntoCmpBranchFallbackInstr,
-        TryIntoCmpBranchInstr,
-        TryIntoCmpSelectInstr,
-    },
     control_frame::{
         BlockControlFrame,
         BlockHeight,
@@ -33,12 +31,6 @@ use self::{
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     stack::ValueStack,
     utils::FromProviders as _,
-};
-pub use self::{
-    control_frame::ControlFrame,
-    control_stack::ControlStack,
-    instr_encoder::{Instr, InstrEncoder},
-    stack::TypedProvider,
 };
 use crate::{
     core::{FuelCostsProvider, TrapCode, TypedVal, UntypedVal, ValType},

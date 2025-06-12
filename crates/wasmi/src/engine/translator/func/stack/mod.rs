@@ -13,7 +13,10 @@ use super::{PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
-        translator::func::{Provider, UntypedProvider},
+        translator::{
+            comparator::AllocConst,
+            func::{Provider, UntypedProvider},
+        },
         TranslationError,
     },
     ir::{Reg, RegSpan},
@@ -418,5 +421,11 @@ impl ValueStack {
     /// - This does nothing if `register` is not a preservation [`Reg`].
     pub fn dec_register_usage(&mut self, register: Reg) {
         self.reg_alloc.dec_register_usage(register)
+    }
+}
+
+impl AllocConst for ValueStack {
+    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error> {
+        self.consts.alloc(value.into())
     }
 }
