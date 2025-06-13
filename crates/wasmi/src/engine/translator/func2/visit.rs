@@ -130,6 +130,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 (reachability, consume_fuel_instr)
             }
             operand => {
+                let condition = self.layout.operand_to_reg(operand)?;
                 let else_label = self.labels.new_label();
                 let reachability = IfReachability::Both { else_label };
                 todo!()
