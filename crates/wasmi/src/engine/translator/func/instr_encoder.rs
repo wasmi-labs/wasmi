@@ -1052,7 +1052,6 @@ impl InstrEncoder {
     /// Try to fuse [`Instruction`] at `instr` into a branch+cmp instruction.
     ///
     /// Returns `Ok(Some)` if successful.
-    #[rustfmt::skip]
     fn try_fuse_branch_cmp_for_instr(
         &mut self,
         stack: &mut ValueStack,
