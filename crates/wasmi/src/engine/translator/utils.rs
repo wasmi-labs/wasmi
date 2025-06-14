@@ -7,9 +7,6 @@ use crate::{
     FuncRef,
 };
 
-#[cfg(doc)]
-use crate::ir::Instruction;
-
 macro_rules! impl_typed_for {
     ( $( $ty:ident ),* $(,)? ) => {
         $(
