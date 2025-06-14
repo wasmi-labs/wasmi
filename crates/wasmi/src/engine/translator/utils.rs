@@ -183,3 +183,35 @@ impl BumpFuelConsumption for Instruction {
         }
     }
 }
+
+/// Extension trait to query if an [`Instruction`] is a parameter.
+pub trait IsInstructionParameter {
+    /// Returns `true` if `self` is a parameter to an [`Instruction`].
+    fn is_instruction_parameter(&self) -> bool;
+}
+
+impl IsInstructionParameter for Instruction {
+    #[rustfmt::skip]
+    fn is_instruction_parameter(&self) -> bool {
+        matches!(self,
+            | Self::TableIndex { .. }
+            | Self::MemoryIndex { .. }
+            | Self::DataIndex { .. }
+            | Self::ElemIndex { .. }
+            | Self::Const32 { .. }
+            | Self::I64Const32 { .. }
+            | Self::F64Const32 { .. }
+            | Self::BranchTableTarget { .. }
+            | Self::BranchTableTargetNonOverlapping { .. }
+            | Self::Imm16AndImm32 { .. }
+            | Self::RegisterAndImm32 { .. }
+            | Self::RegisterSpan { .. }
+            | Self::Register { .. }
+            | Self::Register2 { .. }
+            | Self::Register3 { .. }
+            | Self::RegisterList { .. }
+            | Self::CallIndirectParams { .. }
+            | Self::CallIndirectParamsImm16 { .. }
+        )
+    }
+}

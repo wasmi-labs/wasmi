@@ -18,7 +18,7 @@ use crate::{
             ValueStack,
         },
         relink_result::RelinkResult as _,
-        utils::{BumpFuelConsumption as _, FuelInfo, WasmInteger},
+        utils::{BumpFuelConsumption as _, FuelInfo, IsInstructionParameter as _, WasmInteger},
         visit_register::VisitInputRegisters as _,
     },
     ir::{
@@ -344,6 +344,7 @@ impl InstrEncoder {
     /// parameters for the [`Instruction`]. An example of this is [`Instruction::RegisterAndImm32`]
     /// carrying the `ptr` and `offset` parameters for [`Instruction::Load32`].
     pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+        debug_assert!(instr.is_instruction_parameter());
         self.instrs.push(instr)
     }
 
