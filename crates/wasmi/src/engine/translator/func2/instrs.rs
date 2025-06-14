@@ -122,7 +122,7 @@ impl InstrEncoder {
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    pub fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
+    fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
         &mut self.instrs[instr.into_usize()]
     }
 
