@@ -23,7 +23,6 @@ pub use self::{
 use super::code_map::CompiledFuncEntity;
 use crate::{
     engine::EngineFunc,
-    ir::Instruction,
     module::{FuncIdx, ModuleHeader},
     Error,
 };
@@ -498,23 +497,4 @@ impl<'a> VisitOperator<'a> for LazyFuncTranslator {
 #[cfg(feature = "simd")]
 impl wasmparser::VisitSimdOperator<'_> for LazyFuncTranslator {
     wasmparser::for_each_visit_simd_operator!(impl_visit_operator);
-}
-
-trait BumpFuelConsumption {
-    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
-    ///
-    /// # Error
-    ///
-    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
-    /// - If the new fuel consumption overflows the internal `u64` value.
-    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
-}
-
-impl BumpFuelConsumption for Instruction {
-    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
-        match self {
-            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
-            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
-        }
-    }
 }

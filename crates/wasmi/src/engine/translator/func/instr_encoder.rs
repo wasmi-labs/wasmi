@@ -18,9 +18,8 @@ use crate::{
             ValueStack,
         },
         relink_result::RelinkResult as _,
-        utils::{FuelInfo, WasmInteger},
+        utils::{BumpFuelConsumption as _, FuelInfo, IsInstructionParameter as _, WasmInteger},
         visit_register::VisitInputRegisters as _,
-        BumpFuelConsumption as _,
     },
     ir::{
         BoundedRegSpan,
@@ -314,6 +313,7 @@ impl InstrEncoder {
 
     /// Push the [`Instruction`] to the [`InstrEncoder`].
     pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+        debug_assert!(!instr.is_instruction_parameter(), "parameter: {instr:?}");
         let last_instr = self.instrs.push(instr)?;
         self.last_instr = Some(last_instr);
         Ok(last_instr)
@@ -345,6 +345,12 @@ impl InstrEncoder {
     /// parameters for the [`Instruction`]. An example of this is [`Instruction::RegisterAndImm32`]
     /// carrying the `ptr` and `offset` parameters for [`Instruction::Load32`].
     pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+        debug_assert!(
+            instr.is_instruction_parameter()
+            // Note: `br_table` may have `Instruction::Branch` as parameter.
+            || matches!(instr, Instruction::Branch { .. }),
+            "non-parameter: {instr:?}"
+        );
         self.instrs.push(instr)
     }
 
