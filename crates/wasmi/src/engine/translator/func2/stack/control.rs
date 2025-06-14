@@ -390,7 +390,7 @@ pub struct LoopControlFrame {
 }
 
 impl LoopControlFrame {
-    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
+    /// Returns the [`BlockType`] of the [`LoopControlFrame`].
     pub fn ty(&self) -> BlockType {
         self.ty
     }
@@ -431,13 +431,13 @@ impl LoopControlFrame {
 /// A Wasm `if` control frame including its `then` part.
 #[derive(Debug)]
 pub struct IfControlFrame {
-    /// The block type of the [`LoopControlFrame`].
+    /// The block type of the [`IfControlFrame`].
     ty: BlockType,
-    /// The value stack height upon entering the [`LoopControlFrame`].
+    /// The value stack height upon entering the [`IfControlFrame`].
     height: usize,
-    /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
+    /// This is `true` if there is at least one branch to this [`IfControlFrame`].
     is_branched_to: bool,
-    /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// The [`IfControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// # Note
     ///
@@ -548,11 +548,11 @@ pub enum IfReachability {
 /// A Wasm `else` control frame part of Wasm `if`.
 #[derive(Debug)]
 pub struct ElseControlFrame {
-    /// The block type of the [`LoopControlFrame`].
+    /// The block type of the [`ElseControlFrame`].
     ty: BlockType,
-    /// The value stack height upon entering the [`LoopControlFrame`].
+    /// The value stack height upon entering the [`ElseControlFrame`].
     height: usize,
-    /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
+    /// This is `true` if there is at least one branch to this [`ElseControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
     ///
