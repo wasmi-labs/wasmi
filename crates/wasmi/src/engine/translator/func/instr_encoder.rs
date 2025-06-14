@@ -18,9 +18,8 @@ use crate::{
             ValueStack,
         },
         relink_result::RelinkResult as _,
-        utils::{FuelInfo, WasmInteger},
+        utils::{BumpFuelConsumption as _, FuelInfo, WasmInteger},
         visit_register::VisitInputRegisters as _,
-        BumpFuelConsumption as _,
     },
     ir::{
         BoundedRegSpan,

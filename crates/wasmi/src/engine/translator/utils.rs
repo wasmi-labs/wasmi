@@ -1,7 +1,8 @@
 use super::Instr;
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal, ValType},
-    ir::{Const16, Sign},
+    ir::{Const16, Instruction, Sign},
+    Error,
     ExternRef,
     FuncRef,
 };
@@ -163,5 +164,25 @@ impl FuelInfo {
     /// Create a new [`FuelInfo`] for enabled fuel metering.
     pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
         Self::Some { costs, instr }
+    }
+}
+
+/// Extension trait to bump the consumed fuel of [`Instruction::ConsumeFuel`].
+pub trait BumpFuelConsumption {
+    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Error
+    ///
+    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
+}
+
+impl BumpFuelConsumption for Instruction {
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
+        match self {
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
+            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
+        }
     }
 }
