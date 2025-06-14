@@ -1,7 +1,7 @@
 use super::{Instr, Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::translator::BumpFuelConsumption,
+    engine::translator::utils::BumpFuelConsumption as _,
     ir::Instruction,
     Engine,
     Error,
