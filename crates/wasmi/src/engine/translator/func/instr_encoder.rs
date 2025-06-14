@@ -312,11 +312,29 @@ impl InstrEncoder {
     }
 
     /// Push the [`Instruction`] to the [`InstrEncoder`].
-    pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+    fn push_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
         debug_assert!(!instr.is_instruction_parameter(), "parameter: {instr:?}");
         let last_instr = self.instrs.push(instr)?;
         self.last_instr = Some(last_instr);
         Ok(last_instr)
+    }
+
+    /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn push_fuel_instr(
+        &mut self,
+        fuel_costs: Option<&FuelCostsProvider>,
+    ) -> Result<Option<Instr>, Error> {
+        let Some(fuel_costs) = fuel_costs else {
+            // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
+            return Ok(None);
+        };
+        let base = u32::try_from(fuel_costs.base())
+            .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
+        let fuel_instr = Instruction::consume_fuel(base);
+        let instr = self.push_instr(fuel_instr)?;
+        Ok(Some(instr))
     }
 
     /// Utility function for pushing a new [`Instruction`] with fuel costs.

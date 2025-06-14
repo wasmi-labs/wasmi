@@ -434,12 +434,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let (params, results) = func_type.params_results();
-        let provider_params = &mut self.providers;
-        self.stack.pop_n(params.len(), provider_params);
+        self.stack.pop_n(params.len(), &mut self.providers);
         let results = self.stack.push_dynamic_n(results.len())?;
         let instr = match self.module.get_engine_func(func_idx) {
             Some(engine_func) => {
@@ -459,22 +457,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
             }
         };
-        self.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::call)?;
         self.instr_encoder
-            .encode_register_list(&mut self.stack, provider_params)?;
+            .encode_register_list(&mut self.stack, &self.providers)?;
         Ok(())
     }
 
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
         let index = self.stack.pop();
         let indirect_params = self.call_indirect_params(index, table_index)?;
         let (params, results) = func_type.params_results();
-        let provider_params = &mut self.providers;
-        self.stack.pop_n(params.len(), provider_params);
+        self.stack.pop_n(params.len(), &mut self.providers);
         let results = self.stack.push_dynamic_n(results.len())?;
         let instr = match (params.len(), indirect_params) {
             (0, Instruction::CallIndirectParams { .. }) => {
@@ -491,21 +487,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             _ => unreachable!(),
         };
-        self.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::call)?;
         self.instr_encoder.append_instr(indirect_params)?;
         self.instr_encoder
-            .encode_register_list(&mut self.stack, provider_params)?;
+            .encode_register_list(&mut self.stack, &self.providers)?;
         Ok(())
     }
 
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let params = func_type.params();
-        let provider_params = &mut self.providers;
-        self.stack.pop_n(params.len(), provider_params);
+        self.stack.pop_n(params.len(), &mut self.providers);
         let instr = match self.module.get_engine_func(func_idx) {
             Some(engine_func) => {
                 // Case: We are calling an internal function and can optimize
@@ -524,23 +518,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
             }
         };
-        self.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::call)?;
         self.instr_encoder
-            .encode_register_list(&mut self.stack, provider_params)?;
+            .encode_register_list(&mut self.stack, &self.providers)?;
         self.reachable = false;
         Ok(())
     }
 
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
         let index = self.stack.pop();
         let indirect_params = self.call_indirect_params(index, table_index)?;
-        let provider_params = &mut self.providers;
-        self.stack.pop_n(params.len(), provider_params);
+        self.stack.pop_n(params.len(), &mut self.providers);
         let instr = match (params.len(), indirect_params) {
             (0, Instruction::CallIndirectParams { .. }) => {
                 Instruction::return_call_indirect_0(type_index)
@@ -556,10 +548,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             _ => unreachable!(),
         };
-        self.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::call)?;
         self.instr_encoder.append_instr(indirect_params)?;
         self.instr_encoder
-            .encode_register_list(&mut self.stack, provider_params)?;
+            .encode_register_list(&mut self.stack, &self.providers)?;
         self.reachable = false;
         Ok(())
     }
