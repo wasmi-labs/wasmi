@@ -412,27 +412,7 @@ impl FuncTranslator {
     ///
     /// Returns `None` if fuel metering is disabled.
     fn make_fuel_instr(&mut self) -> Result<Option<Instr>, Error> {
-        let Some(fuel_costs) = self.fuel_costs() else {
-            // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
-            return Ok(None);
-        };
-        let base = u32::try_from(fuel_costs.base())
-            .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
-        let fuel_instr = Instruction::consume_fuel(base);
-        let instr = self.instr_encoder.push_instr(fuel_instr)?;
-        Ok(Some(instr))
-    }
-
-    /// Bumps fuel consumption of the most recent [`Instruction::ConsumeFuel`] in the translation process.
-    ///
-    /// Does nothing if gas metering is disabled.
-    fn bump_fuel_consumption<F>(&mut self, f: F) -> Result<(), Error>
-    where
-        F: FnOnce(&FuelCostsProvider) -> u64,
-    {
-        let fuel_info = self.fuel_info();
-        self.instr_encoder.bump_fuel_consumption(&fuel_info, f)?;
-        Ok(())
+        self.instr_encoder.push_fuel_instr(self.fuel_costs.as_ref())
     }
 
     /// Utility function for pushing a new [`Instruction`] with fuel costs.
@@ -444,8 +424,8 @@ impl FuncTranslator {
     where
         F: FnOnce(&FuelCostsProvider) -> u64,
     {
-        self.bump_fuel_consumption(f)?;
-        self.instr_encoder.push_instr(instr)
+        let fuel_info = self.fuel_info();
+        self.instr_encoder.push_fueled_instr(instr, &fuel_info, f)
     }
 
     /// Convenience method for appending an [`Instruction`] parameter.
@@ -783,8 +763,7 @@ impl FuncTranslator {
             // Furthermore we need to encode the branch to the `if` end label.
             self.translate_copy_branch_params(&frame)?;
             let end_offset = self.instr_encoder.try_resolve_label(frame.end_label())?;
-            self.instr_encoder
-                .push_instr(Instruction::branch(end_offset))?;
+            self.push_fueled_instr(Instruction::branch(end_offset), FuelCostsProvider::base)?;
         }
         self.instr_encoder.pin_label_if_unpinned(
             frame
@@ -1166,8 +1145,7 @@ impl FuncTranslator {
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 let sign = T::from(rhs).sign();
                 let result = self.stack.push_dynamic()?;
-                self.instr_encoder
-                    .push_instr(make_instr_imm(result, lhs, sign))?;
+                self.push_fueled_instr(make_instr_imm(result, lhs, sign), FuelCostsProvider::base)?;
                 Ok(())
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
