@@ -1,4 +1,4 @@
-use crate::{engine::translator::Instr, ir::BranchOffset, Error};
+use crate::{engine::translator::utils::Instr, ir::BranchOffset, Error};
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},
@@ -147,7 +147,7 @@ impl LabelRegistry {
     ) -> Result<BranchOffset, Error> {
         let offset = match *self.get_label(label) {
             Label::Pinned(target) => {
-                BranchOffset::from_src_to_dst(user.into_u32(), target.into_u32())?
+                BranchOffset::from_src_to_dst(u32::from(user), u32::from(target))?
             }
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
@@ -206,7 +206,7 @@ impl Iterator for ResolvedUserIter<'_> {
             .resolve_label(next.label)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
         let offset =
-            BranchOffset::from_src_to_dst(src.into_u32(), dst.into_u32()).map_err(Into::into);
+            BranchOffset::from_src_to_dst(u32::from(src), u32::from(dst)).map_err(Into::into);
         Some((src, offset))
     }
 }

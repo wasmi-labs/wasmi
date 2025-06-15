@@ -15,7 +15,7 @@ mod simd;
 pub use self::{
     control_frame::ControlFrame,
     control_stack::ControlStack,
-    instr_encoder::{Instr, InstrEncoder},
+    instr_encoder::InstrEncoder,
     stack::TypedProvider,
 };
 use self::{
@@ -38,7 +38,7 @@ use crate::{
         code_map::CompiledFuncEntity,
         translator::{
             labels::{LabelRef, LabelRegistry},
-            utils::{FuelInfo, WasmFloat, WasmInteger, Wrap},
+            utils::{FuelInfo, Instr, WasmFloat, WasmInteger, Wrap},
             WasmTranslator,
         },
         BlockType,
@@ -224,7 +224,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             //       the compiled function.
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
-            let fuel_instr = Instr::from_u32(0);
+            let fuel_instr = Instr::from(0_u32);
             let fuel_info = FuelInfo::some(fuel_costs.clone(), fuel_instr);
             self.instr_encoder
                 .bump_fuel_consumption(&fuel_info, |costs| {

@@ -18,7 +18,7 @@ use crate::Engine;
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
-    func::{FuncTranslator, FuncTranslatorAllocations, Instr},
+    func::{FuncTranslator, FuncTranslatorAllocations},
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{

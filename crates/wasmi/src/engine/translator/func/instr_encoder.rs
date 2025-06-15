@@ -18,7 +18,13 @@ use crate::{
             ValueStack,
         },
         relink_result::RelinkResult as _,
-        utils::{BumpFuelConsumption as _, FuelInfo, IsInstructionParameter as _, WasmInteger},
+        utils::{
+            BumpFuelConsumption as _,
+            FuelInfo,
+            Instr,
+            IsInstructionParameter as _,
+            WasmInteger,
+        },
         visit_register::VisitInputRegisters as _,
     },
     ir::{
@@ -37,53 +43,6 @@ use crate::{
 };
 use alloc::vec::{Drain, Vec};
 use core::mem;
-
-/// A reference to an instruction of the partially
-/// constructed function body of the [`InstrEncoder`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(u32);
-
-impl Instr {
-    /// Creates an [`Instr`] from the given `usize` value.
-    ///
-    /// # Note
-    ///
-    /// This intentionally is an API intended for test purposes only.
-    ///
-    /// # Panics
-    ///
-    /// If the `value` exceeds limitations for [`Instr`].
-    pub fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("invalid index {value} for instruction reference: {error}")
-        });
-        Self(value)
-    }
-
-    /// Returns an `usize` representation of the instruction index.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
-    }
-
-    /// Creates an [`Instr`] form the given `u32` value.
-    pub fn from_u32(value: u32) -> Self {
-        Self(value)
-    }
-
-    /// Returns an `u32` representation of the instruction index.
-    pub fn into_u32(self) -> u32 {
-        self.0
-    }
-
-    /// Returns the absolute distance between `self` and `other`.
-    ///
-    /// - Returns `0` if `self == other`.
-    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
-    /// - etc..
-    pub fn distance(self, other: Self) -> u32 {
-        self.0.abs_diff(other.0)
-    }
-}
 
 /// Encodes Wasmi bytecode instructions to an [`Instruction`] stream.
 #[derive(Debug, Default)]
@@ -150,10 +109,9 @@ impl InstrSequence {
     /// If there are too many instructions in the instruction sequence.
     fn push_before(&mut self, instr: Instr, instruction: Instruction) -> Result<Instr, Error> {
         self.instrs.insert(instr.into_usize(), instruction);
-        let shifted_instr = instr
-            .into_u32()
+        let shifted_instr = u32::from(instr)
             .checked_add(1)
-            .map(Instr::from_u32)
+            .map(Instr::from)
             .unwrap_or_else(|| panic!("pushed to many instructions to a single function"));
         Ok(shifted_instr)
     }

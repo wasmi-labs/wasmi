@@ -1,6 +1,6 @@
 use super::LabelRef;
 use crate::{
-    engine::{translator::Instr, BlockType, TranslationError},
+    engine::{translator::utils::Instr, BlockType, TranslationError},
     ir::{BoundedRegSpan, RegSpan},
     Engine,
     Error,
