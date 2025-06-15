@@ -1,4 +1,4 @@
-use crate::{engine::translator::Instr, ir::BranchOffset, Error};
+use crate::{engine::translator::utils::Instr, ir::BranchOffset, Error};
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},

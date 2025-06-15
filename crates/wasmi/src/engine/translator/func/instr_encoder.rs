@@ -18,7 +18,13 @@ use crate::{
             ValueStack,
         },
         relink_result::RelinkResult as _,
-        utils::{BumpFuelConsumption as _, FuelInfo, IsInstructionParameter as _, WasmInteger},
+        utils::{
+            BumpFuelConsumption as _,
+            FuelInfo,
+            Instr,
+            IsInstructionParameter as _,
+            WasmInteger,
+        },
         visit_register::VisitInputRegisters as _,
     },
     ir::{
@@ -37,59 +43,6 @@ use crate::{
 };
 use alloc::vec::{Drain, Vec};
 use core::mem;
-
-/// A reference to an encoded [`Instruction`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(u32);
-
-impl From<u32> for Instr {
-    fn from(index: u32) -> Self {
-        Self(index)
-    }
-}
-
-impl From<Instr> for u32 {
-    fn from(instr: Instr) -> Self {
-        instr.0
-    }
-}
-
-impl Instr {
-    /// Creates an [`Instr`] from the given `usize` value.
-    ///
-    /// # Note
-    ///
-    /// This intentionally is an API intended for test purposes only.
-    ///
-    /// # Panics
-    ///
-    /// If the `value` exceeds limitations for [`Instr`].
-    pub fn from_usize(value: usize) -> Self {
-        let Ok(index) = u32::try_from(value) else {
-            panic!("out of bounds index {value} for `Instr`")
-        };
-        Self(index)
-    }
-
-    /// Returns an `usize` representation of the instruction index.
-    pub fn into_usize(self) -> usize {
-        match usize::try_from(self.0) {
-            Ok(index) => index,
-            Err(error) => {
-                panic!("out of bound index {} for `Instr`: {error}", self.0)
-            }
-        }
-    }
-
-    /// Returns the absolute distance between `self` and `other`.
-    ///
-    /// - Returns `0` if `self == other`.
-    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
-    /// - etc..
-    pub fn distance(self, other: Self) -> u32 {
-        self.0.abs_diff(other.0)
-    }
-}
 
 /// Encodes Wasmi bytecode instructions to an [`Instruction`] stream.
 #[derive(Debug, Default)]

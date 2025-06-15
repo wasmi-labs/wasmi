@@ -15,7 +15,7 @@ mod simd;
 pub use self::{
     control_frame::ControlFrame,
     control_stack::ControlStack,
-    instr_encoder::{Instr, InstrEncoder},
+    instr_encoder::InstrEncoder,
     stack::TypedProvider,
 };
 use self::{
@@ -38,7 +38,7 @@ use crate::{
         code_map::CompiledFuncEntity,
         translator::{
             labels::{LabelRef, LabelRegistry},
-            utils::{FuelInfo, WasmFloat, WasmInteger, Wrap},
+            utils::{FuelInfo, Instr, WasmFloat, WasmInteger, Wrap},
             WasmTranslator,
         },
         BlockType,
