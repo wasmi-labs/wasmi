@@ -107,6 +107,35 @@ impl InstrEncoder {
         Ok(instr)
     }
 
+    /// Replaces `instr` with `new_instr` in `self`.
+    ///
+    /// - Returns `Ok(true)` if replacement was successful.
+    /// - Returns `Ok(false)` if replacement was unsuccessful.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `instr` or `new_instr` are [`Instruction`] parameters.
+    pub fn try_replace_instr(
+        &mut self,
+        instr: Instr,
+        new_instr: Instruction,
+    ) -> Result<bool, Error> {
+        debug_assert!(
+            !new_instr.is_instruction_parameter(),
+            "parameter: {new_instr:?}"
+        );
+        let Some(last_instr) = self.last_instr else {
+            return Ok(false);
+        };
+        let replace = self.get_mut(instr);
+        debug_assert!(!replace.is_instruction_parameter(), "parameter: {instr:?}");
+        if instr != last_instr {
+            return Ok(false);
+        }
+        *replace = new_instr;
+        Ok(true)
+    }
+
     /// Pushes an [`Instruction`] parameter to the [`InstrEncoder`].
     ///
     /// The parameter is associated to the last pushed [`Instruction`].
