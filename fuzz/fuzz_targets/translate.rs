@@ -1,4 +1,5 @@
 #![no_main]
+#![expect(deprecated)]
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
