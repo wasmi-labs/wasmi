@@ -1,7 +1,7 @@
 use super::{Instr, Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::translator::utils::BumpFuelConsumption as _,
+    engine::translator::utils::{BumpFuelConsumption as _, IsInstructionParameter as _},
     ir::Instruction,
     Engine,
     Error,
@@ -97,6 +97,10 @@ impl InstrEncoder {
 
     /// Pushes a non-parameter [`Instruction`] to the [`InstrEncoder`].
     fn push_instr_impl(&mut self, instruction: Instruction) -> Result<Instr, Error> {
+        debug_assert!(
+            !instruction.is_instruction_parameter(),
+            "parameter: {instruction:?}"
+        );
         let instr = self.next_instr();
         self.instrs.push(instruction);
         self.last_instr = Some(instr);
@@ -107,6 +111,10 @@ impl InstrEncoder {
     ///
     /// The parameter is associated to the last pushed [`Instruction`].
     pub fn push_param(&mut self, instruction: Instruction) {
+        debug_assert!(
+            instruction.is_instruction_parameter(),
+            "non-parameter: {instruction:?}"
+        );
         self.instrs.push(instruction);
     }
 
