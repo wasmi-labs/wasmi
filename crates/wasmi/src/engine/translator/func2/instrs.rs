@@ -42,12 +42,6 @@ impl Reset for InstrEncoderAllocations {
     }
 }
 
-impl Reset for InstrEncoder {
-    fn reset(&mut self) {
-        self.instrs.clear();
-    }
-}
-
 impl InstrEncoder {
     /// Creates a new [`InstrEncoder`].
     pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
