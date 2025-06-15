@@ -17,6 +17,8 @@ pub struct InstrEncoder {
     ///
     /// This is `Some` if fuel metering is enabled, otherwise `None`.
     fuel_costs: Option<FuelCostsProvider>,
+    /// The last pushed non-parameter [`Instruction`].
+    last_instr: Option<Instr>,
 }
 
 impl ReusableAllocations for InstrEncoder {
@@ -53,6 +55,7 @@ impl InstrEncoder {
         Self {
             instrs: alloc.instrs,
             fuel_costs,
+            last_instr: None,
         }
     }
 
@@ -75,12 +78,11 @@ impl InstrEncoder {
         let Ok(base_costs) = u32::try_from(base_costs) else {
             panic!("out of  bounds base fuel costs: {base_costs}");
         };
-        let instr = self.next_instr();
-        self.instrs.push(Instruction::consume_fuel(base_costs));
+        let instr = self.push_instr_impl(Instruction::consume_fuel(base_costs))?;
         Ok(Some(instr))
     }
 
-    /// Pushes an [`Instruction`] to the [`InstrEncoder`].
+    /// Pushes a non-parameter [`Instruction`] to the [`InstrEncoder`].
     ///
     /// Returns an [`Instr`] that refers to the pushed [`Instruction`].
     pub fn push_instr(
@@ -90,8 +92,14 @@ impl InstrEncoder {
         f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<Instr, Error> {
         self.bump_fuel_consumption(consume_fuel, f)?;
+        self.push_instr_impl(instruction)
+    }
+
+    /// Pushes a non-parameter [`Instruction`] to the [`InstrEncoder`].
+    fn push_instr_impl(&mut self, instruction: Instruction) -> Result<Instr, Error> {
         let instr = self.next_instr();
         self.instrs.push(instruction);
+        self.last_instr = Some(instr);
         Ok(instr)
     }
 
