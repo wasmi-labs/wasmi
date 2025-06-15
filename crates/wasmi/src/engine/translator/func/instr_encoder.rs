@@ -38,8 +38,7 @@ use crate::{
 use alloc::vec::{Drain, Vec};
 use core::mem;
 
-/// A reference to an instruction of the partially
-/// constructed function body of the [`InstrEncoder`].
+/// A reference to an encoded [`Instruction`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
 
