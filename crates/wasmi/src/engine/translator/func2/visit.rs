@@ -109,6 +109,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
+    #[allow(unused_variables)] // TODO: remove
     fn visit_if(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
         if !self.reachable {
             self.stack.push_unreachable(UnreachableControlFrame::If)?;
