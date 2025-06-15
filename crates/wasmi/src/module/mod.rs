@@ -244,6 +244,14 @@ impl Module {
     /// - If Wasmi cannot translate the Wasm bytecode.
     ///
     /// [`Config`]: crate::Config
+    #[deprecated(
+        since = "0.48.0",
+        note = "\
+            This API has been deprecated because it is inefficient and unserused. \
+            Please use the `Module::new` API instead if possible. \
+            If you have an urgent need for this API, please tell us at: https://github.com/wasmi-labs/wasmi \
+        "
+    )]
     pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
         ModuleParser::new(engine).parse_streaming(stream)
     }
@@ -293,6 +301,14 @@ impl Module {
     /// - If the Wasm bytecode fails to be compiled by Wasmi.
     ///
     /// [`Config`]: crate::Config
+    #[deprecated(
+        since = "0.48.0",
+        note = "\
+            This API has been deprecated because it is inefficient and unserused. \
+            Please use the `Module::new_unchecked` API instead if possible. \
+            If you have an urgent need for this API, please tell us at: https://github.com/wasmi-labs/wasmi \
+        "
+    )]
     pub unsafe fn new_streaming_unchecked(
         engine: &Engine,
         stream: impl Read,
