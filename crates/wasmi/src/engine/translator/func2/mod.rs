@@ -11,7 +11,7 @@ mod visit;
 
 use self::{
     instrs::{InstrEncoder, InstrEncoderAllocations},
-    layout::StackLayout,
+    layout::{StackLayout, StackSpace},
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -23,6 +23,7 @@ use self::{
         OperandIdx,
         Stack,
         StackAllocations,
+        TempOperand,
         UnreachableControlFrame,
     },
     utils::{Reset, ReusableAllocations},
@@ -30,12 +31,29 @@ use self::{
 use crate::{
     core::{FuelCostsProvider, Typed, TypedVal, ValType},
     engine::{
-        translator::{Instr, LabelRef, LabelRegistry, WasmTranslator},
+        translator::{
+            comparator::{CompareResult as _, NegateCmpInstr as _, TryIntoCmpBranchInstr as _},
+            Instr,
+            LabelRef,
+            LabelRegistry,
+            WasmTranslator,
+        },
         BlockType,
         CompiledFuncEntity,
         TranslationError,
     },
-    ir::{BoundedRegSpan, Const16, Const32, Instruction, Reg, RegSpan},
+    ir::{
+        BoundedRegSpan,
+        BranchOffset,
+        BranchOffset16,
+        Comparator,
+        ComparatorAndOffset,
+        Const16,
+        Const32,
+        Instruction,
+        Reg,
+        RegSpan,
+    },
     module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
@@ -341,6 +359,17 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    fn push_instr(
+        &mut self,
+        instr: Instruction,
+        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        let consume_fuel = self.stack.consume_fuel_instr();
+        self.instrs.push_instr(instr, consume_fuel, fuel_costs)?;
+        Ok(())
+    }
+
     /// Translates a generic return instruction.
     fn translate_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
@@ -439,6 +468,126 @@ impl FuncTranslator {
     /// Translates the end of an unreachable Wasm control frame.
     fn translate_end_unreachable(&mut self, _frame: UnreachableControlFrame) -> Result<(), Error> {
         todo!()
+    }
+
+    /// Translates a `i32.eqz`+`br_if` or `if` conditional branch instruction.
+    fn translate_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
+        self.translate_br_if(condition, label, true)
+    }
+
+    /// Translates a `br_if` conditional branch instruction.
+    fn translate_br_nez(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
+        self.translate_br_if(condition, label, false)
+    }
+
+    /// Translates a generic `br_if` fused conditional branch instruction.
+    fn translate_br_if(
+        &mut self,
+        condition: Operand,
+        label: LabelRef,
+        branch_eqz: bool,
+    ) -> Result<(), Error> {
+        if self.try_fuse_branch_cmp(condition, label, branch_eqz)? {
+            return Ok(());
+        }
+        let condition = match condition {
+            Operand::Local(condition) => self.layout.local_to_reg(condition.local_index())?,
+            Operand::Temp(condition) => self.layout.temp_to_reg(condition.operand_index())?,
+            Operand::Immediate(_condition) => {
+                todo!() // TODO: translate as `br`
+            }
+        };
+        let instr = self.instrs.next_instr();
+        let offset = self.labels.try_resolve_label(label, instr)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => match branch_eqz {
+                true => Instruction::branch_i32_eq_imm16(condition, 0, offset),
+                false => Instruction::branch_i32_ne_imm16(condition, 0, offset),
+            },
+            Err(_) => {
+                let zero = self.layout.const_to_reg(0_i32)?;
+                self.make_branch_cmp_fallback(Comparator::I32Eq, condition, zero, offset)?
+            }
+        };
+        self.push_instr(instr, FuelCostsProvider::base)
+    }
+
+    /// Create an [`Instruction::BranchCmpFallback`].
+    fn make_branch_cmp_fallback(
+        &mut self,
+        cmp: Comparator,
+        lhs: Reg,
+        rhs: Reg,
+        offset: BranchOffset,
+    ) -> Result<Instruction, Error> {
+        let params = self
+            .layout
+            .const_to_reg(ComparatorAndOffset::new(cmp, offset))?;
+        Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
+    }
+
+    /// Try to fuse a cmp+branch [`Instruction`] with optional negation.
+    fn try_fuse_branch_cmp(
+        &mut self,
+        condition: Operand,
+        label: LabelRef,
+        negate: bool,
+    ) -> Result<bool, Error> {
+        let Operand::Temp(condition) = condition else {
+            return Ok(false);
+        };
+        debug_assert_eq!(condition.ty(), ValType::I32);
+        let Some(origin) = condition.instr() else {
+            return Ok(false);
+        };
+        let fused_instr = self.try_make_fused_branch_cmp_instr(origin, condition, label, negate)?;
+        let Some(fused_instr) = fused_instr else {
+            return Ok(false);
+        };
+        self.instrs.try_replace_instr(origin, fused_instr)
+    }
+
+    /// Try to return a fused cmp+branch [`Instruction`] from the given parameters.
+    ///
+    ///
+    /// # Note
+    ///
+    /// - The `instr` parameter refers to the to-be-fused cmp instruction.
+    /// - Returns `Ok(Some)` if cmp+branch fusion was successful.
+    /// - Returns `Ok(None)`, otherwise.
+    fn try_make_fused_branch_cmp_instr(
+        &mut self,
+        instr: Instr,
+        condition: TempOperand,
+        label: LabelRef,
+        negate: bool,
+    ) -> Result<Option<Instruction>, Error> {
+        let cmp_instr = *self.instrs.get(instr);
+        let Some(result) = cmp_instr.compare_result() else {
+            // Note: cannot fuse non-cmp instructions or cmp-instructions without result.
+            return Ok(None);
+        };
+        if matches!(self.layout.stack_space(result), StackSpace::Local) {
+            // Note: cannot fuse cmp instructions with observable semantics.
+            return Ok(None);
+        }
+        if result != self.layout.temp_to_reg(condition.operand_index())? {
+            // Note: cannot fuse cmp instruction with a result that differs
+            //       from the condition operand.
+            return Ok(None);
+        }
+        let cmp_instr = match negate {
+            false => cmp_instr,
+            true => match cmp_instr.negate_cmp_instr() {
+                Some(negated) => negated,
+                None => {
+                    // Note: cannot negate cmp instruction, thus not possible to fuse.
+                    return Ok(None);
+                }
+            },
+        };
+        let offset = self.labels.try_resolve_label(label, instr)?;
+        cmp_instr.try_into_cmp_branch_instr(offset, &mut self.layout)
     }
 
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
