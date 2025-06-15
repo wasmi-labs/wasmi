@@ -109,8 +109,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    #[allow(unused_variables)] // TODO: remove
-    fn visit_if(&mut self, _block_ty: wasmparser::BlockType) -> Self::Output {
+    fn visit_if(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
         if !self.reachable {
             self.stack.push_unreachable(UnreachableControlFrame::If)?;
             return Ok(());
@@ -130,14 +129,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let consume_fuel_instr = self.stack.consume_fuel_instr();
                 (reachability, consume_fuel_instr)
             }
-            operand => {
-                let condition = self.layout.operand_to_reg(operand)?;
+            _ => {
                 let else_label = self.labels.new_label();
+                self.translate_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
-                todo!()
+                let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
+                (reachability, consume_fuel_instr)
             }
         };
-        todo!()
+        let block_ty = BlockType::new(block_ty, &self.module);
+        self.stack
+            .push_if(block_ty, end_label, reachability, consume_fuel_instr)?;
+        Ok(())
     }
 
     fn visit_else(&mut self) -> Self::Output {
