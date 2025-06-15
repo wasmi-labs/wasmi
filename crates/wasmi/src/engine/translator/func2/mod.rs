@@ -506,7 +506,11 @@ impl FuncTranslator {
             },
             Err(_) => {
                 let zero = self.layout.const_to_reg(0_i32)?;
-                self.make_branch_cmp_fallback(Comparator::I32Eq, condition, zero, offset)?
+                let comparator = match branch_eqz {
+                    true => Comparator::I32Eq,
+                    false => Comparator::I32Ne,
+                };
+                self.make_branch_cmp_fallback(comparator, condition, zero, offset)?
             }
         };
         self.push_instr(instr, FuelCostsProvider::base)
