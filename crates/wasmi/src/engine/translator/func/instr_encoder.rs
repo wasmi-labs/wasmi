@@ -66,15 +66,20 @@ impl Instr {
     ///
     /// If the `value` exceeds limitations for [`Instr`].
     pub fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("invalid index {value} for instruction reference: {error}")
-        });
-        Self(value)
+        let Ok(index) = u32::try_from(value) else {
+            panic!("out of bounds index {value} for `Instr`")
+        };
+        Self(index)
     }
 
     /// Returns an `usize` representation of the instruction index.
     pub fn into_usize(self) -> usize {
-        self.0 as usize
+        match usize::try_from(self.0) {
+            Ok(index) => index,
+            Err(error) => {
+                panic!("out of bound index {} for `Instr`: {error}", self.0)
+            }
+        }
     }
 
     /// Returns the absolute distance between `self` and `other`.
