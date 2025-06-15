@@ -4,7 +4,7 @@ use self::consts::{ConstRegistry, ConstRegistryIter};
 use super::{LocalIdx, Operand, OperandIdx, Reset};
 use crate::{
     core::{UntypedVal, ValType},
-    engine::TranslationError,
+    engine::{translator::comparator::AllocConst, TranslationError},
     ir::Reg,
     Error,
 };
@@ -124,6 +124,12 @@ impl StackLayout {
     /// The function local constant are yielded in reverse order of allocation.
     pub fn consts(&self) -> ConstRegistryIter {
         self.consts.iter()
+    }
+}
+
+impl AllocConst for StackLayout {
+    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error> {
+        self.const_to_reg(value)
     }
 }
 
