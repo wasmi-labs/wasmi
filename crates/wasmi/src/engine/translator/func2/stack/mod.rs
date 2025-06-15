@@ -20,7 +20,7 @@ pub use self::{
         UnreachableControlFrame,
     },
     locals::LocalIdx,
-    operand::Operand,
+    operand::{Operand, TempOperand},
     operands::{OperandIdx, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
