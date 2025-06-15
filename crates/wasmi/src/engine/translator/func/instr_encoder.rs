@@ -43,6 +43,18 @@ use core::mem;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
 
+impl From<u32> for Instr {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl From<Instr> for u32 {
+    fn from(instr: Instr) -> Self {
+        instr.0
+    }
+}
+
 impl Instr {
     /// Creates an [`Instr`] from the given `usize` value.
     ///
@@ -63,16 +75,6 @@ impl Instr {
     /// Returns an `usize` representation of the instruction index.
     pub fn into_usize(self) -> usize {
         self.0 as usize
-    }
-
-    /// Creates an [`Instr`] form the given `u32` value.
-    pub fn from_u32(value: u32) -> Self {
-        Self(value)
-    }
-
-    /// Returns an `u32` representation of the instruction index.
-    pub fn into_u32(self) -> u32 {
-        self.0
     }
 
     /// Returns the absolute distance between `self` and `other`.
@@ -150,10 +152,9 @@ impl InstrSequence {
     /// If there are too many instructions in the instruction sequence.
     fn push_before(&mut self, instr: Instr, instruction: Instruction) -> Result<Instr, Error> {
         self.instrs.insert(instr.into_usize(), instruction);
-        let shifted_instr = instr
-            .into_u32()
+        let shifted_instr = u32::from(instr)
             .checked_add(1)
-            .map(Instr::from_u32)
+            .map(Instr::from)
             .unwrap_or_else(|| panic!("pushed to many instructions to a single function"));
         Ok(shifted_instr)
     }
