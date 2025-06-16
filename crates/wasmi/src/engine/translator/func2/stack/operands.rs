@@ -1,7 +1,7 @@
 use super::{LocalIdx, LocalsRegistry, Operand, Reset};
 use crate::{
     core::{TypedVal, ValType},
-    engine::translator::Instr,
+    engine::translator::utils::Instr,
     Error,
 };
 use alloc::vec::Vec;
