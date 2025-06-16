@@ -27,7 +27,7 @@ use super::{Reset, ReusableAllocations};
 use crate::{
     core::{TypedVal, ValType},
     engine::{
-        translator::{Instr, LabelRef},
+        translator::{labels::LabelRef, utils::Instr},
         BlockType,
     },
     Engine,
