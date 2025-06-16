@@ -33,9 +33,8 @@ use crate::{
     engine::{
         translator::{
             comparator::{CompareResult as _, NegateCmpInstr as _, TryIntoCmpBranchInstr as _},
-            Instr,
-            LabelRef,
-            LabelRegistry,
+            labels::{LabelRef, LabelRegistry},
+            utils::Instr,
             WasmTranslator,
         },
         BlockType,
