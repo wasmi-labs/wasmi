@@ -1,7 +1,7 @@
 use super::{LocalIdx, LocalsRegistry, OperandIdx, StackOperand};
 use crate::{
     core::{TypedVal, ValType},
-    engine::translator::Instr,
+    engine::translator::utils::Instr,
 };
 
 #[cfg(doc)]
