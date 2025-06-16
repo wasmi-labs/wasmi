@@ -19,12 +19,7 @@ pub use self::func::{FuncTranslator, FuncTranslatorAllocations};
 #[cfg(feature = "experimental-translator")]
 pub use self::func2::{FuncTranslator, FuncTranslatorAllocations};
 
-pub use self::{
-    driver::FuncTranslationDriver,
-    error::TranslationError,
-    labels::{LabelRef, LabelRegistry},
-    utils::Instr,
-};
+pub use self::{driver::FuncTranslationDriver, error::TranslationError};
 use super::code_map::CompiledFuncEntity;
 use crate::{
     engine::EngineFunc,

@@ -1,7 +1,7 @@
 use super::{Operand, Reset};
 use crate::{
     engine::{
-        translator::{Instr, LabelRef},
+        translator::{labels::LabelRef, utils::Instr},
         BlockType,
     },
     Engine,
