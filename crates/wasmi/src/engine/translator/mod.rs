@@ -22,8 +22,8 @@ pub use self::func2::{FuncTranslator, FuncTranslatorAllocations};
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
-    utils::Instr,
     labels::{LabelRef, LabelRegistry},
+    utils::Instr,
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
