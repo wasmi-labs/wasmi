@@ -3,7 +3,9 @@
 mod comparator;
 mod driver;
 mod error;
+#[cfg(not(feature = "experimental-translator"))]
 mod func;
+#[cfg(feature = "experimental-translator")]
 mod func2;
 mod labels;
 mod relink_result;
