@@ -1,6 +1,6 @@
 use super::{ControlFrame, FuncTranslator, LocalIdx, UnreachableControlFrame};
 use crate::{
-    core::wasm,
+    core::{wasm, FuelCostsProvider, TrapCode},
     engine::{
         translator::func2::{stack::IfReachability, Operand},
         BlockType,
@@ -73,7 +73,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     wasmparser::for_each_visit_operator!(impl_visit_operator);
 
     fn visit_unreachable(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        self.push_instr(
+            Instruction::trap(TrapCode::UnreachableCodeReached),
+            FuelCostsProvider::base,
+        )?;
+        self.reachable = false;
+        Ok(())
     }
 
     fn visit_nop(&mut self) -> Self::Output {
