@@ -11,6 +11,25 @@ use alloc::vec::{Drain, Vec};
 #[cfg(doc)]
 use crate::ir::Instruction;
 
+/// The height of the operand stack upon entering a [`ControlFrame`].
+#[derive(Debug, Copy, Clone)]
+pub struct StackHeight(u16);
+
+impl From<StackHeight> for usize {
+    fn from(height: StackHeight) -> Self {
+        usize::from(height.0)
+    }
+}
+
+impl From<usize> for StackHeight {
+    fn from(height: usize) -> Self {
+        let Ok(height) = u16::try_from(height) else {
+            panic!("out of bounds stack height: {height}")
+        };
+        Self(height)
+    }
+}
+
 /// The Wasm control stack.
 #[derive(Debug, Default)]
 pub struct ControlStack {
@@ -85,7 +104,7 @@ impl ControlStack {
     ) {
         self.frames.push(ControlFrame::from(BlockControlFrame {
             ty,
-            height,
+            height: StackHeight::from(height),
             is_branched_to: false,
             consume_fuel,
             label,
@@ -102,7 +121,7 @@ impl ControlStack {
     ) {
         self.frames.push(ControlFrame::from(LoopControlFrame {
             ty,
-            height,
+            height: StackHeight::from(height),
             is_branched_to: false,
             consume_fuel,
             label,
@@ -121,7 +140,7 @@ impl ControlStack {
     ) {
         self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
-            height,
+            height: StackHeight::from(height),
             is_branched_to: false,
             consume_fuel,
             label,
@@ -148,7 +167,7 @@ impl ControlStack {
         let reachability = ElseReachability::from(if_frame.reachability);
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
-            height,
+            height: StackHeight::from(height),
             is_branched_to,
             consume_fuel,
             label,
@@ -320,7 +339,7 @@ pub struct BlockControlFrame {
     /// The block type of the [`BlockControlFrame`].
     ty: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
-    height: usize,
+    height: StackHeight,
     /// This is `true` if there is at least one branch to this [`BlockControlFrame`].
     is_branched_to: bool,
     /// The [`BlockControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
@@ -346,7 +365,7 @@ impl BlockControlFrame {
 
     /// Returns the height of the [`BlockControlFrame`].
     pub fn height(&self) -> usize {
-        self.height
+        self.height.into()
     }
 
     /// Returns `true` if there are branches to this [`BlockControlFrame`].
@@ -378,7 +397,7 @@ pub struct LoopControlFrame {
     /// The block type of the [`LoopControlFrame`].
     ty: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
-    height: usize,
+    height: StackHeight,
     /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
@@ -404,7 +423,7 @@ impl LoopControlFrame {
 
     /// Returns the height of the [`LoopControlFrame`].
     pub fn height(&self) -> usize {
-        self.height
+        self.height.into()
     }
 
     /// Returns `true` if there are branches to this [`LoopControlFrame`].
@@ -436,7 +455,7 @@ pub struct IfControlFrame {
     /// The block type of the [`IfControlFrame`].
     ty: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
-    height: usize,
+    height: StackHeight,
     /// This is `true` if there is at least one branch to this [`IfControlFrame`].
     is_branched_to: bool,
     /// The [`IfControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
@@ -464,7 +483,7 @@ impl IfControlFrame {
 
     /// Returns the height of the [`IfControlFrame`].
     pub fn height(&self) -> usize {
-        self.height
+        self.height.into()
     }
 
     /// Returns `true` if there are branches to this [`IfControlFrame`].
@@ -553,7 +572,7 @@ pub struct ElseControlFrame {
     /// The block type of the [`ElseControlFrame`].
     ty: BlockType,
     /// The value stack height upon entering the [`ElseControlFrame`].
-    height: usize,
+    height: StackHeight,
     /// This is `true` if there is at least one branch to this [`ElseControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
@@ -622,7 +641,7 @@ impl ElseControlFrame {
 
     /// Returns the height of the [`ElseControlFrame`].
     pub fn height(&self) -> usize {
-        self.height
+        self.height.into()
     }
 
     /// Returns `true` if there are branches to this [`ElseControlFrame`].
