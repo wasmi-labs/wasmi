@@ -144,7 +144,40 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_else(&mut self) -> Self::Output {
-        todo!()
+        let mut frame = match self.stack.pop_control() {
+            ControlFrame::If(frame) => frame,
+            ControlFrame::Unreachable(UnreachableControlFrame::If) => {
+                debug_assert!(!self.reachable);
+                self.stack.push_unreachable(UnreachableControlFrame::Else)?;
+                return Ok(());
+            }
+            unexpected => panic!("expected `if` control frame but found: {unexpected:?}"),
+        };
+        // After `then` block, before `else` block:
+        // - Copy `if` branch parameters.
+        // - Branch from end of `then` to end of `if`.
+        let is_end_of_then_reachable = self.reachable;
+        if let Some(else_label) = frame.else_label() {
+            debug_assert!(frame.is_then_reachable() && frame.is_else_reachable());
+            if is_end_of_then_reachable {
+                let len_values = usize::from(frame.ty().len_results(&self.engine));
+                let consume_fuel_instr = frame.consume_fuel_instr();
+                self.copy_branch_params(len_values, consume_fuel_instr)?;
+                frame.branch_to();
+                self.translate_br(else_label)?;
+            }
+        }
+        // Start of `else` block:
+        if let Some(else_label) = frame.else_label() {
+            self.labels
+                .pin_label(else_label, self.instrs.next_instr())
+                .unwrap();
+        }
+        let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
+        self.reachable = frame.is_else_reachable();
+        self.stack
+            .push_else(frame, is_end_of_then_reachable, consume_fuel_instr)?;
+        Ok(())
     }
 
     fn visit_end(&mut self) -> Self::Output {
