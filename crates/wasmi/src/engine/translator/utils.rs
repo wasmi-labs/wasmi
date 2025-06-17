@@ -5,6 +5,7 @@ use crate::{
     ExternRef,
     FuncRef,
 };
+use core::num::NonZeroU32;
 
 macro_rules! impl_typed_for {
     ( $( $ty:ident ),* $(,)? ) => {
@@ -217,17 +218,20 @@ impl IsInstructionParameter for Instruction {
 
 /// A reference to an encoded [`Instruction`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(u32);
+pub struct Instr(NonZeroU32);
 
 impl From<u32> for Instr {
     fn from(index: u32) -> Self {
+        let Some(index) = NonZeroU32::new(index.wrapping_add(1)) else {
+            panic!("out of bound `Instr` index: {index}");
+        };
         Self(index)
     }
 }
 
 impl From<Instr> for u32 {
     fn from(instr: Instr) -> Self {
-        instr.0
+        instr.0.get().wrapping_sub(1)
     }
 }
 
@@ -245,12 +249,12 @@ impl Instr {
         let Ok(index) = u32::try_from(value) else {
             panic!("out of bounds index {value} for `Instr`")
         };
-        Self(index)
+        Self::from(index)
     }
 
     /// Returns an `usize` representation of the instruction index.
     pub fn into_usize(self) -> usize {
-        match usize::try_from(self.0) {
+        match usize::try_from(u32::from(self)) {
             Ok(index) => index,
             Err(error) => {
                 panic!("out of bound index {} for `Instr`: {error}", self.0)
@@ -264,6 +268,6 @@ impl Instr {
     /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
     /// - etc..
     pub fn distance(self, other: Self) -> u32 {
-        self.0.abs_diff(other.0)
+        self.0.get().abs_diff(other.0.get())
     }
 }
