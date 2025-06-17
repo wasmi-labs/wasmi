@@ -469,6 +469,15 @@ impl FuncTranslator {
         todo!()
     }
 
+    /// Translates an unconditional Wasm `branch` instruction.
+    fn translate_br(&mut self, label: LabelRef) -> Result<(), Error> {
+        let instr = self.instrs.next_instr();
+        let offset = self.labels.try_resolve_label(label, instr)?;
+        self.push_instr(Instruction::branch(offset), FuelCostsProvider::base)?;
+        self.reachable = false;
+        Ok(())
+    }
+
     /// Translates a `i32.eqz`+`br_if` or `if` conditional branch instruction.
     fn translate_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
         self.translate_br_if(condition, label, true)
@@ -492,8 +501,16 @@ impl FuncTranslator {
         let condition = match condition {
             Operand::Local(condition) => self.layout.local_to_reg(condition.local_index())?,
             Operand::Temp(condition) => self.layout.temp_to_reg(condition.operand_index())?,
-            Operand::Immediate(_condition) => {
-                todo!() // TODO: translate as `br`
+            Operand::Immediate(condition) => {
+                let condition = i32::from(condition.val());
+                let take_branch = match branch_eqz {
+                    true => condition == 0,
+                    false => condition != 0,
+                };
+                match take_branch {
+                    true => return self.translate_br(label),
+                    false => return Ok(()),
+                }
             }
         };
         let instr = self.instrs.next_instr();
