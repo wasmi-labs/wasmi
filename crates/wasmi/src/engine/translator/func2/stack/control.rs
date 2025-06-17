@@ -137,17 +137,19 @@ impl ControlStack {
     /// Returns iterator yielding the memorized `else` operands.
     pub fn push_else(
         &mut self,
-        ty: BlockType,
-        height: usize,
-        label: LabelRef,
+        if_frame: IfControlFrame,
         consume_fuel: Option<Instr>,
-        reachability: ElseReachability,
         is_end_of_then_reachable: bool,
     ) -> Drain<Operand> {
+        let ty = if_frame.ty();
+        let height = if_frame.height();
+        let label = if_frame.label();
+        let is_branched_to = if_frame.is_branched_to();
+        let reachability = ElseReachability::from(if_frame.reachability);
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height,
-            is_branched_to: false,
+            is_branched_to,
             consume_fuel,
             label,
             reachability,
@@ -595,6 +597,16 @@ pub enum ElseReachability {
     ///
     /// This case happens only in case the `if` has a `false` constant condition.
     OnlyElse,
+}
+
+impl From<IfReachability> for ElseReachability {
+    fn from(reachability: IfReachability) -> Self {
+        match reachability {
+            IfReachability::Both { .. } => Self::Both,
+            IfReachability::OnlyThen => Self::OnlyThen,
+            IfReachability::OnlyElse => Self::OnlyElse,
+        }
+    }
 }
 
 impl ElseControlFrame {
