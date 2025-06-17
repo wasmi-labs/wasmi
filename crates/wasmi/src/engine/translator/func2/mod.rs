@@ -466,7 +466,7 @@ impl FuncTranslator {
 
     /// Translates the end of an unreachable Wasm control frame.
     fn translate_end_unreachable(&mut self, _frame: UnreachableControlFrame) -> Result<(), Error> {
-        todo!()
+        Ok(())
     }
 
     /// Translates an unconditional Wasm `branch` instruction.
