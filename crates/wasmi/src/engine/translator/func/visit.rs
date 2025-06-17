@@ -290,7 +290,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 frame.branch_to();
                 self.push_base_instr(Instruction::branch(end_offset))?;
             }
-            self.reachable = true;
             self.instr_encoder.pin_label(else_label);
             if let Some(fuel_instr) = self.make_fuel_instr()? {
                 frame.update_consume_fuel_instr(fuel_instr);
@@ -306,31 +305,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
             }
         }
-        match (frame.is_then_reachable(), frame.is_else_reachable()) {
-            (true, false) => {
-                // Case: only `then` branch is reachable.
-                //
-                // Not much needs to be done since an `if` control frame
-                // where only one branch is statically reachable is similar
-                // to a `block` control frame.
-                self.reachable = false;
-            }
-            (false, true) => {
-                // Case: only `else` branch is reachable.
-                //
-                // Not much needs to be done since an `if` control frame
-                // where only one branch is statically reachable is similar
-                // to a `block` control frame.
-                debug_assert!(!self.reachable);
-                self.reachable = true;
-            }
-            (false, false) => unreachable!(
-                "the if control frame is reachable so either then or else must be reachable"
-            ),
-            (true, true) => {
-                // Note: this case has already been handled above.
-            }
-        }
+        self.reachable = frame.is_else_reachable();
         // At last we need to push the popped and adjusted [`IfControlFrame`] back.
         self.control_stack.push_frame(frame);
         Ok(())
