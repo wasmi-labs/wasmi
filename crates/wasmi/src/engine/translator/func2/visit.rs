@@ -77,7 +77,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_nop(&mut self) -> Self::Output {
-        todo!()
+        Ok(())
     }
 
     fn visit_block(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
