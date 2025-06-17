@@ -262,23 +262,14 @@ impl Stack {
     /// If the stack height exceeds the maximum height.
     pub fn push_else(
         &mut self,
-        ty: BlockType,
-        label: LabelRef,
-        reachability: ElseReachability,
+        if_frame: IfControlFrame,
         is_end_of_then_reachable: bool,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        let len_params = usize::from(ty.len_params(&self.engine));
-        let block_height = self.height() - len_params;
-        let else_operands = self.controls.push_else(
-            ty,
-            block_height,
-            label,
-            consume_fuel,
-            reachability,
-            is_end_of_then_reachable,
-        );
+        let else_operands =
+            self.controls
+                .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
         for operand in else_operands {
             match operand {
                 Operand::Local(op) => {
