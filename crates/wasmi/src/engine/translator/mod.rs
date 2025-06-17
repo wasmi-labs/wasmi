@@ -3,7 +3,7 @@
 mod comparator;
 mod driver;
 mod error;
-#[cfg(not(feature = "experimental-translator"))]
+#[cfg_attr(feature = "experimental-translator", expect(dead_code))]
 mod func;
 #[cfg(feature = "experimental-translator")]
 mod func2;
