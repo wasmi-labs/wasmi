@@ -1,10 +1,11 @@
+use super::FuncTranslator;
 use crate::{
     core::{
         simd::{self, ImmLaneIdx32},
         FuelCostsProvider,
         V128,
     },
-    engine::translator::{provider::Provider, FuncTranslator},
+    engine::translator::func::provider::Provider,
     ir::{Const32, Instruction, Reg},
 };
 use core::array;
@@ -273,7 +274,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_v128_const(&mut self, value: wasmparser::V128) -> Self::Output {
         bail_unreachable!(self);
         let v128 = V128::from(value.i128() as u128);
-        self.alloc.stack.push_const(v128);
+        self.stack.push_const(v128);
         Ok(())
     }
 
@@ -285,17 +286,16 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             };
             lane
         });
-        let (lhs, rhs) = self.alloc.stack.pop2();
+        let (lhs, rhs) = self.stack.pop2();
         if let (Provider::Const(lhs), Provider::Const(rhs)) = (lhs, rhs) {
             let result = simd::i8x16_shuffle(lhs.into(), rhs.into(), selector);
-            self.alloc.stack.push_const(result);
+            self.stack.push_const(result);
             return Ok(());
         }
-        let result = self.alloc.stack.push_dynamic()?;
-        let lhs = self.alloc.stack.provider2reg(&lhs)?;
-        let rhs = self.alloc.stack.provider2reg(&rhs)?;
+        let result = self.stack.push_dynamic()?;
+        let lhs = self.stack.provider2reg(&lhs)?;
+        let rhs = self.stack.provider2reg(&rhs)?;
         let selector = self
-            .alloc
             .stack
             .alloc_const(V128::from(u128::from_ne_bytes(lanes)))?;
         self.push_fueled_instr(
@@ -423,7 +423,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
                     Some(Instruction::i64const32(value)),
                 )),
                 Err(_) => {
-                    let value = this.alloc.stack.alloc_const(value)?;
+                    let value = this.stack.alloc_const(value)?;
                     Ok((
                         Instruction::i64x2_replace_lane(result, input, lane),
                         Some(Instruction::register(value)),
@@ -458,7 +458,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
                     Some(Instruction::f64const32(value)),
                 )),
                 Err(_) => {
-                    let value = this.alloc.stack.alloc_const(value)?;
+                    let value = this.stack.alloc_const(value)?;
                     Ok((
                         Instruction::f64x2_replace_lane(result, input, lane),
                         Some(Instruction::register(value)),

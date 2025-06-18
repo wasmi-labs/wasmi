@@ -1,8 +1,114 @@
-use super::ValueStack;
 use crate::{
+    core::UntypedVal,
     ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Instruction, Reg},
     Error,
 };
+
+/// Types able to allocate function local constant values.
+///
+/// # Note
+///
+/// This allows to cheaply convert immediate values to [`Reg`]s.
+///
+/// # Errors
+///
+/// If the function local constant allocation from immediate value to [`Reg`] failed.
+pub trait AllocConst {
+    /// Allocates a new function local constant value and returns its [`Reg`].
+    ///
+    /// # Note
+    ///
+    /// Constant values allocated this way are deduplicated and return shared [`Reg`].
+    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error>;
+}
+
+/// Extension trait to return [`Reg`] result of compare [`Instruction`]s.
+pub trait CompareResult {
+    /// Returns the result [`Reg`] of the compare [`Instruction`].
+    ///
+    /// Returns `None` if the [`Instruction`] is not a compare instruction.
+    fn compare_result(&self) -> Option<Reg>;
+}
+
+impl CompareResult for Instruction {
+    fn compare_result(&self) -> Option<Reg> {
+        use crate::ir::Instruction as I;
+        let result = match *self {
+            | I::I32BitAnd { result, .. }
+            | I::I32BitAndImm16 { result, .. }
+            | I::I32BitOr { result, .. }
+            | I::I32BitOrImm16 { result, .. }
+            | I::I32BitXor { result, .. }
+            | I::I32BitXorImm16 { result, .. }
+            | I::I32And { result, .. }
+            | I::I32AndImm16 { result, .. }
+            | I::I32Or { result, .. }
+            | I::I32OrImm16 { result, .. }
+            | I::I32Xor { result, .. }
+            | I::I32XorImm16 { result, .. }
+            | I::I32Nand { result, .. }
+            | I::I32NandImm16 { result, .. }
+            | I::I32Nor { result, .. }
+            | I::I32NorImm16 { result, .. }
+            | I::I32Xnor { result, .. }
+            | I::I32XnorImm16 { result, .. }
+            | I::I32Eq { result, .. }
+            | I::I32EqImm16 { result, .. }
+            | I::I32Ne { result, .. }
+            | I::I32NeImm16 { result, .. }
+            | I::I32LtS { result, .. }
+            | I::I32LtSImm16Lhs { result, .. }
+            | I::I32LtSImm16Rhs { result, .. }
+            | I::I32LtU { result, .. }
+            | I::I32LtUImm16Lhs { result, .. }
+            | I::I32LtUImm16Rhs { result, .. }
+            | I::I32LeS { result, .. }
+            | I::I32LeSImm16Lhs { result, .. }
+            | I::I32LeSImm16Rhs { result, .. }
+            | I::I32LeU { result, .. }
+            | I::I32LeUImm16Lhs { result, .. }
+            | I::I32LeUImm16Rhs { result, .. }
+            | I::I64And { result, .. }
+            | I::I64AndImm16 { result, .. }
+            | I::I64Or { result, .. }
+            | I::I64OrImm16 { result, .. }
+            | I::I64Xor { result, .. }
+            | I::I64XorImm16 { result, .. }
+            | I::I64Nand { result, .. }
+            | I::I64NandImm16 { result, .. }
+            | I::I64Nor { result, .. }
+            | I::I64NorImm16 { result, .. }
+            | I::I64Xnor { result, .. }
+            | I::I64XnorImm16 { result, .. }
+            | I::I64Eq { result, .. }
+            | I::I64EqImm16 { result, .. }
+            | I::I64Ne { result, .. }
+            | I::I64NeImm16 { result, .. }
+            | I::I64LtS { result, .. }
+            | I::I64LtSImm16Lhs { result, .. }
+            | I::I64LtSImm16Rhs { result, .. }
+            | I::I64LtU { result, .. }
+            | I::I64LtUImm16Lhs { result, .. }
+            | I::I64LtUImm16Rhs { result, .. }
+            | I::I64LeS { result, .. }
+            | I::I64LeSImm16Lhs { result, .. }
+            | I::I64LeSImm16Rhs { result, .. }
+            | I::I64LeU { result, .. }
+            | I::I64LeUImm16Lhs { result, .. }
+            | I::I64LeUImm16Rhs { result, .. }
+            | I::F32Eq { result, .. }
+            | I::F32Ne { result, .. }
+            | I::F32Lt { result, .. }
+            | I::F32Le { result, .. }
+            | I::F64Eq { result, .. }
+            | I::F64Ne { result, .. }
+            | I::F64Lt { result, .. }
+            | I::F64Le { result, .. } => result,
+            _ => return None,
+        };
+        Some(result)
+    }
+}
 
 pub trait NegateCmpInstr: Sized {
     /// Negates the compare (`cmp`) [`Instruction`].
@@ -346,7 +452,7 @@ pub trait TryIntoCmpBranchInstr: Sized {
     fn try_into_cmp_branch_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Self>, Error>;
 }
 
@@ -354,7 +460,7 @@ impl TryIntoCmpBranchInstr for Instruction {
     fn try_into_cmp_branch_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Self>, Error> {
         use Instruction as I;
         let Ok(offset) = BranchOffset16::try_from(offset) else {
@@ -458,7 +564,7 @@ pub trait TryIntoCmpBranchFallbackInstr {
     fn try_into_cmp_branch_fallback_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Instruction>, Error>;
 }
 
@@ -466,7 +572,7 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
     fn try_into_cmp_branch_fallback_instr(
         &self,
         offset: BranchOffset,
-        stack: &mut ValueStack,
+        stack: &mut impl AllocConst,
     ) -> Result<Option<Instruction>, Error> {
         use Instruction as I;
         debug_assert!(BranchOffset16::try_from(offset).is_err());

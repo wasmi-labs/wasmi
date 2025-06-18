@@ -1,4 +1,4 @@
-use wasmi::Config;
+use wasmi::{CompilationMode, Config};
 use wasmi_wast::{ParsingMode, RunnerConfig, WastRunner};
 
 /// Runs the Wasm test spec identified by the given name.
@@ -88,7 +88,8 @@ fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
         .wasm_extended_const(true)
         .wasm_wide_arithmetic(true)
         .wasm_simd(true)
-        .consume_fuel(consume_fuel);
+        .consume_fuel(consume_fuel)
+        .compilation_mode(CompilationMode::Eager);
     RunnerConfig {
         config,
         parsing_mode,

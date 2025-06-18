@@ -32,9 +32,9 @@ pub struct Config {
 #[derive(Debug, Default, Copy, Clone)]
 pub enum CompilationMode {
     /// The Wasm code is compiled eagerly to Wasmi bytecode.
-    #[default]
     Eager,
     /// The Wasm code is validated eagerly and translated lazily on first use.
+    #[default]
     LazyTranslation,
     /// The Wasm code is validated and translated lazily on first use.
     ///
@@ -333,7 +333,7 @@ impl Config {
 
     /// Sets the [`CompilationMode`] used for the [`Engine`].
     ///
-    /// By default [`CompilationMode::Eager`] is used.
+    /// By default [`CompilationMode::LazyTranslation`] is used.
     ///
     /// [`Engine`]: crate::Engine
     pub fn compilation_mode(&mut self, mode: CompilationMode) -> &mut Self {

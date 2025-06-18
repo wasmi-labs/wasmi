@@ -1,21 +1,32 @@
-use super::{
-    comparator::TryIntoCmpSelectInstr,
-    relink_result::RelinkResult as _,
-    utils::{FromProviders as _, WasmInteger},
-    visit_register::VisitInputRegisters as _,
-    BumpFuelConsumption as _,
-    FuelInfo,
-    LabelRef,
-    LabelRegistry,
-    LogicalizeCmpInstr,
-    NegateCmpInstr,
-    TryIntoCmpBranchFallbackInstr,
-    TryIntoCmpBranchInstr,
-    TypedProvider,
-};
 use crate::{
     core::{FuelCostsProvider, UntypedVal, ValType},
-    engine::translator::{stack::RegisterSpace, ValueStack},
+    engine::translator::{
+        comparator::{
+            CompareResult,
+            LogicalizeCmpInstr,
+            NegateCmpInstr,
+            TryIntoCmpBranchFallbackInstr,
+            TryIntoCmpBranchInstr,
+            TryIntoCmpSelectInstr,
+        },
+        func::{
+            stack::RegisterSpace,
+            utils::FromProviders as _,
+            LabelRef,
+            LabelRegistry,
+            TypedProvider,
+            ValueStack,
+        },
+        relink_result::RelinkResult as _,
+        utils::{
+            BumpFuelConsumption as _,
+            FuelInfo,
+            Instr,
+            IsInstructionParameter as _,
+            WasmInteger,
+        },
+        visit_register::VisitInputRegisters as _,
+    },
     ir::{
         BoundedRegSpan,
         BranchOffset,
@@ -32,53 +43,6 @@ use crate::{
 };
 use alloc::vec::{Drain, Vec};
 use core::mem;
-
-/// A reference to an instruction of the partially
-/// constructed function body of the [`InstrEncoder`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(u32);
-
-impl Instr {
-    /// Creates an [`Instr`] from the given `usize` value.
-    ///
-    /// # Note
-    ///
-    /// This intentionally is an API intended for test purposes only.
-    ///
-    /// # Panics
-    ///
-    /// If the `value` exceeds limitations for [`Instr`].
-    pub fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("invalid index {value} for instruction reference: {error}")
-        });
-        Self(value)
-    }
-
-    /// Returns an `usize` representation of the instruction index.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
-    }
-
-    /// Creates an [`Instr`] form the given `u32` value.
-    pub fn from_u32(value: u32) -> Self {
-        Self(value)
-    }
-
-    /// Returns an `u32` representation of the instruction index.
-    pub fn into_u32(self) -> u32 {
-        self.0
-    }
-
-    /// Returns the absolute distance between `self` and `other`.
-    ///
-    /// - Returns `0` if `self == other`.
-    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
-    /// - etc..
-    pub fn distance(self, other: Self) -> u32 {
-        self.0.abs_diff(other.0)
-    }
-}
 
 /// Encodes Wasmi bytecode instructions to an [`Instruction`] stream.
 #[derive(Debug, Default)]
@@ -145,10 +109,9 @@ impl InstrSequence {
     /// If there are too many instructions in the instruction sequence.
     fn push_before(&mut self, instr: Instr, instruction: Instruction) -> Result<Instr, Error> {
         self.instrs.insert(instr.into_usize(), instruction);
-        let shifted_instr = instr
-            .into_u32()
+        let shifted_instr = u32::from(instr)
             .checked_add(1)
-            .map(Instr::from_u32)
+            .map(Instr::from)
             .unwrap_or_else(|| panic!("pushed to many instructions to a single function"));
         Ok(shifted_instr)
     }
@@ -307,10 +270,29 @@ impl InstrEncoder {
     }
 
     /// Push the [`Instruction`] to the [`InstrEncoder`].
-    pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+    fn push_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+        debug_assert!(!instr.is_instruction_parameter(), "parameter: {instr:?}");
         let last_instr = self.instrs.push(instr)?;
         self.last_instr = Some(last_instr);
         Ok(last_instr)
+    }
+
+    /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn push_fuel_instr(
+        &mut self,
+        fuel_costs: Option<&FuelCostsProvider>,
+    ) -> Result<Option<Instr>, Error> {
+        let Some(fuel_costs) = fuel_costs else {
+            // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
+            return Ok(None);
+        };
+        let base = u32::try_from(fuel_costs.base())
+            .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
+        let fuel_instr = Instruction::consume_fuel(base);
+        let instr = self.push_instr(fuel_instr)?;
+        Ok(Some(instr))
     }
 
     /// Utility function for pushing a new [`Instruction`] with fuel costs.
@@ -339,6 +321,12 @@ impl InstrEncoder {
     /// parameters for the [`Instruction`]. An example of this is [`Instruction::RegisterAndImm32`]
     /// carrying the `ptr` and `offset` parameters for [`Instruction::Load32`].
     pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
+        debug_assert!(
+            instr.is_instruction_parameter()
+            // Note: `br_table` may have `Instruction::Branch` as parameter.
+            || matches!(instr, Instruction::Branch { .. }),
+            "non-parameter: {instr:?}"
+        );
         self.instrs.push(instr)
     }
 
@@ -1046,7 +1034,6 @@ impl InstrEncoder {
     /// Try to fuse [`Instruction`] at `instr` into a branch+cmp instruction.
     ///
     /// Returns `Ok(Some)` if successful.
-    #[rustfmt::skip]
     fn try_fuse_branch_cmp_for_instr(
         &mut self,
         stack: &mut ValueStack,
@@ -1055,45 +1042,9 @@ impl InstrEncoder {
         label: LabelRef,
         negate: bool,
     ) -> Result<Option<Instruction>, Error> {
-        use Instruction as I;
         let last_instruction = *self.instrs.get(last_instr);
-        let result = match last_instruction {
-            | I::I32BitAnd { result, .. } | I::I32BitAndImm16 { result, .. }
-            | I::I32BitOr { result, .. } | I::I32BitOrImm16 { result, .. }
-            | I::I32BitXor { result, .. } | I::I32BitXorImm16 { result, .. }
-            | I::I32And { result, .. } | I::I32AndImm16 { result, .. }
-            | I::I32Or { result, .. } | I::I32OrImm16 { result, .. }
-            | I::I32Xor { result, .. } | I::I32XorImm16 { result, .. }
-            | I::I32Nand { result, .. } | I::I32NandImm16 { result, .. }
-            | I::I32Nor { result, .. } | I::I32NorImm16 { result, .. }
-            | I::I32Xnor { result, .. } | I::I32XnorImm16 { result, .. }
-            | I::I32Eq { result, .. } | I::I32EqImm16 { result, .. }
-            | I::I32Ne { result, .. } | I::I32NeImm16 { result, .. }
-            | I::I32LtS { result, .. } | I::I32LtSImm16Lhs { result, .. } | I::I32LtSImm16Rhs { result, .. }
-            | I::I32LtU { result, .. } | I::I32LtUImm16Lhs { result, .. } | I::I32LtUImm16Rhs { result, .. }
-            | I::I32LeS { result, .. } | I::I32LeSImm16Lhs { result, .. } | I::I32LeSImm16Rhs { result, .. }
-            | I::I32LeU { result, .. } | I::I32LeUImm16Lhs { result, .. } | I::I32LeUImm16Rhs { result, .. }
-            | I::I64And { result, .. } | I::I64AndImm16 { result, .. }
-            | I::I64Or { result, .. } | I::I64OrImm16 { result, .. }
-            | I::I64Xor { result, .. } | I::I64XorImm16 { result, .. }
-            | I::I64Nand { result, .. } | I::I64NandImm16 { result, .. }
-            | I::I64Nor { result, .. } | I::I64NorImm16 { result, .. }
-            | I::I64Xnor { result, .. } | I::I64XnorImm16 { result, .. }
-            | I::I64Eq { result, .. } | I::I64EqImm16 { result, .. }
-            | I::I64Ne { result, .. } | I::I64NeImm16 { result, .. }
-            | I::I64LtS { result, .. } | I::I64LtSImm16Lhs { result, .. } | I::I64LtSImm16Rhs { result, .. }
-            | I::I64LtU { result, .. } | I::I64LtUImm16Lhs { result, .. } | I::I64LtUImm16Rhs { result, .. }
-            | I::I64LeS { result, .. } | I::I64LeSImm16Lhs { result, .. } | I::I64LeSImm16Rhs { result, .. }
-            | I::I64LeU { result, .. } | I::I64LeUImm16Lhs { result, .. } | I::I64LeUImm16Rhs { result, .. }
-            | I::F32Eq { result, .. }
-            | I::F32Ne { result, .. }
-            | I::F32Lt { result, .. }
-            | I::F32Le { result, .. }
-            | I::F64Eq { result, .. }
-            | I::F64Ne { result, .. }
-            | I::F64Lt { result, .. }
-            | I::F64Le { result, .. } => result,
-            _ => return Ok(None),
+        let Some(result) = last_instruction.compare_result() else {
+            return Ok(None);
         };
         if matches!(stack.get_register_space(result), RegisterSpace::Local) {
             // We need to filter out instructions that store their result

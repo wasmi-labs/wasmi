@@ -336,6 +336,7 @@ impl WastRunner {
     /// Compiles the `wat` and eventually stores it for further processing.
     ///
     /// Returns the compiled Wasm module and its optional name.
+    #[expect(deprecated)]
     fn module_definition<'a>(
         &mut self,
         mut wat: QuoteWat<'a>,

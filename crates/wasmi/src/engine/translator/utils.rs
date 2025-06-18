@@ -1,25 +1,36 @@
-use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    core::IndexType,
-    ir::{BoundedRegSpan, Const16, Const32, Reg, RegSpan, Sign},
+    core::{FuelCostsProvider, Typed, TypedVal, ValType},
+    ir::{Const16, Instruction, Sign},
     Error,
+    ExternRef,
+    FuncRef,
 };
 
-/// Bail out early in case the current code is unreachable.
-///
-/// # Note
-///
-/// - This should be prepended to most Wasm operator translation procedures.
-/// - If we are in unreachable code most Wasm translation is skipped. Only
-///   certain control flow operators such as `End` are going through the
-///   translation process. In particular the `End` operator may end unreachable
-///   code blocks.
-macro_rules! bail_unreachable {
-    ($this:ident) => {{
-        if !$this.is_reachable() {
-            return Ok(());
-        }
-    }};
+macro_rules! impl_typed_for {
+    ( $( $ty:ident ),* $(,)? ) => {
+        $(
+            impl Typed for $ty {
+                const TY: ValType = crate::core::ValType::$ty;
+            }
+
+            impl From<TypedVal> for $ty {
+                fn from(typed_value: TypedVal) -> Self {
+                    // # Note
+                    //
+                    // We only use a `debug_assert` here instead of a proper `assert`
+                    // since the whole translation process assumes that Wasm validation
+                    // was already performed and thus type checking does not necessarily
+                    // need to happen redundantly outside of debug builds.
+                    debug_assert!(matches!(typed_value.ty(), <$ty as Typed>::TY));
+                    Self::from(typed_value.untyped())
+                }
+            }
+        )*
+    };
+}
+impl_typed_for! {
+    FuncRef,
+    ExternRef,
 }
 
 /// A WebAssembly integer. Either `i32` or `i64`.
@@ -91,136 +102,6 @@ impl WasmFloat for f64 {
     }
 }
 
-macro_rules! impl_provider_new_const16 {
-    ($ty:ty) => {
-        impl Provider<Const16<$ty>> {
-            /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
-            ///
-            /// # Note
-            ///
-            /// This is a convenience function and used by translation
-            /// procedures for certain Wasm `table` instructions.
-            pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, Error> {
-                match provider {
-                    TypedProvider::Const(value) => match Const16::try_from(<$ty>::from(value)).ok()
-                    {
-                        Some(value) => Ok(Self::Const(value)),
-                        None => {
-                            let register = stack.alloc_const(value)?;
-                            Ok(Self::Register(register))
-                        }
-                    },
-                    TypedProvider::Register(index) => Ok(Self::Register(index)),
-                }
-            }
-        }
-    };
-}
-impl_provider_new_const16!(u32);
-impl_provider_new_const16!(u64);
-
-impl super::FuncTranslator {
-    /// Converts the `provider` to a 16-bit index-type constant value.
-    ///
-    /// # Note
-    ///
-    /// - Turns immediates that cannot be 16-bit encoded into function local constants.
-    /// - The behavior is different whether `memory64` is enabled or disabled.
-    pub(super) fn as_index_type_const16(
-        &mut self,
-        provider: TypedProvider,
-        index_type: IndexType,
-    ) -> Result<Provider<Const16<u64>>, Error> {
-        let value = match provider {
-            Provider::Register(reg) => return Ok(Provider::Register(reg)),
-            Provider::Const(value) => value,
-        };
-        match index_type {
-            IndexType::I64 => {
-                if let Ok(value) = Const16::try_from(u64::from(value)) {
-                    return Ok(Provider::Const(value));
-                }
-            }
-            IndexType::I32 => {
-                if let Ok(value) = Const16::try_from(u32::from(value)) {
-                    return Ok(Provider::Const(<Const16<u64>>::cast(value)));
-                }
-            }
-        }
-        let register = self.alloc.stack.alloc_const(value)?;
-        Ok(Provider::Register(register))
-    }
-
-    /// Converts the `provider` to a 32-bit index-type constant value.
-    ///
-    /// # Note
-    ///
-    /// - Turns immediates that cannot be 32-bit encoded into function local constants.
-    /// - The behavior is different whether `memory64` is enabled or disabled.
-    pub(super) fn as_index_type_const32(
-        &mut self,
-        provider: TypedProvider,
-        index_type: IndexType,
-    ) -> Result<Provider<Const32<u64>>, Error> {
-        let value = match provider {
-            Provider::Register(reg) => return Ok(Provider::Register(reg)),
-            Provider::Const(value) => value,
-        };
-        match index_type {
-            IndexType::I64 => {
-                if let Ok(value) = Const32::try_from(u64::from(value)) {
-                    return Ok(Provider::Const(value));
-                }
-            }
-            IndexType::I32 => {
-                let value = Const32::from(u32::from(value));
-                return Ok(Provider::Const(<Const32<u64>>::cast(value)));
-            }
-        }
-        let register = self.alloc.stack.alloc_const(value)?;
-        Ok(Provider::Register(register))
-    }
-}
-
-impl TypedProvider {
-    /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
-    fn register_index(&self) -> Option<i16> {
-        match self {
-            TypedProvider::Register(index) => Some(i16::from(*index)),
-            TypedProvider::Const(_) => None,
-        }
-    }
-}
-
-/// Extension trait to create a [`BoundedRegSpan`] from a slice of [`TypedProvider`]s.
-pub trait FromProviders: Sized {
-    /// Creates a [`BoundedRegSpan`] from the given slice of [`TypedProvider`] if possible.
-    ///
-    /// All [`TypedProvider`] must be [`Reg`] and have
-    /// contiguous indices for the conversion to succeed.
-    ///
-    /// Returns `None` if the `providers` slice is empty.
-    fn from_providers(providers: &[TypedProvider]) -> Option<Self>;
-}
-
-impl FromProviders for BoundedRegSpan {
-    fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
-        let (first, rest) = providers.split_first()?;
-        let first_index = first.register_index()?;
-        let mut prev_index = first_index;
-        for next in rest {
-            let next_index = next.register_index()?;
-            if next_index.checked_sub(prev_index)? != 1 {
-                return None;
-            }
-            prev_index = next_index;
-        }
-        let end_index = prev_index.checked_add(1)?;
-        let len = (end_index - first_index) as u16;
-        Some(Self::new(RegSpan::new(Reg::from(first_index)), len))
-    }
-}
-
 /// Implemented by integer types to wrap them to another (smaller) integer type.
 pub trait Wrap<T> {
     /// Wraps `self` into a value of type `T`.
@@ -259,4 +140,130 @@ impl_wrap_for! {
     u64 => u8,
     u64 => u16,
     u64 => u32,
+}
+
+/// Fuel metering information for a certain translation state.
+#[derive(Debug, Clone)]
+pub enum FuelInfo {
+    /// Fuel metering is disabled.
+    None,
+    /// Fuel metering is enabled with the following information.
+    Some {
+        /// The [`FuelCostsProvider`] for the function translation.
+        costs: FuelCostsProvider,
+        /// Index to the current [`Instruction::ConsumeFuel`] of a parent Wasm control frame.
+        instr: Instr,
+    },
+}
+
+impl FuelInfo {
+    /// Create a new [`FuelInfo`] for enabled fuel metering.
+    pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
+        Self::Some { costs, instr }
+    }
+}
+
+/// Extension trait to bump the consumed fuel of [`Instruction::ConsumeFuel`].
+pub trait BumpFuelConsumption {
+    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Error
+    ///
+    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
+}
+
+impl BumpFuelConsumption for Instruction {
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
+        match self {
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
+            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
+        }
+    }
+}
+
+/// Extension trait to query if an [`Instruction`] is a parameter.
+pub trait IsInstructionParameter {
+    /// Returns `true` if `self` is a parameter to an [`Instruction`].
+    fn is_instruction_parameter(&self) -> bool;
+}
+
+impl IsInstructionParameter for Instruction {
+    #[rustfmt::skip]
+    fn is_instruction_parameter(&self) -> bool {
+        matches!(self,
+            | Self::TableIndex { .. }
+            | Self::MemoryIndex { .. }
+            | Self::DataIndex { .. }
+            | Self::ElemIndex { .. }
+            | Self::Const32 { .. }
+            | Self::I64Const32 { .. }
+            | Self::F64Const32 { .. }
+            | Self::BranchTableTarget { .. }
+            | Self::BranchTableTargetNonOverlapping { .. }
+            | Self::Imm16AndImm32 { .. }
+            | Self::RegisterAndImm32 { .. }
+            | Self::RegisterSpan { .. }
+            | Self::Register { .. }
+            | Self::Register2 { .. }
+            | Self::Register3 { .. }
+            | Self::RegisterList { .. }
+            | Self::CallIndirectParams { .. }
+            | Self::CallIndirectParamsImm16 { .. }
+        )
+    }
+}
+
+/// A reference to an encoded [`Instruction`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Instr(u32);
+
+impl From<u32> for Instr {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl From<Instr> for u32 {
+    fn from(instr: Instr) -> Self {
+        instr.0
+    }
+}
+
+impl Instr {
+    /// Creates an [`Instr`] from the given `usize` value.
+    ///
+    /// # Note
+    ///
+    /// This intentionally is an API intended for test purposes only.
+    ///
+    /// # Panics
+    ///
+    /// If the `value` exceeds limitations for [`Instr`].
+    pub fn from_usize(value: usize) -> Self {
+        let Ok(index) = u32::try_from(value) else {
+            panic!("out of bounds index {value} for `Instr`")
+        };
+        Self(index)
+    }
+
+    /// Returns an `usize` representation of the instruction index.
+    pub fn into_usize(self) -> usize {
+        match usize::try_from(self.0) {
+            Ok(index) => index,
+            Err(error) => {
+                panic!("out of bound index {} for `Instr`: {error}", self.0)
+            }
+        }
+    }
+
+    /// Returns the absolute distance between `self` and `other`.
+    ///
+    /// - Returns `0` if `self == other`.
+    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
+    /// - etc..
+    pub fn distance(self, other: Self) -> u32 {
+        self.0.abs_diff(other.0)
+    }
 }
