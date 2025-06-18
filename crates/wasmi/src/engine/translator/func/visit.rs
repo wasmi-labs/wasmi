@@ -13,12 +13,12 @@ use super::{
     FuncTranslator,
     TypedVal,
 };
-use alloc::vec::Vec;
 use crate::{
     core::{wasm, FuelCostsProvider, TrapCode, ValType, F32, F64},
     engine::{
         translator::func::{AcquiredTarget, Provider},
         BlockType,
+        TranslationError,
     },
     ir::{
         self,
@@ -34,6 +34,7 @@ use crate::{
     FuncRef,
     Mutability,
 };
+use alloc::vec::Vec;
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 use wasmparser::VisitOperator;
 

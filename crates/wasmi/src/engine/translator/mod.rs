@@ -26,6 +26,7 @@ use crate::{
     module::{FuncIdx, ModuleHeader},
     Error,
 };
+use alloc::vec::Vec;
 use core::{fmt, mem};
 use wasmparser::{
     BinaryReaderError,
