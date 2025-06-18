@@ -41,11 +41,11 @@ wasmi_fuzz = { version = "0.47.0", path = "crates/fuzz" }
 wasmi_wast = { version = "0.47.0", path = "crates/wast" }
 
 # wasm-tools dependencies
-wat = { version = "1.232.0", default-features = false }
-wast = { version = "232.0.0", default-features = false }
-wasmparser = { version = "0.232.0", default-features = false }
-wasm-smith = "0.232.0"
-wasmprinter = { version = "0.232.0", default-features = false }
+wat = { version = "1.233.0", default-features = false }
+wast = { version = "233.0.0", default-features = false }
+wasmparser = { version = "0.233.0", default-features = false }
+wasm-smith = "0.233.0"
+wasmprinter = { version = "0.233.0", default-features = false }
 
 # Wasmtime dependencies
 wasi-common = { version = "31.0.0", default-features = false }
