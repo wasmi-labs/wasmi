@@ -211,7 +211,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_return(&mut self) -> Self::Output {
         bail_unreachable!(self);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        self.translate_return(consume_fuel_instr)?;
+        self.encode_return(consume_fuel_instr)?;
         let len_results = self.func_type_with(FuncType::len_results);
         for _ in 0..len_results {
             self.stack.pop();

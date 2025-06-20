@@ -372,8 +372,8 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates a generic return instruction.
-    fn translate_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
+    /// Encodes a generic return instruction.
+    fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
             0 => Instruction::Return,
@@ -442,7 +442,7 @@ impl FuncTranslator {
         }
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
-            self.translate_return(consume_fuel_instr)?;
+            self.encode_return(consume_fuel_instr)?;
         }
         Ok(())
     }
