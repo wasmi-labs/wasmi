@@ -63,7 +63,7 @@ impl ElseOperands {
         self.ends.push(end);
     }
 
-    /// Pops the top-most Wasm `else` operands from `self` and returns it.
+    /// Pops the top-most Wasm `else` operands from `self` and returns them.
     pub fn pop(&mut self) -> Option<Drain<Operand>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);
