@@ -426,9 +426,9 @@ impl FuncTranslator {
 
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        let len_values = frame.len_branch_params(&self.engine);
         let consume_fuel_instr = frame.consume_fuel_instr();
         if self.reachable && frame.is_branched_to() {
+            let len_values = frame.len_branch_params(&self.engine);
             self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
         }
         if let Err(err) = self
