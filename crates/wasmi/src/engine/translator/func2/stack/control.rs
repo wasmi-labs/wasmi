@@ -37,6 +37,8 @@ pub struct ControlStack {
     frames: Vec<ControlFrame>,
     /// Special operand stack to memorize operands for `else` control frames.
     else_operands: ElseOperands,
+    /// This is `true` if an `if` with else providers was just popped from the stack.
+    expect_else: bool,
 }
 
 /// Duplicated operands for Wasm `else` control frames.
@@ -69,6 +71,13 @@ impl ElseOperands {
         let start = self.ends.last().copied().unwrap_or(0);
         Some(self.operands.drain(start..end))
     }
+
+    /// Drops the top-most Wasm `else` operands from `self`.
+    pub fn drop(&mut self) {
+        self.ends.pop().expect("tried to drop empty else operands");
+        let start = self.ends.last().copied().unwrap_or(0);
+        self.operands.truncate(start);
+    }
 }
 
 impl Reset for ControlStack {
@@ -91,6 +100,7 @@ impl ControlStack {
 
     /// Pushes a new unreachable Wasm control frame onto the [`ControlStack`].
     pub fn push_unreachable(&mut self, kind: ControlFrameKind) {
+        self.try_drop_else_providers();
         self.frames.push(ControlFrame::from(kind))
     }
 
@@ -102,6 +112,7 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
+        self.try_drop_else_providers();
         self.frames.push(ControlFrame::from(BlockControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -119,6 +130,7 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
+        self.try_drop_else_providers();
         self.frames.push(ControlFrame::from(LoopControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -138,6 +150,7 @@ impl ControlStack {
         reachability: IfReachability,
         else_operands: impl IntoIterator<Item = Operand>,
     ) {
+        self.try_drop_else_providers();
         self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -189,7 +202,25 @@ impl ControlStack {
 
     /// Pops the top-most [`ControlFrame`] and returns it if any.
     pub fn pop(&mut self) -> Option<ControlFrame> {
-        self.frames.pop()
+        self.try_drop_else_providers();
+        let frame = self.frames.pop()?;
+        self.expect_else = match &frame {
+            ControlFrame::If(frame) => {
+                matches!(frame.reachability, IfReachability::Both { .. })
+            }
+            _ => false,
+        };
+        Some(frame)
+    }
+
+    /// Drops the top-most else operands if `expect_else` is `true`.
+    ///
+    /// Otherwise do nothing.
+    pub fn try_drop_else_providers(&mut self) {
+        if self.expect_else {
+            self.else_operands.drop();
+        }
+        self.expect_else = false;
     }
 
     /// Returns a shared reference to the [`ControlFrame`] at `depth` if any.
@@ -514,6 +545,11 @@ impl IfControlFrame {
     /// Returns the branch label of the [`IfControlFrame`].
     pub fn label(&self) -> LabelRef {
         self.label
+    }
+
+    /// Returns the [`IfReachability`] of the [`IfControlFrame`].
+    pub fn reachability(&self) -> IfReachability {
+        self.reachability
     }
 
     /// Returns the label to the `else` branch of the [`IfControlFrame`].
