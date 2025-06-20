@@ -477,7 +477,7 @@ impl FuncTranslator {
             )?;
         }
         self.labels
-            .try_pin_label(else_label, self.instrs.next_instr());
+            .try_pin_label(frame.label(), self.instrs.next_instr());
         self.reachable = true;
         Ok(())
     }
