@@ -159,7 +159,7 @@ impl ControlStack {
         if_frame: IfControlFrame,
         consume_fuel: Option<Instr>,
         is_end_of_then_reachable: bool,
-    ) -> Drain<Operand> {
+    ) -> Option<Drain<Operand>> {
         let ty = if_frame.ty();
         let height = if_frame.height();
         let label = if_frame.label();
@@ -174,9 +174,17 @@ impl ControlStack {
             reachability,
             is_end_of_then_reachable,
         }));
-        self.else_operands
-            .pop()
-            .unwrap_or_else(|| panic!("missing operands for `else` control frame"))
+        self.expect_else = false;
+        match reachability {
+            ElseReachability::OnlyThen | ElseReachability::OnlyElse => None,
+            ElseReachability::Both => {
+                let else_operands = self
+                    .else_operands
+                    .pop()
+                    .unwrap_or_else(|| panic!("missing operands for `else` control frame"));
+                Some(else_operands)
+            }
+        }
     }
 
     /// Pops the top-most [`ControlFrame`] and returns it if any.
