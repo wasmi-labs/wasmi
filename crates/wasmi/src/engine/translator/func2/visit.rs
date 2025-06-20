@@ -2,7 +2,7 @@ use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
     core::{wasm, FuelCostsProvider, TrapCode},
     engine::{
-        translator::func2::{stack::IfReachability, Operand},
+        translator::func2::{stack::IfReachability, ControlFrameBase, Operand},
         BlockType,
     },
     ir::Instruction,

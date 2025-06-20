@@ -329,9 +329,54 @@ impl From<ControlFrameKind> for ControlFrame {
     }
 }
 
-impl ControlFrame {
-    /// Makes the [`ControlFrame`] aware that there is a branch to it.
-    pub fn branch_to(&mut self) {
+/// Trait implemented by control frame types that share a common API.
+pub trait ControlFrameBase {
+    /// Returns the branch label of `self`.
+    fn label(&self) -> LabelRef;
+
+    /// Returns `true` if there exists a branch to `self.`
+    fn is_branched_to(&self) -> bool;
+
+    /// Makes `self` aware that there is a branch to it.
+    fn branch_to(&mut self);
+
+    /// Returns the number of operands required for branching to `self`.
+    fn len_branch_params(&self, engine: &Engine) -> u16;
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of `self`.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    fn consume_fuel_instr(&self) -> Option<Instr>;
+}
+
+impl ControlFrameBase for ControlFrame {
+    fn label(&self) -> LabelRef {
+        match self {
+            ControlFrame::Block(frame) => frame.label(),
+            ControlFrame::Loop(frame) => frame.label(),
+            ControlFrame::If(frame) => frame.label(),
+            ControlFrame::Else(frame) => frame.label(),
+            ControlFrame::Unreachable(_) => {
+                panic!("invalid query for unreachable control frame: `ControlFrame::label`")
+            }
+        }
+    }
+
+    fn is_branched_to(&self) -> bool {
+        match self {
+            ControlFrame::Block(frame) => frame.is_branched_to(),
+            ControlFrame::Loop(frame) => frame.is_branched_to(),
+            ControlFrame::If(frame) => frame.is_branched_to(),
+            ControlFrame::Else(frame) => frame.is_branched_to(),
+            ControlFrame::Unreachable(_) => {
+                panic!(
+                    "invalid query for unreachable control frame: `ControlFrame::is_branched_to`"
+                )
+            }
+        }
+    }
+
+    fn branch_to(&mut self) {
         match self {
             ControlFrame::Block(frame) => frame.branch_to(),
             ControlFrame::Loop(frame) => frame.branch_to(),
@@ -343,8 +388,7 @@ impl ControlFrame {
         }
     }
 
-    /// Returns the number of operands required for branching to the [`ControlFrame`].
-    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
+    fn len_branch_params(&self, engine: &Engine) -> u16 {
         match self {
             ControlFrame::Block(frame) => frame.len_branch_params(engine),
             ControlFrame::Loop(frame) => frame.len_branch_params(engine),
@@ -356,10 +400,7 @@ impl ControlFrame {
         }
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<Instr> {
         match self {
             ControlFrame::Block(frame) => frame.consume_fuel_instr(),
             ControlFrame::Loop(frame) => frame.consume_fuel_instr(),
@@ -397,36 +438,31 @@ impl BlockControlFrame {
         self.ty
     }
 
-    /// Returns the number of operands required for branching to the [`BlockControlFrame`].
-    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
-        self.ty.len_results(engine)
-    }
-
     /// Returns the height of the [`BlockControlFrame`].
     pub fn height(&self) -> usize {
         self.height.into()
     }
+}
 
-    /// Returns `true` if there are branches to this [`BlockControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
+impl ControlFrameBase for BlockControlFrame {
+    fn label(&self) -> LabelRef {
+        self.label
+    }
+
+    fn is_branched_to(&self) -> bool {
         self.is_branched_to
     }
 
-    /// Makes the [`BlockControlFrame`] aware that there is a branch to it.
-    pub fn branch_to(&mut self) {
+    fn branch_to(&mut self) {
         self.is_branched_to = true;
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        self.consume_fuel
+    fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_results(engine)
     }
 
-    /// Returns the branch label of the [`BlockControlFrame`].
-    pub fn label(&self) -> LabelRef {
-        self.label
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 
@@ -455,36 +491,31 @@ impl LoopControlFrame {
         self.ty
     }
 
-    /// Returns the number of operands required for branching to the [`LoopControlFrame`].
-    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
-        self.ty.len_params(engine)
-    }
-
     /// Returns the height of the [`LoopControlFrame`].
     pub fn height(&self) -> usize {
         self.height.into()
     }
+}
 
-    /// Returns `true` if there are branches to this [`LoopControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
+impl ControlFrameBase for LoopControlFrame {
+    fn label(&self) -> LabelRef {
+        self.label
+    }
+
+    fn is_branched_to(&self) -> bool {
         self.is_branched_to
     }
 
-    /// Makes the [`LoopControlFrame`] aware that there is a branch to it.
-    pub fn branch_to(&mut self) {
+    fn branch_to(&mut self) {
         self.is_branched_to = true;
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`LoopControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        self.consume_fuel
+    fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_params(engine)
     }
 
-    /// Returns the branch label of the [`LoopControlFrame`].
-    pub fn label(&self) -> LabelRef {
-        self.label
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 
@@ -515,36 +546,9 @@ impl IfControlFrame {
         self.ty
     }
 
-    /// Returns the number of operands required for branching to the [`IfControlFrame`].
-    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
-        self.ty.len_results(engine)
-    }
-
     /// Returns the height of the [`IfControlFrame`].
     pub fn height(&self) -> usize {
         self.height.into()
-    }
-
-    /// Returns `true` if there are branches to this [`IfControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
-        self.is_branched_to
-    }
-
-    /// Makes the [`IfControlFrame`] aware that there is a branch to it.
-    pub fn branch_to(&mut self) {
-        self.is_branched_to = true;
-    }
-
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`IfControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        self.consume_fuel
-    }
-
-    /// Returns the branch label of the [`IfControlFrame`].
-    pub fn label(&self) -> LabelRef {
-        self.label
     }
 
     /// Returns the [`IfReachability`] of the [`IfControlFrame`].
@@ -582,6 +586,28 @@ impl IfControlFrame {
             IfReachability::Both { .. } | IfReachability::OnlyElse => true,
             IfReachability::OnlyThen => false,
         }
+    }
+}
+
+impl ControlFrameBase for IfControlFrame {
+    fn label(&self) -> LabelRef {
+        self.label
+    }
+
+    fn is_branched_to(&self) -> bool {
+        self.is_branched_to
+    }
+
+    fn branch_to(&mut self) {
+        self.is_branched_to = true;
+    }
+
+    fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_results(engine)
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 
@@ -678,36 +704,14 @@ impl ElseControlFrame {
         self.ty
     }
 
-    /// Returns the number of operands required for branching to the [`ElseControlFrame`].
-    pub fn len_branch_params(&self, engine: &Engine) -> u16 {
-        self.ty.len_results(engine)
-    }
-
     /// Returns the height of the [`ElseControlFrame`].
     pub fn height(&self) -> usize {
         self.height.into()
     }
 
-    /// Returns `true` if there are branches to this [`ElseControlFrame`].
-    pub fn is_branched_to(&self) -> bool {
-        self.is_branched_to
-    }
-
-    /// Makes the [`ElseControlFrame`] aware that there is a branch to it.
-    pub fn branch_to(&mut self) {
-        self.is_branched_to = true;
-    }
-
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ElseControlFrame`] if any.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        self.consume_fuel
-    }
-
-    /// Returns the branch label of the [`ElseControlFrame`].
-    pub fn label(&self) -> LabelRef {
-        self.label
+    /// Returns the [`ElseReachability`] of the [`ElseReachability`].
+    pub fn reachability(&self) -> ElseReachability {
+        self.reachability
     }
 
     /// Returns `true` if the `then` branch is reachable.
@@ -737,6 +741,28 @@ impl ElseControlFrame {
     /// Returns `true` if the end of the `then` branch is reachable.
     pub fn is_end_of_then_reachable(&self) -> bool {
         self.is_end_of_then_reachable
+    }
+}
+
+impl ControlFrameBase for ElseControlFrame {
+    fn label(&self) -> LabelRef {
+        self.label
+    }
+
+    fn is_branched_to(&self) -> bool {
+        self.is_branched_to
+    }
+
+    fn branch_to(&mut self) {
+        self.is_branched_to = true;
+    }
+
+    fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.ty.len_results(engine)
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 

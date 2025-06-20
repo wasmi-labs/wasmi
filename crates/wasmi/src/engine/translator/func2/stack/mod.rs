@@ -12,6 +12,7 @@ pub use self::{
     control::{
         BlockControlFrame,
         ControlFrame,
+        ControlFrameBase,
         ControlFrameKind,
         ElseControlFrame,
         ElseReachability,
