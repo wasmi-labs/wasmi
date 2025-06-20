@@ -477,8 +477,9 @@ impl FuncTranslator {
                 FuelCostsProvider::base,
             )?;
         }
-        self.labels
-            .try_pin_label(frame.label(), self.instrs.next_instr());
+        let next_instr = self.instrs.next_instr();
+        self.labels.try_pin_label(else_label, next_instr);
+        self.labels.pin_label(frame.label(), next_instr).unwrap();
         self.reachable = true;
         Ok(())
     }
