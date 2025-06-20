@@ -446,26 +446,26 @@ impl FuncTranslator {
 
     /// Translates the end of a Wasm `loop` control frame.
     fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), Error> {
-        debug_assert!(
-            !self.stack.is_control_empty(),
-            "control stack must not be empty since its first element is always a `block`"
-        );
+        debug_assert!(!self.stack.is_control_empty());
         // Nothing needs to be done since Wasm `loop` control frames always only have a single exit.
         Ok(())
     }
 
     /// Translates the end of a Wasm `if` control frame.
     fn translate_end_if(&mut self, _frame: IfControlFrame) -> Result<(), Error> {
+        debug_assert!(!self.stack.is_control_empty());
         todo!()
     }
 
     /// Translates the end of a Wasm `else` control frame.
     fn translate_end_else(&mut self, _frame: ElseControlFrame) -> Result<(), Error> {
+        debug_assert!(!self.stack.is_control_empty());
         todo!()
     }
 
     /// Translates the end of an unreachable Wasm control frame.
     fn translate_end_unreachable(&mut self, _frame: UnreachableControlFrame) -> Result<(), Error> {
+        debug_assert!(!self.stack.is_control_empty());
         Ok(())
     }
 
