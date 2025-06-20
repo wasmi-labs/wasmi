@@ -270,16 +270,18 @@ impl Stack {
         let else_operands =
             self.controls
                 .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
-        for operand in else_operands {
-            match operand {
-                Operand::Local(op) => {
-                    self.operands.push_local(op.local_index())?;
-                }
-                Operand::Temp(op) => {
-                    self.operands.push_temp(op.ty(), op.instr())?;
-                }
-                Operand::Immediate(op) => {
-                    self.operands.push_immediate(op.val())?;
+        if let Some(else_operands) = else_operands {
+            for operand in else_operands {
+                match operand {
+                    Operand::Local(op) => {
+                        self.operands.push_local(op.local_index())?;
+                    }
+                    Operand::Temp(op) => {
+                        self.operands.push_temp(op.ty(), op.instr())?;
+                    }
+                    Operand::Immediate(op) => {
+                        self.operands.push_immediate(op.val())?;
+                    }
                 }
             }
         }
