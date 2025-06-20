@@ -15,6 +15,7 @@ use self::{
     stack::{
         BlockControlFrame,
         ControlFrame,
+        ControlFrameBase,
         ControlFrameKind,
         ElseControlFrame,
         IfControlFrame,
