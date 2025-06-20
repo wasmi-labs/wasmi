@@ -18,6 +18,7 @@ use self::{
         ControlFrameKind,
         ElseControlFrame,
         IfControlFrame,
+        IfReachability,
         LocalIdx,
         LoopControlFrame,
         Operand,
@@ -452,9 +453,50 @@ impl FuncTranslator {
     }
 
     /// Translates the end of a Wasm `if` control frame.
-    fn translate_end_if(&mut self, _frame: IfControlFrame) -> Result<(), Error> {
+    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
-        todo!()
+        let IfReachability::Both { else_label } = frame.reachability() else {
+            return self.translate_end_if_then_or_else_only(frame);
+        };
+        let end_of_then_reachable = self.reachable;
+        let len_results = frame.ty().len_results(self.engine());
+        let has_results = len_results >= 1;
+        if end_of_then_reachable && has_results {
+            let consume_fuel_instr = frame.consume_fuel_instr();
+            self.copy_branch_params(usize::from(len_results), consume_fuel_instr)?;
+            let end_offset = self
+                .labels
+                .try_resolve_label(frame.label(), self.instrs.next_instr())
+                .unwrap();
+            self.instrs.push_instr(
+                Instruction::branch(end_offset),
+                consume_fuel_instr,
+                FuelCostsProvider::base,
+            )?;
+        }
+        self.labels
+            .try_pin_label(else_label, self.instrs.next_instr());
+        self.reachable = true;
+        Ok(())
+    }
+
+    /// Translates the end of a Wasm `if` control frame where only one branch is known to be reachable.
+    fn translate_end_if_then_or_else_only(&mut self, frame: IfControlFrame) -> Result<(), Error> {
+        let end_is_reachable = match frame.reachability() {
+            IfReachability::OnlyThen => self.reachable,
+            IfReachability::OnlyElse => true,
+            IfReachability::Both { .. } => unreachable!(),
+        };
+        if end_is_reachable && frame.is_branched_to() {
+            let len_values = frame.len_branch_params(&self.engine);
+            let consume_fuel_instr = frame.consume_fuel_instr();
+            self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
+        }
+        self.labels
+            .pin_label(frame.label(), self.instrs.next_instr())
+            .unwrap();
+        self.reachable = end_is_reachable || frame.is_branched_to();
+        Ok(())
     }
 
     /// Translates the end of a Wasm `else` control frame.
