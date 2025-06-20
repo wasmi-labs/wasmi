@@ -18,6 +18,7 @@ use self::{
         ControlFrameBase,
         ControlFrameKind,
         ElseControlFrame,
+        ElseReachability,
         IfControlFrame,
         IfReachability,
         LocalIdx,
@@ -482,6 +483,34 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates the end of a Wasm `else` control frame.
+    fn translate_end_else(&mut self, frame: ElseControlFrame) -> Result<(), Error> {
+        debug_assert!(!self.stack.is_control_empty());
+        let reachability = frame.reachability();
+        if matches!(
+            reachability,
+            ElseReachability::OnlyThen | ElseReachability::OnlyElse
+        ) {
+            return self.translate_end_if_or_else_only(frame, reachability);
+        }
+        let end_of_then_reachable = frame.is_end_of_then_reachable();
+        let end_of_else_reachable = self.reachable;
+        let reachable = match (end_of_then_reachable, end_of_else_reachable) {
+            (false, false) => frame.is_branched_to(),
+            _ => true,
+        };
+        if end_of_else_reachable {
+            let len_values = frame.len_branch_params(&self.engine);
+            let consume_fuel_instr: Option<Instr> = frame.consume_fuel_instr();
+            self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
+        }
+        self.labels
+            .pin_label(frame.label(), self.instrs.next_instr())
+            .unwrap();
+        self.reachable = reachable;
+        Ok(())
+    }
+
     /// Translates the end of a Wasm `else` control frame where only one branch is known to be reachable.
     fn translate_end_if_or_else_only(
         &mut self,
@@ -503,12 +532,6 @@ impl FuncTranslator {
             .unwrap();
         self.reachable = end_is_reachable || frame.is_branched_to();
         Ok(())
-    }
-
-    /// Translates the end of a Wasm `else` control frame.
-    fn translate_end_else(&mut self, _frame: ElseControlFrame) -> Result<(), Error> {
-        debug_assert!(!self.stack.is_control_empty());
-        todo!()
     }
 
     /// Translates the end of an unreachable Wasm control frame.
