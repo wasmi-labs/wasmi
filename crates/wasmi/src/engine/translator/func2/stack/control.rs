@@ -90,7 +90,7 @@ impl ControlStack {
     }
 
     /// Pushes a new unreachable Wasm control frame onto the [`ControlStack`].
-    pub fn push_unreachable(&mut self, kind: UnreachableControlFrame) {
+    pub fn push_unreachable(&mut self, kind: ControlFrameKind) {
         self.frames.push(ControlFrame::from(kind))
     }
 
@@ -257,7 +257,7 @@ pub enum ControlFrame {
     /// A Wasm `else` control frame.
     Else(ElseControlFrame),
     /// A generic unreachable control frame.
-    Unreachable(UnreachableControlFrame),
+    Unreachable(ControlFrameKind),
 }
 
 impl From<BlockControlFrame> for ControlFrame {
@@ -284,8 +284,8 @@ impl From<ElseControlFrame> for ControlFrame {
     }
 }
 
-impl From<UnreachableControlFrame> for ControlFrame {
-    fn from(frame: UnreachableControlFrame) -> Self {
+impl From<ControlFrameKind> for ControlFrame {
+    fn from(frame: ControlFrameKind) -> Self {
         Self::Unreachable(frame)
     }
 }
@@ -696,15 +696,15 @@ impl ElseControlFrame {
     }
 }
 
-/// A generic unreachable Wasm control frame.
+/// The kind of a Wasm control frame.
 #[derive(Debug, Copy, Clone)]
-pub enum UnreachableControlFrame {
-    /// An unreachable Wasm `block` control frame.
+pub enum ControlFrameKind {
+    /// An Wasm `block` control frame.
     Block,
-    /// An unreachable Wasm `loop` control frame.
+    /// An Wasm `loop` control frame.
     Loop,
-    /// An unreachable Wasm `if` control frame.
+    /// An Wasm `if` control frame.
     If,
-    /// An unreachable Wasm `else` control frame.
+    /// An Wasm `else` control frame.
     Else,
 }
