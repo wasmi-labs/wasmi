@@ -12,12 +12,12 @@ pub use self::{
     control::{
         BlockControlFrame,
         ControlFrame,
+        ControlFrameKind,
         ElseControlFrame,
         ElseReachability,
         IfControlFrame,
         IfReachability,
         LoopControlFrame,
-        UnreachableControlFrame,
     },
     locals::LocalIdx,
     operand::{Operand, TempOperand},
@@ -291,7 +291,7 @@ impl Stack {
     /// # Errors
     ///
     /// If the stack height exceeds the maximum height.
-    pub fn push_unreachable(&mut self, kind: UnreachableControlFrame) -> Result<(), Error> {
+    pub fn push_unreachable(&mut self, kind: ControlFrameKind) -> Result<(), Error> {
         self.controls.push_unreachable(kind);
         Ok(())
     }

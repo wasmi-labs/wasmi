@@ -1,4 +1,4 @@
-use super::{ControlFrame, FuncTranslator, LocalIdx, UnreachableControlFrame};
+use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
     core::{wasm, FuelCostsProvider, TrapCode},
     engine::{
@@ -88,8 +88,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_block(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
         if !self.reachable {
-            self.stack
-                .push_unreachable(UnreachableControlFrame::Block)?;
+            self.stack.push_unreachable(ControlFrameKind::Block)?;
             return Ok(());
         }
         let block_ty = BlockType::new(block_ty, &self.module);
@@ -100,7 +99,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_loop(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
         if !self.reachable {
-            self.stack.push_unreachable(UnreachableControlFrame::Loop)?;
+            self.stack.push_unreachable(ControlFrameKind::Loop)?;
             return Ok(());
         }
         let block_ty = BlockType::new(block_ty, &self.module);
@@ -117,7 +116,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_if(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
         if !self.reachable {
-            self.stack.push_unreachable(UnreachableControlFrame::If)?;
+            self.stack.push_unreachable(ControlFrameKind::If)?;
             return Ok(());
         }
         let end_label = self.labels.new_label();
@@ -152,9 +151,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_else(&mut self) -> Self::Output {
         let mut frame = match self.stack.pop_control() {
             ControlFrame::If(frame) => frame,
-            ControlFrame::Unreachable(UnreachableControlFrame::If) => {
+            ControlFrame::Unreachable(ControlFrameKind::If) => {
                 debug_assert!(!self.reachable);
-                self.stack.push_unreachable(UnreachableControlFrame::Else)?;
+                self.stack.push_unreachable(ControlFrameKind::Else)?;
                 return Ok(());
             }
             unexpected => panic!("expected `if` control frame but found: {unexpected:?}"),

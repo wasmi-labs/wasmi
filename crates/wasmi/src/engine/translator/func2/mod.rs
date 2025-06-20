@@ -15,6 +15,7 @@ use self::{
     stack::{
         BlockControlFrame,
         ControlFrame,
+        ControlFrameKind,
         ElseControlFrame,
         IfControlFrame,
         LocalIdx,
@@ -24,7 +25,6 @@ use self::{
         Stack,
         StackAllocations,
         TempOperand,
-        UnreachableControlFrame,
     },
     utils::{Reset, ReusableAllocations},
 };
@@ -464,7 +464,7 @@ impl FuncTranslator {
     }
 
     /// Translates the end of an unreachable Wasm control frame.
-    fn translate_end_unreachable(&mut self, _frame: UnreachableControlFrame) -> Result<(), Error> {
+    fn translate_end_unreachable(&mut self, _frame: ControlFrameKind) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
         Ok(())
     }
