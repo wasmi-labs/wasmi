@@ -457,7 +457,8 @@ impl FuncTranslator {
     fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
         let IfReachability::Both { else_label } = frame.reachability() else {
-            return self.translate_end_if_then_or_else_only(frame);
+            let reachability = frame.reachability().into();
+            return self.translate_end_if_or_else_only(frame, reachability);
         };
         let end_of_then_reachable = self.reachable;
         let len_results = frame.ty().len_results(self.engine());
@@ -481,12 +482,16 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates the end of a Wasm `if` control frame where only one branch is known to be reachable.
-    fn translate_end_if_then_or_else_only(&mut self, frame: IfControlFrame) -> Result<(), Error> {
-        let end_is_reachable = match frame.reachability() {
-            IfReachability::OnlyThen => self.reachable,
-            IfReachability::OnlyElse => true,
-            IfReachability::Both { .. } => unreachable!(),
+    /// Translates the end of a Wasm `else` control frame where only one branch is known to be reachable.
+    fn translate_end_if_or_else_only(
+        &mut self,
+        frame: impl ControlFrameBase,
+        reachability: ElseReachability,
+    ) -> Result<(), Error> {
+        let end_is_reachable = match reachability {
+            ElseReachability::OnlyThen => self.reachable,
+            ElseReachability::OnlyElse => true,
+            ElseReachability::Both => unreachable!(),
         };
         if end_is_reachable && frame.is_branched_to() {
             let len_values = frame.len_branch_params(&self.engine);
