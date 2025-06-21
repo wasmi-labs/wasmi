@@ -2408,20 +2408,21 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
         const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
+        signed: bool,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
         let (lhs, rhs) = match (lhs, rhs) {
             (Provider::Register(lhs), Provider::Register(rhs)) => (lhs, rhs),
             (Provider::Register(lhs), Provider::Const(rhs)) => {
-                if self.try_opt_i64_mul_wide_sx(lhs, rhs)? {
+                if self.try_opt_i64_mul_wide_sx(lhs, rhs, signed)? {
                     return Ok(());
                 }
                 let rhs = self.stack.alloc_const(rhs)?;
                 (lhs, rhs)
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
-                if self.try_opt_i64_mul_wide_sx(rhs, lhs)? {
+                if self.try_opt_i64_mul_wide_sx(rhs, lhs, signed)? {
                     return Ok(());
                 }
                 let lhs = self.stack.alloc_const(lhs)?;
@@ -2446,7 +2447,12 @@ impl FuncTranslator {
     ///
     /// - Returns `Ok(true)` if the optimiation was applied successfully.
     /// - Returns `Ok(false)` if no optimization was applied.
-    fn try_opt_i64_mul_wide_sx(&mut self, reg_in: Reg, imm_in: TypedVal) -> Result<bool, Error> {
+    fn try_opt_i64_mul_wide_sx(
+        &mut self,
+        reg_in: Reg,
+        imm_in: TypedVal,
+        signed: bool,
+    ) -> Result<bool, Error> {
         let imm_in = i64::from(imm_in);
         if imm_in == 0 {
             // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.
@@ -2454,8 +2460,9 @@ impl FuncTranslator {
             self.stack.push_const(0_i64); // hi-bits
             return Ok(true);
         }
-        if imm_in == 1 {
-            // Case: `mul(x, 1)` or `mul(0, x)` always evaluates to just `x`.
+        if imm_in == 1 && !signed {
+            // Case: `mul(x, 1)` or `mul(1, x)` always evaluates to just `x`.
+            // This is only valid if `x` is not a singed (negative) value.
             self.stack.push_register(reg_in)?; // lo-bits
             self.stack.push_const(0_i64); // hi-bits
             return Ok(true);
