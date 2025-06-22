@@ -197,6 +197,7 @@ macro_rules! expand_tests {
             fn wasm_utf8_import_module("utf8-import-module");
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
+            fn wasm_wide_arithmetic_local("../../local/wide-arithmetic");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
