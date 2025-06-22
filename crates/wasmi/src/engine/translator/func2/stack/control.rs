@@ -234,13 +234,44 @@ impl ControlStack {
     }
 
     /// Returns an exclusive reference to the [`ControlFrame`] at `depth` if any.
-    pub fn get_mut(&mut self, depth: usize) -> &mut ControlFrame {
+    pub fn get_mut(&mut self, depth: usize) -> ControlFrameMut {
         let height = self.height();
-        self.frames.iter_mut().rev().nth(depth).unwrap_or_else(|| {
-            panic!(
+        self.frames
+            .iter_mut()
+            .rev()
+            .nth(depth)
+            .map(ControlFrameMut)
+            .unwrap_or_else(|| {
+                panic!(
                 "out of bounds control frame at depth (={depth}) for stack of height (={height})"
             )
-        })
+            })
+    }
+}
+
+/// An exclusive reference to a [`ControlFrame`].
+#[derive(Debug)]
+pub struct ControlFrameMut<'a>(&'a mut ControlFrame);
+
+impl<'a> ControlFrameBase for ControlFrameMut<'a> {
+    fn label(&self) -> LabelRef {
+        self.0.label()
+    }
+
+    fn is_branched_to(&self) -> bool {
+        self.0.is_branched_to()
+    }
+
+    fn branch_to(&mut self) {
+        self.0.branch_to()
+    }
+
+    fn len_branch_params(&self, engine: &Engine) -> u16 {
+        self.0.len_branch_params(engine)
+    }
+
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.0.consume_fuel_instr()
     }
 }
 
@@ -248,14 +279,14 @@ impl ControlStack {
 #[derive(Debug)]
 pub enum AcquiredTarget<'stack> {
     /// The branch targets the function enclosing `block` and therefore is a `return`.
-    Return(&'stack mut ControlFrame),
+    Return(ControlFrameMut<'stack>),
     /// The branch targets a regular [`ControlFrame`].
-    Branch(&'stack mut ControlFrame),
+    Branch(ControlFrameMut<'stack>),
 }
 
 impl<'stack> AcquiredTarget<'stack> {
     /// Returns an exclusive reference to the [`ControlFrame`] of the [`AcquiredTarget`].
-    pub fn control_frame(&'stack mut self) -> &'stack mut ControlFrame {
+    pub fn control_frame(self) -> ControlFrameMut<'stack> {
         match self {
             Self::Return(frame) => frame,
             Self::Branch(frame) => frame,
