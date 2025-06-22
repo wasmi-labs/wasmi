@@ -10,6 +10,7 @@ use self::{
 };
 pub use self::{
     control::{
+        AcquiredTarget,
         BlockControlFrame,
         ControlFrame,
         ControlFrameBase,
@@ -317,6 +318,15 @@ impl Stack {
     /// If `depth` is out of bounds for `self`.
     pub fn peek_control(&self, depth: usize) -> &ControlFrame {
         self.controls.get(depth)
+    }
+
+    /// Acquires the branch target at `depth`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    pub fn acquire_target(&mut self, depth: usize) -> AcquiredTarget {
+        self.controls.acquire_target(depth)
     }
 
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
