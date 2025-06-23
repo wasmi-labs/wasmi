@@ -254,6 +254,14 @@ impl ControlStack {
 pub struct ControlFrameMut<'a>(&'a mut ControlFrame);
 
 impl<'a> ControlFrameBase for ControlFrameMut<'a> {
+    fn ty(&self) -> BlockType {
+        self.0.ty()
+    }
+
+    fn height(&self) -> usize {
+        self.0.height()
+    }
+
     fn label(&self) -> LabelRef {
         self.0.label()
     }
@@ -362,6 +370,12 @@ impl From<ControlFrameKind> for ControlFrame {
 
 /// Trait implemented by control frame types that share a common API.
 pub trait ControlFrameBase {
+    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
+    fn ty(&self) -> BlockType;
+
+    /// Returns the height of the [`BlockControlFrame`].
+    fn height(&self) -> usize;
+
     /// Returns the branch label of `self`.
     fn label(&self) -> LabelRef;
 
@@ -381,6 +395,30 @@ pub trait ControlFrameBase {
 }
 
 impl ControlFrameBase for ControlFrame {
+    fn ty(&self) -> BlockType {
+        match self {
+            ControlFrame::Block(frame) => frame.ty(),
+            ControlFrame::Loop(frame) => frame.ty(),
+            ControlFrame::If(frame) => frame.ty(),
+            ControlFrame::Else(frame) => frame.ty(),
+            ControlFrame::Unreachable(_) => {
+                panic!("invalid query for unreachable control frame: `ControlFrameBase::ty`")
+            }
+        }
+    }
+
+    fn height(&self) -> usize {
+        match self {
+            ControlFrame::Block(frame) => frame.height(),
+            ControlFrame::Loop(frame) => frame.height(),
+            ControlFrame::If(frame) => frame.height(),
+            ControlFrame::Else(frame) => frame.height(),
+            ControlFrame::Unreachable(_) => {
+                panic!("invalid query for unreachable control frame: `ControlFrameBase::height`")
+            }
+        }
+    }
+
     fn label(&self) -> LabelRef {
         match self {
             ControlFrame::Block(frame) => frame.label(),
@@ -463,19 +501,15 @@ pub struct BlockControlFrame {
     label: LabelRef,
 }
 
-impl BlockControlFrame {
-    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
-    pub fn ty(&self) -> BlockType {
+impl ControlFrameBase for BlockControlFrame {
+    fn ty(&self) -> BlockType {
         self.ty
     }
 
-    /// Returns the height of the [`BlockControlFrame`].
-    pub fn height(&self) -> usize {
+    fn height(&self) -> usize {
         self.height.into()
     }
-}
 
-impl ControlFrameBase for BlockControlFrame {
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -516,19 +550,15 @@ pub struct LoopControlFrame {
     label: LabelRef,
 }
 
-impl LoopControlFrame {
-    /// Returns the [`BlockType`] of the [`LoopControlFrame`].
-    pub fn ty(&self) -> BlockType {
+impl ControlFrameBase for LoopControlFrame {
+    fn ty(&self) -> BlockType {
         self.ty
     }
 
-    /// Returns the height of the [`LoopControlFrame`].
-    pub fn height(&self) -> usize {
+    fn height(&self) -> usize {
         self.height.into()
     }
-}
 
-impl ControlFrameBase for LoopControlFrame {
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -572,16 +602,6 @@ pub struct IfControlFrame {
 }
 
 impl IfControlFrame {
-    /// Returns the [`BlockType`] of the [`IfControlFrame`].
-    pub fn ty(&self) -> BlockType {
-        self.ty
-    }
-
-    /// Returns the height of the [`IfControlFrame`].
-    pub fn height(&self) -> usize {
-        self.height.into()
-    }
-
     /// Returns the [`IfReachability`] of the [`IfControlFrame`].
     pub fn reachability(&self) -> IfReachability {
         self.reachability
@@ -621,6 +641,14 @@ impl IfControlFrame {
 }
 
 impl ControlFrameBase for IfControlFrame {
+    fn ty(&self) -> BlockType {
+        self.ty
+    }
+
+    fn height(&self) -> usize {
+        self.height.into()
+    }
+
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -730,16 +758,6 @@ impl From<IfReachability> for ElseReachability {
 }
 
 impl ElseControlFrame {
-    /// Returns the [`BlockType`] of the [`ElseControlFrame`].
-    pub fn ty(&self) -> BlockType {
-        self.ty
-    }
-
-    /// Returns the height of the [`ElseControlFrame`].
-    pub fn height(&self) -> usize {
-        self.height.into()
-    }
-
     /// Returns the [`ElseReachability`] of the [`ElseReachability`].
     pub fn reachability(&self) -> ElseReachability {
         self.reachability
@@ -776,6 +794,14 @@ impl ElseControlFrame {
 }
 
 impl ControlFrameBase for ElseControlFrame {
+    fn ty(&self) -> BlockType {
+        self.ty
+    }
+
+    fn height(&self) -> usize {
+        self.height.into()
+    }
+
     fn label(&self) -> LabelRef {
         self.label
     }
