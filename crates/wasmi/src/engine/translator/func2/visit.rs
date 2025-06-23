@@ -2,7 +2,11 @@ use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
     core::{wasm, FuelCostsProvider, TrapCode},
     engine::{
-        translator::func2::{stack::IfReachability, ControlFrameBase, Operand},
+        translator::func2::{
+            stack::{AcquiredTarget, IfReachability},
+            ControlFrameBase,
+            Operand,
+        },
         BlockType,
     },
     ir::Instruction,
@@ -196,8 +200,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
     }
 
-    fn visit_br(&mut self, _relative_depth: u32) -> Self::Output {
-        todo!()
+    fn visit_br(&mut self, depth: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let Ok(depth) = usize::try_from(depth) else {
+            panic!("out of bounds depth: {depth}")
+        };
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        match self.stack.peek_control_mut(depth) {
+            AcquiredTarget::Return(_) => self.visit_return(),
+            AcquiredTarget::Branch(mut frame) => {
+                frame.branch_to();
+                let label = frame.label();
+                self.copy_branch_params(depth, consume_fuel_instr)?;
+                self.encode_br(label)?;
+                self.reachable = false;
+                Ok(())
+            }
+        }
     }
 
     fn visit_br_if(&mut self, _relative_depth: u32) -> Self::Output {
