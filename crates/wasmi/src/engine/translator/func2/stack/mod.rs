@@ -320,12 +320,18 @@ impl Stack {
         self.controls.get(depth)
     }
 
-    /// Acquires the branch target at `depth`.
+    /// Returns an exclusive reference to the [`ControlFrame`] at `depth`.
+    /// 
+    /// # Note
+    /// 
+    /// This returns an [`AcquiredTarget`] to differentiate between the function
+    /// body Wasm `block` and other control frames in order to know whether a branching
+    /// target returns or branches.
     ///
     /// # Panics
     ///
     /// If `depth` is out of bounds for `self`.
-    pub fn acquire_target(&mut self, depth: usize) -> AcquiredTarget {
+    pub fn peek_control_mut(&mut self, depth: usize) -> AcquiredTarget {
         self.controls.acquire_target(depth)
     }
 
