@@ -541,8 +541,8 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates an unconditional Wasm `branch` instruction.
-    fn translate_br(&mut self, label: LabelRef) -> Result<(), Error> {
+    /// Encodes an unconditional Wasm `branch` instruction.
+    fn encode_br(&mut self, label: LabelRef) -> Result<(), Error> {
         let instr = self.instrs.next_instr();
         let offset = self.labels.try_resolve_label(label, instr)?;
         self.push_instr(Instruction::branch(offset), FuelCostsProvider::base)?;
@@ -550,18 +550,18 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates a `i32.eqz`+`br_if` or `if` conditional branch instruction.
-    fn translate_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
-        self.translate_br_if(condition, label, true)
+    /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
+    fn encode_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
+        self.encode_br_if(condition, label, true)
     }
 
-    /// Translates a `br_if` conditional branch instruction.
-    fn translate_br_nez(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
-        self.translate_br_if(condition, label, false)
+    /// Encodes a `br_if` conditional branch instruction.
+    fn encode_br_nez(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
+        self.encode_br_if(condition, label, false)
     }
 
-    /// Translates a generic `br_if` fused conditional branch instruction.
-    fn translate_br_if(
+    /// Encodes a generic `br_if` fused conditional branch instruction.
+    fn encode_br_if(
         &mut self,
         condition: Operand,
         label: LabelRef,
@@ -580,7 +580,7 @@ impl FuncTranslator {
                     false => condition != 0,
                 };
                 match take_branch {
-                    true => return self.translate_br(label),
+                    true => return self.encode_br(label),
                     false => return Ok(()),
                 }
             }
