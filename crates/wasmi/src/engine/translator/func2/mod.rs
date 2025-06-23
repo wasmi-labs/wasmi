@@ -299,6 +299,22 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
+    ///
+    /// # Note
+    ///
+    /// Some instructions can be encoded in a more efficient way if no branch parameter copies are required.
+    fn requires_branch_param_copies(&self, depth: usize) -> bool {
+        let frame = self.stack.peek_control(depth);
+        let len_branch_params = usize::from(frame.len_branch_params(&self.engine));
+        let frame_height = frame.height();
+        frame_height == (self.stack.height() - usize::from(len_branch_params))
+            && (0..len_branch_params)
+                .into_iter()
+                .map(|depth| self.stack.peek(depth))
+                .all(|o| o.is_temp())
+    }
+
     /// Pins the `label` to the next [`Instr`].
     fn pin_label(&mut self, label: LabelRef) {
         self.labels
