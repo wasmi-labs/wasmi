@@ -321,9 +321,9 @@ impl Stack {
     }
 
     /// Returns an exclusive reference to the [`ControlFrame`] at `depth`.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This returns an [`AcquiredTarget`] to differentiate between the function
     /// body Wasm `block` and other control frames in order to know whether a branching
     /// target returns or branches.
