@@ -137,7 +137,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             _ => {
                 let else_label = self.labels.new_label();
-                self.translate_br_eqz(condition, else_label)?;
+                self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
                 let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
                 (reachability, consume_fuel_instr)
@@ -170,7 +170,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let consume_fuel_instr = frame.consume_fuel_instr();
                 self.copy_branch_params(len_values, consume_fuel_instr)?;
                 frame.branch_to();
-                self.translate_br(else_label)?;
+                self.encode_br(else_label)?;
             }
         }
         // Start of `else` block:
