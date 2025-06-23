@@ -219,8 +219,42 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
     }
 
-    fn visit_br_if(&mut self, _relative_depth: u32) -> Self::Output {
-        todo!()
+    fn visit_br_if(&mut self, depth: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let condition = self.stack.pop();
+        if let Operand::Immediate(condition) = condition {
+            if i32::from(condition.val()) != 0 {
+                // Case (true): always takes the branch
+                self.visit_br(depth)?;
+            }
+            return Ok(());
+        }
+        let Ok(depth) = usize::try_from(depth) else {
+            panic!("out of bounds depth: {depth}")
+        };
+        let mut frame = self.stack.peek_control_mut(depth).control_frame();
+        frame.branch_to();
+        let len_branch_params = frame.len_branch_params(&self.engine);
+        let label = frame.label();
+        if len_branch_params == 0 {
+            // Case: no branch values are required to be copied
+            self.encode_br_nez(condition, label)?;
+            return Ok(());
+        }
+        if !self.requires_branch_param_copies(depth) {
+            // Case: no branch values are required to be copied
+            self.encode_br_nez(condition, label)?;
+            return Ok(());
+        }
+        // Case: fallback to copy branch parameters conditionally
+        let skip_label = self.labels.new_label();
+        self.encode_br_eqz(condition, label)?;
+        self.copy_operands_to_temp(depth)?;
+        self.encode_br(label)?;
+        self.labels
+            .pin_label(skip_label, self.instrs.next_instr())
+            .unwrap();
+        Ok(())
     }
 
     fn visit_br_table(&mut self, _targets: wasmparser::BrTable<'a>) -> Self::Output {
