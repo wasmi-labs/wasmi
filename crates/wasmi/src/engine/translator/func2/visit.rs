@@ -282,7 +282,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_drop(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        _ = self.stack.pop();
+        Ok(())
     }
 
     fn visit_select(&mut self) -> Self::Output {
