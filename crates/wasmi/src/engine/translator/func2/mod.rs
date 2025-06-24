@@ -308,9 +308,8 @@ impl FuncTranslator {
         let frame = self.stack.peek_control(depth);
         let len_branch_params = usize::from(frame.len_branch_params(&self.engine));
         let frame_height = frame.height();
-        frame_height == (self.stack.height() - usize::from(len_branch_params))
+        frame_height == (self.stack.height() - len_branch_params)
             && (0..len_branch_params)
-                .into_iter()
                 .map(|depth| self.stack.peek(depth))
                 .all(|o| o.is_temp())
     }
