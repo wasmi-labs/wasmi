@@ -588,15 +588,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_clz(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i32, i32>(Instruction::i32_clz, wasm::i32_clz)
     }
 
     fn visit_i32_ctz(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i32, i32>(Instruction::i32_ctz, wasm::i32_ctz)
     }
 
     fn visit_i32_popcnt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i32, i32>(Instruction::i32_popcnt, wasm::i32_popcnt)
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
@@ -680,15 +680,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_clz(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i64, i64>(Instruction::i64_clz, wasm::i64_clz)
     }
 
     fn visit_i64_ctz(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i64, i64>(Instruction::i64_ctz, wasm::i64_ctz)
     }
 
     fn visit_i64_popcnt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i64, i64>(Instruction::i64_popcnt, wasm::i64_popcnt)
     }
 
     fn visit_i64_add(&mut self) -> Self::Output {
