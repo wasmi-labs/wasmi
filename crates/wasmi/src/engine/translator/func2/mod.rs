@@ -697,6 +697,40 @@ impl FuncTranslator {
         cmp_instr.try_into_cmp_branch_instr(offset, &mut self.layout)
     }
 
+    /// Translates a unary Wasm instruction to Wasmi bytecode.
+    fn translate_unary<T, R>(
+        &mut self,
+        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        consteval: fn(input: T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal> + Typed,
+    {
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        if let Operand::Immediate(input) = input {
+            self.stack
+                .push_immediate(consteval(input.val().into()).into())?;
+            return Ok(());
+        }
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let input = self.layout.operand_to_reg(input)?;
+        let iidx = self.instrs.next_instr();
+        let result = self
+            .layout
+            .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
+        assert_eq!(
+            self.instrs.push_instr(
+                make_instr(result, input),
+                consume_fuel_instr,
+                FuelCostsProvider::base
+            )?,
+            iidx
+        );
+        Ok(())
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
