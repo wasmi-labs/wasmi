@@ -32,7 +32,7 @@ use self::{
     utils::{Reset, ReusableAllocations},
 };
 use crate::{
-    core::{FuelCostsProvider, Typed, TypedVal, ValType},
+    core::{FuelCostsProvider, Typed, TypedVal, ValType, TrapCode},
     engine::{
         translator::{
             comparator::{CompareResult as _, NegateCmpInstr as _, TryIntoCmpBranchInstr as _},
