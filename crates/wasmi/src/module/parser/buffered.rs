@@ -120,15 +120,7 @@ impl ModuleParser {
         header: ModuleHeader,
         mut custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
-        let mut payload;
-        'exit: loop {
-            payload = self.next_payload(buffer)?;
-            let Payload::CodeSectionEntry(func_body) = payload else {
-                break 'exit;
-            };
-            let bytes = func_body.as_bytes();
-            self.process_code_entry(func_body, bytes, &header)?;
-        }
+        let mut payload = self.parse_buffered_code_entries(buffer, &header)?;
         loop {
             match payload {
                 Payload::CustomSection(reader) => {
@@ -143,6 +135,25 @@ impl ModuleParser {
                 unexpected => self.process_invalid_payload(unexpected)?,
             };
             payload = self.next_payload(buffer)?;
+        }
+    }
+
+    /// Parse the Wasm section code entries.
+    ///
+    /// Returns the next payload after the last code section entry.
+    fn parse_buffered_code_entries<'a>(
+        &mut self,
+        buffer: &mut &'a [u8],
+        header: &ModuleHeader,
+    ) -> Result<Payload<'a>, Error> {
+        loop {
+            match self.next_payload(buffer)? {
+                Payload::CodeSectionEntry(func_body) => {
+                    let bytes = func_body.as_bytes();
+                    self.process_code_entry(func_body, bytes, header)?;
+                }
+                other => return Ok(other),
+            }
         }
     }
 
