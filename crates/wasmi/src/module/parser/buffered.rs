@@ -39,7 +39,9 @@ impl ModuleParser {
     pub unsafe fn parse_buffered_unchecked(self, buffer: &[u8]) -> Result<Module, Error> {
         unsafe { self.parse_buffered_impl(buffer) }
     }
+}
 
+impl ModuleParser {
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
@@ -118,12 +120,17 @@ impl ModuleParser {
         header: ModuleHeader,
         mut custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
+        let mut payload;
+        'exit: loop {
+            payload = self.next_payload(buffer)?;
+            let Payload::CodeSectionEntry(func_body) = payload else {
+                break 'exit;
+            };
+            let bytes = func_body.as_bytes();
+            self.process_code_entry(func_body, bytes, &header)?;
+        }
         loop {
-            match self.next_payload(buffer)? {
-                Payload::CodeSectionEntry(func_body) => {
-                    let bytes = func_body.as_bytes();
-                    self.process_code_entry(func_body, bytes, &header)?;
-                }
+            match payload {
                 Payload::CustomSection(reader) => {
                     self.process_custom_section(&mut custom_sections, reader)?;
                 }
@@ -134,7 +141,8 @@ impl ModuleParser {
                     return self.finish(offset, ModuleBuilder::new(header, custom_sections))
                 }
                 unexpected => self.process_invalid_payload(unexpected)?,
-            }
+            };
+            payload = self.next_payload(buffer)?;
         }
     }
 
