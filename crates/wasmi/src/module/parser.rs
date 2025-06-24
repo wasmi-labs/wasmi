@@ -16,6 +16,7 @@ use crate::{
     Error,
     FuncType,
     MemoryType,
+    Module,
     TableType,
 };
 use alloc::boxed::Box;
@@ -38,9 +39,6 @@ use wasmparser::{
     Validator,
 };
 
-#[cfg(doc)]
-use crate::Module;
-
 mod buffered;
 mod streaming;
 
@@ -54,8 +52,6 @@ pub struct ModuleParser {
     parser: WasmParser,
     /// The number of compiled or processed functions.
     engine_funcs: u32,
-    /// Flag, `true` when `stream` is at the end.
-    eof: bool,
 }
 
 impl ModuleParser {
@@ -68,8 +64,14 @@ impl ModuleParser {
             validator: None,
             parser,
             engine_funcs: 0,
-            eof: false,
         }
+    }
+
+    /// Finish Wasm module parsing and returns the resulting [`Module`].
+    fn finish(&mut self, offset: usize, builder: ModuleBuilder) -> Result<Module, Error> {
+        self.process_end(offset)?;
+        let module = builder.finish(&self.engine);
+        Ok(module)
     }
 
     /// Processes the end of the Wasm binary.
@@ -455,7 +457,7 @@ impl ModuleParser {
             }
         }
         if let Some(validator) = &mut self.validator {
-            validator.code_section_start(count, &range)?;
+            validator.code_section_start(&range)?;
         }
         Ok(())
     }
@@ -516,6 +518,7 @@ impl ModuleParser {
     }
 
     /// Process an unexpected, unsupported or malformed Wasm module section payload.
+    #[cold]
     fn process_invalid_payload(&mut self, payload: Payload<'_>) -> Result<(), Error> {
         if let Some(validator) = &mut self.validator {
             if let Err(error) = validator.payload(&payload) {

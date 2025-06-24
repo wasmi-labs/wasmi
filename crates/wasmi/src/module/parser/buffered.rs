@@ -6,7 +6,7 @@ use super::{
     ModuleParser,
 };
 use crate::{Error, Module};
-use wasmparser::{Chunk, Payload, Validator};
+use wasmparser::{Chunk, DataSectionReader, Payload, Validator};
 
 impl ModuleParser {
     /// Starts parsing and validating the Wasm bytecode stream.
@@ -39,7 +39,9 @@ impl ModuleParser {
     pub unsafe fn parse_buffered_unchecked(self, buffer: &[u8]) -> Result<Module, Error> {
         unsafe { self.parse_buffered_impl(buffer) }
     }
+}
 
+impl ModuleParser {
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
@@ -57,54 +59,11 @@ impl ModuleParser {
     ///
     /// If the Wasm bytecode stream fails to validate.
     unsafe fn parse_buffered_impl(mut self, mut buffer: &[u8]) -> Result<Module, Error> {
+        let buffer = &mut buffer;
         let mut custom_sections = CustomSectionsBuilder::default();
-        let header = Self::parse_buffered_header(&mut self, &mut buffer, &mut custom_sections)?;
-        let builder = Self::parse_buffered_code(&mut self, &mut buffer, header, custom_sections)?;
-        let module = Self::parse_buffered_data(&mut self, &mut buffer, builder)?;
-        Ok(module)
-    }
-
-    /// Fetch next Wasm module payload and adust the `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If the parsed Wasm is malformed.
-    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<(usize, Payload<'a>), Error> {
-        match self.parser.parse(&buffer[..], true)? {
-            Chunk::Parsed { consumed, payload } => Ok((consumed, payload)),
-            Chunk::NeedMoreData(_hint) => {
-                // This is not possible since `eof` is always true.
-                unreachable!()
-            }
-        }
-    }
-
-    /// Consumes the parts of the buffer that have been processed.
-    fn consume_buffer<'a>(consumed: usize, buffer: &mut &'a [u8]) -> &'a [u8] {
-        let (consumed, remaining) = buffer.split_at(consumed);
-        *buffer = remaining;
-        consumed
-    }
-
-    /// Parse the Wasm module header.
-    ///
-    /// - The Wasm module header is the set of all sections that appear before
-    ///   the Wasm code section.
-    /// - We separate parsing of the Wasm module header since the information of
-    ///   the Wasm module header is required for translating the Wasm code section.
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm bytecode stream fails to parse or validate.
-    fn parse_buffered_header(
-        &mut self,
-        buffer: &mut &[u8],
-        custom_sections: &mut CustomSectionsBuilder,
-    ) -> Result<ModuleHeader, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
-            let (consumed, payload) = self.next_payload(buffer)?;
-            match payload {
+            match self.next_payload(buffer)? {
                 Payload::Version {
                     num,
                     encoding,
@@ -124,19 +83,26 @@ impl ModuleParser {
                 Payload::DataCountSection { count, range } => self.process_data_count(count, range),
                 Payload::CodeSectionStart { count, range, size } => {
                     self.process_code_start(count, range, size)?;
-                    Self::consume_buffer(consumed, buffer);
-                    break;
+                    return self.parse_buffered_code(buffer, header.finish(), custom_sections);
                 }
-                Payload::DataSection(_) => break,
-                Payload::End(_) => break,
+                Payload::DataSection(data_section) => {
+                    return self.parse_buffered_data(
+                        buffer,
+                        data_section,
+                        header.finish(),
+                        custom_sections,
+                    );
+                }
+                Payload::End(offset) => {
+                    return self
+                        .finish(offset, ModuleBuilder::new(header.finish(), custom_sections))
+                }
                 Payload::CustomSection(reader) => {
-                    self.process_custom_section(custom_sections, reader)
+                    self.process_custom_section(&mut custom_sections, reader)
                 }
                 unexpected => self.process_invalid_payload(unexpected),
             }?;
-            Self::consume_buffer(consumed, buffer);
         }
-        Ok(header.finish())
     }
 
     /// Parse the Wasm code section entries.
@@ -152,27 +118,46 @@ impl ModuleParser {
         &mut self,
         buffer: &mut &[u8],
         header: ModuleHeader,
-        custom_sections: CustomSectionsBuilder,
-    ) -> Result<ModuleBuilder, Error> {
+        mut custom_sections: CustomSectionsBuilder,
+    ) -> Result<Module, Error> {
+        let mut payload = self.parse_buffered_code_entries(buffer, &header)?;
         loop {
-            let (consumed, payload) = self.next_payload(buffer)?;
             match payload {
-                Payload::CodeSectionEntry(func_body) => {
-                    // Note: Unfortunately the `wasmparser` crate is missing an API
-                    //       to return the byte slice for the respective code section
-                    //       entry payload. Please remove this work around as soon as
-                    //       such an API becomes available.
-                    Self::consume_buffer(consumed, buffer);
-                    let bytes = func_body.as_bytes();
-                    self.process_code_entry(func_body, bytes, &header)?;
+                Payload::CustomSection(reader) => {
+                    self.process_custom_section(&mut custom_sections, reader)?;
                 }
-                _ => break,
-            }
+                Payload::DataSection(data_section) => {
+                    return self.parse_buffered_data(buffer, data_section, header, custom_sections);
+                }
+                Payload::End(offset) => {
+                    return self.finish(offset, ModuleBuilder::new(header, custom_sections))
+                }
+                unexpected => self.process_invalid_payload(unexpected)?,
+            };
+            payload = self.next_payload(buffer)?;
         }
-        Ok(ModuleBuilder::new(header, custom_sections))
     }
 
-    /// Parse the Wasm data section and finalize parsing.
+    /// Parse the Wasm section code entries.
+    ///
+    /// Returns the next payload after the last code section entry.
+    fn parse_buffered_code_entries<'a>(
+        &mut self,
+        buffer: &mut &'a [u8],
+        header: &ModuleHeader,
+    ) -> Result<Payload<'a>, Error> {
+        loop {
+            match self.next_payload(buffer)? {
+                Payload::CodeSectionEntry(func_body) => {
+                    let bytes = func_body.as_bytes();
+                    self.process_code_entry(func_body, bytes, header)?;
+                }
+                other => return Ok(other),
+            }
+        }
+    }
+
+    /// Parse post the Wasm data section and finalize parsing.
     ///
     /// We separate parsing of the Wasm data section since it is the only Wasm
     /// section that comes after the Wasm code section that we have to separate
@@ -184,25 +169,35 @@ impl ModuleParser {
     fn parse_buffered_data(
         &mut self,
         buffer: &mut &[u8],
-        mut builder: ModuleBuilder,
+        data_section: DataSectionReader,
+        header: ModuleHeader,
+        custom_sections: CustomSectionsBuilder,
     ) -> Result<Module, Error> {
+        let mut builder = ModuleBuilder::new(header, custom_sections);
+        self.process_data(data_section, &mut builder)?;
         loop {
-            let (consumed, payload) = self.next_payload(buffer)?;
-            match payload {
-                Payload::DataSection(section) => {
-                    self.process_data(section, &mut builder)?;
-                }
-                Payload::End(offset) => {
-                    self.process_end(offset)?;
-                    break;
-                }
+            match self.next_payload(buffer)? {
+                Payload::End(offset) => return self.finish(offset, builder),
                 Payload::CustomSection(reader) => {
                     self.process_custom_section(&mut builder.custom_sections, reader)?;
                 }
                 invalid => self.process_invalid_payload(invalid)?,
             }
-            Self::consume_buffer(consumed, buffer);
         }
-        Ok(builder.finish(&self.engine))
+    }
+
+    /// Fetch next Wasm module payload and adust the `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// If the parsed Wasm is malformed.
+    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<Payload<'a>, Error> {
+        let chunk = self.parser.parse(&buffer[..], true)?;
+        let Chunk::Parsed { consumed, payload } = chunk else {
+            // Unreachable since `wasmparser` promises to return `Parsed` if `eof` is `true`.
+            unreachable!()
+        };
+        *buffer = &buffer[consumed..];
+        Ok(payload)
     }
 }

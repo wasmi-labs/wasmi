@@ -18,6 +18,7 @@ use crate::{
     engine::{
         translator::func::{AcquiredTarget, Provider},
         BlockType,
+        TranslationError,
     },
     ir::{
         self,
@@ -33,6 +34,7 @@ use crate::{
     FuncRef,
     Mutability,
 };
+use alloc::vec::Vec;
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 use wasmparser::VisitOperator;
 
@@ -544,6 +546,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
         let type_hint = WasmiValueType::from(ty).into_inner();
         self.translate_select(Some(type_hint))
+    }
+
+    fn visit_typed_select_multi(&mut self, _ty: Vec<wasmparser::ValType>) -> Self::Output {
+        Err(Error::from(TranslationError::InvalidMultiSelectInstruction))
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
