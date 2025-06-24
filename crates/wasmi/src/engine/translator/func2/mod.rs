@@ -387,6 +387,25 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    fn push_instr_with_result(
+        &mut self,
+        result_ty: ValType,
+        make_instr: impl FnOnce(Reg) -> Instruction,
+        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let expected_iidx = self.instrs.next_instr();
+        let result = self
+            .layout
+            .temp_to_reg(self.stack.push_temp(result_ty, Some(expected_iidx))?)?;
+        let actual_iidx =
+            self.instrs
+                .push_instr(make_instr(result), consume_fuel_instr, fuel_costs)?;
+        assert_eq!(expected_iidx, actual_iidx);
+        Ok(())
+    }
+
     /// Encodes a generic return instruction.
     fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
@@ -714,21 +733,12 @@ impl FuncTranslator {
                 .push_immediate(consteval(input.val().into()).into())?;
             return Ok(());
         }
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
         let input = self.layout.operand_to_reg(input)?;
-        let iidx = self.instrs.next_instr();
-        let result = self
-            .layout
-            .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
-        assert_eq!(
-            self.instrs.push_instr(
-                make_instr(result, input),
-                consume_fuel_instr,
-                FuelCostsProvider::base
-            )?,
-            iidx
-        );
-        Ok(())
+        self.push_instr_with_result(
+            <R as Typed>::TY,
+            |result| make_instr(result, input),
+            FuelCostsProvider::base,
+        )
     }
 
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
@@ -743,7 +753,6 @@ impl FuncTranslator {
         R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
-        let consume_fuel = self.stack.consume_fuel_instr();
         match self.stack.pop2() {
             (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
                 let value = consteval(lhs.val().into(), rhs.val().into());
@@ -752,40 +761,30 @@ impl FuncTranslator {
             }
             (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
                 let lhs = self.layout.operand_to_reg(val)?;
-                let iidx = self.instrs.next_instr();
-                let result = self
-                    .layout
-                    .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
-                let instr = match T::from(imm.val()).try_into() {
-                    Ok(rhs) => make_instr_imm16(result, lhs, rhs),
+                let rhs16 = match T::from(imm.val()).try_into() {
+                    Ok(rhs) => Ok(rhs),
                     Err(_) => {
                         let rhs = self.layout.const_to_reg(imm.val())?;
-                        make_instr(result, lhs, rhs)
+                        Err(rhs)
                     }
                 };
-                assert_eq!(
-                    self.instrs
-                        .push_instr(instr, consume_fuel, FuelCostsProvider::base)?,
-                    iidx
-                );
-                Ok(())
+                self.push_instr_with_result(
+                    <R as Typed>::TY,
+                    |result| match rhs16 {
+                        Ok(rhs) => make_instr_imm16(result, lhs, rhs),
+                        Err(rhs) => make_instr(result, lhs, rhs),
+                    },
+                    FuelCostsProvider::base,
+                )
             }
             (lhs, rhs) => {
                 let lhs = self.layout.operand_to_reg(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
-                let iidx = self.instrs.next_instr();
-                let result = self
-                    .layout
-                    .temp_to_reg(self.stack.push_temp(<R as Typed>::TY, Some(iidx))?)?;
-                assert_eq!(
-                    self.instrs.push_instr(
-                        make_instr(result, lhs, rhs),
-                        consume_fuel,
-                        FuelCostsProvider::base
-                    )?,
-                    iidx
-                );
-                Ok(())
+                self.push_instr_with_result(
+                    <R as Typed>::TY,
+                    |result| make_instr(result, lhs, rhs),
+                    FuelCostsProvider::base,
+                )
             }
         }
     }
