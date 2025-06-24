@@ -518,6 +518,7 @@ impl ModuleParser {
     }
 
     /// Process an unexpected, unsupported or malformed Wasm module section payload.
+    #[cold]
     fn process_invalid_payload(&mut self, payload: Payload<'_>) -> Result<(), Error> {
         if let Some(validator) = &mut self.validator {
             if let Err(error) = validator.payload(&payload) {
