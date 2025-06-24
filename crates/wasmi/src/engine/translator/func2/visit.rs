@@ -432,15 +432,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        self.stack.push_immediate(0_i32)?;
+        self.visit_i32_eq()
     }
 
     fn visit_i32_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, bool>(
+            Instruction::i32_eq,
+            Instruction::i32_eq_imm16,
+            wasm::i32_eq,
+        )
     }
 
     fn visit_i32_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, bool>(
+            Instruction::i32_ne,
+            Instruction::i32_ne_imm16,
+            wasm::i32_ne,
+        )
     }
 
     fn visit_i32_lt_s(&mut self) -> Self::Output {
@@ -476,15 +486,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_eqz(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        self.stack.push_immediate(0_i64)?;
+        self.visit_i64_eq()
     }
 
     fn visit_i64_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, bool>(
+            Instruction::i64_eq,
+            Instruction::i64_eq_imm16,
+            wasm::i64_eq,
+        )
     }
 
     fn visit_i64_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, bool>(
+            Instruction::i64_ne,
+            Instruction::i64_ne_imm16,
+            wasm::i64_ne,
+        )
     }
 
     fn visit_i64_lt_s(&mut self) -> Self::Output {
@@ -592,7 +612,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, i32>(
+            Instruction::i32_mul,
+            Instruction::i32_mul_imm16,
+            wasm::i32_mul,
+        )
     }
 
     fn visit_i32_div_s(&mut self) -> Self::Output {
@@ -612,15 +636,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_and(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, i32>(
+            Instruction::i32_and,
+            Instruction::i32_and_imm16,
+            wasm::i32_bitand,
+        )
     }
 
     fn visit_i32_or(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, i32>(
+            Instruction::i32_or,
+            Instruction::i32_or_imm16,
+            wasm::i32_bitor,
+        )
     }
 
     fn visit_i32_xor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i32, i32>(
+            Instruction::i32_xor,
+            Instruction::i32_xor_imm16,
+            wasm::i32_bitxor,
+        )
     }
 
     fn visit_i32_shl(&mut self) -> Self::Output {
@@ -656,7 +692,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, i64>(
+            Instruction::i64_add,
+            Instruction::i64_add_imm16,
+            wasm::i64_add,
+        )
     }
 
     fn visit_i64_sub(&mut self) -> Self::Output {
@@ -664,7 +704,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, i64>(
+            Instruction::i64_mul,
+            Instruction::i64_mul_imm16,
+            wasm::i64_mul,
+        )
     }
 
     fn visit_i64_div_s(&mut self) -> Self::Output {
@@ -684,15 +728,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_and(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, i64>(
+            Instruction::i64_and,
+            Instruction::i64_and_imm16,
+            wasm::i64_bitand,
+        )
     }
 
     fn visit_i64_or(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, i64>(
+            Instruction::i64_or,
+            Instruction::i64_or_imm16,
+            wasm::i64_bitor,
+        )
     }
 
     fn visit_i64_xor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64, i64>(
+            Instruction::i64_xor,
+            Instruction::i64_xor_imm16,
+            wasm::i64_bitxor,
+        )
     }
 
     fn visit_i64_shl(&mut self) -> Self::Output {
