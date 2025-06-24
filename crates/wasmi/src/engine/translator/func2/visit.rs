@@ -79,12 +79,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(
-            Instruction::trap(TrapCode::UnreachableCodeReached),
-            FuelCostsProvider::base,
-        )?;
-        self.reachable = false;
-        Ok(())
+        self.translate_trap(TrapCode::UnreachableCodeReached)
     }
 
     fn visit_nop(&mut self) -> Self::Output {
