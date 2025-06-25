@@ -800,6 +800,75 @@ impl FuncTranslator {
         }
     }
 
+    /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
+    fn translate_divrem<T, NonZero>(
+        &mut self,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<NonZero>) -> Instruction,
+        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        consteval: fn(T, T) -> Result<T, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        T: WasmInteger,
+        NonZero: Copy + TryFrom<T> + TryInto<Const16<NonZero>> + Into<UntypedVal>,
+    {
+        bail_unreachable!(self);
+        match self.stack.pop2() {
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
+                let lhs = lhs.val().into();
+                let rhs = rhs.val().into();
+                match consteval(lhs, rhs) {
+                    Ok(value) => {
+                        self.stack.push_immediate(value)?;
+                    }
+                    Err(trap) => {
+                        self.translate_trap(trap)?;
+                    }
+                }
+                Ok(())
+            }
+            (lhs, Operand::Immediate(rhs)) => {
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = T::from(rhs.val());
+                let Some(non_zero_rhs) = NonZero::try_from(rhs).ok() else {
+                    // Optimization: division by zero always traps
+                    return self.translate_trap(TrapCode::IntegerDivisionByZero);
+                };
+                let rhs16 = self.make_imm16(non_zero_rhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| match rhs16 {
+                        Operand16::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
+                        Operand16::Reg(rhs) => make_instr(result, lhs, rhs),
+                    },
+                    FuelCostsProvider::base,
+                )
+            }
+            (Operand::Immediate(lhs), rhs) => {
+                let lhs = T::from(lhs.val());
+                let lhs16 = self.make_imm16(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| match lhs16 {
+                        Operand16::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
+                        Operand16::Reg(lhs) => make_instr(result, lhs, rhs),
+                    },
+                    FuelCostsProvider::base,
+                )
+            }
+            (lhs, rhs) => {
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| make_instr(result, lhs, rhs),
+                    FuelCostsProvider::base,
+                )
+            }
+        }
+    }
+
     fn translate_trap(&mut self, trap: TrapCode) -> Result<(), Error> {
         self.push_instr(Instruction::trap(trap), FuelCostsProvider::base)?;
         self.reachable = false;
