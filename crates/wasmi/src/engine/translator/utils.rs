@@ -5,6 +5,7 @@ use crate::{
     ExternRef,
     FuncRef,
 };
+use core::num::NonZero;
 
 macro_rules! impl_typed_for {
     ( $( $ty:ident ),* $(,)? ) => {
@@ -48,29 +49,40 @@ pub trait WasmInteger:
     + TryInto<Const16<Self>>
     + Typed
 {
+    /// The non-zero type of the [`WasmInteger`].
+    type NonZero: Copy + TryFrom<Self> + Into<UntypedVal> + TryInto<Const16<Self::NonZero>>;
+
     /// Returns `true` if `self` is equal to zero (0).
     fn eq_zero(self) -> bool;
 }
 
 impl WasmInteger for i32 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u32 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for i64 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u64 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
