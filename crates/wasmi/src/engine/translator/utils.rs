@@ -1,10 +1,11 @@
 use crate::{
-    core::{FuelCostsProvider, Typed, TypedVal, ValType},
+    core::{FuelCostsProvider, Typed, TypedVal, UntypedVal, ValType},
     ir::{Const16, Instruction, Sign},
     Error,
     ExternRef,
     FuncRef,
 };
+use core::num::NonZero;
 
 macro_rules! impl_typed_for {
     ( $( $ty:ident ),* $(,)? ) => {
@@ -39,31 +40,49 @@ impl_typed_for! {
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<Const16<Self>>
+    Copy
+    + Eq
+    + From<TypedVal>
+    + Into<TypedVal>
+    + From<UntypedVal>
+    + Into<UntypedVal>
+    + TryInto<Const16<Self>>
+    + Typed
 {
+    /// The non-zero type of the [`WasmInteger`].
+    type NonZero: Copy + TryFrom<Self> + Into<UntypedVal> + TryInto<Const16<Self::NonZero>>;
+
     /// Returns `true` if `self` is equal to zero (0).
     fn eq_zero(self) -> bool;
 }
 
 impl WasmInteger for i32 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u32 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for i64 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u64 {
+    type NonZero = NonZero<Self>;
+
     fn eq_zero(self) -> bool {
         self == 0
     }
