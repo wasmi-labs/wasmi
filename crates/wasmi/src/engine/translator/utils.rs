@@ -1,5 +1,5 @@
 use crate::{
-    core::{FuelCostsProvider, Typed, TypedVal, ValType},
+    core::{FuelCostsProvider, Typed, TypedVal, UntypedVal, ValType},
     ir::{Const16, Instruction, Sign},
     Error,
     ExternRef,
@@ -39,7 +39,14 @@ impl_typed_for! {
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<Const16<Self>>
+    Copy
+    + Eq
+    + From<TypedVal>
+    + Into<TypedVal>
+    + From<UntypedVal>
+    + Into<UntypedVal>
+    + TryInto<Const16<Self>>
+    + Typed
 {
     /// Returns `true` if `self` is equal to zero (0).
     fn eq_zero(self) -> bool;
