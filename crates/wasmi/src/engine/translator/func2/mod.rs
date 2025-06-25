@@ -872,6 +872,7 @@ impl FuncTranslator {
         }
     }
 
+    /// Translates a generic trap instruction.
     fn translate_trap(&mut self, trap: TrapCode) -> Result<(), Error> {
         self.push_instr(Instruction::trap(trap), FuelCostsProvider::base)?;
         self.reachable = false;
