@@ -1,3 +1,5 @@
+use crate::ir::{Const16, Reg};
+
 /// Bail out early in case the current code is unreachable.
 ///
 /// # Note
@@ -36,4 +38,12 @@ pub trait ReusableAllocations {
 
     /// Returns the reusable heap allocations of `self`.
     fn into_allocations(self) -> Self::Allocations;
+}
+
+/// A 16-bit encoded operand for a Wasmi instruction.
+pub enum Operand16<T> {
+    /// A [`Reg`] operand.
+    Reg(Reg),
+    /// A 16-bit encoded immediate value operand.
+    Immediate(Const16<T>),
 }
