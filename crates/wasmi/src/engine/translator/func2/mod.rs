@@ -801,16 +801,19 @@ impl FuncTranslator {
     }
 
     /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
-    fn translate_divrem<T, NonZero>(
+    fn translate_divrem<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<NonZero>) -> Instruction,
+        make_instr_imm16_rhs: fn(
+            result: Reg,
+            lhs: Reg,
+            rhs: Const16<<T as WasmInteger>::NonZero>,
+        ) -> Instruction,
         make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(T, T) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
         T: WasmInteger,
-        NonZero: Copy + TryFrom<T> + TryInto<Const16<NonZero>> + Into<UntypedVal>,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -830,7 +833,7 @@ impl FuncTranslator {
             (lhs, Operand::Immediate(rhs)) => {
                 let lhs = self.layout.operand_to_reg(lhs)?;
                 let rhs = T::from(rhs.val());
-                let Some(non_zero_rhs) = NonZero::try_from(rhs).ok() else {
+                let Some(non_zero_rhs) = <T as WasmInteger>::NonZero::try_from(rhs).ok() else {
                     // Optimization: division by zero always traps
                     return self.translate_trap(TrapCode::IntegerDivisionByZero);
                 };
