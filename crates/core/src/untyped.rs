@@ -92,6 +92,12 @@ macro_rules! impl_write_as_for_int {
                     self.write_lo64(value as $as as _)
                 }
             }
+
+            impl WriteAs<::core::num::NonZero<$int>> for UntypedVal {
+                fn write_as(&mut self, value: ::core::num::NonZero<$int>) {
+                    <UntypedVal as WriteAs<$int>>::write_as(self, value.get())
+                }
+            }
         )*
     };
 }
@@ -106,10 +112,23 @@ macro_rules! impl_write_as_for_uint {
                     self.write_lo64(value as _)
                 }
             }
+
+            impl WriteAs<::core::num::NonZero<$int>> for UntypedVal {
+                fn write_as(&mut self, value: ::core::num::NonZero<$int>) {
+                    <UntypedVal as WriteAs<$int>>::write_as(self, value.get())
+                }
+            }
         )*
     };
 }
-impl_write_as_for_uint!(bool, u8, u16, u32, u64);
+impl_write_as_for_uint!(u8, u16, u32, u64);
+
+impl WriteAs<bool> for UntypedVal {
+    #[allow(clippy::cast_lossless)]
+    fn write_as(&mut self, value: bool) {
+        self.write_lo64(value as _)
+    }
+}
 
 macro_rules! impl_write_as_for_float {
     ( $( $float:ty ),* $(,)? ) => {
@@ -224,13 +243,26 @@ macro_rules! impl_from_unsigned_prim {
                     Self::from_bits64(value as _)
                 }
             }
+
+            impl From<::core::num::NonZero<$prim>> for UntypedVal {
+                fn from(value: ::core::num::NonZero<$prim>) -> Self {
+                    <_ as From<$prim>>::from(value.get())
+                }
+            }
         )*
     };
 }
 #[rustfmt::skip]
 impl_from_unsigned_prim!(
-    bool, u8, u16, u32, u64,
+    u8, u16, u32, u64,
 );
+
+impl From<bool> for UntypedVal {
+    #[allow(clippy::cast_lossless)]
+    fn from(value: bool) -> Self {
+        Self::from_bits64(value as _)
+    }
+}
 
 macro_rules! impl_from_signed_prim {
     ( $( $prim:ty as $base:ty ),* $(,)? ) => {
@@ -239,6 +271,12 @@ macro_rules! impl_from_signed_prim {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
                     Self::from_bits64(u64::from(value as $base))
+                }
+            }
+
+            impl From<::core::num::NonZero<$prim>> for UntypedVal {
+                fn from(value: ::core::num::NonZero<$prim>) -> Self {
+                    <_ as From<$prim>>::from(value.get())
                 }
             }
         )*
