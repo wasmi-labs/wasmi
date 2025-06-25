@@ -29,15 +29,15 @@ use self::{
         StackAllocations,
         TempOperand,
     },
-    utils::{Reset, ReusableAllocations},
+    utils::{Operand16, Reset, ReusableAllocations},
 };
 use crate::{
-    core::{FuelCostsProvider, Typed, TypedVal, ValType, TrapCode},
+    core::{FuelCostsProvider, TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
         translator::{
             comparator::{CompareResult as _, NegateCmpInstr as _, TryIntoCmpBranchInstr as _},
             labels::{LabelRef, LabelRegistry},
-            utils::Instr,
+            utils::{Instr, WasmInteger},
             WasmTranslator,
         },
         BlockType,
@@ -741,6 +741,20 @@ impl FuncTranslator {
         )
     }
 
+    /// Creates a new 16-bit encoded [`Operand16`] from the given `value`.
+    pub fn make_imm16<T>(&mut self, value: T) -> Result<Operand16<T>, Error>
+    where
+        T: Into<UntypedVal> + Copy + TryInto<Const16<T>>,
+    {
+        match value.try_into() {
+            Ok(rhs) => Ok(Operand16::Immediate(rhs)),
+            Err(_) => {
+                let rhs = self.layout.const_to_reg(value)?;
+                Ok(Operand16::Reg(rhs))
+            }
+        }
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
@@ -749,30 +763,27 @@ impl FuncTranslator {
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedVal> + TryInto<Const16<T>>,
+        T: WasmInteger + TryInto<Const16<T>>,
         R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
             (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                let value = consteval(lhs.val().into(), rhs.val().into());
+                let lhs = lhs.val().into();
+                let rhs = rhs.val().into();
+                let value = consteval(lhs, rhs);
                 self.stack.push_immediate(value)?;
                 Ok(())
             }
             (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
                 let lhs = self.layout.operand_to_reg(val)?;
-                let rhs16 = match T::from(imm.val()).try_into() {
-                    Ok(rhs) => Ok(rhs),
-                    Err(_) => {
-                        let rhs = self.layout.const_to_reg(imm.val())?;
-                        Err(rhs)
-                    }
-                };
+                let rhs = imm.val().into();
+                let rhs16 = self.make_imm16(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| match rhs16 {
-                        Ok(rhs) => make_instr_imm16(result, lhs, rhs),
-                        Err(rhs) => make_instr(result, lhs, rhs),
+                        Operand16::Immediate(rhs) => make_instr_imm16(result, lhs, rhs),
+                        Operand16::Reg(rhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
