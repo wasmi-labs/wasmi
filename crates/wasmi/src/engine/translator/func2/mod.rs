@@ -801,10 +801,7 @@ impl FuncTranslator {
     }
 
     fn translate_trap(&mut self, trap: TrapCode) -> Result<(), Error> {
-        self.push_instr(
-            Instruction::trap(TrapCode::UnreachableCodeReached),
-            FuelCostsProvider::base,
-        )?;
+        self.push_instr(Instruction::trap(trap), FuelCostsProvider::base)?;
         self.reachable = false;
         Ok(())
     }
