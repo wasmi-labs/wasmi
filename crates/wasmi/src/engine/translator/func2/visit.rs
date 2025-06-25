@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, FuelCostsProvider, TrapCode},
+    core::{wasm, TrapCode},
     engine::{
         translator::func2::{
             stack::{AcquiredTarget, IfReachability},
