@@ -3,7 +3,7 @@
 |:----------------------:|:--------------------:|:----------------:|:--------------------:|
 | [![ci][1]][2]          | [![codecov][3]][4]   | [![docs][5]][6] | [![crates][7]][8]  |
 
-[1]: https://github.com/wasmi-labs/wasmi/workflows/Rust%20-%20Continuous%20Integration/badge.svg?branch=master
+[1]: https://github.com/wasmi-labs/wasmi/actions/workflows/rust.yml/badge.svg
 [2]: https://github.com/wasmi-labs/wasmi/actions?query=workflow%3A%22Rust+-+Continuous+Integration%22+branch%3Amaster
 [3]: https://codecov.io/gh/wasmi-labs/wasmi/branch/master/graph/badge.svg
 [4]: https://codecov.io/gh/wasmi-labs/wasmi/branch/master
