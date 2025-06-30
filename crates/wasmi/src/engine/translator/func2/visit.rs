@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, TrapCode},
+    core::{wasm, TrapCode, F32, F64},
     engine::{
         translator::func2::{
             stack::{AcquiredTarget, IfReachability},
@@ -414,16 +414,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_i64_const(&mut self, _value: i64) -> Self::Output {
-        todo!()
+    fn visit_i64_const(&mut self, value: i64) -> Self::Output {
+        bail_unreachable!(self);
+        self.stack.push_immediate(value)?;
+        Ok(())
     }
 
-    fn visit_f32_const(&mut self, _value: wasmparser::Ieee32) -> Self::Output {
-        todo!()
+    fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
+        bail_unreachable!(self);
+        let value = F32::from_bits(value.bits());
+        self.stack.push_immediate(value)?;
+        Ok(())
     }
 
-    fn visit_f64_const(&mut self, _value: wasmparser::Ieee64) -> Self::Output {
-        todo!()
+    fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Self::Output {
+        bail_unreachable!(self);
+        let value = F64::from_bits(value.bits());
+        self.stack.push_immediate(value)?;
+        Ok(())
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Output {
