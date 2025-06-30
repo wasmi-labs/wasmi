@@ -84,7 +84,7 @@ where
             self.translator.update_pos(pos);
             reader.visit_operator(&mut self.translator)??;
         }
-        reader.ensure_end()?;
+        reader.finish()?;
         Ok(reader.original_position())
     }
 }

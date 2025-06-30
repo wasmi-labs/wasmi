@@ -32,6 +32,8 @@ pub enum TranslationError {
     TooManyFunctionParams,
     /// The function failed to compiled lazily.
     LazyCompilationFailed,
+    /// The function contains an invalid multi select instruction.
+    InvalidMultiSelectInstruction,
 }
 
 impl TranslationError {
@@ -103,6 +105,12 @@ impl Display for TranslationError {
                 write!(
                     f,
                     "lazy function compilation encountered a Wasm validation or translation error"
+                )
+            }
+            Self::InvalidMultiSelectInstruction => {
+                write!(
+                    f,
+                    "encountered an invalid Wasm `select` instruction returning multiple values"
                 )
             }
         }
