@@ -22,7 +22,7 @@ pub use self::{
         LoopControlFrame,
     },
     locals::LocalIdx,
-    operand::{Operand, TempOperand},
+    operand::{ImmediateOperand, Operand, TempOperand},
     operands::{OperandIdx, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
