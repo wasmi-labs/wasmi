@@ -4,9 +4,9 @@
 | [![ci][1]][2]          | [![codecov][3]][4]   | [![docs][5]][6] | [![crates][7]][8]  |
 
 [1]: https://github.com/wasmi-labs/wasmi/actions/workflows/rust.yml/badge.svg
-[2]: https://github.com/wasmi-labs/wasmi/actions?query=workflow%3A%22Rust+-+Continuous+Integration%22+branch%3Amaster
-[3]: https://codecov.io/gh/wasmi-labs/wasmi/branch/master/graph/badge.svg
-[4]: https://codecov.io/gh/wasmi-labs/wasmi/branch/master
+[2]: https://github.com/wasmi-labs/wasmi/actions/workflows/rust.yml
+[3]: https://codecov.io/gh/wasmi-labs/wasmi/branch/main/badge.svg
+[4]: https://codecov.io/gh/wasmi-labs/wasmi/branch/main
 [5]: https://docs.rs/wasmi/badge.svg
 [6]: https://docs.rs/wasmi
 [7]: https://img.shields.io/crates/v/wasmi.svg
