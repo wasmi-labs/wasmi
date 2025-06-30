@@ -457,35 +457,75 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i32, bool>(
+            Instruction::i32_lt_s,
+            Instruction::i32_lt_s_imm16_rhs,
+            Instruction::i32_lt_s_imm16_lhs,
+            wasm::i32_lt_s,
+        )
     }
 
     fn visit_i32_lt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u32, bool>(
+            Instruction::i32_lt_u,
+            Instruction::i32_lt_u_imm16_rhs,
+            Instruction::i32_lt_u_imm16_lhs,
+            wasm::i32_lt_u,
+        )
     }
 
     fn visit_i32_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i32, bool>(
+            swap_ops!(Instruction::i32_lt_s),
+            swap_ops!(Instruction::i32_lt_s_imm16_lhs),
+            swap_ops!(Instruction::i32_lt_s_imm16_rhs),
+            wasm::i32_gt_s,
+        )
     }
 
     fn visit_i32_gt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u32, bool>(
+            swap_ops!(Instruction::i32_lt_u),
+            swap_ops!(Instruction::i32_lt_u_imm16_lhs),
+            swap_ops!(Instruction::i32_lt_u_imm16_rhs),
+            wasm::i32_gt_u,
+        )
     }
 
     fn visit_i32_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i32, bool>(
+            Instruction::i32_le_s,
+            Instruction::i32_le_s_imm16_rhs,
+            Instruction::i32_le_s_imm16_lhs,
+            wasm::i32_le_s,
+        )
     }
 
     fn visit_i32_le_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u32, bool>(
+            Instruction::i32_le_u,
+            Instruction::i32_le_u_imm16_rhs,
+            Instruction::i32_le_u_imm16_lhs,
+            wasm::i32_le_u,
+        )
     }
 
     fn visit_i32_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i32, bool>(
+            swap_ops!(Instruction::i32_le_s),
+            swap_ops!(Instruction::i32_le_s_imm16_lhs),
+            swap_ops!(Instruction::i32_le_s_imm16_rhs),
+            wasm::i32_ge_s,
+        )
     }
 
     fn visit_i32_ge_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u32, bool>(
+            swap_ops!(Instruction::i32_le_u),
+            swap_ops!(Instruction::i32_le_u_imm16_lhs),
+            swap_ops!(Instruction::i32_le_u_imm16_rhs),
+            wasm::i32_ge_u,
+        )
     }
 
     fn visit_i64_eqz(&mut self) -> Self::Output {
@@ -511,35 +551,75 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i64, bool>(
+            Instruction::i64_lt_s,
+            Instruction::i64_lt_s_imm16_rhs,
+            Instruction::i64_lt_s_imm16_lhs,
+            wasm::i64_lt_s,
+        )
     }
 
     fn visit_i64_lt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u64, bool>(
+            Instruction::i64_lt_u,
+            Instruction::i64_lt_u_imm16_rhs,
+            Instruction::i64_lt_u_imm16_lhs,
+            wasm::i64_lt_u,
+        )
     }
 
     fn visit_i64_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i64, bool>(
+            swap_ops!(Instruction::i64_lt_s),
+            swap_ops!(Instruction::i64_lt_s_imm16_lhs),
+            swap_ops!(Instruction::i64_lt_s_imm16_rhs),
+            wasm::i64_gt_s,
+        )
     }
 
     fn visit_i64_gt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u64, bool>(
+            swap_ops!(Instruction::i64_lt_u),
+            swap_ops!(Instruction::i64_lt_u_imm16_lhs),
+            swap_ops!(Instruction::i64_lt_u_imm16_rhs),
+            wasm::i64_gt_u,
+        )
     }
 
     fn visit_i64_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i64, bool>(
+            Instruction::i64_le_s,
+            Instruction::i64_le_s_imm16_rhs,
+            Instruction::i64_le_s_imm16_lhs,
+            wasm::i64_le_s,
+        )
     }
 
     fn visit_i64_le_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u64, bool>(
+            Instruction::i64_le_u,
+            Instruction::i64_le_u_imm16_rhs,
+            Instruction::i64_le_u_imm16_lhs,
+            wasm::i64_le_u,
+        )
     }
 
     fn visit_i64_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<i64, bool>(
+            swap_ops!(Instruction::i64_le_s),
+            swap_ops!(Instruction::i64_le_s_imm16_lhs),
+            swap_ops!(Instruction::i64_le_s_imm16_rhs),
+            wasm::i64_ge_s,
+        )
     }
 
     fn visit_i64_ge_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary::<u64, bool>(
+            swap_ops!(Instruction::i64_le_u),
+            swap_ops!(Instruction::i64_le_u_imm16_lhs),
+            swap_ops!(Instruction::i64_le_u_imm16_rhs),
+            wasm::i64_ge_u,
+        )
     }
 
     fn visit_f32_eq(&mut self) -> Self::Output {
