@@ -21,6 +21,7 @@ use self::{
         ElseReachability,
         IfControlFrame,
         IfReachability,
+        ImmediateOperand,
         LocalIdx,
         LoopControlFrame,
         Operand,
@@ -755,6 +756,46 @@ impl FuncTranslator {
         }
     }
 
+    /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
+    fn translate_binary_consteval_fallible<T, R>(
+        &mut self,
+        lhs: ImmediateOperand,
+        rhs: ImmediateOperand,
+        consteval: impl FnOnce(T, T) -> Result<R, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
+        let lhs: T = lhs.val().into();
+        let rhs: T = rhs.val().into();
+        match consteval(lhs, rhs) {
+            Ok(value) => {
+                self.stack.push_immediate(value)?;
+            }
+            Err(trap) => {
+                self.translate_trap(trap)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
+    fn translate_binary_consteval<T, R>(
+        &mut self,
+        lhs: ImmediateOperand,
+        rhs: ImmediateOperand,
+        consteval: fn(T, T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
+        self.translate_binary_consteval_fallible::<T, R>(lhs, rhs, |lhs, rhs| {
+            Ok(consteval(lhs, rhs))
+        })
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
@@ -769,11 +810,7 @@ impl FuncTranslator {
         bail_unreachable!(self);
         match self.stack.pop2() {
             (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                let lhs = lhs.val().into();
-                let rhs = rhs.val().into();
-                let value = consteval(lhs, rhs);
-                self.stack.push_immediate(value)?;
-                Ok(())
+                self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
             }
             (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
                 let lhs = self.layout.operand_to_reg(val)?;
@@ -818,17 +855,7 @@ impl FuncTranslator {
         bail_unreachable!(self);
         match self.stack.pop2() {
             (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                let lhs = lhs.val().into();
-                let rhs = rhs.val().into();
-                match consteval(lhs, rhs) {
-                    Ok(value) => {
-                        self.stack.push_immediate(value)?;
-                    }
-                    Err(trap) => {
-                        self.translate_trap(trap)?;
-                    }
-                }
-                Ok(())
+                self.translate_binary_consteval_fallible::<T, T>(lhs, rhs, consteval)
             }
             (lhs, Operand::Immediate(rhs)) => {
                 let lhs = self.layout.operand_to_reg(lhs)?;
