@@ -12,7 +12,7 @@ use crate::ir::{Const16, Reg};
 macro_rules! bail_unreachable {
     ($this:ident) => {{
         if !$this.reachable {
-            return Ok(());
+            return ::core::result::Result::Ok(());
         }
     }};
 }
