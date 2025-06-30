@@ -390,14 +390,15 @@ pub trait IntoShiftAmount: Sized {
 }
 
 macro_rules! impl_shift_amount {
-    ( $( ($ty:ty, $bits:literal, $ty16:ty, $shamt:ty) ),* $(,)? ) => {
+    ( $( ($ty:ty, $ty16:ty, $shamt:ty) ),* $(,)? ) => {
         $(
             impl IntoShiftAmount for $ty {
                 type Output = ShiftAmount<$shamt>;
                 type Input = $shamt;
 
                 fn into_shift_amount(input: Self::Input) -> Option<Self::Output> {
-                    let value = (input % $bits) as $ty16;
+                    const BITS: $shamt = (::core::mem::size_of::<$ty>() * 8) as $shamt;
+                    let value = (input % BITS) as $ty16;
                     if value == 0 {
                         return None
                     }
@@ -409,14 +410,14 @@ macro_rules! impl_shift_amount {
 }
 impl_shift_amount! {
     // used by scalar types such as `i32` and `i64`
-    (i32, 32, i16, i32),
-    (i64, 64, i16, i64),
+    (i32, i16, i32),
+    (i64, i16, i64),
 
     // used by SIMD types such as `i8x16`, `i16x8`, `i32x4` and `i64x2`
-    (u8 ,  8, u16, u32),
-    (u16, 16, u16, u32),
-    (u32, 32, u16, u32),
-    (u64, 64, u16, u32),
+    ( u8, u16, u32),
+    (u16, u16, u32),
+    (u32, u16, u32),
+    (u64, u16, u32),
 }
 
 /// A 64-bit offset in Wasmi bytecode.
