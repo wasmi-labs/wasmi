@@ -10,7 +10,7 @@ pub struct CustomSections {
 impl CustomSections {
     /// Returns an iterator over the [`CustomSection`]s stored in `self`.
     #[inline]
-    pub fn iter(&self) -> CustomSectionsIter {
+    pub fn iter(&self) -> CustomSectionsIter<'_> {
         self.inner.iter()
     }
 }
@@ -68,7 +68,7 @@ impl CustomSectionsInner {
 
     /// Returns an iterator over the [`CustomSection`]s stored in `self`.
     #[inline]
-    pub fn iter(&self) -> CustomSectionsIter {
+    pub fn iter(&self) -> CustomSectionsIter<'_> {
         CustomSectionsIter {
             items: self.items.iter(),
             names_and_data: &self.names_and_data[..],

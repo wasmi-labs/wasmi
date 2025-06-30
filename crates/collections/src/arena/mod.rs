@@ -86,7 +86,7 @@ impl<Idx, T> Arena<Idx, T> {
 
     /// Returns an iterator over the shared reference of the arena entities.
     #[inline]
-    pub fn iter(&self) -> Iter<Idx, T> {
+    pub fn iter(&self) -> Iter<'_, Idx, T> {
         Iter {
             iter: self.entities.iter().enumerate(),
             marker: PhantomData,
@@ -95,7 +95,7 @@ impl<Idx, T> Arena<Idx, T> {
 
     /// Returns an iterator over the exclusive reference of the arena entities.
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Idx, T> {
         IterMut {
             iter: self.entities.iter_mut().enumerate(),
             marker: PhantomData,

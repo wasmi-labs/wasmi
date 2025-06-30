@@ -98,7 +98,7 @@ impl ControlStack {
     /// Pops the top-most [`Provider`] slice of an `else` branch of an [`IfControlFrame`] to the [`ControlStack`].
     ///
     /// [`IfControlFrame`]: super::control_frame::IfControlFrame
-    pub fn pop_else_providers(&mut self) -> Drain<Provider<TypedVal>> {
+    pub fn pop_else_providers(&mut self) -> Drain<'_, Provider<TypedVal>> {
         self.else_providers
             .pop()
             .expect("missing else providers for `else` branch")
@@ -133,7 +133,7 @@ impl ControlStack {
     }
 
     /// Acquires the target [`ControlFrame`] at the given relative `depth`.
-    pub fn acquire_target(&mut self, depth: u32) -> AcquiredTarget {
+    pub fn acquire_target(&mut self, depth: u32) -> AcquiredTarget<'_> {
         let is_root = self.is_root(depth);
         let frame = self.nth_back_mut(depth);
         if is_root {

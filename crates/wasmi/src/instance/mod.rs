@@ -130,7 +130,7 @@ impl InstanceEntity {
     /// Returns an iterator over the exports of the [`Instance`].
     ///
     /// The order of the yielded exports is not specified.
-    pub fn exports(&self) -> ExportsIter {
+    pub fn exports(&self) -> ExportsIter<'_> {
         ExportsIter::new(self.exports.iter())
     }
 }
