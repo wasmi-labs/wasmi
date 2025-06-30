@@ -21,11 +21,11 @@ macro_rules! bail_unreachable {
 ///
 /// [`Instruction`]: crate::ir::Instruction
 macro_rules! swap_ops {
-    ($make_instr:path) => {
+    ($make_instr:path) => {{
         |result: $crate::ir::Reg, lhs, rhs| -> $crate::ir::Instruction {
             $make_instr(result, rhs, lhs)
         }
-    };
+    }};
 }
 
 /// Implemented by types that can be reset for reuse.
