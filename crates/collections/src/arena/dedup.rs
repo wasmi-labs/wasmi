@@ -64,13 +64,13 @@ impl<Idx, T> DedupArena<Idx, T> {
 
     /// Returns an iterator over the shared reference of the [`Arena`] entities.
     #[inline]
-    pub fn iter(&self) -> Iter<Idx, T> {
+    pub fn iter(&self) -> Iter<'_, Idx, T> {
         self.entities.iter()
     }
 
     /// Returns an iterator over the exclusive reference of the [`Arena`] entities.
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Idx, T> {
         self.entities.iter_mut()
     }
 }

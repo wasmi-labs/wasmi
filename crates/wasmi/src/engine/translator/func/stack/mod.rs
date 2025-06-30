@@ -184,7 +184,7 @@ impl ValueStack {
     /// and accessed via negative [`Reg`] index where the 0 index is referring
     /// to the first function local and the -1 index is referring to the first
     /// allocated function local constant value.
-    pub fn func_local_consts(&self) -> FuncLocalConstsIter {
+    pub fn func_local_consts(&self) -> FuncLocalConstsIter<'_> {
         self.consts.iter()
     }
 

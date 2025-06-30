@@ -139,7 +139,7 @@ impl InstrSequence {
     /// # Note
     ///
     /// The [`InstrSequence`] will be in an empty state after this operation.
-    pub fn drain(&mut self) -> Drain<Instruction> {
+    pub fn drain(&mut self) -> Drain<'_, Instruction> {
         self.instrs.drain(..)
     }
 
@@ -191,7 +191,7 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The [`InstrEncoder`] will be in an empty state after this operation.
-    pub fn drain_instrs(&mut self) -> Drain<Instruction> {
+    pub fn drain_instrs(&mut self) -> Drain<'_, Instruction> {
         self.instrs.drain()
     }
 

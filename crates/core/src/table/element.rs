@@ -30,7 +30,7 @@ impl ElementSegment {
     }
 
     /// Returns `self` as [`ElementSegmentRef`].
-    pub fn as_ref(&self) -> ElementSegmentRef {
+    pub fn as_ref(&self) -> ElementSegmentRef<'_> {
         ElementSegmentRef::from(self)
     }
 

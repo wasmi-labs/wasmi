@@ -123,7 +123,7 @@ impl<T> ProviderSliceStack<T> {
     }
 
     /// Pops the top-most [`Reg`] slice from the [`ProviderSliceStack`] and returns it.
-    pub fn pop(&mut self) -> Option<Drain<Provider<T>>> {
+    pub fn pop(&mut self) -> Option<Drain<'_, Provider<T>>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);
         Some(self.providers.drain(start..end))

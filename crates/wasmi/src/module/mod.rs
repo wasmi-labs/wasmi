@@ -387,7 +387,7 @@ impl Module {
     }
 
     /// Returns an iterator over the imports of the [`Module`].
-    pub fn imports(&self) -> ModuleImportsIter {
+    pub fn imports(&self) -> ModuleImportsIter<'_> {
         let header = self.module_header();
         let len_imported_funcs = header.imports.len_funcs;
         let len_imported_globals = header.imports.len_globals;
@@ -404,7 +404,7 @@ impl Module {
     /// Returns an iterator over the internally defined [`Func`].
     ///
     /// [`Func`]: [`crate::Func`]
-    pub(crate) fn internal_funcs(&self) -> InternalFuncsIter {
+    pub(crate) fn internal_funcs(&self) -> InternalFuncsIter<'_> {
         let header = self.module_header();
         let len_imported = header.imports.len_funcs;
         // We skip the first `len_imported` elements in `funcs`
@@ -419,7 +419,7 @@ impl Module {
     }
 
     /// Returns an iterator over the [`MemoryType`] of internal linear memories.
-    fn internal_memories(&self) -> SliceIter<MemoryType> {
+    fn internal_memories(&self) -> SliceIter<'_, MemoryType> {
         let header = self.module_header();
         let len_imported = header.imports.len_memories;
         // We skip the first `len_imported` elements in `memories`
@@ -430,7 +430,7 @@ impl Module {
     }
 
     /// Returns an iterator over the [`TableType`] of internal tables.
-    fn internal_tables(&self) -> SliceIter<TableType> {
+    fn internal_tables(&self) -> SliceIter<'_, TableType> {
         let header = self.module_header();
         let len_imported = header.imports.len_tables;
         // We skip the first `len_imported` elements in `memories`
@@ -441,7 +441,7 @@ impl Module {
     }
 
     /// Returns an iterator over the internally defined [`Global`].
-    fn internal_globals(&self) -> InternalGlobalsIter {
+    fn internal_globals(&self) -> InternalGlobalsIter<'_> {
         let header = self.module_header();
         let len_imported = header.imports.len_globals;
         // We skip the first `len_imported` elements in `globals`
@@ -455,7 +455,7 @@ impl Module {
     }
 
     /// Returns an iterator over the exports of the [`Module`].
-    pub fn exports(&self) -> ModuleExportsIter {
+    pub fn exports(&self) -> ModuleExportsIter<'_> {
         ModuleExportsIter::new(self)
     }
 
@@ -510,7 +510,7 @@ impl Module {
     ///
     /// [`Config::ignore_custom_sections`]: crate::Config::ignore_custom_sections
     #[inline]
-    pub fn custom_sections(&self) -> CustomSectionsIter {
+    pub fn custom_sections(&self) -> CustomSectionsIter<'_> {
         self.inner.custom_sections.iter()
     }
 }

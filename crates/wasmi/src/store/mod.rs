@@ -154,7 +154,7 @@ impl<T> Store<T> {
     /// This methods mostly exists to satisfy certain use cases that otherwise would conflict with the borrow checker.
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
-    ) -> (&mut StoreInner, ResourceLimiterRef) {
+    ) -> (&mut StoreInner, ResourceLimiterRef<'_>) {
         let resource_limiter = match &mut self.typed.limiter {
             Some(query) => {
                 let limiter = query.0(&mut self.typed.data);

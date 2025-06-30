@@ -6,13 +6,13 @@ pub trait AsContext {
     type Data;
 
     /// Returns the store context that this type provides access to.
-    fn as_context(&self) -> StoreContext<Self::Data>;
+    fn as_context(&self) -> StoreContext<'_, Self::Data>;
 }
 
 /// A trait used to get exclusive access to a [`Store`] in Wasmi.
 pub trait AsContextMut: AsContext {
     /// Returns the store context that this type provides access to.
-    fn as_context_mut(&mut self) -> StoreContextMut<Self::Data>;
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::Data>;
 }
 
 /// A temporary handle to a [`&Store<T>`][`Store`].

@@ -97,7 +97,7 @@ impl FuncLocalConsts {
     /// # Note
     ///
     /// The function local constant values are yielded in their allocation order.
-    pub fn iter(&self) -> FuncLocalConstsIter {
+    pub fn iter(&self) -> FuncLocalConstsIter<'_> {
         FuncLocalConstsIter::new(self)
     }
 }

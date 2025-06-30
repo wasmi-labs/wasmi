@@ -310,7 +310,7 @@ impl CodeMap {
 
     /// Returns the [`CompiledFuncRef`] of `func` if possible, otherwise returns `None`.
     #[inline]
-    fn get_compiled(&self, func: EngineFunc) -> Option<CompiledFuncRef> {
+    fn get_compiled(&self, func: EngineFunc) -> Option<CompiledFuncRef<'_>> {
         let funcs = self.funcs.lock();
         let Some(entity) = funcs.get(func) else {
             // Safety: this is just called internally with function indices
@@ -396,7 +396,7 @@ impl CodeMap {
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[cold]
     #[inline(never)]
-    fn wait_for_compilation(&self, func: EngineFunc) -> Result<CompiledFuncRef, Error> {
+    fn wait_for_compilation(&self, func: EngineFunc) -> Result<CompiledFuncRef<'_>, Error> {
         'wait: loop {
             let funcs = self.funcs.lock();
             let Some(entity) = funcs.get(func) else {
@@ -470,7 +470,7 @@ impl FuncEntity {
     ///
     /// Returns `None` if the [`FuncEntity`] has not yet been compiled.
     #[inline]
-    pub fn get_compiled(&self) -> Option<CompiledFuncRef> {
+    pub fn get_compiled(&self) -> Option<CompiledFuncRef<'_>> {
         match self {
             FuncEntity::Compiled(func) => Some(func.into()),
             _ => None,
@@ -509,7 +509,7 @@ impl FuncEntity {
     ///
     /// If `func` has already been initialized.
     #[inline]
-    pub fn set_compiled(&mut self, entity: CompiledFuncEntity) -> CompiledFuncRef {
+    pub fn set_compiled(&mut self, entity: CompiledFuncEntity) -> CompiledFuncRef<'_> {
         assert!(matches!(self, Self::Compiling));
         *self = Self::Compiled(entity);
         let Self::Compiled(entity) = self else {
