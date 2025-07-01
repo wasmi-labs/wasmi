@@ -331,7 +331,16 @@ impl From<AnyConst16> for u64 {
 /// Upon use the small 32-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct AnyConst32(u32);
+pub struct AnyConst32 {
+    bits: u32,
+}
+
+impl AnyConst32 {
+    /// Creates a new [`AnyConst32`] from the given `bits`.
+    fn from_bits(bits: u32) -> Self {
+        Self { bits }
+    }
+}
 
 impl TryFrom<u64> for AnyConst32 {
     type Error = OutOfBoundsConst;
@@ -397,7 +406,7 @@ impl From<i32> for AnyConst32 {
 
 impl From<u32> for AnyConst32 {
     fn from(value: u32) -> Self {
-        Self(value)
+        Self::from_bits(value)
     }
 }
 
@@ -415,13 +424,13 @@ impl From<F32> for AnyConst32 {
 
 impl From<AnyConst32> for i32 {
     fn from(value: AnyConst32) -> Self {
-        value.0 as _
+        value.bits as _
     }
 }
 
 impl From<AnyConst32> for u32 {
     fn from(value: AnyConst32) -> Self {
-        value.0
+        value.bits
     }
 }
 
