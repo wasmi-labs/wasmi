@@ -58,7 +58,7 @@ pub trait WasmInteger:
     fn non_zero(self) -> Option<Self::NonZero>;
 
     /// Returns `true` if `self` is equal to zero (0).
-    fn eq_zero(self) -> bool;
+    fn is_zero(self) -> bool;
 }
 
 macro_rules! impl_wasm_integer {
@@ -71,7 +71,7 @@ macro_rules! impl_wasm_integer {
                     Self::NonZero::new(self)
                 }
 
-                fn eq_zero(self) -> bool {
+                fn is_zero(self) -> bool {
                     self == 0
                 }
             }

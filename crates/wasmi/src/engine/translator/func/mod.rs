@@ -1328,7 +1328,7 @@ impl FuncTranslator {
                     // Custom optimization was applied: return early
                     return Ok(());
                 }
-                if T::from(lhs).eq_zero() {
+                if T::from(lhs).is_zero() {
                     // Optimization: Shifting or rotating a zero value is a no-op.
                     self.stack.push_const(lhs);
                     return Ok(());

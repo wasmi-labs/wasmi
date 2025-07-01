@@ -840,7 +840,7 @@ impl InstrEncoder {
         lhs: Reg,
         rhs: T,
     ) -> Result<bool, Error> {
-        if !rhs.eq_zero() {
+        if !rhs.is_zero() {
             // Case: `rhs` needs to be zero to apply this optimization.
             return Ok(false);
         }
@@ -885,7 +885,7 @@ impl InstrEncoder {
         lhs: Reg,
         rhs: T,
     ) -> Result<bool, Error> {
-        if !rhs.eq_zero() {
+        if !rhs.is_zero() {
             // Case: `rhs` needs to be zero to apply this optimization.
             return Ok(false);
         }
