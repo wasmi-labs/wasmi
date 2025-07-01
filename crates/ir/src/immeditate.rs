@@ -1,9 +1,5 @@
 use crate::core::{F32, F64};
-use core::{
-    num::NonZero,
-    fmt::Debug,
-    marker::PhantomData,
-};
+use core::{fmt::Debug, marker::PhantomData, num::NonZero};
 
 /// Error that may occur upon converting values to [`Const16`].
 #[derive(Debug, Copy, Clone)]
@@ -75,12 +71,7 @@ macro_rules! impl_const16_from {
         )*
     }
 }
-impl_const16_from!(
-    (i16, i32),
-    (u16, u32),
-    (i16, i64),
-    (u16, u64),
-);
+impl_const16_from!((i16, i32), (u16, u32), (i16, i64), (u16, u64),);
 
 macro_rules! impl_const16_from {
     ( $($ty:ty),* ) => {
@@ -202,14 +193,7 @@ macro_rules! impl_const32 {
     };
     () => {};
 }
-impl_const32!(
-    i32,
-    u32,
-    i64 as i32,
-    u64 as u32,
-    f32,
-    f64 as f32,
-);
+impl_const32!(i32, u32, i64 as i32, u64 as u32, f32, f64 as f32,);
 
 /// A 16-bit constant value of any type.
 ///
@@ -249,12 +233,7 @@ macro_rules! impl_any_const16 {
         )*
     };
 }
-impl_any_const16!(
-    i32 as i16,
-    u32 as u16,
-    i64 as i16,
-    u64 as u16,
-);
+impl_any_const16!(i32 as i16, u32 as u16, i64 as i16, u64 as u16,);
 
 impl AnyConst16 {
     /// Creates a new [`AnyConst16`] from the given `bits`.
