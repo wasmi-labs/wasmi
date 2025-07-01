@@ -219,7 +219,7 @@ impl_const32!(
 /// Upon use the small 16-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct AnyConst16(i16);
+pub struct AnyConst16(u16);
 
 macro_rules! impl_any_const16 {
     ( $( $ty:ty as $ty16:ty ),* $(,)? ) => {
@@ -256,19 +256,19 @@ impl_any_const16!(
 
 impl From<i8> for AnyConst16 {
     fn from(value: i8) -> Self {
-        Self(value as u8 as u16 as i16)
+        Self(value as u8 as u16)
     }
 }
 
 impl From<i16> for AnyConst16 {
     fn from(value: i16) -> Self {
-        Self(value)
+        Self(value as u16)
     }
 }
 
 impl From<u16> for AnyConst16 {
     fn from(value: u16) -> Self {
-        Self::from(value as i16)
+        Self(value)
     }
 }
 
@@ -280,31 +280,37 @@ impl From<AnyConst16> for i8 {
 
 impl From<AnyConst16> for i16 {
     fn from(value: AnyConst16) -> Self {
+        u16::from(value) as i16
+    }
+}
+
+impl From<AnyConst16> for u16 {
+    fn from(value: AnyConst16) -> Self {
         value.0
     }
 }
 
 impl From<AnyConst16> for i32 {
     fn from(value: AnyConst16) -> Self {
-        Self::from(value.0)
+        Self::from(i16::from(value))
     }
 }
 
 impl From<AnyConst16> for i64 {
     fn from(value: AnyConst16) -> Self {
-        Self::from(value.0)
+        Self::from(i16::from(value))
     }
 }
 
 impl From<AnyConst16> for u32 {
     fn from(value: AnyConst16) -> Self {
-        Self::from(value.0 as u16)
+        Self::from(u16::from(value))
     }
 }
 
 impl From<AnyConst16> for u64 {
     fn from(value: AnyConst16) -> Self {
-        Self::from(value.0 as u16)
+        Self::from(u16::from(value))
     }
 }
 
