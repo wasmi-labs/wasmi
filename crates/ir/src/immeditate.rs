@@ -383,15 +383,15 @@ impl From<AnyConst32> for i32 {
     }
 }
 
-impl From<AnyConst32> for u32 {
-    fn from(value: AnyConst32) -> Self {
-        value.bits
-    }
-}
-
 impl From<AnyConst32> for i64 {
     fn from(value: AnyConst32) -> Self {
         Self::from(i32::from(value))
+    }
+}
+
+impl From<AnyConst32> for u32 {
+    fn from(value: AnyConst32) -> Self {
+        value.bits
     }
 }
 
