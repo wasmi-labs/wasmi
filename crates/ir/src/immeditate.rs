@@ -207,6 +207,13 @@ pub struct AnyConst16 {
     bits: u16,
 }
 
+impl AnyConst16 {
+    /// Creates a new [`AnyConst16`] from the given `bits`.
+    fn from_bits(bits: u16) -> Self {
+        Self { bits }
+    }
+}
+
 macro_rules! impl_any_const16 {
     ( $( $ty:ty as $ty16:ty ),* $(,)? ) => {
         $(
@@ -234,13 +241,6 @@ macro_rules! impl_any_const16 {
     };
 }
 impl_any_const16!(i32 as i16, u32 as u16, i64 as i16, u64 as u16);
-
-impl AnyConst16 {
-    /// Creates a new [`AnyConst16`] from the given `bits`.
-    fn from_bits(bits: u16) -> Self {
-        Self { bits }
-    }
-}
 
 impl From<i8> for AnyConst16 {
     fn from(value: i8) -> Self {
