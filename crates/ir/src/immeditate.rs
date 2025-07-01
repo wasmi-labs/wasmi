@@ -233,7 +233,7 @@ macro_rules! impl_any_const16 {
         )*
     };
 }
-impl_any_const16!(i32 as i16, u32 as u16, i64 as i16, u64 as u16,);
+impl_any_const16!(i32 as i16, u32 as u16, i64 as i16, u64 as u16);
 
 impl AnyConst16 {
     /// Creates a new [`AnyConst16`] from the given `bits`.
