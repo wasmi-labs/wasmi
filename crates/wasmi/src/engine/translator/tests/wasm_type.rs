@@ -1,7 +1,7 @@
 use crate::core::ValType;
 
 use crate::{
-    core::{UntypedVal, F32},
+    core::UntypedVal,
     ir::{Const32, Instruction, Reg},
 };
 use core::fmt::Display;
@@ -60,7 +60,7 @@ impl WasmTy for f32 {
     const VALUE_TYPE: ValType = ValType::F32;
 
     fn return_imm_instr(&self) -> Instruction {
-        Instruction::return_imm32(F32::from(*self))
+        Instruction::return_imm32(*self)
     }
 }
 
