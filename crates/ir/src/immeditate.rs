@@ -3,7 +3,6 @@ use core::{
     num::NonZero,
     fmt::Debug,
     marker::PhantomData,
-    num::{NonZeroI16, NonZeroI32, NonZeroI64, NonZeroU16, NonZeroU32, NonZeroU64},
 };
 
 /// Error that may occur upon converting values to [`Const16`].
@@ -222,89 +221,38 @@ impl_const32!(
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct AnyConst16(i16);
 
-impl TryFrom<i32> for AnyConst16 {
-    type Error = OutOfBoundsConst;
+macro_rules! impl_any_const16 {
+    ( $( $ty:ty as $ty16:ty ),* $(,)? ) => {
+        $(
+            impl TryFrom<$ty> for AnyConst16 {
+                type Error = OutOfBoundsConst;
 
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        i16::try_from(value)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
+                fn try_from(value: $ty) -> Result<Self, Self::Error> {
+                    <$ty16>::try_from(value)
+                        .map(Self::from)
+                        .map_err(|_| OutOfBoundsConst)
+                }
+            }
+
+            impl TryFrom<NonZero<$ty>> for AnyConst16 {
+                type Error = OutOfBoundsConst;
+
+                fn try_from(value: NonZero<$ty>) -> Result<Self, Self::Error> {
+                    <NonZero<$ty16>>::try_from(value)
+                        .map(<NonZero<$ty16>>::get)
+                        .map(Self::from)
+                        .map_err(|_| OutOfBoundsConst)
+                }
+            }
+        )*
+    };
 }
-
-impl TryFrom<u32> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        u16::try_from(value)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
-
-impl TryFrom<i64> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: i64) -> Result<Self, Self::Error> {
-        i16::try_from(value)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
-
-impl TryFrom<u64> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: u64) -> Result<Self, Self::Error> {
-        u16::try_from(value)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
-
-impl TryFrom<NonZeroI32> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: NonZeroI32) -> Result<Self, Self::Error> {
-        NonZeroI16::try_from(value)
-            .map(NonZeroI16::get)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
-
-impl TryFrom<NonZeroU32> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: NonZeroU32) -> Result<Self, Self::Error> {
-        NonZeroU16::try_from(value)
-            .map(NonZeroU16::get)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
-
-impl TryFrom<NonZeroI64> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: NonZeroI64) -> Result<Self, Self::Error> {
-        NonZeroI16::try_from(value)
-            .map(NonZeroI16::get)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
-
-impl TryFrom<NonZeroU64> for AnyConst16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: NonZeroU64) -> Result<Self, Self::Error> {
-        NonZeroU16::try_from(value)
-            .map(NonZeroU16::get)
-            .map(Self::from)
-            .map_err(|_| OutOfBoundsConst)
-    }
-}
+impl_any_const16!(
+    i32 as i16,
+    u32 as u16,
+    i64 as i16,
+    u64 as u16,
+);
 
 impl From<i8> for AnyConst16 {
     fn from(value: i8) -> Self {
