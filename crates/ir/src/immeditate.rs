@@ -358,35 +358,18 @@ impl<T> From<Const32<T>> for AnyConst32 {
     }
 }
 
-impl From<bool> for AnyConst32 {
-    fn from(value: bool) -> Self {
-        Self::from_bits(value as _)
-    }
+macro_rules! impl_from_for_anyconst32 {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl From<$ty> for AnyConst32 {
+                fn from(value: $ty) -> Self {
+                    Self::from_bits(value as _)
+                }
+            }
+        )*
+    };
 }
-
-impl From<i8> for AnyConst32 {
-    fn from(value: i8) -> Self {
-        Self::from_bits(value as _)
-    }
-}
-
-impl From<i16> for AnyConst32 {
-    fn from(value: i16) -> Self {
-        Self::from_bits(value as _)
-    }
-}
-
-impl From<i32> for AnyConst32 {
-    fn from(value: i32) -> Self {
-        Self::from_bits(value as _)
-    }
-}
-
-impl From<u32> for AnyConst32 {
-    fn from(value: u32) -> Self {
-        Self::from_bits(value as _)
-    }
-}
+impl_from_for_anyconst32!(bool, i8, u8, i16, u16, i32, u32);
 
 impl From<f32> for AnyConst32 {
     fn from(value: f32) -> Self {
