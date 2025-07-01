@@ -1362,10 +1362,10 @@ impl FuncTranslator {
     ///
     /// - `{i32, i64}.{div_u, div_s, rem_u, rem_s}`
     #[allow(clippy::too_many_arguments)]
-    fn translate_divrem<T, NonZeroT>(
+    fn translate_divrem<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<NonZeroT>) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T::NonZero>) -> Instruction,
         make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(T, T) -> Result<T, TrapCode>,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
@@ -1373,7 +1373,6 @@ impl FuncTranslator {
     ) -> Result<(), Error>
     where
         T: WasmInteger,
-        NonZeroT: Copy + TryFrom<T> + TryInto<Const16<NonZeroT>>,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -1385,7 +1384,7 @@ impl FuncTranslator {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                let Some(non_zero_rhs) = NonZeroT::try_from(T::from(rhs)).ok() else {
+                let Some(non_zero_rhs) = <T as WasmInteger>::non_zero(T::from(rhs)) else {
                     // Optimization: division by zero always traps
                     self.translate_trap(TrapCode::IntegerDivisionByZero)?;
                     return Ok(());
