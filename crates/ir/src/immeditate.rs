@@ -1,4 +1,3 @@
-use crate::core::{F32, F64};
 use core::{fmt::Debug, marker::PhantomData, num::NonZero};
 
 /// Error that may occur upon converting values to [`Const16`].
@@ -395,12 +394,6 @@ impl From<f32> for AnyConst32 {
     }
 }
 
-impl From<F32> for AnyConst32 {
-    fn from(value: F32) -> Self {
-        Self::from(value.to_bits())
-    }
-}
-
 impl From<AnyConst32> for i32 {
     fn from(value: AnyConst32) -> Self {
         value.bits as _
@@ -427,24 +420,10 @@ impl From<AnyConst32> for u64 {
 
 impl From<AnyConst32> for f32 {
     fn from(value: AnyConst32) -> Self {
-        f32::from_bits(u32::from(value))
-    }
-}
-
-impl From<AnyConst32> for F32 {
-    fn from(value: AnyConst32) -> Self {
-        F32::from(f32::from(value))
     }
 }
 
 impl From<AnyConst32> for f64 {
     fn from(value: AnyConst32) -> Self {
-        f64::from(f32::from_bits(u32::from(value)))
-    }
-}
-
-impl From<AnyConst32> for F64 {
-    fn from(value: AnyConst32) -> Self {
-        F64::from(f64::from(value))
     }
 }
