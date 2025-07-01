@@ -22,6 +22,7 @@ pub use self::{
     ty::{MemoryType, MemoryTypeBuilder},
 };
 use crate::{Fuel, FuelError, ResourceLimiterRef};
+use core::ops::Range;
 
 #[cfg(feature = "simd")]
 pub use self::access::ExtendInto;
@@ -278,6 +279,14 @@ impl Memory {
         self.bytes.len
     }
 
+    /// Returns the index span for the memory access at `start..(start+len)`.
+    fn access_span(start: usize, len: usize) -> Result<Range<usize>, MemoryError> {
+        let Some(end) = start.checked_add(len) else {
+            return Err(MemoryError::OutOfBoundsAccess);
+        };
+        Ok(start..end)
+    }
+
     /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
     /// where `n` is the length of `buffer`.
     ///
@@ -285,10 +294,10 @@ impl Memory {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), MemoryError> {
-        let len_buffer = buffer.len();
+        let span = Self::access_span(offset, buffer.len())?;
         let slice = self
             .data()
-            .get(offset..(offset + len_buffer))
+            .get(span)
             .ok_or(MemoryError::OutOfBoundsAccess)?;
         buffer.copy_from_slice(slice);
         Ok(())
@@ -301,10 +310,10 @@ impl Memory {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), MemoryError> {
-        let len_buffer = buffer.len();
+        let span = Self::access_span(offset, buffer.len())?;
         let slice = self
             .data_mut()
-            .get_mut(offset..(offset + len_buffer))
+            .get_mut(span)
             .ok_or(MemoryError::OutOfBoundsAccess)?;
         slice.copy_from_slice(buffer);
         Ok(())
