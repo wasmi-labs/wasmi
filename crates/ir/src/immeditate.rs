@@ -360,43 +360,43 @@ impl<T> From<Const32<T>> for AnyConst32 {
 
 impl From<bool> for AnyConst32 {
     fn from(value: bool) -> Self {
-        Self::from(u32::from(value))
+        Self::from_bits(value as _)
     }
 }
 
 impl From<i8> for AnyConst32 {
     fn from(value: i8) -> Self {
-        Self::from(value as u32)
+        Self::from_bits(value as _)
     }
 }
 
 impl From<i16> for AnyConst32 {
     fn from(value: i16) -> Self {
-        Self::from(value as u32)
+        Self::from_bits(value as _)
     }
 }
 
 impl From<i32> for AnyConst32 {
     fn from(value: i32) -> Self {
-        Self::from(value as u32)
+        Self::from_bits(value as _)
     }
 }
 
 impl From<u32> for AnyConst32 {
     fn from(value: u32) -> Self {
-        Self::from_bits(value)
+        Self::from_bits(value as _)
     }
 }
 
 impl From<f32> for AnyConst32 {
     fn from(value: f32) -> Self {
-        Self::from(F32::from(value))
+        Self::from_bits(f32::to_bits(value))
     }
 }
 
 impl From<AnyConst32> for i32 {
     fn from(value: AnyConst32) -> Self {
-        value.bits as _
+        u32::from(value) as _
     }
 }
 
@@ -420,10 +420,12 @@ impl From<AnyConst32> for u64 {
 
 impl From<AnyConst32> for f32 {
     fn from(value: AnyConst32) -> Self {
+        Self::from_bits(u32::from(value))
     }
 }
 
 impl From<AnyConst32> for f64 {
     fn from(value: AnyConst32) -> Self {
+        Self::from(f32::from(value))
     }
 }
