@@ -860,7 +860,7 @@ impl FuncTranslator {
             (lhs, Operand::Immediate(rhs)) => {
                 let lhs = self.layout.operand_to_reg(lhs)?;
                 let rhs = T::from(rhs.val());
-                let Some(non_zero_rhs) = <T as WasmInteger>::NonZero::try_from(rhs).ok() else {
+                let Some(non_zero_rhs) = <T as WasmInteger>::non_zero(rhs) else {
                     // Optimization: division by zero always traps
                     return self.translate_trap(TrapCode::IntegerDivisionByZero);
                 };
