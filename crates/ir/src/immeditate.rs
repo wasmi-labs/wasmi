@@ -172,95 +172,45 @@ impl<T> PartialEq for Const32<T> {
 
 impl<T> Eq for Const32<T> {}
 
-impl From<i32> for Const32<i32> {
-    fn from(value: i32) -> Self {
-        Self::new(AnyConst32::from(value))
-    }
+macro_rules! impl_const32 {
+    ( $ty:ty, $($rest:tt)* ) => {
+        impl_const32!(@ $ty, $ty);
+        impl_const32!($($rest)*);
+    };
+    ( $ty64:ty as $ty32:ty, $($rest:tt)* ) => {
+        impl TryFrom<$ty64> for Const32<$ty64> {
+            type Error = OutOfBoundsConst;
+
+            fn try_from(value: $ty64) -> Result<Self, Self::Error> {
+                AnyConst32::try_from(value).map(Self::new)
+            }
+        }
+        impl_const32!(@ $ty64, $ty32);
+        impl_const32!($($rest)*);
+    };
+    ( @ $ty:ty, $ty32:ty ) => {
+        impl From<$ty32> for Const32<$ty> {
+            fn from(value: $ty32) -> Self {
+                Self::new(AnyConst32::from(value))
+            }
+        }
+
+        impl From<Const32<$ty>> for $ty {
+            fn from(value: Const32<Self>) -> Self {
+                Self::from(value.inner)
+            }
+        }
+    };
+    () => {};
 }
-
-impl From<u32> for Const32<u32> {
-    fn from(value: u32) -> Self {
-        Self::new(AnyConst32::from(value))
-    }
-}
-
-impl From<i32> for Const32<i64> {
-    fn from(value: i32) -> Self {
-        Self::new(AnyConst32::from(value))
-    }
-}
-
-impl From<u32> for Const32<u64> {
-    fn from(value: u32) -> Self {
-        Self::new(AnyConst32::from(value))
-    }
-}
-
-impl From<f32> for Const32<f64> {
-    fn from(value: f32) -> Self {
-        Self::new(AnyConst32::from(value))
-    }
-}
-
-impl From<Const32<i32>> for i32 {
-    fn from(value: Const32<Self>) -> Self {
-        Self::from(value.inner)
-    }
-}
-
-impl From<Const32<u32>> for u32 {
-    fn from(value: Const32<Self>) -> Self {
-        Self::from(value.inner)
-    }
-}
-
-impl From<Const32<i64>> for i64 {
-    fn from(value: Const32<Self>) -> Self {
-        Self::from(value.inner)
-    }
-}
-
-impl From<Const32<u64>> for u64 {
-    fn from(value: Const32<Self>) -> Self {
-        Self::from(value.inner)
-    }
-}
-
-impl From<Const32<f32>> for f32 {
-    fn from(value: Const32<Self>) -> Self {
-        Self::from(value.inner)
-    }
-}
-
-impl From<Const32<f64>> for f64 {
-    fn from(value: Const32<Self>) -> Self {
-        Self::from(value.inner)
-    }
-}
-
-impl TryFrom<i64> for Const32<i64> {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: i64) -> Result<Self, Self::Error> {
-        AnyConst32::try_from(value).map(Self::new)
-    }
-}
-
-impl TryFrom<u64> for Const32<u64> {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: u64) -> Result<Self, Self::Error> {
-        AnyConst32::try_from(value).map(Self::new)
-    }
-}
-
-impl TryFrom<f64> for Const32<f64> {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(value: f64) -> Result<Self, Self::Error> {
-        AnyConst32::try_from(value).map(Self::new)
-    }
-}
+impl_const32!(
+    i32,
+    u32,
+    i64 as i32,
+    u64 as u32,
+    f32,
+    f64 as f32,
+);
 
 /// A 16-bit constant value of any type.
 ///
