@@ -54,6 +54,7 @@ use crate::{
         Const16,
         Const32,
         Instruction,
+        IntoShiftAmount,
         Reg,
         RegSpan,
     },
@@ -932,6 +933,70 @@ impl FuncTranslator {
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
                 let lhs16 = self.make_imm16(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| match lhs16 {
+                        Operand16::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
+                        Operand16::Reg(lhs) => make_instr(result, lhs, rhs),
+                    },
+                    FuelCostsProvider::base,
+                )
+            }
+            (lhs, rhs) => {
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| make_instr(result, lhs, rhs),
+                    FuelCostsProvider::base,
+                )
+            }
+        }
+    }
+
+    /// Translates Wasm shift and rotate operators to Wasmi bytecode.
+    fn translate_shift<T>(
+        &mut self,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm16_rhs: fn(
+            result: Reg,
+            lhs: Reg,
+            rhs: <T as IntoShiftAmount>::Output,
+        ) -> Instruction,
+        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        consteval: fn(T, T) -> T,
+    ) -> Result<(), Error>
+    where
+        T: WasmInteger + IntoShiftAmount<Input: From<TypedVal>>,
+        Const16<T>: From<i16>,
+    {
+        bail_unreachable!(self);
+        match self.stack.pop2() {
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
+                self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
+            }
+            (lhs, Operand::Immediate(rhs)) => {
+                let Some(rhs) = T::into_shift_amount(rhs.val().into()) else {
+                    // Optimization: Shifting or rotating by zero bits is a no-op.
+                    self.stack.push_operand(lhs)?;
+                    return Ok(());
+                };
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| make_instr_imm16_rhs(result, lhs, rhs),
+                    FuelCostsProvider::base,
+                )
+            }
+            (Operand::Immediate(lhs), rhs) => {
+                let lhs = T::from(lhs.val());
+                if lhs.is_zero() {
+                    // Optimization: Shifting or rotating a zero value is a no-op.
+                    self.stack.push_immediate(lhs)?;
+                    return Ok(());
+                }
+                let lhs16 = self.make_imm16(T::from(lhs))?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,

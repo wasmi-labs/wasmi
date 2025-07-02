@@ -763,23 +763,48 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_shl(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i32>(
+            Instruction::i32_shl,
+            Instruction::i32_shl_by,
+            Instruction::i32_shl_imm16,
+            wasm::i32_shl,
+        )
     }
 
     fn visit_i32_shr_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i32>(
+            Instruction::i32_shr_s,
+            Instruction::i32_shr_s_by,
+            Instruction::i32_shr_s_imm16,
+            wasm::i32_shr_s,
+        )
     }
 
     fn visit_i32_shr_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i32>(
+            Instruction::i32_shr_u,
+            Instruction::i32_shr_u_by,
+            Instruction::i32_shr_u_imm16,
+            wasm::i32_shr_u,
+        )
     }
 
     fn visit_i32_rotl(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i32>(
+            Instruction::i32_rotl,
+            Instruction::i32_rotl_by,
+            Instruction::i32_rotl_imm16,
+            wasm::i32_rotl,
+        )
     }
 
     fn visit_i32_rotr(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i32>(
+            Instruction::i32_rotr,
+            Instruction::i32_rotr_by,
+            Instruction::i32_rotr_imm16,
+            wasm::i32_rotr,
+        )
     }
 
     fn visit_i64_clz(&mut self) -> Self::Output {
@@ -875,23 +900,48 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_shl(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i64>(
+            Instruction::i64_shl,
+            Instruction::i64_shl_by,
+            Instruction::i64_shl_imm16,
+            wasm::i64_shl,
+        )
     }
 
     fn visit_i64_shr_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i64>(
+            Instruction::i64_shr_s,
+            Instruction::i64_shr_s_by,
+            Instruction::i64_shr_s_imm16,
+            wasm::i64_shr_s,
+        )
     }
 
     fn visit_i64_shr_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i64>(
+            Instruction::i64_shr_u,
+            Instruction::i64_shr_u_by,
+            Instruction::i64_shr_u_imm16,
+            wasm::i64_shr_u,
+        )
     }
 
     fn visit_i64_rotl(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i64>(
+            Instruction::i64_rotl,
+            Instruction::i64_rotl_by,
+            Instruction::i64_rotl_imm16,
+            wasm::i64_rotl,
+        )
     }
 
     fn visit_i64_rotr(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift::<i64>(
+            Instruction::i64_rotr,
+            Instruction::i64_rotr_by,
+            Instruction::i64_rotr_imm16,
+            wasm::i64_rotr,
+        )
     }
 
     fn visit_f32_abs(&mut self) -> Self::Output {
