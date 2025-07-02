@@ -742,6 +742,38 @@ impl FuncTranslator {
         )
     }
 
+    /// Translates a unary Wasm instruction to Wasmi bytecode.
+    fn translate_unary_fallible<T, R>(
+        &mut self,
+        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        consteval: fn(input: T) -> Result<R, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal> + Typed,
+    {
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        if let Operand::Immediate(input) = input {
+            let input = T::from(input.val());
+            match consteval(input) {
+                Ok(result) => {
+                    self.stack.push_immediate(result)?;
+                }
+                Err(trap) => {
+                    self.translate_trap(trap)?;
+                }
+            }
+            return Ok(());
+        }
+        let input = self.layout.operand_to_reg(input)?;
+        self.push_instr_with_result(
+            <R as Typed>::TY,
+            |result| make_instr(result, input),
+            FuelCostsProvider::base,
+        )
+    }
+
     /// Creates a new 16-bit encoded [`Operand16`] from the given `value`.
     pub fn make_imm16<T>(&mut self, value: T) -> Result<Operand16<T>, Error>
     where
