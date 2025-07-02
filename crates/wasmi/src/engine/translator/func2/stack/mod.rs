@@ -335,6 +335,22 @@ impl Stack {
         self.controls.acquire_target(depth)
     }
 
+    /// Pushes the [`Operand`] back to the [`Stack`].
+    ///
+    /// Returns the new [`OperandIdx`].
+    ///
+    /// # Errors
+    ///
+    /// - If too many operands have been pushed onto the [`Stack`].
+    /// - If the local with `local_idx` does not exist.
+    pub fn push_operand(&mut self, operand: Operand) -> Result<OperandIdx, Error> {
+        match operand {
+            Operand::Local(operand) => self.push_local(operand.local_index()),
+            Operand::Temp(operand) => self.push_temp(operand.ty(), operand.instr()),
+            Operand::Immediate(operand) => self.push_immediate(operand.val()),
+        }
+    }
+
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
     ///
     /// # Errors
