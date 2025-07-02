@@ -1001,31 +1001,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_abs, wasm::f64_abs)
+        self.translate_unary(Instruction::f64_abs, wasm::f64_abs)
     }
 
     fn visit_f64_neg(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_neg, wasm::f64_neg)
+        self.translate_unary(Instruction::f64_neg, wasm::f64_neg)
     }
 
     fn visit_f64_ceil(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_ceil, wasm::f64_ceil)
+        self.translate_unary(Instruction::f64_ceil, wasm::f64_ceil)
     }
 
     fn visit_f64_floor(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_floor, wasm::f64_floor)
+        self.translate_unary(Instruction::f64_floor, wasm::f64_floor)
     }
 
     fn visit_f64_trunc(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_trunc, wasm::f64_trunc)
+        self.translate_unary(Instruction::f64_trunc, wasm::f64_trunc)
     }
 
     fn visit_f64_nearest(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_nearest, wasm::f64_nearest)
+        self.translate_unary(Instruction::f64_nearest, wasm::f64_nearest)
     }
 
     fn visit_f64_sqrt(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f64>(Instruction::f64_sqrt, wasm::f64_sqrt)
+        self.translate_unary(Instruction::f64_sqrt, wasm::f64_sqrt)
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
