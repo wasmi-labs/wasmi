@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, TrapCode, F32, F64},
+    core::{wasm, TrapCode, F32, F64, ValType},
     engine::{
         translator::func2::{
             stack::{AcquiredTarget, IfReachability},
@@ -1093,7 +1093,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        // Note: this Wasm operation is a no-op, we only have to change the types on the stack.
+        match self.stack.pop() {
+            Operand::Local(input) => {
+                debug_assert!(matches!(input.ty(), ValType::I32));
+                todo!() // do we need a copy or should we allow to manipulate a local's type?
+            }
+            Operand::Temp(input) => {
+                debug_assert!(matches!(input.ty(), ValType::I32));
+                self.stack.push_temp(ValType::I64, None)?;
+            }
+            Operand::Immediate(input) => {
+                let input = u32::from(input.val());
+                self.stack.push_immediate(u64::from(input))?;
+            }
+        }
+        Ok(())
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
