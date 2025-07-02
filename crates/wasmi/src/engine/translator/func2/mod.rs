@@ -731,8 +731,7 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let input = self.stack.pop();
         if let Operand::Immediate(input) = input {
-            self.stack
-                .push_immediate(consteval(input.val().into()).into())?;
+            self.stack.push_immediate(consteval(input.val().into()))?;
             return Ok(());
         }
         let input = self.layout.operand_to_reg(input)?;
