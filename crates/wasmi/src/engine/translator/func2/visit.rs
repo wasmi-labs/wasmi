@@ -1157,7 +1157,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<f64, f32>(Instruction::f32_demote_f64, wasm::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
@@ -1177,7 +1177,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<f32, f64>(Instruction::f64_promote_f32, wasm::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
