@@ -1057,7 +1057,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i64, i32>(Instruction::i32_wrap_i64, wasm::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
@@ -1089,7 +1089,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i32, i64>(Instruction::i64_extend32_s, wasm::i64_extend_i32_s)
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
