@@ -995,7 +995,7 @@ impl FuncTranslator {
                     self.stack.push_immediate(lhs)?;
                     return Ok(());
                 }
-                let lhs16 = self.make_imm16(T::from(lhs))?;
+                let lhs16 = self.make_imm16(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
