@@ -1141,19 +1141,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_convert_i32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i32, f32>(Instruction::f32_convert_i32_s, wasm::f32_convert_i32_s)
     }
 
     fn visit_f32_convert_i32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<u32, f32>(Instruction::f32_convert_i32_u, wasm::f32_convert_i32_u)
     }
 
     fn visit_f32_convert_i64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i64, f32>(Instruction::f32_convert_i64_s, wasm::f32_convert_i64_s)
     }
 
     fn visit_f32_convert_i64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<u64, f32>(Instruction::f32_convert_i64_u, wasm::f32_convert_i64_u)
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
@@ -1161,19 +1161,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i32, f64>(Instruction::f64_convert_i32_s, wasm::f64_convert_i32_s)
     }
 
     fn visit_f64_convert_i32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<u32, f64>(Instruction::f64_convert_i32_u, wasm::f64_convert_i32_u)
     }
 
     fn visit_f64_convert_i64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<i64, f64>(Instruction::f64_convert_i64_s, wasm::f64_convert_i64_s)
     }
 
     fn visit_f64_convert_i64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary::<u64, f64>(Instruction::f64_convert_i64_u, wasm::f64_convert_i64_u)
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
