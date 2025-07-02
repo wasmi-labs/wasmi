@@ -945,31 +945,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_abs(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_abs, wasm::f32_abs)
+        self.translate_unary(Instruction::f32_abs, wasm::f32_abs)
     }
 
     fn visit_f32_neg(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_neg, wasm::f32_neg)
+        self.translate_unary(Instruction::f32_neg, wasm::f32_neg)
     }
 
     fn visit_f32_ceil(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_ceil, wasm::f32_ceil)
+        self.translate_unary(Instruction::f32_ceil, wasm::f32_ceil)
     }
 
     fn visit_f32_floor(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_floor, wasm::f32_floor)
+        self.translate_unary(Instruction::f32_floor, wasm::f32_floor)
     }
 
     fn visit_f32_trunc(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_trunc, wasm::f32_trunc)
+        self.translate_unary(Instruction::f32_trunc, wasm::f32_trunc)
     }
 
     fn visit_f32_nearest(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_nearest, wasm::f32_nearest)
+        self.translate_unary(Instruction::f32_nearest, wasm::f32_nearest)
     }
 
     fn visit_f32_sqrt(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f32>(Instruction::f32_sqrt, wasm::f32_sqrt)
+        self.translate_unary(Instruction::f32_sqrt, wasm::f32_sqrt)
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
