@@ -39,7 +39,7 @@ impl ModuleExports {
     }
 
     /// Returns an iterator yielding the names of the exported Wasm functions.
-    pub fn funcs(&self) -> ExportedFuncsIter {
+    pub fn funcs(&self) -> ExportedFuncsIter<'_> {
         ExportedFuncsIter {
             names: self.funcs.iter(),
             types: self.func_types.iter(),
@@ -47,17 +47,17 @@ impl ModuleExports {
     }
 
     /// Returns an iterator yielding the names of the exported Wasm globals.
-    pub fn globals(&self) -> StringSequenceIter {
+    pub fn globals(&self) -> StringSequenceIter<'_> {
         self.globals.iter()
     }
 
     /// Returns an iterator yielding the names of the exported Wasm memories.
-    pub fn memories(&self) -> StringSequenceIter {
+    pub fn memories(&self) -> StringSequenceIter<'_> {
         self.memories.iter()
     }
 
     /// Returns an iterator yielding the names of the exported Wasm tables.
-    pub fn tables(&self) -> StringSequenceIter {
+    pub fn tables(&self) -> StringSequenceIter<'_> {
         self.tables.iter()
     }
 }
@@ -103,7 +103,7 @@ impl StringSequence {
     /// Returns an iterator over the strings in `self`.
     ///
     /// The iterator yields the strings in order of their insertion.
-    pub fn iter(&self) -> StringSequenceIter {
+    pub fn iter(&self) -> StringSequenceIter<'_> {
         StringSequenceIter {
             iter: self.strings.iter(),
         }
