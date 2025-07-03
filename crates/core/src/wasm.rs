@@ -284,6 +284,23 @@ impl_untyped_val! {
     fn i64_trunc_sat_f64_u(value: f64) -> u64 = TruncateSaturateInto::truncate_saturate_into;
 }
 
+macro_rules! impl_reinterpret_cast {
+    ( $(fn $name:ident($from:ty) -> $to:ty);* $(;)? ) => {
+        $(
+            #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+            pub fn $name(value: $from) -> $to {
+                <$to>::from_ne_bytes(<$from>::to_ne_bytes(value))
+            }
+        )*
+    };
+}
+impl_reinterpret_cast! {
+    fn i32_reinterpret_f32(f32) -> i32;
+    fn i64_reinterpret_f64(f64) -> i64;
+    fn f32_reinterpret_i32(i32) -> f32;
+    fn f64_reinterpret_i64(i64) -> f64;
+}
+
 macro_rules! gen_load_extend_fn {
     (
         $( (fn $load_fn:ident, fn $load_at_fn:ident, $wrapped:ty => $ty:ty); )*
@@ -487,21 +504,4 @@ pub fn i64_mul_wide_u(lhs: i64, rhs: i64) -> (i64, i64) {
     let rhs = u128::from(rhs as u64);
     let result = lhs.wrapping_mul(rhs);
     split128(result as i128)
-}
-
-macro_rules! impl_reinterpret_cast {
-    ( $(fn $name:ident($from:ty) -> $to:ty);* $(;)? ) => {
-        $(
-            #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
-            pub fn $name(value: $from) -> $to {
-                <$to>::from_ne_bytes(<$from>::to_ne_bytes(value))
-            }
-        )*
-    };
-}
-impl_reinterpret_cast! {
-    fn i32_reinterpret_f32(f32) -> i32;
-    fn i64_reinterpret_f64(f64) -> i64;
-    fn f32_reinterpret_i32(i32) -> f32;
-    fn f64_reinterpret_i64(i64) -> f64;
 }
