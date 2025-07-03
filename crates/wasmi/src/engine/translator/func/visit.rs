@@ -2844,7 +2844,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        self.translate_i64_extend_i32_u()
+        self.translate_reinterpret(wasm::i64_extend_i32_u)
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
@@ -2916,19 +2916,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValType::I32)
+        self.translate_reinterpret(wasm::i32_reinterpret_f32)
     }
 
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValType::I64)
+        self.translate_reinterpret(wasm::i64_reinterpret_f64)
     }
 
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValType::F32)
+        self.translate_reinterpret(wasm::f32_reinterpret_i32)
     }
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValType::F64)
+        self.translate_reinterpret(wasm::f64_reinterpret_i64)
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
