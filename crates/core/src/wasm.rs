@@ -489,22 +489,19 @@ pub fn i64_mul_wide_u(lhs: i64, rhs: i64) -> (i64, i64) {
     split128(result as i128)
 }
 
-/// Execute an `i32.reinterpret_f32` Wasm instruction.
-pub fn i32_reinterpret_f32(value: f32) -> i32 {
-    i32::from_ne_bytes(f32::to_ne_bytes(value))
+macro_rules! impl_reinterpret_cast {
+    ( $(fn $name:ident($from:ty) -> $to:ty);* $(;)? ) => {
+        $(
+            #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+            pub fn $name(value: $from) -> $to {
+                <$to>::from_ne_bytes(<$from>::to_ne_bytes(value))
+            }
+        )*
+    };
 }
-
-/// Execute an `i64.reinterpret_f64` Wasm instruction.
-pub fn i64_reinterpret_f64(value: f64) -> i64 {
-    i64::from_ne_bytes(f64::to_ne_bytes(value))
-}
-
-/// Execute an `f32.reinterpret_i32` Wasm instruction.
-pub fn f32_reinterpret_i32(value: i32) -> f32 {
-    f32::from_ne_bytes(i32::to_ne_bytes(value))
-}
-
-/// Execute an `f64.reinterpret_i64` Wasm instruction.
-pub fn f64_reinterpret_i64(value: i64) -> f64 {
-    f64::from_ne_bytes(i64::to_ne_bytes(value))
+impl_reinterpret_cast! {
+    fn i32_reinterpret_f32(f32) -> i32;
+    fn i64_reinterpret_f64(f64) -> i64;
+    fn f32_reinterpret_i32(i32) -> f32;
+    fn f64_reinterpret_i64(i64) -> f64;
 }
