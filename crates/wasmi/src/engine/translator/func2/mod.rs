@@ -774,6 +774,34 @@ impl FuncTranslator {
         )
     }
 
+    /// Translate a generic Wasm reinterpret-like operation.
+    ///
+    /// # Note
+    ///
+    /// This Wasm operation is a no-op. Ideally we only have to change the types on the stack.
+    fn translate_reinterpret<T, R>(&mut self, consteval: fn(T) -> R) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
+        bail_unreachable!(self);
+        match self.stack.pop() {
+            Operand::Local(input) => {
+                debug_assert!(matches!(input.ty(), ValType::I32));
+                todo!() // do we need a copy or should we allow to manipulate a local's type?
+            }
+            Operand::Temp(input) => {
+                debug_assert!(matches!(input.ty(), ValType::I32));
+                self.stack.push_temp(ValType::I64, None)?;
+            }
+            Operand::Immediate(input) => {
+                let input: T = input.val().into();
+                self.stack.push_immediate(consteval(input))?;
+            }
+        }
+        Ok(())
+    }
+
     /// Creates a new 16-bit encoded [`Operand16`] from the given `value`.
     pub fn make_imm16<T>(&mut self, value: T) -> Result<Operand16<T>, Error>
     where
