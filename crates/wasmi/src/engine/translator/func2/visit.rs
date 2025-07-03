@@ -1177,35 +1177,35 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_trunc_sat_f32_s, wasm::i32_trunc_sat_f32_s)
     }
 
     fn visit_i32_trunc_sat_f32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_trunc_sat_f32_u, wasm::i32_trunc_sat_f32_u)
     }
 
     fn visit_i32_trunc_sat_f64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_trunc_sat_f64_s, wasm::i32_trunc_sat_f64_s)
     }
 
     fn visit_i32_trunc_sat_f64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_trunc_sat_f64_u, wasm::i32_trunc_sat_f64_u)
     }
 
     fn visit_i64_trunc_sat_f32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_trunc_sat_f32_s, wasm::i64_trunc_sat_f32_s)
     }
 
     fn visit_i64_trunc_sat_f32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_trunc_sat_f32_u, wasm::i64_trunc_sat_f32_u)
     }
 
     fn visit_i64_trunc_sat_f64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_trunc_sat_f64_s, wasm::i64_trunc_sat_f64_s)
     }
 
     fn visit_i64_trunc_sat_f64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_trunc_sat_f64_u, wasm::i64_trunc_sat_f64_u)
     }
 
     fn visit_memory_init(&mut self, _data_index: u32, _mem: u32) -> Self::Output {
