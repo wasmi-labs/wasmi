@@ -1057,35 +1057,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
-        self.translate_unary::<i64, i32>(Instruction::i32_wrap_i64, wasm::i32_wrap_i64)
+        self.translate_unary(Instruction::i32_wrap_i64, wasm::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f32, i32>(
-            Instruction::i32_trunc_f32_s,
-            wasm::i32_trunc_f32_s,
-        )
+        self.translate_unary_fallible(Instruction::i32_trunc_f32_s, wasm::i32_trunc_f32_s)
     }
 
     fn visit_i32_trunc_f32_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f32, u32>(
-            Instruction::i32_trunc_f32_u,
-            wasm::i32_trunc_f32_u,
-        )
+        self.translate_unary_fallible(Instruction::i32_trunc_f32_u, wasm::i32_trunc_f32_u)
     }
 
     fn visit_i32_trunc_f64_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f64, i32>(
-            Instruction::i32_trunc_f64_s,
-            wasm::i32_trunc_f64_s,
-        )
+        self.translate_unary_fallible(Instruction::i32_trunc_f64_s, wasm::i32_trunc_f64_s)
     }
 
     fn visit_i32_trunc_f64_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f64, u32>(
-            Instruction::i32_trunc_f64_u,
-            wasm::i32_trunc_f64_u,
-        )
+        self.translate_unary_fallible(Instruction::i32_trunc_f64_u, wasm::i32_trunc_f64_u)
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
@@ -1097,71 +1085,59 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f32, i64>(
-            Instruction::i64_trunc_f32_s,
-            wasm::i64_trunc_f32_s,
-        )
+        self.translate_unary_fallible(Instruction::i64_trunc_f32_s, wasm::i64_trunc_f32_s)
     }
 
     fn visit_i64_trunc_f32_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f32, u64>(
-            Instruction::i64_trunc_f32_u,
-            wasm::i64_trunc_f32_u,
-        )
+        self.translate_unary_fallible(Instruction::i64_trunc_f32_u, wasm::i64_trunc_f32_u)
     }
 
     fn visit_i64_trunc_f64_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f64, i64>(
-            Instruction::i64_trunc_f64_s,
-            wasm::i64_trunc_f64_s,
-        )
+        self.translate_unary_fallible(Instruction::i64_trunc_f64_s, wasm::i64_trunc_f64_s)
     }
 
     fn visit_i64_trunc_f64_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible::<f64, u64>(
-            Instruction::i64_trunc_f64_u,
-            wasm::i64_trunc_f64_u,
-        )
+        self.translate_unary_fallible(Instruction::i64_trunc_f64_u, wasm::i64_trunc_f64_u)
     }
 
     fn visit_f32_convert_i32_s(&mut self) -> Self::Output {
-        self.translate_unary::<i32, f32>(Instruction::f32_convert_i32_s, wasm::f32_convert_i32_s)
+        self.translate_unary(Instruction::f32_convert_i32_s, wasm::f32_convert_i32_s)
     }
 
     fn visit_f32_convert_i32_u(&mut self) -> Self::Output {
-        self.translate_unary::<u32, f32>(Instruction::f32_convert_i32_u, wasm::f32_convert_i32_u)
+        self.translate_unary(Instruction::f32_convert_i32_u, wasm::f32_convert_i32_u)
     }
 
     fn visit_f32_convert_i64_s(&mut self) -> Self::Output {
-        self.translate_unary::<i64, f32>(Instruction::f32_convert_i64_s, wasm::f32_convert_i64_s)
+        self.translate_unary(Instruction::f32_convert_i64_s, wasm::f32_convert_i64_s)
     }
 
     fn visit_f32_convert_i64_u(&mut self) -> Self::Output {
-        self.translate_unary::<u64, f32>(Instruction::f32_convert_i64_u, wasm::f32_convert_i64_u)
+        self.translate_unary(Instruction::f32_convert_i64_u, wasm::f32_convert_i64_u)
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
-        self.translate_unary::<f64, f32>(Instruction::f32_demote_f64, wasm::f32_demote_f64)
+        self.translate_unary(Instruction::f32_demote_f64, wasm::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
-        self.translate_unary::<i32, f64>(Instruction::f64_convert_i32_s, wasm::f64_convert_i32_s)
+        self.translate_unary(Instruction::f64_convert_i32_s, wasm::f64_convert_i32_s)
     }
 
     fn visit_f64_convert_i32_u(&mut self) -> Self::Output {
-        self.translate_unary::<u32, f64>(Instruction::f64_convert_i32_u, wasm::f64_convert_i32_u)
+        self.translate_unary(Instruction::f64_convert_i32_u, wasm::f64_convert_i32_u)
     }
 
     fn visit_f64_convert_i64_s(&mut self) -> Self::Output {
-        self.translate_unary::<i64, f64>(Instruction::f64_convert_i64_s, wasm::f64_convert_i64_s)
+        self.translate_unary(Instruction::f64_convert_i64_s, wasm::f64_convert_i64_s)
     }
 
     fn visit_f64_convert_i64_u(&mut self) -> Self::Output {
-        self.translate_unary::<u64, f64>(Instruction::f64_convert_i64_u, wasm::f64_convert_i64_u)
+        self.translate_unary(Instruction::f64_convert_i64_u, wasm::f64_convert_i64_u)
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
-        self.translate_unary::<f32, f64>(Instruction::f64_promote_f32, wasm::f64_promote_f32)
+        self.translate_unary(Instruction::f64_promote_f32, wasm::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
