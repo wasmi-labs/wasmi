@@ -222,6 +222,7 @@ impl_untyped_val! {
 
     fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
     fn i64_extend_i32_s(value: i32) -> i64 = i64::from;
+    fn i64_extend_i32_u(value: u32) -> u64 = u64::from;
     fn f32_demote_f64(value: f64) -> f32 = |v| v as f32;
     fn f64_promote_f32(value: f32) -> f64 = f64::from;
 
@@ -486,4 +487,24 @@ pub fn i64_mul_wide_u(lhs: i64, rhs: i64) -> (i64, i64) {
     let rhs = u128::from(rhs as u64);
     let result = lhs.wrapping_mul(rhs);
     split128(result as i128)
+}
+
+/// Execute an `i32.reinterpret_f32` Wasm instruction.
+pub fn i32_reinterpret_f32(value: f32) -> i32 {
+    i32::from_ne_bytes(f32::to_ne_bytes(value))
+}
+
+/// Execute an `i64.reinterpret_f64` Wasm instruction.
+pub fn i64_reinterpret_f64(value: f64) -> i64 {
+    i64::from_ne_bytes(f64::to_ne_bytes(value))
+}
+
+/// Execute an `f32.reinterpret_i32` Wasm instruction.
+pub fn f32_reinterpret_i32(value: i32) -> f32 {
+    f32::from_ne_bytes(i32::to_ne_bytes(value))
+}
+
+/// Execute an `f64.reinterpret_i64` Wasm instruction.
+pub fn f64_reinterpret_i64(value: i64) -> f64 {
+    f64::from_ne_bytes(i64::to_ne_bytes(value))
 }
