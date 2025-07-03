@@ -66,16 +66,6 @@ impl TypedVal {
     pub fn untyped(&self) -> UntypedVal {
         self.value
     }
-
-    /// Changes the [`ValType`] of `self` to `ty`.
-    ///
-    /// # Note
-    ///
-    /// This acts similar to a Wasm reinterpret cast and
-    /// the underlying `value` bits are unchanged.
-    pub fn reinterpret(self, ty: ValType) -> Self {
-        Self { ty, ..self }
-    }
 }
 
 impl<T> From<T> for TypedVal
