@@ -1165,19 +1165,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
-        todo!()
+        self.translate_reinterpret(wasm::i32_reinterpret_f32)
     }
 
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
-        todo!()
+        self.translate_reinterpret(wasm::i64_reinterpret_f64)
     }
 
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
-        todo!()
+        self.translate_reinterpret(wasm::f32_reinterpret_i32)
     }
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
-        todo!()
+        self.translate_reinterpret(wasm::f64_reinterpret_i64)
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
