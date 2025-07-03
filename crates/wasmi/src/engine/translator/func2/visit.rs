@@ -1157,23 +1157,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_extend8_s, wasm::i32_extend8_s)
     }
 
     fn visit_i32_extend16_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_extend16_s, wasm::i32_extend16_s)
     }
 
     fn visit_i64_extend8_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_extend8_s, wasm::i64_extend8_s)
     }
 
     fn visit_i64_extend16_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_extend16_s, wasm::i64_extend16_s)
     }
 
     fn visit_i64_extend32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i64_extend32_s, wasm::i64_extend32_s)
     }
 
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
