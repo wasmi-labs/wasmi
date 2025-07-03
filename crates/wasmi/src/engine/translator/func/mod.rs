@@ -1976,7 +1976,11 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `reinterpret` instruction.
-    fn translate_reinterpret(&mut self, ty: ValType) -> Result<(), Error> {
+    fn translate_reinterpret<T, R>(&mut self, consteval: fn(T) -> R) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
         bail_unreachable!(self);
         if let TypedProvider::Register(_) = self.stack.peek() {
             // Nothing to do.
@@ -1989,26 +1993,7 @@ impl FuncTranslator {
         let TypedProvider::Const(value) = self.stack.pop() else {
             panic!("the top-most stack item was asserted to be a constant value but a register was found")
         };
-        self.stack.push_const(value.reinterpret(ty));
-        Ok(())
-    }
-
-    /// Translates a Wasm `i64.extend_i32_u` instruction.
-    fn translate_i64_extend_i32_u(&mut self) -> Result<(), Error> {
-        bail_unreachable!(self);
-        if let TypedProvider::Register(_) = self.stack.peek() {
-            // Nothing to do.
-            //
-            // We try to not manipulate the emulation stack if not needed.
-            return Ok(());
-        }
-        // Case: At this point we know that the top-most stack item is a constant value.
-        //       We pop it, change its type and push it back onto the stack.
-        let TypedProvider::Const(value) = self.stack.pop() else {
-            panic!("the top-most stack item was asserted to be a constant value but a register was found")
-        };
-        debug_assert_eq!(value.ty(), ValType::I32);
-        self.stack.push_const(u64::from(u32::from(value)));
+        self.stack.push_const(consteval(value.into()));
         Ok(())
     }
 

@@ -222,6 +222,7 @@ impl_untyped_val! {
 
     fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
     fn i64_extend_i32_s(value: i32) -> i64 = i64::from;
+    fn i64_extend_i32_u(value: u32) -> u64 = u64::from;
     fn f32_demote_f64(value: f64) -> f32 = |v| v as f32;
     fn f64_promote_f32(value: f32) -> f64 = f64::from;
 
@@ -281,6 +282,23 @@ impl_untyped_val! {
     fn i64_trunc_sat_f32_u(value: f32) -> u64 = TruncateSaturateInto::truncate_saturate_into;
     fn i64_trunc_sat_f64_s(value: f64) -> i64 = TruncateSaturateInto::truncate_saturate_into;
     fn i64_trunc_sat_f64_u(value: f64) -> u64 = TruncateSaturateInto::truncate_saturate_into;
+}
+
+macro_rules! impl_reinterpret_cast {
+    ( $(fn $name:ident($from:ty) -> $to:ty);* $(;)? ) => {
+        $(
+            #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+            pub fn $name(value: $from) -> $to {
+                <$to>::from_ne_bytes(<$from>::to_ne_bytes(value))
+            }
+        )*
+    };
+}
+impl_reinterpret_cast! {
+    fn i32_reinterpret_f32(f32) -> i32;
+    fn i64_reinterpret_f64(f64) -> i64;
+    fn f32_reinterpret_i32(i32) -> f32;
+    fn f64_reinterpret_i64(i64) -> f64;
 }
 
 macro_rules! gen_load_extend_fn {
