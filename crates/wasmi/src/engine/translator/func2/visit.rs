@@ -623,51 +623,51 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_eq, wasm::f32_eq)
     }
 
     fn visit_f32_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_ne, wasm::f32_ne)
     }
 
     fn visit_f32_lt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_lt, wasm::f32_lt)
     }
 
     fn visit_f32_gt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(swap_ops!(Instruction::f32_lt), wasm::f32_gt)
     }
 
     fn visit_f32_le(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_le, wasm::f32_le)
     }
 
     fn visit_f32_ge(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(swap_ops!(Instruction::f32_le), wasm::f32_ge)
     }
 
     fn visit_f64_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_eq, wasm::f64_eq)
     }
 
     fn visit_f64_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_ne, wasm::f64_ne)
     }
 
     fn visit_f64_lt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_lt, wasm::f64_lt)
     }
 
     fn visit_f64_gt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(swap_ops!(Instruction::f64_lt), wasm::f64_gt)
     }
 
     fn visit_f64_le(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_le, wasm::f64_le)
     }
 
     fn visit_f64_ge(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(swap_ops!(Instruction::f64_le), wasm::f64_ge)
     }
 
     fn visit_i32_clz(&mut self) -> Self::Output {
