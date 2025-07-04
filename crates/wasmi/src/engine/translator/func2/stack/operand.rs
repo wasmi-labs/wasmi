@@ -83,9 +83,9 @@ impl Operand {
     /// Returns the type of the [`Operand`].
     pub fn ty(&self) -> ValType {
         match self {
-            Self::Local(local_operand) => local_operand.ty(),
-            Self::Temp(temp_operand) => temp_operand.ty(),
-            Self::Immediate(immediate_operand) => immediate_operand.ty(),
+            Self::Local(operand) => operand.ty(),
+            Self::Temp(operand) => operand.ty(),
+            Self::Immediate(operand) => operand.ty(),
         }
     }
 }
