@@ -38,7 +38,7 @@ use crate::{
         translator::{
             comparator::{CompareResult as _, NegateCmpInstr as _, TryIntoCmpBranchInstr as _},
             labels::{LabelRef, LabelRegistry},
-            utils::{Instr, WasmInteger},
+            utils::{Instr, WasmFloat, WasmInteger},
             WasmTranslator,
         },
         BlockType,
@@ -1076,6 +1076,30 @@ impl FuncTranslator {
                 )
             }
         }
+    }
+
+    /// Translate a binary float Wasm operation.
+    fn translate_fbinary<T, R>(
+        &mut self,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        consteval: fn(T, T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: WasmFloat,
+        R: Into<TypedVal>,
+    {
+        bail_unreachable!(self);
+        let (lhs, rhs) = self.stack.pop2();
+        if let (Operand::Immediate(lhs), Operand::Immediate(rhs)) = (lhs, rhs) {
+            return self.translate_binary_consteval::<T, R>(lhs, rhs, consteval);
+        }
+        let lhs = self.layout.operand_to_reg(lhs)?;
+        let rhs = self.layout.operand_to_reg(rhs)?;
+        self.push_instr_with_result(
+            <T as Typed>::TY,
+            |result| make_instr(result, lhs, rhs),
+            FuelCostsProvider::base,
+        )
     }
 
     /// Translates a generic trap instruction.
