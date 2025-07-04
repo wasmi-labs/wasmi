@@ -196,7 +196,7 @@ impl OperandStack {
     /// # Panics
     ///
     /// If `depth` is out of bounds for `self`.
-    pub fn peek(&self, depth: usize) -> PeekedOperands {
+    pub fn peek(&self, depth: usize) -> PeekedOperands<'_> {
         let index = self.depth_to_index(depth);
         let operands = &self.operands[usize::from(index)..];
         PeekedOperands {
@@ -289,7 +289,7 @@ impl OperandStack {
     ///
     /// If the local at `local_index` is out of bounds.
     #[must_use]
-    pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter {
+    pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
         let ty = self.locals.ty(local_index);
         let index = self.locals.replace_first_operand(local_index, None);
         PreservedLocalsIter {

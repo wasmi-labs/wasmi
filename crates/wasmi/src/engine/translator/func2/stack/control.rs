@@ -66,7 +66,7 @@ impl ElseOperands {
     }
 
     /// Pops the top-most Wasm `else` operands from `self` and returns them.
-    pub fn pop(&mut self) -> Option<Drain<Operand>> {
+    pub fn pop(&mut self) -> Option<Drain<'_, Operand>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);
         Some(self.operands.drain(start..end))
@@ -172,7 +172,7 @@ impl ControlStack {
         if_frame: IfControlFrame,
         consume_fuel: Option<Instr>,
         is_end_of_then_reachable: bool,
-    ) -> Option<Drain<Operand>> {
+    ) -> Option<Drain<'_, Operand>> {
         let ty = if_frame.ty();
         let height = if_frame.height();
         let label = if_frame.label();
@@ -234,7 +234,7 @@ impl ControlStack {
     }
 
     /// Returns an exclusive reference to the [`ControlFrame`] at `depth` if any.
-    pub fn get_mut(&mut self, depth: usize) -> ControlFrameMut {
+    pub fn get_mut(&mut self, depth: usize) -> ControlFrameMut<'_> {
         let height = self.height();
         self.frames
             .iter_mut()
@@ -304,7 +304,7 @@ impl<'stack> AcquiredTarget<'stack> {
 
 impl ControlStack {
     /// Acquires the target [`ControlFrame`] at the given relative `depth`.
-    pub fn acquire_target(&mut self, depth: usize) -> AcquiredTarget {
+    pub fn acquire_target(&mut self, depth: usize) -> AcquiredTarget<'_> {
         let is_root = self.is_root(depth);
         let frame = self.get_mut(depth);
         if is_root {

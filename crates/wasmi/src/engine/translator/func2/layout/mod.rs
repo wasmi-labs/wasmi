@@ -122,7 +122,7 @@ impl StackLayout {
     /// # Note
     ///
     /// The function local constant are yielded in reverse order of allocation.
-    pub fn consts(&self) -> ConstRegistryIter {
+    pub fn consts(&self) -> ConstRegistryIter<'_> {
         self.consts.iter()
     }
 }
