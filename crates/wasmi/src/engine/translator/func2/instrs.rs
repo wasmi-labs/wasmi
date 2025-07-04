@@ -196,7 +196,7 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The [`InstrEncoder`] will be empty after this operation.
-    pub fn drain(&mut self) -> InstrEncoderIter {
+    pub fn drain(&mut self) -> InstrEncoderIter<'_> {
         InstrEncoderIter {
             iter: self.instrs.drain(..),
         }
