@@ -101,6 +101,12 @@ pub struct LocalOperand {
     ty: ValType,
 }
 
+impl From<LocalOperand> for Operand {
+    fn from(operand: LocalOperand) -> Self {
+        Self::Local(operand)
+    }
+}
+
 impl LocalOperand {
     /// Returns the operand index of the [`LocalOperand`].
     pub fn operand_index(&self) -> OperandIdx {
@@ -129,6 +135,12 @@ pub struct TempOperand {
     instr: Option<Instr>,
 }
 
+impl From<TempOperand> for Operand {
+    fn from(operand: TempOperand) -> Self {
+        Self::Temp(operand)
+    }
+}
+
 impl TempOperand {
     /// Returns the operand index of the [`TempOperand`].
     pub fn operand_index(&self) -> OperandIdx {
@@ -153,6 +165,12 @@ pub struct ImmediateOperand {
     operand_index: OperandIdx,
     /// The value and type of the immediate value.
     val: TypedVal,
+}
+
+impl From<ImmediateOperand> for Operand {
+    fn from(operand: ImmediateOperand) -> Self {
+        Self::Immediate(operand)
+    }
 }
 
 impl ImmediateOperand {
