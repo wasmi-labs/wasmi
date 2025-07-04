@@ -973,27 +973,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_add, wasm::f32_add)
     }
 
     fn visit_f32_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_sub, wasm::f32_sub)
     }
 
     fn visit_f32_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_mul, wasm::f32_mul)
     }
 
     fn visit_f32_div(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_div, wasm::f32_div)
     }
 
     fn visit_f32_min(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_min, wasm::f32_min)
     }
 
     fn visit_f32_max(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f32_max, wasm::f32_max)
     }
 
     fn visit_f32_copysign(&mut self) -> Self::Output {
@@ -1029,27 +1029,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_add, wasm::f64_add)
     }
 
     fn visit_f64_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_sub, wasm::f64_sub)
     }
 
     fn visit_f64_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_mul, wasm::f64_mul)
     }
 
     fn visit_f64_div(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_div, wasm::f64_div)
     }
 
     fn visit_f64_min(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_min, wasm::f64_min)
     }
 
     fn visit_f64_max(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(Instruction::f64_max, wasm::f64_max)
     }
 
     fn visit_f64_copysign(&mut self) -> Self::Output {
