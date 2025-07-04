@@ -331,7 +331,7 @@ impl Stack {
     /// # Panics
     ///
     /// If `depth` is out of bounds for `self`.
-    pub fn peek_control_mut(&mut self, depth: usize) -> AcquiredTarget {
+    pub fn peek_control_mut(&mut self, depth: usize) -> AcquiredTarget<'_> {
         self.controls.acquire_target(depth)
     }
 
@@ -445,7 +445,7 @@ impl Stack {
     ///
     /// If the local at `local_index` is out of bounds.
     #[must_use]
-    pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter {
+    pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
         self.operands.preserve_locals(local_index)
     }
 

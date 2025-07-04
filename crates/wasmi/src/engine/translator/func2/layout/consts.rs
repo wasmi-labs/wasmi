@@ -98,7 +98,7 @@ impl ConstRegistry {
     /// # Note
     ///
     /// The function local constant values are yielded in their allocation order.
-    pub fn iter(&self) -> ConstRegistryIter {
+    pub fn iter(&self) -> ConstRegistryIter<'_> {
         ConstRegistryIter::new(self)
     }
 }
