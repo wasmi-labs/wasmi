@@ -91,7 +91,7 @@ impl_wasm_integer!(i32, u32, i64, u64);
 /// # Note
 ///
 /// This trait provides some utility methods useful for translation.
-pub trait WasmFloat: Copy + Into<TypedVal> + From<TypedVal> {
+pub trait WasmFloat: Typed + Copy + Into<TypedVal> + From<TypedVal> {
     /// Returns `true` if `self` is any kind of NaN value.
     fn is_nan(self) -> bool;
 
