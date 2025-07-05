@@ -67,7 +67,7 @@ pub trait WasmInteger:
     fn is_zero(self) -> bool;
 
     /// Returns the wrapped negated `self`.
-    #[cfg(feature = "experimental-translator")]
+    #[cfg(feature = "experimental-translator")] // TODO: remove
     fn wrapping_neg(self) -> Self;
 }
 
@@ -85,7 +85,7 @@ macro_rules! impl_wasm_integer {
                     self == 0
                 }
 
-                #[cfg(feature = "experimental-translator")]
+                #[cfg(feature = "experimental-translator")] // TODO: remove
                 fn wrapping_neg(self) -> Self {
                     Self::wrapping_neg(self)
                 }
