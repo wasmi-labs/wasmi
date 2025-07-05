@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use core::{cmp, iter};
 
 /// A local variable index.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LocalIdx(u32);
 
 impl From<u32> for LocalIdx {

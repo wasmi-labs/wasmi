@@ -1,8 +1,13 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::translator::utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
-    ir::Instruction,
+    engine::translator::{
+        func2::{StackLayout, StackSpace},
+        relink_result::RelinkResult,
+        utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
+    },
+    ir::{Instruction, Reg},
+    module::ModuleHeader,
     Engine,
     Error,
 };
@@ -133,6 +138,38 @@ impl InstrEncoder {
             return Ok(false);
         }
         *replace = new_instr;
+        Ok(true)
+    }
+
+    /// Tries to replace the result of the last instruction with `new_result` if possible.
+    ///
+    /// # Note
+    ///
+    /// - `old_result`: just required for additional safety to check if the last instruction
+    ///                 really is the source of the `local.set` or `local.tee`.
+    /// - `new_result`: the new result which shall replace the `old_result`.
+    pub fn try_replace_result(
+        &mut self,
+        new_result: Reg,
+        old_result: Reg,
+        layout: &StackLayout,
+        module: &ModuleHeader,
+    ) -> Result<bool, Error> {
+        if !matches!(layout.stack_space(new_result), StackSpace::Local) {
+            // Case: cannot replace result if `new_result` isn't a local.
+            return Ok(false);
+        }
+        let Some(last_instr) = self.last_instr else {
+            // Case: cannot replace result without last instruction.
+            return Ok(false);
+        };
+        if !self
+            .get_mut(last_instr)
+            .relink_result(module, new_result, old_result)?
+        {
+            // Case: it was impossible to relink the result of `last_instr.
+            return Ok(false);
+        }
         Ok(true)
     }
 

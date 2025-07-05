@@ -582,6 +582,88 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translate the Wasm `local.set` and `local.tee` operations.
+    ///
+    /// # Note
+    ///
+    /// This applies op-code fusion that replaces the result of the previous instruction
+    /// instead of encoding a copy instruction for the `local.set` or `local.tee` if possible.
+    fn translate_local_set(&mut self, local_index: u32, push_result: bool) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        if let Operand::Local(input) = input {
+            if u32::from(input.local_index()) == local_index {
+                // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
+                //
+                // Note: This does not require any preservation since it won't change
+                //       the value of `local $n`.
+                return Ok(());
+            }
+        }
+        let local_idx = LocalIdx::from(local_index);
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        for preserved in self.stack.preserve_locals(local_idx) {
+            let result = self.layout.temp_to_reg(preserved)?;
+            let value = self.layout.local_to_reg(local_idx)?;
+            self.instrs.push_instr(
+                Instruction::copy(result, value),
+                consume_fuel_instr,
+                FuelCostsProvider::base,
+            )?;
+        }
+        if push_result {
+            match input {
+                Operand::Immediate(input) => {
+                    self.stack.push_immediate(input.val())?;
+                }
+                _ => {
+                    self.stack.push_local(local_idx)?;
+                }
+            }
+        }
+        if self.try_replace_result(local_idx, input)? {
+            // Case: it was possible to replace the result of the previous
+            //       instructions so no copy instruction is required.
+            return Ok(());
+        }
+        // At this point we need to encode a copy instruction.
+        let result = self.layout.local_to_reg(local_idx)?;
+        let instr = match input {
+            Operand::Immediate(operand) => self.make_copy_imm_instr(result, operand.val())?,
+            operand => {
+                let input = self.layout.operand_to_reg(operand)?;
+                Instruction::copy(result, input)
+            }
+        };
+        self.instrs
+            .push_instr(instr, consume_fuel_instr, FuelCostsProvider::base)?;
+        Ok(())
+    }
+
+    /// Tries to replace the result of the previous instruction with `new_result` if possible.
+    ///
+    /// Returns `Ok(true)` if replacement was successful and `Ok(false)` otherwise.
+    fn try_replace_result(
+        &mut self,
+        new_result: LocalIdx,
+        old_result: Operand,
+    ) -> Result<bool, Error> {
+        let result = self.layout.local_to_reg(new_result)?;
+        let old_result = match old_result {
+            Operand::Immediate(_) => {
+                // Case: cannot replace immediate value result.
+                return Ok(false);
+            }
+            Operand::Local(_) => {
+                // Case: cannot replace local with another local due to observable behavior.
+                return Ok(false);
+            }
+            Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
+        };
+        self.instrs
+            .try_replace_result(result, old_result, &self.layout, &self.module)
+    }
+
     /// Encodes an unconditional Wasm `branch` instruction.
     fn encode_br(&mut self, label: LabelRef) -> Result<(), Error> {
         let instr = self.instrs.next_instr();
