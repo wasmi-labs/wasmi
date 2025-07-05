@@ -1007,7 +1007,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_copysign(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fcopysign::<f32>(
+            Instruction::f32_copysign,
+            Instruction::f32_copysign_imm,
+            wasm::f32_copysign,
+        )
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {
@@ -1063,7 +1067,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_copysign(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fcopysign::<f64>(
+            Instruction::f64_copysign,
+            Instruction::f64_copysign_imm,
+            wasm::f64_copysign,
+        )
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
