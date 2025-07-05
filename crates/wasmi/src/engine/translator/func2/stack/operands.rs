@@ -191,16 +191,19 @@ impl OperandStack {
         Ok(idx)
     }
 
-    /// Returns an iterator that yields all [`Operand`]s up to `depth`.
-    ///
+    /// Returns an iterator that yields the last `n` [`Operand`]s.
+    /// 
     /// # Panics
     ///
-    /// If `depth` is out of bounds for `self`.
-    pub fn peek(&self, depth: usize) -> PeekedOperands<'_> {
-        let index = self.depth_to_index(depth);
-        let operands = &self.operands[usize::from(index)..];
+    /// If `n` is out of bounds for `self`.
+    pub fn peek(&self, n: usize) -> PeekedOperands<'_> {
+        let len_operands = self.operands.len();
+        let first_index = len_operands - n;
+        let Some(operands) = self.operands.get(first_index..) else {
+            return PeekedOperands::empty(&self.locals)
+        };
         PeekedOperands {
-            index: usize::from(index),
+            index: first_index,
             operands: operands.iter(),
             locals: &self.locals,
         }
@@ -387,6 +390,17 @@ pub struct PeekedOperands<'stack> {
     operands: slice::Iter<'stack, StackOperand>,
     /// Used to query types of local operands.
     locals: &'stack LocalsRegistry,
+}
+
+impl<'stack> PeekedOperands<'stack> {
+    /// Creates a [`PeekedOperands`] iterator that yields no operands.
+    pub fn empty(locals: &'stack LocalsRegistry) -> Self {
+        Self {
+            index: 0,
+            operands: [].iter(),
+            locals,
+        }
+    }
 }
 
 impl Iterator for PeekedOperands<'_> {
