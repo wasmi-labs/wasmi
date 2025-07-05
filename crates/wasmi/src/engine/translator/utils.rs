@@ -65,6 +65,9 @@ pub trait WasmInteger:
 
     /// Returns `true` if `self` is equal to zero (0).
     fn is_zero(self) -> bool;
+
+    /// Returns the wrapped negated `self`.
+    fn wrapping_neg(self) -> Self;
 }
 
 macro_rules! impl_wasm_integer {
@@ -79,6 +82,10 @@ macro_rules! impl_wasm_integer {
 
                 fn is_zero(self) -> bool {
                     self == 0
+                }
+
+                fn wrapping_neg(self) -> Self {
+                    Self::wrapping_neg(self)
                 }
             }
         )*
