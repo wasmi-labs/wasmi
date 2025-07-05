@@ -192,7 +192,7 @@ impl OperandStack {
     }
 
     /// Returns an iterator that yields the last `n` [`Operand`]s.
-    /// 
+    ///
     /// # Panics
     ///
     /// If `n` is out of bounds for `self`.
@@ -200,7 +200,7 @@ impl OperandStack {
         let len_operands = self.operands.len();
         let first_index = len_operands - n;
         let Some(operands) = self.operands.get(first_index..) else {
-            return PeekedOperands::empty(&self.locals)
+            return PeekedOperands::empty(&self.locals);
         };
         PeekedOperands {
             index: first_index,
