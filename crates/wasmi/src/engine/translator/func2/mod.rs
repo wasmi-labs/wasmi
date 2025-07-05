@@ -1093,13 +1093,62 @@ impl FuncTranslator {
                 )
             }
             (lhs, rhs) => {
+                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
+            }
+        }
+    }
+
+    /// Translates Wasm `i{32,64}.sub` operators to Wasmi bytecode.
+    fn translate_isub<T, R>(
+        &mut self,
+        make_sub_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_add_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_sub_ir: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        consteval: fn(T, T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: WasmInteger,
+        R: Into<TypedVal>,
+    {
+        bail_unreachable!(self);
+        match self.stack.pop2() {
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
+                self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
+            }
+            (lhs, Operand::Immediate(rhs)) => {
                 let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = T::from(rhs.val());
+                let rhs16 = match rhs.wrapping_neg().try_into() {
+                    Ok(rhs) => Operand16::Immediate(rhs),
+                    Err(_) => {
+                        let rhs = self.layout.const_to_reg(rhs)?;
+                        Operand16::Reg(rhs)
+                    }
+                };
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| match rhs16 {
+                        Operand16::Immediate(rhs) => make_add_ri(result, lhs, rhs),
+                        Operand16::Reg(rhs) => make_sub_rr(result, lhs, rhs),
+                    },
+                    FuelCostsProvider::base,
+                )
+            }
+            (Operand::Immediate(lhs), rhs) => {
+                let lhs = T::from(lhs.val());
+                let lhs16 = self.make_imm16(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| make_instr(result, lhs, rhs),
+                    |result| match lhs16 {
+                        Operand16::Immediate(lhs) => make_sub_ir(result, lhs, rhs),
+                        Operand16::Reg(lhs) => make_sub_rr(result, lhs, rhs),
+                    },
                     FuelCostsProvider::base,
                 )
+            }
+            (lhs, rhs) => {
+                self.push_binary_instr_with_result(lhs, rhs, make_sub_rr, FuelCostsProvider::base)
             }
         }
     }

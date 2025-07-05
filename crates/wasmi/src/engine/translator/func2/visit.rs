@@ -691,7 +691,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_isub(
+            Instruction::i32_sub,
+            Instruction::i32_add_imm16,
+            Instruction::i32_sub_imm16_lhs,
+            wasm::i32_sub,
+        )
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
@@ -828,7 +833,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_isub(
+            Instruction::i64_sub,
+            Instruction::i64_add_imm16,
+            Instruction::i64_sub_imm16_lhs,
+            wasm::i64_sub,
+        )
     }
 
     fn visit_i64_mul(&mut self) -> Self::Output {
