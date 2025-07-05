@@ -145,9 +145,11 @@ impl InstrEncoder {
     ///
     /// # Note
     ///
-    /// - `old_result`: just required for additional safety to check if the last instruction
-    ///                 really is the source of the `local.set` or `local.tee`.
-    /// - `new_result`: the new result which shall replace the `old_result`.
+    /// - `old_result`:
+    ///   just required for additional safety to check if the last instruction
+    ///   really is the source of the `local.set` or `local.tee`.
+    /// - `new_result`:
+    ///   the new result which shall replace the `old_result`.
     pub fn try_replace_result(
         &mut self,
         new_result: Reg,
