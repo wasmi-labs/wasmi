@@ -292,12 +292,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_local_set(&mut self, _local_index: u32) -> Self::Output {
-        todo!()
+    fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
+        self.translate_local_set(local_index, false)
     }
 
-    fn visit_local_tee(&mut self, _local_index: u32) -> Self::Output {
-        todo!()
+    fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
+        self.translate_local_set(local_index, true)
     }
 
     fn visit_global_get(&mut self, _global_index: u32) -> Self::Output {
