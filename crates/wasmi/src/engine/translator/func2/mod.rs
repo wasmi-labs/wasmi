@@ -413,6 +413,21 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Pushes a binary instruction with a result and associated fuel costs.
+    fn push_binary_instr_with_result(
+        &mut self,
+        lhs: Operand,
+        rhs: Operand,
+        make_instr: impl FnOnce(Reg, Reg, Reg) -> Instruction,
+        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(lhs.ty(), rhs.ty());
+        let ty = lhs.ty();
+        let lhs = self.layout.operand_to_reg(lhs)?;
+        let rhs = self.layout.operand_to_reg(rhs)?;
+        self.push_instr_with_result(ty, |result| make_instr(result, lhs, rhs), fuel_costs)
+    }
+
     /// Encodes a generic return instruction.
     fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
@@ -973,13 +988,7 @@ impl FuncTranslator {
                 )
             }
             (lhs, rhs) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
-                let rhs = self.layout.operand_to_reg(rhs)?;
-                self.push_instr_with_result(
-                    <R as Typed>::TY,
-                    |result| make_instr(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
+                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
             }
         }
     }
@@ -1035,13 +1044,7 @@ impl FuncTranslator {
                 )
             }
             (lhs, rhs) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
-                let rhs = self.layout.operand_to_reg(rhs)?;
-                self.push_instr_with_result(
-                    <T as Typed>::TY,
-                    |result| make_instr(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
+                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
             }
         }
     }
@@ -1154,13 +1157,7 @@ impl FuncTranslator {
                 )
             }
             (lhs, rhs) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
-                let rhs = self.layout.operand_to_reg(rhs)?;
-                self.push_instr_with_result(
-                    <T as Typed>::TY,
-                    |result| make_instr(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
+                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
             }
         }
     }
@@ -1180,13 +1177,7 @@ impl FuncTranslator {
         if let (Operand::Immediate(lhs), Operand::Immediate(rhs)) = (lhs, rhs) {
             return self.translate_binary_consteval::<T, R>(lhs, rhs, consteval);
         }
-        let lhs = self.layout.operand_to_reg(lhs)?;
-        let rhs = self.layout.operand_to_reg(rhs)?;
-        self.push_instr_with_result(
-            <T as Typed>::TY,
-            |result| make_instr(result, lhs, rhs),
-            FuelCostsProvider::base,
-        )
+        self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
     }
 
     /// Translates a generic trap instruction.
