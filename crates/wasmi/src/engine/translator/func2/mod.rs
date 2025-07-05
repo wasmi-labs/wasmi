@@ -57,6 +57,7 @@ use crate::{
         IntoShiftAmount,
         Reg,
         RegSpan,
+        Sign,
     },
     module::{FuncIdx, ModuleHeader, WasmiValueType},
     Engine,
@@ -1227,6 +1228,46 @@ impl FuncTranslator {
             return self.translate_binary_consteval::<T, R>(lhs, rhs, consteval);
         }
         self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
+    }
+
+    /// Translate Wasmi `{f32,f64}.copysign` instructions.
+    ///
+    /// # Note
+    ///
+    /// - This applies some optimization that are valid for copysign instructions.
+    /// - Applies constant evaluation if both operands are constant values.
+    fn translate_fcopysign<T>(
+        &mut self,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
+        consteval: fn(T, T) -> T,
+    ) -> Result<(), Error>
+    where
+        T: WasmFloat,
+    {
+        bail_unreachable!(self);
+        match self.stack.pop2() {
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
+                self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
+            }
+            (lhs, Operand::Immediate(rhs)) => {
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let sign = T::from(rhs.val()).sign();
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| make_instr_imm(result, lhs, sign),
+                    FuelCostsProvider::base,
+                )
+            }
+            (lhs, rhs) => {
+                if lhs == rhs {
+                    // Optimization: `copysign x x` is always just `x`
+                    self.stack.push_operand(lhs)?;
+                    return Ok(());
+                }
+                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
+            }
+        }
     }
 
     /// Translates a generic trap instruction.
