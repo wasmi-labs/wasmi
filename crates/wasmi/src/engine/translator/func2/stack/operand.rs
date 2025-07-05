@@ -8,7 +8,7 @@ use crate::{
 use super::Stack;
 
 /// An operand on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Operand {
     /// A local variable operand.
     Local(LocalOperand),
@@ -91,7 +91,7 @@ impl Operand {
 }
 
 /// A local variable on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LocalOperand {
     /// The index of the operand.
     operand_index: OperandIdx,
@@ -125,7 +125,7 @@ impl LocalOperand {
 }
 
 /// A temporary on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TempOperand {
     /// The index of the operand.
     operand_index: OperandIdx,
@@ -159,7 +159,7 @@ impl TempOperand {
 }
 
 /// An immediate value on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ImmediateOperand {
     /// The index of the operand.
     operand_index: OperandIdx,
