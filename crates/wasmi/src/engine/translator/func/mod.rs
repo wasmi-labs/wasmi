@@ -1960,7 +1960,7 @@ impl FuncTranslator {
             .instr_encoder
             .try_fuse_select(&mut self.stack, result, condition)?
         {
-            Some((_, swap_operands)) => {
+            Some(swap_operands) => {
                 if swap_operands {
                     mem::swap(&mut true_val, &mut false_val);
                 }

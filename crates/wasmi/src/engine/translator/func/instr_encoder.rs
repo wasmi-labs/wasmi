@@ -929,7 +929,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         select_result: Reg,
         select_condition: Reg,
-    ) -> Result<Option<(Instruction, bool)>, Error> {
+    ) -> Result<Option<bool>, Error> {
         let Some(last_instr) = self.last_instr else {
             // If there is no last instruction there is no comparison instruction to negate.
             return Ok(None);
@@ -958,7 +958,7 @@ impl InstrEncoder {
         };
         let last_instr = self.instrs.get_mut(last_instr);
         *last_instr = fused;
-        Ok(Some((fused, swap_operands)))
+        Ok(Some(swap_operands))
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].
