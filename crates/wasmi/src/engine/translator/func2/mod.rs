@@ -64,6 +64,7 @@ use crate::{
     Error,
     FuncType,
 };
+use core::mem;
 use wasmparser::WasmFeatures;
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
@@ -1274,6 +1275,78 @@ impl FuncTranslator {
     fn translate_trap(&mut self, trap: TrapCode) -> Result<(), Error> {
         self.push_instr(Instruction::trap(trap), FuelCostsProvider::base)?;
         self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `select` or `select <ty>` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies constant propagation in case `condition` is a constant value.
+    /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
+    /// - Fuses compare instructions with the associated select instructions if possible.
+    fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (true_val, false_val, condition) = self.stack.pop3();
+        if let Some(type_hint) = type_hint {
+            debug_assert_eq!(true_val.ty(), type_hint);
+            debug_assert_eq!(false_val.ty(), type_hint);
+        }
+        let ty = true_val.ty();
+        if true_val.is_same(&false_val) {
+            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
+            //               thus `select` will always yield this same value irrespective of the condition.
+            self.stack.push_operand(true_val)?;
+            return Ok(());
+        }
+        if let Operand::Immediate(condition) = condition {
+            // Optimization: since condition is a constant value we can const-fold the `select`
+            //               instruction and simply push the selected value back to the provider stack.
+            let condition = i32::from(condition.val()) != 0;
+            let selected = match condition {
+                true => true_val,
+                false => false_val,
+            };
+            if let Operand::Temp(selected) = selected {
+                // Case: the selected operand is a temporary which needs to be copied
+                //       if it was the `false_val` since it changed its index. This is
+                //       not the case for the `true_val` since `true_val` is the first
+                //       value popped from the stack.
+                if !condition {
+                    let selected = self.layout.temp_to_reg(selected.operand_index())?;
+                    self.push_instr_with_result(
+                        ty,
+                        |result| Instruction::copy(result, selected),
+                        FuelCostsProvider::base,
+                    )?;
+                }
+            }
+            self.stack.push_operand(selected)?;
+            return Ok(());
+        }
+        let condition = self.layout.operand_to_reg(condition)?;
+        let mut true_val = self.layout.operand_to_reg(true_val)?;
+        let mut false_val = self.layout.operand_to_reg(false_val)?;
+        match self
+            .instrs
+            .try_fuse_select(ty, condition, &self.layout, &mut self.stack)?
+        {
+            Some(swap_operands) => {
+                if swap_operands {
+                    mem::swap(&mut true_val, &mut false_val);
+                }
+            }
+            None => {
+                self.push_instr_with_result(
+                    ty,
+                    |result| Instruction::select_i32_eq_imm16(result, condition, 0_i16),
+                    FuelCostsProvider::base,
+                )?;
+                mem::swap(&mut true_val, &mut false_val);
+            }
+        };
+        self.instrs
+            .push_param(Instruction::register2_ext(true_val, false_val));
         Ok(())
     }
 }
