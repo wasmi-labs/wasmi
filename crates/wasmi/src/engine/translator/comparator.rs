@@ -28,6 +28,11 @@ pub trait CompareResult {
     ///
     /// Returns `None` if the [`Instruction`] is not a compare instruction.
     fn compare_result(&self) -> Option<Reg>;
+
+    /// Returns `true` if `self` is a compare [`Instruction`].
+    fn is_compare_instr(&self) -> bool {
+        self.compare_result().is_some()
+    }
 }
 
 impl CompareResult for Instruction {
@@ -325,45 +330,72 @@ impl LogicalizeCmpInstr for Instruction {
 }
 
 pub trait TryIntoCmpSelectInstr: Sized {
-    fn try_into_cmp_select_instr(&self, result: Reg) -> Option<(Self, bool)>;
+    fn try_into_cmp_select_instr(
+        &self,
+        get_result: impl FnOnce() -> Result<Reg, Error>,
+    ) -> Result<CmpSelectFusion, Error>;
+}
+
+/// The outcome of `cmp`+`select` op-code fusion.
+pub enum CmpSelectFusion {
+    /// The `cmp`+`select` fusion was applied and may require swapping operands.
+    Applied {
+        fused: Instruction,
+        swap_operands: bool,
+    },
+    /// The `cmp`+`select` fusion was _not_ applied.
+    Unapplied,
+}
+
+/// Returns `true` if a `cmp`+`select` fused instruction required to swap its operands.
+#[rustfmt::skip]
+fn cmp_select_swap_operands(instr: &Instruction) -> bool {
+    use Instruction as I;
+    matches!(instr,
+        | I::I32Ne { .. }
+        | I::I32NeImm16 { .. }
+        | I::I32LeSImm16Lhs { .. }
+        | I::I32LeUImm16Lhs { .. }
+        | I::I32LtSImm16Lhs { .. }
+        | I::I32LtUImm16Lhs { .. }
+        | I::I32Nand { .. }
+        | I::I32Nor { .. }
+        | I::I32Xnor { .. }
+        | I::I32NandImm16 { .. }
+        | I::I32NorImm16 { .. }
+        | I::I32XnorImm16 { .. }
+        | I::I64Ne { .. }
+        | I::I64NeImm16 { .. }
+        | I::I64LeSImm16Lhs { .. }
+        | I::I64LeUImm16Lhs { .. }
+        | I::I64LtSImm16Lhs { .. }
+        | I::I64LtUImm16Lhs { .. }
+        | I::I64Nand { .. }
+        | I::I64Nor { .. }
+        | I::I64Xnor { .. }
+        | I::I64NandImm16 { .. }
+        | I::I64NorImm16 { .. }
+        | I::I64XnorImm16 { .. }
+        | I::F32Ne { .. }
+        | I::F64Ne { .. }
+        | I::F32NotLt { .. }
+        | I::F32NotLe { .. }
+        | I::F64NotLt { .. }
+        | I::F64NotLe { .. }
+    )
 }
 
 impl TryIntoCmpSelectInstr for Instruction {
-    fn try_into_cmp_select_instr(&self, result: Reg) -> Option<(Self, bool)> {
+    fn try_into_cmp_select_instr(
+        &self,
+        get_result: impl FnOnce() -> Result<Reg, Error>,
+    ) -> Result<CmpSelectFusion, Error> {
         use Instruction as I;
-        #[rustfmt::skip]
-        let swap_operands = matches!(self,
-            | I::I32Ne { .. }
-            | I::I32NeImm16 { .. }
-            | I::I32LeSImm16Lhs { .. }
-            | I::I32LeUImm16Lhs { .. }
-            | I::I32LtSImm16Lhs { .. }
-            | I::I32LtUImm16Lhs { .. }
-            | I::I32Nand { .. }
-            | I::I32Nor { .. }
-            | I::I32Xnor { .. }
-            | I::I32NandImm16 { .. }
-            | I::I32NorImm16 { .. }
-            | I::I32XnorImm16 { .. }
-            | I::I64Ne { .. }
-            | I::I64NeImm16 { .. }
-            | I::I64LeSImm16Lhs { .. }
-            | I::I64LeUImm16Lhs { .. }
-            | I::I64LtSImm16Lhs { .. }
-            | I::I64LtUImm16Lhs { .. }
-            | I::I64Nand { .. }
-            | I::I64Nor { .. }
-            | I::I64Xnor { .. }
-            | I::I64NandImm16 { .. }
-            | I::I64NorImm16 { .. }
-            | I::I64XnorImm16 { .. }
-            | I::F32Ne { .. }
-            | I::F64Ne { .. }
-            | I::F32NotLt { .. }
-            | I::F32NotLe { .. }
-            | I::F64NotLt { .. }
-            | I::F64NotLe { .. }
-        );
+        if !self.is_compare_instr() {
+            return Ok(CmpSelectFusion::Unapplied);
+        }
+        let swap_operands = cmp_select_swap_operands(self);
+        let result = get_result()?;
         #[rustfmt::skip]
         let fused = match *self {
             // i32
@@ -452,9 +484,12 @@ impl TryIntoCmpSelectInstr for Instruction {
             I::F64Le { lhs, rhs, .. } => I::select_f64_le(result, lhs, rhs),
             I::F64NotLt { lhs, rhs, .. } => I::select_f64_lt(result, rhs, lhs),
             I::F64NotLe { lhs, rhs, .. } => I::select_f64_le(result, rhs, lhs),
-            _ => return None,
+            _ => unreachable!("expected to successfully fuse cmp+select"),
         };
-        Some((fused, swap_operands))
+        Ok(CmpSelectFusion::Applied {
+            fused,
+            swap_operands,
+        })
     }
 }
 

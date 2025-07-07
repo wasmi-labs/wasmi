@@ -2,6 +2,7 @@ use crate::{
     core::{FuelCostsProvider, UntypedVal, ValType},
     engine::translator::{
         comparator::{
+            CmpSelectFusion,
             CompareResult,
             LogicalizeCmpInstr,
             NegateCmpInstr,
@@ -928,30 +929,36 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         select_result: Reg,
         select_condition: Reg,
-    ) -> Option<(Instruction, bool)> {
+    ) -> Result<Option<bool>, Error> {
         let Some(last_instr) = self.last_instr else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return None;
+            return Ok(None);
         };
         let last_instruction = *self.instrs.get(last_instr);
-        let Some(last_result) = last_instruction.result() else {
+        let Some(last_result) = last_instruction.compare_result() else {
             // All negatable instructions have a single result register.
-            return None;
+            return Ok(None);
         };
         if matches!(stack.get_register_space(last_result), RegisterSpace::Local) {
             // The instruction stores its result into a local variable which
             // is an observable side effect which we are not allowed to mutate.
-            return None;
+            return Ok(None);
         }
         if last_result != select_condition {
             // The result of the last instruction and the select's `condition`
             // are not equal thus indicating that we cannot fuse the instructions.
-            return None;
+            return Ok(None);
         }
-        let (fused_select, swap_operands) =
-            last_instruction.try_into_cmp_select_instr(select_result)?;
-        _ = mem::replace(self.instrs.get_mut(last_instr), fused_select);
-        Some((fused_select, swap_operands))
+        let CmpSelectFusion::Applied {
+            fused,
+            swap_operands,
+        } = last_instruction.try_into_cmp_select_instr(|| Ok(select_result))?
+        else {
+            return Ok(None);
+        };
+        let last_instr = self.instrs.get_mut(last_instr);
+        *last_instr = fused;
+        Ok(Some(swap_operands))
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].
