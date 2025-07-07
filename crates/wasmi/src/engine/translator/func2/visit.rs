@@ -10,6 +10,7 @@ use crate::{
         BlockType,
     },
     ir::Instruction,
+    module::WasmiValueType,
     Error,
     FuncType,
 };
@@ -283,7 +284,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_select(&mut self) -> Self::Output {
-        todo!()
+        self.translate_select(None)
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
@@ -1254,8 +1255,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_typed_select(&mut self, _ty: wasmparser::ValType) -> Self::Output {
-        todo!()
+    fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
+        let type_hint = WasmiValueType::from(ty).into_inner();
+        self.translate_select(Some(type_hint))
     }
 
     fn visit_ref_null(&mut self, _hty: wasmparser::HeapType) -> Self::Output {
