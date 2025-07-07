@@ -1958,7 +1958,7 @@ impl FuncTranslator {
         let result = self.stack.push_dynamic()?;
         match self
             .instr_encoder
-            .try_fuse_select(&mut self.stack, result, condition)
+            .try_fuse_select(&mut self.stack, result, condition)?
         {
             Some((_, swap_operands)) => {
                 if swap_operands {
