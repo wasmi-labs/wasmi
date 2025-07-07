@@ -935,7 +935,7 @@ impl InstrEncoder {
             return Ok(None);
         };
         let last_instruction = *self.instrs.get(last_instr);
-        let Some(last_result) = last_instruction.result() else {
+        let Some(last_result) = last_instruction.compare_result() else {
             // All negatable instructions have a single result register.
             return Ok(None);
         };
