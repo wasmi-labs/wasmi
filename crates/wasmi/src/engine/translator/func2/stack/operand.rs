@@ -8,7 +8,7 @@ use crate::{
 use super::Stack;
 
 /// An operand on the [`Stack`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone)]
 pub enum Operand {
     /// A local variable operand.
     Local(LocalOperand),
@@ -25,6 +25,16 @@ impl Operand {
             StackOperand::Local { local_index, .. } => Self::local(index, local_index, locals),
             StackOperand::Temp { ty, instr } => Self::temp(index, ty, instr),
             StackOperand::Immediate { val } => Self::immediate(index, val),
+        }
+    }
+
+    /// Returns `true` if `self` and `other` evaluate to the same value.
+    pub fn is_same(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Operand::Local(lhs), Operand::Local(rhs)) => lhs.local_index() == rhs.local_index(),
+            (Operand::Temp(lhs), Operand::Temp(rhs)) => lhs.operand_index() == rhs.operand_index(),
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => lhs.val() == rhs.val(),
+            _ => false,
         }
     }
 
@@ -91,7 +101,7 @@ impl Operand {
 }
 
 /// A local variable on the [`Stack`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
     /// The index of the operand.
     operand_index: OperandIdx,
@@ -125,7 +135,7 @@ impl LocalOperand {
 }
 
 /// A temporary on the [`Stack`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone)]
 pub struct TempOperand {
     /// The index of the operand.
     operand_index: OperandIdx,
@@ -159,7 +169,7 @@ impl TempOperand {
 }
 
 /// An immediate value on the [`Stack`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
     /// The index of the operand.
     operand_index: OperandIdx,
