@@ -1260,7 +1260,7 @@ impl FuncTranslator {
                 )
             }
             (lhs, rhs) => {
-                if lhs == rhs {
+                if lhs.is_same(&rhs) {
                     // Optimization: `copysign x x` is always just `x`
                     self.stack.push_operand(lhs)?;
                     return Ok(());
