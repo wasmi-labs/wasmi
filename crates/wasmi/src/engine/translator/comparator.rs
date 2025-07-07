@@ -68,6 +68,12 @@ impl CompareResult for Instruction {
             | I::I32LeU { result, .. }
             | I::I32LeUImm16Lhs { result, .. }
             | I::I32LeUImm16Rhs { result, .. }
+            | I::I64BitAnd { result, .. }
+            | I::I64BitAndImm16 { result, .. }
+            | I::I64BitOr { result, .. }
+            | I::I64BitOrImm16 { result, .. }
+            | I::I64BitXor { result, .. }
+            | I::I64BitXorImm16 { result, .. }
             | I::I64And { result, .. }
             | I::I64AndImm16 { result, .. }
             | I::I64Or { result, .. }
@@ -100,10 +106,14 @@ impl CompareResult for Instruction {
             | I::F32Ne { result, .. }
             | I::F32Lt { result, .. }
             | I::F32Le { result, .. }
+            | I::F32NotLt { result, .. }
+            | I::F32NotLe { result, .. }
             | I::F64Eq { result, .. }
             | I::F64Ne { result, .. }
             | I::F64Lt { result, .. }
-            | I::F64Le { result, .. } => result,
+            | I::F64Le { result, .. }
+            | I::F64NotLt { result, .. }
+            | I::F64NotLe { result, .. } => result,
             _ => return None,
         };
         Some(result)
