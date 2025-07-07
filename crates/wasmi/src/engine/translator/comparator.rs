@@ -30,7 +30,7 @@ pub trait CompareResult {
     fn compare_result(&self) -> Option<Reg>;
 
     /// Returns `true` if `self` is a compare [`Instruction`].
-    fn is_compare(&self) -> bool {
+    fn is_compare_instr(&self) -> bool {
         self.compare_result().is_some()
     }
 }
@@ -391,7 +391,7 @@ impl TryIntoCmpSelectInstr for Instruction {
         get_result: impl FnOnce() -> Result<Reg, Error>,
     ) -> Result<CmpSelectFusion, Error> {
         use Instruction as I;
-        if !self.is_compare() {
+        if !self.is_compare_instr() {
             return Ok(CmpSelectFusion::Unapplied);
         }
         let swap_operands = cmp_select_swap_operands(self);
