@@ -1,8 +1,9 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
-    core::FuelCostsProvider,
+    core::{FuelCostsProvider, ValType},
     engine::translator::{
-        func2::{StackLayout, StackSpace},
+        comparator::{CmpSelectFusion, CompareResult as _, TryIntoCmpSelectInstr as _},
+        func2::{Stack, StackLayout, StackSpace},
         relink_result::RelinkResult,
         utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
     },
@@ -173,6 +174,54 @@ impl InstrEncoder {
             return Ok(false);
         }
         Ok(true)
+    }
+
+    /// Tries to fuse a compare instruction with a Wasm `select` instruction.
+    ///
+    /// # Returns
+    ///
+    /// - Returns `Some` if fusion was successful.
+    /// - Returns `None` if fusion could not be applied.
+    pub fn try_fuse_select(
+        &mut self,
+        ty: ValType,
+        select_condition: Reg,
+        layout: &StackLayout,
+        stack: &mut Stack,
+    ) -> Result<Option<bool>, Error> {
+        let Some(last_instr) = self.last_instr else {
+            // If there is no last instruction there is no comparison instruction to negate.
+            return Ok(None);
+        };
+        let last_instruction = self.get(last_instr);
+        let Some(last_result) = last_instruction.compare_result() else {
+            // All negatable instructions have a single result register.
+            return Ok(None);
+        };
+        if matches!(layout.stack_space(last_result), StackSpace::Local) {
+            // The instruction stores its result into a local variable which
+            // is an observable side effect which we are not allowed to mutate.
+            return Ok(None);
+        }
+        if last_result != select_condition {
+            // The result of the last instruction and the select's `condition`
+            // are not equal thus indicating that we cannot fuse the instructions.
+            return Ok(None);
+        }
+        let CmpSelectFusion::Applied {
+            fused,
+            swap_operands,
+        } = last_instruction.try_into_cmp_select_instr(|| {
+            let select_result = stack.push_temp(ty, Some(last_instr))?;
+            let select_result = layout.temp_to_reg(select_result)?;
+            Ok(select_result)
+        })?
+        else {
+            return Ok(None);
+        };
+        let last_instr = self.get_mut(last_instr);
+        *last_instr = fused;
+        Ok(Some(swap_operands))
     }
 
     /// Pushes an [`Instruction`] parameter to the [`InstrEncoder`].
