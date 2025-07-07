@@ -28,6 +28,11 @@ pub trait CompareResult {
     ///
     /// Returns `None` if the [`Instruction`] is not a compare instruction.
     fn compare_result(&self) -> Option<Reg>;
+
+    /// Returns `true` if `self` is a compare [`Instruction`].
+    fn is_compare(&self) -> bool {
+        self.compare_result().is_some()
+    }
 }
 
 impl CompareResult for Instruction {
@@ -342,12 +347,6 @@ pub enum CmpSelectFusion {
     Unapplied,
 }
 
-/// Returns `true` if `instr` is a comparison instruction.
-#[rustfmt::skip]
-fn is_cmp_instr(instr: &Instruction) -> bool {
-    instr.compare_result().is_some()
-}
-
 /// Returns `true` if a `cmp`+`select` fused instruction required to swap its operands.
 #[rustfmt::skip]
 fn cmp_select_swap_operands(instr: &Instruction) -> bool {
@@ -392,7 +391,7 @@ impl TryIntoCmpSelectInstr for Instruction {
         get_result: impl FnOnce() -> Result<Reg, Error>,
     ) -> Result<CmpSelectFusion, Error> {
         use Instruction as I;
-        if !is_cmp_instr(self) {
+        if !self.is_compare() {
             return Ok(CmpSelectFusion::Unapplied);
         }
         let swap_operands = cmp_select_swap_operands(self);
