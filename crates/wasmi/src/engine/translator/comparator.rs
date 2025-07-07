@@ -106,6 +106,7 @@ impl CompareResult for Instruction {
             | I::F32Ne { result, .. }
             | I::F32Lt { result, .. }
             | I::F32Le { result, .. }
+            | I::F32NotLt { result, .. }
             | I::F32NotLe { result, .. }
             | I::F64Eq { result, .. }
             | I::F64Ne { result, .. }
