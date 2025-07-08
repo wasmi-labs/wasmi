@@ -965,12 +965,18 @@ impl FuncTranslator {
         })
     }
 
+    /// Convenience method to tell that there is no custom optimization.
+    fn no_opt_ri<T>(&mut self, _lhs: Operand, _rhs: T) -> Result<bool, Error> {
+        Ok(false)
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
         consteval: fn(T, T) -> R,
+        opt_ri: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmInteger + TryInto<Const16<T>>,
@@ -982,20 +988,23 @@ impl FuncTranslator {
                 self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
             }
             (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
-                let lhs = self.layout.operand_to_reg(val)?;
                 let rhs = imm.val().into();
+                if opt_ri(self, val, rhs)? {
+                    return Ok(());
+                }
+                let lhs = self.layout.operand_to_reg(val)?;
                 let rhs16 = self.make_imm16(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| match rhs16 {
-                        Operand16::Immediate(rhs) => make_instr_imm16(result, lhs, rhs),
-                        Operand16::Reg(rhs) => make_instr(result, lhs, rhs),
+                        Operand16::Immediate(rhs) => make_ri(result, lhs, rhs),
+                        Operand16::Reg(rhs) => make_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
             }
             (lhs, rhs) => {
-                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
+                self.push_binary_instr_with_result(lhs, rhs, make_rr, FuelCostsProvider::base)
             }
         }
     }

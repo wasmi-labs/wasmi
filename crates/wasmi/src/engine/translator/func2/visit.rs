@@ -446,6 +446,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_eq,
             Instruction::i32_eq_imm16,
             wasm::i32_eq,
+            FuncTranslator::fuse_eqz,
         )
     }
 
@@ -454,6 +455,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_ne,
             Instruction::i32_ne_imm16,
             wasm::i32_ne,
+            FuncTranslator::fuse_nez,
         )
     }
 
@@ -540,6 +542,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_eq,
             Instruction::i64_eq_imm16,
             wasm::i64_eq,
+            FuncTranslator::fuse_eqz,
         )
     }
 
@@ -548,6 +551,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_ne,
             Instruction::i64_ne_imm16,
             wasm::i64_ne,
+            FuncTranslator::fuse_nez,
         )
     }
 
@@ -688,6 +692,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_add,
             Instruction::i32_add_imm16,
             wasm::i32_add,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -705,6 +710,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_mul,
             Instruction::i32_mul_imm16,
             wasm::i32_mul,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -749,6 +755,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_bitand,
             Instruction::i32_bitand_imm16,
             wasm::i32_bitand,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -757,6 +764,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_bitor,
             Instruction::i32_bitor_imm16,
             wasm::i32_bitor,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -765,6 +773,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_bitxor,
             Instruction::i32_bitxor_imm16,
             wasm::i32_bitxor,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -830,6 +839,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_add,
             Instruction::i64_add_imm16,
             wasm::i64_add,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -847,6 +857,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_mul,
             Instruction::i64_mul_imm16,
             wasm::i64_mul,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -891,6 +902,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_bitand,
             Instruction::i64_bitand_imm16,
             wasm::i64_bitand,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -899,6 +911,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_bitor,
             Instruction::i64_bitor_imm16,
             wasm::i64_bitor,
+            FuncTranslator::no_opt_ri,
         )
     }
 
@@ -907,6 +920,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_bitxor,
             Instruction::i64_bitxor_imm16,
             wasm::i64_bitxor,
+            FuncTranslator::no_opt_ri,
         )
     }
 
