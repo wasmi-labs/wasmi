@@ -289,6 +289,11 @@ impl InstrEncoder {
             iter: self.instrs.drain(..),
         }
     }
+
+    /// Returns the last instruction of the [`InstrEncoder`] if any.
+    pub fn last_instr(&self) -> Option<Instr> {
+        self.last_instr
+    }
 }
 
 /// Iterator yielding all [`Instruction`]s of the [`InstrEncoder`].
