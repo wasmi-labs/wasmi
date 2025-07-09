@@ -1335,8 +1335,33 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_return_call(&mut self, _function_index: u32) -> Self::Output {
-        todo!()
+    fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let func_idx = FuncIdx::from(function_index);
+        let func_type = self.resolve_func_type(func_idx);
+        let len_params = usize::from(func_type.len_params());
+        let instr = match self.module.get_engine_func(func_idx) {
+            Some(engine_func) => {
+                // Case: We are calling an internal function and can optimize
+                //       this case by using the special instruction for it.
+                match len_params {
+                    0 => Instruction::return_call_internal_0(engine_func),
+                    _ => Instruction::return_call_internal(engine_func),
+                }
+            }
+            None => {
+                // Case: We are calling an imported function and must use the
+                //       general calling operator for it.
+                match len_params {
+                    0 => Instruction::return_call_imported_0(function_index),
+                    _ => Instruction::return_call_imported(function_index),
+                }
+            }
+        };
+        self.push_instr(instr, FuelCostsProvider::call)?;
+        self.encode_register_list(len_params)?;
+        self.reachable = false;
+        Ok(())
     }
 
     fn visit_return_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
