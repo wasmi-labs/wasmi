@@ -260,7 +260,17 @@ impl FuncTranslator {
 
     /// Applies `f` to the [`FuncType`] of the function that is currently translated.
     fn func_type_with<R>(&self, f: impl FnOnce(&FuncType) -> R) -> R {
-        let dedup_func_type = self.module.get_type_of_func(self.func);
+        self.resolve_func_type_with(self.func, f)
+    }
+
+    /// Returns the [`FuncType`] of the function at `func_index`.
+    fn resolve_func_type(&self, func_index: FuncIdx) -> FuncType {
+        self.resolve_func_type_with(func_index, FuncType::clone)
+    }
+
+    /// Applies `f` to the [`FuncType`] of the function at `func_index`.
+    fn resolve_func_type_with<R>(&self, func_index: FuncIdx, f: impl FnOnce(&FuncType) -> R) -> R {
+        let dedup_func_type = self.module.get_type_of_func(func_index);
         self.engine().resolve_func_type(dedup_func_type, f)
     }
 
