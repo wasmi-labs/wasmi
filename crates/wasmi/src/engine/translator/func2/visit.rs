@@ -243,9 +243,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         // Case: fallback to copy branch parameters conditionally
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
         let skip_label = self.labels.new_label();
         self.encode_br_eqz(condition, label)?;
-        self.copy_operands_to_temp(depth)?;
+        self.copy_operands_to_temp(depth, consume_fuel_instr)?;
         self.encode_br(label)?;
         self.labels
             .pin_label(skip_label, self.instrs.next_instr())
