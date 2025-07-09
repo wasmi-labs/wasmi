@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, TrapCode, F32, F64},
+    core::{wasm, FuelCostsProvider, TrapCode, F32, F64},
     engine::{
         translator::func2::{
             stack::{AcquiredTarget, IfReachability},
@@ -10,7 +10,7 @@ use crate::{
         BlockType,
     },
     ir::Instruction,
-    module::WasmiValueType,
+    module::{FuncIdx, WasmiValueType},
     Error,
     FuncType,
 };
@@ -270,8 +270,36 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_call(&mut self, _function_index: u32) -> Self::Output {
-        todo!()
+    fn visit_call(&mut self, function_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let func_idx = FuncIdx::from(function_index);
+        let func_type = self.resolve_func_type(func_idx);
+        let len_params = usize::from(func_type.len_params());
+        let results = self.call_regspan(len_params)?;
+        let instr = match self.module.get_engine_func(func_idx) {
+            Some(engine_func) => {
+                // Case: We are calling an internal function and can optimize
+                //       this case by using the special instruction for it.
+                match len_params {
+                    0 => Instruction::call_internal_0(results, engine_func),
+                    _ => Instruction::call_internal(results, engine_func),
+                }
+            }
+            None => {
+                // Case: We are calling an imported function and must use the
+                //       general calling operator for it.
+                match len_params {
+                    0 => Instruction::call_imported_0(results, function_index),
+                    _ => Instruction::call_imported(results, function_index),
+                }
+            }
+        };
+        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
+        self.encode_register_list(len_params)?;
+        if let Some(span) = self.push_results(call_instr, func_type.results())? {
+            debug_assert_eq!(span, results);
+        }
+        Ok(())
     }
 
     fn visit_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
