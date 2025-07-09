@@ -1011,18 +1011,18 @@ impl FuncTranslator {
     /// This Wasm operation is a no-op. Ideally we only have to change the types on the stack.
     fn translate_reinterpret<T, R>(&mut self, consteval: fn(T) -> R) -> Result<(), Error>
     where
-        T: From<TypedVal>,
-        R: Into<TypedVal>,
+        T: From<TypedVal> + Typed,
+        R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop() {
             Operand::Local(input) => {
-                debug_assert!(matches!(input.ty(), ValType::I32));
+                debug_assert_eq!(input.ty(), <T as Typed>::TY);
                 todo!() // do we need a copy or should we allow to manipulate a local's type?
             }
             Operand::Temp(input) => {
-                debug_assert!(matches!(input.ty(), ValType::I32));
-                self.stack.push_temp(ValType::I64, None)?;
+                debug_assert_eq!(input.ty(), <T as Typed>::TY);
+                self.stack.push_temp(<R as Typed>::TY, None)?;
             }
             Operand::Immediate(input) => {
                 let input: T = input.val().into();
