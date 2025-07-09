@@ -894,7 +894,7 @@ impl FuncTranslator {
         let Operand::Temp(condition) = condition else {
             return Ok(false);
         };
-        debug_assert_eq!(condition.ty(), ValType::I32);
+        debug_assert!(matches!(condition.ty(), ValType::I32 | ValType::I64));
         let Some(origin) = condition.instr() else {
             return Ok(false);
         };
