@@ -69,6 +69,7 @@ use crate::{
     Error,
     FuncType,
 };
+use alloc::vec::Vec;
 use core::mem;
 use wasmparser::WasmFeatures;
 
@@ -109,6 +110,8 @@ pub struct FuncTranslator {
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
     instrs: InstrEncoder,
+    /// Temporary buffer for operands.
+    operands: Vec<Operand>,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -122,6 +125,8 @@ pub struct FuncTranslatorAllocations {
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
     instrs: InstrEncoderAllocations,
+    /// Temporary buffer for operands.
+    operands: Vec<Operand>,
 }
 
 impl Reset for FuncTranslatorAllocations {
@@ -130,6 +135,7 @@ impl Reset for FuncTranslatorAllocations {
         self.layout.reset();
         self.labels.reset();
         self.instrs.reset();
+        self.operands.clear();
     }
 }
 
@@ -187,6 +193,7 @@ impl ReusableAllocations for FuncTranslator {
             layout: self.layout,
             labels: self.labels,
             instrs: self.instrs.into_allocations(),
+            operands: self.operands,
         }
     }
 }
@@ -214,6 +221,7 @@ impl FuncTranslator {
             layout,
             labels,
             instrs,
+            operands,
         } = alloc.into_reset();
         let stack = Stack::new(&engine, stack);
         let instrs = InstrEncoder::new(&engine, instrs);
@@ -227,6 +235,7 @@ impl FuncTranslator {
             layout,
             labels,
             instrs,
+            operands,
         };
         translator.init_func_body_block()?;
         translator.init_func_params()?;
