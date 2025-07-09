@@ -1196,7 +1196,7 @@ impl FuncTranslator {
     ) -> Result<(), Error>
     where
         T: WasmInteger,
-        R: Into<TypedVal>,
+        R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -1208,7 +1208,7 @@ impl FuncTranslator {
                 let rhs = T::from(rhs.val());
                 let rhs16 = self.make_imm16(rhs)?;
                 self.push_instr_with_result(
-                    <T as Typed>::TY,
+                    <R as Typed>::TY,
                     |result| match rhs16 {
                         Operand16::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
                         Operand16::Reg(rhs) => make_instr(result, lhs, rhs),
@@ -1221,7 +1221,7 @@ impl FuncTranslator {
                 let lhs16 = self.make_imm16(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
-                    <T as Typed>::TY,
+                    <R as Typed>::TY,
                     |result| match lhs16 {
                         Operand16::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
                         Operand16::Reg(lhs) => make_instr(result, lhs, rhs),
