@@ -495,9 +495,10 @@ impl FuncTranslator {
                 Instruction::return_reg3_ext(v0, v1, v2)
             }
             _ => {
-                let depth = usize::from(len_results);
-                self.copy_operands_to_temp(depth)?;
-                let first_idx = self.stack.peek(depth).index();
+                let len_copies = usize::from(len_results);
+                let Some(first_idx) = self.copy_operands_to_temp(len_copies, consume_fuel)? else {
+                    unreachable!("`first_idx` must be `Some` since `len_copies` is >0")
+                };
                 let result = self.layout.temp_to_reg(first_idx)?;
                 let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
                 Instruction::return_span(values)
