@@ -582,13 +582,13 @@ impl FuncTranslator {
                 }
             },
             2 => {
-                let [v0, v1] = [self.stack.peek(1), self.stack.peek(0)];
+                let (v0, v1) = self.stack.peek2();
                 let v0 = self.layout.operand_to_reg(v0)?;
                 let v1 = self.layout.operand_to_reg(v1)?;
                 Instruction::return_reg2_ext(v0, v1)
             }
             3 => {
-                let [v0, v1, v2] = [self.stack.peek(2), self.stack.peek(1), self.stack.peek(0)];
+                let (v0, v1, v2) = self.stack.peek3();
                 let v0 = self.layout.operand_to_reg(v0)?;
                 let v1 = self.layout.operand_to_reg(v1)?;
                 let v2 = self.layout.operand_to_reg(v2)?;

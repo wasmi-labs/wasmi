@@ -393,6 +393,29 @@ impl Stack {
         self.operands.get(depth)
     }
 
+    /// Peeks the 2 top-most [`Operand`]s.
+    ///
+    /// # Panics
+    ///
+    /// If there aren't at least 2 [`Operand`]s on the [`Stack`].
+    pub fn peek2(&self) -> (Operand, Operand) {
+        let v0 = self.peek(1);
+        let v1 = self.peek(0);
+        (v0, v1)
+    }
+
+    /// Peeks the 3 top-most [`Operand`]s.
+    ///
+    /// # Panics
+    ///
+    /// If there aren't at least 2 [`Operand`]s on the [`Stack`].
+    pub fn peek3(&self) -> (Operand, Operand, Operand) {
+        let v0 = self.peek(2);
+        let v1 = self.peek(1);
+        let v2 = self.peek(0);
+        (v0, v1, v2)
+    }
+
     /// Pops the top-most [`Operand`] from the [`Stack`].
     ///
     /// # Panics
