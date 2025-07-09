@@ -401,10 +401,10 @@ impl FuncTranslator {
         &mut self,
         instr: Instruction,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<(), Error> {
+    ) -> Result<Instr, Error> {
         let consume_fuel = self.stack.consume_fuel_instr();
-        self.instrs.push_instr(instr, consume_fuel, fuel_costs)?;
-        Ok(())
+        let instr = self.instrs.push_instr(instr, consume_fuel, fuel_costs)?;
+        Ok(instr)
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
@@ -752,7 +752,8 @@ impl FuncTranslator {
                 self.make_branch_cmp_fallback(comparator, condition, zero, offset)?
             }
         };
-        self.push_instr(instr, FuelCostsProvider::base)
+        self.push_instr(instr, FuelCostsProvider::base)?;
+        Ok(())
     }
 
     /// Create an [`Instruction::BranchCmpFallback`].
