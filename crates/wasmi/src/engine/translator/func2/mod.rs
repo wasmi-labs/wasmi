@@ -292,20 +292,26 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Copy all [`Operand`]s up to `depth` into [`Operand::Temp`]s by copying if necessary.
+    /// Copy the top-most `len` [`Operand`]s into [`Operand::Temp`]s by copying if necessary.
     ///
+    /// Returns the [`OperandIdx`] of the first [`Operand`].
     ///
     /// # Note
     ///
     /// - This does _not_ manipulate the [`Stack`].
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn copy_operands_to_temp(&mut self, depth: usize) -> Result<(), Error> {
-        let consume_fuel = self.stack.consume_fuel_instr();
-        for n in 0..depth {
+    fn copy_operands_to_temp(
+        &mut self,
+        len: usize,
+        consume_fuel: Option<Instr>,
+    ) -> Result<Option<OperandIdx>, Error> {
+        let mut idx = None;
+        for n in 0..len {
             let operand = self.stack.peek(n);
             self.copy_operand_to_temp(operand, consume_fuel)?;
+            idx = Some(operand.index());
         }
-        Ok(())
+        Ok(idx)
     }
 
     /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
