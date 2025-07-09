@@ -596,18 +596,54 @@ impl FuncTranslator {
             }
             _ => {
                 let len_copies = usize::from(len_results);
-                let Some(first_idx) = self.copy_operands_to_temp(len_copies, consume_fuel)? else {
-                    unreachable!("`first_idx` must be `Some` since `len_copies` is >0")
-                };
-                let result = self.layout.temp_to_reg(first_idx)?;
-                let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
-                Instruction::return_span(values)
+                match self.try_form_regspan(len_copies)? {
+                    Some(span) => {
+                        let values = BoundedRegSpan::new(span, len_results);
+                        Instruction::return_span(values)
+                    }
+                    None => {
+                        let Some(first_idx) =
+                            self.copy_operands_to_temp(len_copies, consume_fuel)?
+                        else {
+                            unreachable!("`first_idx` must be `Some` since `len_copies` is >0")
+                        };
+                        let result = self.layout.temp_to_reg(first_idx)?;
+                        let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
+                        Instruction::return_span(values)
+                    }
+                }
             }
         };
         let instr = self
             .instrs
             .push_instr(instr, consume_fuel, FuelCostsProvider::base)?;
         Ok(instr)
+    }
+
+    /// Tries to form a [`RegSpan`] from the top-most `len` operands on the [`Stack`].
+    ///
+    /// Returns `None` if forming a [`RegSpan`] was not possible.
+    fn try_form_regspan(&self, len: usize) -> Result<Option<RegSpan>, Error> {
+        if len == 0 {
+            return Ok(None);
+        }
+        let mut start = match self.stack.peek(0) {
+            Operand::Immediate(_) => return Ok(None),
+            Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
+            Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
+        };
+        for depth in 1..len {
+            let cur = match self.stack.peek(depth) {
+                Operand::Immediate(_) => return Ok(None),
+                Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
+                Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
+            };
+            if start != cur.next() {
+                return Ok(None);
+            }
+            start = cur;
+        }
+        Ok(Some(RegSpan::new(start)))
     }
 
     /// Translates the end of a Wasm `block` control frame.
