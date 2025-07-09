@@ -35,6 +35,7 @@ use crate::{
     Engine,
     Error,
 };
+use alloc::vec::Vec;
 
 #[cfg(doc)]
 use crate::ir::Instruction;
@@ -430,6 +431,18 @@ impl Stack {
         let o2 = self.pop();
         let o1 = self.pop();
         (o1, o2, o3)
+    }
+
+    /// Pops `len` operands from the stack and store them into `buffer`.
+    ///
+    /// Operands stored into the buffer are placed in order.
+    pub fn pop_n(&mut self, len: usize, buffer: &mut Vec<Operand>) {
+        buffer.clear();
+        for _ in 0..len {
+            let operand = self.pop();
+            buffer.push(operand);
+        }
+        buffer.reverse();
     }
 
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
