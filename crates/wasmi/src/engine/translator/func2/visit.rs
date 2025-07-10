@@ -209,7 +209,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             AcquiredTarget::Branch(mut frame) => {
                 frame.branch_to();
                 let label = frame.label();
-                self.copy_branch_params(depth, consume_fuel_instr)?;
+                let len_params = usize::from(frame.len_branch_params(&self.engine));
+                self.copy_branch_params(len_params, consume_fuel_instr)?;
                 self.encode_br(label)?;
                 self.reachable = false;
                 Ok(())
