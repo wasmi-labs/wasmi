@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, FuelCostsProvider, TrapCode, F32, F64},
+    core::{wasm, FuelCostsProvider, Mutability, TrapCode, TypedVal, F32, F64},
     engine::{
         translator::func2::{
             stack::{AcquiredTarget, IfReachability},
@@ -9,7 +9,9 @@ use crate::{
         },
         BlockType,
     },
+    ir,
     ir::Instruction,
+    module,
     module::{FuncIdx, WasmiValueType},
     Error,
     FuncType,
@@ -356,8 +358,33 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_local_set(local_index, true)
     }
 
-    fn visit_global_get(&mut self, _global_index: u32) -> Self::Output {
-        todo!()
+    fn visit_global_get(&mut self, global_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let global_idx = module::GlobalIdx::from(global_index);
+        let (global_type, init_value) = self.module.get_global(global_idx);
+        let content = global_type.content();
+        if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
+            if let Some(value) = init_expr.eval_const() {
+                // Case: access to immutable internally defined global variables
+                //       can be replaced with their constant initialization value.
+                self.stack.push_immediate(TypedVal::new(content, value))?;
+                return Ok(());
+            }
+            if let Some(func_index) = init_expr.funcref() {
+                // Case: forward to `ref.func x` translation.
+                self.visit_ref_func(func_index.into_u32())?;
+                return Ok(());
+            }
+        }
+        // Case: The `global.get` instruction accesses a mutable or imported
+        //       global variable and thus cannot be optimized away.
+        let global_idx = ir::index::Global::from(global_index);
+        self.push_instr_with_result(
+            content,
+            |result| Instruction::global_get(result, global_idx),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_global_set(&mut self, _global_index: u32) -> Self::Output {
