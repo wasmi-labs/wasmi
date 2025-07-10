@@ -64,7 +64,7 @@ use crate::{
         RegSpan,
         Sign,
     },
-    module::{FuncIdx, ModuleHeader, WasmiValueType},
+    module::{FuncIdx, FuncTypeIdx, ModuleHeader, TableIdx, WasmiValueType},
     Engine,
     Error,
     FuncType,
@@ -281,6 +281,14 @@ impl FuncTranslator {
     fn resolve_func_type_with<R>(&self, func_index: FuncIdx, f: impl FnOnce(&FuncType) -> R) -> R {
         let dedup_func_type = self.module.get_type_of_func(func_index);
         self.engine().resolve_func_type(dedup_func_type, f)
+    }
+
+    /// Resolves the [`FuncType`] at the given Wasm module `type_index`.
+    fn resolve_type(&self, type_index: u32) -> FuncType {
+        let func_type_idx = FuncTypeIdx::from(type_index);
+        let dedup_func_type = self.module.get_func_type(func_type_idx);
+        self.engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Returns the [`RegSpan`] of a call instruction before manipulating the operand stack.
@@ -1554,6 +1562,23 @@ impl FuncTranslator {
         self.instrs
             .push_param(Instruction::register2_ext(true_val, false_val));
         Ok(())
+    }
+
+    /// Create either [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`] depending on the inputs.
+    fn call_indirect_params(
+        &mut self,
+        index: Operand,
+        table_index: u32,
+    ) -> Result<Instruction, Error> {
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
+        let index = self.make_index16(index, table_type.index_ty())?;
+        let instr = match index {
+            Operand16::Reg(index) => Instruction::call_indirect_params(index, table_index),
+            Operand16::Immediate(index) => {
+                Instruction::call_indirect_params_imm16(index, table_index)
+            }
+        };
+        Ok(instr)
     }
 
     /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
