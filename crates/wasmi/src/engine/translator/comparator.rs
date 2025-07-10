@@ -801,88 +801,90 @@ pub trait UpdateBranchOffset {
 
 impl UpdateBranchOffset for Instruction {
     #[rustfmt::skip]
-    fn update_branch_offset(&mut self, stack: &mut impl AllocConst, new_offset: BranchOffset) -> Result<(), Error> {
+    fn update_branch_offset(
+        &mut self,
+        stack: &mut impl AllocConst,
+        new_offset: BranchOffset,
+    ) -> Result<(), Error> {
         use Instruction as I;
         match self {
-            I::Branch { offset } |
-            I::BranchTableTarget { offset, .. } |
-            I::BranchTableTargetNonOverlapping { offset, .. } => {
+            | I::Branch { offset }
+            | I::BranchTableTarget { offset, .. }
+            | I::BranchTableTargetNonOverlapping { offset, .. } => {
                 offset.init(new_offset);
-                return Ok(())
+                return Ok(());
             }
             _ => {}
         };
         let offset = match self {
-            I::BranchI32And { offset, .. } |
-            I::BranchI32Or { offset, .. } |
-            I::BranchI32Xor { offset, .. } |
-            I::BranchI32Nand { offset, .. } |
-            I::BranchI32Nor { offset, .. } |
-            I::BranchI32Xnor { offset, .. } |
-            I::BranchI32Eq { offset, .. } |
-            I::BranchI32Ne { offset, .. } |
-            I::BranchI32LtS { offset, .. } |
-            I::BranchI32LtU { offset, .. } |
-            I::BranchI32LeS { offset, .. } |
-            I::BranchI32LeU { offset, .. } |
-            I::BranchI64And { offset, .. } |
-            I::BranchI64Or { offset, .. } |
-            I::BranchI64Xor { offset, .. } |
-            I::BranchI64Nand { offset, .. } |
-            I::BranchI64Nor { offset, .. } |
-            I::BranchI64Xnor { offset, .. } |
-            I::BranchI64Eq { offset, .. } |
-            I::BranchI64Ne { offset, .. } |
-            I::BranchI64LtS { offset, .. } |
-            I::BranchI64LtU { offset, .. } |
-            I::BranchI64LeS { offset, .. } |
-            I::BranchI64LeU { offset, .. } |
-            I::BranchF32Eq { offset, .. } |
-            I::BranchF32Ne { offset, .. } |
-            I::BranchF32Lt { offset, .. } |
-            I::BranchF32Le { offset, .. } |
-            I::BranchF32NotLt { offset, .. } |
-            I::BranchF32NotLe { offset, .. } |
-            I::BranchF64Eq { offset, .. } |
-            I::BranchF64Ne { offset, .. } |
-            I::BranchF64Lt { offset, .. } |
-            I::BranchF64Le { offset, .. } |
-            I::BranchF64NotLt { offset, .. } |
-            I::BranchF64NotLe { offset, .. } |
-            I::BranchI32AndImm16 { offset, .. } |
-            I::BranchI32OrImm16 { offset, .. } |
-            I::BranchI32XorImm16 { offset, .. } |
-            I::BranchI32NandImm16 { offset, .. } |
-            I::BranchI32NorImm16 { offset, .. } |
-            I::BranchI32XnorImm16 { offset, .. } |
-            I::BranchI32EqImm16 { offset, .. } |
-            I::BranchI32NeImm16 { offset, .. } |
-            I::BranchI32LtSImm16Lhs { offset, .. } |
-            I::BranchI32LtSImm16Rhs { offset, .. } |
-            I::BranchI32LeSImm16Lhs { offset, .. } |
-            I::BranchI32LeSImm16Rhs { offset, .. } |
-            I::BranchI32LtUImm16Lhs { offset, .. } |
-            I::BranchI32LtUImm16Rhs { offset, .. } |
-            I::BranchI32LeUImm16Lhs { offset, .. } |
-            I::BranchI32LeUImm16Rhs { offset, .. } |
-            I::BranchI64AndImm16 { offset, .. } |
-            I::BranchI64OrImm16 { offset, .. } |
-            I::BranchI64XorImm16 { offset, .. } |
-            I::BranchI64NandImm16 { offset, .. } |
-            I::BranchI64NorImm16 { offset, .. } |
-            I::BranchI64XnorImm16 { offset, .. } |
-            I::BranchI64EqImm16 { offset, .. } |
-            I::BranchI64NeImm16 { offset, .. } |
-            I::BranchI64LtSImm16Lhs { offset, .. } |
-            I::BranchI64LtSImm16Rhs { offset, .. } |
-            I::BranchI64LeSImm16Lhs { offset, .. } |
-            I::BranchI64LeSImm16Rhs { offset, .. } |
-            I::BranchI64LtUImm16Lhs { offset, .. } |
-            I::BranchI64LtUImm16Rhs { offset, .. } |
-            I::BranchI64LeUImm16Lhs { offset, .. } |
-            I::BranchI64LeUImm16Rhs { offset, .. } => {
-                offset
-            }
+            | I::BranchI32And { offset, .. }
+            | I::BranchI32Or { offset, .. }
+            | I::BranchI32Xor { offset, .. }
+            | I::BranchI32Nand { offset, .. }
+            | I::BranchI32Nor { offset, .. }
+            | I::BranchI32Xnor { offset, .. }
+            | I::BranchI32Eq { offset, .. }
+            | I::BranchI32Ne { offset, .. }
+            | I::BranchI32LtS { offset, .. }
+            | I::BranchI32LtU { offset, .. }
+            | I::BranchI32LeS { offset, .. }
+            | I::BranchI32LeU { offset, .. }
+            | I::BranchI64And { offset, .. }
+            | I::BranchI64Or { offset, .. }
+            | I::BranchI64Xor { offset, .. }
+            | I::BranchI64Nand { offset, .. }
+            | I::BranchI64Nor { offset, .. }
+            | I::BranchI64Xnor { offset, .. }
+            | I::BranchI64Eq { offset, .. }
+            | I::BranchI64Ne { offset, .. }
+            | I::BranchI64LtS { offset, .. }
+            | I::BranchI64LtU { offset, .. }
+            | I::BranchI64LeS { offset, .. }
+            | I::BranchI64LeU { offset, .. }
+            | I::BranchF32Eq { offset, .. }
+            | I::BranchF32Ne { offset, .. }
+            | I::BranchF32Lt { offset, .. }
+            | I::BranchF32Le { offset, .. }
+            | I::BranchF32NotLt { offset, .. }
+            | I::BranchF32NotLe { offset, .. }
+            | I::BranchF64Eq { offset, .. }
+            | I::BranchF64Ne { offset, .. }
+            | I::BranchF64Lt { offset, .. }
+            | I::BranchF64Le { offset, .. }
+            | I::BranchF64NotLt { offset, .. }
+            | I::BranchF64NotLe { offset, .. }
+            | I::BranchI32AndImm16 { offset, .. }
+            | I::BranchI32OrImm16 { offset, .. }
+            | I::BranchI32XorImm16 { offset, .. }
+            | I::BranchI32NandImm16 { offset, .. }
+            | I::BranchI32NorImm16 { offset, .. }
+            | I::BranchI32XnorImm16 { offset, .. }
+            | I::BranchI32EqImm16 { offset, .. }
+            | I::BranchI32NeImm16 { offset, .. }
+            | I::BranchI32LtSImm16Lhs { offset, .. }
+            | I::BranchI32LtSImm16Rhs { offset, .. }
+            | I::BranchI32LeSImm16Lhs { offset, .. }
+            | I::BranchI32LeSImm16Rhs { offset, .. }
+            | I::BranchI32LtUImm16Lhs { offset, .. }
+            | I::BranchI32LtUImm16Rhs { offset, .. }
+            | I::BranchI32LeUImm16Lhs { offset, .. }
+            | I::BranchI32LeUImm16Rhs { offset, .. }
+            | I::BranchI64AndImm16 { offset, .. }
+            | I::BranchI64OrImm16 { offset, .. }
+            | I::BranchI64XorImm16 { offset, .. }
+            | I::BranchI64NandImm16 { offset, .. }
+            | I::BranchI64NorImm16 { offset, .. }
+            | I::BranchI64XnorImm16 { offset, .. }
+            | I::BranchI64EqImm16 { offset, .. }
+            | I::BranchI64NeImm16 { offset, .. }
+            | I::BranchI64LtSImm16Lhs { offset, .. }
+            | I::BranchI64LtSImm16Rhs { offset, .. }
+            | I::BranchI64LeSImm16Lhs { offset, .. }
+            | I::BranchI64LeSImm16Rhs { offset, .. }
+            | I::BranchI64LtUImm16Lhs { offset, .. }
+            | I::BranchI64LtUImm16Rhs { offset, .. }
+            | I::BranchI64LeUImm16Lhs { offset, .. }
+            | I::BranchI64LeUImm16Rhs { offset, .. } => offset,
             unexpected => {
                 panic!("expected a Wasmi `cmp`+`branch` instruction but found: {unexpected:?}")
             }
