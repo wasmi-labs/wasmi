@@ -1471,7 +1471,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index = self.stack.pop();
         let indirect_params = self.call_indirect_params(index, table_index)?;
         let len_params = usize::from(func_type.len_params());
-        // let results = self.call_regspan(len_params)?;
         let instr = match (len_params, indirect_params) {
             (0, Instruction::CallIndirectParams { .. }) => {
                 Instruction::return_call_indirect_0(type_index)
