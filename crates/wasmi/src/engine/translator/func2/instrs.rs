@@ -2,12 +2,17 @@ use super::{Reset, ReusableAllocations};
 use crate::{
     core::{FuelCostsProvider, ValType},
     engine::translator::{
-        comparator::{CmpSelectFusion, CompareResult as _, TryIntoCmpSelectInstr as _},
+        comparator::{
+            CmpSelectFusion,
+            CompareResult as _,
+            TryIntoCmpSelectInstr as _,
+            UpdateBranchOffset as _,
+        },
         func2::{Stack, StackLayout, StackSpace},
         relink_result::RelinkResult,
         utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
     },
-    ir::{Instruction, Reg},
+    ir::{BranchOffset, Instruction, Reg},
     module::ModuleHeader,
     Engine,
     Error,
@@ -251,6 +256,21 @@ impl InstrEncoder {
     /// If `instr` is out of bounds for `self`.
     fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
         &mut self.instrs[instr.into_usize()]
+    }
+
+    /// Updates the branch offset of `instr` to `offset`.
+    ///
+    /// # Errors
+    ///
+    /// If the branch offset could not be updated for `instr`.
+    pub fn update_branch_offset(
+        &mut self,
+        instr: Instr,
+        offset: BranchOffset,
+        layout: &mut StackLayout,
+    ) -> Result<(), Error> {
+        self.get_mut(instr).update_branch_offset(layout, offset)?;
+        Ok(())
     }
 
     /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.

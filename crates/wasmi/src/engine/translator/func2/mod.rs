@@ -175,6 +175,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         let Ok(max_height) = u16::try_from(self.stack.max_height()) else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
+        self.update_branch_offsets()?;
         finalize(CompiledFuncEntity::new(
             max_height,
             self.instrs.drain(),
@@ -258,6 +259,19 @@ impl FuncTranslator {
         for ty in self.func_type().params() {
             self.stack.register_locals(1, *ty)?;
             self.layout.register_locals(1, *ty)?;
+        }
+        Ok(())
+    }
+
+    /// Updates the branch offsets of all branch instructions inplace.
+    ///
+    /// # Panics
+    ///
+    /// If this is used before all branching labels have been pinned.
+    fn update_branch_offsets(&mut self) -> Result<(), Error> {
+        for (user, offset) in self.labels.resolved_users() {
+            self.instrs
+                .update_branch_offset(user, offset?, &mut self.layout)?;
         }
         Ok(())
     }
