@@ -551,16 +551,16 @@ impl FuncTranslator {
     /// Pushes a binary instruction with a result and associated fuel costs.
     fn push_binary_instr_with_result(
         &mut self,
+        result_ty: ValType,
         lhs: Operand,
         rhs: Operand,
         make_instr: impl FnOnce(Reg, Reg, Reg) -> Instruction,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         debug_assert_eq!(lhs.ty(), rhs.ty());
-        let ty = lhs.ty();
         let lhs = self.layout.operand_to_reg(lhs)?;
         let rhs = self.layout.operand_to_reg(rhs)?;
-        self.push_instr_with_result(ty, |result| make_instr(result, lhs, rhs), fuel_costs)
+        self.push_instr_with_result(result_ty, |result| make_instr(result, lhs, rhs), fuel_costs)
     }
 
     /// Encodes a generic return instruction.
@@ -1217,9 +1217,13 @@ impl FuncTranslator {
                     FuelCostsProvider::base,
                 )
             }
-            (lhs, rhs) => {
-                self.push_binary_instr_with_result(lhs, rhs, make_rr, FuelCostsProvider::base)
-            }
+            (lhs, rhs) => self.push_binary_instr_with_result(
+                <R as Typed>::TY,
+                lhs,
+                rhs,
+                make_rr,
+                FuelCostsProvider::base,
+            ),
         }
     }
 
@@ -1273,9 +1277,13 @@ impl FuncTranslator {
                     FuelCostsProvider::base,
                 )
             }
-            (lhs, rhs) => {
-                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
-            }
+            (lhs, rhs) => self.push_binary_instr_with_result(
+                <T as Typed>::TY,
+                lhs,
+                rhs,
+                make_instr,
+                FuelCostsProvider::base,
+            ),
         }
     }
 
@@ -1322,9 +1330,13 @@ impl FuncTranslator {
                     FuelCostsProvider::base,
                 )
             }
-            (lhs, rhs) => {
-                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
-            }
+            (lhs, rhs) => self.push_binary_instr_with_result(
+                <R as Typed>::TY,
+                lhs,
+                rhs,
+                make_instr,
+                FuelCostsProvider::base,
+            ),
         }
     }
 
@@ -1338,7 +1350,7 @@ impl FuncTranslator {
     ) -> Result<(), Error>
     where
         T: WasmInteger,
-        R: Into<TypedVal>,
+        R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -1377,9 +1389,13 @@ impl FuncTranslator {
                     FuelCostsProvider::base,
                 )
             }
-            (lhs, rhs) => {
-                self.push_binary_instr_with_result(lhs, rhs, make_sub_rr, FuelCostsProvider::base)
-            }
+            (lhs, rhs) => self.push_binary_instr_with_result(
+                <R as Typed>::TY,
+                lhs,
+                rhs,
+                make_sub_rr,
+                FuelCostsProvider::base,
+            ),
         }
     }
 
@@ -1435,9 +1451,13 @@ impl FuncTranslator {
                     FuelCostsProvider::base,
                 )
             }
-            (lhs, rhs) => {
-                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
-            }
+            (lhs, rhs) => self.push_binary_instr_with_result(
+                <T as Typed>::TY,
+                lhs,
+                rhs,
+                make_instr,
+                FuelCostsProvider::base,
+            ),
         }
     }
 
@@ -1449,14 +1469,20 @@ impl FuncTranslator {
     ) -> Result<(), Error>
     where
         T: WasmFloat,
-        R: Into<TypedVal>,
+        R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
         if let (Operand::Immediate(lhs), Operand::Immediate(rhs)) = (lhs, rhs) {
             return self.translate_binary_consteval::<T, R>(lhs, rhs, consteval);
         }
-        self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
+        self.push_binary_instr_with_result(
+            <R as Typed>::TY,
+            lhs,
+            rhs,
+            make_instr,
+            FuelCostsProvider::base,
+        )
     }
 
     /// Translate Wasmi `{f32,f64}.copysign` instructions.
@@ -1494,7 +1520,13 @@ impl FuncTranslator {
                     self.stack.push_operand(lhs)?;
                     return Ok(());
                 }
-                self.push_binary_instr_with_result(lhs, rhs, make_instr, FuelCostsProvider::base)
+                self.push_binary_instr_with_result(
+                    <T as Typed>::TY,
+                    lhs,
+                    rhs,
+                    make_instr,
+                    FuelCostsProvider::base,
+                )
             }
         }
     }
