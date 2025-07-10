@@ -302,8 +302,34 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
-        todo!()
+    fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        let func_type = self.resolve_type(type_index);
+        let index = self.stack.pop();
+        let indirect_params = self.call_indirect_params(index, table_index)?;
+        let len_params = usize::from(func_type.len_params());
+        let results = self.call_regspan(len_params)?;
+        let instr = match (len_params, indirect_params) {
+            (0, Instruction::CallIndirectParams { .. }) => {
+                Instruction::call_indirect_0(results, type_index)
+            }
+            (0, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::call_indirect_0_imm16(results, type_index)
+            }
+            (_, Instruction::CallIndirectParams { .. }) => {
+                Instruction::call_indirect(results, type_index)
+            }
+            (_, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::call_indirect_imm16(results, type_index)
+            }
+            _ => unreachable!(),
+        };
+        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
+        self.instrs.push_param(indirect_params);
+        self.encode_register_list(len_params)?;
+        if let Some(span) = self.push_results(call_instr, func_type.results())? {
+            debug_assert_eq!(span, results);
+        }
+        Ok(())
     }
 
     fn visit_drop(&mut self) -> Self::Output {
@@ -1364,8 +1390,32 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_return_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
-        todo!()
+    fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        let func_type = self.resolve_type(type_index);
+        let index = self.stack.pop();
+        let indirect_params = self.call_indirect_params(index, table_index)?;
+        let len_params = usize::from(func_type.len_params());
+        // let results = self.call_regspan(len_params)?;
+        let instr = match (len_params, indirect_params) {
+            (0, Instruction::CallIndirectParams { .. }) => {
+                Instruction::return_call_indirect_0(type_index)
+            }
+            (0, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::return_call_indirect_0_imm16(type_index)
+            }
+            (_, Instruction::CallIndirectParams { .. }) => {
+                Instruction::return_call_indirect(type_index)
+            }
+            (_, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::return_call_indirect_imm16(type_index)
+            }
+            _ => unreachable!(),
+        };
+        self.push_instr(instr, FuelCostsProvider::call)?;
+        self.instrs.push_param(indirect_params);
+        self.encode_register_list(len_params)?;
+        self.reachable = false;
+        Ok(())
     }
 
     fn visit_i64_add128(&mut self) -> Self::Output {
