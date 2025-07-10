@@ -33,7 +33,7 @@ use self::{
     utils::{Operand16, Reset, ReusableAllocations},
 };
 use crate::{
-    core::{FuelCostsProvider, TrapCode, Typed, TypedVal, UntypedVal, ValType},
+    core::{FuelCostsProvider, IndexType, TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
         translator::{
             comparator::{
@@ -1080,6 +1080,41 @@ impl FuncTranslator {
                 Ok(Operand16::Reg(rhs))
             }
         }
+    }
+
+    /// Converts the `provider` to a 16-bit index-type constant value.
+    ///
+    /// # Note
+    ///
+    /// - Turns immediates that cannot be 16-bit encoded into function local constants.
+    /// - The behavior is different whether `memory64` is enabled or disabled.
+    pub(super) fn make_index16(
+        &mut self,
+        operand: Operand,
+        index_type: IndexType,
+    ) -> Result<Operand16<u64>, Error> {
+        let value = match operand {
+            Operand::Immediate(value) => value.val(),
+            operand => {
+                debug_assert_eq!(operand.ty(), index_type.ty());
+                let reg = self.layout.operand_to_reg(operand)?;
+                return Ok(Operand16::Reg(reg));
+            }
+        };
+        match index_type {
+            IndexType::I64 => {
+                if let Ok(value) = Const16::try_from(u64::from(value)) {
+                    return Ok(Operand16::Immediate(value));
+                }
+            }
+            IndexType::I32 => {
+                if let Ok(value) = Const16::try_from(u32::from(value)) {
+                    return Ok(Operand16::Immediate(<Const16<u64>>::cast(value)));
+                }
+            }
+        }
+        let reg = self.layout.const_to_reg(value)?;
+        Ok(Operand16::Reg(reg))
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
