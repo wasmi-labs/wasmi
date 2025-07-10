@@ -812,7 +812,7 @@ impl UpdateBranchOffset for Instruction {
             }
             _ => {}
         };
-        let update_status = match self {
+        let offset = match self {
             I::BranchI32And { offset, .. } |
             I::BranchI32Or { offset, .. } |
             I::BranchI32Xor { offset, .. } |
@@ -881,16 +881,19 @@ impl UpdateBranchOffset for Instruction {
             I::BranchI64LtUImm16Rhs { offset, .. } |
             I::BranchI64LeUImm16Lhs { offset, .. } |
             I::BranchI64LeUImm16Rhs { offset, .. } => {
-                offset.init(new_offset)
+                offset
             }
             unexpected => {
-                panic!("expected a Wasmi branch+cmp instruction but found: {unexpected:?}")
+                panic!("expected a Wasmi `cmp`+`branch` instruction but found: {unexpected:?}")
             }
         };
-        if update_status.is_err() {
-            if let Some(fallback) = self.try_into_cmp_branch_fallback_instr(new_offset, stack)? {
-                *self = fallback;
-            }
+        if offset.init(new_offset).is_err() {
+            // Case: we need to covert `self` into its cmp+branch fallback instruction variant
+            //       since adjusting the 16-bit offset failed.
+            let Some(fallback) = self.try_into_cmp_branch_fallback_instr(new_offset, stack)? else {
+                unreachable!("failed to create cmp+branch fallback instruction for: {self:?}");
+            };
+            *self = fallback;
         }
         Ok(())
     }
