@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, FuelCostsProvider, Mutability, TrapCode, TypedVal, F32, F64},
+    core::{wasm, FuelCostsProvider, Mutability, TrapCode, TypedVal, ValType, F32, F64},
     engine::{
         translator::func2::{
             stack::{AcquiredTarget, IfReachability},
@@ -10,7 +10,7 @@ use crate::{
         BlockType,
     },
     ir,
-    ir::Instruction,
+    ir::{Const16, Instruction},
     module,
     module::{FuncIdx, WasmiValueType},
     Error,
@@ -387,8 +387,56 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_global_set(&mut self, _global_index: u32) -> Self::Output {
-        todo!()
+    fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let global = ir::index::Global::from(global_index);
+        let input = match self.stack.pop() {
+            Operand::Immediate(input) => input.val(),
+            input => {
+                // Case: `global.set` with simple register input.
+                let input = self.layout.operand_to_reg(input)?;
+                self.push_instr(
+                    Instruction::global_set(input, global),
+                    FuelCostsProvider::instance,
+                )?;
+                return Ok(());
+            }
+        };
+        // Note: at this point we handle the different immediate `global.set` instructions.
+        let (global_type, _init_value) = self
+            .module
+            .get_global(module::GlobalIdx::from(global_index));
+        debug_assert_eq!(global_type.content(), input.ty());
+        match global_type.content() {
+            ValType::I32 => {
+                if let Ok(value) = Const16::try_from(i32::from(input)) {
+                    // Case: `global.set` with 16-bit encoded `i32` value.
+                    self.push_instr(
+                        Instruction::global_set_i32imm16(value, global),
+                        FuelCostsProvider::instance,
+                    )?;
+                    return Ok(());
+                }
+            }
+            ValType::I64 => {
+                if let Ok(value) = Const16::try_from(i64::from(input)) {
+                    // Case: `global.set` with 16-bit encoded `i64` value.
+                    self.push_instr(
+                        Instruction::global_set_i64imm16(value, global),
+                        FuelCostsProvider::instance,
+                    )?;
+                    return Ok(());
+                }
+            }
+            _ => {}
+        };
+        // Note: at this point we have to allocate a function local constant.
+        let cref = self.layout.const_to_reg(input)?;
+        self.push_instr(
+            Instruction::global_set(cref, global),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_i32_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
