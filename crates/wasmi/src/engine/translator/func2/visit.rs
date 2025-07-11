@@ -306,6 +306,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        bail_unreachable!(self);
         let func_type = self.resolve_type(type_index);
         let index = self.stack.pop();
         let indirect_params = self.call_indirect_params(index, table_index)?;
@@ -1467,6 +1468,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        bail_unreachable!(self);
         let func_type = self.resolve_type(type_index);
         let index = self.stack.pop();
         let indirect_params = self.call_indirect_params(index, table_index)?;
