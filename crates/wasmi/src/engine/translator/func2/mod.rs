@@ -445,10 +445,11 @@ impl FuncTranslator {
         let frame = self.stack.peek_control(depth);
         let len_branch_params = usize::from(frame.len_branch_params(&self.engine));
         let frame_height = frame.height();
-        frame_height == (self.stack.height() - len_branch_params)
-            && (0..len_branch_params)
-                .map(|depth| self.stack.peek(depth))
-                .all(|o| o.is_temp())
+        let height_matches = frame_height == (self.stack.height() - len_branch_params);
+        let only_temps = (0..len_branch_params)
+            .map(|depth| self.stack.peek(depth))
+            .all(|o| o.is_temp());
+        !height_matches || !only_temps
     }
 
     /// Pins the `label` to the next [`Instr`].
