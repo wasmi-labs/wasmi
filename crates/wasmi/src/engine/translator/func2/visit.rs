@@ -172,11 +172,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let consume_fuel_instr = frame.consume_fuel_instr();
                 self.copy_branch_params(len_values, consume_fuel_instr)?;
                 frame.branch_to();
-                self.encode_br(else_label)?;
+                self.encode_br(frame.label())?;
             }
-        }
-        // Start of `else` block:
-        if let Some(else_label) = frame.else_label() {
+            // Start of `else` block:
             self.labels
                 .pin_label(else_label, self.instrs.next_instr())
                 .unwrap();
