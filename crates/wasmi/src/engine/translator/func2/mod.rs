@@ -175,9 +175,15 @@ impl WasmTranslator<'_> for FuncTranslator {
         let Ok(max_height) = u16::try_from(self.stack.max_height()) else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
+        let Some(frame_size) = self
+            .func_type_with(FuncType::len_params)
+            .checked_add(max_height)
+        else {
+            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
+        };
         self.update_branch_offsets()?;
         finalize(CompiledFuncEntity::new(
-            max_height,
+            frame_size,
             self.instrs.drain(),
             self.layout.consts(),
         ));
