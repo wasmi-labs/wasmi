@@ -416,6 +416,14 @@ impl Stack {
         (v0, v1, v2)
     }
 
+    /// Peeks the top-most `len` operands from the stack and store them into `buffer`.
+    ///
+    /// Operands stored into the buffer are placed in order.
+    pub fn peek_n(&mut self, len: usize, buffer: &mut Vec<Operand>) {
+        buffer.clear();
+        buffer.extend((0..len).rev().map(|depth| self.peek(depth)));
+    }
+
     /// Pops the top-most [`Operand`] from the [`Stack`].
     ///
     /// # Panics
