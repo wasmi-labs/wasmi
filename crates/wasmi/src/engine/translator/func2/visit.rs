@@ -296,7 +296,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         };
         let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
-        self.encode_register_list(len_params)?;
+        self.stack.pop_n(len_params, &mut self.operands);
+        self.instrs
+            .encode_register_list(&self.operands, &mut self.layout)?;
         if let Some(span) = self.push_results(call_instr, func_type.results())? {
             debug_assert_eq!(span, results);
         }
@@ -327,7 +329,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
         self.instrs.push_param(indirect_params);
-        self.encode_register_list(len_params)?;
+        self.stack.pop_n(len_params, &mut self.operands);
+        self.instrs
+            .encode_register_list(&self.operands, &mut self.layout)?;
         if let Some(span) = self.push_results(call_instr, func_type.results())? {
             debug_assert_eq!(span, results);
         }
@@ -1460,7 +1464,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         };
         self.push_instr(instr, FuelCostsProvider::call)?;
-        self.encode_register_list(len_params)?;
+        self.stack.pop_n(len_params, &mut self.operands);
+        self.instrs
+            .encode_register_list(&self.operands, &mut self.layout)?;
         self.reachable = false;
         Ok(())
     }
@@ -1488,7 +1494,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         self.push_instr(instr, FuelCostsProvider::call)?;
         self.instrs.push_param(indirect_params);
-        self.encode_register_list(len_params)?;
+        self.stack.pop_n(len_params, &mut self.operands);
+        self.instrs
+            .encode_register_list(&self.operands, &mut self.layout)?;
         self.reachable = false;
         Ok(())
     }

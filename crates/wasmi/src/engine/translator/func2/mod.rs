@@ -321,57 +321,6 @@ impl FuncTranslator {
         Ok(RegSpan::new(start))
     }
 
-    /// Encode the top-most `len` operands on the stack as register list.
-    ///
-    /// # Note
-    ///
-    /// This is used for the following n-ary instructions:
-    ///
-    /// - [`Instruction::ReturnMany`]
-    /// - [`Instruction::CopyMany`]
-    /// - [`Instruction::CallInternal`]
-    /// - [`Instruction::CallImported`]
-    /// - [`Instruction::CallIndirect`]
-    /// - [`Instruction::ReturnCallInternal`]
-    /// - [`Instruction::ReturnCallImported`]
-    /// - [`Instruction::ReturnCallIndirect`]
-    pub fn encode_register_list(&mut self, len: usize) -> Result<(), Error> {
-        self.stack.pop_n(len, &mut self.operands);
-        let mut remaining = &self.operands[..];
-        let mut operand_to_reg =
-            |operand: &Operand| -> Result<Reg, Error> { self.layout.operand_to_reg(*operand) };
-        let instr = loop {
-            match remaining {
-                [] => return Ok(()),
-                [v0] => {
-                    let v0 = operand_to_reg(v0)?;
-                    break Instruction::register(v0);
-                }
-                [v0, v1] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    break Instruction::register2_ext(v0, v1);
-                }
-                [v0, v1, v2] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    let v2 = operand_to_reg(v2)?;
-                    break Instruction::register3_ext(v0, v1, v2);
-                }
-                [v0, v1, v2, rest @ ..] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    let v2 = operand_to_reg(v2)?;
-                    let instr = Instruction::register_list_ext(v0, v1, v2);
-                    self.instrs.push_param(instr);
-                    remaining = rest;
-                }
-            };
-        };
-        self.instrs.push_param(instr);
-        Ok(())
-    }
-
     /// Push `results` as [`TempOperand`] onto the [`Stack`] tagged to `instr`.
     ///
     /// Returns the [`RegSpan`] identifying the pushed operands if any.
