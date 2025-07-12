@@ -391,6 +391,145 @@ impl FuncTranslator {
         Ok(idx)
     }
 
+    /// Convert all branch params up to `depth` to [`Operand::Temp`].
+    ///
+    /// # Note
+    ///
+    /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
+    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
+    fn copy_branch_params_v2(
+        &mut self,
+        target: &impl ControlFrameBase,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
+        let len_branch_params = target.len_branch_params(&self.engine);
+        let Some(branch_results) = self.frame_results(target)? else {
+            return Ok(());
+        };
+        self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
+        Ok(())
+    }
+
+    /// Encodes a copy instruction for the top-most `len_values` on the stack to `results`.
+    /// 
+    /// # Note
+    /// 
+    /// - This does _not_ pop values from the stack or manipulate the stack otherwise.
+    /// - This might allocate new function local constant values if necessary.
+    /// - This does _not_ encode a copy if the copy is a no-op.
+    fn encode_copies(
+        &mut self,
+        results: RegSpan,
+        len_values: u16,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
+        match len_values {
+            0 => Ok(()),
+            1 => {
+                let result = results.head();
+                let copy_instr = match self.stack.peek(0) {
+                    Operand::Immediate(operand) => match operand.ty() {
+                        ValType::I32 => {
+                            let value = i32::from(operand.val());
+                            Instruction::copy_imm32(result, value)
+                        }
+                        ValType::I64 => {
+                            let value = i64::from(operand.val());
+                            match Const32::try_from(value) {
+                                Ok(value) => Instruction::copy_i64imm32(result, value),
+                                Err(_) => {
+                                    let value = self.layout.const_to_reg(value)?;
+                                    Instruction::copy(result, value)
+                                }
+                            }
+                        }
+                        ValType::F32 => {
+                            let value = f32::from(operand.val());
+                            Instruction::copy_imm32(result, value)
+                        }
+                        ValType::F64 => {
+                            let value = f64::from(operand.val());
+                            match Const32::try_from(value) {
+                                Ok(value) => Instruction::copy_f64imm32(result, value),
+                                Err(_) => {
+                                    let value = self.layout.const_to_reg(value)?;
+                                    Instruction::copy(result, value)
+                                }
+                            }
+                        }
+                        ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                            let value = self.layout.const_to_reg(operand.val())?;
+                            Instruction::copy(result, value)
+                        }
+                    },
+                    operand => {
+                        let operand = self.layout.operand_to_reg(operand)?;
+                        Instruction::copy(result, operand)
+                    }
+                };
+                self.instrs
+                    .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+                Ok(())
+            }
+            2 => {
+                let (fst, snd) = self.stack.peek2();
+                let fst = self.layout.operand_to_reg(fst)?;
+                let snd = self.layout.operand_to_reg(snd)?;
+                self.instrs.push_instr(
+                    Instruction::copy2_ext(results, fst, snd),
+                    consume_fuel_instr,
+                    FuelCostsProvider::base,
+                )?;
+                Ok(())
+            }
+            _ => {
+                self.instrs
+                    .bump_fuel_consumption(consume_fuel_instr, |costs| {
+                        costs.fuel_for_copying_values(u64::from(len_values))
+                    })?;
+                if let Some(values) = self.try_form_regspan(usize::from(len_values))? {
+                    // Case: can encode the copies as a more efficient `copy_span`
+                    if results == values {
+                        // Case: results and values are equal and therefore the copy is a no-op
+                        return Ok(());
+                    }
+                    debug_assert!(results.head() < values.head());
+                    self.instrs.push_instr(
+                        Instruction::copy_span(results, values, len_values),
+                        consume_fuel_instr,
+                        FuelCostsProvider::base,
+                    )?;
+                    return Ok(());
+                }
+                self.stack
+                    .peek_n(usize::from(len_values), &mut self.operands);
+                let [fst, snd, rest @ ..] = &self.operands[..] else {
+                    unreachable!("asserted that operands.len() >= 3")
+                };
+                let fst = self.layout.operand_to_reg(*fst)?;
+                let snd = self.layout.operand_to_reg(*snd)?;
+                self.instrs.push_instr(
+                    Instruction::copy_many_ext(results, fst, snd),
+                    consume_fuel_instr,
+                    FuelCostsProvider::base,
+                )?;
+                self.instrs.encode_register_list(rest, &mut self.layout)?;
+                Ok(())
+            }
+        }
+    }
+
+    /// Returns the results [`RegSpan`] of the `frame` if any.
+    fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<RegSpan>, Error> {
+        if frame.len_branch_params(&self.engine) == 0 {
+            return Ok(None);
+        }
+        let height = frame.height();
+        let start = self.layout.temp_to_reg(OperandIdx::from(height))?;
+        let span = RegSpan::new(start);
+        Ok(Some(span))
+    }
+
     /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
     ///
     /// # Note
