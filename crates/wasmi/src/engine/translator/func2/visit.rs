@@ -109,7 +109,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let len_params = block_ty.len_params(&self.engine);
         let continue_label = self.labels.new_label();
         let consume_fuel = self.stack.consume_fuel_instr();
-        self.copy_branch_params(usize::from(len_params), consume_fuel)?;
+        self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
         self.pin_label(continue_label);
         let consume_fuel = self.instrs.push_consume_fuel_instr()?;
         self.stack
