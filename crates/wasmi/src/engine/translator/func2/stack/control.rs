@@ -768,30 +768,6 @@ impl ElseControlFrame {
         self.reachability
     }
 
-    /// Returns `true` if the `then` branch is reachable.
-    ///
-    /// # Note
-    ///
-    /// The `then` branch is unreachable if the `if` condition is a constant `false` value.
-    pub fn is_then_reachable(&self) -> bool {
-        match self.reachability {
-            ElseReachability::Both { .. } | ElseReachability::OnlyThen { .. } => true,
-            ElseReachability::OnlyElse => false,
-        }
-    }
-
-    /// Returns `true` if the `else` branch is reachable.
-    ///
-    /// # Note
-    ///
-    /// The `else` branch is unreachable if the `if` condition is a constant `true` value.
-    pub fn is_else_reachable(&self) -> bool {
-        match self.reachability {
-            ElseReachability::Both { .. } | ElseReachability::OnlyElse => true,
-            ElseReachability::OnlyThen { .. } => false,
-        }
-    }
-
     /// Returns `true` if the end of the `then` branch is reachable.
     pub fn is_end_of_then_reachable(&self) -> bool {
         match self.reachability {
