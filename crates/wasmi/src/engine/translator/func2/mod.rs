@@ -574,7 +574,8 @@ impl FuncTranslator {
         let only_temps = (0..len_branch_params)
             .map(|depth| self.stack.peek(depth))
             .all(|o| o.is_temp());
-        !height_matches || !only_temps
+        let can_avoid_copies = height_matches && only_temps;
+        !can_avoid_copies
     }
 
     /// Pins the `label` to the next [`Instr`].
