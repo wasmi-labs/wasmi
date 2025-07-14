@@ -433,9 +433,9 @@ impl FuncTranslator {
     }
 
     /// Encodes a copy instruction for the top-most `len_values` on the stack to `results`.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// - This does _not_ pop values from the stack or manipulate the stack otherwise.
     /// - This might allocate new function local constant values if necessary.
     /// - This does _not_ encode a copy if the copy is a no-op.
