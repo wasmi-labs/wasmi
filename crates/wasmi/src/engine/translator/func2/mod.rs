@@ -831,14 +831,18 @@ impl FuncTranslator {
     /// Translates the end of a Wasm `if` control frame.
     fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
+        let is_end_of_then_reachable = self.reachable;
         let IfReachability::Both { else_label } = frame.reachability() else {
-            let reachability = frame.reachability().into();
-            return self.translate_end_if_or_else_only(frame, reachability);
+            let is_end_reachable = match frame.reachability() {
+                IfReachability::OnlyThen => self.reachable,
+                IfReachability::OnlyElse => false,
+                IfReachability::Both { .. } => unreachable!(),
+            };
+            return self.translate_end_if_or_else_only(frame, is_end_reachable);
         };
-        let end_of_then_reachable = self.reachable;
         let len_results = frame.ty().len_results(self.engine());
         let has_results = len_results >= 1;
-        if end_of_then_reachable && has_results {
+        if is_end_of_then_reachable && has_results {
             let consume_fuel_instr = frame.consume_fuel_instr();
             self.copy_branch_params(usize::from(len_results), consume_fuel_instr)?;
             let end_offset = self
@@ -862,13 +866,17 @@ impl FuncTranslator {
     /// Translates the end of a Wasm `else` control frame.
     fn translate_end_else(&mut self, frame: ElseControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
-        let reachability = frame.reachability();
-        if matches!(
-            reachability,
-            ElseReachability::OnlyThen | ElseReachability::OnlyElse
-        ) {
-            return self.translate_end_if_or_else_only(frame, reachability);
-        }
+        match frame.reachability() {
+            ElseReachability::OnlyThen {
+                is_end_of_then_reachable,
+            } => {
+                return self.translate_end_if_or_else_only(frame, is_end_of_then_reachable);
+            }
+            ElseReachability::OnlyElse => {
+                return self.translate_end_if_or_else_only(frame, self.reachable);
+            }
+            _ => {}
+        };
         let end_of_then_reachable = frame.is_end_of_then_reachable();
         let end_of_else_reachable = self.reachable;
         let reachable = match (end_of_then_reachable, end_of_else_reachable) {
@@ -891,13 +899,8 @@ impl FuncTranslator {
     fn translate_end_if_or_else_only(
         &mut self,
         frame: impl ControlFrameBase,
-        reachability: ElseReachability,
+        end_is_reachable: bool,
     ) -> Result<(), Error> {
-        let end_is_reachable = match reachability {
-            ElseReachability::OnlyThen => self.reachable,
-            ElseReachability::OnlyElse => true,
-            ElseReachability::Both => unreachable!(),
-        };
         if frame.is_branched_to() {
             if end_is_reachable {
                 let consume_fuel_instr = frame.consume_fuel_instr();
