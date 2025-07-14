@@ -543,11 +543,20 @@ impl FuncTranslator {
 
     /// Returns the results [`RegSpan`] of the `frame` if any.
     fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<RegSpan>, Error> {
-        if frame.len_branch_params(&self.engine) == 0 {
+        Self::frame_results_impl(frame, &self.engine, &self.layout)
+    }
+
+    /// Returns the results [`RegSpan`] of the `frame` if any.
+    fn frame_results_impl(
+        frame: &impl ControlFrameBase,
+        engine: &Engine,
+        layout: &StackLayout,
+    ) -> Result<Option<RegSpan>, Error> {
+        if frame.len_branch_params(engine) == 0 {
             return Ok(None);
         }
         let height = frame.height();
-        let start = self.layout.temp_to_reg(OperandIdx::from(height))?;
+        let start = layout.temp_to_reg(OperandIdx::from(height))?;
         let span = RegSpan::new(start);
         Ok(Some(span))
     }
