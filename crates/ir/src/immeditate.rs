@@ -6,10 +6,13 @@ pub struct OutOfBoundsConst;
 
 /// A typed 16-bit encoded constant value.
 #[derive(Debug)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct Const16<T> {
     /// The underlying untyped value.
     inner: AnyConst16,
     /// The type marker to satisfy the Rust type system.
+    #[cfg_attr(any(feature = "serialization", feature = "deserialization"), serde(skip))]
     marker: PhantomData<fn() -> T>,
 }
 
@@ -110,10 +113,13 @@ macro_rules! impl_const16_from {
 impl_const16_from!(i32, u32, i64, u64);
 
 /// A typed 32-bit encoded constant value.
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct Const32<T> {
     /// The underlying untyped value.
     inner: AnyConst32,
     /// The type marker to satisfy the Rust type system.
+    #[cfg_attr(any(feature = "serialization", feature = "deserialization"), serde(skip))]
     marker: PhantomData<fn() -> T>,
 }
 
@@ -202,6 +208,8 @@ impl_const32!(i32, u32, i64 as i32, u64 as u32, f32, f64 as f32,);
 /// Upon use the small 16-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct AnyConst16 {
     bits: u16,
 }
@@ -309,6 +317,8 @@ impl From<AnyConst16> for u64 {
 /// Upon use the small 32-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct AnyConst32 {
     bits: u32,
 }

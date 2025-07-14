@@ -91,7 +91,9 @@ mod foreach_tuple;
 #[cfg(test)]
 pub mod tests;
 
-mod engine;
+pub mod serialization;
+
+pub(crate) mod engine;
 mod error;
 mod func;
 mod global;
@@ -99,7 +101,7 @@ mod instance;
 mod limits;
 mod linker;
 mod memory;
-mod module;
+pub(crate) mod module;
 mod reftype;
 mod store;
 mod table;

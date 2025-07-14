@@ -8,7 +8,7 @@ use core::slice;
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct DataSegment {
-    inner: DataSegmentInner,
+    pub(crate) inner: DataSegmentInner,
 }
 
 /// The inner structure of a [`DataSegment`].
@@ -27,11 +27,11 @@ pub enum DataSegmentInner {
 #[derive(Debug)]
 pub struct ActiveDataSegment {
     /// The linear memory that is to be initialized with this active segment.
-    memory_index: MemoryIdx,
+    pub(crate) memory_index: MemoryIdx,
     /// The offset at which the data segment is initialized.
-    offset: ConstExpr,
+    pub(crate) offset: ConstExpr,
     /// Number of bytes of the active data segment.
-    len: u32,
+    pub(crate) len: u32,
 }
 
 impl ActiveDataSegment {
@@ -63,6 +63,14 @@ impl AsRef<[u8]> for PassiveDataSegmentBytes {
     }
 }
 
+impl PassiveDataSegmentBytes {
+    pub(crate) fn from_vec(vec: Vec<u8>) -> Self {
+        Self {
+            bytes: Arc::from(vec),
+        }
+    }
+}
+
 #[test]
 fn size_of_data_segment() {
     assert!(core::mem::size_of::<DataSegment>() <= 32);
@@ -83,7 +91,7 @@ impl DataSegment {
 #[derive(Debug)]
 pub struct DataSegments {
     /// All data segments.
-    segments: Box<[DataSegment]>,
+    pub(crate) segments: Box<[DataSegment]>,
     /// All bytes from all active data segments.
     ///
     /// # Note
@@ -92,7 +100,7 @@ pub struct DataSegments {
     /// to properly pre-reserve space for the bytes and thus finishing construction
     /// of the [`DataSegments`] would highly likely reallocate and mass-copy
     /// which we prevent by simply using a `Vec<u8>` instead.
-    bytes: Vec<u8>,
+    pub(crate) bytes: Vec<u8>,
 }
 
 impl DataSegments {
@@ -115,6 +123,13 @@ pub struct DataSegmentsBuilder {
 }
 
 impl DataSegmentsBuilder {
+    /// Creates a DataSegmentsBuilder from an existing DataSegments.
+    pub fn from_data_segments(data_segments: DataSegments) -> Self {
+        DataSegmentsBuilder {
+            segments: data_segments.segments.into(),
+            bytes: data_segments.bytes,
+        }
+    }
     /// Reserves space for at least `additional` new [`DataSegments`].
     pub fn reserve(&mut self, count: usize) {
         assert!(

@@ -7,17 +7,15 @@ use alloc::boxed::Box;
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct ElementSegment {
-    /// The kind of the [`ElementSegment`].
-    kind: ElementSegmentKind,
+    pub(crate) kind: ElementSegmentKind,
     /// The type of elements of the [`ElementSegment`].
-    ty: ValType,
-    /// The items of the [`ElementSegment`].
-    items: Box<[ConstExpr]>,
+    pub(crate) ty: ValType,
+    pub(crate) items: Box<[ConstExpr]>,
 }
 
 /// The kind of a Wasm [`ElementSegment`].
 #[derive(Debug)]
-pub enum ElementSegmentKind {
+pub(crate) enum ElementSegmentKind {
     /// A passive [`ElementSegment`] from the `bulk-memory` Wasm proposal.
     Passive,
     /// An active [`ElementSegment`].
@@ -30,9 +28,9 @@ pub enum ElementSegmentKind {
 #[derive(Debug)]
 pub struct ActiveElementSegment {
     /// The index of the Wasm table that is to be initialized.
-    table_index: TableIdx,
+    pub(crate) table_index: TableIdx,
     /// The offset where the Wasm table is to be initialized.
-    offset: ConstExpr,
+    pub(crate) offset: ConstExpr,
 }
 
 impl ActiveElementSegment {
@@ -103,7 +101,7 @@ impl From<wasmparser::Element<'_>> for ElementSegment {
 
 impl ElementSegment {
     /// Returns the offset expression of the [`ElementSegment`].
-    pub fn kind(&self) -> &ElementSegmentKind {
+    pub(crate) fn kind(&self) -> &ElementSegmentKind {
         &self.kind
     }
 

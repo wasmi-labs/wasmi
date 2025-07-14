@@ -44,6 +44,8 @@ macro_rules! define_index {
         $(
             $( #[$docs] )*
             #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+            #[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+            #[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
             pub struct $name($vis $ty);
 
             impl From<$name> for $ty {

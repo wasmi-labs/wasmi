@@ -11,12 +11,7 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
-exclude = [
-    "benches/wat",
-    "benches/wasm",
-    "tests/spec/testsuite",
-    "**.wast",
-]
+exclude = ["benches/wat", "benches/wasm", "tests/spec/testsuite", "**.wast"]
 
 [dependencies]
 wasmi_core = { workspace = true }
@@ -28,6 +23,13 @@ spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
     "rwlock",
+] }
+serde = { version = "1.0", default-features = false, features = [
+    "derive",
+    "alloc",
+], optional = true }
+postcard = { workspace = true, default-features = false, optional = true, features = [
+    "alloc",
 ] }
 
 [dev-dependencies]
@@ -52,6 +54,19 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
+
+serialization = [
+    "dep:serde",
+    "serde/derive",
+    "dep:postcard",
+    "wasmi_ir/serialization",
+]
+deserialization = [
+    "postcard/alloc",
+    "serde/alloc",
+    "serde/derive",
+    "wasmi_ir/deserialization",
+]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #

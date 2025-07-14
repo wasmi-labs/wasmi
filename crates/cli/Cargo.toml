@@ -14,7 +14,11 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-wasmi = { workspace = true, features = ["wat"] }
+wasmi = { workspace = true, default-features = false, features = [
+    "wat",
+    "serialization",
+    "deserialization"
+] }
 wasmi_wasi = { workspace = true }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }

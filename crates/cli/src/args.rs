@@ -6,9 +6,53 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
+use wasmi::serialization::RequiredFeatures;
 use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
 
-/// A CLI flag value key-value argument.
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None, trailing_var_arg = true)]
+pub enum Cli {
+    Args(Args),
+    Serialize(SerializeArgs),
+}
+
+#[derive(Parser, Debug)]
+pub struct SerializeArgs {
+    /// The file containing the WebAssembly module to serialize.
+    #[clap(value_name = "MODULE", value_hint = clap::ValueHint::FilePath)]
+    pub module: PathBuf,
+    /// The output file for the serialized module (or '-' for stdout).
+    #[clap(long, value_name = "OUTPUT", value_hint = clap::ValueHint::FilePath)]
+    pub output: Option<PathBuf>,
+    /// Enable the simd feature.
+    #[clap(long)]
+    pub simd: bool,
+    /// Enable the bulk-memory feature.
+    #[clap(long = "bulk-memory")]
+    pub bulk_memory: bool,
+    /// Enable the reference-types feature.
+    #[clap(long = "reference-types")]
+    pub reference_types: bool,
+    /// Enable the tail-calls feature.
+    #[clap(long = "tail-calls")]
+    pub tail_calls: bool,
+    /// Enable the function-references feature.
+    #[clap(long = "function-references")]
+    pub function_references: bool,
+}
+
+impl SerializeArgs {
+    pub fn to_required_features(&self) -> RequiredFeatures {
+        RequiredFeatures {
+            simd: self.simd,
+            bulk_memory: self.bulk_memory,
+            reference_types: self.reference_types,
+            tail_calls: self.tail_calls,
+            function_references: self.function_references,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct KeyValue {
     key: String,

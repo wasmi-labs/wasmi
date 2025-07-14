@@ -4,9 +4,7 @@ use crate::{
     memory::{self, ExtendInto},
     simd,
     value::Float,
-    wasm,
-    TrapCode,
-    V128,
+    wasm, TrapCode, V128,
 };
 use core::{
     array,
@@ -54,6 +52,8 @@ impl_into_lane_idx! {
 
 /// A byte with values in the range 0–N identifying a lane.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct ImmLaneIdx<const N: u8>(u8);
 
 impl<const N: u8> ImmLaneIdx<N> {

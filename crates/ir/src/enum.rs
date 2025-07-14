@@ -41,6 +41,8 @@ macro_rules! define_enum {
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
         #[derive(Debug)]
+        #[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+        #[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
         #[non_exhaustive]
         #[repr(u16)]
         pub enum Instruction {
@@ -299,4 +301,19 @@ fn size_of() {
     // fields in a precise order to end up with the correct `enum` size.
     assert_eq!(::core::mem::size_of::<Instruction>(), 8);
     assert_eq!(::core::mem::align_of::<Instruction>(), 4);
+}
+
+#[cfg(all(test, any(feature = "serialization", feature = "deserialization")))]
+mod serde_tests {
+    use super::*;
+
+    #[test]
+    fn instruction_serde_roundtrip() {
+        let instr = Instruction::ReturnReg {
+            value: Reg::from(42),
+        };
+        let bytes = bincode::serialize(&instr).expect("serialize");
+        let decoded: Instruction = bincode::deserialize(&bytes).expect("deserialize");
+        assert_eq!(instr, decoded);
+    }
 }

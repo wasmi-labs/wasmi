@@ -15,6 +15,7 @@ exclude.workspace = true
 
 [dependencies]
 libm = { version = "0.2.11", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"], optional = true }
 
 [features]
 default = ["std"]
@@ -25,6 +26,8 @@ std = []
 # This also changes the size of `UntypedVal` from 64-bit to 128-bit
 # which may have significant impact on performance and memory usage.
 simd = []
+serialization = ["dep:serde", "serde/derive", "serde/alloc"]
+deserialization = ["dep:serde", "serde/derive", "serde/alloc"]
 
 [package.metadata.cargo-udeps.ignore]
 # cargo-udeps cannot detect that libm is used for no_std targets only.

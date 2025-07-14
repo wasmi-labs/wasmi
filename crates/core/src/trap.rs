@@ -217,6 +217,8 @@ impl StdError for Trap {
 ///
 /// [`Trap`]: struct.Trap.html
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.
     ///

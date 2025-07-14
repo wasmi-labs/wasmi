@@ -10,6 +10,8 @@ use core::{
 ///
 /// Provides a dense and simple interface to all functional Wasm operations.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[cfg_attr(not(feature = "simd"), repr(transparent))]
 #[cfg_attr(feature = "simd", repr(C))]
 pub struct UntypedVal {
