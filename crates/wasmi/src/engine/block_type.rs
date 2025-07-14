@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "experimental-translator"), allow(dead_code))]
+
 use crate::{
     engine::DedupFuncType,
     module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
