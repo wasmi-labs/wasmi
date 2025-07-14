@@ -169,7 +169,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             debug_assert!(frame.is_then_reachable() && frame.is_else_reachable());
             if is_end_of_then_reachable {
                 let consume_fuel_instr = frame.consume_fuel_instr();
-                self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+                self.copy_branch_params(&frame, consume_fuel_instr)?;
                 self.stack.trunc(frame.height());
                 frame.branch_to();
                 self.encode_br(frame.label())?;
