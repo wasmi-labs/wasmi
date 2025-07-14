@@ -748,22 +748,13 @@ impl FuncTranslator {
                 Instruction::return_reg3_ext(v0, v1, v2)
             }
             _ => {
-                let len_copies = usize::from(len_results);
-                match self.try_form_regspan(len_copies)? {
+                let len_values = usize::from(len_results);
+                match self.try_form_regspan(len_values)? {
                     Some(span) => {
                         let values = BoundedRegSpan::new(span, len_results);
                         Instruction::return_span(values)
                     }
-                    None => {
-                        let Some(first_idx) =
-                            self.copy_operands_to_temp(len_copies, consume_fuel)?
-                        else {
-                            unreachable!("`first_idx` must be `Some` since `len_copies` is >0")
-                        };
-                        let result = self.layout.temp_to_reg(first_idx)?;
-                        let values = BoundedRegSpan::new(RegSpan::new(result), len_results);
-                        Instruction::return_span(values)
-                    }
+                    None => return self.encode_return_many(len_values, consume_fuel),
                 }
             }
         };
@@ -771,6 +762,32 @@ impl FuncTranslator {
             .instrs
             .push_instr(instr, consume_fuel, FuelCostsProvider::base)?;
         Ok(instr)
+    }
+
+    /// Encodes an [`Instruction::ReturnMany`] for `len` values.
+    ///
+    /// # Panics
+    ///
+    /// If `len` is not greater than or equal to 4.
+    fn encode_return_many(
+        &mut self,
+        len: usize,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<Instr, Error> {
+        self.stack.peek_n(len, &mut self.operands);
+        let [v0, v1, v2, rest @ ..] = &self.operands[..] else {
+            unreachable!("encode_return_many (pre-condition): len >= 4")
+        };
+        let v0 = self.layout.operand_to_reg(*v0)?;
+        let v1 = self.layout.operand_to_reg(*v1)?;
+        let v2 = self.layout.operand_to_reg(*v2)?;
+        let return_instr = self.instrs.push_instr(
+            Instruction::return_many_ext(v0, v1, v2),
+            consume_fuel_instr,
+            FuelCostsProvider::base,
+        )?;
+        self.instrs.encode_register_list(rest, &mut self.layout)?;
+        Ok(return_instr)
     }
 
     /// Tries to form a [`RegSpan`] from the top-most `len` operands on the [`Stack`].
