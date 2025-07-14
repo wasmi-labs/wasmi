@@ -1,4 +1,3 @@
-use core::slice;
 use crate::{
     engine::DedupFuncType,
     module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
