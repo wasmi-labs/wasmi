@@ -410,6 +410,28 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Pushes the temporary results of the control `frame` onto the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// - Before pushing the results, the [`Stack`] is truncated to the `frame`'s height.
+    /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
+    ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
+    ///   require to call this function.
+    fn push_frame_results(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let height = frame.height();
+        self.stack.trunc(height);
+        frame
+            .ty()
+            .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
+                for result in func_ty.results() {
+                    self.stack.push_temp(*result, None)?;
+                }
+                Ok(())
+            })?;
+        Ok(())
+    }
+
     /// Encodes a copy instruction for the top-most `len_values` on the stack to `results`.
     /// 
     /// # Note
