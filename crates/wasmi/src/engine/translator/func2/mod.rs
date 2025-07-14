@@ -844,7 +844,7 @@ impl FuncTranslator {
         let has_results = len_results >= 1;
         if is_end_of_then_reachable && has_results {
             let consume_fuel_instr = frame.consume_fuel_instr();
-            self.copy_branch_params(usize::from(len_results), consume_fuel_instr)?;
+            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
             let end_offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())
