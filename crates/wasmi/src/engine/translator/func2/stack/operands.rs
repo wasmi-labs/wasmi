@@ -116,18 +116,6 @@ impl OperandStack {
         self.max_height
     }
 
-    /// Truncates `self` to the target `height`.
-    ///
-    /// All operands above `height` are dropped.
-    ///
-    /// # Panic
-    ///
-    /// If `height` is greater than the current height of `self`.
-    pub fn trunc(&mut self, height: usize) {
-        assert!(height <= self.height());
-        self.operands.truncate(height);
-    }
-
     /// Updates the maximum stack height if needed.
     fn update_max_stack_height(&mut self) {
         self.max_height = core::cmp::max(self.max_height, self.height());

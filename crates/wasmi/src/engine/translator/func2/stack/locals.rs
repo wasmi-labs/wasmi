@@ -89,15 +89,6 @@ impl LocalsRegistry {
         index
     }
 
-    /// Returns the first operand for this local on the stack if any.
-    ///
-    /// # Panics
-    ///
-    /// If `index` is out of bounds.
-    pub fn first_operand(&self, index: LocalIdx) -> Option<OperandIdx> {
-        self.first_operands[Self::local_idx_to_index(index)]
-    }
-
     /// Replaces the first operand for this local on the stack and returns the old one.
     ///
     /// # Panics
