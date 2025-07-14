@@ -802,8 +802,10 @@ impl FuncTranslator {
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let consume_fuel_instr = frame.consume_fuel_instr();
-        if self.reachable && frame.is_branched_to() {
-            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+        if frame.is_branched_to() {
+            if self.reachable {
+                self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            }
             self.push_frame_results(&frame)?;
         }
         if let Err(err) = self
@@ -839,7 +841,6 @@ impl FuncTranslator {
         if end_of_then_reachable && has_results {
             let consume_fuel_instr = frame.consume_fuel_instr();
             self.copy_branch_params(usize::from(len_results), consume_fuel_instr)?;
-            self.push_frame_results(&frame)?;
             let end_offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())
@@ -850,6 +851,7 @@ impl FuncTranslator {
                 FuelCostsProvider::base,
             )?;
         }
+        self.push_frame_results(&frame)?;
         let next_instr = self.instrs.next_instr();
         self.labels.try_pin_label(else_label, next_instr);
         self.labels.pin_label(frame.label(), next_instr).unwrap();
@@ -876,8 +878,8 @@ impl FuncTranslator {
         if end_of_else_reachable {
             let consume_fuel_instr: Option<Instr> = frame.consume_fuel_instr();
             self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
-            self.push_frame_results(&frame)?;
         }
+        self.push_frame_results(&frame)?;
         self.labels
             .pin_label(frame.label(), self.instrs.next_instr())
             .unwrap();
@@ -896,9 +898,11 @@ impl FuncTranslator {
             ElseReachability::OnlyElse => true,
             ElseReachability::Both => unreachable!(),
         };
-        if end_is_reachable && frame.is_branched_to() {
-            let consume_fuel_instr = frame.consume_fuel_instr();
-            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+        if frame.is_branched_to() {
+            if end_is_reachable {
+                let consume_fuel_instr = frame.consume_fuel_instr();
+                self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            }
             self.push_frame_results(&frame)?;
         }
         self.labels
