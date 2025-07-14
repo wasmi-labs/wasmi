@@ -351,18 +351,18 @@ impl FuncTranslator {
         self.fuel_costs.is_some()
     }
 
-    /// Convert all branch params up to `depth` to [`Operand::Temp`].
+    /// Copy the top-most `len` operands to [`Operand::Temp`] values.
     ///
     /// # Note
     ///
-    /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
+    /// - The top-most `len` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn copy_branch_params(
+    fn move_operands_to_temp(
         &mut self,
-        depth: usize,
+        len: usize,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
-        for n in 0..depth {
+        for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
