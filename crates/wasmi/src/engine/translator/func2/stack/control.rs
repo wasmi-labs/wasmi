@@ -177,7 +177,15 @@ impl ControlStack {
         let height = if_frame.height();
         let label = if_frame.label();
         let is_branched_to = if_frame.is_branched_to();
-        let reachability = ElseReachability::from(if_frame.reachability);
+        let reachability = match if_frame.reachability {
+            IfReachability::Both { .. } => ElseReachability::Both {
+                is_end_of_then_reachable,
+            },
+            IfReachability::OnlyThen => ElseReachability::OnlyThen {
+                is_end_of_then_reachable,
+            },
+            IfReachability::OnlyElse => ElseReachability::OnlyElse,
+        };
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -185,12 +193,11 @@ impl ControlStack {
             consume_fuel,
             label,
             reachability,
-            is_end_of_then_reachable,
         }));
         self.expect_else = false;
         match reachability {
-            ElseReachability::OnlyThen | ElseReachability::OnlyElse => None,
-            ElseReachability::Both => {
+            ElseReachability::OnlyThen { .. } | ElseReachability::OnlyElse => None,
+            ElseReachability::Both { .. } => {
                 let else_operands = self
                     .else_operands
                     .pop()
@@ -714,12 +721,6 @@ pub struct ElseControlFrame {
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
     reachability: ElseReachability,
-    /// Is `true` if code is reachable when entering the `else` block.
-    ///
-    /// # Note
-    ///
-    /// This means that the end of the `then` block was reachable.
-    is_end_of_then_reachable: bool,
 }
 
 /// The reachability of the `else` control flow frame.
@@ -732,29 +733,33 @@ pub enum ElseReachability {
     /// This variant does not mean that necessarily both `then` and `else`
     /// blocks do exist and are non-empty. The `then` block might still be
     /// empty and the `then` block might still be missing.
-    Both,
+    Both {
+        /// Is `true` if code is reachable when entering the `else` block.
+        ///
+        /// # Note
+        ///
+        /// This means that the end of the `then` block was reachable.
+        is_end_of_then_reachable: bool,
+    },
     /// Only the `then` block of the `if` is reachable.
     ///
     /// # Note
     ///
     /// This case happens only in case the `if` has a `true` constant condition.
-    OnlyThen,
+    OnlyThen {
+        /// Is `true` if code is reachable when entering the `else` block.
+        ///
+        /// # Note
+        ///
+        /// This means that the end of the `then` block was reachable.
+        is_end_of_then_reachable: bool,
+    },
     /// Only the `else` block of the `if` is reachable.
     ///
     /// # Note
     ///
     /// This case happens only in case the `if` has a `false` constant condition.
     OnlyElse,
-}
-
-impl From<IfReachability> for ElseReachability {
-    fn from(reachability: IfReachability) -> Self {
-        match reachability {
-            IfReachability::Both { .. } => Self::Both,
-            IfReachability::OnlyThen => Self::OnlyThen,
-            IfReachability::OnlyElse => Self::OnlyElse,
-        }
-    }
 }
 
 impl ElseControlFrame {
@@ -770,7 +775,7 @@ impl ElseControlFrame {
     /// The `then` branch is unreachable if the `if` condition is a constant `false` value.
     pub fn is_then_reachable(&self) -> bool {
         match self.reachability {
-            ElseReachability::Both | ElseReachability::OnlyThen => true,
+            ElseReachability::Both { .. } | ElseReachability::OnlyThen { .. } => true,
             ElseReachability::OnlyElse => false,
         }
     }
@@ -782,14 +787,22 @@ impl ElseControlFrame {
     /// The `else` branch is unreachable if the `if` condition is a constant `true` value.
     pub fn is_else_reachable(&self) -> bool {
         match self.reachability {
-            ElseReachability::Both | ElseReachability::OnlyElse => true,
-            ElseReachability::OnlyThen => false,
+            ElseReachability::Both { .. } | ElseReachability::OnlyElse => true,
+            ElseReachability::OnlyThen { .. } => false,
         }
     }
 
     /// Returns `true` if the end of the `then` branch is reachable.
     pub fn is_end_of_then_reachable(&self) -> bool {
-        self.is_end_of_then_reachable
+        match self.reachability {
+            ElseReachability::Both {
+                is_end_of_then_reachable,
+            }
+            | ElseReachability::OnlyThen {
+                is_end_of_then_reachable,
+            } => is_end_of_then_reachable,
+            ElseReachability::OnlyElse => false,
+        }
     }
 }
 
