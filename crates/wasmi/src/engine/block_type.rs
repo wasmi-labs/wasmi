@@ -1,4 +1,3 @@
-use core::slice;
 use crate::{
     core::ValType,
     engine::DedupFuncType,
