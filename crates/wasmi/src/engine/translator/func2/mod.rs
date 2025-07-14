@@ -485,8 +485,12 @@ impl FuncTranslator {
                         }
                     },
                     operand => {
-                        let operand = self.layout.operand_to_reg(operand)?;
-                        Instruction::copy(result, operand)
+                        let value = self.layout.operand_to_reg(operand)?;
+                        if result == value {
+                            // Case: no-op copy
+                            return Ok(());
+                        }
+                        Instruction::copy(result, value)
                     }
                 };
                 self.instrs
@@ -799,8 +803,8 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let consume_fuel_instr = frame.consume_fuel_instr();
         if self.reachable && frame.is_branched_to() {
-            let len_values = frame.len_branch_params(&self.engine);
-            self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
+            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            self.push_frame_results(&frame)?;
         }
         if let Err(err) = self
             .labels
@@ -835,6 +839,7 @@ impl FuncTranslator {
         if end_of_then_reachable && has_results {
             let consume_fuel_instr = frame.consume_fuel_instr();
             self.copy_branch_params(usize::from(len_results), consume_fuel_instr)?;
+            self.push_frame_results(&frame)?;
             let end_offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())
@@ -869,9 +874,9 @@ impl FuncTranslator {
             _ => true,
         };
         if end_of_else_reachable {
-            let len_values = frame.len_branch_params(&self.engine);
             let consume_fuel_instr: Option<Instr> = frame.consume_fuel_instr();
-            self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
+            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            self.push_frame_results(&frame)?;
         }
         self.labels
             .pin_label(frame.label(), self.instrs.next_instr())
@@ -892,9 +897,9 @@ impl FuncTranslator {
             ElseReachability::Both => unreachable!(),
         };
         if end_is_reachable && frame.is_branched_to() {
-            let len_values = frame.len_branch_params(&self.engine);
             let consume_fuel_instr = frame.consume_fuel_instr();
-            self.copy_branch_params(usize::from(len_values), consume_fuel_instr)?;
+            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            self.push_frame_results(&frame)?;
         }
         self.labels
             .pin_label(frame.label(), self.instrs.next_instr())
@@ -992,12 +997,11 @@ impl FuncTranslator {
     }
 
     /// Encodes an unconditional Wasm `branch` instruction.
-    fn encode_br(&mut self, label: LabelRef) -> Result<(), Error> {
+    fn encode_br(&mut self, label: LabelRef) -> Result<Instr, Error> {
         let instr = self.instrs.next_instr();
         let offset = self.labels.try_resolve_label(label, instr)?;
-        self.push_instr(Instruction::branch(offset), FuelCostsProvider::base)?;
-        self.reachable = false;
-        Ok(())
+        let br_instr = self.push_instr(Instruction::branch(offset), FuelCostsProvider::base)?;
+        Ok(br_instr)
     }
 
     /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
@@ -1030,7 +1034,11 @@ impl FuncTranslator {
                     false => condition != 0,
                 };
                 match take_branch {
-                    true => return self.encode_br(label),
+                    true => {
+                        self.encode_br(label)?;
+                        self.reachable = false;
+                        return Ok(());
+                    }
                     false => return Ok(()),
                 }
             }
