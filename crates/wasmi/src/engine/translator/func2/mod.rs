@@ -397,7 +397,7 @@ impl FuncTranslator {
     ///
     /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn copy_branch_params_v2(
+    fn copy_branch_params(
         &mut self,
         target: &impl ControlFrameBase,
         consume_fuel_instr: Option<Instr>,
@@ -804,7 +804,7 @@ impl FuncTranslator {
         let consume_fuel_instr = frame.consume_fuel_instr();
         if frame.is_branched_to() {
             if self.reachable {
-                self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+                self.copy_branch_params(&frame, consume_fuel_instr)?;
             }
             self.push_frame_results(&frame)?;
         }
@@ -844,7 +844,7 @@ impl FuncTranslator {
         let has_results = len_results >= 1;
         if is_end_of_then_reachable && has_results {
             let consume_fuel_instr = frame.consume_fuel_instr();
-            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            self.copy_branch_params(&frame, consume_fuel_instr)?;
             let end_offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())
@@ -885,7 +885,7 @@ impl FuncTranslator {
         };
         if end_of_else_reachable {
             let consume_fuel_instr: Option<Instr> = frame.consume_fuel_instr();
-            self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+            self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
         self.labels
@@ -904,7 +904,7 @@ impl FuncTranslator {
         if frame.is_branched_to() {
             if end_is_reachable {
                 let consume_fuel_instr = frame.consume_fuel_instr();
-                self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+                self.copy_branch_params(&frame, consume_fuel_instr)?;
             }
             self.push_frame_results(&frame)?;
         }
