@@ -1,3 +1,4 @@
+use core::slice;
 use crate::{
     engine::DedupFuncType,
     module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
@@ -18,7 +19,7 @@ pub enum BlockTypeInner {
     /// A block type with no parameters and no results.
     Empty,
     /// A block type with no parameters and exactly one result.
-    Returns,
+    Returns(ValType),
     /// A general block type with parameters and results.
     FuncType(DedupFuncType),
 }
@@ -54,8 +55,8 @@ impl BlockType {
     }
 
     /// Creates a [`BlockType`] with no parameters and a single result type.
-    fn returns(_return_type: ValType) -> Self {
-        Self::from_inner(BlockTypeInner::Returns)
+    fn returns(return_type: ValType) -> Self {
+        Self::from_inner(BlockTypeInner::Returns(return_type))
     }
 
     /// Creates a [`BlockType`] with parameters and results.
@@ -66,7 +67,7 @@ impl BlockType {
     /// Returns the number of parameters of the [`BlockType`].
     pub fn len_params(&self, engine: &Engine) -> u16 {
         match &self.inner {
-            BlockTypeInner::Empty | BlockTypeInner::Returns => 0,
+            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => 0,
             BlockTypeInner::FuncType(func_type) => {
                 engine.resolve_func_type(func_type, FuncType::len_params)
             }
@@ -77,10 +78,19 @@ impl BlockType {
     pub fn len_results(&self, engine: &Engine) -> u16 {
         match &self.inner {
             BlockTypeInner::Empty => 0,
-            BlockTypeInner::Returns => 1,
+            BlockTypeInner::Returns(_) => 1,
             BlockTypeInner::FuncType(func_type) => {
                 engine.resolve_func_type(func_type, FuncType::len_results)
             }
+        }
+    }
+
+    /// Applies `f` to `self`'s [`FuncType`] and returns the result.
+    pub fn func_type_with<R>(&self, engine: &Engine, f: impl for<'a> FnOnce(&FuncType) -> R) -> R {
+        match &self.inner {
+            BlockTypeInner::Empty => f(&FuncType::new([], [])),
+            BlockTypeInner::Returns(return_type) => f(&FuncType::new([], [*return_type])),
+            BlockTypeInner::FuncType(func_type) => engine.resolve_func_type(func_type, f),
         }
     }
 }
