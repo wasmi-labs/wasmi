@@ -168,9 +168,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         if let Some(else_label) = frame.else_label() {
             debug_assert!(frame.is_then_reachable() && frame.is_else_reachable());
             if is_end_of_then_reachable {
-                let len_values = usize::from(frame.ty().len_results(&self.engine));
                 let consume_fuel_instr = frame.consume_fuel_instr();
-                self.copy_branch_params(len_values, consume_fuel_instr)?;
+                self.copy_branch_params_v2(&frame, consume_fuel_instr)?;
+                self.stack.trunc(frame.height());
                 frame.branch_to();
                 self.encode_br(frame.label())?;
             }
@@ -207,8 +207,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             AcquiredTarget::Branch(mut frame) => {
                 frame.branch_to();
                 let label = frame.label();
-                let len_params = usize::from(frame.len_branch_params(&self.engine));
-                self.copy_branch_params(len_params, consume_fuel_instr)?;
+                let len_params = frame.len_branch_params(&self.engine);
+                let branch_results = Self::frame_results_impl(&frame, &self.engine, &self.layout)?;
+                if let Some(branch_results) = branch_results {
+                    self.encode_copies(branch_results, len_params, consume_fuel_instr)?;
+                }
                 self.encode_br(label)?;
                 self.reachable = false;
                 Ok(())
@@ -232,6 +235,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let mut frame = self.stack.peek_control_mut(depth).control_frame();
         frame.branch_to();
         let len_branch_params = frame.len_branch_params(&self.engine);
+        let branch_results = Self::frame_results_impl(&frame, &self.engine, &self.layout)?;
         let label = frame.label();
         if len_branch_params == 0 {
             // Case: no branch values are required to be copied
@@ -246,8 +250,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // Case: fallback to copy branch parameters conditionally
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let skip_label = self.labels.new_label();
-        self.encode_br_eqz(condition, label)?;
-        self.copy_operands_to_temp(depth, consume_fuel_instr)?;
+        self.encode_br_eqz(condition, skip_label)?;
+        if let Some(branch_results) = branch_results {
+            self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
+        }
         self.encode_br(label)?;
         self.labels
             .pin_label(skip_label, self.instrs.next_instr())
