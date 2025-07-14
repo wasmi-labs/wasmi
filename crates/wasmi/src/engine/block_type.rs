@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "experimental-translator"), allow(dead_code))]
+#![cfg_attr(not(feature = "experimental-translator"), allow(dead_code))] // TODO: remove
 
 use crate::{
     engine::DedupFuncType,
