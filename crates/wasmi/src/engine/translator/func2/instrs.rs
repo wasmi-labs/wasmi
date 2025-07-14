@@ -318,7 +318,7 @@ impl InstrEncoder {
         operands: &[Operand],
         layout: &mut StackLayout,
     ) -> Result<(), Error> {
-        let mut remaining = &operands[..];
+        let mut remaining = operands;
         let mut operand_to_reg =
             |operand: &Operand| -> Result<Reg, Error> { layout.operand_to_reg(*operand) };
         let instr = loop {
