@@ -9,11 +9,11 @@ use crate::{
         },
         BlockType,
     },
-    ir,
-    ir::{Const16, Instruction},
-    module,
-    module::{FuncIdx, WasmiValueType},
+    ir::{self, Const16, Instruction},
+    module::{self, FuncIdx, WasmiValueType},
     Error,
+    ExternRef,
+    FuncRef,
     FuncType,
 };
 use wasmparser::VisitOperator;
@@ -1457,16 +1457,62 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_select(Some(type_hint))
     }
 
-    fn visit_ref_null(&mut self, _hty: wasmparser::HeapType) -> Self::Output {
-        todo!()
+    fn visit_ref_null(&mut self, ty: wasmparser::HeapType) -> Self::Output {
+        bail_unreachable!(self);
+        let type_hint = WasmiValueType::from(ty).into_inner();
+        let null = match type_hint {
+            ValType::FuncRef => TypedVal::from(FuncRef::null()),
+            ValType::ExternRef => TypedVal::from(ExternRef::null()),
+            ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
+        };
+        self.stack.push_immediate(null)?;
+        Ok(())
     }
 
     fn visit_ref_is_null(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        match self.stack.pop() {
+            Operand::Local(input) => {
+                // Note: `funcref` and `externref` both serialize to `UntypedValue`
+                //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
+                //       via reinterpretation of the value's type.
+                let input = self.layout.local_to_reg(input.local_index())?;
+                // TODO: improve performance by allowing type overwrites for local operands
+                self.push_instr_with_result(
+                    ValType::I64,
+                    |result| Instruction::copy(result, input),
+                    FuelCostsProvider::base,
+                )?;
+                self.visit_i64_eqz()
+            }
+            Operand::Temp(input) => {
+                // Note: `funcref` and `externref` both serialize to `UntypedValue`
+                //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
+                //       via reinterpretation of the value's type.
+                self.stack.push_temp(ValType::I64, input.instr())?;
+                self.visit_i64_eqz()
+            }
+            Operand::Immediate(input) => {
+                let untyped = input.val().untyped();
+                let is_null = match input.ty() {
+                    ValType::FuncRef => FuncRef::from(untyped).is_null(),
+                    ValType::ExternRef => ExternRef::from(untyped).is_null(),
+                    invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
+                };
+                self.stack.push_immediate(i32::from(is_null))?;
+                Ok(())
+            }
+        }
     }
 
-    fn visit_ref_func(&mut self, _function_index: u32) -> Self::Output {
-        todo!()
+    fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.push_instr_with_result(
+            ValType::FuncRef,
+            |result| Instruction::ref_func(result, function_index),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_table_fill(&mut self, _table: u32) -> Self::Output {
