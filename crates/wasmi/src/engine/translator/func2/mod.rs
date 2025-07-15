@@ -112,6 +112,8 @@ pub struct FuncTranslator {
     instrs: InstrEncoder,
     /// Temporary buffer for operands.
     operands: Vec<Operand>,
+    /// Temporary buffer for immediate values.
+    immediates: Vec<TypedVal>,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -127,6 +129,8 @@ pub struct FuncTranslatorAllocations {
     instrs: InstrEncoderAllocations,
     /// Temporary buffer for operands.
     operands: Vec<Operand>,
+    /// Temporary buffer for immediate values.
+    immediates: Vec<TypedVal>,
 }
 
 impl Reset for FuncTranslatorAllocations {
@@ -136,6 +140,7 @@ impl Reset for FuncTranslatorAllocations {
         self.labels.reset();
         self.instrs.reset();
         self.operands.clear();
+        self.immediates.clear();
     }
 }
 
@@ -201,6 +206,7 @@ impl ReusableAllocations for FuncTranslator {
             labels: self.labels,
             instrs: self.instrs.into_allocations(),
             operands: self.operands,
+            immediates: self.immediates,
         }
     }
 }
@@ -229,6 +235,7 @@ impl FuncTranslator {
             labels,
             instrs,
             operands,
+            immediates,
         } = alloc.into_reset();
         let stack = Stack::new(&engine, stack);
         let instrs = InstrEncoder::new(&engine, instrs);
@@ -243,6 +250,7 @@ impl FuncTranslator {
             labels,
             instrs,
             operands,
+            immediates,
         };
         translator.init_func_body_block()?;
         translator.init_func_params()?;
