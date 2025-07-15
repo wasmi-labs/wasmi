@@ -233,10 +233,6 @@ impl InstrEncoder {
     ///
     /// The parameter is associated to the last pushed [`Instruction`].
     pub fn push_param(&mut self, instruction: Instruction) {
-        debug_assert!(
-            instruction.is_instruction_parameter(),
-            "non-parameter: {instruction:?}"
-        );
         self.instrs.push(instruction);
     }
 
