@@ -180,10 +180,10 @@ impl WasmTranslator<'_> for FuncTranslator {
         let Ok(max_height) = u16::try_from(self.stack.max_height()) else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
-        let Some(frame_size) = self
-            .func_type_with(FuncType::len_params)
-            .checked_add(max_height)
-        else {
+        let Ok(len_locals) = u16::try_from(self.layout.len_locals()) else {
+            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
+        };
+        let Some(frame_size) = len_locals.checked_add(max_height) else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
         self.update_branch_offsets()?;

@@ -125,6 +125,11 @@ impl StackLayout {
     pub fn consts(&self) -> ConstRegistryIter<'_> {
         self.consts.iter()
     }
+
+    /// Returns the number of registered locals.
+    pub fn len_locals(&self) -> usize {
+        self.len_locals
+    }
 }
 
 impl AllocConst for StackLayout {
