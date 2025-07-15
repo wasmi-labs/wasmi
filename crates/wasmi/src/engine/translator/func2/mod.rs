@@ -680,6 +680,96 @@ impl FuncTranslator {
         self.push_instr_with_result(result_ty, |result| make_instr(result, lhs, rhs), fuel_costs)
     }
 
+    /// Populate the `buffer` with the `table` targets including the `table` default target.
+    ///
+    /// Returns a shared slice to the `buffer` after it has been filled.
+    ///
+    /// # Note
+    ///
+    /// The `table` default target is pushed last to the `buffer`.
+    fn copy_targets_from_br_table(
+        table: &wasmparser::BrTable,
+        buffer: &mut Vec<TypedVal>,
+    ) -> Result<(), Error> {
+        let default_target = table.default();
+        buffer.clear();
+        for target in table.targets() {
+            buffer.push(TypedVal::from(target?));
+        }
+        buffer.push(TypedVal::from(default_target));
+        Ok(())
+    }
+
+    /// Encodes a Wasm `br_table` that does not copy branching values.
+    ///
+    /// # Note
+    ///
+    /// Upon call the `immediates` buffer contains all `br_table` target values.
+    fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Reg) -> Result<(), Error> {
+        debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
+        self.push_instr(
+            Instruction::branch_table_0(index, table.len() + 1),
+            FuelCostsProvider::base,
+        )?;
+        // Encode the `br_table` targets:
+        let targets = &self.immediates[..];
+        for target in targets {
+            let Ok(depth) = usize::try_from(u32::from(*target)) else {
+                panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
+            };
+            let mut frame = self.stack.peek_control_mut(depth).control_frame();
+            let offset = self
+                .labels
+                .try_resolve_label(frame.label(), self.instrs.next_instr())?;
+            self.instrs.push_param(Instruction::branch(offset));
+            frame.branch_to();
+        }
+        Ok(())
+    }
+
+    /// Encodes a Wasm `br_table` that has to copy `len_values` branching values.
+    ///
+    /// # Note
+    ///
+    /// Upon call the `immediates` buffer contains all `br_table` target values.
+    fn encode_br_table_n(
+        &mut self,
+        table: wasmparser::BrTable,
+        index: Reg,
+        len_values: u16,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
+        self.push_instr(
+            Instruction::branch_table_span(index, table.len() + 1),
+            FuelCostsProvider::base,
+        )?;
+        self.instrs
+            .push_param(Instruction::register_span(BoundedRegSpan::new(
+                values, len_values,
+            )));
+        // Encode the `br_table` targets:
+        let targets = &self.immediates[..];
+        for target in targets {
+            let Ok(depth) = usize::try_from(u32::from(*target)) else {
+                panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
+            };
+            let mut frame = self.stack.peek_control_mut(depth).control_frame();
+            let Some(results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
+            else {
+                panic!("must have frame results since `br_table` requires to copy values");
+            };
+            let offset = self
+                .labels
+                .try_resolve_label(frame.label(), self.instrs.next_instr())?;
+            self.instrs
+                .push_param(Instruction::branch_table_target(results, offset));
+            frame.branch_to();
+        }
+        Ok(())
+    }
+
     /// Encodes a generic return instruction.
     fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
