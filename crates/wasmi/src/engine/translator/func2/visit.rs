@@ -261,8 +261,51 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_br_table(&mut self, _targets: wasmparser::BrTable<'a>) -> Self::Output {
-        todo!()
+    fn visit_br_table(&mut self, table: wasmparser::BrTable<'a>) -> Self::Output {
+        bail_unreachable!(self);
+        let index = self.stack.pop();
+        let default_target = table.default();
+        if table.is_empty() {
+            // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
+            return self.visit_br(default_target);
+        }
+        if let Operand::Immediate(index) = index {
+            // Case: the `br_table` index is a constant value, therefore always taking the same branch.
+            // Note: `usize::MAX` is used to fallback to the default target.
+            let chosen_index = usize::try_from(u32::from(index.val())).unwrap_or(usize::MAX);
+            let chosen_target = table
+                .targets()
+                .nth(chosen_index)
+                .transpose()?
+                .unwrap_or(default_target);
+            return self.visit_br(chosen_target);
+        }
+        Self::copy_targets_from_br_table(&table, &mut self.immediates)?;
+        let targets = &self.immediates[..];
+        if targets
+            .iter()
+            .all(|&target| u32::from(target) == default_target)
+        {
+            // Case: all targets are the same and thus the `br_table` is equal to a `br`.
+            return self.visit_br(default_target);
+        }
+        // Note: The Wasm spec mandates that all `br_table` targets manipulate the
+        //       Wasm value stack the same. This implies for Wasmi that all `br_table`
+        //       targets have the same branch parameter arity.
+        let Ok(default_target) = usize::try_from(default_target) else {
+            panic!("out of bounds `default_target` does not fit into `usize`: {default_target}");
+        };
+        let index = self.layout.operand_to_reg(index)?;
+        let len_branch_params = self
+            .stack
+            .peek_control(default_target)
+            .len_branch_params(&self.engine);
+        match len_branch_params {
+            0 => self.encode_br_table_0(table, index)?,
+            n => self.encode_br_table_n(table, index, n)?,
+        };
+        self.reachable = false;
+        Ok(())
     }
 
     fn visit_return(&mut self) -> Self::Output {
