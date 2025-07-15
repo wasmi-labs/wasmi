@@ -802,6 +802,24 @@ impl FuncTranslator {
         Ok(Some(RegSpan::new(start)))
     }
 
+    /// Tries to form a [`RegSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
+    ///
+    /// Returns `None` if forming a [`RegSpan`] was not possible.
+    fn try_form_regspan_or_move(
+        &mut self,
+        len: usize,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<RegSpan, Error> {
+        if let Some(span) = self.try_form_regspan(len)? {
+            return Ok(span);
+        }
+        self.move_operands_to_temp(len, consume_fuel_instr)?;
+        let Some(span) = self.try_form_regspan(len)? else {
+            unreachable!("the top-most `len` operands are now temporaries thus `RegSpan` forming should succeed")
+        };
+        Ok(span)
+    }
+
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let consume_fuel_instr = frame.consume_fuel_instr();
