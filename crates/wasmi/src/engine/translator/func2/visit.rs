@@ -11,7 +11,7 @@ use crate::{
         BlockType,
     },
     ir::{self, Const16, Instruction},
-    module::{self, FuncIdx, WasmiValueType},
+    module::{self, FuncIdx, MemoryIdx, WasmiValueType},
     Error,
     ExternRef,
     FuncRef,
@@ -679,8 +679,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore_wrap::<op::I64Store32>(memarg)
     }
 
-    fn visit_memory_size(&mut self, _mem: u32) -> Self::Output {
-        todo!()
+    fn visit_memory_size(&mut self, mem: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let index_ty = self
+            .module
+            .get_type_of_memory(MemoryIdx::from(mem))
+            .index_ty()
+            .ty();
+        self.push_instr_with_result(
+            index_ty,
+            |result| Instruction::memory_size(result, mem),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_memory_grow(&mut self, _mem: u32) -> Self::Output {
