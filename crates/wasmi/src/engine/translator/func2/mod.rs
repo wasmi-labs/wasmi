@@ -280,10 +280,12 @@ impl FuncTranslator {
     }
 
     /// Returns the frame size of the to-be-compiled function.
-    /// 
+    ///
     /// Returns `None` if the frame size is out of bounds.
     fn frame_size(&self) -> Option<u16> {
-        let frame_size = self.stack.max_height()
+        let frame_size = self
+            .stack
+            .max_height()
             .checked_add(self.layout.len_locals())?
             .checked_add(self.layout.consts().len())?;
         u16::try_from(frame_size).ok()
