@@ -185,13 +185,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         mut self,
         finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<Self::Allocations, Error> {
-        let Some(frame_size) = self
-            .stack
-            .max_height()
-            .checked_add(self.layout.len_locals())
-            .and_then(|frame_size| frame_size.checked_add(self.layout.consts().len()))
-            .and_then(|x| u16::try_from(x).ok())
-        else {
+        let Some(frame_size) = self.frame_size() else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
         self.update_branch_offsets()?;
@@ -283,6 +277,16 @@ impl FuncTranslator {
             self.layout.register_locals(1, *ty)?;
         }
         Ok(())
+    }
+
+    /// Returns the frame size of the to-be-compiled function.
+    /// 
+    /// Returns `None` if the frame size is out of bounds.
+    fn frame_size(&self) -> Option<u16> {
+        let frame_size = self.stack.max_height()
+            .checked_add(self.layout.len_locals())?
+            .checked_add(self.layout.consts().len())?;
+        u16::try_from(frame_size).ok()
     }
 
     /// Updates the branch offsets of all branch instructions inplace.
