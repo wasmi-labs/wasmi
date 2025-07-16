@@ -3,6 +3,7 @@ use crate::{
     core::{wasm, FuelCostsProvider, Mutability, TrapCode, TypedVal, ValType, F32, F64},
     engine::{
         translator::func2::{
+            op,
             stack::{AcquiredTarget, IfReachability},
             ControlFrameBase,
             Operand,
@@ -632,12 +633,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         )
     }
 
-    fn visit_i32_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I32Store>(memarg)
     }
 
-    fn visit_i64_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I64Store>(memarg)
     }
 
     fn visit_f32_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
@@ -648,24 +649,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         todo!()
     }
 
-    fn visit_i32_store8(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I32Store8>(memarg)
     }
 
-    fn visit_i32_store16(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I32Store16>(memarg)
     }
 
-    fn visit_i64_store8(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I64Store8>(memarg)
     }
 
-    fn visit_i64_store16(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I64Store16>(memarg)
     }
 
-    fn visit_i64_store32(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_istore_wrap::<op::I64Store32>(memarg)
     }
 
     fn visit_memory_size(&mut self, _mem: u32) -> Self::Output {
