@@ -492,60 +492,144 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_i32_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I32,
+            Instruction::load32,
+            Instruction::load32_offset16,
+            Instruction::load32_at,
+        )
     }
 
-    fn visit_i64_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::load64,
+            Instruction::load64_offset16,
+            Instruction::load64_at,
+        )
     }
 
-    fn visit_f32_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_f32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::F32,
+            Instruction::load32,
+            Instruction::load32_offset16,
+            Instruction::load32_at,
+        )
     }
 
-    fn visit_f64_load(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_f64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::F64,
+            Instruction::load64,
+            Instruction::load64_offset16,
+            Instruction::load64_at,
+        )
     }
 
-    fn visit_i32_load8_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I32,
+            Instruction::i32_load8_s,
+            Instruction::i32_load8_s_offset16,
+            Instruction::i32_load8_s_at,
+        )
     }
 
-    fn visit_i32_load8_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I32,
+            Instruction::i32_load8_u,
+            Instruction::i32_load8_u_offset16,
+            Instruction::i32_load8_u_at,
+        )
     }
 
-    fn visit_i32_load16_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I32,
+            Instruction::i32_load16_s,
+            Instruction::i32_load16_s_offset16,
+            Instruction::i32_load16_s_at,
+        )
     }
 
-    fn visit_i32_load16_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i32_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I32,
+            Instruction::i32_load16_u,
+            Instruction::i32_load16_u_offset16,
+            Instruction::i32_load16_u_at,
+        )
     }
 
-    fn visit_i64_load8_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::i64_load8_s,
+            Instruction::i64_load8_s_offset16,
+            Instruction::i64_load8_s_at,
+        )
     }
 
-    fn visit_i64_load8_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::i64_load8_u,
+            Instruction::i64_load8_u_offset16,
+            Instruction::i64_load8_u_at,
+        )
     }
 
-    fn visit_i64_load16_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::i64_load16_s,
+            Instruction::i64_load16_s_offset16,
+            Instruction::i64_load16_s_at,
+        )
     }
 
-    fn visit_i64_load16_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::i64_load16_u,
+            Instruction::i64_load16_u_offset16,
+            Instruction::i64_load16_u_at,
+        )
     }
 
-    fn visit_i64_load32_s(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load32_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::i64_load32_s,
+            Instruction::i64_load32_s_offset16,
+            Instruction::i64_load32_s_at,
+        )
     }
 
-    fn visit_i64_load32_u(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_i64_load32_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            ValType::I64,
+            Instruction::i64_load32_u,
+            Instruction::i64_load32_u_offset16,
+            Instruction::i64_load32_u_at,
+        )
     }
 
     fn visit_i32_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {

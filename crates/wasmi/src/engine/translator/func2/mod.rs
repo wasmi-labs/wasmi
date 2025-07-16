@@ -51,6 +51,9 @@ use crate::{
         TranslationError,
     },
     ir::{
+        index,
+        Address,
+        Address32,
         BoundedRegSpan,
         BranchOffset,
         BranchOffset16,
@@ -60,18 +63,21 @@ use crate::{
         Const32,
         Instruction,
         IntoShiftAmount,
+        Offset16,
+        Offset64,
+        Offset64Lo,
         Reg,
         RegSpan,
         Sign,
     },
-    module::{FuncIdx, FuncTypeIdx, ModuleHeader, TableIdx, WasmiValueType},
+    module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx, WasmiValueType},
     Engine,
     Error,
     FuncType,
 };
 use alloc::vec::Vec;
 use core::mem;
-use wasmparser::WasmFeatures;
+use wasmparser::{MemArg, WasmFeatures};
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
 #[derive(Debug)]
@@ -1981,5 +1987,124 @@ impl FuncTranslator {
         }
         self.stack.push_operand(lhs)?;
         Ok(true)
+    }
+
+    /// Translates a Wasm `load` instruction to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the right encoding for the given `load` instruction.
+    /// If `ptr+offset` is a constant value the address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
+    ///
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
+    /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
+    fn translate_load(
+        &mut self,
+        memarg: MemArg,
+        loaded_ty: ValType,
+        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let ptr = self.stack.pop();
+        let (ptr, offset) = match ptr {
+            Operand::Immediate(ptr) => {
+                let ptr = ptr.val();
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    self.push_instr_with_result(
+                        loaded_ty,
+                        |result| make_instr_at(result, address),
+                        FuelCostsProvider::load,
+                    )?;
+                    if !memory.is_default() {
+                        self.instrs.push_param(Instruction::memory_index(memory));
+                    }
+                    return Ok(());
+                }
+                // Case: we cannot use specialized encoding and thus have to fall back
+                //       to the general case where `ptr` is zero and `offset` stores the
+                //       `ptr+offset` address value.
+                let zero_ptr = self.layout.const_to_reg(0_u64)?;
+                (zero_ptr, u64::from(address))
+            }
+            ptr => {
+                let ptr = self.layout.operand_to_reg(ptr)?;
+                (ptr, offset)
+            }
+        };
+        if memory.is_default() {
+            if let Ok(offset) = Offset16::try_from(offset) {
+                self.push_instr_with_result(
+                    loaded_ty,
+                    |result| make_instr_offset16(result, ptr, offset),
+                    FuelCostsProvider::load,
+                )?;
+                return Ok(());
+            }
+        }
+        let (offset_hi, offset_lo) = Offset64::split(offset);
+        self.push_instr_with_result(
+            loaded_ty,
+            |result| make_instr(result, offset_lo),
+            FuelCostsProvider::load,
+        )?;
+        self.instrs
+            .push_param(Instruction::register_and_offset_hi(ptr, offset_hi));
+        if !memory.is_default() {
+            self.instrs.push_param(Instruction::memory_index(memory));
+        }
+        Ok(())
+    }
+
+    /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
+    ///
+    /// # Panics
+    ///
+    /// If the [`MemArg`] offset is not 32-bit.
+    fn decode_memarg(memarg: MemArg) -> (index::Memory, u64) {
+        let memory = index::Memory::from(memarg.memory);
+        (memory, memarg.offset)
+    }
+
+    /// Returns the effective address `ptr+offset` if it is valid.
+    fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<Address> {
+        let memory_type = *self
+            .module
+            .get_type_of_memory(MemoryIdx::from(u32::from(mem)));
+        let ptr = match memory_type.is_64() {
+            true => u64::from(ptr),
+            false => u64::from(u32::from(ptr)),
+        };
+        let Some(address) = ptr.checked_add(offset) else {
+            // Case: address overflows any legal memory index.
+            return None;
+        };
+        if let Some(max) = memory_type.maximum() {
+            // The memory's maximum size in bytes.
+            let max_size = max << memory_type.page_size_log2();
+            if address > max_size {
+                // Case: address overflows the memory's maximum size.
+                return None;
+            }
+        }
+        if !memory_type.is_64() && address >= 1 << 32 {
+            // Case: address overflows the 32-bit memory index.
+            return None;
+        }
+        let Ok(address) = Address::try_from(address) else {
+            // Case: address is too big for the system to handle properly.
+            return None;
+        };
+        Some(address)
     }
 }
