@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, FuelCostsProvider, Mutability, TrapCode, TypedVal, ValType, F32, F64},
+    core::{wasm, FuelCostsProvider, IndexType, Mutability, TrapCode, TypedVal, ValType, F32, F64},
     engine::{
         translator::func2::{
             op,
@@ -17,6 +17,7 @@ use crate::{
     FuncRef,
     FuncType,
 };
+use ir::Const32;
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -694,8 +695,52 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_memory_grow(&mut self, _mem: u32) -> Self::Output {
-        todo!()
+    fn visit_memory_grow(&mut self, mem: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let index_ty = self
+            .module
+            .get_type_of_memory(MemoryIdx::from(mem))
+            .index_ty();
+        let delta = self.stack.pop();
+        if let Operand::Immediate(delta) = delta {
+            let delta = delta.val();
+            let delta = match index_ty {
+                IndexType::I32 => u64::from(u32::from(delta)),
+                IndexType::I64 => u64::from(delta),
+            };
+            if delta == 0 {
+                // Case: growing by 0 pages.
+                //
+                // Since `memory.grow` returns the `memory.size` before the
+                // operation a `memory.grow` with `delta` of 0 can be translated
+                // as `memory.size` instruction instead.
+                self.push_instr_with_result(
+                    index_ty.ty(),
+                    |result| Instruction::memory_size(result, mem),
+                    FuelCostsProvider::instance,
+                )?;
+                return Ok(());
+            }
+            if let Ok(delta) = <Const32<u64>>::try_from(delta) {
+                // Case: delta can be 32-bit encoded
+                self.push_instr_with_result(
+                    index_ty.ty(),
+                    |result| Instruction::memory_grow_imm(result, delta),
+                    FuelCostsProvider::instance,
+                )?;
+                self.instrs.push_param(Instruction::memory_index(mem));
+                return Ok(());
+            }
+        }
+        // Case: fallback to generic `memory.grow` instruction
+        let delta = self.layout.operand_to_reg(delta)?;
+        self.push_instr_with_result(
+            index_ty.ty(),
+            |result| Instruction::memory_grow(result, delta),
+            FuelCostsProvider::instance,
+        )?;
+        self.instrs.push_param(Instruction::memory_index(mem));
+        Ok(())
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
