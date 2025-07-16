@@ -4,6 +4,7 @@
 mod utils;
 mod instrs;
 mod layout;
+mod op;
 #[cfg(feature = "simd")]
 mod simd;
 mod stack;
@@ -43,7 +44,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
-            utils::{Instr, WasmFloat, WasmInteger},
+            utils::{Instr, WasmFloat, WasmInteger, Wrap},
             WasmTranslator,
         },
         BlockType,
@@ -54,6 +55,7 @@ use crate::{
         index,
         Address,
         Address32,
+        AnyConst16,
         BoundedRegSpan,
         BranchOffset,
         BranchOffset16,
@@ -2064,6 +2066,190 @@ impl FuncTranslator {
             self.instrs.push_param(Instruction::memory_index(memory));
         }
         Ok(())
+    }
+
+    /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the most efficient encoding for the given `store` instruction.
+    /// If `ptr+offset` is a constant value the pointer address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
+    ///
+    /// - `{i32, i64}.{store, store8, store16, store32}`
+    fn translate_istore_wrap<T: op::StoreWrapOperator>(
+        &mut self,
+        memarg: MemArg,
+    ) -> Result<(), Error>
+    where
+        T::Value: Copy + Wrap<T::Wrapped> + From<TypedVal>,
+        T::Param: TryFrom<T::Wrapped> + Into<AnyConst16>,
+    {
+        bail_unreachable!(self);
+        let (ptr, value) = self.stack.pop2();
+        self.encode_istore_wrap::<T>(memarg, ptr, value)
+    }
+
+    /// Encodes Wasm integer `store` and `storeN` instructions as Wasmi bytecode.
+    fn encode_istore_wrap<T: op::StoreWrapOperator>(
+        &mut self,
+        memarg: MemArg,
+        ptr: Operand,
+        value: Operand,
+    ) -> Result<(), Error>
+    where
+        T::Value: Copy + Wrap<T::Wrapped> + From<TypedVal>,
+        T::Param: TryFrom<T::Wrapped> + Into<AnyConst16>,
+    {
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, offset) = match ptr {
+            Operand::Immediate(ptr) => {
+                let ptr = ptr.val();
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    return self.encode_istore_wrap_at::<T>(memory, address, value);
+                }
+                // Case: we cannot use specialized encoding and thus have to fall back
+                //       to the general case where `ptr` is zero and `offset` stores the
+                //       `ptr+offset` address value.
+                let zero_ptr = self.layout.const_to_reg(0_u64)?;
+                (zero_ptr, u64::from(address))
+            }
+            ptr => {
+                let ptr = self.layout.operand_to_reg(ptr)?;
+                (ptr, offset)
+            }
+        };
+        if memory.is_default() {
+            if let Some(_instr) = self.encode_istore_wrap_mem0::<T>(ptr, offset, value)? {
+                return Ok(());
+            }
+        }
+        let (offset_hi, offset_lo) = Offset64::split(offset);
+        let (instr, param) = {
+            match value {
+                Operand::Immediate(value) => {
+                    let value = value.val();
+                    match T::Param::try_from(T::Value::from(value).wrap()).ok() {
+                        Some(value) => (
+                            T::store_imm(ptr, offset_lo),
+                            Instruction::imm16_and_offset_hi(value, offset_hi),
+                        ),
+                        None => (
+                            T::store(ptr, offset_lo),
+                            Instruction::register_and_offset_hi(
+                                self.layout.const_to_reg(value)?,
+                                offset_hi,
+                            ),
+                        ),
+                    }
+                }
+                value => {
+                    let value = self.layout.operand_to_reg(value)?;
+                    (
+                        T::store(ptr, offset_lo),
+                        Instruction::register_and_offset_hi(value, offset_hi),
+                    )
+                }
+            }
+        };
+        self.push_instr(instr, FuelCostsProvider::store)?;
+        self.instrs.push_param(param);
+        if !memory.is_default() {
+            self.instrs.push_param(Instruction::memory_index(memory));
+        }
+        Ok(())
+    }
+
+    /// Encodes a Wasm integer `store` and `storeN` instructions as Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is used in cases where the `ptr` is a known constant value.
+    fn encode_istore_wrap_at<T: op::StoreWrapOperator>(
+        &mut self,
+        memory: index::Memory,
+        address: Address32,
+        value: Operand,
+    ) -> Result<(), Error>
+    where
+        T::Value: Copy + From<TypedVal> + Wrap<T::Wrapped>,
+        T::Param: TryFrom<T::Wrapped>,
+    {
+        match value {
+            Operand::Immediate(value) => {
+                let value = value.val();
+                let wrapped = T::Value::from(value).wrap();
+                if let Ok(value) = T::Param::try_from(wrapped) {
+                    self.push_instr(T::store_at_imm(value, address), FuelCostsProvider::store)?;
+                } else {
+                    let value = self.layout.const_to_reg(value)?;
+                    self.push_instr(T::store_at(value, address), FuelCostsProvider::store)?;
+                }
+            }
+            value => {
+                let value = self.layout.operand_to_reg(value)?;
+                self.push_instr(T::store_at(value, address), FuelCostsProvider::store)?;
+            }
+        }
+        if !memory.is_default() {
+            self.instrs.push_param(Instruction::memory_index(memory));
+        }
+        Ok(())
+    }
+
+    /// Encodes a Wasm integer `store` and `storeN` instructions as Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This optimizes for cases where the Wasm linear memory that is operated on is known
+    /// to be the default memory.
+    /// Returns `Some` in case the optimized instructions have been encoded.
+    fn encode_istore_wrap_mem0<T: op::StoreWrapOperator>(
+        &mut self,
+        ptr: Reg,
+        offset: u64,
+        value: Operand,
+    ) -> Result<Option<Instr>, Error>
+    where
+        T::Value: Copy + From<TypedVal> + Wrap<T::Wrapped>,
+        T::Param: TryFrom<T::Wrapped>,
+    {
+        let Ok(offset16) = Offset16::try_from(offset) else {
+            return Ok(None);
+        };
+        let instr = match value {
+            Operand::Immediate(value) => {
+                let value = value.val();
+                let wrapped = T::Value::from(value).wrap();
+                match T::Param::try_from(wrapped) {
+                    Ok(value) => self.push_instr(
+                        T::store_offset16_imm(ptr, offset16, value),
+                        FuelCostsProvider::store,
+                    )?,
+                    Err(_) => {
+                        let value = self.layout.const_to_reg(value)?;
+                        self.push_instr(
+                            T::store_offset16(ptr, offset16, value),
+                            FuelCostsProvider::store,
+                        )?
+                    }
+                }
+            }
+            value => {
+                let value = self.layout.operand_to_reg(value)?;
+                self.push_instr(
+                    T::store_offset16(ptr, offset16, value),
+                    FuelCostsProvider::store,
+                )?
+            }
+        };
+        Ok(Some(instr))
     }
 
     /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
