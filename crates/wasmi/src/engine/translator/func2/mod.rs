@@ -189,6 +189,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             .stack
             .max_height()
             .checked_add(self.layout.len_locals())
+            .and_then(|frame_size| frame_size.checked_add(self.layout.consts().len()))
             .and_then(|x| u16::try_from(x).ok())
         else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
