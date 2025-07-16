@@ -177,13 +177,12 @@ impl WasmTranslator<'_> for FuncTranslator {
         mut self,
         finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<Self::Allocations, Error> {
-        let Ok(max_height) = u16::try_from(self.stack.max_height()) else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
-        };
-        let Ok(len_locals) = u16::try_from(self.layout.len_locals()) else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
-        };
-        let Some(frame_size) = len_locals.checked_add(max_height) else {
+        let Some(frame_size) = self
+            .stack
+            .max_height()
+            .checked_add(self.layout.len_locals())
+            .and_then(|x| u16::try_from(x).ok())
+        else {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         };
         self.update_branch_offsets()?;
