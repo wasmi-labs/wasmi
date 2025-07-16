@@ -2252,6 +2252,81 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
+    /// Translates a general Wasm `store` instruction to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the most efficient encoding for the given `store` instruction.
+    /// If `ptr+offset` is a constant value the pointer address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
+    ///
+    /// - `{f32, f64, v128}.store`
+    fn translate_store(
+        &mut self,
+        memarg: MemArg,
+        store: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        store_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        store_at: fn(value: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, value) = self.stack.pop2();
+        let (ptr, offset) = match ptr {
+            Operand::Immediate(ptr) => {
+                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    return self.encode_fstore_at(memory, address, value, store_at);
+                }
+                let zero_ptr = self.layout.const_to_reg(0_u64)?;
+                (zero_ptr, u64::from(address))
+            }
+            ptr => {
+                let ptr = self.layout.operand_to_reg(ptr)?;
+                (ptr, offset)
+            }
+        };
+        let (offset_hi, offset_lo) = Offset64::split(offset);
+        let value = self.layout.operand_to_reg(value)?;
+        if memory.is_default() {
+            if let Ok(offset) = Offset16::try_from(offset) {
+                self.push_instr(store_offset16(ptr, offset, value), FuelCostsProvider::store)?;
+                return Ok(());
+            }
+        }
+        self.push_instr(store(ptr, offset_lo), FuelCostsProvider::store)?;
+        self.instrs
+            .push_param(Instruction::register_and_offset_hi(value, offset_hi));
+        if !memory.is_default() {
+            self.instrs.push_param(Instruction::memory_index(memory));
+        }
+        Ok(())
+    }
+
+    /// Encodes a Wasm `store` instruction with immediate address as Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is used in cases where the `ptr` is a known constant value.
+    fn encode_fstore_at(
+        &mut self,
+        memory: index::Memory,
+        address: Address32,
+        value: Operand,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error> {
+        let value = self.layout.operand_to_reg(value)?;
+        self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
+        if !memory.is_default() {
+            self.instrs.push_param(Instruction::memory_index(memory));
+        }
+        Ok(())
+    }
+
     /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
     ///
     /// # Panics

@@ -641,12 +641,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore_wrap::<op::I64Store>(memarg)
     }
 
-    fn visit_f32_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_store(
+            memarg,
+            Instruction::store32,
+            Instruction::store32_offset16,
+            Instruction::store32_at,
+        )
     }
 
-    fn visit_f64_store(&mut self, _memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+    fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        self.translate_store(
+            memarg,
+            Instruction::store64,
+            Instruction::store64_offset16,
+            Instruction::store64_at,
+        )
     }
 
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
