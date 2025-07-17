@@ -980,10 +980,27 @@ impl FuncTranslator {
                 FuelCostsProvider::base,
             )?;
         }
+        self.labels
+            .try_pin_label(else_label, self.instrs.next_instr());
+        self.operands.clear();
+        self.operands.extend(self.stack.pop_else_providers());
+        if has_results {
+            // We haven't visited the `else` block and thus the `else`
+            // providers are still on the auxiliary stack and need to
+            // be popped. We use them to restore the stack to the state
+            // when entering the `if` block so that we can properly copy
+            // the `else` results to were they are expected.
+            let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
+            self.stack.trunc(frame.height());
+            for else_operand in self.operands.iter().copied() {
+                self.stack.push_operand(else_operand)?;
+            }
+            self.copy_branch_params(&frame, consume_fuel_instr)?;
+        }
         self.push_frame_results(&frame)?;
-        let next_instr = self.instrs.next_instr();
-        self.labels.try_pin_label(else_label, next_instr);
-        self.labels.pin_label(frame.label(), next_instr).unwrap();
+        self.labels
+            .pin_label(frame.label(), self.instrs.next_instr())
+            .unwrap();
         self.reachable = true;
         Ok(())
     }

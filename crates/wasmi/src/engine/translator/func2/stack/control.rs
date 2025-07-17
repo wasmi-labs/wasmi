@@ -38,7 +38,13 @@ pub struct ControlStack {
     /// Special operand stack to memorize operands for `else` control frames.
     else_operands: ElseOperands,
     /// This is `true` if an `if` with else providers was just popped from the stack.
-    expect_else: bool,
+    ///
+    /// # Note
+    ///
+    /// This means that its associated `else` operands need to be taken care of by
+    /// either pushing back an `else` control frame or by manually popping them off
+    /// the control stack.
+    orphaned_else_operands: bool,
 }
 
 /// Duplicated operands for Wasm `else` control frames.
@@ -71,19 +77,13 @@ impl ElseOperands {
         let start = self.ends.last().copied().unwrap_or(0);
         Some(self.operands.drain(start..end))
     }
-
-    /// Drops the top-most Wasm `else` operands from `self`.
-    pub fn drop(&mut self) {
-        self.ends.pop().expect("tried to drop empty else operands");
-        let start = self.ends.last().copied().unwrap_or(0);
-        self.operands.truncate(start);
-    }
 }
 
 impl Reset for ControlStack {
     fn reset(&mut self) {
         self.frames.clear();
         self.else_operands.reset();
+        self.orphaned_else_operands = false;
     }
 }
 
@@ -100,7 +100,7 @@ impl ControlStack {
 
     /// Pushes a new unreachable Wasm control frame onto the [`ControlStack`].
     pub fn push_unreachable(&mut self, kind: ControlFrameKind) {
-        self.try_drop_else_providers();
+        debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(kind))
     }
 
@@ -112,7 +112,7 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
-        self.try_drop_else_providers();
+        debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(BlockControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -130,7 +130,7 @@ impl ControlStack {
         label: LabelRef,
         consume_fuel: Option<Instr>,
     ) {
-        self.try_drop_else_providers();
+        debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(LoopControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -150,7 +150,7 @@ impl ControlStack {
         reachability: IfReachability,
         else_operands: impl IntoIterator<Item = Operand>,
     ) {
-        self.try_drop_else_providers();
+        debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -178,14 +178,19 @@ impl ControlStack {
         let label = if_frame.label();
         let is_branched_to = if_frame.is_branched_to();
         let reachability = match if_frame.reachability {
-            IfReachability::Both { .. } => ElseReachability::Both {
-                is_end_of_then_reachable,
-            },
+            IfReachability::Both { .. } => {
+                debug_assert!(self.orphaned_else_operands);
+                self.orphaned_else_operands = false;
+                ElseReachability::Both {
+                    is_end_of_then_reachable,
+                }
+            }
             IfReachability::OnlyThen => ElseReachability::OnlyThen {
                 is_end_of_then_reachable,
             },
             IfReachability::OnlyElse => ElseReachability::OnlyElse,
         };
+        debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height: StackHeight::from(height),
@@ -194,7 +199,7 @@ impl ControlStack {
             label,
             reachability,
         }));
-        self.expect_else = false;
+        self.orphaned_else_operands = false;
         match reachability {
             ElseReachability::OnlyThen { .. } | ElseReachability::OnlyElse => None,
             ElseReachability::Both { .. } => {
@@ -209,9 +214,9 @@ impl ControlStack {
 
     /// Pops the top-most [`ControlFrame`] and returns it if any.
     pub fn pop(&mut self) -> Option<ControlFrame> {
-        self.try_drop_else_providers();
+        debug_assert!(!self.orphaned_else_operands);
         let frame = self.frames.pop()?;
-        self.expect_else = match &frame {
+        self.orphaned_else_operands = match &frame {
             ControlFrame::If(frame) => {
                 matches!(frame.reachability, IfReachability::Both { .. })
             }
@@ -220,14 +225,18 @@ impl ControlStack {
         Some(frame)
     }
 
-    /// Drops the top-most else operands if `expect_else` is `true`.
+    /// Pops the top-most `else` operands from the control stack.
     ///
-    /// Otherwise do nothing.
-    pub fn try_drop_else_providers(&mut self) {
-        if self.expect_else {
-            self.else_operands.drop();
-        }
-        self.expect_else = false;
+    /// # Panics (Debug)
+    ///
+    /// If the `else` operands are not in orphaned state.
+    pub fn pop_else_providers(&mut self) -> Drain<'_, Operand> {
+        debug_assert!(self.orphaned_else_operands);
+        let Some(else_operands) = self.else_operands.pop() else {
+            panic!("missing `else` operands")
+        };
+        self.orphaned_else_operands = false;
+        else_operands
     }
 
     /// Returns a shared reference to the [`ControlFrame`] at `depth` if any.
