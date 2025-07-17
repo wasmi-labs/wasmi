@@ -1216,18 +1216,35 @@ impl FuncTranslator {
         label: LabelRef,
         negate: bool,
     ) -> Result<bool, Error> {
+        let Some(last_instr) = self.instrs.last_instr() else {
+            // Case: cannot fuse without a known last instruction
+            return Ok(false);
+        };
         let Operand::Temp(condition) = condition else {
+            // Case: cannot fuse non-temporary operands
+            //  - locals have observable behavior.
+            //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        debug_assert!(matches!(condition.ty(), ValType::I32 | ValType::I64));
         let Some(origin) = condition.instr() else {
+            // Case: cannot fuse temporary operands without origin instruction
             return Ok(false);
         };
+        if last_instr != origin {
+            // Case: cannot fuse if last instruction does not match origin instruction
+            return Ok(false);
+        }
+        debug_assert!(matches!(condition.ty(), ValType::I32 | ValType::I64));
         let fused_instr = self.try_make_fused_branch_cmp_instr(origin, condition, label, negate)?;
         let Some(fused_instr) = fused_instr else {
+            // Case: not possible to perform fusion with last instruction
             return Ok(false);
         };
-        self.instrs.try_replace_instr(origin, fused_instr)
+        assert!(
+            self.instrs.try_replace_instr(origin, fused_instr)?,
+            "op-code fusion must suceed at this point",
+        );
+        Ok(true)
     }
 
     /// Try to return a fused cmp+branch [`Instruction`] from the given parameters.
