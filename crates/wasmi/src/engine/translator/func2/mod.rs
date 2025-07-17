@@ -1270,7 +1270,10 @@ impl FuncTranslator {
             },
         };
         let offset = self.labels.try_resolve_label(label, instr)?;
-        cmp_instr.try_into_cmp_branch_instr(offset, &mut self.layout)
+        let fused = cmp_instr
+            .try_into_cmp_branch_instr(offset, &mut self.layout)?
+            .expect("cmp+branch fusion must succeed");
+        Ok(Some(fused))
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
