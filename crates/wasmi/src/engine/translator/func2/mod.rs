@@ -39,8 +39,8 @@ use crate::{
         translator::{
             comparator::{
                 CompareResult as _,
-                LogicalizeCmpInstr as _,
-                NegateCmpInstr as _,
+                LogicalizeCmpInstr,
+                NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
@@ -1928,45 +1928,7 @@ impl FuncTranslator {
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
     pub fn fuse_eqz<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
-        if !rhs.is_zero() {
-            // Case: cannot fuse with non-zero `rhs`
-            return Ok(false);
-        }
-        let lhs_reg = match lhs {
-            Operand::Immediate(_) => {
-                // Case: const-eval opt should take place instead since both operands are const
-                return Ok(false);
-            }
-            operand => self.layout.operand_to_reg(operand)?,
-        };
-        let Some(last_instr) = self.instrs.last_instr() else {
-            // Case: cannot fuse without registered last instruction
-            return Ok(false);
-        };
-        let last_instruction = *self.instrs.get(last_instr);
-        let Some(result) = last_instruction.compare_result() else {
-            // Case: cannot fuse non-cmp instructions
-            return Ok(false);
-        };
-        if matches!(self.layout.stack_space(result), StackSpace::Local) {
-            // Case: cannot fuse cmp instructions with local result
-            // Note: local results have observable side effects which must not change
-            return Ok(false);
-        }
-        if result != lhs_reg {
-            // Case: the `cmp` instruction does not feed into the `eqz` and cannot be fused
-            return Ok(false);
-        }
-        let Some(negated) = last_instruction.negate_cmp_instr() else {
-            // Case: the `cmp` instruction cannot be negated
-            return Ok(false);
-        };
-        if !self.instrs.try_replace_instr(last_instr, negated)? {
-            // Case: could not replace the `cmp` instruction with the fused one
-            return Ok(false);
-        }
-        self.stack.push_operand(lhs)?;
-        Ok(true)
+        self.fuse_commutative_cmp_with(lhs, rhs, NegateCmpInstr::negate_cmp_instr)
     }
 
     /// Tries to fuse a Wasm `i32.ne` instruction with 0 `rhs` value.
@@ -1977,40 +1939,61 @@ impl FuncTranslator {
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
     pub fn fuse_nez<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
+        self.fuse_commutative_cmp_with(lhs, rhs, LogicalizeCmpInstr::logicalize_cmp_instr)
+    }
+
+    /// Tries to fuse a `i{32,64}`.{eq,ne}` instruction with `rhs` of zero.
+    ///
+    /// Generically applies `f` onto the fused last instruction.
+    ///
+    /// Returns
+    ///
+    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(false)` if instruction fusion could not be applied.
+    /// - `Err(_)` if an error occurred.
+    pub fn fuse_commutative_cmp_with<T: WasmInteger>(
+        &mut self,
+        lhs: Operand,
+        rhs: T,
+        f: fn(&Instruction) -> Option<Instruction>,
+    ) -> Result<bool, Error> {
         if !rhs.is_zero() {
             // Case: cannot fuse with non-zero `rhs`
             return Ok(false);
         }
-        let lhs_reg = match lhs {
-            Operand::Immediate(_) => {
-                // Case: const-eval opt should take place instead since both operands are const
-                return Ok(false);
-            }
-            operand => self.layout.operand_to_reg(operand)?,
-        };
         let Some(last_instr) = self.instrs.last_instr() else {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
-        let last_instruction = *self.instrs.get(last_instr);
+        let Operand::Temp(lhs_opd) = lhs else {
+            // Case: cannot fuse non-temporary operands
+            //  - locals have observable behavior.
+            //  - immediates cannot be the result of a previous instruction.
+            return Ok(false);
+        };
+        let Some(origin) = lhs_opd.instr() else {
+            // Case: `lhs` has no origin instruciton, thus not possible to fuse.
+            return Ok(false);
+        };
+        if origin != last_instr {
+            // Case: `lhs`'s origin instruction does not match the last instruction
+            return Ok(false);
+        }
+        let lhs_reg = self.layout.temp_to_reg(lhs_opd.operand_index())?;
+        let last_instruction = self.instrs.get(last_instr);
         let Some(result) = last_instruction.compare_result() else {
             // Case: cannot fuse non-cmp instructions
             return Ok(false);
         };
-        if matches!(self.layout.stack_space(result), StackSpace::Local) {
-            // Case: cannot fuse cmp instructions with local result
-            // Note: local results have observable side effects which must not change
-            return Ok(false);
-        }
         if result != lhs_reg {
-            // Case: the `cmp` instruction does not feed into the `nez` and cannot be fused
+            // Case: the `cmp` instruction does not feed into the `eqz` and cannot be fused
             return Ok(false);
         }
-        let Some(logicalized) = last_instruction.logicalize_cmp_instr() else {
-            // Case: the `cmp` instruction cannot be logicalized
+        let Some(negated) = f(last_instruction) else {
+            // Case: the `cmp` instruction cannot be negated
             return Ok(false);
         };
-        if !self.instrs.try_replace_instr(last_instr, logicalized)? {
+        if !self.instrs.try_replace_instr(last_instr, negated)? {
             // Case: could not replace the `cmp` instruction with the fused one
             return Ok(false);
         }
