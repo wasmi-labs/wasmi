@@ -35,7 +35,7 @@ use crate::{
     Engine,
     Error,
 };
-use alloc::vec::Vec;
+use alloc::vec::{Drain, Vec};
 
 #[cfg(doc)]
 use crate::ir::Instruction;
@@ -310,6 +310,15 @@ impl Stack {
         self.controls
             .pop()
             .unwrap_or_else(|| panic!("tried to pop control from empty control stack"))
+    }
+
+    /// Pops the top-most `else` operands from the control stack.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the `else` operands are not in orphaned state.
+    pub fn pop_else_providers(&mut self) -> Drain<'_, Operand> {
+        self.controls.pop_else_providers()
     }
 
     /// Returns a shared reference to the [`ControlFrame`] at `depth`.
