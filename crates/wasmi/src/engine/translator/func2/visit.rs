@@ -1661,8 +1661,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_elem_drop(&mut self, _elem_index: u32) -> Self::Output {
-        todo!()
+    fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.push_instr(
+            Instruction::elem_drop(elem_index),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_table_copy(&mut self, _dst_table: u32, _src_table: u32) -> Self::Output {
