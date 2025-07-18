@@ -1599,8 +1599,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
-        todo!()
+    fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, src, len) = self.stack.pop3();
+        let dst_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
+        let src_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(src_mem));
+        let min_index_ty = dst_memory_type.index_ty().min(&src_memory_type.index_ty());
+        let dst = self.layout.operand_to_reg(dst)?;
+        let src = self.layout.operand_to_reg(src)?;
+        let len = self.make_index16(len, min_index_ty)?;
+        let instr = match len {
+            Input::Reg(len) => Instruction::memory_copy(dst, src, len),
+            Input::Immediate(len) => Instruction::memory_copy_imm(dst, src, len),
+        };
+        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_param(Instruction::memory_index(dst_mem))?;
+        self.push_param(Instruction::memory_index(src_mem))?;
+        Ok(())
     }
 
     fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {
