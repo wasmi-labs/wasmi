@@ -1618,8 +1618,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {
-        todo!()
+    fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
+        let (dst, value, len) = self.stack.pop3();
+        let dst = self.layout.operand_to_reg(dst)?;
+        let value = self.make_input(value, |_, value| {
+            let byte = u32::from(value) as u8;
+            Ok(Input::Immediate(byte))
+        })?;
+        let len = self.make_index16(len, memory_type.index_ty())?;
+        let instr: Instruction = match (value, len) {
+            (Input::Reg(value), Input::Reg(len)) => Instruction::memory_fill(dst, value, len),
+            (Input::Reg(value), Input::Immediate(len)) => {
+                Instruction::memory_fill_exact(dst, value, len)
+            }
+            (Input::Immediate(value), Input::Reg(len)) => {
+                Instruction::memory_fill_imm(dst, value, len)
+            }
+            (Input::Immediate(value), Input::Immediate(len)) => {
+                Instruction::memory_fill_imm_exact(dst, value, len)
+            }
+        };
+        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_param(Instruction::memory_index(mem))?;
+        Ok(())
     }
 
     fn visit_table_init(&mut self, _elem_index: u32, _table: u32) -> Self::Output {
