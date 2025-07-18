@@ -308,9 +308,9 @@ impl Stack {
     /// # Panics (Debug)
     ///
     /// If the `else` operands are not in orphaned state.
-    pub fn push_else_providers(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+    pub fn push_else_operands(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
         self.trunc(frame.height());
-        for else_operand in self.controls.pop_else_providers() {
+        for else_operand in self.controls.pop_else_operands() {
             self.operands.push_operand(else_operand)?;
         }
         Ok(())

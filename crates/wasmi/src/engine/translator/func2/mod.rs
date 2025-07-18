@@ -982,7 +982,7 @@ impl FuncTranslator {
         }
         self.labels
             .try_pin_label(else_label, self.instrs.next_instr());
-        self.stack.push_else_providers(&frame)?;
+        self.stack.push_else_operands(&frame)?;
         if has_results {
             // We haven't visited the `else` block and thus the `else`
             // providers are still on the auxiliary stack and need to
