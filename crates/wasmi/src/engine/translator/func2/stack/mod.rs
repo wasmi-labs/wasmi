@@ -270,15 +270,9 @@ impl Stack {
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        // self.trunc(if_frame.height());
-        let else_operands =
-            self.controls
-                .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
-        if let Some(else_operands) = else_operands {
-            for else_operand in else_operands {
-                self.operands.push_operand(else_operand)?;
-            }
-        }
+        self.push_else_operands(&if_frame)?;
+        self.controls
+            .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
         Ok(())
     }
 
@@ -308,7 +302,11 @@ impl Stack {
     /// # Panics (Debug)
     ///
     /// If the `else` operands are not in orphaned state.
-    pub fn push_else_operands(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+    pub fn push_else_operands(&mut self, frame: &IfControlFrame) -> Result<(), Error> {
+        match frame.reachability() {
+            IfReachability::Both { .. } => {}
+            IfReachability::OnlyThen | IfReachability::OnlyElse => return Ok(()),
+        };
         self.trunc(frame.height());
         for else_operand in self.controls.pop_else_operands() {
             self.operands.push_operand(else_operand)?;
