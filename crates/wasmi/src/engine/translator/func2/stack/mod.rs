@@ -35,7 +35,7 @@ use crate::{
     Engine,
     Error,
 };
-use alloc::vec::{Drain, Vec};
+use alloc::vec::Vec;
 
 #[cfg(doc)]
 use crate::ir::Instruction;
@@ -270,6 +270,7 @@ impl Stack {
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
+        // self.trunc(if_frame.height());
         let else_operands =
             self.controls
                 .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
@@ -302,13 +303,17 @@ impl Stack {
             .unwrap_or_else(|| panic!("tried to pop control from empty control stack"))
     }
 
-    /// Pops the top-most `else` operands from the control stack.
+    /// Pushes the top-most `else` operands from the control stack onto the operand stack.
     ///
     /// # Panics (Debug)
     ///
     /// If the `else` operands are not in orphaned state.
-    pub fn pop_else_providers(&mut self) -> Drain<'_, Operand> {
-        self.controls.pop_else_providers()
+    pub fn push_else_providers(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        self.trunc(frame.height());
+        for else_operand in self.controls.pop_else_providers() {
+            self.operands.push_operand(else_operand)?;
+        }
+        Ok(())
     }
 
     /// Returns a shared reference to the [`ControlFrame`] at `depth`.
