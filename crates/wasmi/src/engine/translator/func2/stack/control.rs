@@ -230,7 +230,7 @@ impl ControlStack {
     /// # Panics (Debug)
     ///
     /// If the `else` operands are not in orphaned state.
-    pub fn pop_else_providers(&mut self) -> Drain<'_, Operand> {
+    pub fn pop_else_operands(&mut self) -> Drain<'_, Operand> {
         debug_assert!(self.orphaned_else_operands);
         let Some(else_operands) = self.else_operands.pop() else {
             panic!("missing `else` operands")
