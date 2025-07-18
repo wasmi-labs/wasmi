@@ -1590,8 +1590,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_data_drop(&mut self, _data_index: u32) -> Self::Output {
-        todo!()
+    fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.push_instr(
+            Instruction::data_drop(data_index),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
