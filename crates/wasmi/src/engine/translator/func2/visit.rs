@@ -12,7 +12,7 @@ use crate::{
         BlockType,
     },
     ir::{self, Const16, Instruction},
-    module::{self, FuncIdx, MemoryIdx, WasmiValueType},
+    module::{self, FuncIdx, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
     FuncRef,
@@ -1645,8 +1645,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_table_init(&mut self, _elem_index: u32, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, src, len) = self.stack.pop3();
+        let dst = self.layout.operand_to_reg(dst)?;
+        let src = self.layout.operand_to_reg(src)?;
+        let len = self.make_input16::<u32>(len)?;
+        let instr = match len {
+            Input::Reg(len) => Instruction::table_init(dst, src, len),
+            Input::Immediate(len) => Instruction::table_init_imm(dst, src, len),
+        };
+        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_param(Instruction::table_index(table))?;
+        self.push_param(Instruction::elem_index(elem_index))?;
+        Ok(())
     }
 
     fn visit_elem_drop(&mut self, _elem_index: u32) -> Self::Output {
