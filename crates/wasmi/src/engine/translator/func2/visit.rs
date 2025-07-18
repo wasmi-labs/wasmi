@@ -1803,8 +1803,38 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_table_grow(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_grow(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let index_ty = table_type.index_ty();
+        let (value, delta) = self.stack.pop2();
+        let delta = self.make_index16(delta, index_ty)?;
+        if let Input::Immediate(delta) = delta {
+            if u64::from(delta) == 0 {
+                // Case: growing by 0 elements.
+                //
+                // Since `table.grow` returns the `table.size` before the
+                // operation a `table.grow` with `delta` of 0 can be translated
+                // as `table.size` instruction instead.
+                self.push_instr_with_result(
+                    index_ty.ty(),
+                    |result| Instruction::table_size(result, table),
+                    FuelCostsProvider::instance,
+                )?;
+                return Ok(());
+            }
+        }
+        let value = self.layout.operand_to_reg(value)?;
+        self.push_instr_with_result(
+            index_ty.ty(),
+            |result| match delta {
+                Input::Reg(delta) => Instruction::table_grow(result, delta, value),
+                Input::Immediate(delta) => Instruction::table_grow_imm(result, delta, value),
+            },
+            FuelCostsProvider::instance,
+        )?;
+        self.push_param(Instruction::table_index(table))?;
+        Ok(())
     }
 
     fn visit_table_size(&mut self, _table: u32) -> Self::Output {
