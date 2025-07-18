@@ -1,4 +1,4 @@
-use crate::ir::{Const16, Reg};
+use crate::ir::{Const16, Const32, Reg};
 
 /// Bail out early in case the current code is unreachable.
 ///
@@ -53,6 +53,9 @@ pub trait ReusableAllocations {
 
 /// A 16-bit encoded input to Wasmi instruction.
 pub type Input16<T> = Input<Const16<T>>;
+
+/// A 32-bit encoded input to Wasmi instruction.
+pub type Input32<T> = Input<Const32<T>>;
 
 /// A concrete input to a Wasmi instruction.
 pub enum Input<T> {
