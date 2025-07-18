@@ -1417,22 +1417,30 @@ impl FuncTranslator {
     /// Creates a new 16-bit encoded [`Input16`] from the given `operand`.
     pub fn make_input16<T>(&mut self, operand: Operand) -> Result<Input16<T>, Error>
     where
-        T: From<TypedVal> + Into<UntypedVal> + TryInto<Const16<T>>,
+        T: From<TypedVal> + Into<UntypedVal> + TryInto<Const16<T>> + Copy,
     {
+        self.make_input(operand, |this, imm| {
+            let opd16 = match T::from(imm).try_into() {
+                Ok(rhs) => Input::Immediate(rhs),
+                Err(_) => {
+                    let rhs = this.layout.const_to_reg(imm)?;
+                    Input::Reg(rhs)
+                }
+            };
+            Ok(opd16)
+        })
+    }
+
+    /// Create a new generic [`Input`] from the given `operand`.
+    fn make_input<R>(
+        &mut self,
+        operand: Operand,
+        f: impl FnOnce(&mut Self, TypedVal) -> Result<Input<R>, Error>,
+    ) -> Result<Input<R>, Error> {
         let reg = match operand {
             Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
-            Operand::Immediate(operand) => {
-                let operand = operand.val();
-                let opd16 = match T::from(operand).try_into() {
-                    Ok(rhs) => Input::Immediate(rhs),
-                    Err(_) => {
-                        let rhs = self.layout.const_to_reg(operand)?;
-                        Input::Reg(rhs)
-                    }
-                };
-                return Ok(opd16);
-            }
+            Operand::Immediate(operand) => return f(self, operand.val()),
         };
         Ok(Input::Reg(reg))
     }
