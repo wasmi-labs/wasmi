@@ -377,7 +377,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             _ => unreachable!(),
         };
         let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
-        self.instrs.push_param(indirect_params);
+        self.push_param(indirect_params)?;
         self.stack.pop_n(len_params, &mut self.operands);
         self.instrs
             .encode_register_list(&self.operands, &mut self.layout)?;
@@ -726,7 +726,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     |result| Instruction::memory_grow_imm(result, delta),
                     FuelCostsProvider::instance,
                 )?;
-                self.instrs.push_param(Instruction::memory_index(mem));
+                self.push_param(Instruction::memory_index(mem))?;
                 return Ok(());
             }
         }
@@ -737,7 +737,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             |result| Instruction::memory_grow(result, delta),
             FuelCostsProvider::instance,
         )?;
-        self.instrs.push_param(Instruction::memory_index(mem));
+        self.push_param(Instruction::memory_index(mem))?;
         Ok(())
     }
 
@@ -1737,7 +1737,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             _ => unreachable!(),
         };
         self.push_instr(instr, FuelCostsProvider::call)?;
-        self.instrs.push_param(indirect_params);
+        self.push_param(indirect_params)?;
         self.stack.pop_n(len_params, &mut self.operands);
         self.instrs
             .encode_register_list(&self.operands, &mut self.layout)?;
