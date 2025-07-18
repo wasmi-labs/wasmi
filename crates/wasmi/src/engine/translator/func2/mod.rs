@@ -1414,6 +1414,29 @@ impl FuncTranslator {
         }
     }
 
+    /// Creates a new 16-bit encoded [`Operand16`] from the given `operand`.
+    pub fn make_operand16<T>(&mut self, operand: Operand) -> Result<Operand16<T>, Error>
+    where
+        T: From<TypedVal> + TryInto<Const16<T>>,
+    {
+        let reg = match operand {
+            Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
+            Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
+            Operand::Immediate(operand) => {
+                let operand = operand.val();
+                let opd16 = match T::from(operand).try_into() {
+                    Ok(rhs) => Operand16::Immediate(rhs),
+                    Err(_) => {
+                        let rhs = self.layout.const_to_reg(operand)?;
+                        Operand16::Reg(rhs)
+                    }
+                };
+                return Ok(opd16);
+            }
+        };
+        Ok(Operand16::Reg(reg))
+    }
+
     /// Converts the `provider` to a 16-bit index-type constant value.
     ///
     /// # Note
