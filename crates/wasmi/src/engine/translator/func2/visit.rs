@@ -1837,8 +1837,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_table_size(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_size(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let index_ty = table_type.index_ty();
+        self.push_instr_with_result(
+            index_ty.ty(),
+            |result| Instruction::table_size(result, table),
+            FuelCostsProvider::instance,
+        )?;
+        Ok(())
     }
 
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
