@@ -694,6 +694,12 @@ impl FuncTranslator {
         self.push_instr_with_result(result_ty, |result| make_instr(result, lhs, rhs), fuel_costs)
     }
 
+    /// Pushes an instruction parameter `param` to the list of instructions.
+    fn push_param(&mut self, param: Instruction) -> Result<(), Error> {
+        self.instrs.push_param(param);
+        Ok(())
+    }
+
     /// Populate the `buffer` with the `table` targets including the `table` default target.
     ///
     /// Returns a shared slice to the `buffer` after it has been filled.
@@ -759,10 +765,9 @@ impl FuncTranslator {
             Instruction::branch_table_span(index, table.len() + 1),
             FuelCostsProvider::base,
         )?;
-        self.instrs
-            .push_param(Instruction::register_span(BoundedRegSpan::new(
-                values, len_values,
-            )));
+        self.push_param(Instruction::register_span(BoundedRegSpan::new(
+            values, len_values,
+        )))?;
         // Encode the `br_table` targets:
         let targets = &self.immediates[..];
         for target in targets {
@@ -1910,8 +1915,7 @@ impl FuncTranslator {
                 mem::swap(&mut true_val, &mut false_val);
             }
         };
-        self.instrs
-            .push_param(Instruction::register2_ext(true_val, false_val));
+        self.push_param(Instruction::register2_ext(true_val, false_val))?;
         Ok(())
     }
 
@@ -2051,7 +2055,7 @@ impl FuncTranslator {
                         FuelCostsProvider::load,
                     )?;
                     if !memory.is_default() {
-                        self.instrs.push_param(Instruction::memory_index(memory));
+                        self.push_param(Instruction::memory_index(memory))?;
                     }
                     return Ok(());
                 }
@@ -2082,10 +2086,9 @@ impl FuncTranslator {
             |result| make_instr(result, offset_lo),
             FuelCostsProvider::load,
         )?;
-        self.instrs
-            .push_param(Instruction::register_and_offset_hi(ptr, offset_hi));
+        self.push_param(Instruction::register_and_offset_hi(ptr, offset_hi))?;
         if !memory.is_default() {
-            self.instrs.push_param(Instruction::memory_index(memory));
+            self.push_param(Instruction::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2181,9 +2184,9 @@ impl FuncTranslator {
             }
         };
         self.push_instr(instr, FuelCostsProvider::store)?;
-        self.instrs.push_param(param);
+        self.push_param(param)?;
         if !memory.is_default() {
-            self.instrs.push_param(Instruction::memory_index(memory));
+            self.push_param(Instruction::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2220,7 +2223,7 @@ impl FuncTranslator {
             }
         }
         if !memory.is_default() {
-            self.instrs.push_param(Instruction::memory_index(memory));
+            self.push_param(Instruction::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2321,10 +2324,9 @@ impl FuncTranslator {
             }
         }
         self.push_instr(store(ptr, offset_lo), FuelCostsProvider::store)?;
-        self.instrs
-            .push_param(Instruction::register_and_offset_hi(value, offset_hi));
+        self.push_param(Instruction::register_and_offset_hi(value, offset_hi))?;
         if !memory.is_default() {
-            self.instrs.push_param(Instruction::memory_index(memory));
+            self.push_param(Instruction::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2344,7 +2346,7 @@ impl FuncTranslator {
         let value = self.layout.operand_to_reg(value)?;
         self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
         if !memory.is_default() {
-            self.instrs.push_param(Instruction::memory_index(memory));
+            self.push_param(Instruction::memory_index(memory))?;
         }
         Ok(())
     }
