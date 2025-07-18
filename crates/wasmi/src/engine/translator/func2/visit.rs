@@ -1752,8 +1752,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_table_fill(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_fill(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, value, len) = self.stack.pop3();
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let dst = self.layout.operand_to_reg(dst)?;
+        let value = self.layout.operand_to_reg(value)?;
+        let len = self.make_index16(len, table_type.index_ty())?;
+        let instr = match len {
+            Input::Reg(len) => Instruction::table_fill(dst, len, value),
+            Input::Immediate(len) => Instruction::table_fill_imm(dst, len, value),
+        };
+        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_param(Instruction::table_index(table))?;
+        Ok(())
     }
 
     fn visit_table_get(&mut self, _table: u32) -> Self::Output {
