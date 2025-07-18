@@ -1670,8 +1670,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_table_copy(&mut self, _dst_table: u32, _src_table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, src, len) = self.stack.pop3();
+        let dst_table_type = *self.module.get_type_of_table(TableIdx::from(dst_table));
+        let src_table_type = *self.module.get_type_of_table(TableIdx::from(src_table));
+        let min_index_ty = dst_table_type.index_ty().min(&src_table_type.index_ty());
+        let dst = self.layout.operand_to_reg(dst)?;
+        let src = self.layout.operand_to_reg(src)?;
+        let len = self.make_index16(len, min_index_ty)?;
+        let instr = match len {
+            Input::Reg(len) => Instruction::table_copy(dst, src, len),
+            Input::Immediate(len) => Instruction::table_copy_imm(dst, src, len),
+        };
+        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_param(Instruction::table_index(dst_table))?;
+        self.push_param(Instruction::table_index(src_table))?;
+        Ok(())
     }
 
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
