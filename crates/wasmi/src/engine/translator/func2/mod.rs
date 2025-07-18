@@ -1400,7 +1400,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Creates a new 16-bit encoded [`Operand16`] from the given `value`.
+    /// Creates a new 16-bit encoded [`Input16`] from the given `value`.
     pub fn make_imm16<T>(&mut self, value: T) -> Result<Input16<T>, Error>
     where
         T: Into<UntypedVal> + Copy + TryInto<Const16<T>>,
