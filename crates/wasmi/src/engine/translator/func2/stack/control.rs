@@ -623,26 +623,6 @@ impl IfControlFrame {
         self.reachability
     }
 
-    /// Returns the label to the `else` branch of the [`IfControlFrame`].
-    pub fn else_label(&self) -> Option<LabelRef> {
-        match self.reachability {
-            IfReachability::Both { else_label } => Some(else_label),
-            IfReachability::OnlyThen | IfReachability::OnlyElse => None,
-        }
-    }
-
-    /// Returns `true` if the `then` branch is reachable.
-    ///
-    /// # Note
-    ///
-    /// The `then` branch is unreachable if the `if` condition is a constant `false` value.
-    pub fn is_then_reachable(&self) -> bool {
-        match self.reachability {
-            IfReachability::Both { .. } | IfReachability::OnlyThen => true,
-            IfReachability::OnlyElse => false,
-        }
-    }
-
     /// Returns `true` if the `else` branch is reachable.
     ///
     /// # Note

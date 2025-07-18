@@ -167,8 +167,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // - Copy `if` branch parameters.
         // - Branch from end of `then` to end of `if`.
         let is_end_of_then_reachable = self.reachable;
-        if let Some(else_label) = frame.else_label() {
-            debug_assert!(frame.is_then_reachable() && frame.is_else_reachable());
+        if let IfReachability::Both { else_label } = frame.reachability() {
             if is_end_of_then_reachable {
                 let consume_fuel_instr = frame.consume_fuel_instr();
                 self.copy_branch_params(&frame, consume_fuel_instr)?;
