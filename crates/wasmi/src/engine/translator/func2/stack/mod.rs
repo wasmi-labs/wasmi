@@ -274,18 +274,8 @@ impl Stack {
             self.controls
                 .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
         if let Some(else_operands) = else_operands {
-            for operand in else_operands {
-                match operand {
-                    Operand::Local(op) => {
-                        self.operands.push_local(op.local_index())?;
-                    }
-                    Operand::Temp(op) => {
-                        self.operands.push_temp(op.ty(), op.instr())?;
-                    }
-                    Operand::Immediate(op) => {
-                        self.operands.push_immediate(op.val())?;
-                    }
-                }
+            for else_operand in else_operands {
+                self.operands.push_operand(else_operand)?;
             }
         }
         Ok(())
@@ -354,11 +344,7 @@ impl Stack {
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
     pub fn push_operand(&mut self, operand: Operand) -> Result<OperandIdx, Error> {
-        match operand {
-            Operand::Local(operand) => self.push_local(operand.local_index()),
-            Operand::Temp(operand) => self.push_temp(operand.ty(), operand.instr()),
-            Operand::Immediate(operand) => self.push_immediate(operand.val()),
-        }
+        self.operands.push_operand(operand)
     }
 
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
