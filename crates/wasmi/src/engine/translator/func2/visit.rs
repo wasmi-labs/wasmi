@@ -6,8 +6,8 @@ use crate::{
             op,
             stack::{AcquiredTarget, IfReachability},
             ControlFrameBase,
+            Input,
             Operand,
-            Operand16,
         },
         BlockType,
     },
@@ -1579,10 +1579,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let dst = self.layout.operand_to_reg(dst)?;
         let src = self.layout.operand_to_reg(src)?;
-        let len = self.make_operand16::<u32>(len)?;
+        let len = self.make_input16::<u32>(len)?;
         let instr = match len {
-            Operand16::Immediate(len) => Instruction::memory_init_imm(dst, src, len),
-            Operand16::Reg(len) => Instruction::memory_init(dst, src, len),
+            Input::Immediate(len) => Instruction::memory_init_imm(dst, src, len),
+            Input::Reg(len) => Instruction::memory_init(dst, src, len),
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
         self.push_param(Instruction::memory_index(mem))?;

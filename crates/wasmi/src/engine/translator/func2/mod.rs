@@ -31,7 +31,7 @@ use self::{
         StackAllocations,
         TempOperand,
     },
-    utils::{Operand16, Reset, ReusableAllocations},
+    utils::{Input, Input16, Reset, ReusableAllocations},
 };
 use crate::{
     core::{FuelCostsProvider, IndexType, TrapCode, Typed, TypedVal, UntypedVal, ValType},
@@ -1401,23 +1401,23 @@ impl FuncTranslator {
     }
 
     /// Creates a new 16-bit encoded [`Operand16`] from the given `value`.
-    pub fn make_imm16<T>(&mut self, value: T) -> Result<Operand16<T>, Error>
+    pub fn make_imm16<T>(&mut self, value: T) -> Result<Input16<T>, Error>
     where
         T: Into<UntypedVal> + Copy + TryInto<Const16<T>>,
     {
         match value.try_into() {
-            Ok(rhs) => Ok(Operand16::Immediate(rhs)),
+            Ok(rhs) => Ok(Input::Immediate(rhs)),
             Err(_) => {
                 let rhs = self.layout.const_to_reg(value)?;
-                Ok(Operand16::Reg(rhs))
+                Ok(Input::Reg(rhs))
             }
         }
     }
 
-    /// Creates a new 16-bit encoded [`Operand16`] from the given `operand`.
-    pub fn make_operand16<T>(&mut self, operand: Operand) -> Result<Operand16<T>, Error>
+    /// Creates a new 16-bit encoded [`Input16`] from the given `operand`.
+    pub fn make_input16<T>(&mut self, operand: Operand) -> Result<Input16<T>, Error>
     where
-        T: From<TypedVal> + TryInto<Const16<T>>,
+        T: From<TypedVal> + Into<UntypedVal> + TryInto<Const16<T>>,
     {
         let reg = match operand {
             Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
@@ -1425,16 +1425,16 @@ impl FuncTranslator {
             Operand::Immediate(operand) => {
                 let operand = operand.val();
                 let opd16 = match T::from(operand).try_into() {
-                    Ok(rhs) => Operand16::Immediate(rhs),
+                    Ok(rhs) => Input::Immediate(rhs),
                     Err(_) => {
                         let rhs = self.layout.const_to_reg(operand)?;
-                        Operand16::Reg(rhs)
+                        Input::Reg(rhs)
                     }
                 };
                 return Ok(opd16);
             }
         };
-        Ok(Operand16::Reg(reg))
+        Ok(Input::Reg(reg))
     }
 
     /// Converts the `provider` to a 16-bit index-type constant value.
@@ -1447,29 +1447,29 @@ impl FuncTranslator {
         &mut self,
         operand: Operand,
         index_type: IndexType,
-    ) -> Result<Operand16<u64>, Error> {
+    ) -> Result<Input16<u64>, Error> {
         let value = match operand {
             Operand::Immediate(value) => value.val(),
             operand => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
                 let reg = self.layout.operand_to_reg(operand)?;
-                return Ok(Operand16::Reg(reg));
+                return Ok(Input::Reg(reg));
             }
         };
         match index_type {
             IndexType::I64 => {
                 if let Ok(value) = Const16::try_from(u64::from(value)) {
-                    return Ok(Operand16::Immediate(value));
+                    return Ok(Input::Immediate(value));
                 }
             }
             IndexType::I32 => {
                 if let Ok(value) = Const16::try_from(u32::from(value)) {
-                    return Ok(Operand16::Immediate(<Const16<u64>>::cast(value)));
+                    return Ok(Input::Immediate(<Const16<u64>>::cast(value)));
                 }
             }
         }
         let reg = self.layout.const_to_reg(value)?;
-        Ok(Operand16::Reg(reg))
+        Ok(Input::Reg(reg))
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
@@ -1544,8 +1544,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| match rhs16 {
-                        Operand16::Immediate(rhs) => make_ri(result, lhs, rhs),
-                        Operand16::Reg(rhs) => make_rr(result, lhs, rhs),
+                        Input::Immediate(rhs) => make_ri(result, lhs, rhs),
+                        Input::Reg(rhs) => make_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1591,8 +1591,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| match rhs16 {
-                        Operand16::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
-                        Operand16::Reg(rhs) => make_instr(result, lhs, rhs),
+                        Input::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
+                        Input::Reg(rhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1604,8 +1604,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| match lhs16 {
-                        Operand16::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Operand16::Reg(lhs) => make_instr(result, lhs, rhs),
+                        Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
+                        Input::Reg(lhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1644,8 +1644,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| match rhs16 {
-                        Operand16::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
-                        Operand16::Reg(rhs) => make_instr(result, lhs, rhs),
+                        Input::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
+                        Input::Reg(rhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1657,8 +1657,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| match lhs16 {
-                        Operand16::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Operand16::Reg(lhs) => make_instr(result, lhs, rhs),
+                        Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
+                        Input::Reg(lhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1694,17 +1694,17 @@ impl FuncTranslator {
                 let lhs = self.layout.operand_to_reg(lhs)?;
                 let rhs = T::from(rhs.val());
                 let rhs16 = match rhs.wrapping_neg().try_into() {
-                    Ok(rhs) => Operand16::Immediate(rhs),
+                    Ok(rhs) => Input::Immediate(rhs),
                     Err(_) => {
                         let rhs = self.layout.const_to_reg(rhs)?;
-                        Operand16::Reg(rhs)
+                        Input::Reg(rhs)
                     }
                 };
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| match rhs16 {
-                        Operand16::Immediate(rhs) => make_add_ri(result, lhs, rhs),
-                        Operand16::Reg(rhs) => make_sub_rr(result, lhs, rhs),
+                        Input::Immediate(rhs) => make_add_ri(result, lhs, rhs),
+                        Input::Reg(rhs) => make_sub_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1716,8 +1716,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| match lhs16 {
-                        Operand16::Immediate(lhs) => make_sub_ir(result, lhs, rhs),
-                        Operand16::Reg(lhs) => make_sub_rr(result, lhs, rhs),
+                        Input::Immediate(lhs) => make_sub_ir(result, lhs, rhs),
+                        Input::Reg(lhs) => make_sub_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1778,8 +1778,8 @@ impl FuncTranslator {
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| match lhs16 {
-                        Operand16::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Operand16::Reg(lhs) => make_instr(result, lhs, rhs),
+                        Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
+                        Input::Reg(lhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1951,10 +1951,8 @@ impl FuncTranslator {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
         let index = self.make_index16(index, table_type.index_ty())?;
         let instr = match index {
-            Operand16::Reg(index) => Instruction::call_indirect_params(index, table_index),
-            Operand16::Immediate(index) => {
-                Instruction::call_indirect_params_imm16(index, table_index)
-            }
+            Input::Reg(index) => Instruction::call_indirect_params(index, table_index),
+            Input::Immediate(index) => Instruction::call_indirect_params_imm16(index, table_index),
         };
         Ok(instr)
     }
