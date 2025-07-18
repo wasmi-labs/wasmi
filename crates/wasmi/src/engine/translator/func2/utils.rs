@@ -51,10 +51,13 @@ pub trait ReusableAllocations {
     fn into_allocations(self) -> Self::Allocations;
 }
 
-/// A 16-bit encoded operand for a Wasmi instruction.
-pub enum Operand16<T> {
+/// A 16-bit encoded input to Wasmi instruction.
+pub type Input16<T> = Input<Const16<T>>;
+
+/// A concrete input to a Wasmi instruction.
+pub enum Input<T> {
     /// A [`Reg`] operand.
     Reg(Reg),
     /// A 16-bit encoded immediate value operand.
-    Immediate(Const16<T>),
+    Immediate(T),
 }
