@@ -7,6 +7,7 @@ use crate::{
             stack::{AcquiredTarget, IfReachability},
             ControlFrameBase,
             Operand,
+            Operand16,
         },
         BlockType,
     },
@@ -1573,8 +1574,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_unary(Instruction::i64_trunc_sat_f64_u, wasm::i64_trunc_sat_f64_u)
     }
 
-    fn visit_memory_init(&mut self, _data_index: u32, _mem: u32) -> Self::Output {
-        todo!()
+    fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, src, len) = self.stack.pop3();
+        let dst = self.layout.operand_to_reg(dst)?;
+        let src = self.layout.operand_to_reg(src)?;
+        let len = self.make_operand16::<u32>(len)?;
+        let instr = match len {
+            Operand16::Immediate(len) => Instruction::memory_init_imm(dst, src, len),
+            Operand16::Reg(len) => Instruction::memory_init(dst, src, len),
+        };
+        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_param(Instruction::memory_index(mem))?;
+        self.push_param(Instruction::data_index(data_index))?;
+        Ok(())
     }
 
     fn visit_data_drop(&mut self, _data_index: u32) -> Self::Output {
