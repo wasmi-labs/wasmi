@@ -63,6 +63,7 @@ use crate::{
         ComparatorAndOffset,
         Const16,
         Const32,
+        FixedRegSpan,
         Instruction,
         IntoShiftAmount,
         Offset16,
@@ -2454,5 +2455,124 @@ impl FuncTranslator {
             return None;
         };
         Some(address)
+    }
+
+    /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
+    fn translate_i64_binop128(
+        &mut self,
+        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Instruction,
+        const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (rhs_lo, rhs_hi) = self.stack.pop2();
+        let (lhs_lo, lhs_hi) = self.stack.pop2();
+        if let (
+            Operand::Immediate(lhs_lo),
+            Operand::Immediate(lhs_hi),
+            Operand::Immediate(rhs_lo),
+            Operand::Immediate(rhs_hi),
+        ) = (lhs_lo, lhs_hi, rhs_lo, rhs_hi)
+        {
+            let (result_lo, result_hi) = const_eval(
+                lhs_lo.val().into(),
+                lhs_hi.val().into(),
+                rhs_lo.val().into(),
+                rhs_hi.val().into(),
+            );
+            self.stack.push_immediate(result_lo)?;
+            self.stack.push_immediate(result_hi)?;
+            return Ok(());
+        }
+        let rhs_lo = self.layout.operand_to_reg(rhs_lo)?;
+        let rhs_hi = self.layout.operand_to_reg(rhs_hi)?;
+        let lhs_lo = self.layout.operand_to_reg(lhs_lo)?;
+        let lhs_hi = self.layout.operand_to_reg(lhs_hi)?;
+        let result_lo = self.stack.push_temp(ValType::I64, None)?;
+        let result_hi = self.stack.push_temp(ValType::I64, None)?;
+        let result_lo = self.layout.temp_to_reg(result_lo)?;
+        let result_hi = self.layout.temp_to_reg(result_hi)?;
+        self.push_instr(
+            make_instr([result_lo, result_hi], lhs_lo),
+            FuelCostsProvider::base,
+        )?;
+        self.push_param(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
+        Ok(())
+    }
+
+    /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
+    fn translate_i64_mul_wide_sx(
+        &mut self,
+        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
+        const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
+        signed: bool,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (lhs, rhs) = self.stack.pop2();
+        let (lhs, rhs) = match (lhs, rhs) {
+            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
+                let (result_lo, result_hi) = const_eval(lhs.val().into(), rhs.val().into());
+                self.stack.push_immediate(result_lo)?;
+                self.stack.push_immediate(result_hi)?;
+                return Ok(());
+            }
+            (lhs, Operand::Immediate(rhs)) => {
+                let rhs = rhs.val();
+                if self.try_opt_i64_mul_wide_sx(lhs, rhs, signed)? {
+                    return Ok(());
+                }
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = self.layout.const_to_reg(rhs)?;
+                (lhs, rhs)
+            }
+            (Operand::Immediate(lhs), rhs) => {
+                let lhs = lhs.val();
+                if self.try_opt_i64_mul_wide_sx(rhs, lhs, signed)? {
+                    return Ok(());
+                }
+                let lhs = self.layout.const_to_reg(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                (lhs, rhs)
+            }
+            (lhs, rhs) => {
+                let lhs = self.layout.operand_to_reg(lhs)?;
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                (lhs, rhs)
+            }
+        };
+        let result0 = self.stack.push_temp(ValType::I64, None)?;
+        let _result1 = self.stack.push_temp(ValType::I64, None)?;
+        let result0 = self.layout.temp_to_reg(result0)?;
+        let Ok(results) = <FixedRegSpan<2>>::new(RegSpan::new(result0)) else {
+            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
+        };
+        self.push_instr(make_instr(results, lhs, rhs), FuelCostsProvider::base)?;
+        Ok(())
+    }
+
+    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Reg`] and one immediate input.
+    ///
+    /// - Returns `Ok(true)` if the optimiation was applied successfully.
+    /// - Returns `Ok(false)` if no optimization was applied.
+    fn try_opt_i64_mul_wide_sx(
+        &mut self,
+        lhs: Operand,
+        rhs: TypedVal,
+        signed: bool,
+    ) -> Result<bool, Error> {
+        let rhs = i64::from(rhs);
+        if rhs == 0 {
+            // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.
+            self.stack.push_immediate(0_i64)?; // lo-bits
+            self.stack.push_immediate(0_i64)?; // hi-bits
+            return Ok(true);
+        }
+        if rhs == 1 && !signed {
+            // Case: `mul(x, 1)` or `mul(1, x)` always evaluates to just `x`.
+            // This is only valid if `x` is not a singed (negative) value.
+            self.stack.push_operand(lhs)?; // lo-bits
+            self.stack.push_immediate(0_i64)?; // hi-bits
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
