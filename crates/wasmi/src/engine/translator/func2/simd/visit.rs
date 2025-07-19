@@ -100,35 +100,67 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_extract_lane_s(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<i8, _>(
+            lane,
+            Instruction::i8x16_extract_lane_s,
+            simd::i8x16_extract_lane_s,
+        )
     }
 
     fn visit_i8x16_extract_lane_u(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<u8, _>(
+            lane,
+            Instruction::i8x16_extract_lane_u,
+            simd::i8x16_extract_lane_u,
+        )
     }
 
     fn visit_i16x8_extract_lane_s(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<i16, _>(
+            lane,
+            Instruction::i16x8_extract_lane_s,
+            simd::i16x8_extract_lane_s,
+        )
     }
 
     fn visit_i16x8_extract_lane_u(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<u16, _>(
+            lane,
+            Instruction::i16x8_extract_lane_u,
+            simd::i16x8_extract_lane_u,
+        )
     }
 
     fn visit_i32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<i32, _>(
+            lane,
+            Instruction::i32x4_extract_lane,
+            simd::i32x4_extract_lane,
+        )
     }
 
     fn visit_i64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<i64, _>(
+            lane,
+            Instruction::i64x2_extract_lane,
+            simd::i64x2_extract_lane,
+        )
     }
 
     fn visit_f32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<f32, _>(
+            lane,
+            Instruction::f32x4_extract_lane,
+            simd::f32x4_extract_lane,
+        )
     }
 
     fn visit_f64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
-        todo!()
+        self.translate_extract_lane::<f64, _>(
+            lane,
+            Instruction::f64x2_extract_lane,
+            simd::f64x2_extract_lane,
+        )
     }
 
     fn visit_i8x16_replace_lane(&mut self, _lane: u8) -> Self::Output {
