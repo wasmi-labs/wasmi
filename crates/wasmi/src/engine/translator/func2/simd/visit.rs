@@ -99,11 +99,35 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_i8x16_extract_lane_s(&mut self, _lane: u8) -> Self::Output {
+    fn visit_i8x16_extract_lane_s(&mut self, lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_i8x16_extract_lane_u(&mut self, _lane: u8) -> Self::Output {
+    fn visit_i8x16_extract_lane_u(&mut self, lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i16x8_extract_lane_s(&mut self, lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i16x8_extract_lane_u(&mut self, lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
         todo!()
     }
 
@@ -111,19 +135,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_i16x8_extract_lane_s(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
-    fn visit_i16x8_extract_lane_u(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_i16x8_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
-    fn visit_i32x4_extract_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
@@ -131,23 +143,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_i64x2_extract_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_i64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
-    fn visit_f32x4_extract_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_f32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
-    fn visit_f64x2_extract_lane(&mut self, _lane: u8) -> Self::Output {
         todo!()
     }
 
