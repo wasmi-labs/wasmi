@@ -1096,6 +1096,10 @@ impl FuncTranslator {
                 //
                 // Note: This does not require any preservation since it won't change
                 //       the value of `local $n`.
+                if push_result {
+                    // Need to push back input before we exit.
+                    self.stack.push_operand(input.into())?;
+                }
                 return Ok(());
             }
         }
