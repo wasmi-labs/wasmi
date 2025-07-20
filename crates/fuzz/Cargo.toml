@@ -34,3 +34,6 @@ differential = [
     "dep:wasmi-stack",
     "dep:wasmtime",
 ]
+experimental-translator = [
+    "wasmi/experimental-translator"
+]
