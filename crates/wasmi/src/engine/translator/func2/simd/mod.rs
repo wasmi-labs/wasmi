@@ -1,16 +1,16 @@
 use super::FuncTranslator;
 
+mod op;
 mod visit;
 
 use crate::{
     core::{simd::IntoLaneIdx, FuelCostsProvider, TrapCode, Typed, TypedVal, ValType, V128},
     engine::translator::{
-        func2::Operand,
+        func2::{utils::Input, Operand},
         utils::{Instr, Wrap},
     },
     ir::{
-        index,
-        index::Memory,
+        index::{self, Memory},
         Address32,
         Instruction,
         IntoShiftAmount,
@@ -76,6 +76,52 @@ impl FuncTranslator {
             |result| make_instr(result, input, lane),
             FuelCostsProvider::simd,
         )?;
+        Ok(())
+    }
+
+    /// Generically translate a Wasm SIMD replace lane instruction.
+    #[allow(clippy::type_complexity)]
+    fn translate_replace_lane<T: op::SimdReplaceLane>(&mut self, lane: u8) -> Result<(), Error>
+    where
+        T::Item: IntoLaneIdx + From<TypedVal> + Copy,
+        T::Immediate: Copy,
+    {
+        bail_unreachable!(self);
+        let Ok(lane) = <<T::Item as IntoLaneIdx>::LaneIdx>::try_from(lane) else {
+            panic!("encountered out of bounds lane index: {lane}");
+        };
+        let (input, value) = self.stack.pop2();
+        if let (Operand::Immediate(x), Operand::Immediate(item)) = (input, value) {
+            let result = T::const_eval(x.val().into(), lane, item.val().into());
+            self.stack.push_immediate(result)?;
+            return Ok(());
+        }
+        let input = self.layout.operand_to_reg(input)?;
+        let value =
+            self.make_input::<T::Immediate>(value, |this, value| {
+                match T::value_to_imm(T::Item::from(value)) {
+                    Some(imm) => Ok(Input::Immediate(imm)),
+                    None => {
+                        let imm = this.layout.const_to_reg(value)?;
+                        Ok(Input::Reg(imm))
+                    }
+                }
+            })?;
+        let param = match value {
+            Input::Reg(value) => Some(Instruction::register(value)),
+            Input::Immediate(value) => T::replace_lane_imm_param(value),
+        };
+        self.push_instr_with_result(
+            <T::Item as Typed>::TY,
+            |result| match value {
+                Input::Reg(_) => T::replace_lane(result, input, lane),
+                Input::Immediate(value) => T::replace_lane_imm(result, input, lane, value),
+            },
+            FuelCostsProvider::simd,
+        )?;
+        if let Some(param) = param {
+            self.push_param(param)?;
+        }
         Ok(())
     }
 
