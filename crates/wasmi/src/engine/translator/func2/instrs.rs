@@ -254,6 +254,20 @@ impl InstrEncoder {
         &mut self.instrs[instr.into_usize()]
     }
 
+    /// Resets the [`Instr`] last created via [`InstrEncoder::push_instr`].
+    ///
+    /// # Note
+    ///
+    /// The `last_instr` info is used for op-code fusion of `local.set`
+    /// `local.tee`, compare, conditional branch and `select` instructions.
+    ///
+    /// Whenever ending a control frame during Wasm translation `last_instr`
+    /// needs to be reset to `None` to signal that no such optimization is
+    /// valid across control flow boundaries.
+    pub fn reset_last_instr(&mut self) {
+        self.last_instr = None;
+    }
+
     /// Updates the branch offset of `instr` to `offset`.
     ///
     /// # Errors

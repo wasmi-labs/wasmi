@@ -949,6 +949,10 @@ impl FuncTranslator {
         if self.reachable && self.stack.is_control_empty() {
             self.encode_return(consume_fuel_instr)?;
         }
+        if frame.is_branched_to() {
+            // No need to reset `last_instr` if there was no branch to the end of a Wasm `block`.
+            self.instrs.reset_last_instr();
+        }
         Ok(())
     }
 
@@ -956,6 +960,8 @@ impl FuncTranslator {
     fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
         // Nothing needs to be done since Wasm `loop` control frames always only have a single exit.
+        //
+        // Note: no need to reset `last_instr` since end of `loop` is not a control flow boundary.
         Ok(())
     }
 
@@ -1003,6 +1009,8 @@ impl FuncTranslator {
             .pin_label(frame.label(), self.instrs.next_instr())
             .unwrap();
         self.reachable = true;
+        // Need to reset `last_instr` since end of `if` is a control flow boundary.
+        self.instrs.reset_last_instr();
         Ok(())
     }
 
@@ -1035,6 +1043,8 @@ impl FuncTranslator {
             .pin_label(frame.label(), self.instrs.next_instr())
             .unwrap();
         self.reachable = reachable;
+        // Need to reset `last_instr` since end of `else` is a control flow boundary.
+        self.instrs.reset_last_instr();
         Ok(())
     }
 
@@ -1055,12 +1065,19 @@ impl FuncTranslator {
             .pin_label(frame.label(), self.instrs.next_instr())
             .unwrap();
         self.reachable = end_is_reachable || frame.is_branched_to();
+        if frame.is_branched_to() {
+            // No need to reset `last_instr` if there was no branch to the
+            // end of a Wasm `if` where only `then` or `else` is reachable.
+            self.instrs.reset_last_instr();
+        }
         Ok(())
     }
 
     /// Translates the end of an unreachable Wasm control frame.
     fn translate_end_unreachable(&mut self, _frame: ControlFrameKind) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
+        // We reset `last_instr` out of caution in case there is a control flow boundary.
+        self.instrs.reset_last_instr();
         Ok(())
     }
 

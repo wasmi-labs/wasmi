@@ -117,6 +117,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let consume_fuel = self.instrs.push_consume_fuel_instr()?;
         self.stack
             .push_loop(block_ty, continue_label, consume_fuel)?;
+        // Need to reset `last_instr` because a loop header is a control flow boundary.
+        self.instrs.reset_last_instr();
         Ok(())
     }
 
