@@ -197,8 +197,11 @@ macro_rules! expand_tests {
             fn wasm_utf8_import_module("utf8-import-module");
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
-            fn wasm_wide_arithmetic_local("../../local/wide-arithmetic");
-            fn wasm_replace_result("../../local/replace-result");
+
+            // Wasmi specific test cases
+            fn wasmi_wide_arithmetic("../../local/wide-arithmetic");
+            fn wasmi_replace_result("../../local/replace-result");
+            fn wasmi_local_tee("../../local/local-tee");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
