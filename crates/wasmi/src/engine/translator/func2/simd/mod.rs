@@ -86,7 +86,7 @@ impl FuncTranslator {
         const_eval: fn(input: V128) -> T,
     ) -> Result<(), Error>
     where
-        T: Into<TypedVal>,
+        T: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
         let input = self.stack.pop();
@@ -98,7 +98,7 @@ impl FuncTranslator {
         };
         let input = self.layout.operand_to_reg(input)?;
         self.push_instr_with_result(
-            ValType::V128,
+            <T as Typed>::TY,
             |result| make_instr(result, input),
             FuelCostsProvider::simd,
         )?;
