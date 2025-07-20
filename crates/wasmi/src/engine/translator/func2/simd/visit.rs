@@ -3,14 +3,24 @@ use crate::{
     core::{
         simd::{self, ImmLaneIdx32},
         FuelCostsProvider,
+        TypedVal,
         ValType,
         V128,
     },
     engine::translator::func2::{op, simd::op as simd_op, Operand},
     ir::{Instruction, Reg},
+    Error,
 };
 use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};
+
+impl FuncTranslator {
+    /// Hacky utility method to convert an immediate value into an [`Operand`].
+    fn immediate_to_operand<T: Into<TypedVal>>(&mut self, value: T) -> Result<Operand, Error> {
+        self.stack.push_immediate(value)?;
+        Ok(self.stack.pop())
+    }
+}
 
 /// Used to swap operands of binary [`Instruction`] constructor.
 macro_rules! swap_ops {
@@ -202,9 +212,10 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_store8_lane,
             Instruction::v128_store8_lane_offset8,
             Instruction::v128_store8_lane_at,
-            |_this, _memarg, _ptr, lane, v128| {
-                let _value = simd::i8x16_extract_lane_s(v128, lane);
-                todo!()
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i8x16_extract_lane_s(v128, lane);
+                let value = this.immediate_to_operand(value)?;
+                this.encode_istore_wrap::<op::I32Store8>(memarg, ptr, value)
             },
         )
     }
@@ -216,9 +227,10 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_store16_lane,
             Instruction::v128_store16_lane_offset8,
             Instruction::v128_store16_lane_at,
-            |_this, _memarg, _ptr, lane, v128| {
-                let _value = simd::i16x8_extract_lane_s(v128, lane);
-                todo!()
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i16x8_extract_lane_s(v128, lane);
+                let value = this.immediate_to_operand(value)?;
+                this.encode_istore_wrap::<op::I32Store16>(memarg, ptr, value)
             },
         )
     }
@@ -230,9 +242,10 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_store32_lane,
             Instruction::v128_store32_lane_offset8,
             Instruction::v128_store32_lane_at,
-            |_this, _memarg, _ptr, lane, v128| {
-                let _value = simd::i32x4_extract_lane(v128, lane);
-                todo!()
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i32x4_extract_lane(v128, lane);
+                let value = this.immediate_to_operand(value)?;
+                this.encode_istore_wrap::<op::I32Store>(memarg, ptr, value)
             },
         )
     }
@@ -244,9 +257,10 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_store64_lane,
             Instruction::v128_store64_lane_offset8,
             Instruction::v128_store64_lane_at,
-            |_this, _memarg, _ptr, lane, v128| {
-                let _value = simd::i64x2_extract_lane(v128, lane);
-                todo!()
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i64x2_extract_lane(v128, lane);
+                let value = this.immediate_to_operand(value)?;
+                this.encode_istore_wrap::<op::I64Store>(memarg, ptr, value)
             },
         )
     }
