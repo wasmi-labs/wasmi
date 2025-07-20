@@ -6,7 +6,7 @@ use crate::{
         ValType,
         V128,
     },
-    engine::translator::func2::{simd::op, Operand},
+    engine::translator::func2::{op, simd::op as simd_op, Operand},
     ir::{Instruction, Reg},
 };
 use core::array;
@@ -351,27 +351,27 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_replace_lane(&mut self, lane: u8) -> Self::Output {
-        self.translate_replace_lane::<op::I8x16ReplaceLane>(lane)
+        self.translate_replace_lane::<simd_op::I8x16ReplaceLane>(lane)
     }
 
     fn visit_i16x8_replace_lane(&mut self, lane: u8) -> Self::Output {
-        self.translate_replace_lane::<op::I16x8ReplaceLane>(lane)
+        self.translate_replace_lane::<simd_op::I16x8ReplaceLane>(lane)
     }
 
     fn visit_i32x4_replace_lane(&mut self, lane: u8) -> Self::Output {
-        self.translate_replace_lane::<op::I32x4ReplaceLane>(lane)
+        self.translate_replace_lane::<simd_op::I32x4ReplaceLane>(lane)
     }
 
     fn visit_i64x2_replace_lane(&mut self, lane: u8) -> Self::Output {
-        self.translate_replace_lane::<op::I64x2ReplaceLane>(lane)
+        self.translate_replace_lane::<simd_op::I64x2ReplaceLane>(lane)
     }
 
     fn visit_f32x4_replace_lane(&mut self, lane: u8) -> Self::Output {
-        self.translate_replace_lane::<op::F32x4ReplaceLane>(lane)
+        self.translate_replace_lane::<simd_op::F32x4ReplaceLane>(lane)
     }
 
     fn visit_f64x2_replace_lane(&mut self, lane: u8) -> Self::Output {
-        self.translate_replace_lane::<op::F64x2ReplaceLane>(lane)
+        self.translate_replace_lane::<simd_op::F64x2ReplaceLane>(lane)
     }
 
     fn visit_i8x16_swizzle(&mut self) -> Self::Output {
