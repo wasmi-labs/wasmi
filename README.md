@@ -128,47 +128,47 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
     <img
       src="./resources/logos/users/soroban-black.svg"
       height="32"
-      style="vertical-align: middle; margin-right: 12px;"
+      style="vertical-align: middle;"
       alt="Stellar Soroban"
     />
   </picture>
-</a>
+</a>&nbsp;
 <a href="https://wasmer.io">
   <img
     src="./resources/logos/users/wasmer.svg"
-    height="32" style="vertical-align: middle; margin-right: 12px;" alt="Wasmer"
+    height="32" style="vertical-align: middle;" alt="Wasmer"
   />
 </a>&nbsp;
 <a href="https://fireflyzero.com">
   <img
     src="./resources/logos/users/firefly-zero.png"
-    height="32" style="vertical-align: middle; margin-right: 12px;" alt="Firefly Zero"
+    height="32" style="vertical-align: middle;" alt="Firefly Zero"
   />
-</a>
+</a>&nbsp;
 <a href="https://typst.app">
   <img
     src="./resources/logos/users/typst.png"
-    height="32" style="vertical-align: middle; margin-right: 12px;" alt="Typst"
+    height="32" style="vertical-align: middle;" alt="Typst"
   />
-</a>
+</a>&nbsp;
 <a href="https://orbitinghail.dev">
   <img
     src="./resources/logos/users/orbitinghail.png"
-    height="32" style="vertical-align: middle; margin-right: 12px;" alt="Orbiting Hail"
+    height="32" style="vertical-align: middle;" alt="Orbiting Hail"
   />
-</a>
+</a>&nbsp;
 <a href="https://github.com/smol-dot/smoldot">
   <img
     src="./resources/logos/users/smoldot.png"
-    height="32" style="vertical-align: middle; margin-right: 12px;" alt="Smoldot"
+    height="32" style="vertical-align: middle;" alt="Smoldot"
   />
-</a>
+</a>&nbsp;
 <a href="https://github.com/Askannz/munal-os">
   <img
     src="./resources/logos/users/munal-os.png"
-    height="32" style="vertical-align: middle; margin-right: 12px;" alt="Munal OS"
+    height="32" style="vertical-align: middle;" alt="Munal OS"
   />
-</a>
+</a>&nbsp;
 
 ## Sponsors
 
