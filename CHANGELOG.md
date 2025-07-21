@@ -8,6 +8,61 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.48.0` - 2025-07-21
+
+### Added
+
+- Added Wasm `reinterpret` operators to `wasmi_core::wasm` API. 
+
+### Changed
+
+- Marked `Module::new_streaming[_unchecked]` API deprecated. [#1540]
+  - Reason for the deprecation:
+    - The streaming Wasm module creation is not a great fit for Wasmi's target usage.
+    - No users are known that depend on this functionality - please inform us if you do!
+    - Streaming Wasm module creating has a performance overhead when not needed.
+- Changed `CompilationMode` default to `CompilationMode::LazyTranslation`. [#1530]
+  - With this default Wasm is still validated eagerly but tranlated to Wasmi IR lazily.
+    This gives the best of both worlds: fast startup times while avoiding partial validation.
+- Update Wasmtime dependencies to v34. [#1563]
+
+### Fixed
+
+- Fixed a bug that `f{32,64}.copysign` with immediate `rhs` operands won't bump fuel. [#1539]
+- Fixed incorrect optimization application for `i64.mul_wide_s`. [#1545] [#1546]
+- Fixed an `integer-overflow` that could happen when reading or writing memory. [#1554]
+
+### Internal
+
+- Optimize `ControlFrame` memory footprint slightly. [#1534]
+- Slightly optimize `fuse_nez` and `fuse_eqz` routines. [#1559]
+- Simplified lots of `FuncTranslator` logic. E.g. [#1542] [#1550] [#1552]
+- Add some new Wasmi specific `.wast` test cases. [#1561] [#1562]
+- Prepare for new Wasmi translator implementation.
+  - [#1532] [#1537] [#1541] [#1553] [#1558] [#1560]
+
+[#1530]: https://github.com/wasmi-labs/wasmi/pull/1530
+[#1534]: https://github.com/wasmi-labs/wasmi/pull/1534
+[#1539]: https://github.com/wasmi-labs/wasmi/pull/1539
+[#1540]: https://github.com/wasmi-labs/wasmi/pull/1540
+[#1542]: https://github.com/wasmi-labs/wasmi/pull/1542
+[#1545]: https://github.com/wasmi-labs/wasmi/pull/1545
+[#1546]: https://github.com/wasmi-labs/wasmi/pull/1546
+[#1550]: https://github.com/wasmi-labs/wasmi/pull/1550
+[#1552]: https://github.com/wasmi-labs/wasmi/pull/1552
+[#1554]: https://github.com/wasmi-labs/wasmi/pull/1554
+[#1555]: https://github.com/wasmi-labs/wasmi/pull/1555
+[#1559]: https://github.com/wasmi-labs/wasmi/pull/1559
+[#1561]: https://github.com/wasmi-labs/wasmi/pull/1561
+[#1562]: https://github.com/wasmi-labs/wasmi/pull/1562
+[#1563]: https://github.com/wasmi-labs/wasmi/pull/1563
+[#1532]: https://github.com/wasmi-labs/wasmi/pull/1532
+[#1537]: https://github.com/wasmi-labs/wasmi/pull/1537
+[#1541]: https://github.com/wasmi-labs/wasmi/pull/1541
+[#1553]: https://github.com/wasmi-labs/wasmi/pull/1553
+[#1558]: https://github.com/wasmi-labs/wasmi/pull/1558
+[#1560]: https://github.com/wasmi-labs/wasmi/pull/1560
+
 ## `0.47.0` - 2025-05-30
 
 ### Changed
