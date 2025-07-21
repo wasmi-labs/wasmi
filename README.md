@@ -42,7 +42,7 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 - Simple, correct and deterministic execution of WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime for embedded environments.
-- JIT bomb resisting translation.
+- Compiler/JIT bomb resisting translation.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
