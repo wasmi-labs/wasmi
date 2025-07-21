@@ -117,29 +117,6 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
 [(#1443)]: https://github.com/wasmi-labs/wasmi/pull/1443
 
-## Development
-
-### Build & Test
-
-Clone the Wasmi repository and build using `cargo`:
-
-```console
-git clone https://github.com/wasmi-labs/wasmi.git --recursive
-cd wasmi
-cargo build
-cargo test
-```
-
-### Benchmarks
-
-In order to benchmark Wasmi use the following command:
-
-```console
-cargo bench
-```
-
-Use `translate`, `instantiate`, `execute` or `overhead` filters to only run benchmarks that test performance of Wasm translation, instantiation, execution or miscellaneous overhead respectively, e.g. `cargo bench execute`.
-
 ## Supported Platforms
 
 Wasmi supports a wide variety of architectures and platforms.
