@@ -152,10 +152,16 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
   />
 </a>&nbsp;
 <a href="https://orbitinghail.dev">
-  <img
-    src="./resources/logos/users/orbitinghail.png"
-    height="32" style="vertical-align: middle;" alt="Orbiting Hail"
-  />
+  <picture>
+    <source srcset="./resources/logos/users/orbitinghail-white.png" media="(prefers-color-scheme: dark)">
+    <source srcset="./resources/logos/users/orbitinghail-black.png" media="(prefers-color-scheme: light)">
+    <img
+      src="./resources/logos/users/orbitinghail-black.svg"
+      height="32"
+      style="vertical-align: middle;"
+      alt="Orbitinghail"
+    />
+  </picture>
 </a>&nbsp;
 <a href="https://github.com/smol-dot/smoldot">
   <img
