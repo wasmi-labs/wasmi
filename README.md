@@ -48,9 +48,10 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 - Built-in support for fuel metering.
 - Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
 
-## Usage
+## Docs
 
-Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
+- [Usage Guide](./docs/usage.md): learn how to use the [Wasmi API](https://crates.io/crates/wasmi) properly.
+- [Development Guide](./docs/developement.md): learn how to develop for Wasmi.
 
 ## WebAssembly Features
 
