@@ -121,13 +121,60 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 If you want your project on this list [please inform me](mailto:robin.freyler@gmail.com) about you project and how Wasmi is used.
 
-[<img src="./resources/logos/users/soroban.svg" height="32"/>](https://stellar.org/soroban)　
-[<img src="./resources/logos/users/wasmer.svg" height="32"/>](https://wasmer.io)　
-[<img src="./resources/logos/users/firefly-zero.png" height="32"/>](https://fireflyzero.com)　
-[<img src="./resources/logos/users/typst.png" height="32"/>](https://typst.app)　
-[<img src="./resources/logos/users/orbitinghail.png" height="32"/>](https://orbitinghail.dev)　
-[<img src="./resources/logos/users/smoldot.png" height="32"/>](https://github.com/smol-dot/smoldot)　
-[<img src="./resources/logos/users/munal-os.png" height="32"/>](https://github.com/Askannz/munal-os)　
+<a href="https://stellar.org/soroban">
+  <picture>
+    <source srcset="./resources/logos/users/soroban-white.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="./resources/logos/users/soroban-black.svg" media="(prefers-color-scheme: light)">
+    <img
+      src="./resources/logos/users/soroban-black.svg"
+      height="32"
+      style="vertical-align: middle;"
+      alt="Stellar Soroban"
+    />
+  </picture>
+</a>&nbsp;
+<a href="https://wasmer.io">
+  <img
+    src="./resources/logos/users/wasmer.svg"
+    height="32" style="vertical-align: middle;" alt="Wasmer"
+  />
+</a>&nbsp;
+<a href="https://fireflyzero.com">
+  <img
+    src="./resources/logos/users/firefly-zero.png"
+    height="32" style="vertical-align: middle;" alt="Firefly Zero"
+  />
+</a>&nbsp;
+<a href="https://typst.app">
+  <img
+    src="./resources/logos/users/typst.png"
+    height="32" style="vertical-align: middle;" alt="Typst"
+  />
+</a>&nbsp;
+<a href="https://orbitinghail.dev">
+  <picture>
+    <source srcset="./resources/logos/users/orbitinghail-white.png" media="(prefers-color-scheme: dark)">
+    <source srcset="./resources/logos/users/orbitinghail-black.png" media="(prefers-color-scheme: light)">
+    <img
+      src="./resources/logos/users/orbitinghail-black.svg"
+      height="32"
+      style="vertical-align: middle;"
+      alt="Orbitinghail"
+    />
+  </picture>
+</a>&nbsp;
+<a href="https://github.com/smol-dot/smoldot">
+  <img
+    src="./resources/logos/users/smoldot.png"
+    height="32" style="vertical-align: middle;" alt="Smoldot"
+  />
+</a>&nbsp;
+<a href="https://github.com/Askannz/munal-os">
+  <img
+    src="./resources/logos/users/munal-os.png"
+    height="32" style="vertical-align: middle;" alt="Munal OS"
+  />
+</a>&nbsp;
 
 ## Sponsors
 
@@ -138,11 +185,16 @@ Special thanks to the past and present sponsors of the Wasmi project.
     <td align="center" style="padding: 10px; width: 200px;">
       <div style="height: 50px; display: flex; flex-direction: column; justify-content: flex-end;">
         <a href="https://stellar.org/foundation">
-          <img
-            src="./resources/logos/sponsors/stellar-development-foundation.svg"
-            height="64"
-            alt="Stellar Development Foundation"
-          />
+          <picture>
+            <source srcset="./resources/logos/sponsors/sdf-white.svg" media="(prefers-color-scheme: dark)">
+            <source srcset="./resources/logos/sponsors/sdf-black.svg" media="(prefers-color-scheme: light)">
+            <img
+              src="./resources/logos/sponsors/sdf-black.svg"
+              height="64"
+              alt="Stellar Development Foundation"
+              style="display: inline-block"
+            />
+          </picture>
         </a>
       </div>
       <div><sub>Sponsoring since Oct. 2024</sub></div>
