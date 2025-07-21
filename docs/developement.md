@@ -58,6 +58,13 @@ Wasmi has some built-in fuzzers that are even used in Google's OSSFuzz.
 - `execute`: optimized to find crashes and bugs during Wasmi execution
 - `differential`: finds mismatches between different Wasm runtimes
     - Wasm runtimes compared against trunc Wasmi are Wasmtime and an old Wasmi v0.31
+    - Requires the `differential` crate feature.
+
+Example usage:
+
+```
+cargo +nightly fuzz run differential --features differential
+```
 
 ## Publishing a Release
 
