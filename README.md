@@ -117,6 +117,66 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
 [(#1443)]: https://github.com/wasmi-labs/wasmi/pull/1443
 
+## Used by
+
+If you want your project on this list [please inform me](mailto:robin.freyler@gmail.com) about you project and how Wasmi is used.
+
+<a href="https://stellar.org/soroban" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/soroban.svg" height="32" style="margin-right:6px;" alt="Soroban"/>
+</a>
+<a href="https://wasmer.io" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/wasmer.svg" height="32" style="margin-right:6px;" alt="Wasmer"/>
+</a>
+<a href="https://fireflyzero.com/" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/firefly-zero.png" height="32" style="margin-right:6px;" alt="Firefly-Zero logo"/>
+</a>
+<a href="https://typst.app/" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/typst.png" height="32" style="margin-right:6px;" alt="Typst"/>
+</a>
+<a href="https://orbitinghail.dev/" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/orbitinghail.png" height="32" style="margin-right:6px;" alt="Orbitinghail"/>
+</a>
+<a href="https://github.com/smol-dot/smoldot" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/smoldot.png" height="32" style="margin-right:6px;" alt="Orbitinghail"/>
+</a>
+<a href="https://github.com/Askannz/munal-os" style="display:inline-flex; align-items:center; margin:2px; padding:4px 8px; text-decoration:none; color:inherit; border-radius:4px;">
+  <img src="./resources/logos/users/munal-os.png" height="32" style="margin-right:6px;" alt="Munal OS logo"/>
+  <strong style="font-size: 27px;">Munal OS</strong>
+</a>
+
+## Sponsors
+
+Special thanks to the past and present sponsors of the Wasmi project.
+
+<table>
+  <tr>
+    <td align="center" style="padding: 10px; width: 200px;">
+      <div style="height: 50px; display: flex; flex-direction: column; justify-content: flex-end;">
+        <a href="https://stellar.org/foundation">
+          <img
+            src="./resources/logos/sponsors/stellar-development-foundation.svg"
+            height="64"
+            alt="Stellar Development Foundation"
+          />
+        </a>
+      </div>
+      <div><sub>Sponsoring since Oct. 2024</sub></div>
+    </td>
+    <td align="center" style="padding: 10px; width: 200px;">
+      <div style="height: 50px; display: flex; flex-direction: column; justify-content: flex-end;">
+        <a href="https://parity.io">
+          <img
+            src="./resources/logos/sponsors/parity.svg"
+            height="32"
+            alt="Parity Technologies"
+          />
+        </a>
+      </div>
+      <div><sub>Sponsored until Oct. 2024</sub></div>
+    </td>
+  </tr>
+</table>
+
 ## Supported Platforms
 
 Wasmi supports a wide variety of architectures and platforms.
