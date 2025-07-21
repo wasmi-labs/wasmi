@@ -122,8 +122,7 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 Wasmi supports a wide variety of architectures and platforms.
 
 - Fore more details see this [list of supported platforms for Rust](https://doc.rust-lang.org/stable/rustc/platform-support.html).
-- **Note:** Wasmi can be used in `no_std` embedded environments, thus not requiring the standard library (`std`).
-- Only some platforms are checked in CI and guaranteed to be fully working by the Wasmi maintainers.
+- Wasmi supports `no_std` embedded environments, thus not requiring the standard library (`std`).
 
 ## License
 
