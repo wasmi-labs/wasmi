@@ -138,11 +138,16 @@ Special thanks to the past and present sponsors of the Wasmi project.
     <td align="center" style="padding: 10px; width: 200px;">
       <div style="height: 50px; display: flex; flex-direction: column; justify-content: flex-end;">
         <a href="https://stellar.org/foundation">
-          <img
-            src="./resources/logos/sponsors/stellar-development-foundation.svg"
-            height="64"
-            alt="Stellar Development Foundation"
-          />
+          <picture>
+            <source srcset="./resources/logos/sponsors/sdf-white.svg" media="(prefers-color-scheme: dark)">
+            <source srcset="./resources/logos/sponsors/sdf-black.svg" media="(prefers-color-scheme: light)">
+            <img
+              src="./resources/logos/sponsors/sdf-black.svg"
+              height="64"
+              alt="Stellar Development Foundation"
+              style="display: inline-block"
+            />
+          </picture>
         </a>
       </div>
       <div><sub>Sponsoring since Oct. 2024</sub></div>
