@@ -8,6 +8,16 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.48.0` - 2025-07-21
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Internal
+
 ## `0.47.0` - 2025-05-30
 
 ### Changed
