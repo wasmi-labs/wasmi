@@ -42,15 +42,17 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 - Simple, correct and deterministic execution of WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime for embedded environments.
-- JIT bomb resisting translation.
+- Compiler/JIT bomb resisting translation.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
 - Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
 
-## Usage
+## Docs
 
-Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
+- 📖 [Usage Guide](./docs/usage.md): learn how to use the [Wasmi API](https://crates.io/crates/wasmi) properly.
+- 🛠️ [Development Guide](./docs/developement.md): learn how to develop for Wasmi.
+- ✨ [Crate Features](https://docs.rs/wasmi/latest/wasmi/#crate-features): learn about `wasmi` crate features.
 
 ## WebAssembly Features
 
@@ -115,54 +117,19 @@ Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
 [(#1443)]: https://github.com/wasmi-labs/wasmi/pull/1443
 
-## Crate Features
-
-| Feature | Crates | Description |
-|:-:|:--|:--|
-| `std` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_collections` | Enables usage of Rust's standard library. This may have some performance advantages when enabled. Disabling this feature makes Wasmi compile on platforms that do not provide Rust's standard library such as many embedded platforms. <br><br> Enabled by default. |
-| `wat` | `wasmi` | Enables support to parse Wat encoded Wasm modules. <br><br> Enabled by default. |
-| `simd` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_cli` | Enables support for the Wasm `simd` and `relaxed-simd` proposals. Note that this may introduce execution overhead and increased memory consumption for Wasm executions that do not need Wasm `simd` functionality. <br><br> Disabled by default. |
-| `hash-collections` | `wasmi`<br>`wasmi_collections` | Enables use of hash-map based collections in Wasmi internals. This might yield performance improvements in some use cases. <br><br> Disabled by default. |
-| `prefer-btree-collections` | `wasmi`<br>`wasmi_collections` | Enforces use of btree-map based collections in Wasmi internals. This may yield performance improvements and memory consumption decreases in some use cases. Also it enables Wasmi to run on platforms that have no random source. <br><br> Disabled by default. |
-| `extra-checks` | `wasmi` | Enables extra runtime checks in the Wasmi executor. Expected execution overhead is ~20%. Enable this if your focus is on safety. Disable this for maximum execution performance. <br><br> Disabled by default. |
-
-## Development
-
-### Build & Test
-
-Clone the Wasmi repository and build using `cargo`:
-
-```console
-git clone https://github.com/wasmi-labs/wasmi.git --recursive
-cd wasmi
-cargo build
-cargo test
-```
-
-### Benchmarks
-
-In order to benchmark Wasmi use the following command:
-
-```console
-cargo bench
-```
-
-Use `translate`, `instantiate`, `execute` or `overhead` filters to only run benchmarks that test performance of Wasm translation, instantiation, execution or miscellaneous overhead respectively, e.g. `cargo bench execute`.
-
 ## Supported Platforms
 
 Wasmi supports a wide variety of architectures and platforms.
 
 - Fore more details see this [list of supported platforms for Rust](https://doc.rust-lang.org/stable/rustc/platform-support.html).
-- **Note:** Wasmi can be used in `no_std` embedded environments, thus not requiring the standard library (`std`).
-- Only some platforms are checked in CI and guaranteed to be fully working by the Wasmi maintainers.
+- Wasmi supports `no_std` embedded environments, thus not requiring the standard library (`std`).
 
 ## License
 
 Licensed under either of
 
-  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
-  * MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <https://www.apache.org/licenses/LICENSE-2.0>)
+  * MIT license ([LICENSE-MIT](LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
 
 at your option.
 
