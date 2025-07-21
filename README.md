@@ -144,6 +144,39 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
   <strong style="font-size: 27px;">Munal OS</strong>
 </a>
 
+## Sponsors
+
+Special thanks to the past and present sponsors of the Wasmi project.
+
+<table>
+  <tr>
+    <td align="center" style="padding: 10px; width: 200px;">
+      <div style="height: 50px; display: flex; flex-direction: column; justify-content: flex-end;">
+        <a href="https://stellar.org/foundation">
+          <img
+            src="./resources/logos/sponsors/stellar-development-foundation.svg"
+            height="64"
+            alt="Stellar Development Foundation"
+          />
+        </a>
+      </div>
+      <div><sub>Sponsoring since Oct. 2024</sub></div>
+    </td>
+    <td align="center" style="padding: 10px; width: 200px;">
+      <div style="height: 50px; display: flex; flex-direction: column; justify-content: flex-end;">
+        <a href="https://parity.io">
+          <img
+            src="./resources/logos/sponsors/parity.svg"
+            height="32"
+            alt="Parity Technologies"
+          />
+        </a>
+      </div>
+      <div><sub>Sponsored until Oct. 2024</sub></div>
+    </td>
+  </tr>
+</table>
+
 ## Supported Platforms
 
 Wasmi supports a wide variety of architectures and platforms.
