@@ -117,6 +117,31 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
 [(#1443)]: https://github.com/wasmi-labs/wasmi/pull/1443
 
+## Used by
+
+<a href="https://stellar.org/soroban" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/soroban.svg" height="32" style="margin-right:6px;" alt="Soroban"/>
+</a>
+<a href="https://wasmer.io" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/wasmer.svg" height="32" style="margin-right:6px;" alt="Wasmer"/>
+</a>
+<a href="https://fireflyzero.com/" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/firefly-zero.png" height="32" style="margin-right:6px;" alt="Firefly-Zero logo"/>
+</a>
+<a href="https://typst.app/" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/typst.png" height="32" style="margin-right:6px;" alt="Typst"/>
+</a>
+<a href="https://orbitinghail.dev/" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/orbitinghail.png" height="32" style="margin-right:6px;" alt="Orbitinghail"/>
+</a>
+<a href="https://github.com/smol-dot/smoldot" style="margin:2px; padding:4px 8px; border-radius:4px;">
+  <img src="./resources/logos/users/smoldot.png" height="32" style="margin-right:6px;" alt="Orbitinghail"/>
+</a>
+<a href="https://github.com/Askannz/munal-os" style="display:inline-flex; align-items:center; margin:2px; padding:4px 8px; text-decoration:none; color:inherit; border-radius:4px;">
+  <img src="./resources/logos/users/munal-os.png" height="32" style="margin-right:6px;" alt="Munal OS logo"/>
+  <strong style="font-size: 27px;">Munal OS</strong>
+</a>
+
 ## Supported Platforms
 
 Wasmi supports a wide variety of architectures and platforms.
