@@ -202,6 +202,7 @@ macro_rules! expand_tests {
             fn wasmi_wide_arithmetic("../../local/wide-arithmetic");
             fn wasmi_replace_result("../../local/replace-result");
             fn wasmi_local_tee("../../local/local-tee");
+            fn wasmi_if("../../local/if");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
