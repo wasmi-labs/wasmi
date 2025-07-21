@@ -50,9 +50,9 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 ## Docs
 
-- [📖 Usage Guide](./docs/usage.md): learn how to use the [Wasmi API](https://crates.io/crates/wasmi) properly.
-- [🛠️ Development Guide](./docs/developement.md): learn how to develop for Wasmi.
-- [✨ Crate Features](https://docs.rs/wasmi/latest/wasmi/#crate-features): learn about `wasmi` crate features.
+- 📖 [Usage Guide](./docs/usage.md): learn how to use the [Wasmi API](https://crates.io/crates/wasmi) properly.
+- 🛠️ [Development Guide](./docs/developement.md): learn how to develop for Wasmi.
+- ✨ [Crate Features](https://docs.rs/wasmi/latest/wasmi/#crate-features): learn about `wasmi` crate features.
 
 ## WebAssembly Features
 
