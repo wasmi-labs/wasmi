@@ -52,6 +52,7 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 - [Usage Guide](./docs/usage.md): learn how to use the [Wasmi API](https://crates.io/crates/wasmi) properly.
 - [Development Guide](./docs/developement.md): learn how to develop for Wasmi.
+- [Crate Features](https://docs.rs/wasmi/latest/wasmi/#crate-features): learn about `wasmi` crate features.
 
 ## WebAssembly Features
 
@@ -115,17 +116,6 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 [(#1364)]: https://github.com/wasmi-labs/wasmi/issues/1364
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
 [(#1443)]: https://github.com/wasmi-labs/wasmi/pull/1443
-
-## Crate Features
-
-| Feature | Crates | Description |
-|:-:|:--|:--|
-| `std` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_collections` | Enables usage of Rust's standard library. This may have some performance advantages when enabled. Disabling this feature makes Wasmi compile on platforms that do not provide Rust's standard library such as many embedded platforms. <br><br> Enabled by default. |
-| `wat` | `wasmi` | Enables support to parse Wat encoded Wasm modules. <br><br> Enabled by default. |
-| `simd` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_cli` | Enables support for the Wasm `simd` and `relaxed-simd` proposals. Note that this may introduce execution overhead and increased memory consumption for Wasm executions that do not need Wasm `simd` functionality. <br><br> Disabled by default. |
-| `hash-collections` | `wasmi`<br>`wasmi_collections` | Enables use of hash-map based collections in Wasmi internals. This might yield performance improvements in some use cases. <br><br> Disabled by default. |
-| `prefer-btree-collections` | `wasmi`<br>`wasmi_collections` | Enforces use of btree-map based collections in Wasmi internals. This may yield performance improvements and memory consumption decreases in some use cases. Also it enables Wasmi to run on platforms that have no random source. <br><br> Disabled by default. |
-| `extra-checks` | `wasmi` | Enables extra runtime checks in the Wasmi executor. Expected execution overhead is ~20%. Enable this if your focus is on safety. Disable this for maximum execution performance. <br><br> Disabled by default. |
 
 ## Development
 
