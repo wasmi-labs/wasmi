@@ -121,7 +121,7 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 If you want your project on this list [please inform me](mailto:robin.freyler@gmail.com) about you project and how Wasmi is used.
 
-<a href="https://stellar.org/soroban" style="margin-right: 8px;">
+<a href="https://stellar.org/soroban" style="margin-right: 12px;">
   <picture>
     <source srcset="./resources/logos/users/soroban-white.svg" media="(prefers-color-scheme: dark)">
     <source srcset="./resources/logos/users/soroban-black.svg" media="(prefers-color-scheme: light)">
@@ -133,37 +133,37 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
     />
   </picture>
 </a>
-<a href="https://wasmer.io" style="margin-right: 8px;">
+<a href="https://wasmer.io" style="margin-right: 12px;">
   <img
     src="./resources/logos/users/wasmer.svg"
     height="32" style="vertical-align: middle" alt="Wasmer"
   />
 </a>&nbsp;
-<a href="https://fireflyzero.com" style="margin-right: 8px;">
+<a href="https://fireflyzero.com" style="margin-right: 12px;">
   <img
     src="./resources/logos/users/firefly-zero.png"
     height="32" style="vertical-align: middle" alt="Firefly Zero"
   />
 </a>
-<a href="https://typst.app" style="margin-right: 8px;">
+<a href="https://typst.app" style="margin-right: 12px;">
   <img
     src="./resources/logos/users/typst.png"
     height="32" style="vertical-align: middle" alt="Typst"
   />
 </a>
-<a href="https://orbitinghail.dev" style="margin-right: 8px;">
+<a href="https://orbitinghail.dev" style="margin-right: 12px;">
   <img
     src="./resources/logos/users/orbitinghail.png"
     height="32" style="vertical-align: middle" alt="Orbiting Hail"
   />
 </a>
-<a href="https://github.com/smol-dot/smoldot" style="margin-right: 8px;">
+<a href="https://github.com/smol-dot/smoldot" style="margin-right: 12px;">
   <img
     src="./resources/logos/users/smoldot.png"
     height="32" style="vertical-align: middle" alt="Smoldot"
   />
 </a>
-<a href="https://github.com/Askannz/munal-os" style="margin-right: 8px;">
+<a href="https://github.com/Askannz/munal-os" style="margin-right: 12px;">
   <img
     src="./resources/logos/users/munal-os.png"
     height="32" style="vertical-align: middle" alt="Munal OS"
