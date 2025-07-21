@@ -972,7 +972,7 @@ impl FuncTranslator {
         let IfReachability::Both { else_label } = frame.reachability() else {
             let is_end_reachable = match frame.reachability() {
                 IfReachability::OnlyThen => self.reachable,
-                IfReachability::OnlyElse => false,
+                IfReachability::OnlyElse => true,
                 IfReachability::Both { .. } => unreachable!(),
             };
             return self.translate_end_if_or_else_only(frame, is_end_reachable);
