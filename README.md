@@ -119,6 +119,8 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 ## Used by
 
+If you want your project on this list [please inform me](mailto:robin.freyler@gmail.com) about you project and how Wasmi is used.
+
 <a href="https://stellar.org/soroban" style="margin:2px; padding:4px 8px; border-radius:4px;">
   <img src="./resources/logos/users/soroban.svg" height="32" style="margin-right:6px;" alt="Soroban"/>
 </a>
