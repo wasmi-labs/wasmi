@@ -203,6 +203,7 @@ macro_rules! expand_tests {
             fn wasmi_replace_result("../../local/replace-result");
             fn wasmi_local_tee("../../local/local-tee");
             fn wasmi_if("../../local/if");
+            fn wasmi_fuse_cmp("../../local/fuse-cmp");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
