@@ -1976,6 +1976,7 @@ impl FuncTranslator {
                         |result| Instruction::copy(result, selected),
                         FuelCostsProvider::base,
                     )?;
+                    return Ok(());
                 }
             }
             self.stack.push_operand(selected)?;
