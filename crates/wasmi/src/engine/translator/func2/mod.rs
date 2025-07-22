@@ -2066,13 +2066,13 @@ impl FuncTranslator {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
-        let Operand::Temp(lhs_opd) = lhs else {
+        let Operand::Temp(lhs) = lhs else {
             // Case: cannot fuse non-temporary operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        let Some(origin) = lhs_opd.instr() else {
+        let Some(origin) = lhs.instr() else {
             // Case: `lhs` has no origin instruciton, thus not possible to fuse.
             return Ok(false);
         };
@@ -2080,7 +2080,7 @@ impl FuncTranslator {
             // Case: `lhs`'s origin instruction does not match the last instruction
             return Ok(false);
         }
-        let lhs_reg = self.layout.temp_to_reg(lhs_opd.operand_index())?;
+        let lhs_reg = self.layout.temp_to_reg(lhs.operand_index())?;
         let last_instruction = self.instrs.get(last_instr);
         let Some(result) = last_instruction.compare_result() else {
             // Case: cannot fuse non-cmp instructions
@@ -2098,7 +2098,9 @@ impl FuncTranslator {
             // Case: could not replace the `cmp` instruction with the fused one
             return Ok(false);
         }
-        self.stack.push_operand(lhs)?;
+        // Need to push back `lhs` but with its type adjusted to be `i32`
+        // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
+        self.stack.push_temp(ValType::I32, lhs.instr())?;
         Ok(true)
     }
 
