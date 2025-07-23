@@ -93,7 +93,7 @@ impl<T> Store<T> {
     /// growable resource such as a linear memory or table is grown.
     pub fn limiter(
         &mut self,
-        limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
+        limiter: impl (FnMut(&mut T) -> &mut dyn ResourceLimiter) + Send + Sync + 'static,
     ) {
         self.typed.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
@@ -315,7 +315,7 @@ impl<T> TypedStoreInner<T> {
 /// This wrapper exists both to make types a little easier to read and to
 /// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
 /// contain it.
-struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
+struct ResourceLimiterQuery<T>(Box<dyn (FnMut(&mut T) -> &mut dyn ResourceLimiter) + Send + Sync>);
 impl<T> Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterQuery<{}>(...)", type_name::<T>())
