@@ -41,6 +41,7 @@ use crate::{
                 CompareResult as _,
                 LogicalizeCmpInstr,
                 NegateCmpInstr,
+                ReplaceCmpResult,
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
@@ -2057,7 +2058,7 @@ impl FuncTranslator {
         &mut self,
         lhs: Operand,
         rhs: T,
-        f: fn(&Instruction) -> Option<Instruction>,
+        try_fuse: fn(cmp: &Instruction) -> Option<Instruction>,
     ) -> Result<bool, Error> {
         if !rhs.is_zero() {
             // Case: cannot fuse with non-zero `rhs`
@@ -2091,17 +2092,22 @@ impl FuncTranslator {
             // Case: the `cmp` instruction does not feed into the `eqz` and cannot be fused
             return Ok(false);
         }
-        let Some(negated) = f(last_instruction) else {
+        let Some(negated) = try_fuse(last_instruction) else {
             // Case: the `cmp` instruction cannot be negated
             return Ok(false);
         };
-        if !self.instrs.try_replace_instr(last_instr, negated)? {
-            // Case: could not replace the `cmp` instruction with the fused one
-            return Ok(false);
-        }
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        self.stack.push_temp(ValType::I32, lhs.instr())?;
+        let result_idx = self.stack.push_temp(ValType::I32, lhs.instr())?;
+        // Need to replace `cmp` instruction result register since it might
+        // have been misaligned if `lhs` originally referred to the zero operand.
+        let new_result = self.layout.temp_to_reg(result_idx)?;
+        let Some(negated) = negated.replace_cmp_result(new_result) else {
+            unreachable!("`negated` has been asserted as `cmp` instruction");
+        };
+        if !self.instrs.try_replace_instr(last_instr, negated)? {
+            unreachable!("`negated` has been asserted to be `last_instr`");
+        }
         Ok(true)
     }
 
