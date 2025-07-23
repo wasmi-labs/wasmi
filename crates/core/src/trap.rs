@@ -117,7 +117,7 @@ impl Trap {
     {
         self.reason
             .as_host()
-            .and_then(<(dyn HostError + 'static)>::downcast_ref)
+            .and_then(<dyn HostError + 'static>::downcast_ref)
     }
 
     /// Downcasts the [`Trap`] into the `T: HostError` if possible.
@@ -130,7 +130,7 @@ impl Trap {
     {
         self.reason
             .as_host_mut()
-            .and_then(<(dyn HostError + 'static)>::downcast_mut)
+            .and_then(<dyn HostError + 'static>::downcast_mut)
     }
 
     /// Consumes `self` to downcast the [`Trap`] into the `T: HostError` if possible.
