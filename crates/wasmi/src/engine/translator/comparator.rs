@@ -125,6 +125,106 @@ impl CompareResult for Instruction {
     }
 }
 
+#[cfg(feature = "experimental-translator")]
+pub trait ReplaceCmpResult: Sized {
+    /// Returns `self` `cmp` instruction with the `new_result`.
+    ///
+    /// Returns `None` if `self` is not a `cmp` instruction.
+    fn replace_cmp_result(&self, new_result: Reg) -> Option<Self>;
+}
+
+#[cfg(feature = "experimental-translator")]
+impl ReplaceCmpResult for Instruction {
+    fn replace_cmp_result(&self, new_result: Reg) -> Option<Self> {
+        use crate::ir::Instruction as I;
+        let mut copy = *self;
+        match &mut copy {
+            | I::I32BitAnd { result, .. }
+            | I::I32BitAndImm16 { result, .. }
+            | I::I32BitOr { result, .. }
+            | I::I32BitOrImm16 { result, .. }
+            | I::I32BitXor { result, .. }
+            | I::I32BitXorImm16 { result, .. }
+            | I::I32And { result, .. }
+            | I::I32AndImm16 { result, .. }
+            | I::I32Or { result, .. }
+            | I::I32OrImm16 { result, .. }
+            | I::I32Xor { result, .. }
+            | I::I32XorImm16 { result, .. }
+            | I::I32Nand { result, .. }
+            | I::I32NandImm16 { result, .. }
+            | I::I32Nor { result, .. }
+            | I::I32NorImm16 { result, .. }
+            | I::I32Xnor { result, .. }
+            | I::I32XnorImm16 { result, .. }
+            | I::I32Eq { result, .. }
+            | I::I32EqImm16 { result, .. }
+            | I::I32Ne { result, .. }
+            | I::I32NeImm16 { result, .. }
+            | I::I32LtS { result, .. }
+            | I::I32LtSImm16Lhs { result, .. }
+            | I::I32LtSImm16Rhs { result, .. }
+            | I::I32LtU { result, .. }
+            | I::I32LtUImm16Lhs { result, .. }
+            | I::I32LtUImm16Rhs { result, .. }
+            | I::I32LeS { result, .. }
+            | I::I32LeSImm16Lhs { result, .. }
+            | I::I32LeSImm16Rhs { result, .. }
+            | I::I32LeU { result, .. }
+            | I::I32LeUImm16Lhs { result, .. }
+            | I::I32LeUImm16Rhs { result, .. }
+            | I::I64BitAnd { result, .. }
+            | I::I64BitAndImm16 { result, .. }
+            | I::I64BitOr { result, .. }
+            | I::I64BitOrImm16 { result, .. }
+            | I::I64BitXor { result, .. }
+            | I::I64BitXorImm16 { result, .. }
+            | I::I64And { result, .. }
+            | I::I64AndImm16 { result, .. }
+            | I::I64Or { result, .. }
+            | I::I64OrImm16 { result, .. }
+            | I::I64Xor { result, .. }
+            | I::I64XorImm16 { result, .. }
+            | I::I64Nand { result, .. }
+            | I::I64NandImm16 { result, .. }
+            | I::I64Nor { result, .. }
+            | I::I64NorImm16 { result, .. }
+            | I::I64Xnor { result, .. }
+            | I::I64XnorImm16 { result, .. }
+            | I::I64Eq { result, .. }
+            | I::I64EqImm16 { result, .. }
+            | I::I64Ne { result, .. }
+            | I::I64NeImm16 { result, .. }
+            | I::I64LtS { result, .. }
+            | I::I64LtSImm16Lhs { result, .. }
+            | I::I64LtSImm16Rhs { result, .. }
+            | I::I64LtU { result, .. }
+            | I::I64LtUImm16Lhs { result, .. }
+            | I::I64LtUImm16Rhs { result, .. }
+            | I::I64LeS { result, .. }
+            | I::I64LeSImm16Lhs { result, .. }
+            | I::I64LeSImm16Rhs { result, .. }
+            | I::I64LeU { result, .. }
+            | I::I64LeUImm16Lhs { result, .. }
+            | I::I64LeUImm16Rhs { result, .. }
+            | I::F32Eq { result, .. }
+            | I::F32Ne { result, .. }
+            | I::F32Lt { result, .. }
+            | I::F32Le { result, .. }
+            | I::F32NotLt { result, .. }
+            | I::F32NotLe { result, .. }
+            | I::F64Eq { result, .. }
+            | I::F64Ne { result, .. }
+            | I::F64Lt { result, .. }
+            | I::F64Le { result, .. }
+            | I::F64NotLt { result, .. }
+            | I::F64NotLe { result, .. } => *result = new_result,
+            _ => return None,
+        };
+        Some(copy)
+    }
+}
+
 pub trait NegateCmpInstr: Sized {
     /// Negates the compare (`cmp`) [`Instruction`].
     fn negate_cmp_instr(&self) -> Option<Self>;
