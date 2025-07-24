@@ -97,6 +97,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::Block)?;
             return Ok(());
         }
+        self.preserve_all_locals()?;
         let block_ty = BlockType::new(block_ty, &self.module);
         let end_label = self.labels.new_label();
         self.stack.push_block(block_ty, end_label)?;
@@ -129,6 +130,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let end_label = self.labels.new_label();
         let condition = self.stack.pop();
+        self.preserve_all_locals()?;
         let (reachability, consume_fuel_instr) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());

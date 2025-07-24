@@ -587,6 +587,43 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Preserves all local operands on the stack.
+    ///
+    /// # Note
+    ///
+    /// This works by encoding copy instructions to `temp` register space.
+    fn preserve_all_locals(&mut self) -> Result<(), Error> {
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        for local in self.stack.preserve_all_locals() {
+            debug_assert!(matches!(local, Operand::Local(_)));
+            let result = self.layout.temp_to_reg(local.index())?;
+            let copy_instr = Self::make_copy_instr(result, local, &mut self.layout)?;
+            self.instrs
+                .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+        }
+        Ok(())
+    }
+
+    /// Returns the copy instruction to copy the given `operand` to `result`.
+    fn make_copy_instr(
+        result: Reg,
+        value: Operand,
+        layout: &mut StackLayout,
+    ) -> Result<Instruction, Error> {
+        let instr = match value {
+            Operand::Temp(value) => {
+                let value = layout.temp_to_reg(value.operand_index())?;
+                Instruction::copy(result, value)
+            }
+            Operand::Local(value) => {
+                let value = layout.local_to_reg(value.local_index())?;
+                Instruction::copy(result, value)
+            }
+            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val(), layout)?,
+        };
+        Ok(instr)
+    }
+
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
     fn make_copy_imm_instr(
         result: Reg,

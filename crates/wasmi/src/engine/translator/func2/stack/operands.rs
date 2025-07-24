@@ -306,6 +306,22 @@ impl OperandStack {
         }
     }
 
+    /// Preserve all locals on the [`OperandStack`].
+    ///
+    /// This is done by converting those locals to [`StackOperand::Temp`] and yielding them.
+    ///
+    /// # Note
+    ///
+    /// The users must fully consume all items yielded by the returned iterator in order
+    /// for the local preservation to take full effect.
+    #[must_use]
+    pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
+        PreservedAllLocalsIter {
+            operands: self,
+            index: 0,
+        }
+    }
+
     /// Unlinks the [`StackOperand::Local`] `operand` at `index` from `self`.
     ///
     /// Does nothing if `operand` is not a [`StackOperand::Local`].
@@ -357,6 +373,33 @@ impl OperandStack {
             }
             operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
         }
+    }
+}
+
+/// Iterator yielding preserved local indices while preserving them.
+#[derive(Debug)]
+pub struct PreservedAllLocalsIter<'stack> {
+    /// The underlying operand stack.
+    operands: &'stack mut OperandStack,
+    /// The current operand index of the next preserved local if any.
+    index: usize,
+}
+
+impl Iterator for PreservedAllLocalsIter<'_> {
+    type Item = Operand;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        'a: loop {
+            let opd = self.operands.operands.get(self.index)?;
+            if let StackOperand::Local { .. } = opd {
+                break 'a;
+            }
+            self.index += 1;
+        }
+        let index = OperandIdx::from(self.index);
+        let operand = self.operands.operand_to_temp_at(index);
+        debug_assert!(matches!(operand, StackOperand::Local { .. }));
+        Some(Operand::new(index, operand, &self.operands.locals))
     }
 }
 

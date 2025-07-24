@@ -23,7 +23,7 @@ pub use self::{
     },
     locals::LocalIdx,
     operand::{ImmediateOperand, Operand, TempOperand},
-    operands::{OperandIdx, PreservedLocalsIter},
+    operands::{OperandIdx, PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
@@ -489,6 +489,19 @@ impl Stack {
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
         self.operands.preserve_locals(local_index)
+    }
+
+    /// Preserve all locals on the [`OperandStack`].
+    ///
+    /// This is done by converting those locals to [`StackOperand::Temp`] and yielding them.
+    ///
+    /// # Note
+    ///
+    /// The users must fully consume all items yielded by the returned iterator in order
+    /// for the local preservation to take full effect.
+    #[must_use]
+    pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
+        self.operands.preserve_all_locals()
     }
 
     /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].
