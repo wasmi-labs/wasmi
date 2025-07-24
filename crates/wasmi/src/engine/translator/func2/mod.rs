@@ -452,40 +452,9 @@ impl FuncTranslator {
             1 => {
                 let result = results.head();
                 let copy_instr = match self.stack.peek(0) {
-                    Operand::Immediate(operand) => match operand.ty() {
-                        ValType::I32 => {
-                            let value = i32::from(operand.val());
-                            Instruction::copy_imm32(result, value)
-                        }
-                        ValType::I64 => {
-                            let value = i64::from(operand.val());
-                            match Const32::try_from(value) {
-                                Ok(value) => Instruction::copy_i64imm32(result, value),
-                                Err(_) => {
-                                    let value = self.layout.const_to_reg(value)?;
-                                    Instruction::copy(result, value)
-                                }
-                            }
-                        }
-                        ValType::F32 => {
-                            let value = f32::from(operand.val());
-                            Instruction::copy_imm32(result, value)
-                        }
-                        ValType::F64 => {
-                            let value = f64::from(operand.val());
-                            match Const32::try_from(value) {
-                                Ok(value) => Instruction::copy_f64imm32(result, value),
-                                Err(_) => {
-                                    let value = self.layout.const_to_reg(value)?;
-                                    Instruction::copy(result, value)
-                                }
-                            }
-                        }
-                        ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                            let value = self.layout.const_to_reg(operand.val())?;
-                            Instruction::copy(result, value)
-                        }
-                    },
+                    Operand::Immediate(operand) => {
+                        Self::make_copy_imm_instr(result, operand.val(), &mut self.layout)?
+                    }
                     operand => {
                         let value = self.layout.operand_to_reg(operand)?;
                         if result == value {
@@ -610,7 +579,7 @@ impl FuncTranslator {
             }
             Operand::Immediate(operand) => {
                 let result = self.layout.temp_to_reg(operand.operand_index())?;
-                self.make_copy_imm_instr(result, operand.val())?
+                Self::make_copy_imm_instr(result, operand.val(), &mut self.layout)?
             }
         };
         self.instrs
@@ -618,8 +587,12 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Returns the copy instruction to copy the given immediate `value`.
-    fn make_copy_imm_instr(&mut self, result: Reg, value: TypedVal) -> Result<Instruction, Error> {
+    /// Returns the copy instruction to copy the given immediate `value` to `result`.
+    fn make_copy_imm_instr(
+        result: Reg,
+        value: TypedVal,
+        layout: &mut StackLayout,
+    ) -> Result<Instruction, Error> {
         let instr = match value.ty() {
             ValType::I32 => Instruction::copy_imm32(result, i32::from(value)),
             ValType::I64 => {
@@ -627,7 +600,7 @@ impl FuncTranslator {
                 match <Const32<i64>>::try_from(value) {
                     Ok(value) => Instruction::copy_i64imm32(result, value),
                     Err(_) => {
-                        let value = self.layout.const_to_reg(value)?;
+                        let value = layout.const_to_reg(value)?;
                         Instruction::copy(result, value)
                     }
                 }
@@ -638,13 +611,13 @@ impl FuncTranslator {
                 match <Const32<f64>>::try_from(value) {
                     Ok(value) => Instruction::copy_f64imm32(result, value),
                     Err(_) => {
-                        let value = self.layout.const_to_reg(value)?;
+                        let value = layout.const_to_reg(value)?;
                         Instruction::copy(result, value)
                     }
                 }
             }
             ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                let value = self.layout.const_to_reg(value)?;
+                let value = layout.const_to_reg(value)?;
                 Instruction::copy(result, value)
             }
         };
@@ -1133,7 +1106,9 @@ impl FuncTranslator {
         // At this point we need to encode a copy instruction.
         let result = self.layout.local_to_reg(local_idx)?;
         let instr = match input {
-            Operand::Immediate(operand) => self.make_copy_imm_instr(result, operand.val())?,
+            Operand::Immediate(operand) => {
+                Self::make_copy_imm_instr(result, operand.val(), &mut self.layout)?
+            }
             operand => {
                 let input = self.layout.operand_to_reg(operand)?;
                 Instruction::copy(result, input)
