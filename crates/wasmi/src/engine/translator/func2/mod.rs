@@ -562,20 +562,15 @@ impl FuncTranslator {
         operand: Operand,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
-        let instr = match operand {
-            Operand::Temp(_) => return Ok(()),
-            Operand::Local(operand) => {
-                let result = self.layout.temp_to_reg(operand.operand_index())?;
-                let value = self.layout.local_to_reg(operand.local_index())?;
-                Instruction::copy(result, value)
-            }
-            Operand::Immediate(operand) => {
-                let result = self.layout.temp_to_reg(operand.operand_index())?;
-                Self::make_copy_imm_instr(result, operand.val(), &mut self.layout)?
-            }
+        if matches!(operand, Operand::Temp(_)) {
+            return Ok(());
+        }
+        let result = self.layout.temp_to_reg(operand.index())?;
+        let Some(copy_instr) = Self::make_copy_instr(result, operand, &mut self.layout)? else {
+            unreachable!("filtered out temporary operands already");
         };
         self.instrs
-            .push_instr(instr, consume_fuel, FuelCostsProvider::base)?;
+            .push_instr(copy_instr, consume_fuel, FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -599,7 +594,7 @@ impl FuncTranslator {
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
-    /// 
+    ///
     /// Returns `None` if the resulting copy instruction is a no-op.
     fn make_copy_instr(
         result: Reg,
@@ -1146,17 +1141,11 @@ impl FuncTranslator {
         }
         // At this point we need to encode a copy instruction.
         let result = self.layout.local_to_reg(local_idx)?;
-        let instr = match input {
-            Operand::Immediate(operand) => {
-                Self::make_copy_imm_instr(result, operand.val(), &mut self.layout)?
-            }
-            operand => {
-                let input = self.layout.operand_to_reg(operand)?;
-                Instruction::copy(result, input)
-            }
+        let Some(copy_instr) = Self::make_copy_instr(result, input, &mut self.layout)? else {
+            unreachable!("filtered out no-op copies above already");
         };
         self.instrs
-            .push_instr(instr, consume_fuel_instr, FuelCostsProvider::base)?;
+            .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         Ok(())
     }
 
