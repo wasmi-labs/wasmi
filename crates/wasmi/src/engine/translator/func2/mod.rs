@@ -462,11 +462,17 @@ impl FuncTranslator {
                 Ok(())
             }
             2 => {
-                let (fst, snd) = self.stack.peek2();
-                let fst = self.layout.operand_to_reg(fst)?;
-                let snd = self.layout.operand_to_reg(snd)?;
+                let (val0, val1) = self.stack.peek2();
+                let val0 = self.layout.operand_to_reg(val0)?;
+                let val1 = self.layout.operand_to_reg(val1)?;
+                let result0 = results.head();
+                let result1 = result0.next();
+                if result0 == val0 && result1 == val1 {
+                    // Case: no-op copy instruction
+                    return Ok(());
+                }
                 self.instrs.push_instr(
-                    Instruction::copy2_ext(results, fst, snd),
+                    Instruction::copy2_ext(results, val0, val1),
                     consume_fuel_instr,
                     FuelCostsProvider::base,
                 )?;
