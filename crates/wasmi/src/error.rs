@@ -97,7 +97,7 @@ impl Error {
     {
         self.kind
             .as_host()
-            .and_then(<(dyn HostError + 'static)>::downcast_ref)
+            .and_then(<dyn HostError + 'static>::downcast_ref)
     }
 
     /// Downcasts the [`Error`] into the `T: HostError` if possible.
@@ -110,7 +110,7 @@ impl Error {
     {
         self.kind
             .as_host_mut()
-            .and_then(<(dyn HostError + 'static)>::downcast_mut)
+            .and_then(<dyn HostError + 'static>::downcast_mut)
     }
 
     /// Consumes `self` to downcast the [`Error`] into the `T: HostError` if possible.
