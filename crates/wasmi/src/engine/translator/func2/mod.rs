@@ -454,6 +454,7 @@ impl FuncTranslator {
                 let value = self.stack.peek(0);
                 let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)?
                 else {
+                    // Case: no-op copy instruction
                     return Ok(());
                 };
                 self.instrs
