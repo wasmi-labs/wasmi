@@ -163,3 +163,33 @@
     (invoke "fuse.xor+nez" (i64.const 1) (i64.const 1))
     (i64.const 0)
 )
+
+;; Regression tests to check that `fuse-nez` and `fuse-eqz` result in fused
+;; `cmp` instructions with the correct result `Reg`. The bug yielded incorrect
+;; result `Reg` due to stack heights when `lhs` was the zero immediate and
+;; `rhs` was a `temp` operand on the translation stack.
+
+(module
+    (func (export "nez.imm.temp") (param i64) (result i32)
+        (i32.ne
+            (i32.const 0)
+            (i64.lt_u (local.get 0) (i64.const 1))
+        )
+    )
+
+    (func (export "eqz.imm.temp") (param i64) (result i32)
+        (i32.eq
+            (i32.const 0)
+            (i64.lt_u (local.get 0) (i64.const 0))
+        )
+    )
+)
+
+(assert_return
+    (invoke "nez.imm.temp" (i64.const 0))
+    (i32.const 1)
+)
+(assert_return
+    (invoke "eqz.imm.temp" (i64.const 0))
+    (i32.const 1)
+)
