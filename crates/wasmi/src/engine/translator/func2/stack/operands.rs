@@ -77,6 +77,10 @@ pub struct OperandStack {
     locals: LocalsRegistry,
     /// The maximum height of the [`OperandStack`].
     max_height: usize,
+    /// The current number of local operands on the `operands` stack.
+    ///
+    /// This field is required to optimize [`OperandStack::preserve_all_locals`].
+    len_locals: usize,
 }
 
 impl Reset for OperandStack {
@@ -84,6 +88,7 @@ impl Reset for OperandStack {
         self.operands.clear();
         self.locals.reset();
         self.max_height = 0;
+        self.len_locals = 0;
     }
 }
 
@@ -167,6 +172,7 @@ impl OperandStack {
             next_local,
         });
         self.update_max_stack_height();
+        self.len_locals += 1;
         Ok(operand_index)
     }
 
@@ -316,9 +322,10 @@ impl OperandStack {
     /// for the local preservation to take full effect.
     #[must_use]
     pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
+        let index = self.operands.len();
         PreservedAllLocalsIter {
             operands: self,
-            index: 0,
+            index,
         }
     }
 
@@ -343,6 +350,7 @@ impl OperandStack {
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, prev_local);
         }
+        self.len_locals -= 1;
     }
 
     /// Updates the `prev_local` of the [`StackOperand::Local`] at `local_index` to `prev_index`.
@@ -377,6 +385,19 @@ impl OperandStack {
 }
 
 /// Iterator yielding preserved local indices while preserving them.
+///
+/// # Note
+///
+/// This intentionally iterates backwards from the last pushed stack operand to the first one.
+/// Together with the remaining number of local operands on the stack this achieves armortized
+/// constant O(1) preservation for all locals via [`Stack::preserve_all_locals`].
+///
+/// The reason for this is that a single call to [`Stack::preserve_all_locals`] has the effect
+/// that there are no more local operands on the stack. New locals are always pushed to the top
+/// of the stack. A single Wasm `local.get` operation (or similar) may only push a single local
+/// operand on the stack. This iterator yields once there are no more local operands and since
+/// it iterates from the back (top-most) operand it will find the newly inserted locals in
+/// armortized constant O(1) time.
 #[derive(Debug)]
 pub struct PreservedAllLocalsIter<'stack> {
     /// The underlying operand stack.
@@ -385,17 +406,35 @@ pub struct PreservedAllLocalsIter<'stack> {
     index: usize,
 }
 
+impl PreservedAllLocalsIter<'_> {
+    /// Returns `true` if there are remaining local operands on the stack.
+    fn has_remaining_locals(&self) -> bool {
+        self.operands.len_locals != 0
+    }
+
+    /// Returns the index of the next local operand on the stack if any.
+    ///
+    /// Returns `None` if there are no more local operands on the stack.
+    fn find_next_local(&mut self) -> Option<usize> {
+        let mut index = self.index;
+        loop {
+            index -= 1;
+            let opd = self.operands.operands.get(index)?;
+            if let StackOperand::Local { .. } = opd {
+                return Some(index);
+            }
+        }
+    }
+}
+
 impl Iterator for PreservedAllLocalsIter<'_> {
     type Item = Operand;
 
     fn next(&mut self) -> Option<Self::Item> {
-        'a: loop {
-            let opd = self.operands.operands.get(self.index)?;
-            if let StackOperand::Local { .. } = opd {
-                break 'a;
-            }
-            self.index += 1;
+        if !self.has_remaining_locals() {
+            return None;
         }
+        self.index = self.find_next_local()?;
         let index = OperandIdx::from(self.index);
         let operand = self.operands.operand_to_temp_at(index);
         debug_assert!(matches!(operand, StackOperand::Local { .. }));
