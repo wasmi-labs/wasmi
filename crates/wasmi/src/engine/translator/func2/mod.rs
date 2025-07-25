@@ -2618,8 +2618,11 @@ impl FuncTranslator {
                     Self::make_copy_instr(self.layout.temp_to_reg(result)?, lhs, &mut self.layout)?
                 {
                     let consume_fuel_instr = self.stack.consume_fuel_instr();
-                    self.instrs
-                        .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+                    self.instrs.push_instr(
+                        copy_instr,
+                        consume_fuel_instr,
+                        FuelCostsProvider::base,
+                    )?;
                 }
             }
             self.stack.push_immediate(0_i64)?; // hi-bits
