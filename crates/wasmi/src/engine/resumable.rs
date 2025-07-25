@@ -337,7 +337,7 @@ impl ResumableCallHostTrap {
         &self.host_error
     }
 
-    /// Consumes `self` and returns a the encountered host error.
+    /// Consumes `self` and returns the encountered host error.
     ///
     /// # Note
     ///
