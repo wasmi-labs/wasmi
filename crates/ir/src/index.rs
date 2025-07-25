@@ -73,7 +73,7 @@ impl TryFrom<u32> for Reg {
 }
 
 impl Reg {
-    /// Returns the n-th next [`Reg`] from `self` with contigous index.
+    /// Returns the n-th next [`Reg`] from `self` with contiguous index.
     ///
     /// # Note
     ///
@@ -83,7 +83,7 @@ impl Reg {
         Self(self.0.wrapping_add_unsigned(n))
     }
 
-    /// Returns the n-th previous [`Reg`] from `self` with contigous index.
+    /// Returns the n-th previous [`Reg`] from `self` with contiguous index.
     ///
     /// # Note
     ///

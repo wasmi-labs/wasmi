@@ -50,7 +50,7 @@ impl TableType {
         self.core.element()
     }
 
-    /// Returns minimum number of elements the a table with this type must have.
+    /// Returns minimum number of elements the table with this type must have.
     pub fn minimum(&self) -> u64 {
         self.core.minimum()
     }
