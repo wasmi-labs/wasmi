@@ -2611,7 +2611,17 @@ impl FuncTranslator {
         if rhs == 1 && !signed {
             // Case: `mul(x, 1)` or `mul(1, x)` always evaluates to just `x`.
             // This is only valid if `x` is not a singed (negative) value.
-            self.stack.push_operand(lhs)?; // lo-bits
+            let result = self.stack.push_operand(lhs)?; // lo-bits
+            if matches!(lhs, Operand::Temp(_)) {
+                // Case: `lhs` is temporary and thus might need a copy to its new result.
+                if let Some(copy_instr) =
+                    Self::make_copy_instr(self.layout.temp_to_reg(result)?, lhs, &mut self.layout)?
+                {
+                    let consume_fuel_instr = self.stack.consume_fuel_instr();
+                    self.instrs
+                        .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+                }
+            }
             self.stack.push_immediate(0_i64)?; // hi-bits
             return Ok(true);
         }
