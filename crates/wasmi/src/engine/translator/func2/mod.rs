@@ -451,18 +451,10 @@ impl FuncTranslator {
             0 => Ok(()),
             1 => {
                 let result = results.head();
-                let copy_instr = match self.stack.peek(0) {
-                    Operand::Immediate(operand) => {
-                        Self::make_copy_imm_instr(result, operand.val(), &mut self.layout)?
-                    }
-                    operand => {
-                        let value = self.layout.operand_to_reg(operand)?;
-                        if result == value {
-                            // Case: no-op copy
-                            return Ok(());
-                        }
-                        Instruction::copy(result, value)
-                    }
+                let value = self.stack.peek(0);
+                let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)?
+                else {
+                    return Ok(());
                 };
                 self.instrs
                     .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
@@ -597,7 +589,9 @@ impl FuncTranslator {
         for local in self.stack.preserve_all_locals() {
             debug_assert!(matches!(local, Operand::Local(_)));
             let result = self.layout.temp_to_reg(local.index())?;
-            let copy_instr = Self::make_copy_instr(result, local, &mut self.layout)?;
+            let Some(copy_instr) = Self::make_copy_instr(result, local, &mut self.layout)? else {
+                unreachable!("`result` and `local` refer to different stack spaces");
+            };
             self.instrs
                 .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         }
@@ -605,23 +599,33 @@ impl FuncTranslator {
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
+    /// 
+    /// Returns `None` if the resulting copy instruction is a no-op.
     fn make_copy_instr(
         result: Reg,
         value: Operand,
         layout: &mut StackLayout,
-    ) -> Result<Instruction, Error> {
+    ) -> Result<Option<Instruction>, Error> {
         let instr = match value {
             Operand::Temp(value) => {
                 let value = layout.temp_to_reg(value.operand_index())?;
+                if result == value {
+                    // Case: no-op copy
+                    return Ok(None);
+                }
                 Instruction::copy(result, value)
             }
             Operand::Local(value) => {
                 let value = layout.local_to_reg(value.local_index())?;
+                if result == value {
+                    // Case: no-op copy
+                    return Ok(None);
+                }
                 Instruction::copy(result, value)
             }
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val(), layout)?,
         };
-        Ok(instr)
+        Ok(Some(instr))
     }
 
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
