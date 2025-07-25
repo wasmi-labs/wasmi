@@ -1,7 +1,4 @@
-use crate::{
-    core::{ValType, V128},
-    Val,
-};
+use crate::core::{ValType, V128};
 use core::{
     fmt,
     fmt::Display,
@@ -100,39 +97,6 @@ impl Display for DisplayValueType {
             ValType::V128 => write!(f, "v128"),
             ValType::FuncRef => write!(f, "funcref"),
             ValType::ExternRef => write!(f, "externref"),
-        }
-    }
-}
-
-/// Wasm [`Display`] wrapper for [`Val`].
-pub struct DisplayValue(Val);
-
-impl From<Val> for DisplayValue {
-    fn from(ty: Val) -> Self {
-        Self(ty)
-    }
-}
-
-impl Display for DisplayValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            Val::I64(value) => write!(f, "{value}"),
-            Val::I32(value) => write!(f, "{value}"),
-            Val::F32(value) => write!(f, "{}", DisplayWasm::from(f32::from(value))),
-            Val::F64(value) => write!(f, "{}", DisplayWasm::from(f64::from(value))),
-            Val::V128(value) => write!(f, "{}", DisplayWasm::from(value)),
-            Val::FuncRef(value) => {
-                if value.is_null() {
-                    return write!(f, "null");
-                }
-                unimplemented!("wasm funcref types other than null cannot be displayed")
-            }
-            Val::ExternRef(value) => {
-                if value.is_null() {
-                    return write!(f, "null");
-                }
-                unimplemented!("wasm externref types other than null cannot be displayed")
-            }
         }
     }
 }
