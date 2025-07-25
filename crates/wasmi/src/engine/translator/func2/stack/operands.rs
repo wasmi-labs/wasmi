@@ -390,11 +390,11 @@ impl OperandStack {
 ///
 /// This intentionally iterates backwards from the last pushed stack operand to the first one.
 /// Together with the remaining number of local operands on the stack this achieves armortized
-/// constant O(1) preservation for all locals via [`Stack::preserve_all_locals`].
+/// constant O(1) preservation for all locals via [`OperandStack::preserve_all_locals`].
 ///
-/// The reason for this is that a single call to [`Stack::preserve_all_locals`] has the effect
-/// that there are no more local operands on the stack. New locals are always pushed to the top
-/// of the stack. A single Wasm `local.get` operation (or similar) may only push a single local
+/// The reason for this is that a single call to [`OperandStack::preserve_all_locals`] has the
+/// effect that there are no more local operands on the stack. New locals are always pushed to the
+/// top of the stack. A single Wasm `local.get` operation (or similar) may only push a single local
 /// operand on the stack. This iterator yields once there are no more local operands and since
 /// it iterates from the back (top-most) operand it will find the newly inserted locals in
 /// armortized constant O(1) time.
