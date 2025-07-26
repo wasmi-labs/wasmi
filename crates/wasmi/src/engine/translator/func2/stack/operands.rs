@@ -36,6 +36,12 @@ pub enum StackOperand {
     Local {
         /// The index of the local variable.
         local_index: LocalIdx,
+        /// The type of the local operand.
+        ///
+        /// This does not have to be the type of the associated local but
+        /// might be a type overwrite. This is useful for Wasm `reinterpret`
+        /// operators with local operand inputs.
+        ty: ValType,
         /// The previous [`StackOperand::Local`] on the [`OperandStack`].
         prev_local: Option<OperandIdx>,
         /// The next [`StackOperand::Local`] on the [`OperandStack`].
@@ -57,11 +63,11 @@ pub enum StackOperand {
 
 impl StackOperand {
     /// Returns the [`ValType`] of the [`StackOperand`].
-    pub fn ty(&self, locals: &LocalsRegistry) -> ValType {
+    pub fn ty(&self) -> ValType {
         match self {
             StackOperand::Temp { ty, .. } => *ty,
             StackOperand::Immediate { val } => val.ty(),
-            StackOperand::Local { local_index, .. } => locals.ty(*local_index),
+            StackOperand::Local { ty, .. } => *ty,
         }
     }
 }
@@ -93,13 +99,13 @@ impl Reset for OperandStack {
 }
 
 impl OperandStack {
-    /// Register `amount` local variables of common type `ty`.
+    /// Register `amount` local variables.
     ///
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
-        self.locals.register(amount, ty)?;
+    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
+        self.locals.register(amount)?;
         Ok(())
     }
 
@@ -146,7 +152,7 @@ impl OperandStack {
     /// - If the local with `local_idx` does not exist.
     pub fn push_operand(&mut self, operand: Operand) -> Result<OperandIdx, Error> {
         match operand {
-            Operand::Local(operand) => self.push_local(operand.local_index()),
+            Operand::Local(operand) => self.push_local(operand.local_index(), operand.ty()),
             Operand::Temp(operand) => self.push_temp(operand.ty(), operand.instr()),
             Operand::Immediate(operand) => self.push_immediate(operand.val()),
         }
@@ -158,7 +164,7 @@ impl OperandStack {
     ///
     /// - If too many operands have been pushed onto the [`OperandStack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_local(&mut self, local_index: LocalIdx) -> Result<OperandIdx, Error> {
+    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<OperandIdx, Error> {
         let operand_index = self.next_index();
         let next_local = self
             .locals
@@ -168,6 +174,7 @@ impl OperandStack {
         }
         self.operands.push(StackOperand::Local {
             local_index,
+            ty,
             prev_local: None,
             next_local,
         });
@@ -230,7 +237,7 @@ impl OperandStack {
         };
         let index = self.next_index();
         self.unlink_local(operand);
-        Operand::new(index, operand, &self.locals)
+        Operand::new(index, operand)
     }
 
     /// Returns the [`Operand`] at `depth`.
@@ -241,7 +248,7 @@ impl OperandStack {
     pub fn get(&self, depth: usize) -> Operand {
         let index = self.depth_to_index(depth);
         let operand = self.get_at(index);
-        Operand::new(index, operand, &self.locals)
+        Operand::new(index, operand)
     }
 
     /// Returns the [`StackOperand`] at `index`.
@@ -267,7 +274,7 @@ impl OperandStack {
     pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
         let index = self.depth_to_index(depth);
         let operand = self.operand_to_temp_at(index);
-        Operand::new(index, operand, &self.locals)
+        Operand::new(index, operand)
     }
 
     /// Converts and returns the [`StackOperand`] at `index` into a [`StackOperand::Temp`].
@@ -283,7 +290,7 @@ impl OperandStack {
     #[must_use]
     fn operand_to_temp_at(&mut self, index: OperandIdx) -> StackOperand {
         let operand = self.get_at(index);
-        let ty = operand.ty(&self.locals);
+        let ty = operand.ty();
         self.unlink_local(operand);
         self.operands[usize::from(index)] = StackOperand::Temp { ty, instr: None };
         operand
@@ -303,12 +310,10 @@ impl OperandStack {
     /// If the local at `local_index` is out of bounds.
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
-        let ty = self.locals.ty(local_index);
         let index = self.locals.replace_first_operand(local_index, None);
         PreservedLocalsIter {
             operands: self,
             index,
-            ty,
         }
     }
 
@@ -337,6 +342,7 @@ impl OperandStack {
             local_index,
             prev_local,
             next_local,
+            ..
         } = operand
         else {
             return;
@@ -438,7 +444,7 @@ impl Iterator for PreservedAllLocalsIter<'_> {
         let index = OperandIdx::from(self.index);
         let operand = self.operands.operand_to_temp_at(index);
         debug_assert!(matches!(operand, StackOperand::Local { .. }));
-        Some(Operand::new(index, operand, &self.operands.locals))
+        Some(Operand::new(index, operand))
     }
 }
 
@@ -449,8 +455,6 @@ pub struct PreservedLocalsIter<'stack> {
     operands: &'stack mut OperandStack,
     /// The current operand index of the next preserved local if any.
     index: Option<OperandIdx>,
-    /// Type of local at preserved `local_index`.
-    ty: ValType,
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
@@ -496,7 +500,7 @@ impl Iterator for PeekedOperands<'_> {
         let operand = self.operands.next().copied()?;
         let index = OperandIdx::from(self.index);
         self.index += 1;
-        Some(Operand::new(index, operand, self.locals))
+        Some(Operand::new(index, operand))
     }
 }
 

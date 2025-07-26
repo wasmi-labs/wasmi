@@ -404,7 +404,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.stack.push_local(LocalIdx::from(local_index))?;
+        let local_idx = LocalIdx::from(local_index);
+        let ty = self.locals.ty(local_idx);
+        self.stack.push_local(local_idx, ty)?;
         Ok(())
     }
 
