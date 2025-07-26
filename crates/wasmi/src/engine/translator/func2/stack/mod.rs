@@ -21,7 +21,6 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    locals::LocalIdx,
     operand::{ImmediateOperand, Operand, TempOperand},
     operands::{OperandIdx, PreservedAllLocalsIter, PreservedLocalsIter},
 };
@@ -29,7 +28,7 @@ use super::{Reset, ReusableAllocations};
 use crate::{
     core::{TypedVal, ValType},
     engine::{
-        translator::{labels::LabelRef, utils::Instr},
+        translator::{func2::LocalIdx, labels::LabelRef, utils::Instr},
         BlockType,
     },
     Engine,
@@ -89,13 +88,13 @@ impl Stack {
         }
     }
 
-    /// Register `amount` local variables of common type `ty`.
+    /// Register `amount` local variables.
     ///
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
-        self.operands.register_locals(amount, ty)
+    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
+        self.operands.register_locals(amount)
     }
 
     /// Returns `true` if the control stack is empty.
@@ -356,8 +355,8 @@ impl Stack {
     ///
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_local(&mut self, local_index: LocalIdx) -> Result<OperandIdx, Error> {
-        self.operands.push_local(local_index)
+    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<OperandIdx, Error> {
+        self.operands.push_local(local_index, ty)
     }
 
     /// Pushes a temporary with type `ty` on the [`Stack`].
