@@ -1719,13 +1719,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Note: `funcref` and `externref` both serialize to `UntypedValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
                 //       via reinterpretation of the value's type.
-                let input = self.layout.local_to_reg(input.local_index())?;
-                // TODO: improve performance by allowing type overwrites for local operands
-                self.push_instr_with_result(
-                    ValType::I64,
-                    |result| Instruction::copy(result, input),
-                    FuelCostsProvider::base,
-                )?;
+                self.stack.push_local(input.local_index(), ValType::I64)?;
                 self.visit_i64_eqz()
             }
             Operand::Temp(input) => {
