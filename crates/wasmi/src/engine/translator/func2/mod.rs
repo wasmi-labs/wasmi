@@ -4,6 +4,7 @@
 mod utils;
 mod instrs;
 mod layout;
+mod locals;
 mod op;
 #[cfg(feature = "simd")]
 mod simd;
@@ -13,6 +14,7 @@ mod visit;
 use self::{
     instrs::{InstrEncoder, InstrEncoderAllocations},
     layout::{StackLayout, StackSpace},
+    locals::{LocalIdx, LocalsRegistry},
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -23,7 +25,6 @@ use self::{
         IfControlFrame,
         IfReachability,
         ImmediateOperand,
-        LocalIdx,
         LoopControlFrame,
         Operand,
         OperandIdx,
@@ -114,6 +115,8 @@ pub struct FuncTranslator {
     fuel_costs: Option<FuelCostsProvider>,
     /// Wasm value and control stack.
     stack: Stack,
+    /// Types of local variables and function parameters.
+    locals: LocalsRegistry,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
     /// Registers and pins labels and tracks their users.
@@ -131,6 +134,8 @@ pub struct FuncTranslator {
 pub struct FuncTranslatorAllocations {
     /// Wasm value and control stack.
     stack: StackAllocations,
+    /// Types of local variables and function parameters.
+    locals: LocalsRegistry,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
     /// Registers and pins labels and tracks their users.
@@ -146,6 +151,7 @@ pub struct FuncTranslatorAllocations {
 impl Reset for FuncTranslatorAllocations {
     fn reset(&mut self) {
         self.stack.reset();
+        self.locals.reset();
         self.layout.reset();
         self.labels.reset();
         self.instrs.reset();
@@ -172,8 +178,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         value_type: wasmparser::ValType,
     ) -> Result<(), Error> {
         let ty = WasmiValueType::from(value_type).into_inner();
-        self.stack.register_locals(amount, ty)?;
-        self.layout.register_locals(amount, ty)?;
+        self.register_locals(amount, ty)?;
         Ok(())
     }
 
@@ -206,6 +211,7 @@ impl ReusableAllocations for FuncTranslator {
     fn into_allocations(self) -> Self::Allocations {
         Self::Allocations {
             stack: self.stack.into_allocations(),
+            locals: self.locals,
             layout: self.layout,
             labels: self.labels,
             instrs: self.instrs.into_allocations(),
@@ -235,6 +241,7 @@ impl FuncTranslator {
             .cloned();
         let FuncTranslatorAllocations {
             stack,
+            locals,
             layout,
             labels,
             instrs,
@@ -250,6 +257,7 @@ impl FuncTranslator {
             reachable: true,
             fuel_costs,
             stack,
+            locals,
             layout,
             labels,
             instrs,
@@ -275,9 +283,21 @@ impl FuncTranslator {
     /// Initializes the function's parameters.
     fn init_func_params(&mut self) -> Result<(), Error> {
         for ty in self.func_type().params() {
-            self.stack.register_locals(1, *ty)?;
-            self.layout.register_locals(1, *ty)?;
+            self.register_locals(1, *ty)?;
         }
+        Ok(())
+    }
+
+    /// Registers an `amount` of local variables of type `ty`.
+    fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
+        let Ok(amount) = usize::try_from(amount) else {
+            panic!(
+                "failed to register {amount} local variables of type {ty:?}: out of bounds `usize`"
+            )
+        };
+        self.locals.register(amount, ty)?;
+        self.stack.register_locals(amount)?;
+        self.layout.register_locals(amount)?;
         Ok(())
     }
 
@@ -288,7 +308,7 @@ impl FuncTranslator {
         let frame_size = self
             .stack
             .max_height()
-            .checked_add(self.layout.len_locals())?
+            .checked_add(self.locals.len())?
             .checked_add(self.layout.consts().len())?;
         u16::try_from(frame_size).ok()
     }
@@ -1107,6 +1127,7 @@ impl FuncTranslator {
     fn translate_local_set(&mut self, local_index: u32, push_result: bool) -> Result<(), Error> {
         bail_unreachable!(self);
         let input = self.stack.pop();
+        let input_ty = input.ty();
         if let Operand::Local(input) = input {
             if u32::from(input.local_index()) == local_index {
                 // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
@@ -1137,7 +1158,7 @@ impl FuncTranslator {
                     self.stack.push_immediate(input.val())?;
                 }
                 _ => {
-                    self.stack.push_local(local_idx)?;
+                    self.stack.push_local(local_idx, input_ty)?;
                 }
             }
         }

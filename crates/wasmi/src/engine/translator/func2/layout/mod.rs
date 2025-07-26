@@ -3,7 +3,7 @@ mod consts;
 use self::consts::{ConstRegistry, ConstRegistryIter};
 use super::{LocalIdx, Operand, OperandIdx, Reset};
 use crate::{
-    core::{UntypedVal, ValType},
+    core::UntypedVal,
     engine::{translator::comparator::AllocConst, TranslationError},
     ir::Reg,
     Error,
@@ -34,8 +34,8 @@ impl StackLayout {
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: u32, _ty: ValType) -> Result<(), Error> {
-        self.len_locals += amount as usize;
+    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
+        self.len_locals += amount;
         Ok(())
     }
 
@@ -124,11 +124,6 @@ impl StackLayout {
     /// The function local constant are yielded in reverse order of allocation.
     pub fn consts(&self) -> ConstRegistryIter<'_> {
         self.consts.iter()
-    }
-
-    /// Returns the number of registered locals.
-    pub fn len_locals(&self) -> usize {
-        self.len_locals
     }
 }
 

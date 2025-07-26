@@ -1,4 +1,4 @@
-use super::{LocalIdx, LocalsRegistry, OperandIdx, StackOperand};
+use super::{LocalIdx, OperandIdx, StackOperand};
 use crate::{
     core::{TypedVal, ValType},
     engine::translator::utils::Instr,
@@ -20,9 +20,11 @@ pub enum Operand {
 
 impl Operand {
     /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`OperandIdx`].
-    pub(super) fn new(index: OperandIdx, operand: StackOperand, locals: &LocalsRegistry) -> Self {
+    pub(super) fn new(index: OperandIdx, operand: StackOperand) -> Self {
         match operand {
-            StackOperand::Local { local_index, .. } => Self::local(index, local_index, locals),
+            StackOperand::Local {
+                local_index, ty, ..
+            } => Self::local(index, local_index, ty),
             StackOperand::Temp { ty, instr } => Self::temp(index, ty, instr),
             StackOperand::Immediate { val } => Self::immediate(index, val),
         }
@@ -39,12 +41,7 @@ impl Operand {
     }
 
     /// Creates a local [`Operand`].
-    pub(super) fn local(
-        operand_index: OperandIdx,
-        local_index: LocalIdx,
-        locals: &LocalsRegistry,
-    ) -> Self {
-        let ty = locals.ty(local_index);
+    pub(super) fn local(operand_index: OperandIdx, local_index: LocalIdx, ty: ValType) -> Self {
         Self::Local(LocalOperand {
             operand_index,
             local_index,
