@@ -1436,13 +1436,8 @@ impl FuncTranslator {
         match self.stack.pop() {
             Operand::Local(input) => {
                 debug_assert_eq!(input.ty(), <T as Typed>::TY);
-                // TODO: improve performance by allowing type overwrites for local operands
-                let input = self.layout.local_to_reg(input.local_index())?;
-                self.push_instr_with_result(
-                    <R as Typed>::TY,
-                    |result| Instruction::copy(result, input),
-                    FuelCostsProvider::base,
-                )?;
+                self.stack
+                    .push_local(input.local_index(), <R as Typed>::TY)?;
             }
             Operand::Temp(input) => {
                 debug_assert_eq!(input.ty(), <T as Typed>::TY);
