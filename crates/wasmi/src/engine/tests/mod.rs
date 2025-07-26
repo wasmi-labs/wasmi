@@ -1,5 +1,3 @@
-mod host_calls;
-
 use super::{
     code_map::{CompiledFuncRef, EngineFunc},
     EngineInner,

@@ -1,6 +1,6 @@
 //! This submodule tests the unusual use case of calling host functions through the engine from the host side.
 
-use crate::{Caller, Config, Engine, Error, Func, Linker, Module, Store};
+use wasmi::{Caller, Config, Engine, Error, Func, Linker, Module, Store};
 
 /// Setup a new `Store` for testing with initial value of 5.
 fn setup_store() -> Store<i32> {
