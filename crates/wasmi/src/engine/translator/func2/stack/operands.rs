@@ -1,4 +1,4 @@
-use super::{LocalIdx, LocalsRegistry, Operand, Reset};
+use super::{LocalIdx, LocalsHead, Operand, Reset};
 use crate::{
     core::{TypedVal, ValType},
     engine::translator::utils::Instr,
@@ -77,10 +77,8 @@ impl StackOperand {
 pub struct OperandStack {
     /// The current set of operands on the [`OperandStack`].
     operands: Vec<StackOperand>,
-    /// All function locals and their associated types.
-    ///
-    /// Used to query types of locals and their first local on the [`OperandStack`].
-    locals: LocalsRegistry,
+    /// Stores the first occurrences of every local variable on the [`OperandStack`] if any.
+    local_heads: LocalsHead,
     /// The maximum height of the [`OperandStack`].
     max_height: usize,
     /// The current number of local operands on the `operands` stack.
@@ -92,7 +90,7 @@ pub struct OperandStack {
 impl Reset for OperandStack {
     fn reset(&mut self) {
         self.operands.clear();
-        self.locals.reset();
+        self.local_heads.reset();
         self.max_height = 0;
         self.len_locals = 0;
     }
@@ -105,7 +103,7 @@ impl OperandStack {
     ///
     /// If too many local variables are being registered.
     pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
-        self.locals.register(amount)?;
+        self.local_heads.register(amount)?;
         Ok(())
     }
 
@@ -167,8 +165,8 @@ impl OperandStack {
     pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<OperandIdx, Error> {
         let operand_index = self.next_index();
         let next_local = self
-            .locals
-            .replace_first_operand(local_index, Some(operand_index));
+            .local_heads
+            .replace_first(local_index, Some(operand_index));
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(operand_index));
         }
@@ -217,12 +215,12 @@ impl OperandStack {
         let len_operands = self.operands.len();
         let first_index = len_operands - n;
         let Some(operands) = self.operands.get(first_index..) else {
-            return PeekedOperands::empty(&self.locals);
+            return PeekedOperands::empty(&self.local_heads);
         };
         PeekedOperands {
             index: first_index,
             operands: operands.iter(),
-            locals: &self.locals,
+            local_heads: &self.local_heads,
         }
     }
 
@@ -310,7 +308,7 @@ impl OperandStack {
     /// If the local at `local_index` is out of bounds.
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
-        let index = self.locals.replace_first_operand(local_index, None);
+        let index = self.local_heads.replace_first(local_index, None);
         PreservedLocalsIter {
             operands: self,
             index,
@@ -348,7 +346,7 @@ impl OperandStack {
             return;
         };
         if prev_local.is_none() {
-            self.locals.replace_first_operand(local_index, next_local);
+            self.local_heads.replace_first(local_index, next_local);
         }
         if let Some(prev_local) = prev_local {
             self.update_next_local(prev_local, next_local);
@@ -479,16 +477,16 @@ pub struct PeekedOperands<'stack> {
     /// The iterator of peeked stack operands.
     operands: slice::Iter<'stack, StackOperand>,
     /// Used to query types of local operands.
-    locals: &'stack LocalsRegistry,
+    local_heads: &'stack LocalsHead,
 }
 
 impl<'stack> PeekedOperands<'stack> {
     /// Creates a [`PeekedOperands`] iterator that yields no operands.
-    pub fn empty(locals: &'stack LocalsRegistry) -> Self {
+    pub fn empty(local_heads: &'stack LocalsHead) -> Self {
         Self {
             index: 0,
             operands: [].iter(),
-            locals,
+            local_heads,
         }
     }
 }

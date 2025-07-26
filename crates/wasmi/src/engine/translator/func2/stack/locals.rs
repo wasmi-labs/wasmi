@@ -3,20 +3,20 @@ use crate::{engine::translator::func2::LocalIdx, Error};
 use alloc::vec::Vec;
 use core::iter;
 
-/// Stores definitions of locals.
-#[derive(Debug, Default, Clone)]
-pub struct LocalsRegistry {
-    /// The first operand for the local on the stack if any.
+/// Store the index of the first occurence on the stack for every local variable.
+#[derive(Debug, Default)]
+pub struct LocalsHead {
+    /// The index of the first occurence of every local variable.
     first_operands: Vec<Option<OperandIdx>>,
 }
 
-impl Reset for LocalsRegistry {
+impl Reset for LocalsHead {
     fn reset(&mut self) {
         self.first_operands.clear();
     }
 }
 
-impl LocalsRegistry {
+impl LocalsHead {
     /// Registers `amount` of locals.
     ///
     /// # Errors
@@ -41,7 +41,7 @@ impl LocalsRegistry {
     /// # Panics
     ///
     /// If `index` is out of bounds.
-    pub fn replace_first_operand(
+    pub fn replace_first(
         &mut self,
         index: LocalIdx,
         first_operand: Option<OperandIdx>,

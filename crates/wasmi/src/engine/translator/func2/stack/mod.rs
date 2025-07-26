@@ -5,7 +5,7 @@ mod operands;
 
 use self::{
     control::ControlStack,
-    locals::LocalsRegistry,
+    locals::LocalsHead,
     operands::{OperandStack, StackOperand},
 };
 pub use self::{
