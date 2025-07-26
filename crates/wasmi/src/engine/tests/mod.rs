@@ -1,5 +1,4 @@
 mod host_calls;
-mod many_inout;
 
 use super::{
     code_map::{CompiledFuncRef, EngineFunc},
