@@ -57,7 +57,7 @@ pub trait AddWasi<T> {
 /// # Note
 ///
 /// `WASI` is versioned in snapshots. It's still a WIP. Currently, this crate supports `preview_1`
-/// Look [here](https://github.com/WebAssembly/WASI/blob/main/phases/snapshot/docs.md) for more details.
+/// Look [here](https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md) for more details.
 pub fn add_wasi_snapshot_preview1_to_linker<T, U>(
     linker: &mut Linker<T>,
     wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
