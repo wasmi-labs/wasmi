@@ -1,4 +1,4 @@
-mod host_calls;
+//! APIs to test and introspect Wasmi engine internals.
 
 use super::{
     code_map::{CompiledFuncRef, EngineFunc},
