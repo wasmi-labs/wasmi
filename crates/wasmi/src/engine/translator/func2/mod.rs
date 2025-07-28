@@ -472,13 +472,7 @@ impl FuncTranslator {
             1 => {
                 let result = results.head();
                 let value = self.stack.peek(0);
-                let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)?
-                else {
-                    // Case: no-op copy instruction
-                    return Ok(());
-                };
-                self.instrs
-                    .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+                self.encode_copy(result, value, consume_fuel_instr)?;
                 Ok(())
             }
             2 => {
@@ -537,6 +531,27 @@ impl FuncTranslator {
         }
     }
 
+    /// Encodes a single copy instruction.
+    ///
+    /// # Note
+    ///
+    /// This won't encode a copy if `result` and `value` yields a no-op copy.
+    fn encode_copy(
+        &mut self,
+        result: Reg,
+        value: Operand,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<Option<Instr>, Error> {
+        let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)? else {
+            // Case: no-op copy instruction
+            return Ok(None);
+        };
+        let instr =
+            self.instrs
+                .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+        Ok(Some(instr))
+    }
+
     /// Returns the results [`RegSpan`] of the `frame` if any.
     fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<RegSpan>, Error> {
         Self::frame_results_impl(frame, &self.engine, &self.layout)
@@ -591,15 +606,8 @@ impl FuncTranslator {
         operand: Operand,
         consume_fuel: Option<Instr>,
     ) -> Result<(), Error> {
-        if matches!(operand, Operand::Temp(_)) {
-            return Ok(());
-        }
         let result = self.layout.temp_to_reg(operand.index())?;
-        let Some(copy_instr) = Self::make_copy_instr(result, operand, &mut self.layout)? else {
-            unreachable!("filtered out temporary operands already");
-        };
-        self.instrs
-            .push_instr(copy_instr, consume_fuel, FuelCostsProvider::base)?;
+        self.encode_copy(result, operand, consume_fuel)?;
         Ok(())
     }
 
@@ -1171,11 +1179,11 @@ impl FuncTranslator {
         }
         // At this point we need to encode a copy instruction.
         let result = self.layout.local_to_reg(local_idx)?;
-        let Some(copy_instr) = Self::make_copy_instr(result, input, &mut self.layout)? else {
-            unreachable!("filtered out no-op copies above already");
-        };
-        self.instrs
-            .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+        let outcome = self.encode_copy(result, input, consume_fuel_instr)?;
+        debug_assert!(
+            outcome.is_some(),
+            "no-op copy cases have been filtered out already"
+        );
         Ok(())
     }
 
@@ -2632,16 +2640,9 @@ impl FuncTranslator {
             let result = self.stack.push_operand(lhs)?; // lo-bits
             if matches!(lhs, Operand::Temp(_)) {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
-                if let Some(copy_instr) =
-                    Self::make_copy_instr(self.layout.temp_to_reg(result)?, lhs, &mut self.layout)?
-                {
-                    let consume_fuel_instr = self.stack.consume_fuel_instr();
-                    self.instrs.push_instr(
-                        copy_instr,
-                        consume_fuel_instr,
-                        FuelCostsProvider::base,
-                    )?;
-                }
+                let consume_fuel_instr = self.stack.consume_fuel_instr();
+                let result = self.layout.temp_to_reg(result)?;
+                self.encode_copy(result, lhs, consume_fuel_instr)?;
             }
             self.stack.push_immediate(0_i64)?; // hi-bits
             return Ok(true);
