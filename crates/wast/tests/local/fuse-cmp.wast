@@ -193,3 +193,59 @@
     (invoke "eqz.imm.temp" (i64.const 0))
     (i32.const 1)
 )
+
+(module
+  (global i32 (i32.const 42))
+  (func (export "invalid-fuse-global-get") (param i32 i32) (result i32 i32)
+    (i32.lt_s
+        (local.get 0)
+        (local.get 1)
+    )
+    (global.get 0)
+    (i32.eqz) ;; must not fuse with `i32.lt_s`
+  )
+)
+
+(assert_return
+    (invoke "invalid-fuse-global-get" (i32.const 0) (i32.const 0))
+    (i32.const 0) (i32.const 0)
+)
+(assert_return
+    (invoke "invalid-fuse-global-get" (i32.const 0) (i32.const 1))
+    (i32.const 1) (i32.const 0)
+)
+(assert_return
+    (invoke "invalid-fuse-global-get" (i32.const 1) (i32.const 0))
+    (i32.const 0) (i32.const 0)
+)
+(assert_return
+    (invoke "invalid-fuse-global-get" (i32.const 1) (i32.const 1))
+    (i32.const 0) (i32.const 0)
+)
+
+(module
+  (func (export "invalid.fuse.f32.nan") (param f32) (result i32)
+    (f32.le
+        (local.get 0)
+        (local.get 0)
+    )
+    (i32.eqz)
+  )
+
+  (func (export "invalid.fuse.f64.nan") (param f64) (result i32)
+    (f64.le
+        (local.get 0)
+        (local.get 0)
+    )
+    (i32.eqz)
+  )
+)
+
+(assert_return
+    (invoke "invalid.fuse.f32.nan" (f32.const -nan:0x7fffff))
+    (i32.const 1)
+)
+(assert_return
+    (invoke "invalid.fuse.f64.nan" (f64.const -nan:0xfffffffffffff))
+    (i32.const 1)
+)
