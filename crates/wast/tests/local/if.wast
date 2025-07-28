@@ -9,6 +9,8 @@
     )
 )
 
+(assert_return (invoke "if.only-then.diverging"))
+
 (module
     ;; Regression tests for PR #838.
 
