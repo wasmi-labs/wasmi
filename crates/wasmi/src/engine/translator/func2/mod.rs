@@ -481,10 +481,9 @@ impl FuncTranslator {
                 Ok(())
             }
             _ => {
-                self.instrs
-                    .bump_fuel_consumption(consume_fuel_instr, |costs| {
-                        costs.fuel_for_copying_values(u64::from(len_values))
-                    })?;
+                let fuel_costs = |costs: &FuelCostsProvider| -> u64 {
+                    costs.fuel_for_copying_values(u64::from(len_values))
+                };
                 if let Some(values) = self.try_form_regspan(usize::from(len_values))? {
                     // Case: can encode the copies as a more efficient `copy_span`
                     if results == values {
@@ -497,7 +496,7 @@ impl FuncTranslator {
                     self.instrs.push_instr(
                         Instruction::copy_span(results, values, len_values),
                         consume_fuel_instr,
-                        |costs| costs.fuel_for_copying_values(u64::from(len_values)),
+                        fuel_costs,
                     )?;
                     return Ok(());
                 }
@@ -511,7 +510,7 @@ impl FuncTranslator {
                 self.instrs.push_instr(
                     Instruction::copy_many_ext(results, val0, val1),
                     consume_fuel_instr,
-                    |costs| costs.fuel_for_copying_values(u64::from(len_values)),
+                    fuel_costs,
                 )?;
                 self.instrs.encode_register_list(rest, &mut self.layout)?;
                 Ok(())
