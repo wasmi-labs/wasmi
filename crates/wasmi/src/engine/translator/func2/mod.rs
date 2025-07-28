@@ -497,7 +497,7 @@ impl FuncTranslator {
                     self.instrs.push_instr(
                         Instruction::copy_span(results, values, len_values),
                         consume_fuel_instr,
-                        FuelCostsProvider::base,
+                        |costs| costs.fuel_for_copying_values(u64::from(len_values)),
                     )?;
                     return Ok(());
                 }
@@ -511,7 +511,7 @@ impl FuncTranslator {
                 self.instrs.push_instr(
                     Instruction::copy_many_ext(results, fst, snd),
                     consume_fuel_instr,
-                    FuelCostsProvider::base,
+                    |costs| costs.fuel_for_copying_values(u64::from(len_values)),
                 )?;
                 self.instrs.encode_register_list(rest, &mut self.layout)?;
                 Ok(())
