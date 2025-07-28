@@ -2,7 +2,6 @@
 
 mod display_wasm;
 pub mod driver;
-mod fuzz;
 mod op;
 pub mod wasm_type;
 
