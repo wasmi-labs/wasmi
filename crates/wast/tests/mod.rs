@@ -207,6 +207,7 @@ macro_rules! expand_tests {
             fn wasmi_select("../../local/select");
             fn wasmi_preserve_locals("../../local/preserve-locals");
             fn wasmi_many_inout("../../local/many-inout");
+            fn wasmi_copy_span("../../local/copy-span");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
