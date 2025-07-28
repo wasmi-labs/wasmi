@@ -477,19 +477,7 @@ impl FuncTranslator {
             }
             2 => {
                 let (val0, val1) = self.stack.peek2();
-                let val0 = self.layout.operand_to_reg(val0)?;
-                let val1 = self.layout.operand_to_reg(val1)?;
-                let result0 = results.head();
-                let result1 = result0.next();
-                if result0 == val0 && result1 == val1 {
-                    // Case: no-op copy instruction
-                    return Ok(());
-                }
-                self.instrs.push_instr(
-                    Instruction::copy2_ext(results, val0, val1),
-                    consume_fuel_instr,
-                    FuelCostsProvider::base,
-                )?;
+                self.encode_copy2(results, val0, val1, consume_fuel_instr)?;
                 Ok(())
             }
             _ => {
@@ -550,6 +538,34 @@ impl FuncTranslator {
             self.instrs
                 .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         Ok(Some(instr))
+    }
+
+    /// Encode a copy instruction that copies 2 values.
+    ///
+    /// # Note
+    ///
+    /// This won't encode a copy if the resulting copy instruction is a no-op.
+    fn encode_copy2(
+        &mut self,
+        results: RegSpan,
+        val0: Operand,
+        val1: Operand,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
+        let val0 = self.layout.operand_to_reg(val0)?;
+        let val1 = self.layout.operand_to_reg(val1)?;
+        let result0 = results.head();
+        let result1 = result0.next();
+        if result0 == val0 && result1 == val1 {
+            // Case: no-op copy instruction
+            return Ok(());
+        }
+        self.instrs.push_instr(
+            Instruction::copy2_ext(results, val0, val1),
+            consume_fuel_instr,
+            FuelCostsProvider::base,
+        )?;
+        Ok(())
     }
 
     /// Returns the results [`RegSpan`] of the `frame` if any.
