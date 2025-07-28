@@ -502,6 +502,11 @@ impl FuncTranslator {
                 }
                 self.stack
                     .peek_n(usize::from(len_values), &mut self.operands);
+                debug_assert!(!Self::has_overlapping_copies(
+                    results,
+                    &self.operands[..],
+                    &self.layout
+                )?);
                 let [val0, val1, rest @ ..] = &self.operands[..] else {
                     unreachable!("asserted that operands.len() >= 3")
                 };
@@ -565,6 +570,51 @@ impl FuncTranslator {
             FuelCostsProvider::base,
         )?;
         Ok(())
+    }
+
+    /// Returns `true` if there are overlapping copies with `results` and `values`.
+    ///
+    /// # Examples
+    ///
+    /// - `[ 0 <- 1, 1 <- 1, 2 <- 4 ]` has no overlapping copies.
+    /// - `[ 0 <- 1, 1 <- 0 ]` has overlapping copies since register `0`
+    ///   is written to in the first copy but read from in the next.
+    /// - `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
+    ///   is written to in the first copy but read from in the third.
+    fn has_overlapping_copies(
+        results: RegSpan,
+        values: &[Operand],
+        layout: &StackLayout,
+    ) -> Result<bool, Error> {
+        if values.is_empty() {
+            // An empty set of copies can never have overlapping copies.
+            return Ok(false);
+        }
+        let Ok(len) = u16::try_from(values.len()) else {
+            panic!("operand span too large: len={}", values.len());
+        };
+        let result0 = results.head();
+        for (result, value) in results.iter(len).zip(values) {
+            // Note: We only have to check the register case since constant value
+            //       copies can never overlap.
+            let value = match value {
+                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
+                Operand::Immediate(_) => {
+                    // Immediates are allocated as function local constants
+                    // which can not collide with the result registers.
+                    continue;
+                }
+            };
+            if result0 <= value && value < result {
+                // Case: `value` is in the range of `result0..result` which
+                //       means it has been overwritten by previous copies,
+                //       thus we detected a collission.
+                return Ok(true);
+            }
+        }
+        // No copy collissions have been found.
+        Ok(false)
     }
 
     /// Returns the results [`RegSpan`] of the `frame` if any.
