@@ -503,13 +503,13 @@ impl FuncTranslator {
                 }
                 self.stack
                     .peek_n(usize::from(len_values), &mut self.operands);
-                let [fst, snd, rest @ ..] = &self.operands[..] else {
+                let [val0, val1, rest @ ..] = &self.operands[..] else {
                     unreachable!("asserted that operands.len() >= 3")
                 };
-                let fst = self.layout.operand_to_reg(*fst)?;
-                let snd = self.layout.operand_to_reg(*snd)?;
+                let val0 = self.layout.operand_to_reg(*val0)?;
+                let val1 = self.layout.operand_to_reg(*val1)?;
                 self.instrs.push_instr(
-                    Instruction::copy_many_ext(results, fst, snd),
+                    Instruction::copy_many_ext(results, val0, val1),
                     consume_fuel_instr,
                     |costs| costs.fuel_for_copying_values(u64::from(len_values)),
                 )?;
