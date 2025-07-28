@@ -544,6 +544,73 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
+    /// Returns the copy instruction to copy the given `operand` to `result`.
+    ///
+    /// Returns `None` if the resulting copy instruction is a no-op.
+    fn make_copy_instr(
+        result: Reg,
+        value: Operand,
+        layout: &mut StackLayout,
+    ) -> Result<Option<Instruction>, Error> {
+        let instr = match value {
+            Operand::Temp(value) => {
+                let value = layout.temp_to_reg(value.operand_index())?;
+                if result == value {
+                    // Case: no-op copy
+                    return Ok(None);
+                }
+                Instruction::copy(result, value)
+            }
+            Operand::Local(value) => {
+                let value = layout.local_to_reg(value.local_index())?;
+                if result == value {
+                    // Case: no-op copy
+                    return Ok(None);
+                }
+                Instruction::copy(result, value)
+            }
+            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val(), layout)?,
+        };
+        Ok(Some(instr))
+    }
+
+    /// Returns the copy instruction to copy the given immediate `value` to `result`.
+    fn make_copy_imm_instr(
+        result: Reg,
+        value: TypedVal,
+        layout: &mut StackLayout,
+    ) -> Result<Instruction, Error> {
+        let instr = match value.ty() {
+            ValType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+            ValType::I64 => {
+                let value = i64::from(value);
+                match <Const32<i64>>::try_from(value) {
+                    Ok(value) => Instruction::copy_i64imm32(result, value),
+                    Err(_) => {
+                        let value = layout.const_to_reg(value)?;
+                        Instruction::copy(result, value)
+                    }
+                }
+            }
+            ValType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+            ValType::F64 => {
+                let value = f64::from(value);
+                match <Const32<f64>>::try_from(value) {
+                    Ok(value) => Instruction::copy_f64imm32(result, value),
+                    Err(_) => {
+                        let value = layout.const_to_reg(value)?;
+                        Instruction::copy(result, value)
+                    }
+                }
+            }
+            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                let value = layout.const_to_reg(value)?;
+                Instruction::copy(result, value)
+            }
+        };
+        Ok(instr)
+    }
+
     /// Encode a copy instruction that copies 2 values.
     ///
     /// # Note
@@ -693,73 +760,6 @@ impl FuncTranslator {
                 .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         }
         Ok(())
-    }
-
-    /// Returns the copy instruction to copy the given `operand` to `result`.
-    ///
-    /// Returns `None` if the resulting copy instruction is a no-op.
-    fn make_copy_instr(
-        result: Reg,
-        value: Operand,
-        layout: &mut StackLayout,
-    ) -> Result<Option<Instruction>, Error> {
-        let instr = match value {
-            Operand::Temp(value) => {
-                let value = layout.temp_to_reg(value.operand_index())?;
-                if result == value {
-                    // Case: no-op copy
-                    return Ok(None);
-                }
-                Instruction::copy(result, value)
-            }
-            Operand::Local(value) => {
-                let value = layout.local_to_reg(value.local_index())?;
-                if result == value {
-                    // Case: no-op copy
-                    return Ok(None);
-                }
-                Instruction::copy(result, value)
-            }
-            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val(), layout)?,
-        };
-        Ok(Some(instr))
-    }
-
-    /// Returns the copy instruction to copy the given immediate `value` to `result`.
-    fn make_copy_imm_instr(
-        result: Reg,
-        value: TypedVal,
-        layout: &mut StackLayout,
-    ) -> Result<Instruction, Error> {
-        let instr = match value.ty() {
-            ValType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-            ValType::I64 => {
-                let value = i64::from(value);
-                match <Const32<i64>>::try_from(value) {
-                    Ok(value) => Instruction::copy_i64imm32(result, value),
-                    Err(_) => {
-                        let value = layout.const_to_reg(value)?;
-                        Instruction::copy(result, value)
-                    }
-                }
-            }
-            ValType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-            ValType::F64 => {
-                let value = f64::from(value);
-                match <Const32<f64>>::try_from(value) {
-                    Ok(value) => Instruction::copy_f64imm32(result, value),
-                    Err(_) => {
-                        let value = layout.const_to_reg(value)?;
-                        Instruction::copy(result, value)
-                    }
-                }
-            }
-            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                let value = layout.const_to_reg(value)?;
-                Instruction::copy(result, value)
-            }
-        };
-        Ok(instr)
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
