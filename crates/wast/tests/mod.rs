@@ -298,11 +298,15 @@ macro_rules! include_wasm_blobs {
     };
 }
 
-expand_tests! {
-    define_spec_tests,
+mod buffered {
+    use super::*;
 
-    let config = test_config(false, ParsingMode::Buffered);
-    let runner = process_wast;
+    expand_tests! {
+        define_spec_tests,
+
+        let config = test_config(false, ParsingMode::Buffered);
+        let runner = process_wast;
+    }
 }
 
 macro_rules! expand_tests_mm {
