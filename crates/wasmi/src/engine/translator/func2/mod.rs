@@ -509,7 +509,7 @@ impl FuncTranslator {
                         // Case: results and values are equal and therefore the copy is a no-op
                         return Ok(());
                     }
-                    debug_assert!(results.head() < values.head());
+                    debug_assert!(!RegSpan::has_overlapping_copies(results, values, len_values));
                     self.instrs.push_instr(
                         Instruction::copy_span(results, values, len_values),
                         consume_fuel_instr,
