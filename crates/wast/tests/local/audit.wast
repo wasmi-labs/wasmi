@@ -65,3 +65,56 @@
     (invoke "audit.2" (i32.const 1))
     (i32.const 1) (i32.const 1) (i32.const 1) (i32.const 1)
 )
+
+(module
+  (func (export "regression.0") (param i32) (result i32 i32 i32)
+    local.get 0
+    local.get 0
+    local.get 0
+    local.get 0
+    br_if 0 ;; conditional return
+  )
+)
+
+(assert_return
+    (invoke "regression.0" (i32.const 0))
+    (i32.const 0) (i32.const 0) (i32.const 0)
+)
+(assert_return
+    (invoke "regression.0" (i32.const 1))
+    (i32.const 1) (i32.const 1) (i32.const 1)
+)
+(assert_return
+    (invoke "regression.0" (i32.const -1))
+    (i32.const -1) (i32.const -1) (i32.const -1)
+)
+
+(module
+  (func (export "regression.1") (param i64) (result f32)
+    (block (result f32) ;; label = @1
+      (block (result f32) ;; label = @2
+        (block (result f32) ;; label = @3
+          (f32.const 10)
+          (local.get 0)
+          (i32.wrap_i64)
+          (br_table 0 3 0)
+        )
+        (unreachable)
+      )
+    )
+    (unreachable)
+  )
+)
+
+(assert_trap
+    (invoke "regression.1" (i64.const 0))
+    "unreachable"
+)
+(assert_return
+    (invoke "regression.1" (i64.const 1))
+    (f32.const 10.0)
+)
+(assert_trap
+    (invoke "regression.1" (i64.const 2))
+    "unreachable"
+)
