@@ -654,7 +654,7 @@ impl FuncTranslator {
             &self.layout
         )?);
         match values {
-            [] => unreachable!("no-op copies have been stripped out before"),
+            [] => Ok(()),
             [val0] => {
                 let result = results.head();
                 let value = *val0;
