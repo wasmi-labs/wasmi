@@ -547,7 +547,6 @@ impl FuncTranslator {
                     let values = RegSpan::new(last_value0);
                     let len = 3_u16;
                     debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-                    // fused_copy = Some(Instruction::copy_span_non_overlapping(results, values, len));
                     Instruction::copy_span_non_overlapping(results, values, len)
                 } else if result == last_result0.prev() && value == last_value0.prev() {
                     // Case: we can prepend `copy_instr`.
