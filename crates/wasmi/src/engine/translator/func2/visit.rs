@@ -183,6 +183,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.labels
                 .pin_label(else_label, self.instrs.next_instr())
                 .unwrap();
+            self.instrs.reset_last_instr();
         }
         let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
         self.reachable = frame.is_else_reachable();
