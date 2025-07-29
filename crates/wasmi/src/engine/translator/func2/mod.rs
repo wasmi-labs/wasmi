@@ -161,7 +161,6 @@ impl WasmTranslator<'_> for FuncTranslator {
         Ok(false)
     }
 
-    #[inline]
     fn features(&self) -> WasmFeatures {
         self.engine.config().wasm_features()
     }
