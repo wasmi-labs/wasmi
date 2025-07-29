@@ -143,23 +143,3 @@ pub enum StackSpace {
     /// Stack slot referring to a temporary stack operand.
     Temp,
 }
-
-impl StackSpace {
-    /// Returns `true` if `self` is [`StackSpace::Local`].
-    #[inline]
-    pub fn is_local(self) -> bool {
-        matches!(self, Self::Local)
-    }
-
-    /// Returns `true` if `self` is [`StackSpace::Temp`].
-    #[inline]
-    pub fn is_temp(self) -> bool {
-        matches!(self, Self::Temp)
-    }
-
-    /// Returns `true` if `self` is [`StackSpace::Const`].
-    #[inline]
-    pub fn is_const(self) -> bool {
-        matches!(self, Self::Const)
-    }
-}

@@ -1,5 +1,3 @@
-#![expect(dead_code)]
-
 #[macro_use]
 mod utils;
 mod instrs;
@@ -109,10 +107,6 @@ pub struct FuncTranslator {
     /// Visiting the Wasm `Else` or `End` control flow operator resets
     /// reachability to `true` again.
     reachable: bool,
-    /// Fuel costs for fuel metering.
-    ///
-    /// `None` if fuel metering is disabled.
-    fuel_costs: Option<FuelCostsProvider>,
     /// Wasm value and control stack.
     stack: Stack,
     /// Types of local variables and function parameters.
@@ -234,11 +228,6 @@ impl FuncTranslator {
                 module.engine()
             )
         };
-        let config = engine.config();
-        let fuel_costs = config
-            .get_consume_fuel()
-            .then(|| config.fuel_costs())
-            .cloned();
         let FuncTranslatorAllocations {
             stack,
             locals,
@@ -255,7 +244,6 @@ impl FuncTranslator {
             engine,
             module,
             reachable: true,
-            fuel_costs,
             stack,
             locals,
             layout,
@@ -388,11 +376,6 @@ impl FuncTranslator {
     /// Returns the [`Engine`] for which the function is compiled.
     fn engine(&self) -> &Engine {
         &self.engine
-    }
-
-    /// Returns `true` if fuel metering is enabled.
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.fuel_costs.is_some()
     }
 
     /// Copy the top-most `len` operands to [`Operand::Temp`] values.
