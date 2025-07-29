@@ -1054,16 +1054,7 @@ impl FuncTranslator {
                 let v2 = self.layout.operand_to_reg(v2)?;
                 Instruction::return_reg3_ext(v0, v1, v2)
             }
-            _ => {
-                let len_values = usize::from(len_results);
-                match self.try_form_regspan(len_values)? {
-                    Some(span) => {
-                        let values = BoundedRegSpan::new(span, len_results);
-                        Instruction::return_span(values)
-                    }
-                    None => return self.encode_return_many(len_values, consume_fuel),
-                }
-            }
+            _ => return self.encode_return_many(len_results, consume_fuel),
         };
         let instr = self
             .instrs
@@ -1084,10 +1075,18 @@ impl FuncTranslator {
     /// If `len` is not greater than or equal to 4.
     fn encode_return_many(
         &mut self,
-        len: usize,
+        len: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<Instr, Error> {
         self.peek_operands_into_buffer(usize::from(len));
+        if let Some(values) = Self::try_form_regspan_of(&self.operands, &self.layout)? {
+            let values = BoundedRegSpan::new(values, len);
+            return self.instrs.push_instr(
+                Instruction::return_span(values),
+                consume_fuel_instr,
+                FuelCostsProvider::base,
+            );
+        }
         let [v0, v1, v2, rest @ ..] = &self.operands[..] else {
             unreachable!("encode_return_many (pre-condition): len >= 4")
         };
