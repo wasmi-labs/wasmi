@@ -196,3 +196,9 @@ impl ImmediateOperand {
         self.val.ty()
     }
 }
+
+impl AsRef<Operand> for Operand {
+    fn as_ref(&self) -> &Operand {
+        self
+    }
+}
