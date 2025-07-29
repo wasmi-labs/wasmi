@@ -480,13 +480,7 @@ impl FuncTranslator {
                 self.encode_copy2(results, val0, val1, consume_fuel_instr)?;
                 Ok(())
             }
-            _ => {
-                if let Some(values) = self.try_form_regspan(usize::from(len_values))? {
-                    // Case: can encode the copies as a more efficient `copy_span`
-                    return self.encode_copy_span(results, values, len_values, consume_fuel_instr);
-                }
-                self.encode_copy_many(results, len_values, consume_fuel_instr)
-            }
+            _ => self.encode_copy_many(results, len_values, consume_fuel_instr),
         }
     }
 
@@ -664,6 +658,9 @@ impl FuncTranslator {
             [val0, val1] => self.encode_copy2(results, *val0, *val1, consume_fuel_instr),
             [val0, val1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                if let Some(values) = Self::try_form_regspan_of(values, &self.layout)? {
+                    return self.encode_copy_span(results, values, len, consume_fuel_instr);
+                }
                 let val0 = self.layout.operand_to_reg(*val0)?;
                 let val1 = self.layout.operand_to_reg(*val1)?;
                 self.instrs.push_instr(
