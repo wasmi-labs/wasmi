@@ -53,11 +53,6 @@ impl ConstRegistry {
         i16::MIN
     }
 
-    /// Returns the number of allocated function local constant values.
-    pub fn len_consts(&self) -> u16 {
-        self.next_idx.abs_diff(Self::first_index())
-    }
-
     /// Allocates a new constant `value` on the [`ConstRegistry`] and returns its identifier.
     ///
     /// # Note
@@ -82,15 +77,6 @@ impl ConstRegistry {
                 Ok(register)
             }
         }
-    }
-
-    /// Returns the function local constant [`UntypedVal`] of the [`Reg`] if any.
-    pub fn get(&self, register: Reg) -> Option<UntypedVal> {
-        if !register.is_const() {
-            return None;
-        }
-        let index = i16::from(register).wrapping_add(1).unsigned_abs() as usize;
-        self.idx2const.get(index).copied()
     }
 
     /// Returns an iterator yielding all function local constant values of the [`ConstRegistry`].
