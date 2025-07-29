@@ -28,7 +28,11 @@ use super::{Reset, ReusableAllocations};
 use crate::{
     core::{TypedVal, ValType},
     engine::{
-        translator::{func2::LocalIdx, labels::LabelRef, utils::Instr},
+        translator::{
+            func2::{stack::operands::PeekedOperands, LocalIdx},
+            labels::LabelRef,
+            utils::Instr,
+        },
         BlockType,
     },
     Engine,
@@ -413,12 +417,11 @@ impl Stack {
         (v0, v1, v2)
     }
 
-    /// Peeks the top-most `len` operands from the stack and store them into `buffer`.
+    /// Returns an iterator yielding the top-most `len` operands from the stack.
     ///
-    /// Operands stored into the buffer are placed in order.
-    pub fn peek_n(&mut self, len: usize, buffer: &mut Vec<Operand>) {
-        buffer.clear();
-        buffer.extend((0..len).rev().map(|depth| self.peek(depth)));
+    /// Operands are yieleded in insertion order.
+    pub fn peek_n(&self, len: usize) -> PeekedOperands<'_> {
+        self.operands.peek(len)
     }
 
     /// Pops the top-most [`Operand`] from the [`Stack`].
