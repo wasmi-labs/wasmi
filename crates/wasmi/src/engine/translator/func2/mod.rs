@@ -482,10 +482,125 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
+        if let Some(fused_copy) = self.try_merge_copies(copy_instr)? {
+            // Case: successfully merged the copy instruction with its succeeding one.
+            return Ok(Some(fused_copy));
+        }
         let instr =
             self.instrs
                 .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         Ok(Some(instr))
+    }
+
+    /// Tries to merge `copy_instr` with the succeeding copy instruction if one exists.
+    ///
+    /// - Returns `None` if merging was not applicable.
+    /// - Returns `Some(last_instr)` if merging was successful.
+    fn try_merge_copies(&mut self, copy_instr: Instruction) -> Result<Option<Instr>, Error> {
+        let Instruction::Copy { result, value } = copy_instr else {
+            // Case: `copy_instr` is not fusable.
+            return Ok(None);
+        };
+        let Some(last_instr) = self.instrs.last_instr() else {
+            // Case: no `last_instr` to fuse with.
+            return Ok(None);
+        };
+        let last_copy = *self.instrs.get(last_instr);
+        match last_copy {
+            Instruction::Copy {
+                result: last_result,
+                value: last_value,
+            } => {
+                // Try to fuse to a `copy2` instruction.
+                if value == last_result {
+                    // Case: cannot merge since the succeeding copy overwrites the result of `copy_instr`
+                    return Ok(None);
+                }
+                let fused_copy = match result {
+                    result if result == last_result.next() => {
+                        // Case: we can append `copy_instrs`.
+                        Instruction::copy2_ext(RegSpan::new(last_result), last_value, value)
+                    }
+                    result if result == last_result.prev() => {
+                        // Case: we can prepend `copy_instr`.
+                        Instruction::copy2_ext(RegSpan::new(result), value, last_value)
+                    }
+                    _ => return Ok(None),
+                };
+                let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
+                debug_assert!(success);
+                return Ok(Some(last_instr));
+            }
+            Instruction::Copy2 { results, values } => {
+                // Try to fuse to a `copy_span` instruction.
+                let last_result0 = results.span().head();
+                let last_result1 = last_result0.next();
+                let last_value0 = values[0];
+                let last_value1 = values[1];
+                if last_value0.next() != last_value1 {
+                    // Case: last `copy2` instruction itself is not convertible to a `copy_span`.
+                    return Ok(None);
+                }
+                let mut fused_copy = None;
+                if result == last_result1.next() && value == last_value1.next() {
+                    // Case: we can append `copy_instr`.
+                    fused_copy = Some(Instruction::copy_span(
+                        RegSpan::new(last_result0),
+                        RegSpan::new(last_value0),
+                        3_u16,
+                    ));
+                }
+                if result == last_result0.prev() && value == last_value0.prev() {
+                    // Case: we can prepend `copy_instr`.
+                    fused_copy = Some(Instruction::copy_span(
+                        RegSpan::new(result),
+                        RegSpan::new(value),
+                        3_u16,
+                    ));
+                }
+                if let Some(fused_copy) = fused_copy {
+                    let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
+                    debug_assert!(success);
+                    return Ok(Some(last_instr));
+                }
+            }
+            Instruction::CopySpan {
+                results,
+                values,
+                len,
+            } => {
+                let last_result0 = results.head();
+                let last_value0 = values.head();
+                // Try to fuse to a larger `copy_span` instruction.
+                let mut fused_copy = None;
+                if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
+                    // Case: we can append `copy_instr`.
+                    fused_copy = Some(Instruction::copy_span(results, values, len + 1));
+                }
+                if result == last_result0.prev() && value == last_value0.prev() {
+                    // Case: we can prepend `copy_instr`.
+                    fused_copy = Some(Instruction::copy_span(
+                        RegSpan::new(result),
+                        RegSpan::new(value),
+                        len + 1,
+                    ));
+                }
+                if let Some(fused_copy) = fused_copy {
+                    let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
+                    debug_assert!(success);
+                    return Ok(Some(last_instr));
+                }
+            }
+            Instruction::CopyMany {
+                results: _,
+                values: _,
+            } => {
+                // Try to fuse to a larger `copy_many` instruction.
+                // todo!()
+            }
+            _ => {}
+        }
+        Ok(None)
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
