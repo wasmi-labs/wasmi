@@ -507,101 +507,152 @@ impl FuncTranslator {
         };
         let last_copy = *self.instrs.get(last_instr);
         let fused_copy = match last_copy {
-            Instruction::Copy {
-                result: last_result,
-                value: last_value,
-            } => {
-                // Try to fuse to a `copy2` instruction.
-                if value == last_result {
-                    // Case: cannot merge since the succeeding copy overwrites the result of `copy_instr`
-                    return Ok(None);
-                }
-                if result == last_result.next() {
-                    // Case: we can append `copy_instrs`.
-                    Instruction::copy2_ext(RegSpan::new(last_result), last_value, value)
-                } else if result == last_result.prev() {
-                    // Case: we can prepend `copy_instr`.
-                    Instruction::copy2_ext(RegSpan::new(result), value, last_value)
-                } else {
-                    // Case: found no way to merge copies.
-                    return Ok(None);
-                }
-            }
-            Instruction::Copy2 { results, values } => {
-                // Try to fuse to a `copy_span` instruction.
-                let last_result0 = results.span().head();
-                let last_result1 = last_result0.next();
-                let last_value0 = values[0];
-                let last_value1 = values[1];
-                if last_value0.next() != last_value1 {
-                    // Case: last `copy2` instruction itself is not convertible to a `copy_span`.
-                    return Ok(None);
-                }
-                if result == last_result1.next() && value == last_value1.next() {
-                    // Case: we can append `copy_instr`.
-                    if value == last_result0 || value == last_result1 {
-                        // Case: cannot merge since `value` is overwritten by `last_copy`.
-                        return Ok(None);
-                    }
-                    let results = RegSpan::new(last_result0);
-                    let values = RegSpan::new(last_value0);
-                    let len = 3_u16;
-                    debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-                    Instruction::copy_span_non_overlapping(results, values, len)
-                } else if result == last_result0.prev() && value == last_value0.prev() {
-                    // Case: we can prepend `copy_instr`.
-                    if result == last_value0 || result == last_value1 {
-                        // Case: cannot merge since `result` overwrites results of `last_copy`.
-                        return Ok(None);
-                    }
-                    let results = RegSpan::new(result);
-                    let values = RegSpan::new(value);
-                    let len = 3_u16;
-                    debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-                    Instruction::copy_span_non_overlapping(results, values, len)
-                } else {
-                    // Case: found no way to merge copies.
-                    return Ok(None);
-                }
-            }
-            Instruction::CopySpanNonOverlapping {
-                results,
-                values,
-                len,
-            } => {
-                let last_result0 = results.head();
-                let last_value0 = values.head();
-                // Try to fuse to a larger `copy_span` instruction.
-                if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
-                    // Case: we can append `copy_instr`.
-                    let new_len = len + 1;
-                    if RegSpan::has_overlapping_copies(results, values, new_len) {
-                        // Case: cannot merge since resulting `copy_span` has overlapping copies.
-                        return Ok(None);
-                    }
-                    Instruction::copy_span_non_overlapping(results, values, new_len)
-                } else if result == last_result0.prev() && value == last_value0.prev() {
-                    // Case: we can prepend `copy_instr`.
-                    let new_len = len + 1;
-                    if RegSpan::has_overlapping_copies(results, values, new_len) {
-                        // Case: cannot merge since resulting `copy_span` has overlapping copies.
-                        return Ok(None);
-                    }
-                    Instruction::copy_span_non_overlapping(
-                        RegSpan::new(result),
-                        RegSpan::new(value),
-                        new_len,
-                    )
-                } else {
-                    // Case: found no way to merge copies.
-                    return Ok(None);
-                }
+            Instruction::Copy { .. } => Self::try_merge_copy_instr(last_copy, result, value),
+            Instruction::Copy2 { .. } => Self::try_merge_copy2_instr(last_copy, result, value),
+            Instruction::CopySpanNonOverlapping { .. } => {
+                Self::try_merge_copy_span_instr(last_copy, result, value)
             }
             _ => return Ok(None),
         };
-        let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
-        debug_assert!(success);
-        Ok(Some(last_instr))
+        if let Some(fused_copy) = fused_copy {
+            let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
+            debug_assert!(success);
+            return Ok(Some(last_instr));
+        }
+        Ok(None)
+    }
+
+    /// Tries to merge two [`Instruction::Copy`] instructions and returns the result.
+    ///
+    /// Returns `None` if merging was not possible.
+    fn try_merge_copy_instr(
+        last_copy: Instruction,
+        result: Reg,
+        value: Reg,
+    ) -> Option<Instruction> {
+        let Instruction::Copy {
+            result: last_result,
+            value: last_value,
+        } = last_copy
+        else {
+            // Case: `last_copy` does not refer to a mergable copy instruction.
+            return None;
+        };
+        // Try to fuse to a `copy2` instruction.
+        if value == last_result {
+            // Case: cannot merge since the succeeding copy overwrites the result of `copy_instr`
+            return None;
+        }
+        if result == last_result.next() {
+            // Case: we can append `copy_instrs`.
+            return Some(Instruction::copy2_ext(
+                RegSpan::new(last_result),
+                last_value,
+                value,
+            ));
+        }
+        if result == last_result.prev() {
+            // Case: we can prepend `copy_instr`.
+            return Some(Instruction::copy2_ext(
+                RegSpan::new(result),
+                value,
+                last_value,
+            ));
+        }
+        None
+    }
+
+    /// Tries to merge an [`Instruction::Copy2`] and an [`Instruction::Copy`] and returns the result.
+    ///
+    /// Returns `None` if merging was not possible.
+    fn try_merge_copy2_instr(
+        last_copy: Instruction,
+        result: Reg,
+        value: Reg,
+    ) -> Option<Instruction> {
+        let Instruction::Copy2 { results, values } = last_copy else {
+            // Case: `last_copy` does not refer to a mergable copy instruction.
+            return None;
+        };
+        // Try to fuse to a `copy_span` instruction.
+        let [last_result0, last_result1] = results.to_array();
+        let [last_value0, last_value1] = values;
+        if last_value0.next() != last_value1 {
+            // Case: last `copy2` instruction itself is not convertible to a `copy_span`.
+            return None;
+        }
+        if result == last_result1.next() && value == last_value1.next() {
+            // Case: we can append `copy_instr`.
+            if value == last_result0 || value == last_result1 {
+                // Case: cannot merge since `value` is overwritten by `last_copy`.
+                return None;
+            }
+            let results = RegSpan::new(last_result0);
+            let values = RegSpan::new(last_value0);
+            let len = 3_u16;
+            debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+            return Some(Instruction::copy_span_non_overlapping(results, values, len));
+        }
+        if result == last_result0.prev() && value == last_value0.prev() {
+            // Case: we can prepend `copy_instr`.
+            if result == last_value0 || result == last_value1 {
+                // Case: cannot merge since `result` overwrites results of `last_copy`.
+                return None;
+            }
+            let results = RegSpan::new(result);
+            let values = RegSpan::new(value);
+            let len = 3_u16;
+            debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+            return Some(Instruction::copy_span_non_overlapping(results, values, len));
+        }
+        None
+    }
+
+    /// Tries to merge an [`Instruction::CopySpan`] and an [`Instruction::Copy`] and returns the result.
+    ///
+    /// Returns `None` if merging was not possible.
+    fn try_merge_copy_span_instr(
+        last_copy: Instruction,
+        result: Reg,
+        value: Reg,
+    ) -> Option<Instruction> {
+        let Instruction::CopySpanNonOverlapping {
+            results,
+            values,
+            len,
+        } = last_copy
+        else {
+            // Case: `last_copy` does not refer to a mergable copy instruction.
+            return None;
+        };
+        let last_result0 = results.head();
+        let last_value0 = values.head();
+        // Try to fuse to a larger `copy_span` instruction.
+        if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
+            // Case: we can append `copy_instr`.
+            let new_len = len + 1;
+            if RegSpan::has_overlapping_copies(results, values, new_len) {
+                // Case: cannot merge since resulting `copy_span` has overlapping copies.
+                return None;
+            }
+            return Some(Instruction::copy_span_non_overlapping(
+                results, values, new_len,
+            ));
+        }
+        if result == last_result0.prev() && value == last_value0.prev() {
+            // Case: we can prepend `copy_instr`.
+            let new_len = len + 1;
+            if RegSpan::has_overlapping_copies(results, values, new_len) {
+                // Case: cannot merge since resulting `copy_span` has overlapping copies.
+                return None;
+            }
+            return Some(Instruction::copy_span_non_overlapping(
+                RegSpan::new(result),
+                RegSpan::new(value),
+                new_len,
+            ));
+        }
+        None
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
