@@ -544,19 +544,27 @@ impl FuncTranslator {
                 let mut fused_copy = None;
                 if result == last_result1.next() && value == last_value1.next() {
                     // Case: we can append `copy_instr`.
-                    fused_copy = Some(Instruction::copy_span(
-                        RegSpan::new(last_result0),
-                        RegSpan::new(last_value0),
-                        3_u16,
-                    ));
+                    if value == last_result0 || value == last_result1 {
+                        // Case: cannot merge since `value` is overwritten by `last_copy`.
+                        return Ok(None);
+                    }
+                    let results = RegSpan::new(last_result0);
+                    let values = RegSpan::new(last_value0);
+                    let len = 3_u16;
+                    debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+                    fused_copy = Some(Instruction::copy_span(results, values, len));
                 }
                 if result == last_result0.prev() && value == last_value0.prev() {
                     // Case: we can prepend `copy_instr`.
-                    fused_copy = Some(Instruction::copy_span(
-                        RegSpan::new(result),
-                        RegSpan::new(value),
-                        3_u16,
-                    ));
+                    if result == last_value0 || result == last_value1 {
+                        // Case: cannot merge since `result` overwrites results of `last_copy`.
+                        return Ok(None);
+                    }
+                    let results = RegSpan::new(result);
+                    let values = RegSpan::new(value);
+                    let len = 3_u16;
+                    debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+                    fused_copy = Some(Instruction::copy_span(results, values, len));
                 }
                 if let Some(fused_copy) = fused_copy {
                     let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
@@ -575,14 +583,24 @@ impl FuncTranslator {
                 let mut fused_copy = None;
                 if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
                     // Case: we can append `copy_instr`.
-                    fused_copy = Some(Instruction::copy_span(results, values, len + 1));
+                    let new_len = len + 1;
+                    if RegSpan::has_overlapping_copies(results, values, new_len) {
+                        // Case: cannot merge since resulting `copy_span` has overlapping copies.
+                        return Ok(None);
+                    }
+                    fused_copy = Some(Instruction::copy_span(results, values, new_len));
                 }
                 if result == last_result0.prev() && value == last_value0.prev() {
                     // Case: we can prepend `copy_instr`.
+                    let new_len = len + 1;
+                    if RegSpan::has_overlapping_copies(results, values, new_len) {
+                        // Case: cannot merge since resulting `copy_span` has overlapping copies.
+                        return Ok(None);
+                    }
                     fused_copy = Some(Instruction::copy_span(
                         RegSpan::new(result),
                         RegSpan::new(value),
-                        len + 1,
+                        new_len,
                     ));
                 }
                 if let Some(fused_copy) = fused_copy {
