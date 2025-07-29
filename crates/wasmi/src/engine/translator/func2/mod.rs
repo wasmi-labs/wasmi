@@ -611,13 +611,6 @@ impl FuncTranslator {
                     return Ok(Some(last_instr));
                 }
             }
-            Instruction::CopyManyNonOverlapping {
-                results: _,
-                values: _,
-            } => {
-                // Try to fuse to a larger `copy_many` instruction.
-                // todo!()
-            }
             _ => {}
         }
         Ok(None)
