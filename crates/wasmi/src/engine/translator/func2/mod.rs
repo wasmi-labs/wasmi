@@ -506,7 +506,7 @@ impl FuncTranslator {
             return Ok(None);
         };
         let last_copy = *self.instrs.get(last_instr);
-        match last_copy {
+        let fused_copy = match last_copy {
             Instruction::Copy {
                 result: last_result,
                 value: last_value,
@@ -516,20 +516,16 @@ impl FuncTranslator {
                     // Case: cannot merge since the succeeding copy overwrites the result of `copy_instr`
                     return Ok(None);
                 }
-                let fused_copy = match result {
-                    result if result == last_result.next() => {
-                        // Case: we can append `copy_instrs`.
-                        Instruction::copy2_ext(RegSpan::new(last_result), last_value, value)
-                    }
-                    result if result == last_result.prev() => {
-                        // Case: we can prepend `copy_instr`.
-                        Instruction::copy2_ext(RegSpan::new(result), value, last_value)
-                    }
-                    _ => return Ok(None),
-                };
-                let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
-                debug_assert!(success);
-                return Ok(Some(last_instr));
+                if result == last_result.next() {
+                    // Case: we can append `copy_instrs`.
+                    Instruction::copy2_ext(RegSpan::new(last_result), last_value, value)
+                } else if result == last_result.prev() {
+                    // Case: we can prepend `copy_instr`.
+                    Instruction::copy2_ext(RegSpan::new(result), value, last_value)
+                } else {
+                    // Case: found no way to merge copies.
+                    return Ok(None);
+                }
             }
             Instruction::Copy2 { results, values } => {
                 // Try to fuse to a `copy_span` instruction.
@@ -541,7 +537,6 @@ impl FuncTranslator {
                     // Case: last `copy2` instruction itself is not convertible to a `copy_span`.
                     return Ok(None);
                 }
-                let mut fused_copy = None;
                 if result == last_result1.next() && value == last_value1.next() {
                     // Case: we can append `copy_instr`.
                     if value == last_result0 || value == last_result1 {
@@ -552,9 +547,9 @@ impl FuncTranslator {
                     let values = RegSpan::new(last_value0);
                     let len = 3_u16;
                     debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-                    fused_copy = Some(Instruction::copy_span_non_overlapping(results, values, len));
-                }
-                if result == last_result0.prev() && value == last_value0.prev() {
+                    // fused_copy = Some(Instruction::copy_span_non_overlapping(results, values, len));
+                    Instruction::copy_span_non_overlapping(results, values, len)
+                } else if result == last_result0.prev() && value == last_value0.prev() {
                     // Case: we can prepend `copy_instr`.
                     if result == last_value0 || result == last_value1 {
                         // Case: cannot merge since `result` overwrites results of `last_copy`.
@@ -564,12 +559,10 @@ impl FuncTranslator {
                     let values = RegSpan::new(value);
                     let len = 3_u16;
                     debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-                    fused_copy = Some(Instruction::copy_span_non_overlapping(results, values, len));
-                }
-                if let Some(fused_copy) = fused_copy {
-                    let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
-                    debug_assert!(success);
-                    return Ok(Some(last_instr));
+                    Instruction::copy_span_non_overlapping(results, values, len)
+                } else {
+                    // Case: found no way to merge copies.
+                    return Ok(None);
                 }
             }
             Instruction::CopySpanNonOverlapping {
@@ -580,7 +573,6 @@ impl FuncTranslator {
                 let last_result0 = results.head();
                 let last_value0 = values.head();
                 // Try to fuse to a larger `copy_span` instruction.
-                let mut fused_copy = None;
                 if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
                     // Case: we can append `copy_instr`.
                     let new_len = len + 1;
@@ -588,32 +580,29 @@ impl FuncTranslator {
                         // Case: cannot merge since resulting `copy_span` has overlapping copies.
                         return Ok(None);
                     }
-                    fused_copy = Some(Instruction::copy_span_non_overlapping(
-                        results, values, new_len,
-                    ));
-                }
-                if result == last_result0.prev() && value == last_value0.prev() {
+                    Instruction::copy_span_non_overlapping(results, values, new_len)
+                } else if result == last_result0.prev() && value == last_value0.prev() {
                     // Case: we can prepend `copy_instr`.
                     let new_len = len + 1;
                     if RegSpan::has_overlapping_copies(results, values, new_len) {
                         // Case: cannot merge since resulting `copy_span` has overlapping copies.
                         return Ok(None);
                     }
-                    fused_copy = Some(Instruction::copy_span_non_overlapping(
+                    Instruction::copy_span_non_overlapping(
                         RegSpan::new(result),
                         RegSpan::new(value),
                         new_len,
-                    ));
-                }
-                if let Some(fused_copy) = fused_copy {
-                    let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
-                    debug_assert!(success);
-                    return Ok(Some(last_instr));
+                    )
+                } else {
+                    // Case: found no way to merge copies.
+                    return Ok(None);
                 }
             }
-            _ => {}
-        }
-        Ok(None)
+            _ => return Ok(None),
+        };
+        let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
+        debug_assert!(success);
+        Ok(Some(last_instr))
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
