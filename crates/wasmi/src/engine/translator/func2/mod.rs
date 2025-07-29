@@ -644,7 +644,7 @@ impl FuncTranslator {
         len: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<(), Error> {
-        self.stack.peek_n(usize::from(len), &mut self.operands);
+        self.peek_operands_into_buffer(usize::from(len));
         let values = &self.operands[..];
         let (results, values) = Self::copy_many_strip_noop_start(results, values, &self.layout)?;
         let values = Self::copy_many_strip_noop_end(results, values, &self.layout)?;
@@ -1071,6 +1071,12 @@ impl FuncTranslator {
         Ok(instr)
     }
 
+    /// Store the top-most [`Operand`]s on the [`Stack`] into the operands buffer.
+    fn peek_operands_into_buffer(&mut self, len: usize) {
+        self.operands.clear();
+        self.operands.extend(self.stack.peek_n(len));
+    }
+
     /// Encodes an [`Instruction::ReturnMany`] for `len` values.
     ///
     /// # Panics
@@ -1081,7 +1087,7 @@ impl FuncTranslator {
         len: usize,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<Instr, Error> {
-        self.stack.peek_n(len, &mut self.operands);
+        self.peek_operands_into_buffer(usize::from(len));
         let [v0, v1, v2, rest @ ..] = &self.operands[..] else {
             unreachable!("encode_return_many (pre-condition): len >= 4")
         };
