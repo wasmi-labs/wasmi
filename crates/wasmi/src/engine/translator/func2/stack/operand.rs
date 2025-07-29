@@ -63,19 +63,9 @@ impl Operand {
         Self::Immediate(ImmediateOperand { operand_index, val })
     }
 
-    /// Returns `true` if `self` is an [`Operand::Local`].
-    pub fn is_local(&self) -> bool {
-        matches!(self, Self::Local(_))
-    }
-
     /// Returns `true` if `self` is an [`Operand::Temp`].
     pub fn is_temp(&self) -> bool {
         matches!(self, Self::Temp(_))
-    }
-
-    /// Returns `true` if `self` is an [`Operand::Immediate`].
-    pub fn is_immediate(&self) -> bool {
-        matches!(self, Self::Immediate(_))
     }
 
     /// Returns the [`OperandIdx`] of the [`Operand`].
