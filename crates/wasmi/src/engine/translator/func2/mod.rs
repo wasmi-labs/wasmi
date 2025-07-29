@@ -485,25 +485,7 @@ impl FuncTranslator {
                     // Case: can encode the copies as a more efficient `copy_span`
                     return self.encode_copy_span(results, values, len_values, consume_fuel_instr);
                 }
-                self.stack
-                    .peek_n(usize::from(len_values), &mut self.operands);
-                debug_assert!(!Self::has_overlapping_copies(
-                    results,
-                    &self.operands[..],
-                    &self.layout
-                )?);
-                let [val0, val1, rest @ ..] = &self.operands[..] else {
-                    unreachable!("asserted that operands.len() >= 3")
-                };
-                let val0 = self.layout.operand_to_reg(*val0)?;
-                let val1 = self.layout.operand_to_reg(*val1)?;
-                self.instrs.push_instr(
-                    Instruction::copy_many_ext(results, val0, val1),
-                    consume_fuel_instr,
-                    |costs| costs.fuel_for_copying_values(u64::from(len_values)),
-                )?;
-                self.instrs.encode_register_list(rest, &mut self.layout)?;
-                Ok(())
+                self.encode_copy_many(results, len_values, consume_fuel_instr)
             }
         }
     }
@@ -647,6 +629,33 @@ impl FuncTranslator {
             consume_fuel_instr,
             |costs| costs.fuel_for_copying_values(u64::from(len)),
         )?;
+        Ok(())
+    }
+
+    /// Encode a copy instruction that copies many values.
+    fn encode_copy_many(
+        &mut self,
+        results: RegSpan,
+        len: u16,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
+        self.stack.peek_n(usize::from(len), &mut self.operands);
+        debug_assert!(!Self::has_overlapping_copies(
+            results,
+            &self.operands[..],
+            &self.layout
+        )?);
+        let [val0, val1, rest @ ..] = &self.operands[..] else {
+            unreachable!("asserted that operands.len() >= 3")
+        };
+        let val0 = self.layout.operand_to_reg(*val0)?;
+        let val1 = self.layout.operand_to_reg(*val1)?;
+        self.instrs.push_instr(
+            Instruction::copy_many_ext(results, val0, val1),
+            consume_fuel_instr,
+            |costs| costs.fuel_for_copying_values(u64::from(len)),
+        )?;
+        self.instrs.encode_register_list(rest, &mut self.layout)?;
         Ok(())
     }
 
