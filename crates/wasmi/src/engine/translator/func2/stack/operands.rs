@@ -215,12 +215,11 @@ impl OperandStack {
         let len_operands = self.operands.len();
         let first_index = len_operands - n;
         let Some(operands) = self.operands.get(first_index..) else {
-            return PeekedOperands::empty(&self.local_heads);
+            return PeekedOperands::empty();
         };
         PeekedOperands {
             index: first_index,
             operands: operands.iter(),
-            local_heads: &self.local_heads,
         }
     }
 
@@ -476,17 +475,14 @@ pub struct PeekedOperands<'stack> {
     index: usize,
     /// The iterator of peeked stack operands.
     operands: slice::Iter<'stack, StackOperand>,
-    /// Used to query types of local operands.
-    local_heads: &'stack LocalsHead,
 }
 
 impl<'stack> PeekedOperands<'stack> {
     /// Creates a [`PeekedOperands`] iterator that yields no operands.
-    pub fn empty(local_heads: &'stack LocalsHead) -> Self {
+    pub fn empty() -> Self {
         Self {
             index: 0,
             operands: [].iter(),
-            local_heads,
         }
     }
 }
