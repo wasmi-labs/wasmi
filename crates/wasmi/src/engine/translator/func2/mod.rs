@@ -481,24 +481,9 @@ impl FuncTranslator {
                 Ok(())
             }
             _ => {
-                let fuel_costs = |costs: &FuelCostsProvider| -> u64 {
-                    costs.fuel_for_copying_values(u64::from(len_values))
-                };
                 if let Some(values) = self.try_form_regspan(usize::from(len_values))? {
                     // Case: can encode the copies as a more efficient `copy_span`
-                    if results == values {
-                        // Case: results and values are equal and therefore the copy is a no-op
-                        return Ok(());
-                    }
-                    debug_assert!(!RegSpan::has_overlapping_copies(
-                        results, values, len_values
-                    ));
-                    self.instrs.push_instr(
-                        Instruction::copy_span(results, values, len_values),
-                        consume_fuel_instr,
-                        fuel_costs,
-                    )?;
-                    return Ok(());
+                    return self.encode_copy_span(results, values, len_values, consume_fuel_instr)
                 }
                 self.stack
                     .peek_n(usize::from(len_values), &mut self.operands);
@@ -515,7 +500,7 @@ impl FuncTranslator {
                 self.instrs.push_instr(
                     Instruction::copy_many_ext(results, val0, val1),
                     consume_fuel_instr,
-                    fuel_costs,
+                    |costs| costs.fuel_for_copying_values(u64::from(len_values)),
                 )?;
                 self.instrs.encode_register_list(rest, &mut self.layout)?;
                 Ok(())
@@ -635,6 +620,32 @@ impl FuncTranslator {
             Instruction::copy2_ext(results, val0, val1),
             consume_fuel_instr,
             FuelCostsProvider::base,
+        )?;
+        Ok(())
+    }
+
+    /// Encode a copy instruction that copies a contiguous span of values.
+    ///
+    /// # Note
+    ///
+    /// This won't encode a copy if the resulting copy instruction is a no-op.
+    fn encode_copy_span(
+        &mut self,
+        results: RegSpan,
+        values: RegSpan,
+        len: u16,
+        consume_fuel_instr: Option<Instr>,
+    ) -> Result<(), Error> {
+        // Case: can encode the copies as a more efficient `copy_span`
+        if results == values {
+            // Case: results and values are equal and therefore the copy is a no-op
+            return Ok(());
+        }
+        debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+        self.instrs.push_instr(
+            Instruction::copy_span(results, values, len),
+            consume_fuel_instr,
+            |costs| costs.fuel_for_copying_values(u64::from(len)),
         )?;
         Ok(())
     }
