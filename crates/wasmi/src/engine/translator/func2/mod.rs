@@ -483,7 +483,7 @@ impl FuncTranslator {
             _ => {
                 if let Some(values) = self.try_form_regspan(usize::from(len_values))? {
                     // Case: can encode the copies as a more efficient `copy_span`
-                    return self.encode_copy_span(results, values, len_values, consume_fuel_instr)
+                    return self.encode_copy_span(results, values, len_values, consume_fuel_instr);
                 }
                 self.stack
                     .peek_n(usize::from(len_values), &mut self.operands);
