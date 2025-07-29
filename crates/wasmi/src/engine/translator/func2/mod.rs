@@ -1103,28 +1103,43 @@ impl FuncTranslator {
         Ok(return_instr)
     }
 
-    /// Tries to form a [`RegSpan`] from the top-most `len` operands on the [`Stack`].
+    /// Tries to form a [`RegSpan`] from the top-most `n` operands on the [`Stack`].
     ///
     /// Returns `None` if forming a [`RegSpan`] was not possible.
     fn try_form_regspan(&self, len: usize) -> Result<Option<RegSpan>, Error> {
-        if len == 0 {
+        Self::try_form_regspan_of(self.stack.peek_n(len), &self.layout)
+    }
+
+    /// Tries to form a [`RegSpan`] from the `values` slice of [`Operand`]s.
+    ///
+    /// Returns `None` if forming a [`RegSpan`] was not possible.
+    fn try_form_regspan_of<T>(
+        values: impl IntoIterator<Item = T>,
+        layout: &StackLayout,
+    ) -> Result<Option<RegSpan>, Error>
+    where
+        T: AsRef<Operand>,
+    {
+        let mut values = values.into_iter();
+        let Some(head) = values.next() else {
             return Ok(None);
-        }
-        let mut start = match self.stack.peek(0) {
-            Operand::Immediate(_) => return Ok(None),
-            Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
-            Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
         };
-        for depth in 1..len {
-            let cur = match self.stack.peek(depth) {
+        let mut head = match head.as_ref() {
+            Operand::Local(start) => layout.local_to_reg(start.local_index())?,
+            Operand::Temp(start) => layout.temp_to_reg(start.operand_index())?,
+            Operand::Immediate(_) => return Ok(None),
+        };
+        let start = head;
+        for value in values {
+            let cur = match value.as_ref() {
                 Operand::Immediate(_) => return Ok(None),
-                Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
-                Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
+                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
             };
-            if start != cur.next() {
+            if head != cur.prev() {
                 return Ok(None);
             }
-            start = cur;
+            head = cur;
         }
         Ok(Some(RegSpan::new(start)))
     }
