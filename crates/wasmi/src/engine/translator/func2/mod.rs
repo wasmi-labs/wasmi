@@ -632,6 +632,12 @@ impl FuncTranslator {
     }
 
     /// Encode a copy instruction that copies many values.
+    ///
+    /// # Note
+    ///
+    /// - This won't encode a copy if the resulting copy instruction is a no-op.
+    /// - Encodes either `copy`, `copy2`, `copy_span` or `copy_many` depending on the amount
+    ///   of noop copies between `results` and `values`.
     fn encode_copy_many(
         &mut self,
         results: RegSpan,
@@ -639,23 +645,97 @@ impl FuncTranslator {
         consume_fuel_instr: Option<Instr>,
     ) -> Result<(), Error> {
         self.stack.peek_n(usize::from(len), &mut self.operands);
+        let values = &self.operands[..];
+        let (results, values) = Self::copy_many_strip_noop_start(results, values, &self.layout)?;
+        let values = Self::copy_many_strip_noop_end(results, values, &self.layout)?;
         debug_assert!(!Self::has_overlapping_copies(
             results,
-            &self.operands[..],
+            values,
             &self.layout
         )?);
-        let [val0, val1, rest @ ..] = &self.operands[..] else {
-            unreachable!("asserted that operands.len() >= 3")
+        match values {
+            [] => unreachable!("no-op copies have been stripped out before"),
+            [val0] => {
+                let result = results.head();
+                let value = *val0;
+                self.encode_copy(result, value, consume_fuel_instr)?;
+                Ok(())
+            }
+            [val0, val1] => self.encode_copy2(results, *val0, *val1, consume_fuel_instr),
+            [val0, val1, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
+                let val0 = self.layout.operand_to_reg(*val0)?;
+                let val1 = self.layout.operand_to_reg(*val1)?;
+                self.instrs.push_instr(
+                    Instruction::copy_many_ext(results, val0, val1),
+                    consume_fuel_instr,
+                    |costs| costs.fuel_for_copying_values(u64::from(len)),
+                )?;
+                self.instrs.encode_register_list(rest, &mut self.layout)?;
+                Ok(())
+            }
+        }
+    }
+
+    /// Tries to strip noop copies from the start of the `copy_many`.
+    ///
+    /// Returns the stripped `results` [`RegSpan`] and `values` slice of [`Operand`]s.
+    fn copy_many_strip_noop_start<'a>(
+        results: RegSpan,
+        values: &'a [Operand],
+        layout: &StackLayout,
+    ) -> Result<(RegSpan, &'a [Operand]), Error> {
+        let mut result = results.head();
+        let mut values = values;
+        while let Some((value, rest)) = values.split_first() {
+            let value = match value {
+                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
+                Operand::Immediate(_) => {
+                    // Immediate values will never yield no-op copies.
+                    break;
+                }
+            };
+            if result != value {
+                // Can no longer strip no-op copies from the start.
+                break;
+            }
+            result = result.next();
+            values = rest;
+        }
+        Ok((RegSpan::new(result), values))
+    }
+
+    /// Tries to strip noop copies from the end of the `copy_many`.
+    ///
+    /// Returns the stripped `values` slice of [`Operand`]s.
+    fn copy_many_strip_noop_end<'a>(
+        results: RegSpan,
+        values: &'a [Operand],
+        layout: &StackLayout,
+    ) -> Result<&'a [Operand], Error> {
+        let Ok(len) = u16::try_from(values.len()) else {
+            panic!("out of bounds `copy_many` values length: {}", values.len())
         };
-        let val0 = self.layout.operand_to_reg(*val0)?;
-        let val1 = self.layout.operand_to_reg(*val1)?;
-        self.instrs.push_instr(
-            Instruction::copy_many_ext(results, val0, val1),
-            consume_fuel_instr,
-            |costs| costs.fuel_for_copying_values(u64::from(len)),
-        )?;
-        self.instrs.encode_register_list(rest, &mut self.layout)?;
-        Ok(())
+        let mut result = results.head().next_n(len);
+        let mut values = values;
+        while let Some((value, rest)) = values.split_last() {
+            let value = match value {
+                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
+                Operand::Immediate(_) => {
+                    // Immediate values will never yield no-op copies.
+                    break;
+                }
+            };
+            result = result.prev();
+            if result != value {
+                // Can no longer strip no-op copies from the end.
+                break;
+            }
+            values = rest;
+        }
+        Ok(values)
     }
 
     /// Returns `true` if there are overlapping copies with `results` and `values`.
