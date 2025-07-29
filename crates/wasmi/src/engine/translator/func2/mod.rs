@@ -572,7 +572,7 @@ impl FuncTranslator {
                     return Ok(Some(last_instr));
                 }
             }
-            Instruction::CopySpan {
+            Instruction::CopySpanNonOverlapping {
                 results,
                 values,
                 len,
@@ -611,7 +611,7 @@ impl FuncTranslator {
                     return Ok(Some(last_instr));
                 }
             }
-            Instruction::CopyMany {
+            Instruction::CopyManyNonOverlapping {
                 results: _,
                 values: _,
             } => {
