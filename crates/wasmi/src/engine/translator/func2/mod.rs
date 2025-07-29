@@ -618,7 +618,6 @@ impl FuncTranslator {
         len: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<(), Error> {
-        // Case: can encode the copies as a more efficient `copy_span`
         if results == values {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
