@@ -236,7 +236,7 @@ impl OperandStack {
             panic!("tried to pop operand from empty stack");
         };
         let index = self.next_index();
-        self.unlink_local(operand);
+        self.try_unlink_local(operand);
         Operand::new(index, operand)
     }
 
@@ -293,7 +293,7 @@ impl OperandStack {
     fn operand_to_temp_at(&mut self, index: OperandIdx) -> StackOperand {
         let operand = self.get_at(index);
         let ty = operand.ty();
-        self.unlink_local(operand);
+        self.try_unlink_local(operand);
         self.operands[usize::from(index)] = StackOperand::Temp { ty, instr: None };
         operand
     }
@@ -339,7 +339,8 @@ impl OperandStack {
     /// Unlinks the [`StackOperand::Local`] `operand` at `index` from `self`.
     ///
     /// Does nothing if `operand` is not a [`StackOperand::Local`].
-    fn unlink_local(&mut self, operand: StackOperand) {
+    #[inline]
+    fn try_unlink_local(&mut self, operand: StackOperand) {
         let StackOperand::Local {
             local_index,
             prev_local,
@@ -349,6 +350,11 @@ impl OperandStack {
         else {
             return;
         };
+        self.unlink_local(local_index, prev_local, next_local);
+    }
+
+    /// Unlinks the [`StackOperand::Local`] `operand` identified by the parameters from `self`.
+    fn unlink_local(&mut self, local_index: LocalIdx, prev_local: Option<OperandIdx>, next_local: Option<OperandIdx>) {
         if prev_local.is_none() {
             self.local_heads.replace_first(local_index, next_local);
         }
