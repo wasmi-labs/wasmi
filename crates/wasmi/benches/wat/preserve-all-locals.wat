@@ -1,7 +1,7 @@
 (module
     (func (export "run") (param i32) (result i32)
         (local i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
-        ;; Push 100 locals onto the stack.
+        ;; Push some locals onto the stack.
         (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
         (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 10
         (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
@@ -22,6 +22,46 @@
         (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 90
         (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
         (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 100
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 110
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 120
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 130
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 140
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 150
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 160
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 170
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 180
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 190
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 200
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 210
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 220
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 230
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 240
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 250
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 260
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 270
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 280
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 290
+        (local.get 1) (local.get 2) (local.get 3) (local.get 4) (local.get  5)
+        (local.get 6) (local.get 7) (local.get 8) (local.get 9) (local.get 10) ;; 300
         ;; Now push a sequence of blocks and `local.get` to force preservation of all locals.
         (block
             (local.get 0)
@@ -67,7 +107,7 @@
             )
             (drop)
         )
-        ;; Drop all 100 operands from the stack.
+        ;; Drop all operands from the stack.
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
@@ -77,7 +117,27 @@
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) ;; 100
         (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) ;; 200
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+        (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) ;; 300
         ;; Return input to caller.
         (local.get 0)
     )
