@@ -393,6 +393,10 @@ impl<'a> Iterator for InstrEncoderIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 impl ExactSizeIterator for InstrEncoderIter<'_> {
