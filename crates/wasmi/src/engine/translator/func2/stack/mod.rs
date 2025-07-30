@@ -178,18 +178,7 @@ impl Stack {
         debug_assert!(!self.controls.is_empty());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
-        let fuel_metering = self.is_fuel_metering_enabled();
-        let consume_fuel = match fuel_metering {
-            true => {
-                let consume_instr = self
-                    .controls
-                    .get(0)
-                    .consume_fuel_instr()
-                    .expect("control frame must have consume instructions");
-                Some(consume_instr)
-            }
-            false => None,
-        };
+        let consume_fuel = self.consume_fuel_instr();
         self.controls
             .push_block(ty, block_height, label, consume_fuel);
         Ok(())
@@ -530,8 +519,8 @@ impl Stack {
     /// Returns the current [`Instruction::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// Returns `None` otherwise.
+    #[inline]
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
-        debug_assert!(!self.controls.is_empty());
-        self.controls.get(0).consume_fuel_instr()
+        self.controls.consume_fuel_instr()
     }
 }
