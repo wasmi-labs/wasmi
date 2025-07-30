@@ -35,6 +35,15 @@ impl From<usize> for StackHeight {
 pub struct ControlStack {
     /// The stack of control frames.
     frames: Vec<ControlFrame>,
+    /// The current top-most [`Instruction::ConsumeFuel`] on the stack.
+    ///
+    /// # Note
+    ///
+    /// This is meant as cache and optimization to quickly query the top-most
+    /// fuel consumption instruction since this information is accessed commonly.
+    ///
+    /// [`Instruction`]: crate::ir::Instruction
+    consume_fuel_instr: Option<Instr>,
     /// Special operand stack to memorize operands for `else` control frames.
     else_operands: ElseOperands,
     /// This is `true` if an `if` with else providers was just popped from the stack.
@@ -88,6 +97,15 @@ impl Reset for ControlStack {
 }
 
 impl ControlStack {
+    /// Returns the current [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        debug_assert!(!self.is_empty());
+        self.consume_fuel_instr
+    }
+
     /// Returns `true` if `self` is empty.
     pub fn is_empty(&self) -> bool {
         self.height() == 0
@@ -119,7 +137,8 @@ impl ControlStack {
             is_branched_to: false,
             consume_fuel,
             label,
-        }))
+        }));
+        self.consume_fuel_instr = consume_fuel;
     }
 
     /// Pushes a new Wasm `loop` onto the [`ControlStack`].
@@ -137,7 +156,8 @@ impl ControlStack {
             is_branched_to: false,
             consume_fuel,
             label,
-        }))
+        }));
+        self.consume_fuel_instr = consume_fuel;
     }
 
     /// Pushes a new Wasm `if` onto the [`ControlStack`].
@@ -162,6 +182,7 @@ impl ControlStack {
         if matches!(reachability, IfReachability::Both { .. }) {
             self.else_operands.push(else_operands);
         }
+        self.consume_fuel_instr = consume_fuel;
     }
 
     /// Pushes a new Wasm `else` onto the [`ControlStack`].
@@ -195,12 +216,17 @@ impl ControlStack {
             label,
             reachability,
         }));
+        self.consume_fuel_instr = consume_fuel;
     }
 
     /// Pops the top-most [`ControlFrame`] and returns it if any.
     pub fn pop(&mut self) -> Option<ControlFrame> {
         debug_assert!(!self.orphaned_else_operands);
         let frame = self.frames.pop()?;
+        if !matches!(frame, ControlFrame::Block(_) | ControlFrame::Unreachable(_)) {
+            // Need to replace the cached top-most `consume_fuel_instr`.
+            self.consume_fuel_instr = self.get(0).consume_fuel_instr();
+        }
         self.orphaned_else_operands = match &frame {
             ControlFrame::If(frame) => {
                 matches!(frame.reachability, IfReachability::Both { .. })
