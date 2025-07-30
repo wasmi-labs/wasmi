@@ -57,6 +57,7 @@ criterion_group!(
         bench_translate_case_best,
         bench_translate_case_worst_stackbomb_small,
         bench_translate_case_worst_stackbomb_big,
+        bench_translate_preserve_all_locals,
 );
 criterion_group!(
     name = bench_group_instantiate;
@@ -436,6 +437,17 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, wasm).unwrap();
+        })
+    });
+}
+
+fn bench_translate_preserve_all_locals(c: &mut Criterion) {
+    let id = format!("translate/case/preserve-all-locals/");
+    c.bench_function(&id, |b| {
+        let wasm = load_wasm_from_file("benches/wat/preserve-all-locals.wat");
+        b.iter_with_large_drop(|| {
+            let engine = Engine::default();
+            let _ = Module::new(&engine, &wasm[..]).unwrap();
         })
     });
 }
