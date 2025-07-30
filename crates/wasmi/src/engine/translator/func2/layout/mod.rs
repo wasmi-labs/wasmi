@@ -81,6 +81,7 @@ impl StackLayout {
     /// # Errors
     ///
     /// If `index` cannot be converted into a [`Reg`].
+    #[inline]
     pub fn local_to_reg(&self, index: LocalIdx) -> Result<Reg, Error> {
         debug_assert!(
             (u32::from(index) as usize) < self.len_locals,
@@ -97,6 +98,7 @@ impl StackLayout {
     /// # Errors
     ///
     /// If `index` cannot be converted into a [`Reg`].
+    #[inline]
     pub fn temp_to_reg(&self, index: OperandIdx) -> Result<Reg, Error> {
         let index = usize::from(index);
         let Some(index) = index.checked_add(self.len_locals) else {
@@ -113,6 +115,7 @@ impl StackLayout {
     /// # Errors
     ///
     /// If too many function local constants have been allocated already.
+    #[inline]
     pub fn const_to_reg(&mut self, value: impl Into<UntypedVal>) -> Result<Reg, Error> {
         self.consts.alloc(value.into())
     }
