@@ -354,12 +354,16 @@ impl OperandStack {
     }
 
     /// Unlinks the [`StackOperand::Local`] `operand` identified by the parameters from `self`.
-    fn unlink_local(&mut self, local_index: LocalIdx, prev_local: Option<OperandIdx>, next_local: Option<OperandIdx>) {
-        if prev_local.is_none() {
-            self.local_heads.replace_first(local_index, next_local);
-        }
+    fn unlink_local(
+        &mut self,
+        local_index: LocalIdx,
+        prev_local: Option<OperandIdx>,
+        next_local: Option<OperandIdx>,
+    ) {
         if let Some(prev_local) = prev_local {
             self.update_next_local(prev_local, next_local);
+        } else {
+            self.local_heads.replace_first(local_index, next_local);
         }
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, prev_local);
@@ -374,11 +378,11 @@ impl OperandStack {
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
     fn update_prev_local(&mut self, local_index: OperandIdx, prev_index: Option<OperandIdx>) {
-        match &mut self.operands[usize::from(local_index)] {
-            StackOperand::Local { prev_local, .. } => {
+        match self.operands.get_mut(usize::from(local_index)) {
+            Some(StackOperand::Local { prev_local, .. }) => {
                 *prev_local = prev_index;
             }
-            operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
+            entry => panic!("expected `StackOperand::Local` but found: {entry:?}"),
         }
     }
 
@@ -388,12 +392,12 @@ impl OperandStack {
     ///
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
-    fn update_next_local(&mut self, local_index: OperandIdx, prev_index: Option<OperandIdx>) {
-        match &mut self.operands[usize::from(local_index)] {
-            StackOperand::Local { next_local, .. } => {
-                *next_local = prev_index;
+    fn update_next_local(&mut self, local_index: OperandIdx, next_index: Option<OperandIdx>) {
+        match self.operands.get_mut(usize::from(local_index)) {
+            Some(StackOperand::Local { next_local, .. }) => {
+                *next_local = next_index;
             }
-            operand => panic!("expected `StackOperand::Local` but found: {operand:?}"),
+            entry => panic!("expected `StackOperand::Local` but found: {entry:?}"),
         }
     }
 }
