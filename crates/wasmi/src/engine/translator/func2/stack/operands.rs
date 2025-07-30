@@ -186,6 +186,7 @@ impl OperandStack {
     /// # Errors
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
+    #[inline]
     pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
         let idx = self.next_index();
         self.operands.push(StackOperand::Temp { ty, instr });
@@ -198,6 +199,7 @@ impl OperandStack {
     /// # Errors
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
+    #[inline]
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
         let idx = self.next_index();
         self.operands
@@ -228,6 +230,7 @@ impl OperandStack {
     /// # Panics
     ///
     /// If `self` is empty.
+    #[inline]
     pub fn pop(&mut self) -> Operand {
         let Some(operand) = self.operands.pop() else {
             panic!("tried to pop operand from empty stack");
@@ -242,6 +245,7 @@ impl OperandStack {
     /// # Panics
     ///
     /// If `depth` is out of bounds for `self`.
+    #[inline]
     pub fn get(&self, depth: usize) -> Operand {
         let index = self.depth_to_index(depth);
         let operand = self.get_at(index);
@@ -253,6 +257,7 @@ impl OperandStack {
     /// # Panics
     ///
     /// If `index` is out of bounds for `self`.
+    #[inline]
     fn get_at(&self, index: OperandIdx) -> StackOperand {
         self.operands[usize::from(index)]
     }

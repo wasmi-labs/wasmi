@@ -368,6 +368,7 @@ impl Stack {
     /// # Errors
     ///
     /// If too many operands have been pushed onto the [`Stack`].
+    #[inline]
     pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
         self.operands.push_temp(ty, instr)
     }
@@ -377,6 +378,7 @@ impl Stack {
     /// # Errors
     ///
     /// If too many operands have been pushed onto the [`Stack`].
+    #[inline]
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
         self.operands.push_immediate(value)
     }
@@ -390,6 +392,7 @@ impl Stack {
     /// # Panics
     ///
     /// If `depth` is out of bounds for `self`.
+    #[inline]
     pub fn peek(&self, depth: usize) -> Operand {
         self.operands.get(depth)
     }
@@ -399,6 +402,7 @@ impl Stack {
     /// # Panics
     ///
     /// If there aren't at least 2 [`Operand`]s on the [`Stack`].
+    #[inline]
     pub fn peek2(&self) -> (Operand, Operand) {
         let v0 = self.peek(1);
         let v1 = self.peek(0);
@@ -429,6 +433,7 @@ impl Stack {
     /// # Panics
     ///
     /// If `self` is empty.
+    #[inline]
     pub fn pop(&mut self) -> Operand {
         self.operands.pop()
     }
@@ -442,6 +447,7 @@ impl Stack {
     /// # Panics
     ///
     /// If `self` does not contain enough operands to pop.
+    #[inline]
     pub fn pop2(&mut self) -> (Operand, Operand) {
         let o2 = self.pop();
         let o1 = self.pop();
