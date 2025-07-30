@@ -442,7 +442,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
 }
 
 fn bench_translate_preserve_all_locals(c: &mut Criterion) {
-    let id = format!("translate/case/preserve-all-locals/");
+    let id = "translate/case/preserve-all-locals/".to_string();
     c.bench_function(&id, |b| {
         let wasm = load_wasm_from_file("benches/wat/preserve-all-locals.wat");
         b.iter_with_large_drop(|| {
