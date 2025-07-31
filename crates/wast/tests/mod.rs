@@ -211,6 +211,8 @@ macro_rules! expand_tests {
             fn wasmi_audit("../../local/audit");
             fn wasmi_i32_add("../../local/op/i32-add");
             fn wasmi_i64_add("../../local/op/i64-add");
+            fn wasmi_i32_mul("../../local/op/i32-mul");
+            fn wasmi_i64_mul("../../local/op/i64-mul");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
