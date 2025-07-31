@@ -32,9 +32,9 @@
 (assert_return (invoke "i32.add(0,x)" (i32.const 0x80000000)) (i32.const 0x80000000))
 
 (module
-    (import "utils" "identity.i32" (func $indentity.i32 (param i32) (result i32)))
+    (import "utils" "identity.i32" (func $identity.i32 (param i32) (result i32)))
     (func (export "i32.add(0,temp)") (param i32) (result i32)
-        (i32.add (i32.const 0) (call $indentity.i32 (local.get 0)))
+        (i32.add (i32.const 0) (call $identity.i32 (local.get 0)))
     )
 )
 (assert_return (invoke "i32.add(0,temp)" (i32.const 0)) (i32.const 0))
