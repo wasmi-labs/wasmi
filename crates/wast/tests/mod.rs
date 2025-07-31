@@ -210,6 +210,7 @@ macro_rules! expand_tests {
             fn wasmi_copy_span("../../local/copy-span");
             fn wasmi_audit("../../local/audit");
             fn wasmi_i32_add("../../local/op/i32-add");
+            fn wasmi_i64_add("../../local/op/i64-add");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
