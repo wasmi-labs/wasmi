@@ -1707,9 +1707,26 @@ dependencies = [
  "multi-stash",
  "smallvec",
  "spin",
- "wasmi_collections",
+ "wasmi_collections 0.48.0",
  "wasmi_core 0.48.0",
- "wasmi_ir",
+ "wasmi_ir 0.48.0",
+ "wasmparser 0.228.0",
+ "wat",
+]
+
+[[package]]
+name = "wasmi"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a0485d0c63b399ff35f8fa31365bee99751155274d8b8dbd74b461bf63662c0"
+dependencies = [
+ "arrayvec",
+ "multi-stash",
+ "smallvec",
+ "spin",
+ "wasmi_collections 0.48.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi_core 0.48.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi_ir 0.48.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasmparser 0.228.0",
  "wat",
 ]
@@ -1763,6 +1780,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmi_collections"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e7764144fd36b3b9c981f56a5fd90d330da8ad359b8fb019fa2dad934dbbace"
+dependencies = [
+ "string-interner",
+]
+
+[[package]]
 name = "wasmi_core"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1782,6 +1808,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmi_core"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5ad04f201303784c07a5ab06a07deace877c27283107f253d69270d28d7c81c"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "wasmi_fuzz"
 version = "0.48.0"
 dependencies = [
@@ -1791,6 +1826,7 @@ dependencies = [
  "wasm-smith",
  "wasmi 0.31.2",
  "wasmi 0.48.0",
+ "wasmi 0.48.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasmprinter 0.228.0",
  "wasmtime",
 ]
@@ -1800,6 +1836,15 @@ name = "wasmi_ir"
 version = "0.48.0"
 dependencies = [
  "wasmi_core 0.48.0",
+]
+
+[[package]]
+name = "wasmi_ir"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8f1c12f6048ab2e78c981f84a6e1232fee4adce71f2e4f557eb53376432b36c"
+dependencies = [
+ "wasmi_core 0.48.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
