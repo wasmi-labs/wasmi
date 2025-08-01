@@ -55,3 +55,7 @@ wasmtime = { version = "34.0.0", default-features = false }
 [profile.bench]
 lto = "fat"
 codegen-units = 1
+
+[profile.miri]
+inherits = "dev"
+debug-assertions = false
