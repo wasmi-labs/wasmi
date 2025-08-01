@@ -4,7 +4,6 @@
 [submodule "crates/wasmi/benches/rust"]
 	path = crates/wasmi/benches/rust
 	url = https://github.com/wasmi-labs/rust-benchmarks
-[submodule "crates/wast/tests/spec/memory64"]
-	path = crates/wast/tests/spec/memory64
+[submodule "crates/wast/tests/wasmi"]
+	path = crates/wast/tests/wasmi
 	url = https://github.com/wasmi-labs/wasmi-tests
-	branch = main

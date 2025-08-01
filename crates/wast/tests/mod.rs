@@ -199,16 +199,20 @@ macro_rules! expand_tests {
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
 
             // Wasmi specific test cases and regression tests.
-            fn wasmi_wide_arithmetic("../../local/wide-arithmetic");
-            fn wasmi_replace_result("../../local/replace-result");
-            fn wasmi_local_tee("../../local/local-tee");
-            fn wasmi_if("../../local/if");
-            fn wasmi_fuse_cmp("../../local/fuse-cmp");
-            fn wasmi_select("../../local/select");
-            fn wasmi_preserve_locals("../../local/preserve-locals");
-            fn wasmi_many_inout("../../local/many-inout");
-            fn wasmi_copy_span("../../local/copy-span");
-            fn wasmi_audit("../../local/audit");
+            fn wasmi_wide_arithmetic("../../wasmi/tests/wide-arithmetic");
+            fn wasmi_replace_result("../../wasmi/tests/replace-result");
+            fn wasmi_local_tee("../../wasmi/tests/local-tee");
+            fn wasmi_if("../../wasmi/tests/if");
+            fn wasmi_fuse_cmp("../../wasmi/tests/fuse-cmp");
+            fn wasmi_select("../../wasmi/tests/select");
+            fn wasmi_preserve_locals("../../wasmi/tests/preserve-locals");
+            fn wasmi_many_inout("../../wasmi/tests/many-inout");
+            fn wasmi_copy_span("../../wasmi/tests/copy-span");
+            fn wasmi_audit("../../wasmi/tests/audit");
+            fn wasmi_i32_add("../../wasmi/tests/op/i32-add");
+            fn wasmi_i32_mul("../../wasmi/tests/op/i32-mul");
+            fn wasmi_i64_add("../../wasmi/tests/op/i64-add");
+            fn wasmi_i64_mul("../../wasmi/tests/op/i64-mul");
 
             // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
@@ -438,13 +442,13 @@ mod blobs {
     expand_tests_memory64! {
         include_wasm_blobs,
 
-        let folder = "spec/memory64";
+        let folder = "wasmi/";
     }
 
     expand_tests_missing_features! {
         include_wasm_blobs,
 
-        let folder = "local/missing-features";
+        let folder = "wasmi/tests/missing-features";
     }
 }
 
