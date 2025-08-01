@@ -4,3 +4,7 @@
 [submodule "crates/wast/tests/wasmi"]
 	path = crates/wast/tests/wasmi
 	url = https://github.com/wasmi-labs/wasmi-tests
+[submodule "crates/wast/tests/spec"]
+	path = crates/wast/tests/spec
+	url = https://github.com/WebAssembly/testsuite.git
+	branch = main
