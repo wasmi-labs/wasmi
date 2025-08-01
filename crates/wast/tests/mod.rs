@@ -442,13 +442,13 @@ mod blobs {
     expand_tests_memory64! {
         include_wasm_blobs,
 
-        let folder = "spec/memory64";
+        let folder = "wasmi/";
     }
 
     expand_tests_missing_features! {
         include_wasm_blobs,
 
-        let folder = "local/missing-features";
+        let folder = "wasmi/tests/missing-features";
     }
 }
 
