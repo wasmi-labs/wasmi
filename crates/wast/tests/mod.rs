@@ -199,20 +199,20 @@ macro_rules! expand_tests {
             fn spec_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
 
             // Wasmi specific test cases and regression tests.
-            fn wasmi_wide_arithmetic("../../wasmi/tests/wide-arithmetic");
-            fn wasmi_replace_result("../../wasmi/tests/replace-result");
-            fn wasmi_local_tee("../../wasmi/tests/local-tee");
-            fn wasmi_if("../../wasmi/tests/if");
-            fn wasmi_fuse_cmp("../../wasmi/tests/fuse-cmp");
-            fn wasmi_select("../../wasmi/tests/select");
-            fn wasmi_preserve_locals("../../wasmi/tests/preserve-locals");
-            fn wasmi_many_inout("../../wasmi/tests/many-inout");
-            fn wasmi_copy_span("../../wasmi/tests/copy-span");
-            fn wasmi_audit("../../wasmi/tests/audit");
-            fn wasmi_i32_add("../../wasmi/tests/op/i32-add");
-            fn wasmi_i32_mul("../../wasmi/tests/op/i32-mul");
-            fn wasmi_i64_add("../../wasmi/tests/op/i64-add");
-            fn wasmi_i64_mul("../../wasmi/tests/op/i64-mul");
+            fn wasmi_wide_arithmetic("../wasmi/tests/wide-arithmetic");
+            fn wasmi_replace_result("../wasmi/tests/replace-result");
+            fn wasmi_local_tee("../wasmi/tests/local-tee");
+            fn wasmi_if("../wasmi/tests/if");
+            fn wasmi_fuse_cmp("../wasmi/tests/fuse-cmp");
+            fn wasmi_select("../wasmi/tests/select");
+            fn wasmi_preserve_locals("../wasmi/tests/preserve-locals");
+            fn wasmi_many_inout("../wasmi/tests/many-inout");
+            fn wasmi_copy_span("../wasmi/tests/copy-span");
+            fn wasmi_audit("../wasmi/tests/audit");
+            fn wasmi_i32_add("../wasmi/tests/op/i32-add");
+            fn wasmi_i32_mul("../wasmi/tests/op/i32-mul");
+            fn wasmi_i64_add("../wasmi/tests/op/i64-add");
+            fn wasmi_i64_mul("../wasmi/tests/op/i64-mul");
 
             // Wasm `simd` tests
             fn spec_simd_address("simd_address");
@@ -424,25 +424,25 @@ mod blobs {
     expand_tests! {
         include_wasm_blobs,
 
-        let folder = "spec/testsuite";
+        let folder = "spec";
     }
 
     expand_tests_mm! {
         include_wasm_blobs,
 
-        let folder = "spec/testsuite";
+        let folder = "spec";
     }
 
     expand_tests_cps! {
         include_wasm_blobs,
 
-        let folder = "spec/testsuite";
+        let folder = "spec";
     }
 
     expand_tests_memory64! {
         include_wasm_blobs,
 
-        let folder = "wasmi/";
+        let folder = "wasmi";
     }
 
     expand_tests_missing_features! {
