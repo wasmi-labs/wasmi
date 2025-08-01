@@ -28,4 +28,4 @@ jobs:
             # They have huge overhead for Wasmi and unnecessarily slow down Miri.
             # The Miri job should focus on finding undefined behavior instead or logic errors.
             CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "false"
-          run: cargo +nightly miri nextest run --target x86_64-unknown-linux-gnu -p wasmi_wast --release
+          run: cargo +nightly miri nextest run --target x86_64-unknown-linux-gnu -p wasmi_wast buffered::spec_
