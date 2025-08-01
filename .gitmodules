@@ -8,3 +8,6 @@
 	path = crates/wast/tests/spec/memory64
 	url = https://github.com/wasmi-labs/wasmi-tests
 	branch = main
+[submodule "crates/wast/tests/wasmi"]
+	path = crates/wast/tests/wasmi
+	url = https://github.com/wasmi-labs/wasmi-tests
