@@ -83,7 +83,7 @@ fn apply_spec_config(fuel_metering: FuelMetering) -> impl Fn(&mut Config) {
 }
 
 macro_rules! foreach_test {
-    ( $mac:ident, $( $args:tt )* ) => {
+    ( $mac:ident $( $args:tt )* ) => {
         $mac! {
             $( $args )*
 
@@ -272,7 +272,7 @@ macro_rules! foreach_test {
 }
 
 macro_rules! foreach_test_multi_memory {
-    ( $mac:ident, $( $args:tt )* ) => {
+    ( $mac:ident $( $args:tt )* ) => {
         $mac! {
             $( $args )*
 
@@ -329,7 +329,7 @@ macro_rules! foreach_test_multi_memory {
 }
 
 macro_rules! foreach_test_cps {
-    ( $mac:ident, $( $args:tt )* ) => {
+    ( $mac:ident $( $args:tt )* ) => {
         $mac! {
             $( $args )*
 
@@ -342,7 +342,7 @@ macro_rules! foreach_test_cps {
 }
 
 macro_rules! foreach_test_memory64 {
-    ( $mac:ident, $( $args:tt )* ) => {
+    ( $mac:ident $( $args:tt )* ) => {
         $mac! {
             $( $args )*
 
@@ -367,7 +367,7 @@ macro_rules! foreach_test_memory64 {
 }
 
 macro_rules! foreach_test_missing_features {
-    ( $mac:ident, $( $args:tt )* ) => {
+    ( $mac:ident $( $args:tt )* ) => {
         $mac! {
             $( $args )*
 
@@ -394,33 +394,18 @@ macro_rules! include_wasm_blobs {
 }
 
 mod blobs {
-    foreach_test! {
-        include_wasm_blobs,
-    }
-
-    foreach_test_multi_memory! {
-        include_wasm_blobs,
-    }
-
-    foreach_test_cps! {
-        include_wasm_blobs,
-    }
-
-    foreach_test_memory64! {
-        include_wasm_blobs,
-    }
-
-    foreach_test_missing_features! {
-        include_wasm_blobs,
-    }
+    foreach_test!(include_wasm_blobs);
+    foreach_test_multi_memory!(include_wasm_blobs);
+    foreach_test_cps!(include_wasm_blobs);
+    foreach_test_memory64!(include_wasm_blobs);
+    foreach_test_missing_features!(include_wasm_blobs);
 }
 
 mod buffered {
     use super::*;
 
     foreach_test! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Disabled));
     }
 }
@@ -429,8 +414,7 @@ mod fueled {
     use super::*;
 
     foreach_test! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Enabled));
     }
 }
@@ -439,8 +423,7 @@ mod streaming {
     use super::*;
 
     foreach_test! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Streaming, apply_spec_config(FuelMetering::Disabled));
     }
 }
@@ -449,8 +432,7 @@ mod missing_features {
     use super::*;
 
     foreach_test_missing_features! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Buffered, |_|());
     }
 }
@@ -459,8 +441,7 @@ mod multi_memory {
     use super::*;
 
     foreach_test_multi_memory! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Buffered, |config| {
             config
                 .wasm_simd(true)
@@ -474,8 +455,7 @@ mod custom_page_sizes {
     use super::*;
 
     foreach_test_cps! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Buffered, |config| {
             config
                 .wasm_multi_memory(true)
@@ -489,8 +469,7 @@ mod memory64 {
     use super::*;
 
     foreach_test_memory64! {
-        define_test,
-
+        define_test
         config: runner_config(ParsingMode::Buffered, |config| {
             config
                 .wasm_mutable_global(true)
