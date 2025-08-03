@@ -34,6 +34,7 @@ macro_rules! define_test {
 fn mvp_config() -> Config {
     let mut config = Config::default();
     config
+        .compilation_mode(CompilationMode::Eager)
         .wasm_mutable_global(false)
         .wasm_saturating_float_to_int(false)
         .wasm_sign_extension(false)
@@ -44,33 +45,40 @@ fn mvp_config() -> Config {
     config
 }
 
-/// Create a [`Config`] with all Wasm feature supported by Wasmi enabled.
-///
-/// # Note
-///
-/// The Wasm MVP has no Wasm proposals enabled.
-fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
+/// If Wasmi's fuel metering is enabled or disabled.
+pub enum FuelMetering {
+    /// Fuel metering is disabled.
+    Disabled,
+    /// Fuel metering is enabled.
+    Enabled,
+}
+
+/// Returns [`RunnerConfig`] with `parsing_mode` and apply `adjust_config` to its [`Config`].
+fn runner_config(parsing_mode: ParsingMode, adjust_config: impl Fn(&mut Config)) -> RunnerConfig {
     let mut config = mvp_config();
-    // We have to enable the `mutable-global` Wasm proposal because
-    // it seems that the entire Wasm spec test suite is already built
-    // on the basis of its semantics.
-    config
-        .wasm_mutable_global(true)
-        .wasm_saturating_float_to_int(true)
-        .wasm_sign_extension(true)
-        .wasm_multi_value(true)
-        .wasm_multi_memory(false)
-        .wasm_bulk_memory(true)
-        .wasm_reference_types(true)
-        .wasm_tail_call(true)
-        .wasm_extended_const(true)
-        .wasm_wide_arithmetic(true)
-        .wasm_simd(true)
-        .consume_fuel(consume_fuel)
-        .compilation_mode(CompilationMode::Eager);
+    adjust_config(&mut config);
     RunnerConfig {
         config,
         parsing_mode,
+    }
+}
+
+/// Returns a closure that applies a [`RunnerConfig`]'s Config for Wasm spec tests.
+fn apply_spec_config(fuel_metering: FuelMetering) -> impl Fn(&mut Config) {
+    move |config| {
+        config
+            .consume_fuel(matches!(fuel_metering, FuelMetering::Enabled))
+            .wasm_mutable_global(true)
+            .wasm_saturating_float_to_int(true)
+            .wasm_sign_extension(true)
+            .wasm_multi_value(true)
+            .wasm_multi_memory(false)
+            .wasm_bulk_memory(true)
+            .wasm_reference_types(true)
+            .wasm_tail_call(true)
+            .wasm_extended_const(true)
+            .wasm_wide_arithmetic(true)
+            .wasm_simd(true);
     }
 }
 
@@ -413,7 +421,7 @@ mod buffered {
     foreach_test! {
         define_test,
 
-        let config = test_config(false, ParsingMode::Buffered);
+        let config = runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Disabled));
     }
 }
 
@@ -423,7 +431,7 @@ mod fueled {
     foreach_test! {
         define_test,
 
-        let config = test_config(true, ParsingMode::Buffered);
+        let config = runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Enabled));
     }
 }
 
@@ -433,7 +441,7 @@ mod streaming {
     foreach_test! {
         define_test,
 
-        let config = test_config(false, ParsingMode::Streaming);
+        let config = runner_config(ParsingMode::Streaming, apply_spec_config(FuelMetering::Disabled));
     }
 }
 
@@ -443,69 +451,52 @@ mod missing_features {
     foreach_test_missing_features! {
         define_test,
 
-        let config = RunnerConfig {
-            config: mvp_config(),
-            parsing_mode: ParsingMode::Streaming,
-        };
+        let config = runner_config(ParsingMode::Buffered, |_|());
     }
 }
 
 mod multi_memory {
     use super::*;
 
-    fn test_config() -> RunnerConfig {
-        let mut config = Config::default();
-        config.wasm_memory64(false);
-        let parsing_mode = ParsingMode::Buffered;
-        RunnerConfig {
-            config,
-            parsing_mode,
-        }
-    }
-
     foreach_test_multi_memory! {
         define_test,
 
-        let config = test_config();
+        let config = runner_config(ParsingMode::Buffered, |config| {
+            config
+                .wasm_simd(true)
+                .wasm_mutable_global(true)
+                .wasm_multi_memory(true);
+        });
     }
 }
 
 mod custom_page_sizes {
     use super::*;
 
-    fn test_config() -> RunnerConfig {
-        let mut config = Config::default();
-        config.wasm_custom_page_sizes(true);
-        let parsing_mode = ParsingMode::Buffered;
-        RunnerConfig {
-            config,
-            parsing_mode,
-        }
-    }
-
     foreach_test_cps! {
         define_test,
 
-        let config = test_config();
+        let config = runner_config(ParsingMode::Buffered, |config| {
+            config
+                .wasm_multi_memory(true)
+                .wasm_memory64(true)
+                .wasm_custom_page_sizes(true);
+        });
     }
 }
 
 mod memory64 {
     use super::*;
 
-    fn test_config() -> RunnerConfig {
-        let mut config = Config::default();
-        config.wasm_memory64(true);
-        let parsing_mode = ParsingMode::Buffered;
-        RunnerConfig {
-            config,
-            parsing_mode,
-        }
-    }
-
     foreach_test_memory64! {
         define_test,
 
-        let config = test_config();
+        let config = runner_config(ParsingMode::Buffered, |config| {
+            config
+                .wasm_mutable_global(true)
+                .wasm_multi_value(true)
+                .wasm_multi_memory(true)
+                .wasm_memory64(true);
+        });
     }
 }
