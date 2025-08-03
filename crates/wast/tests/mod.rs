@@ -302,7 +302,7 @@ macro_rules! include_wasm_blobs {
     };
 }
 
-macro_rules! expand_tests_mm {
+macro_rules! expand_tests_multi_memory {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
             $( $args )*
@@ -416,7 +416,7 @@ mod blobs {
         let folder = "spec";
     }
 
-    expand_tests_mm! {
+    expand_tests_multi_memory! {
         include_wasm_blobs,
 
         let folder = "spec";
@@ -502,7 +502,7 @@ mod multi_memory {
         }
     }
 
-    expand_tests_mm! {
+    expand_tests_multi_memory! {
         define_spec_tests,
 
         let config = test_config();
