@@ -16,7 +16,6 @@ macro_rules! define_test {
     (
         let folder = $test_folder:literal;
         let config = $get_config:expr;
-        let runner = $runner_fn:path;
 
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
@@ -26,7 +25,7 @@ macro_rules! define_test {
             fn $test_name() {
                 let name: &'static ::core::primitive::str = ::core::concat!($test_folder, "/", $file_name);
                 let file: &'static ::core::primitive::str = self::blobs::$test_name();
-                $runner_fn(name, file, $get_config)
+                process_wast(name, file, $get_config)
             }
         )*
     };
@@ -35,14 +34,12 @@ macro_rules! define_test {
 macro_rules! define_spec_tests {
     (
         let config = $get_config:expr;
-        let runner = $runner_fn:path;
 
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
         define_test! {
             let folder = "testsuite";
             let config = $get_config;
-            let runner = $runner_fn;
 
             $(
                 $( #[$attr] )*
@@ -448,7 +445,6 @@ mod buffered {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Buffered);
-        let runner = process_wast;
     }
 }
 
@@ -459,7 +455,6 @@ mod fueled {
         define_spec_tests,
 
         let config = test_config(true, ParsingMode::Buffered);
-        let runner = process_wast;
     }
 }
 
@@ -470,7 +465,6 @@ mod streaming {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Streaming);
-        let runner = process_wast;
     }
 }
 
@@ -485,7 +479,6 @@ mod missing_features {
             config: mvp_config(),
             parsing_mode: ParsingMode::Streaming,
         };
-        let runner = process_wast;
     }
 }
 
@@ -506,7 +499,6 @@ mod multi_memory {
         define_spec_tests,
 
         let config = test_config();
-        let runner = process_wast;
     }
 }
 
@@ -527,7 +519,6 @@ mod custom_page_sizes {
         define_spec_tests,
 
         let config = test_config();
-        let runner = process_wast;
     }
 }
 
@@ -548,6 +539,5 @@ mod memory64 {
         define_spec_tests,
 
         let config = test_config();
-        let runner = process_wast;
     }
 }
