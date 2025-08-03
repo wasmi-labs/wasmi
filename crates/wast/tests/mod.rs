@@ -96,7 +96,7 @@ fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
     }
 }
 
-macro_rules! expand_tests {
+macro_rules! foreach_test {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
             $( $args )*
@@ -302,7 +302,7 @@ macro_rules! include_wasm_blobs {
     };
 }
 
-macro_rules! expand_tests_multi_memory {
+macro_rules! foreach_test_multi_memory {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
             $( $args )*
@@ -359,7 +359,7 @@ macro_rules! expand_tests_multi_memory {
     };
 }
 
-macro_rules! expand_tests_cps {
+macro_rules! foreach_test_cps {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
             $( $args )*
@@ -372,7 +372,7 @@ macro_rules! expand_tests_cps {
     };
 }
 
-macro_rules! expand_tests_memory64 {
+macro_rules! foreach_test_memory64 {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
             $( $args )*
@@ -397,7 +397,7 @@ macro_rules! expand_tests_memory64 {
     };
 }
 
-macro_rules! expand_tests_missing_features {
+macro_rules! foreach_test_missing_features {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
             $( $args )*
@@ -410,31 +410,31 @@ macro_rules! expand_tests_missing_features {
 }
 
 mod blobs {
-    expand_tests! {
+    foreach_test! {
         include_wasm_blobs,
 
         let folder = "spec";
     }
 
-    expand_tests_multi_memory! {
+    foreach_test_multi_memory! {
         include_wasm_blobs,
 
         let folder = "spec";
     }
 
-    expand_tests_cps! {
+    foreach_test_cps! {
         include_wasm_blobs,
 
         let folder = "spec";
     }
 
-    expand_tests_memory64! {
+    foreach_test_memory64! {
         include_wasm_blobs,
 
         let folder = "wasmi";
     }
 
-    expand_tests_missing_features! {
+    foreach_test_missing_features! {
         include_wasm_blobs,
 
         let folder = "wasmi/tests/missing-features";
@@ -444,7 +444,7 @@ mod blobs {
 mod buffered {
     use super::*;
 
-    expand_tests! {
+    foreach_test! {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Buffered);
@@ -455,7 +455,7 @@ mod buffered {
 mod fueled {
     use super::*;
 
-    expand_tests! {
+    foreach_test! {
         define_spec_tests,
 
         let config = test_config(true, ParsingMode::Buffered);
@@ -466,7 +466,7 @@ mod fueled {
 mod streaming {
     use super::*;
 
-    expand_tests! {
+    foreach_test! {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Streaming);
@@ -477,7 +477,7 @@ mod streaming {
 mod missing_features {
     use super::*;
 
-    expand_tests_missing_features! {
+    foreach_test_missing_features! {
         define_tests,
 
         let folder = "local/missing-features";
@@ -502,7 +502,7 @@ mod multi_memory {
         }
     }
 
-    expand_tests_multi_memory! {
+    foreach_test_multi_memory! {
         define_spec_tests,
 
         let config = test_config();
@@ -523,7 +523,7 @@ mod custom_page_sizes {
         }
     }
 
-    expand_tests_cps! {
+    foreach_test_cps! {
         define_spec_tests,
 
         let config = test_config();
@@ -544,7 +544,7 @@ mod memory64 {
         }
     }
 
-    expand_tests_memory64! {
+    foreach_test_memory64! {
         define_spec_tests,
 
         let config = test_config();
