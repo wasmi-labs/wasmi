@@ -30,23 +30,6 @@ macro_rules! define_test {
     };
 }
 
-macro_rules! define_spec_tests {
-    (
-        let config = $get_config:expr;
-
-        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
-    ) => {
-        define_test! {
-            let config = $get_config;
-
-            $(
-                $( #[$attr] )*
-                fn $test_name($file_name);
-            )*
-        }
-    };
-}
-
 /// Create a [`Config`] for the Wasm MVP feature set.
 fn mvp_config() -> Config {
     let mut config = Config::default();
@@ -440,7 +423,7 @@ mod buffered {
     use super::*;
 
     foreach_test! {
-        define_spec_tests,
+        define_test,
 
         let config = test_config(false, ParsingMode::Buffered);
     }
@@ -450,7 +433,7 @@ mod fueled {
     use super::*;
 
     foreach_test! {
-        define_spec_tests,
+        define_test,
 
         let config = test_config(true, ParsingMode::Buffered);
     }
@@ -460,7 +443,7 @@ mod streaming {
     use super::*;
 
     foreach_test! {
-        define_spec_tests,
+        define_test,
 
         let config = test_config(false, ParsingMode::Streaming);
     }
@@ -472,7 +455,6 @@ mod missing_features {
     foreach_test_missing_features! {
         define_test,
 
-        let folder = "local/missing-features";
         let config = RunnerConfig {
             config: mvp_config(),
             parsing_mode: ParsingMode::Streaming,
@@ -494,7 +476,7 @@ mod multi_memory {
     }
 
     foreach_test_multi_memory! {
-        define_spec_tests,
+        define_test,
 
         let config = test_config();
     }
@@ -514,7 +496,7 @@ mod custom_page_sizes {
     }
 
     foreach_test_cps! {
-        define_spec_tests,
+        define_test,
 
         let config = test_config();
     }
@@ -534,7 +516,7 @@ mod memory64 {
     }
 
     foreach_test_memory64! {
-        define_spec_tests,
+        define_test,
 
         let config = test_config();
     }
