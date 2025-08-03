@@ -14,7 +14,7 @@ fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
 
 macro_rules! define_test {
     (
-        let config = $get_config:expr;
+        config: $get_config:expr;
 
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
@@ -421,7 +421,7 @@ mod buffered {
     foreach_test! {
         define_test,
 
-        let config = runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Disabled));
+        config: runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Disabled));
     }
 }
 
@@ -431,7 +431,7 @@ mod fueled {
     foreach_test! {
         define_test,
 
-        let config = runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Enabled));
+        config: runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Enabled));
     }
 }
 
@@ -441,7 +441,7 @@ mod streaming {
     foreach_test! {
         define_test,
 
-        let config = runner_config(ParsingMode::Streaming, apply_spec_config(FuelMetering::Disabled));
+        config: runner_config(ParsingMode::Streaming, apply_spec_config(FuelMetering::Disabled));
     }
 }
 
@@ -451,7 +451,7 @@ mod missing_features {
     foreach_test_missing_features! {
         define_test,
 
-        let config = runner_config(ParsingMode::Buffered, |_|());
+        config: runner_config(ParsingMode::Buffered, |_|());
     }
 }
 
@@ -461,7 +461,7 @@ mod multi_memory {
     foreach_test_multi_memory! {
         define_test,
 
-        let config = runner_config(ParsingMode::Buffered, |config| {
+        config: runner_config(ParsingMode::Buffered, |config| {
             config
                 .wasm_simd(true)
                 .wasm_mutable_global(true)
@@ -476,7 +476,7 @@ mod custom_page_sizes {
     foreach_test_cps! {
         define_test,
 
-        let config = runner_config(ParsingMode::Buffered, |config| {
+        config: runner_config(ParsingMode::Buffered, |config| {
             config
                 .wasm_multi_memory(true)
                 .wasm_memory64(true)
@@ -491,7 +491,7 @@ mod memory64 {
     foreach_test_memory64! {
         define_test,
 
-        let config = runner_config(ParsingMode::Buffered, |config| {
+        config: runner_config(ParsingMode::Buffered, |config| {
             config
                 .wasm_mutable_global(true)
                 .wasm_multi_value(true)
