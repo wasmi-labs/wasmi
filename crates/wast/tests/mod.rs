@@ -12,7 +12,7 @@ fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
     }
 }
 
-macro_rules! define_tests {
+macro_rules! define_test {
     (
         let folder = $test_folder:literal;
         let config = $get_config:expr;
@@ -39,7 +39,7 @@ macro_rules! define_spec_tests {
 
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
-        define_tests! {
+        define_test! {
             let folder = "testsuite";
             let config = $get_config;
             let runner = $runner_fn;
@@ -478,7 +478,7 @@ mod missing_features {
     use super::*;
 
     foreach_test_missing_features! {
-        define_tests,
+        define_test,
 
         let folder = "local/missing-features";
         let config = RunnerConfig {
