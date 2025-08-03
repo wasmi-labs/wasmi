@@ -378,6 +378,8 @@ macro_rules! foreach_test_missing_features {
     };
 }
 
+// Note: we include the Wasm blobs into the test binary instead of reading them
+//       from file so that we can run the resulting binary with the `miri` interpreter.
 macro_rules! include_wasm_blobs {
     (
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
