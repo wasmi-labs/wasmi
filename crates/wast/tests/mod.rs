@@ -14,7 +14,6 @@ fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
 
 macro_rules! define_test {
     (
-        let folder = $test_folder:literal;
         let config = $get_config:expr;
 
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
@@ -23,7 +22,7 @@ macro_rules! define_test {
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                let name: &'static ::core::primitive::str = ::core::concat!($test_folder, "/", $file_name);
+                let name: &'static ::core::primitive::str = ::core::concat!($file_name);
                 let file: &'static ::core::primitive::str = self::blobs::$test_name();
                 process_wast(name, file, $get_config)
             }
@@ -38,7 +37,6 @@ macro_rules! define_spec_tests {
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
         define_test! {
-            let folder = "testsuite";
             let config = $get_config;
 
             $(
