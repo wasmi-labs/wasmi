@@ -285,23 +285,6 @@ macro_rules! foreach_test {
     };
 }
 
-macro_rules! include_wasm_blobs {
-    (
-        let folder = $test_folder:literal;
-
-        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
-    ) => {
-        $(
-            $( #[$attr] )*
-            pub fn $test_name() -> &'static str {
-                ::core::include_str!(
-                    ::core::concat!($test_folder, "/", $file_name, ".wast")
-                )
-            }
-        )*
-    };
-}
-
 macro_rules! foreach_test_multi_memory {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
@@ -406,6 +389,23 @@ macro_rules! foreach_test_missing_features {
             fn local_saturating_float_to_int_disabled("saturating-float-to-int-disabled");
             fn local_sign_extension_disabled("sign-extension-disabled");
         }
+    };
+}
+
+macro_rules! include_wasm_blobs {
+    (
+        let folder = $test_folder:literal;
+
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
+    ) => {
+        $(
+            $( #[$attr] )*
+            pub fn $test_name() -> &'static str {
+                ::core::include_str!(
+                    ::core::concat!($test_folder, "/", $file_name, ".wast")
+                )
+            }
+        )*
     };
 }
 
