@@ -302,17 +302,6 @@ macro_rules! include_wasm_blobs {
     };
 }
 
-mod buffered {
-    use super::*;
-
-    expand_tests! {
-        define_spec_tests,
-
-        let config = test_config(false, ParsingMode::Buffered);
-        let runner = process_wast;
-    }
-}
-
 macro_rules! expand_tests_mm {
     ( $mac:ident, $( $args:tt )* ) => {
         $mac! {
@@ -452,6 +441,54 @@ mod blobs {
     }
 }
 
+mod buffered {
+    use super::*;
+
+    expand_tests! {
+        define_spec_tests,
+
+        let config = test_config(false, ParsingMode::Buffered);
+        let runner = process_wast;
+    }
+}
+
+mod fueled {
+    use super::*;
+
+    expand_tests! {
+        define_spec_tests,
+
+        let config = test_config(true, ParsingMode::Buffered);
+        let runner = process_wast;
+    }
+}
+
+mod streaming {
+    use super::*;
+
+    expand_tests! {
+        define_spec_tests,
+
+        let config = test_config(false, ParsingMode::Streaming);
+        let runner = process_wast;
+    }
+}
+
+mod missing_features {
+    use super::*;
+
+    expand_tests_missing_features! {
+        define_tests,
+
+        let folder = "local/missing-features";
+        let config = RunnerConfig {
+            config: mvp_config(),
+            parsing_mode: ParsingMode::Streaming,
+        };
+        let runner = process_wast;
+    }
+}
+
 mod multi_memory {
     use super::*;
 
@@ -511,43 +548,6 @@ mod memory64 {
         define_spec_tests,
 
         let config = test_config();
-        let runner = process_wast;
-    }
-}
-
-mod fueled {
-    use super::*;
-
-    expand_tests! {
-        define_spec_tests,
-
-        let config = test_config(true, ParsingMode::Buffered);
-        let runner = process_wast;
-    }
-}
-
-mod streaming {
-    use super::*;
-
-    expand_tests! {
-        define_spec_tests,
-
-        let config = test_config(false, ParsingMode::Streaming);
-        let runner = process_wast;
-    }
-}
-
-mod missing_features {
-    use super::*;
-
-    expand_tests_missing_features! {
-        define_tests,
-
-        let folder = "local/missing-features";
-        let config = RunnerConfig {
-            config: mvp_config(),
-            parsing_mode: ParsingMode::Streaming,
-        };
         let runner = process_wast;
     }
 }
