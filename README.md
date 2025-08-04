@@ -175,6 +175,12 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
     height="32" style="vertical-align: middle;" alt="Munal OS"
   />
 </a>&nbsp;
+<a href="https://github.com/Uni-Gal/Ayaka">
+  <img
+    src="./resources/logos/users/akaya.png"
+    height="32" style="vertical-align: middle;" alt="Munal OS"
+  />
+</a>&nbsp;
 
 ## Sponsors
 
