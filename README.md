@@ -32,6 +32,7 @@ Wasmi is an efficient and lightweight WebAssembly interpreter with a focus on co
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
 - Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
+- Can be used in [`no_std` environments](https://doc.rust-lang.org/stable/rustc/platform-support.html).
 
 ## Security Audits
 
@@ -219,13 +220,6 @@ Special thanks to the past and present sponsors of the Wasmi project.
     </td>
   </tr>
 </table>
-
-## Supported Platforms
-
-Wasmi supports a wide variety of architectures and platforms.
-
-- Fore more details see this [list of supported platforms for Rust](https://doc.rust-lang.org/stable/rustc/platform-support.html).
-- Wasmi supports `no_std` embedded environments, thus not requiring the standard library (`std`).
 
 ## License
 
