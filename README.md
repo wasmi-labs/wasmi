@@ -26,13 +26,12 @@ Wasmi is an efficient and lightweight WebAssembly interpreter with a focus on co
 ## Distinct Features
 
 - Simple, correct and deterministic execution of WebAssembly.
-- Low-overhead and cross-platform WebAssembly runtime for embedded environments.
+- Efficient and cross-platform WebAssembly runtime for [`no_std` embedded environments](https://doc.rust-lang.org/stable/rustc/platform-support.html).
 - Compiler/JIT bomb resisting translation.
-- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
+- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/) to act as drop-in replacement.
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
 - Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
-- Can be used in [`no_std` environments](https://doc.rust-lang.org/stable/rustc/platform-support.html).
 
 ## Security Audits
 
