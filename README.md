@@ -23,9 +23,19 @@
 
 Wasmi is an efficient and lightweight WebAssembly interpreter with a focus on constrained and embedded systems.
 
+## Distinct Features
+
+- Simple, correct and deterministic execution of WebAssembly.
+- Low-overhead and cross-platform WebAssembly runtime for embedded environments.
+- Compiler/JIT bomb resisting translation.
+- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
+- 100% WebAssembly spec testsuite compliance.
+- Built-in support for fuel metering.
+- Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
+
 ## Security Audits
 
-Wasmi is suitable for safety critical use cases and has been audited several times already.
+Wasmi is suitable for safety critical use cases and has been audited twice.
 
 | Wasmi Version(s) | Auditor | Contractor | Report |
 |--:|:--|:--|:--|
@@ -37,16 +47,6 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 [Runtime Verification Inc.]: https://runtimeverification.com/
 [Stellar Development Foundation]: https://stellar.org/foundation
 [Parity Technologies]: https://www.parity.io/
-
-## Distinct Features
-
-- Simple, correct and deterministic execution of WebAssembly.
-- Low-overhead and cross-platform WebAssembly runtime for embedded environments.
-- Compiler/JIT bomb resisting translation.
-- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
-- 100% WebAssembly spec testsuite compliance.
-- Built-in support for fuel metering.
-- Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
 
 ## Docs
 
