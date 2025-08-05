@@ -832,7 +832,7 @@ impl InstrEncoder {
     ///
     /// Returns
     ///
-    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(true)` if the instruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
     pub fn fuse_eqz<T: WasmInteger>(
@@ -877,7 +877,7 @@ impl InstrEncoder {
     ///
     /// Returns
     ///
-    /// - `Ok(true)` if the intruction fusion was successful.
+    /// - `Ok(true)` if the instruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
     pub fn fuse_nez<T: WasmInteger>(
