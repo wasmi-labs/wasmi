@@ -39,7 +39,7 @@ Benchmarks in Wasmi are structured in the following way:
 - `execute`: test cases that primarily benchmark Wasmi's execution performance
     - `call`: call based testcases
     - `tiny_keccak`, `regex_redux`, `reverse_complement`: compiled from optimized Rust sources
-    - `fibonacci`: variety of fibonacci tests (recusion, tail-recursion and iteration)
+    - `fibonacci`: variety of fibonacci tests (recursion, tail-recursion and iteration)
     - `memory`: test cases benchmarking memory accesses (load, store, bulk-ops)
     - many more ..
 - `overhead`: test cases that benchmark Wasmi call performance overhead
