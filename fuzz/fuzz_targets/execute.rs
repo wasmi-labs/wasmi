@@ -93,10 +93,7 @@ fuzz_target!(|input: FuzzInput| {
         }
     };
     let module = status.unwrap();
-    let Ok(unstarted_instance) = linker.instantiate(&mut store, &module) else {
-        return;
-    };
-    let Ok(instance) = unstarted_instance.ensure_no_start(&mut store) else {
+    let Ok(instance) = linker.instantiate_and_start(&mut store, &module) else {
         return;
     };
 

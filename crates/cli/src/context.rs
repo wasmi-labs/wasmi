@@ -51,8 +51,7 @@ impl Context {
         wasmi_wasi::add_to_linker(&mut linker, |ctx| ctx)
             .map_err(|error| anyhow!("failed to add WASI definitions to the linker: {error}"))?;
         let instance = linker
-            .instantiate(&mut store, &module)
-            .and_then(|pre| pre.start(&mut store))
+            .instantiate_and_start(&mut store, &module)
             .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
         Ok(Self {
             module,

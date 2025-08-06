@@ -9,11 +9,16 @@ use crate::{module::FuncIdx, AsContextMut, Error, Instance, InstanceEntityBuilde
 /// conformant module instantiation. This API provides control over the precise instantiation
 /// process with regard to this need.
 #[derive(Debug)]
+#[deprecated(
+    since = "0.49.0",
+    note = "enable fuel-metering and set fuel to zero if you want to prevent `start` function execution."
+)]
 pub struct InstancePre {
     handle: Instance,
     builder: InstanceEntityBuilder,
 }
 
+#[expect(deprecated)]
 impl InstancePre {
     /// Creates a new [`InstancePre`].
     pub(super) fn new(handle: Instance, builder: InstanceEntityBuilder) -> Self {

@@ -4,7 +4,9 @@ mod pre;
 #[cfg(test)]
 mod tests;
 
-pub use self::{error::InstantiationError, pre::InstancePre};
+pub use self::error::InstantiationError;
+#[expect(deprecated)]
+pub use self::pre::InstancePre;
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
     core::{MemoryError, UntypedVal},
@@ -46,6 +48,7 @@ impl Module {
     ///
     /// [`Linker`]: struct.Linker.html
     /// [`Func`]: [`crate::Func`]
+    #[expect(deprecated)]
     pub(crate) fn instantiate<I>(
         &self,
         mut context: impl AsContextMut,

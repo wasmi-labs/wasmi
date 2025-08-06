@@ -38,11 +38,7 @@ fn host_calls_wasm() {
         )
         "#;
     let module = Module::new(store.engine(), wasm).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let wasm_fn = instance
         .get_export(&store, "wasm_fn")
         .and_then(Extern::into_func)

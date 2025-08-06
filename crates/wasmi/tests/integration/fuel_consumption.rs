@@ -26,11 +26,7 @@ fn create_module(store: &Store<()>, bytes: &[u8]) -> Module {
 fn default_test_setup(wasm: &[u8]) -> (Store<()>, Func) {
     let (mut store, linker) = test_setup();
     let module = create_module(&store, wasm);
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let func = instance.get_func(&store, "test").unwrap();
     (store, func)
 }

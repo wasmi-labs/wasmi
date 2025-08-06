@@ -32,11 +32,7 @@ fn test_compile_in_host_call() {
             },
         )
         .unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .ensure_no_start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     instance
         .get_typed_func::<(), ()>(&mut store, "run")
         .unwrap()

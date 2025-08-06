@@ -55,7 +55,7 @@ impl Test {
         );
         let (mut store, linker) = test_setup(limits);
         let module = create_module(&store, wasm.as_bytes())?;
-        let instance = linker.instantiate(&mut store, &module)?.start(&mut store)?;
+        let instance = linker.instantiate_and_start(&mut store, &module)?;
         let memory_grow = instance.get_func(&store, "memory_grow").unwrap();
         let memory_size = instance.get_func(&store, "memory_size").unwrap();
         let table_grow = instance.get_func(&store, "table_grow").unwrap();

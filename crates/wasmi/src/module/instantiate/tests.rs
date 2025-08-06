@@ -37,10 +37,7 @@ fn try_instantiate_from_wat(wasm: &str) -> Result<(Store<()>, Instance), Error> 
     let init = Val::default(table_type.element());
     let table = Table::new(&mut store, table_type, init)?;
     linker.define("env", "table", table)?;
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)?;
+    let instance = linker.instantiate_and_start(&mut store, &module)?;
     Ok((store, instance))
 }
 

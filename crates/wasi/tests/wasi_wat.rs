@@ -16,11 +16,7 @@ pub fn load_instance_from_wat(wasm: &[u8]) -> (Store<WasiCtx>, wasmi::Instance) 
     let mut store = Store::new(&engine, wasi);
 
     add_to_linker(&mut linker, |ctx| ctx).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     (store, instance)
 }
 

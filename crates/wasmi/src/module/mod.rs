@@ -11,6 +11,8 @@ mod parser;
 mod read;
 pub(crate) mod utils;
 
+#[expect(deprecated)]
+pub use self::instantiate::InstancePre;
 use self::{
     builder::ModuleBuilder,
     custom_section::{CustomSections, CustomSectionsBuilder},
@@ -24,7 +26,7 @@ pub use self::{
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
-    instantiate::{InstancePre, InstantiationError},
+    instantiate::InstantiationError,
     read::{Read, ReadError},
 };
 pub(crate) use self::{
