@@ -132,6 +132,8 @@ pub mod errors {
     pub use crate::core::{FuelError, GlobalError, MemoryError, TableError};
 }
 
+#[expect(deprecated)]
+pub use self::linker::{state, LinkerBuilder};
 pub use self::{
     core::{GlobalType, Mutability},
     engine::{
@@ -166,7 +168,7 @@ pub use self::{
     global::Global,
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{StoreLimits, StoreLimitsBuilder},
-    linker::{state, Linker, LinkerBuilder},
+    linker::Linker,
     memory::{Memory, MemoryType, MemoryTypeBuilder},
     module::{
         CustomSection,

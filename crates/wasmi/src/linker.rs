@@ -257,6 +257,7 @@ impl<T> Linker<T> {
     }
 
     /// Creates a new [`LinkerBuilder`] to construct a [`Linker`].
+    #[expect(deprecated)]
     pub fn build() -> LinkerBuilder<state::Constructing, T> {
         LinkerBuilder {
             inner: Arc::new(LinkerInner::default()),
@@ -542,16 +543,19 @@ impl<T> Linker<T> {
 }
 
 /// Contains type states for the [`LinkerBuilder`] construction process.
+#[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
 pub mod state {
     /// Signals that the [`LinkerBuilder`] is itself under construction.
     ///
     /// [`LinkerBuilder`]: super::LinkerBuilder
+    #[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
     pub enum Constructing {}
 
     /// Signals that the [`LinkerBuilder`] is ready to create new [`Linker`] instances.
     ///
     /// [`Linker`]: super::Linker
     /// [`LinkerBuilder`]: super::LinkerBuilder
+    #[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
     pub enum Ready {}
 }
 
@@ -559,6 +563,7 @@ pub mod state {
 ///
 /// Create this type via the [`Linker::build`] method.
 #[derive(Debug)]
+#[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
 pub struct LinkerBuilder<State, T> {
     /// Internal linker implementation details.
     inner: Arc<LinkerInner<T>>,
@@ -566,6 +571,7 @@ pub struct LinkerBuilder<State, T> {
     marker: PhantomData<fn() -> State>,
 }
 
+#[expect(deprecated)]
 impl<T> Clone for LinkerBuilder<state::Ready, T> {
     fn clone(&self) -> Self {
         Self {
@@ -575,6 +581,7 @@ impl<T> Clone for LinkerBuilder<state::Ready, T> {
     }
 }
 
+#[expect(deprecated)]
 impl<T> LinkerBuilder<state::Ready, T> {
     /// Finishes construction of the [`Linker`] by attaching an [`Engine`].
     pub fn create(&self, engine: &Engine) -> Linker<T> {
@@ -586,6 +593,7 @@ impl<T> LinkerBuilder<state::Ready, T> {
     }
 }
 
+#[expect(deprecated)]
 impl<T> LinkerBuilder<state::Constructing, T> {
     /// Signals that the [`LinkerBuilder`] is now ready to create new [`Linker`] instances.
     pub fn finish(self) -> LinkerBuilder<state::Ready, T> {
