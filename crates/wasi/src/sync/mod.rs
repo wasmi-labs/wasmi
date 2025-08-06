@@ -9,6 +9,9 @@ pub use wasi_common::sync::*;
 #[doc(inline)]
 pub use self::snapshots::preview_1::{
     add_wasi_snapshot_preview1_to_linker as add_to_linker,
-    add_wasi_snapshot_preview1_to_linker_builder as add_to_linker_builder,
     AddWasi,
 };
+
+#[doc(inline)]
+#[expect(deprecated)]
+pub use self::snapshots::preview_1::add_wasi_snapshot_preview1_to_linker_builder as add_to_linker_builder;
