@@ -58,11 +58,7 @@ pub fn load_instance_from_file(file_name: &str) -> (wasmi::Store<()>, wasmi::Ins
     let module = load_module_from_file(file_name);
     let linker = <wasmi::Linker<()>>::new(module.engine());
     let mut store = wasmi::Store::new(module.engine(), ());
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     (store, instance)
 }
 
@@ -85,10 +81,6 @@ pub fn load_instance_from_wat(wasm: &[u8]) -> (wasmi::Store<()>, wasmi::Instance
     let module = wasmi::Module::new(&engine, wasm).unwrap();
     let linker = <wasmi::Linker<()>>::new(&engine);
     let mut store = wasmi::Store::new(&engine, ());
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     (store, instance)
 }

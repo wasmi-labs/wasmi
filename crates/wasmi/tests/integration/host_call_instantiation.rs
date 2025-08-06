@@ -56,19 +56,13 @@ fn test_instantiate_in_host_call() {
                 let linker = linker.clone();
                 let module = module.clone();
                 let _instance = linker
-                    .instantiate(&mut store, &module)
-                    .unwrap()
-                    .ensure_no_start(&mut store)
+                    .instantiate_and_start(&mut store, &module)
                     .map_err(|_| wasmi::Error::host(Error::InstantiationFailed))?;
                 Ok(())
             },
         )
         .unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .ensure_no_start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let run = instance
         .get_typed_func::<(), ()>(&mut store, "run")
         .unwrap();

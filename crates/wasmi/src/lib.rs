@@ -134,6 +134,8 @@ pub mod errors {
 
 #[expect(deprecated)]
 pub use self::linker::{state, LinkerBuilder};
+#[expect(deprecated)]
+pub use self::module::InstancePre;
 pub use self::{
     core::{GlobalType, Mutability},
     engine::{
@@ -175,7 +177,6 @@ pub use self::{
         CustomSectionsIter,
         ExportType,
         ImportType,
-        InstancePre,
         Module,
         ModuleExportsIter,
         ModuleImportsIter,

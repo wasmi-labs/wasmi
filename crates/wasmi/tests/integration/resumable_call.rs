@@ -58,11 +58,7 @@ fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), 
     // host function, returns 10 if the output is 0 and
     // returns 20 otherwise.
     let module = Module::new(store.engine(), wasm).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let wasm_fn = instance.get_typed_func::<(), i32>(&store, "test").unwrap();
     (store, wasm_fn)
 }
@@ -249,11 +245,7 @@ fn resumable_call() {
             )
             "#;
     let module = Module::new(store.engine(), wasm).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let wasm_fn = instance
         .get_export(&store, "wasm_fn")
         .and_then(Extern::into_func)

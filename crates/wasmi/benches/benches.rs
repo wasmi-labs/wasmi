@@ -460,7 +460,7 @@ fn bench_instantiate_using(c: &mut Criterion, name: &str) {
         let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
-            let _instance = linker.instantiate(&mut store, &module).unwrap();
+            let _instance = linker.instantiate_and_start(&mut store, &module).unwrap();
         })
     });
 }
@@ -726,10 +726,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             )
             .unwrap();
         b.iter(|| {
-            let _instance = linker
-                .instantiate(&mut store, &module)
-                .unwrap()
-                .ensure_no_start(&mut store);
+            let _instance = linker.instantiate_and_start(&mut store, &module).unwrap();
         })
     });
 }
@@ -1245,11 +1242,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     linker.define("benchmark", "host/1", host1).unwrap();
     linker.define("benchmark", "host/8", host8).unwrap();
     linker.define("benchmark", "host/16", host16).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .ensure_no_start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     for n in [0, 1, 8, 16] {
         bench_with(&mut g, &mut store, &instance, n);
     }

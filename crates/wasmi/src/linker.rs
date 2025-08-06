@@ -1,3 +1,5 @@
+#[expect(deprecated)]
+use crate::InstancePre;
 use crate::{
     collections::{
         string_interner::{InternHint, Sym as Symbol},
@@ -15,7 +17,6 @@ use crate::{
     Func,
     FuncType,
     Instance,
-    InstancePre,
     IntoFunc,
     Module,
     Val,
@@ -470,6 +471,14 @@ impl<T> Linker<T> {
     ///
     /// - If the linker does not define imports of the instantiated [`Module`].
     /// - If any imported item does not satisfy its type requirements.
+    #[deprecated(
+        since = "0.49.0",
+        note = "\
+            use `Linker::instantiate_and_start` instead. \
+            Prevent `start` function execution by enabling fuel metering and setting fuel to zero before instantiation. \
+        "
+    )]
+    #[expect(deprecated)]
     pub fn instantiate(
         &self,
         mut context: impl AsContextMut<Data = T>,
@@ -483,6 +492,27 @@ impl<T> Linker<T> {
             .map(|import| self.process_import(&mut context, import))
             .collect::<Result<Vec<Extern>, Error>>()?;
         module.instantiate(context, externals)
+    }
+
+    /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
+    ///
+    /// # Errors
+    ///
+    /// - If the linker does not define imports of the instantiated [`Module`].
+    /// - If any imported item does not satisfy its type requirements.
+    /// - If the `start` function traps.
+    pub fn instantiate_and_start(
+        &self,
+        mut context: impl AsContextMut<Data = T>,
+        module: &Module,
+    ) -> Result<Instance, Error> {
+        #[expect(deprecated)]
+        self.instantiate(&mut context, module)
+            .and_then(|instance| instance.start(&mut context))
     }
 
     /// Processes a single [`Module`] import.
@@ -939,11 +969,7 @@ mod tests {
                 )
             "#;
         let module = Module::new(&engine, wasm).unwrap();
-        let instance = linker
-            .instantiate(&mut store, &module)
-            .unwrap()
-            .start(&mut store)
-            .unwrap();
+        let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
 
         let wasm_get_a = instance
             .get_typed_func::<(), i32>(&store, "wasm_get_a")
@@ -1014,7 +1040,7 @@ mod tests {
         let linker = builder.finish().create(&engine);
         let mut store = Store::new(&engine, ());
         let module = Module::new(&engine, wasm).unwrap();
-        linker.instantiate(&mut store, &module).unwrap();
+        linker.instantiate_and_start(&mut store, &module).unwrap();
     }
 
     #[test]
@@ -1040,7 +1066,7 @@ mod tests {
             .unwrap();
         let mut store = Store::new(&engine, ());
         let module = Module::new(&engine, wasm).unwrap();
-        linker.instantiate(&mut store, &module).unwrap();
+        linker.instantiate_and_start(&mut store, &module).unwrap();
     }
 
     #[test]
@@ -1086,6 +1112,6 @@ mod tests {
             |_caller, _params, _results| todo!(),
         );
         linker.define("host", "hello", func).unwrap();
-        linker.instantiate(&mut store, &module).unwrap();
+        linker.instantiate_and_start(&mut store, &module).unwrap();
     }
 }

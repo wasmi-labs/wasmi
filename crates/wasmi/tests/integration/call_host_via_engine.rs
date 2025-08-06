@@ -104,11 +104,7 @@ fn host_tail_calls_0() {
             caller.data() + a
         })
         .unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let test = instance
         .get_typed_func::<i32, i32>(&mut store, "test")
         .unwrap();
@@ -144,11 +140,7 @@ fn host_tail_calls_1() {
             caller.data() + a
         })
         .unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .start(&mut store)
-        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let test = instance
         .get_typed_func::<i32, i32>(&mut store, "test")
         .unwrap();

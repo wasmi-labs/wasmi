@@ -438,8 +438,7 @@ impl WastRunner {
     fn instantiate_module(&mut self, module: &wasmi::Module) -> Result<Instance> {
         let previous_fuel = self.store.get_fuel().ok();
         _ = self.store.set_fuel(1_000);
-        let instance_pre = self.linker.instantiate(&mut self.store, module)?;
-        let instance = instance_pre.start(&mut self.store)?;
+        let instance = self.linker.instantiate_and_start(&mut self.store, module)?;
         if let Some(fuel) = previous_fuel {
             _ = self.store.set_fuel(fuel);
         }
