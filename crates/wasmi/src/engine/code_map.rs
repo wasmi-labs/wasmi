@@ -8,8 +8,9 @@
 use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
     collections::arena::{Arena, ArenaIndex},
-    core::{Fuel, FuelCostsProvider, FuelError, UntypedVal},
+    core::{Fuel, FuelCostsProvider, UntypedVal},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
+    errors::FuelError,
     ir::{index::InternalFunc, Instruction},
     module::{FuncIdx, ModuleHeader},
     Config,

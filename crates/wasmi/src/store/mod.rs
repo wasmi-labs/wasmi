@@ -11,7 +11,7 @@ pub use self::{
 };
 use crate::{
     collections::arena::Arena,
-    core::{Memory as CoreMemory, ResourceLimiter, ResourceLimiterRef},
+    core::{CoreMemory, ResourceLimiter, ResourceLimiterRef},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     Engine,
     Error,

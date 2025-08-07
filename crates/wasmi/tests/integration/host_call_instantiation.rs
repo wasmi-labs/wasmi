@@ -28,7 +28,7 @@ impl fmt::Display for Error {
 }
 
 impl core::error::Error for Error {}
-impl wasmi::core::HostError for Error {}
+impl wasmi::errors::HostError for Error {}
 
 #[test]
 fn test_instantiate_in_host_call() {

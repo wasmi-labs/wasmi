@@ -6,11 +6,7 @@ pub use self::{
     ty::{MemoryType, MemoryTypeBuilder},
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
-use crate::{
-    collections::arena::ArenaIndex,
-    core::{Memory as CoreMemory, MemoryError},
-    Error,
-};
+use crate::{collections::arena::ArenaIndex, core::CoreMemory, errors::MemoryError, Error};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

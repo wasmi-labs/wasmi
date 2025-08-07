@@ -1,7 +1,8 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{MemoryError, TrapCode},
+    core::TrapCode,
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
+    errors::MemoryError,
     ir::{
         index::{Data, Memory},
         Const16,

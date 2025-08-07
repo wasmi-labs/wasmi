@@ -1,8 +1,6 @@
-use crate::core::{
-    IndexType,
-    MemoryError,
-    MemoryType as CoreMemoryType,
-    MemoryTypeBuilder as CoreMemoryTypeBuilder,
+use crate::{
+    core::{CoreMemoryType, CoreMemoryTypeBuilder, IndexType},
+    errors::MemoryError,
 };
 
 /// A Wasm memory descriptor.

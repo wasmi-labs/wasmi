@@ -9,8 +9,9 @@ pub use self::error::InstantiationError;
 pub use self::pre::InstancePre;
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
-    core::{MemoryError, UntypedVal},
+    core::UntypedVal,
     error::ErrorKind,
+    errors::MemoryError,
     func::WasmFuncEntity,
     memory::DataSegment,
     value::WithType,

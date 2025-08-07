@@ -1,5 +1,5 @@
 use crate::{
-    core::{FuncType as CoreFuncType, ValType},
+    core::{CoreFuncType, ValType},
     errors::FuncError,
     Val,
 };

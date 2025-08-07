@@ -7,12 +7,13 @@ use super::errors::{
     LinkerError,
 };
 use crate::{
-    core::{FuelError, HostError, MemoryError, TableError, TrapCode},
+    core::TrapCode,
     engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};
+use wasmi_core::{FuelError, HostError, MemoryError, TableError};
 use wasmparser::BinaryReaderError as WasmError;
 
 #[cfg(feature = "wat")]
