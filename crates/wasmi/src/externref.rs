@@ -76,11 +76,11 @@ impl ArenaIndex for ExternObjectIdx {
 
 /// An externally defined object.
 #[derive(Debug)]
-pub struct ExternObjectEntity {
+pub struct ExternRefEntity {
     inner: Box<dyn 'static + Any + Send + Sync>,
 }
 
-impl ExternObjectEntity {
+impl ExternRefEntity {
     /// Creates a new instance of `ExternRef` wrapping the given value.
     pub fn new<T>(object: T) -> Self
     where
@@ -121,7 +121,7 @@ impl ExternRef {
         ctx.as_context_mut()
             .store
             .inner
-            .alloc_extern_object(ExternObjectEntity::new(object))
+            .alloc_extern_object(ExternRefEntity::new(object))
     }
 
     /// Returns a shared reference to the underlying data for this [`ExternRef`].

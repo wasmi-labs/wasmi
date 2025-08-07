@@ -8,7 +8,7 @@ use crate::{
         Table as CoreTable,
     },
     engine::DedupFuncType,
-    externref::{ExternObjectEntity, ExternObjectIdx, ExternRef},
+    externref::{ExternObjectIdx, ExternRef, ExternRefEntity},
     memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -93,7 +93,7 @@ pub struct StoreInner {
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
-    extern_objects: Arena<ExternObjectIdx, ExternObjectEntity>,
+    extern_objects: Arena<ExternObjectIdx, ExternRefEntity>,
     /// The [`Engine`] in use by the [`StoreInner`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -232,8 +232,8 @@ impl StoreInner {
         ElementSegment::from_inner(self.wrap_stored(segment))
     }
 
-    /// Allocates a new [`ExternObjectEntity`] and returns a [`ExternRef`] reference to it.
-    pub fn alloc_extern_object(&mut self, object: ExternObjectEntity) -> ExternRef {
+    /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
+    pub fn alloc_extern_object(&mut self, object: ExternRefEntity) -> ExternRef {
         let object = self.extern_objects.alloc(object);
         ExternRef::from_inner(self.wrap_stored(object))
     }
@@ -604,13 +604,13 @@ impl StoreInner {
         self.resolve(instance.as_inner(), &self.instances)
     }
 
-    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternRef`].
+    /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
     ///
     /// # Panics
     ///
     /// - If the [`ExternRef`] does not originate from this [`StoreInner`].
     /// - If the [`ExternRef`] cannot be resolved to its entity.
-    pub fn resolve_external_object(&self, object: &ExternRef) -> &ExternObjectEntity {
+    pub fn resolve_external_object(&self, object: &ExternRef) -> &ExternRefEntity {
         self.resolve(object.as_inner(), &self.extern_objects)
     }
 
