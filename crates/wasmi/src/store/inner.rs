@@ -232,7 +232,7 @@ impl StoreInner {
         ElementSegment::from_inner(self.wrap_stored(segment))
     }
 
-    /// Allocates a new [`ExternObjectEntity`] and returns a [`ExternObject`] reference to it.
+    /// Allocates a new [`ExternObjectEntity`] and returns a [`ExternRef`] reference to it.
     pub fn alloc_extern_object(&mut self, object: ExternObjectEntity) -> ExternRef {
         let object = self.extern_objects.alloc(object);
         ExternRef::from_inner(self.wrap_stored(object))
@@ -604,12 +604,12 @@ impl StoreInner {
         self.resolve(instance.as_inner(), &self.instances)
     }
 
-    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternObject`].
+    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternRef`].
     ///
     /// # Panics
     ///
-    /// - If the [`ExternObject`] does not originate from this [`StoreInner`].
-    /// - If the [`ExternObject`] cannot be resolved to its entity.
+    /// - If the [`ExternRef`] does not originate from this [`StoreInner`].
+    /// - If the [`ExternRef`] cannot be resolved to its entity.
     pub fn resolve_external_object(&self, object: &ExternRef) -> &ExternObjectEntity {
         self.resolve(object.as_inner(), &self.extern_objects)
     }
