@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::ValType, engine::translator::tests::wasm_type::WasmTy};
+use crate::{engine::translator::tests::wasm_type::WasmTy, ValType};
 use core::{
     fmt::{self, Display},
     mem,

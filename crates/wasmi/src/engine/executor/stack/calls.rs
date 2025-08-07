@@ -1,10 +1,10 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     collections::HeadVec,
-    core::TrapCode,
     engine::executor::InstructionPtr,
     ir::RegSpan,
     Instance,
+    TrapCode,
 };
 use alloc::vec::Vec;
 

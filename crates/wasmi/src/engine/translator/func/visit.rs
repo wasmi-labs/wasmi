@@ -14,7 +14,7 @@ use super::{
     TypedVal,
 };
 use crate::{
-    core::{wasm, FuelCostsProvider, TrapCode, ValType, F32, F64},
+    core::{wasm, FuelCostsProvider},
     engine::{
         translator::func::{AcquiredTarget, Provider},
         BlockType,
@@ -33,6 +33,10 @@ use crate::{
     Func,
     Mutability,
     Ref,
+    TrapCode,
+    ValType,
+    F32,
+    F64,
 };
 use wasmparser::VisitOperator;
 

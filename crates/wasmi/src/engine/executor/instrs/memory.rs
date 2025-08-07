@@ -1,6 +1,5 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::TrapCode,
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     errors::MemoryError,
     ir::{
@@ -12,6 +11,7 @@ use crate::{
     },
     store::{PrunedStore, StoreInner},
     Error,
+    TrapCode,
 };
 
 impl Executor<'_> {

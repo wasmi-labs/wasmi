@@ -896,7 +896,7 @@ impl<T> LinkerInner<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{core::ValType, Store};
+    use crate::{Store, ValType};
 
     struct HostState {
         a: i32,

@@ -2,17 +2,7 @@
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use wasmi::{
-    core::ValType,
-    Config,
-    Engine,
-    Export,
-    Linker,
-    Module,
-    Store,
-    StoreLimitsBuilder,
-    Val,
-};
+use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder, Val, ValType};
 use wasmi_fuzz::{
     config::ValidationMode,
     FuzzModule,

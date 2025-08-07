@@ -1,10 +1,6 @@
 use crate::display::DisplayValueType;
 use anyhow::{anyhow, bail, Error};
-use wasmi::{
-    core::{ValType, F32, F64, V128},
-    FuncType,
-    Val,
-};
+use wasmi::{FuncType, Val, ValType, F32, F64, V128};
 
 /// Returns a [`Val`] buffer capable of holding the return values.
 ///

@@ -1,8 +1,10 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{CoreGlobal, GlobalType, Mutability},
+    core::CoreGlobal,
     errors::GlobalError,
+    GlobalType,
+    Mutability,
     Val,
 };
 

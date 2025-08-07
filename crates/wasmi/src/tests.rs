@@ -1,14 +1,4 @@
-use crate::{
-    core::TrapCode,
-    Config,
-    Engine,
-    Error,
-    Linker,
-    Module,
-    Store,
-    WasmParams,
-    WasmResults,
-};
+use crate::{Config, Engine, Error, Linker, Module, Store, TrapCode, WasmParams, WasmResults};
 use core::{fmt::Debug, mem};
 
 /// Wasmi execution test runner.

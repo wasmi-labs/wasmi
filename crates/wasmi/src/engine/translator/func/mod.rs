@@ -33,7 +33,7 @@ use self::{
     utils::FromProviders as _,
 };
 use crate::{
-    core::{FuelCostsProvider, TrapCode, TypedVal, UntypedVal, ValType},
+    core::{FuelCostsProvider, TypedVal, UntypedVal},
     engine::{
         code_map::CompiledFuncEntity,
         translator::{
@@ -66,6 +66,8 @@ use crate::{
     Engine,
     Error,
     FuncType,
+    TrapCode,
+    ValType,
 };
 use alloc::vec::Vec;
 use core::mem;

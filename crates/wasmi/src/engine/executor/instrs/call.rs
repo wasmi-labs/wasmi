@@ -1,6 +1,5 @@
 use super::{ControlFlow, Executor, InstructionPtr};
 use crate::{
-    core::TrapCode,
     engine::{
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
@@ -16,6 +15,7 @@ use crate::{
     Func,
     Instance,
     Ref,
+    TrapCode,
 };
 use core::array;
 

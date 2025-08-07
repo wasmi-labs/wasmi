@@ -1,5 +1,5 @@
 use alloc::boxed::Box;
-use wasmi::core::ValType;
+use wasmi::ValType;
 
 /// A WebAssembly value type.
 ///

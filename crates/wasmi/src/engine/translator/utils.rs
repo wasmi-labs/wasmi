@@ -1,10 +1,11 @@
 use crate::{
-    core::{FuelCostsProvider, Typed, TypedVal, UntypedVal, ValType},
+    core::{FuelCostsProvider, Typed, TypedVal, UntypedVal},
     ir::{Const16, Instruction, Sign},
     Error,
     ExternRef,
     Func,
     Ref,
+    ValType,
 };
 use core::num::NonZero;
 
@@ -16,7 +17,7 @@ macro_rules! impl_typed_for {
     ( $( $ty:ty as $ident:ident ),* $(,)? ) => {
         $(
             impl Typed for $ty {
-                const TY: ValType = crate::core::ValType::$ident;
+                const TY: ValType = crate::ValType::$ident;
             }
 
             impl From<TypedVal> for $ty {

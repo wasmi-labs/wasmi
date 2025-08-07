@@ -7,9 +7,9 @@ use super::errors::{
     LinkerError,
 };
 use crate::{
-    core::TrapCode,
     engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
     module::ReadError,
+    TrapCode,
 };
 use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};

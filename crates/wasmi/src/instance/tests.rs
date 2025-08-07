@@ -1,6 +1,5 @@
 use super::*;
 use crate::{
-    core::{TrapCode, ValType},
     error::ErrorKind,
     module::InstantiationError,
     Caller,
@@ -12,7 +11,9 @@ use crate::{
     Ref,
     Store,
     TableType,
+    TrapCode,
     Val,
+    ValType,
 };
 
 #[test]

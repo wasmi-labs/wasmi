@@ -1,6 +1,5 @@
 use super::Func;
 use crate::{
-    core::TrapCode,
     engine::Stack,
     func::{CallResultsTuple, FuncError},
     ir::RegSpan,
@@ -8,6 +7,7 @@ use crate::{
     AsContextMut,
     Engine,
     Error,
+    TrapCode,
     Val,
     WasmResults,
 };

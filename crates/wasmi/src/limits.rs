@@ -1,4 +1,4 @@
-use crate::core::{LimiterError, ResourceLimiter};
+use crate::{core::LimiterError, ResourceLimiter};
 
 /// Value returned by [`ResourceLimiter::instances`] default method
 pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;

@@ -1,7 +1,7 @@
 //! Tests to check if wasmi's fuel metering works as intended.
 
 use std::fmt::Debug;
-use wasmi::{core::TrapCode, Config, Engine, Error, Func, Linker, Module, Store};
+use wasmi::{Config, Engine, Error, Func, Linker, Module, Store, TrapCode};
 
 /// Setup [`Engine`] and [`Store`] for fuel metering.
 fn test_setup() -> (Store<()>, Linker<()>) {

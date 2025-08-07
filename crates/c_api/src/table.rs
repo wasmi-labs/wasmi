@@ -47,8 +47,8 @@ impl wasm_table_t {
 fn option_wasm_ref_t_to_ref(r: Option<&wasm_ref_t>, table_ty: &TableType) -> WasmRef {
     r.map(|r| r.inner.clone())
         .unwrap_or_else(|| match table_ty.element() {
-            wasmi::core::ValType::FuncRef => WasmRef::Func(<Ref<Func>>::Null),
-            wasmi::core::ValType::ExternRef => WasmRef::Extern(<Ref<ExternRef>>::Null),
+            wasmi::ValType::FuncRef => WasmRef::Func(<Ref<Func>>::Null),
+            wasmi::ValType::ExternRef => WasmRef::Extern(<Ref<ExternRef>>::Null),
             invalid => panic!("encountered invalid table type: {invalid:?}"),
         })
 }

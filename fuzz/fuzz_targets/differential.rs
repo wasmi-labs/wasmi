@@ -2,7 +2,7 @@
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use wasmi::core::ValType;
+use wasmi::ValType;
 use wasmi_fuzz::{
     config::FuzzSmithConfig,
     oracle::{

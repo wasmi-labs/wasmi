@@ -1,7 +1,7 @@
 pub use self::call::dispatch_host_func;
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
-    core::{hint, wasm, ReadAs, TrapCode, UntypedVal, WriteAs},
+    core::{hint, wasm, ReadAs, UntypedVal, WriteAs},
     engine::{
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
@@ -19,6 +19,7 @@ use crate::{
     Memory,
     Ref,
     Table,
+    TrapCode,
 };
 
 #[cfg(doc)]

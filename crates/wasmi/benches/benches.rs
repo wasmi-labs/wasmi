@@ -23,7 +23,6 @@ use std::{
     sync::OnceLock,
 };
 use wasmi::{
-    core::{TrapCode, ValType, F32, F64},
     CompilationMode,
     Engine,
     Func,
@@ -33,8 +32,12 @@ use wasmi::{
     Memory,
     Module,
     Store,
+    TrapCode,
     TypedFunc,
     Val,
+    ValType,
+    F32,
+    F64,
 };
 
 criterion_group!(

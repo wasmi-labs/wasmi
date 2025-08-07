@@ -1,4 +1,4 @@
-use crate::core::ValType;
+use crate::ValType;
 
 use crate::{
     core::UntypedVal,

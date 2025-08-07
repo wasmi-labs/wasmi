@@ -2,7 +2,7 @@ mod visit;
 
 use super::{FuncTranslator, Instr, TypedProvider};
 use crate::{
-    core::{simd::IntoLaneIdx, FuelCostsProvider, TrapCode, TypedVal, V128},
+    core::{simd::IntoLaneIdx, FuelCostsProvider, TypedVal},
     engine::translator::{func::Provider, utils::Wrap},
     ir::{
         index,
@@ -18,6 +18,8 @@ use crate::{
         Reg,
     },
     Error,
+    TrapCode,
+    V128,
 };
 use wasmparser::MemArg;
 

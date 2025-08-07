@@ -4,7 +4,7 @@ mod conversion;
 mod op;
 
 use super::*;
-use crate::core::{TrapCode, UntypedVal};
+use crate::{core::UntypedVal, TrapCode};
 use std::fmt::Display;
 use wasm_type::WasmTy;
 

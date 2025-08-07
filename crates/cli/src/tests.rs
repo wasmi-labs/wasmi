@@ -1,6 +1,6 @@
 use super::*;
 use core::borrow::Borrow;
-use wasmi::core::ValType;
+use wasmi::ValType;
 
 fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
     assert_eq!(

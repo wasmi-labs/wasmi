@@ -1,4 +1,4 @@
-use crate::core::ValType;
+use crate::ValType;
 
 /// Macro that turns an iterator over `Option<T>` into an iterator over `T`.
 ///

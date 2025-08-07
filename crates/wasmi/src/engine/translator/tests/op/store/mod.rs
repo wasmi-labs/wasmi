@@ -17,7 +17,7 @@ mod i64_store16;
 mod i64_store32;
 mod i64_store8;
 
-use crate::core::TrapCode;
+use crate::TrapCode;
 use core::fmt::Display;
 
 fn test_store_for(

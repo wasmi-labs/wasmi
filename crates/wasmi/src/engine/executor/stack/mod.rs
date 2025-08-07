@@ -11,7 +11,7 @@ pub use self::{
         ValueStack,
     },
 };
-use crate::{core::TrapCode, Instance, StackLimits};
+use crate::{Instance, StackLimits, TrapCode};
 
 /// Returns a [`TrapCode`] signalling a stack overflow.
 #[cold]

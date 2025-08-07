@@ -3,18 +3,21 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal},
     Caller,
     Error,
     ExternRef,
     Func,
     FuncType,
     Ref,
+    ValType,
+    F32,
+    F64,
 };
 use core::{array, iter::FusedIterator};
 
 #[cfg(feature = "simd")]
-use crate::core::V128;
+use crate::V128;
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {

@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{wasm, ReadAs, TrapCode, UntypedVal},
+    core::{wasm, ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
     ir::{
         index::Memory,
@@ -15,10 +15,11 @@ use crate::{
     },
     store::StoreInner,
     Error,
+    TrapCode,
 };
 
 #[cfg(feature = "simd")]
-use crate::core::{simd, V128};
+use crate::{core::simd, V128};
 
 #[cfg(doc)]
 use crate::ir::Instruction;

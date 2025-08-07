@@ -8,11 +8,13 @@
 
 use super::FuncIdx;
 use crate::{
-    core::{wasm, UntypedVal, F32, F64},
+    core::{wasm, UntypedVal},
     ExternRef,
     Func,
     Ref,
     Val,
+    F32,
+    F64,
 };
 use alloc::boxed::Box;
 use core::fmt;
@@ -20,7 +22,7 @@ use smallvec::SmallVec;
 use wasmparser::AbstractHeapType;
 
 #[cfg(feature = "simd")]
-use crate::core::V128;
+use crate::V128;
 
 /// Types that allow evaluation given an evaluation context.
 pub trait Eval {

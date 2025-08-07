@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::ValType;
+use crate::ValType;
 
 fn test_copy(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);
