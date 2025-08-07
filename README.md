@@ -187,6 +187,18 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
     height="32" style="vertical-align: middle;" alt="Ayaka"
   />
 </a>&nbsp;
+<a href="https://github.com/project-oak/oak">
+  <picture>
+    <source srcset="./resources/logos/users/project-oak-dark.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="./resources/logos/users/project-oak-light.svg" media="(prefers-color-scheme: light)">
+    <img
+      src="./resources/logos/users/project-oak-light.svg"
+      height="32"
+      style="vertical-align: middle;"
+      alt="Project Oak"
+    />
+  </picture>
+</a>&nbsp;
 
 ## Sponsors
 
