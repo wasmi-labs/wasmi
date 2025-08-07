@@ -108,7 +108,7 @@ mod table;
 mod value;
 
 /// Definitions from the `wasmi_core` crate.
-#[deprecated(since = "0.49.0", note = "use inline `wasmi` definitions instead")]
+#[deprecated(since = "0.49.0", note = "use root `wasmi` definitions instead")]
 pub mod core {
     #[cfg(feature = "simd")]
     pub(crate) use wasmi_core::simd;
