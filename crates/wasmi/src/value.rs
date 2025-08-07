@@ -2,7 +2,6 @@ use crate::{
     core::{TypedVal, UntypedVal, ValType, F32, F64, V128},
     ExternRef,
     Func,
-    FuncRef,
     Ref,
 };
 
@@ -70,9 +69,9 @@ pub enum Val {
     F64(F64),
     /// 128-bit Wasm `simd` proposal vector.
     V128(V128),
-    /// A nullable [`Func`][`crate::Func`] reference, a.k.a. [`FuncRef`].
-    FuncRef(FuncRef),
-    /// A nullable external object reference, a.k.a. [`ExternRef`].
+    /// A nullable [`Func`] reference.
+    FuncRef(Ref<Func>),
+    /// A nullable [`ExternRef`] reference.
     ExternRef(Ref<ExternRef>),
 }
 
@@ -86,7 +85,7 @@ impl Val {
             ValType::F32 => Self::F32(0f32.into()),
             ValType::F64 => Self::F64(0f64.into()),
             ValType::V128 => Self::V128(V128::from(0_u128)),
-            ValType::FuncRef => Self::from(FuncRef::null()),
+            ValType::FuncRef => Self::from(<Ref<Func>>::Null),
             ValType::ExternRef => Self::from(<Ref<ExternRef>>::Null),
         }
     }
@@ -138,9 +137,9 @@ impl Val {
     }
 
     /// Returns the underlying `funcref` if the type matches otherwise returns `None`.
-    pub fn funcref(&self) -> Option<&FuncRef> {
+    pub fn funcref(&self) -> Option<Ref<&Func>> {
         match self {
-            Self::FuncRef(value) => Some(value),
+            Self::FuncRef(value) => Some(value.as_ref()),
             _ => None,
         }
     }
@@ -182,17 +181,10 @@ impl From<F64> for Val {
     }
 }
 
-impl From<FuncRef> for Val {
-    #[inline]
-    fn from(funcref: FuncRef) -> Self {
-        Self::FuncRef(funcref)
-    }
-}
-
 impl From<Func> for Val {
     #[inline]
     fn from(func: Func) -> Self {
-        Self::FuncRef(FuncRef::new(func))
+        Self::FuncRef(Ref::Val(func))
     }
 }
 
@@ -200,6 +192,13 @@ impl From<ExternRef> for Val {
     #[inline]
     fn from(externref: ExternRef) -> Self {
         Self::ExternRef(Ref::Val(externref))
+    }
+}
+
+impl From<Ref<Func>> for Val {
+    #[inline]
+    fn from(funcref: Ref<Func>) -> Self {
+        Self::FuncRef(funcref)
     }
 }
 

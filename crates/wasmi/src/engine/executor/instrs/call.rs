@@ -14,8 +14,8 @@ use crate::{
     store::{CallHooks, PrunedStore, StoreInner},
     Error,
     Func,
-    FuncRef,
     Instance,
+    Ref,
 };
 use core::array;
 
@@ -695,9 +695,9 @@ impl Executor<'_> {
             .inner()
             .resolve_table(&table)
             .get_untyped(index)
-            .map(FuncRef::from)
+            .map(<Ref<Func>>::from)
             .ok_or(TrapCode::TableOutOfBounds)?;
-        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
+        let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = store.inner().resolve_func(func).ty_dedup();
         let expected_signature = &self.get_func_type_dedup(func_type);
         if actual_signature != expected_signature {

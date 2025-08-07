@@ -11,7 +11,8 @@ use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
 use wasmi::{
     core::{ValType, F32, F64, V128},
-    FuncRef,
+    Func,
+    Ref,
     Val,
 };
 
@@ -143,7 +144,7 @@ impl wasm_val_t {
             ValType::F64 => Val::from(F64::from(unsafe { self.of.f64 })),
             ValType::V128 => Val::from(V128::from(unsafe { self.of.v128 })),
             ValType::FuncRef => match unsafe { self.of.ref_ }.is_null() {
-                true => Val::FuncRef(FuncRef::null()),
+                true => Val::FuncRef(<Ref<Func>>::Null),
                 false => ref_to_val(unsafe { &*self.of.ref_ }),
             },
             ValType::ExternRef => {

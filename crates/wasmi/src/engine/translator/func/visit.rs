@@ -30,7 +30,7 @@ use crate::{
     module::{self, FuncIdx, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
-    FuncRef,
+    Func,
     Mutability,
     Ref,
 };
@@ -968,7 +968,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(hty).into_inner();
         let null = match type_hint {
-            ValType::FuncRef => TypedVal::from(FuncRef::null()),
+            ValType::FuncRef => TypedVal::from(<Ref<Func>>::Null),
             ValType::ExternRef => TypedVal::from(<Ref<ExternRef>>::Null),
             _ => panic!("must be a Wasm reftype"),
         };
@@ -983,7 +983,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.drop();
             let untyped = input.untyped();
             let is_null = match input.ty() {
-                ValType::FuncRef => FuncRef::from(untyped).is_null(),
+                ValType::FuncRef => <Ref<Func>>::from(untyped).is_null(),
                 ValType::ExternRef => <Ref<ExternRef>>::from(untyped).is_null(),
                 invalid => panic!("ref.is_null: encountered invalid input type: {invalid:?}"),
             };

@@ -15,9 +15,9 @@ use crate::{
     table::ElementSegment,
     Error,
     Func,
-    FuncRef,
     Global,
     Memory,
+    Ref,
     Table,
 };
 
@@ -2763,7 +2763,7 @@ impl Executor<'_> {
     /// Executes an [`Instruction::RefFunc`].
     fn execute_ref_func(&mut self, result: Reg, func_index: index::Func) {
         let func = self.get_func(func_index);
-        let funcref = FuncRef::new(func);
+        let funcref = <Ref<Func>>::from(func);
         self.set_register(result, funcref);
         self.next_instr();
     }

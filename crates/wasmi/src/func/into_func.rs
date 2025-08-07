@@ -7,7 +7,7 @@ use crate::{
     Caller,
     Error,
     ExternRef,
-    FuncRef,
+    Func,
     FuncType,
     Ref,
 };
@@ -192,7 +192,7 @@ impl_wasm_type! {
     type f64 = F64;
     #[cfg(feature = "simd")]
     type V128 = V128;
-    type FuncRef = FuncRef;
+    type Ref<Func> = FuncRef;
     type Ref<ExternRef> = ExternRef;
 }
 

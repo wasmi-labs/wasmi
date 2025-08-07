@@ -1,7 +1,6 @@
 mod caller;
 mod error;
 mod func_inout;
-mod funcref;
 mod into_func;
 mod ty;
 mod typed_func;
@@ -12,7 +11,6 @@ pub use self::{
     caller::Caller,
     error::FuncError,
     func_inout::FuncInOut,
-    funcref::FuncRef,
     into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
     ty::FuncType,
     typed_func::{TypedFunc, WasmParams, WasmResults},

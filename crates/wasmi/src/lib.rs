@@ -95,7 +95,6 @@ pub mod tests;
 
 mod engine;
 mod error;
-mod externref;
 mod func;
 mod global;
 mod instance;
@@ -103,6 +102,7 @@ mod limits;
 mod linker;
 mod memory;
 mod module;
+mod reftype;
 mod store;
 mod table;
 mod value;
@@ -153,11 +153,9 @@ pub use self::{
         TypedResumableCallOutOfFuel,
     },
     error::Error,
-    externref::{ExternRef, Ref},
     func::{
         Caller,
         Func,
-        FuncRef,
         FuncType,
         IntoFunc,
         TypedFunc,
@@ -182,6 +180,7 @@ pub use self::{
         ModuleImportsIter,
         Read,
     },
+    reftype::{ExternRef, Ref},
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Val,

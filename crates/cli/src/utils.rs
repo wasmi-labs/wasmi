@@ -22,9 +22,9 @@ pub fn prepare_func_results(ty: &FuncType) -> Box<[Val]> {
 ///
 /// - If there is a type mismatch between `args` and the expected [`ValType`] by `ty`.
 /// - If too many or too few `args` are given for [`FuncType`] `ty`.
-/// - If unsupported [`ExternRef`] or [`FuncRef`] types are encountered.
+/// - If unsupported `Ref<ExternRef>` or `Ref<Func>` types are encountered.
 ///
-/// [`FuncRef`]: wasmi::FuncRef
+/// [`Func`]: wasmi::Func
 /// [`ExternRef`]: wasmi::ExternRef
 pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Error> {
     ty.params()

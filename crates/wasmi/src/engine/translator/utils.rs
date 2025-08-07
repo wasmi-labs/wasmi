@@ -3,7 +3,7 @@ use crate::{
     ir::{Const16, Instruction, Sign},
     Error,
     ExternRef,
-    FuncRef,
+    Func,
     Ref,
 };
 use core::num::NonZero;
@@ -35,7 +35,7 @@ macro_rules! impl_typed_for {
     };
 }
 impl_typed_for! {
-    FuncRef as FuncRef,
+    Ref<Func> as FuncRef,
     Ref<ExternRef> as ExternRef,
 }
 
