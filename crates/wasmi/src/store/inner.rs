@@ -8,7 +8,7 @@ use crate::{
         Table as CoreTable,
     },
     engine::DedupFuncType,
-    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
+    externref::{ExternObjectEntity, ExternObjectIdx, ExternRef},
     memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -233,9 +233,9 @@ impl StoreInner {
     }
 
     /// Allocates a new [`ExternObjectEntity`] and returns a [`ExternObject`] reference to it.
-    pub fn alloc_extern_object(&mut self, object: ExternObjectEntity) -> ExternObject {
+    pub fn alloc_extern_object(&mut self, object: ExternObjectEntity) -> ExternRef {
         let object = self.extern_objects.alloc(object);
-        ExternObject::from_inner(self.wrap_stored(object))
+        ExternRef::from_inner(self.wrap_stored(object))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -610,7 +610,7 @@ impl StoreInner {
     ///
     /// - If the [`ExternObject`] does not originate from this [`StoreInner`].
     /// - If the [`ExternObject`] cannot be resolved to its entity.
-    pub fn resolve_external_object(&self, object: &ExternObject) -> &ExternObjectEntity {
+    pub fn resolve_external_object(&self, object: &ExternRef) -> &ExternObjectEntity {
         self.resolve(object.as_inner(), &self.extern_objects)
     }
 

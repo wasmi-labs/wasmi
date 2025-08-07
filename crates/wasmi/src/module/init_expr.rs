@@ -11,6 +11,7 @@ use crate::{
     core::{wasm, UntypedVal, F32, F64},
     ExternRef,
     FuncRef,
+    Ref,
     Val,
 };
 use alloc::boxed::Box;
@@ -290,7 +291,7 @@ impl ConstExpr {
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Extern,
-                        } => Val::from(ExternRef::null()),
+                        } => Val::from(<Ref<ExternRef>>::Null),
                         invalid => {
                             panic!("encountered invalid heap type for `ref.null`: {invalid:?}")
                         }

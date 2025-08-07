@@ -32,6 +32,7 @@ use crate::{
     ExternRef,
     FuncRef,
     Mutability,
+    Ref,
 };
 use wasmparser::VisitOperator;
 
@@ -968,7 +969,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let type_hint = WasmiValueType::from(hty).into_inner();
         let null = match type_hint {
             ValType::FuncRef => TypedVal::from(FuncRef::null()),
-            ValType::ExternRef => TypedVal::from(ExternRef::null()),
+            ValType::ExternRef => TypedVal::from(<Ref<ExternRef>>::Null),
             _ => panic!("must be a Wasm reftype"),
         };
         self.stack.push_const(null);
@@ -983,7 +984,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             let untyped = input.untyped();
             let is_null = match input.ty() {
                 ValType::FuncRef => FuncRef::from(untyped).is_null(),
-                ValType::ExternRef => ExternRef::from(untyped).is_null(),
+                ValType::ExternRef => <Ref<ExternRef>>::from(untyped).is_null(),
                 invalid => panic!("ref.is_null: encountered invalid input type: {invalid:?}"),
             };
             self.stack.push_const(i32::from(is_null));

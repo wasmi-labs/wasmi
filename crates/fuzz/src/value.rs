@@ -92,7 +92,7 @@ impl From<FuzzVal> for wasmi::Val {
             }
             FuzzVal::ExternRef { is_null } => {
                 assert!(is_null);
-                Self::ExternRef(wasmi::ExternRef::null())
+                Self::ExternRef(<wasmi::Ref<wasmi::ExternRef>>::Null)
             }
         }
     }

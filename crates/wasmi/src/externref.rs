@@ -8,6 +8,52 @@ use crate::{
 use alloc::boxed::Box;
 use core::{any::Any, mem, num::NonZeroU32};
 
+/// A nullable reference type.
+#[derive(Debug, Copy, Clone)]
+pub enum Ref<T> {
+    /// The [`Ref`] is a non-`null` value.
+    Val(T),
+    /// The [`Ref`] is `null`.
+    Null,
+}
+
+impl<T> Ref<T> {
+    /// Returns `true` is `self` is null.
+    pub fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
+    }
+
+    /// Returns `Some` if `self` is a non-`null` value.
+    ///
+    /// Otherwise returns `None`.
+    pub fn val(&self) -> Option<&T> {
+        match self {
+            Ref::Val(val) => Some(val),
+            Ref::Null => None,
+        }
+    }
+
+    /// Converts from `&Ref<T>` to `Ref<&T>`.
+    pub fn as_ref(&self) -> Ref<&T> {
+        match self {
+            Ref::Val(val) => Ref::Val(val),
+            Ref::Null => Ref::Null,
+        }
+    }
+}
+
+impl<T> From<T> for Ref<T> {
+    fn from(value: T) -> Self {
+        Self::Val(value)
+    }
+}
+
+impl<T> Default for Ref<T> {
+    fn default() -> Self {
+        Self::Null
+    }
+}
+
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExternObjectIdx(NonZeroU32);
@@ -54,15 +100,15 @@ impl ExternObjectEntity {
 /// Represents an opaque reference to any data within WebAssembly.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct ExternObject(Stored<ExternObjectIdx>);
+pub struct ExternRef(Stored<ExternObjectIdx>);
 
-impl ExternObject {
-    /// Creates a new [`ExternObject`] reference from its raw representation.
+impl ExternRef {
+    /// Creates a new [`ExternRef`] reference from its raw representation.
     pub(crate) fn from_inner(stored: Stored<ExternObjectIdx>) -> Self {
         Self(stored)
     }
 
-    /// Returns the raw representation of the [`ExternObject`].
+    /// Returns the raw representation of the [`ExternRef`].
     pub(crate) fn as_inner(&self) -> &Stored<ExternObjectIdx> {
         &self.0
     }
@@ -82,17 +128,10 @@ impl ExternObject {
     ///
     /// # Panics
     ///
-    /// Panics if `ctx` does not own this [`ExternObject`].
+    /// Panics if `ctx` does not own this [`ExternRef`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a dyn Any {
         ctx.into().store.inner.resolve_external_object(self).data()
     }
-}
-
-/// Represents a nullable opaque reference to any data within WebAssembly.
-#[derive(Debug, Default, Copy, Clone)]
-#[repr(transparent)]
-pub struct ExternRef {
-    inner: Option<ExternObject>,
 }
 
 #[test]
@@ -104,19 +143,22 @@ fn externref_sizeof() {
     //     size_of(ExternRef) == size_of(ExternObject) == size_of(UntypedValue)
     use core::mem::size_of;
     assert_eq!(size_of::<ExternRef>(), size_of::<u64>());
-    assert_eq!(size_of::<ExternRef>(), size_of::<ExternObject>());
+    assert_eq!(size_of::<ExternRef>(), size_of::<ExternRef>());
 }
 
 #[test]
 fn externref_null_to_zero() {
-    assert_eq!(UntypedVal::from(ExternRef::null()), UntypedVal::from(0));
-    assert!(ExternRef::from(UntypedVal::from(0)).is_null());
+    assert_eq!(
+        UntypedVal::from(<Ref<ExternRef>>::Null),
+        UntypedVal::from(0)
+    );
+    assert!(<Ref<ExternRef>>::from(UntypedVal::from(0)).is_null());
 }
 
-impl From<UntypedVal> for Option<ExternRef> {
+impl From<UntypedVal> for Ref<ExternRef> {
     fn from(untyped: UntypedVal) -> Self {
         if u64::from(untyped) == 0 {
-            return None;
+            return Ref::Null;
         }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`ExternRef`] instances. Therefore
@@ -139,9 +181,9 @@ impl From<ExternRef> for UntypedVal {
     }
 }
 
-impl From<Option<ExternRef>> for UntypedVal {
-    fn from(externref: Option<ExternRef>) -> Self {
-        if externref.is_none() {
+impl From<Ref<ExternRef>> for UntypedVal {
+    fn from(externref: Ref<ExternRef>) -> Self {
+        if externref.is_null() {
             return UntypedVal::from(0_u64);
         }
         // Safety: This operation is safe since there are no invalid
@@ -149,7 +191,7 @@ impl From<Option<ExternRef>> for UntypedVal {
         //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`ExternRef`] instance.
-        let bits = unsafe { mem::transmute::<Option<ExternRef>, u64>(externref) };
+        let bits = unsafe { mem::transmute::<Ref<ExternRef>, u64>(externref) };
         UntypedVal::from(bits)
     }
 }
@@ -164,7 +206,7 @@ mod tests {
         let engine = Engine::default();
         let mut store = <Store<()>>::new(&engine, ());
         let value = 42_i32;
-        let obj = ExternObject::new::<i32>(&mut store, value);
+        let obj = ExternRef::new::<i32>(&mut store, value);
         assert_eq!(obj.data(&store).downcast_ref::<i32>(), Some(&value),);
     }
 }

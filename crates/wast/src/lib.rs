@@ -13,6 +13,7 @@ use wasmi::{
     MemoryType,
     Module,
     Mutability,
+    Ref,
     ResumableCall,
     Store,
     Table,
@@ -173,10 +174,8 @@ impl WastRunner {
             WastArgCore::RefNull(HeapType::Abstract {
                 ty: AbstractHeapType::Extern,
                 ..
-            }) => Val::ExternRef(ExternRef::null()),
-            WastArgCore::RefExtern(value) => {
-                Val::ExternRef(ExternRef::new(&mut self.store, *value))
-            }
+            }) => Val::ExternRef(<Ref<ExternRef>>::Null),
+            WastArgCore::RefExtern(value) => Val::from(ExternRef::new(&mut self.store, *value)),
             _ => return None,
         })
     }
@@ -417,10 +416,10 @@ impl WastRunner {
                 })),
             ) => externref.is_null(),
             (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
-                let Some(value) = externref.data(&self.store) else {
+                let Ref::Val(value) = externref else {
                     bail!("unexpected null element: {externref:?}");
                 };
-                let Some(value) = value.downcast_ref::<u32>() else {
+                let Some(value) = value.data(&self.store).downcast_ref::<u32>() else {
                     bail!("unexpected non-`u32` externref data: {value:?}");
                 };
                 value == expected

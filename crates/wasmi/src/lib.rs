@@ -153,7 +153,7 @@ pub use self::{
         TypedResumableCallOutOfFuel,
     },
     error::Error,
-    externref::ExternRef,
+    externref::{ExternRef, Ref},
     func::{
         Caller,
         Func,
