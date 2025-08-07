@@ -50,11 +50,11 @@ impl<T> From<T> for Ref<T> {
     }
 }
 
-/// A raw index to a function entity.
+/// A raw index to an external entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ExternObjectIdx(NonZeroU32);
+pub struct ExternRefIdx(NonZeroU32);
 
-impl ArenaIndex for ExternObjectIdx {
+impl ArenaIndex for ExternRefIdx {
     fn into_usize(self) -> usize {
         self.0.get().wrapping_sub(1) as usize
     }
@@ -96,16 +96,16 @@ impl ExternRefEntity {
 /// Represents an opaque reference to any data within WebAssembly.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct ExternRef(Stored<ExternObjectIdx>);
+pub struct ExternRef(Stored<ExternRefIdx>);
 
 impl ExternRef {
     /// Creates a new [`ExternRef`] reference from its raw representation.
-    pub(crate) fn from_inner(stored: Stored<ExternObjectIdx>) -> Self {
+    pub(crate) fn from_inner(stored: Stored<ExternRefIdx>) -> Self {
         Self(stored)
     }
 
     /// Returns the raw representation of the [`ExternRef`].
-    pub(crate) fn as_inner(&self) -> &Stored<ExternObjectIdx> {
+    pub(crate) fn as_inner(&self) -> &Stored<ExternRefIdx> {
         &self.0
     }
 
