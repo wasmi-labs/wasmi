@@ -15,8 +15,9 @@ use crate::{
     module::{self, FuncIdx, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
-    FuncRef,
+    Func,
     FuncType,
+    Ref,
 };
 use ir::Const32;
 use wasmparser::VisitOperator;
@@ -1899,8 +1900,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
-            ValType::FuncRef => TypedVal::from(FuncRef::null()),
-            ValType::ExternRef => TypedVal::from(ExternRef::null()),
+            ValType::FuncRef => TypedVal::from(<Ref<Func>>::Null),
+            ValType::ExternRef => TypedVal::from(<Ref<ExternRef>>::Null),
             ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
         };
         self.stack.push_immediate(null)?;
@@ -1928,8 +1929,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Operand::Immediate(input) => {
                 let untyped = input.val().untyped();
                 let is_null = match input.ty() {
-                    ValType::FuncRef => FuncRef::from(untyped).is_null(),
-                    ValType::ExternRef => ExternRef::from(untyped).is_null(),
+                    ValType::FuncRef => <Ref<Func>>::from(untyped).is_null(),
+                    ValType::ExternRef => <Ref<ExternRef>>::from(untyped).is_null(),
                     invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
                 };
                 self.stack.push_immediate(i32::from(is_null))?;
