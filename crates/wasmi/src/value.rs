@@ -3,6 +3,7 @@ use crate::{
     ExternRef,
     Func,
     FuncRef,
+    Ref,
 };
 
 /// Untyped instances that allow to be typed.
@@ -72,7 +73,7 @@ pub enum Val {
     /// A nullable [`Func`][`crate::Func`] reference, a.k.a. [`FuncRef`].
     FuncRef(FuncRef),
     /// A nullable external object reference, a.k.a. [`ExternRef`].
-    ExternRef(ExternRef),
+    ExternRef(Ref<ExternRef>),
 }
 
 impl Val {
@@ -86,7 +87,7 @@ impl Val {
             ValType::F64 => Self::F64(0f64.into()),
             ValType::V128 => Self::V128(V128::from(0_u128)),
             ValType::FuncRef => Self::from(FuncRef::null()),
-            ValType::ExternRef => Self::from(ExternRef::null()),
+            ValType::ExternRef => Self::from(<Ref<ExternRef>>::Null),
         }
     }
 
@@ -145,9 +146,9 @@ impl Val {
     }
 
     /// Returns the underlying `externref` if the type matches otherwise returns `None`.
-    pub fn externref(&self) -> Option<&ExternRef> {
+    pub fn externref(&self) -> Option<Ref<&ExternRef>> {
         match self {
-            Self::ExternRef(value) => Some(value),
+            Self::ExternRef(value) => Some(value.as_ref()),
             _ => None,
         }
     }
@@ -198,6 +199,13 @@ impl From<Func> for Val {
 impl From<ExternRef> for Val {
     #[inline]
     fn from(externref: ExternRef) -> Self {
+        Self::ExternRef(Ref::Val(externref))
+    }
+}
+
+impl From<Ref<ExternRef>> for Val {
+    #[inline]
+    fn from(externref: Ref<ExternRef>) -> Self {
         Self::ExternRef(externref)
     }
 }

@@ -4,14 +4,19 @@ use crate::{
     Error,
     ExternRef,
     FuncRef,
+    Ref,
 };
 use core::num::NonZero;
 
+impl Typed for ExternRef {
+    const TY: ValType = ValType::ExternRef;
+}
+
 macro_rules! impl_typed_for {
-    ( $( $ty:ident ),* $(,)? ) => {
+    ( $( $ty:ty as $ident:ident ),* $(,)? ) => {
         $(
             impl Typed for $ty {
-                const TY: ValType = crate::core::ValType::$ty;
+                const TY: ValType = crate::core::ValType::$ident;
             }
 
             impl From<TypedVal> for $ty {
@@ -30,8 +35,8 @@ macro_rules! impl_typed_for {
     };
 }
 impl_typed_for! {
-    FuncRef,
-    ExternRef,
+    FuncRef as FuncRef,
+    Ref<ExternRef> as ExternRef,
 }
 
 /// A WebAssembly integer. Either `i32` or `i64`.

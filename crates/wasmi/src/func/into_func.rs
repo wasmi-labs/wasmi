@@ -9,6 +9,7 @@ use crate::{
     ExternRef,
     FuncRef,
     FuncType,
+    Ref,
 };
 use core::{array, iter::FusedIterator};
 
@@ -192,7 +193,7 @@ impl_wasm_type! {
     #[cfg(feature = "simd")]
     type V128 = V128;
     type FuncRef = FuncRef;
-    type ExternRef = ExternRef;
+    type Ref<ExternRef> = ExternRef;
 }
 
 /// A list of [`WasmTy`] types.

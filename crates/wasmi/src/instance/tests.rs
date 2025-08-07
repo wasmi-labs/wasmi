@@ -9,6 +9,7 @@ use crate::{
     FuncRef,
     MemoryType,
     Mutability,
+    Ref,
     Store,
     TableType,
     Val,
@@ -172,7 +173,7 @@ fn instantiate_with_invalid_table_import() {
     let t = Table::new(
         &mut store,
         TableType::new(ValType::ExternRef, 1, None),
-        Val::from(ExternRef::null()),
+        Val::from(<Ref<ExternRef>>::Null),
     )
     .unwrap();
     let externals = [Extern::from(t)].map(Extern::from);

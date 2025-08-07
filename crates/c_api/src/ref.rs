@@ -11,7 +11,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{ffi::c_void, ptr, unimplemented};
-use wasmi::{ExternRef, FuncRef, Val};
+use wasmi::{ExternRef, FuncRef, Ref, Val};
 
 /// `*mut wasm_ref_t` is a reference type (`externref` or `funcref`) for the C API.
 ///
@@ -35,7 +35,7 @@ wasmi_c_api_macros::declare_own!(wasm_ref_t);
 #[derive(Clone)]
 pub(crate) enum WasmRef {
     Func(FuncRef),
-    Extern(ExternRef),
+    Extern(Ref<ExternRef>),
 }
 
 impl From<WasmRef> for Val {
