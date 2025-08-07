@@ -4,16 +4,17 @@ use crate::{
     FuzzSmithConfig,
     FuzzVal,
 };
-use wasmi_v048::{
+use wasmi_v049::{
     core::{TrapCode, V128},
     Config,
     Engine,
     Error,
     ExternRef,
-    FuncRef,
+    Func,
     Instance,
     Linker,
     Module,
+    Ref,
     StackLimits,
     Store,
     StoreLimits,
@@ -63,10 +64,7 @@ impl DifferentialOracleMeta for WasmiV048Oracle {
         let mut store = Store::new(&engine, limiter);
         store.limiter(|lim| lim);
         let module = Module::new(store.engine(), wasm).unwrap();
-        let Ok(unstarted_instance) = linker.instantiate(&mut store, &module) else {
-            return None;
-        };
-        let Ok(instance) = unstarted_instance.ensure_no_start(&mut store) else {
+        let Ok(instance) = linker.instantiate_and_start(&mut store, &module) else {
             return None;
         };
         Some(Self {
@@ -129,11 +127,11 @@ impl From<FuzzVal> for Val {
             FuzzVal::V128(value) => Self::V128(V128::from(value)),
             FuzzVal::FuncRef { is_null } => {
                 assert!(is_null);
-                Self::FuncRef(FuncRef::null())
+                Self::FuncRef(<Ref<Func>>::Null)
             }
             FuzzVal::ExternRef { is_null } => {
                 assert!(is_null);
-                Self::ExternRef(ExternRef::null())
+                Self::ExternRef(<Ref<ExternRef>>::Null)
             }
         }
     }

@@ -2,7 +2,7 @@ pub use self::{
     exports::{ModuleExports, StringSequenceIter},
     wasmi::WasmiOracle,
     wasmi_stack::WasmiStackOracle,
-    wasmi_v048::WasmiV048Oracle,
+    wasmi_v049::WasmiV048Oracle,
     wasmtime::WasmtimeOracle,
 };
 use crate::{FuzzError, FuzzSmithConfig, FuzzVal};
@@ -11,7 +11,7 @@ use arbitrary::{Arbitrary, Unstructured};
 mod exports;
 mod wasmi;
 mod wasmi_stack;
-mod wasmi_v048;
+mod wasmi_v049;
 mod wasmtime;
 
 /// Trait implemented by differential fuzzing oracles.
