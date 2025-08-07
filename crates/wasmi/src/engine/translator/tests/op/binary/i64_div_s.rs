@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::TrapCode;
+use crate::TrapCode;
 
 const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "div_s");
 

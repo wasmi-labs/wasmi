@@ -1,13 +1,14 @@
 use super::Executor;
 use crate::{
-    core::{wasm, TrapCode, UntypedVal, WriteAs},
+    core::{wasm, UntypedVal, WriteAs},
     ir::{index::Memory, Address32, Offset16, Offset64, Offset64Hi, Offset64Lo, Reg},
     store::StoreInner,
     Error,
+    TrapCode,
 };
 
 #[cfg(feature = "simd")]
-use crate::core::{simd, V128};
+use crate::{core::simd, V128};
 
 #[cfg(doc)]
 use crate::ir::Instruction;

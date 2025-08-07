@@ -1,7 +1,8 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{Table as CoreTable, TableError, TrapCode},
+    core::CoreTable,
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
+    errors::TableError,
     ir::{
         index::{Elem, Table},
         Const16,
@@ -11,6 +12,7 @@ use crate::{
     },
     store::{PrunedStore, StoreInner},
     Error,
+    TrapCode,
 };
 
 impl Executor<'_> {

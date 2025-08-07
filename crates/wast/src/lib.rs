@@ -2,7 +2,6 @@ use anyhow::{bail, Context as _, Result};
 use core::array;
 use std::collections::HashMap;
 use wasmi::{
-    core::{ValType, F32, F64, V128},
     Config,
     Engine,
     Extern,
@@ -19,6 +18,10 @@ use wasmi::{
     Table,
     TableType,
     Val,
+    ValType,
+    F32,
+    F64,
+    V128,
 };
 use wast::{
     core::{AbstractHeapType, HeapType, NanPattern, V128Pattern, WastArgCore, WastRetCore},

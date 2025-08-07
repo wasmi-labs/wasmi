@@ -108,8 +108,46 @@ mod table;
 mod value;
 
 /// Definitions from the `wasmi_core` crate.
-#[doc(inline)]
-pub use wasmi_core as core;
+#[deprecated(since = "0.49.0", note = "use root `wasmi` definitions instead")]
+pub mod core {
+    #[cfg(feature = "simd")]
+    pub(crate) use wasmi_core::simd;
+    pub(crate) use wasmi_core::{
+        hint,
+        wasm,
+        DecodeUntypedSlice,
+        ElementSegment as CoreElementSegment,
+        EncodeUntypedSlice,
+        Fuel,
+        FuelCostsProvider,
+        FuncType as CoreFuncType,
+        Global as CoreGlobal,
+        IndexType,
+        LimiterError,
+        Memory as CoreMemory,
+        MemoryType as CoreMemoryType,
+        MemoryTypeBuilder as CoreMemoryTypeBuilder,
+        ReadAs,
+        ResourceLimiterRef,
+        Table as CoreTable,
+        TableType as CoreTableType,
+        Typed,
+        TypedVal,
+        UntypedError,
+        UntypedVal,
+        WriteAs,
+    };
+    pub use wasmi_core::{
+        GlobalType,
+        Mutability,
+        ResourceLimiter,
+        TrapCode,
+        ValType,
+        F32,
+        F64,
+        V128,
+    };
+}
 
 /// Definitions from the `wasmi_collections` crate.
 #[doc(inline)]
@@ -129,7 +167,7 @@ pub mod errors {
         linker::LinkerError,
         module::{InstantiationError, ReadError},
     };
-    pub use crate::core::{FuelError, GlobalError, MemoryError, TableError};
+    pub use wasmi_core::{FuelError, GlobalError, HostError, MemoryError, TableError};
 }
 
 #[expect(deprecated)]
@@ -137,7 +175,6 @@ pub use self::linker::{state, LinkerBuilder};
 #[expect(deprecated)]
 pub use self::module::InstancePre;
 pub use self::{
-    core::{GlobalType, Mutability},
     engine::{
         CompilationMode,
         Config,
@@ -193,3 +230,4 @@ use self::{
     store::Stored,
     table::{ElementSegment, ElementSegmentIdx, TableIdx},
 };
+pub use wasmi_core::{GlobalType, Mutability, ResourceLimiter, TrapCode, ValType, F32, F64, V128};

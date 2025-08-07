@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::{ElementSegment as CoreElementSegment, UntypedVal},
+    core::{CoreElementSegment, UntypedVal},
     module,
     store::Stored,
     AsContext,

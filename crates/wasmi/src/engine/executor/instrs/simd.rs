@@ -10,10 +10,8 @@ use crate::{
             ImmLaneIdx8,
             IntoLaneIdx,
         },
-        TrapCode,
         UntypedVal,
         WriteAs,
-        V128,
     },
     engine::{executor::InstructionPtr, utils::unreachable_unchecked},
     ir::{
@@ -29,6 +27,8 @@ use crate::{
     },
     store::StoreInner,
     Error,
+    TrapCode,
+    V128,
 };
 
 #[cfg(doc)]

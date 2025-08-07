@@ -8,7 +8,6 @@
 //! those entities.
 
 use crate::{
-    core::ValType,
     instance::InstanceEntity,
     Engine,
     Error,
@@ -21,6 +20,7 @@ use crate::{
     Table,
     TableType,
     Val,
+    ValType,
 };
 
 fn try_instantiate_from_wat(wasm: &str) -> Result<(Store<()>, Instance), Error> {

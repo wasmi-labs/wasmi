@@ -1,6 +1,6 @@
 use crate::context::Context;
 use std::fmt::{self, Display};
-use wasmi::{core::ValType, FuncType, Val};
+use wasmi::{FuncType, Val, ValType};
 
 /// [`Display`]-wrapper type for [`ValType`].
 pub struct DisplayValueType<'a>(&'a ValType);

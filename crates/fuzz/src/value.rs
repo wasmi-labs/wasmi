@@ -1,5 +1,5 @@
 use arbitrary::{Arbitrary, Unstructured};
-use wasmi::core::{ValType, V128};
+use wasmi::{ValType, V128};
 
 /// A Wasm value type supported by the Wasmi fuzzing infrastructure.
 #[derive(Debug, Copy, Clone)]

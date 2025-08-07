@@ -1,12 +1,6 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::{
-        ElementSegment as CoreElementSegment,
-        Fuel,
-        Global as CoreGlobal,
-        Memory as CoreMemory,
-        Table as CoreTable,
-    },
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity, ExternRefIdx},

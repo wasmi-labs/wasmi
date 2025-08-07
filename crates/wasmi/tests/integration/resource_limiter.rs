@@ -1,6 +1,5 @@
 //! Tests to check if wasmi's ResourceLimiter works as intended.
 use wasmi::{
-    core::TrapCode,
     Config,
     Engine,
     Error,
@@ -9,6 +8,7 @@ use wasmi::{
     Store,
     StoreLimits,
     StoreLimitsBuilder,
+    TrapCode,
     TypedFunc,
 };
 

@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::{UntypedVal, ValType};
+use crate::{core::UntypedVal, ValType};
 
 fn test_init(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);

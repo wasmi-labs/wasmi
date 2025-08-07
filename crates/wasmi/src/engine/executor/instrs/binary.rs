@@ -1,8 +1,9 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
-    core::{wasm, TrapCode},
+    core::wasm,
     ir::{Const16, Reg, ShiftAmount, Sign},
     Error,
+    TrapCode,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 

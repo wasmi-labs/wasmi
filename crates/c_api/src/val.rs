@@ -9,12 +9,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
-use wasmi::{
-    core::{ValType, F32, F64, V128},
-    Func,
-    Ref,
-    Val,
-};
+use wasmi::{Func, Ref, Val, ValType, F32, F64, V128};
 
 /// A Wasm value.
 ///

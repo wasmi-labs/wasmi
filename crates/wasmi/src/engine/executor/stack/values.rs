@@ -1,8 +1,9 @@
 use super::{err_stack_overflow, StackOffsets};
 use crate::{
-    core::{ReadAs, TrapCode, UntypedVal, WriteAs},
+    core::{ReadAs, UntypedVal, WriteAs},
     engine::code_map::CompiledFuncRef,
     ir::Reg,
+    TrapCode,
 };
 use alloc::vec::Vec;
 use core::{

@@ -1,4 +1,7 @@
-use crate::core::{IndexType, TableType as CoreTableType, ValType};
+use crate::{
+    core::{CoreTableType, IndexType},
+    ValType,
+};
 
 /// A Wasm table descriptor.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

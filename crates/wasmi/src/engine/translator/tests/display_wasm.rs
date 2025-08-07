@@ -1,4 +1,4 @@
-use crate::core::{ValType, V128};
+use crate::{ValType, V128};
 use core::{
     fmt,
     fmt::Display,

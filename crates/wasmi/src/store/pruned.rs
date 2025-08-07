@@ -1,6 +1,7 @@
 use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, StoreInner};
 use crate::{
-    core::{hint, MemoryError, TableError, UntypedVal},
+    core::{hint, UntypedVal},
+    errors::{MemoryError, TableError},
     CallHook,
     Error,
     Instance,

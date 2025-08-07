@@ -11,12 +11,13 @@ pub use self::{
 };
 use crate::{
     collections::arena::Arena,
-    core::{Memory as CoreMemory, ResourceLimiter, ResourceLimiterRef},
+    core::{CoreMemory, ResourceLimiterRef},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     Engine,
     Error,
     Instance,
     Memory,
+    ResourceLimiter,
 };
 use alloc::boxed::Box;
 use core::{

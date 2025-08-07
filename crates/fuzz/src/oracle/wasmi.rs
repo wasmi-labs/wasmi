@@ -6,7 +6,6 @@ use crate::{
     FuzzValType,
 };
 use wasmi::{
-    core::ValType,
     Config,
     Engine,
     Instance,
@@ -17,6 +16,7 @@ use wasmi::{
     StoreLimits,
     StoreLimitsBuilder,
     Val,
+    ValType,
 };
 
 use super::ModuleExports;
@@ -167,7 +167,7 @@ impl From<Val> for FuzzVal {
 
 impl From<wasmi::Error> for FuzzError {
     fn from(error: wasmi::Error) -> Self {
-        use wasmi::core::TrapCode;
+        use wasmi::TrapCode;
         let Some(trap_code) = error.as_trap_code() else {
             return FuzzError::Other;
         };

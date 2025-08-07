@@ -2,8 +2,8 @@
 
 use super::*;
 use crate::{
-    core::TrapCode,
     ir::{Address32, Offset16, Offset64, Offset64Lo},
+    TrapCode,
 };
 
 fn test_load(

@@ -1,5 +1,5 @@
 use crate::{
-    core::{MemoryError, TableError},
+    errors::{MemoryError, TableError},
     Extern,
     ExternType,
     FuncType,

@@ -1,8 +1,9 @@
 use super::*;
 use crate::{
-    core::{TrapCode, UntypedVal},
+    core::UntypedVal,
     engine::EngineFunc,
     ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
+    TrapCode,
 };
 
 #[test]

@@ -1,5 +1,5 @@
 use crate::{
-    core::{FuelCostsProvider, UntypedVal, ValType},
+    core::{FuelCostsProvider, UntypedVal},
     engine::translator::{
         comparator::{
             CmpSelectFusion,
@@ -41,6 +41,7 @@ use crate::{
     },
     module::ModuleHeader,
     Error,
+    ValType,
 };
 use alloc::vec::{Drain, Vec};
 use core::mem;
