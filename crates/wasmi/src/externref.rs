@@ -178,16 +178,10 @@ impl From<ExternRef> for UntypedVal {
 
 impl From<Ref<ExternRef>> for UntypedVal {
     fn from(externref: Ref<ExternRef>) -> Self {
-        if externref.is_null() {
-            return UntypedVal::from(0_u64);
+        match externref {
+            Ref::Val(externref) => UntypedVal::from(externref),
+            Ref::Null => UntypedVal::from(0_u64),
         }
-        // Safety: This operation is safe since there are no invalid
-        //         bit patterns for [`UntypedVal`] instances. Therefore
-        //         this operation cannot produce invalid [`UntypedVal`]
-        //         instances even if it was possible to arbitrarily modify
-        //         the input [`ExternRef`] instance.
-        let bits = unsafe { mem::transmute::<Ref<ExternRef>, u64>(externref) };
-        UntypedVal::from(bits)
     }
 }
 
