@@ -3,6 +3,7 @@ use crate::{
     core::UntypedVal,
     store::Stored,
     AsContextMut,
+    Func,
     StoreContext,
 };
 use alloc::boxed::Box;
@@ -150,6 +151,26 @@ fn externref_null_to_zero() {
     assert!(<Ref<ExternRef>>::from(UntypedVal::from(0)).is_null());
 }
 
+#[test]
+fn funcref_sizeof() {
+    // These assertions are important in order to convert `FuncRef`
+    // from and to 64-bit `UntypedValue` instances.
+    //
+    // The following equation must be true:
+    //     size_of(Func) == size_of(UntypedValue) == size_of(FuncRef)
+    use crate::Func;
+    use core::mem::size_of;
+    assert_eq!(size_of::<Func>(), size_of::<u64>());
+    assert_eq!(size_of::<Func>(), size_of::<Ref<Func>>());
+}
+
+#[test]
+fn funcref_null_to_zero() {
+    use crate::Func;
+    assert_eq!(UntypedVal::from(<Ref<Func>>::Null), UntypedVal::from(0));
+    assert!(<Ref<Func>>::from(UntypedVal::from(0)).is_null());
+}
+
 impl From<UntypedVal> for Ref<ExternRef> {
     fn from(untyped: UntypedVal) -> Self {
         if u64::from(untyped) == 0 {
@@ -180,6 +201,41 @@ impl From<Ref<ExternRef>> for UntypedVal {
     fn from(externref: Ref<ExternRef>) -> Self {
         match externref {
             Ref::Val(externref) => UntypedVal::from(externref),
+            Ref::Null => UntypedVal::from(0_u64),
+        }
+    }
+}
+
+impl From<UntypedVal> for Ref<Func> {
+    fn from(untyped: UntypedVal) -> Self {
+        if u64::from(untyped) == 0 {
+            return <Ref<Func>>::Null;
+        }
+        // Safety: This union access is safe since there are no invalid
+        //         bit patterns for [`FuncRef`] instances. Therefore
+        //         this operation cannot produce invalid [`FuncRef`]
+        //         instances even though the input [`UntypedVal`]
+        //         was modified arbitrarily.
+        unsafe { mem::transmute::<u64, Self>(untyped.into()) }
+    }
+}
+
+impl From<Func> for UntypedVal {
+    fn from(func: Func) -> Self {
+        // Safety: This operation is safe since there are no invalid
+        //         bit patterns for [`UntypedVal`] instances. Therefore
+        //         this operation cannot produce invalid [`UntypedVal`]
+        //         instances even if it was possible to arbitrarily modify
+        //         the input [`ExternRef`] instance.
+        let bits = unsafe { mem::transmute::<Func, u64>(func) };
+        UntypedVal::from(bits)
+    }
+}
+
+impl From<Ref<Func>> for UntypedVal {
+    fn from(funcref: Ref<Func>) -> Self {
+        match funcref {
+            Ref::Val(funcref) => UntypedVal::from(funcref),
             Ref::Null => UntypedVal::from(0_u64),
         }
     }

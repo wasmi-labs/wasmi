@@ -157,7 +157,6 @@ pub use self::{
     func::{
         Caller,
         Func,
-        FuncRef,
         FuncType,
         IntoFunc,
         TypedFunc,

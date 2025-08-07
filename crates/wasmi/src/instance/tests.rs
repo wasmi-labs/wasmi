@@ -6,7 +6,7 @@ use crate::{
     Caller,
     Engine,
     ExternRef,
-    FuncRef,
+    Func,
     MemoryType,
     Mutability,
     Ref,
@@ -91,7 +91,7 @@ fn instantiate_with_imports_and_start() {
     let t = Table::new(
         &mut store,
         TableType::new(ValType::FuncRef, 1, None),
-        Val::from(FuncRef::null()),
+        Val::from(<Ref<Func>>::Null),
     )
     .unwrap();
     let f = Func::wrap(&mut store, |mut caller: Caller<i32>, a: i32| {

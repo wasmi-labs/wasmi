@@ -10,7 +10,7 @@ use super::FuncIdx;
 use crate::{
     core::{wasm, UntypedVal, F32, F64},
     ExternRef,
-    FuncRef,
+    Func,
     Ref,
     Val,
 };
@@ -34,8 +34,8 @@ pub trait Eval {
 pub trait EvalContext {
     /// Returns the [`Val`] of the global value at `index` if any.
     fn get_global(&self, index: u32) -> Option<Val>;
-    /// Returns the [`FuncRef`] of the function at `index` if any.
-    fn get_func(&self, index: u32) -> Option<FuncRef>;
+    /// Returns the [`Ref`] of the [`Func`] at `index` if any.
+    fn get_func(&self, index: u32) -> Option<Ref<Func>>;
 }
 
 /// An empty evaluation context.
@@ -46,7 +46,7 @@ impl EvalContext for EmptyEvalContext {
         None
     }
 
-    fn get_func(&self, _index: u32) -> Option<FuncRef> {
+    fn get_func(&self, _index: u32) -> Option<Ref<Func>> {
         None
     }
 }
@@ -287,7 +287,7 @@ impl ConstExpr {
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Func,
-                        } => Val::from(FuncRef::null()),
+                        } => Val::from(<Ref<Func>>::Null),
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Extern,
@@ -366,7 +366,7 @@ impl ConstExpr {
     pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<UntypedVal>
     where
         G: Fn(u32) -> Val,
-        F: Fn(u32) -> FuncRef,
+        F: Fn(u32) -> Ref<Func>,
     {
         /// Context that wraps closures representing partial evaluation contexts.
         struct WrappedEvalContext<G, F> {
@@ -378,13 +378,13 @@ impl ConstExpr {
         impl<G, F> EvalContext for WrappedEvalContext<G, F>
         where
             G: Fn(u32) -> Val,
-            F: Fn(u32) -> FuncRef,
+            F: Fn(u32) -> Ref<Func>,
         {
             fn get_global(&self, index: u32) -> Option<Val> {
                 Some((self.global_get)(index))
             }
 
-            fn get_func(&self, index: u32) -> Option<FuncRef> {
+            fn get_func(&self, index: u32) -> Option<Ref<Func>> {
                 Some((self.func_get)(index))
             }
         }

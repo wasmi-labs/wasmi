@@ -88,7 +88,7 @@ impl From<FuzzVal> for wasmi::Val {
             FuzzVal::V128(value) => Self::V128(V128::from(value)),
             FuzzVal::FuncRef { is_null } => {
                 assert!(is_null);
-                Self::FuncRef(wasmi::FuncRef::null())
+                Self::FuncRef(<wasmi::Ref<wasmi::Func>>::Null)
             }
             FuzzVal::ExternRef { is_null } => {
                 assert!(is_null);

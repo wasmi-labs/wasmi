@@ -156,7 +156,7 @@ impl WastRunner {
 
     /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
     fn value(&mut self, value: &WastArgCore) -> Option<Val> {
-        use wasmi::{ExternRef, FuncRef};
+        use wasmi::{ExternRef, Func, Ref};
         use wast::core::{AbstractHeapType, HeapType};
         Some(match value {
             WastArgCore::I32(arg) => Val::I32(*arg),
@@ -170,7 +170,7 @@ impl WastRunner {
             WastArgCore::RefNull(HeapType::Abstract {
                 ty: AbstractHeapType::Func,
                 ..
-            }) => Val::FuncRef(FuncRef::null()),
+            }) => Val::FuncRef(<Ref<Func>>::Null),
             WastArgCore::RefNull(HeapType::Abstract {
                 ty: AbstractHeapType::Extern,
                 ..

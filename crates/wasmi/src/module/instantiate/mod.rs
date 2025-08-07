@@ -20,12 +20,13 @@ use crate::{
     Error,
     Extern,
     ExternType,
-    FuncRef,
+    Func,
     Global,
     Instance,
     InstanceEntity,
     InstanceEntityBuilder,
     Memory,
+    Ref,
     Table,
     Val,
 };
@@ -272,7 +273,7 @@ impl Module {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),
-                |func_index| FuncRef::new(builder.get_func(func_index)),
+                |func_index| <Ref<Func>>::from(builder.get_func(func_index)),
             )
             .expect("must evaluate to proper value")
     }
