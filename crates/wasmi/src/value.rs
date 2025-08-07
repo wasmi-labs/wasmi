@@ -69,9 +69,9 @@ pub enum Val {
     F64(F64),
     /// 128-bit Wasm `simd` proposal vector.
     V128(V128),
-    /// A nullable [`Func`][`crate::Func`] reference, a.k.a. [`FuncRef`].
+    /// A nullable [`Func`] reference.
     FuncRef(Ref<Func>),
-    /// A nullable external object reference, a.k.a. [`ExternRef`].
+    /// A nullable [`ExternRef`] reference.
     ExternRef(Ref<ExternRef>),
 }
 
