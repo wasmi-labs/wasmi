@@ -8,8 +8,8 @@ use crate::{
         Table as CoreTable,
     },
     engine::DedupFuncType,
-    externref::{ExternObjectIdx, ExternRef, ExternRefEntity},
     memory::DataSegment,
+    reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -93,7 +93,7 @@ pub struct StoreInner {
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
-    extern_objects: Arena<ExternObjectIdx, ExternRefEntity>,
+    extern_objects: Arena<ExternRefIdx, ExternRefEntity>,
     /// The [`Engine`] in use by the [`StoreInner`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
