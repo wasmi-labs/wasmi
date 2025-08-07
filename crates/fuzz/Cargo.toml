@@ -24,7 +24,7 @@ wasmtime = { workspace = true, optional = true, features = [
 wasm-smith = { workspace = true }
 wasmprinter = { workspace = true }
 wasmi-stack = { package = "wasmi", version = "0.31.2", features = ["std"], optional = true }
-wasmi-v048 = { package = "wasmi", version = "0.48.0", features = ["std", "simd", "extra-checks"], optional = true }
+wasmi-v049 = { package = "wasmi", version = "0.49.0", features = ["std", "simd", "extra-checks"], optional = true }
 arbitrary = "1.3.2"
 sha2 = "0.10"
 anyhow = "1.0.91"
@@ -33,7 +33,7 @@ anyhow = "1.0.91"
 default = []
 differential = [
     "dep:wasmi-stack",
-    "dep:wasmi-v048",
+    "dep:wasmi-v049",
     "dep:wasmtime",
 ]
 experimental-translator = [
