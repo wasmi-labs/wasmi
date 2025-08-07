@@ -1,6 +1,6 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, FuelCostsProvider, IndexType, Mutability, TrapCode, TypedVal, ValType, F32, F64},
+    core::{wasm, FuelCostsProvider, IndexType, TypedVal},
     engine::{
         translator::func2::{
             op,
@@ -17,7 +17,12 @@ use crate::{
     ExternRef,
     Func,
     FuncType,
+    Mutability,
     Ref,
+    TrapCode,
+    ValType,
+    F32,
+    F64,
 };
 use ir::Const32;
 use wasmparser::VisitOperator;
