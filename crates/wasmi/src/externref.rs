@@ -9,11 +9,12 @@ use alloc::boxed::Box;
 use core::{any::Any, mem, num::NonZeroU32};
 
 /// A nullable reference type.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub enum Ref<T> {
     /// The [`Ref`] is a non-`null` value.
     Val(T),
     /// The [`Ref`] is `null`.
+    #[default]
     Null,
 }
 
@@ -45,12 +46,6 @@ impl<T> Ref<T> {
 impl<T> From<T> for Ref<T> {
     fn from(value: T) -> Self {
         Self::Val(value)
-    }
-}
-
-impl<T> Default for Ref<T> {
-    fn default() -> Self {
-        Self::Null
     }
 }
 
