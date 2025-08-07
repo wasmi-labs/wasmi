@@ -113,10 +113,10 @@ fn externref_null_to_zero() {
     assert!(ExternRef::from(UntypedVal::from(0)).is_null());
 }
 
-impl From<UntypedVal> for ExternRef {
+impl From<UntypedVal> for Option<ExternRef> {
     fn from(untyped: UntypedVal) -> Self {
         if u64::from(untyped) == 0 {
-            return ExternRef::null();
+            return None;
         }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`ExternRef`] instances. Therefore
@@ -129,9 +129,6 @@ impl From<UntypedVal> for ExternRef {
 
 impl From<ExternRef> for UntypedVal {
     fn from(externref: ExternRef) -> Self {
-        if externref.is_null() {
-            return UntypedVal::from(0_u64);
-        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedVal`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedVal`]
@@ -142,43 +139,18 @@ impl From<ExternRef> for UntypedVal {
     }
 }
 
-impl ExternRef {
-    /// Creates a new [`ExternRef`] wrapping the given value.
-    pub fn new<T>(ctx: impl AsContextMut, object: impl Into<Option<T>>) -> Self
-    where
-        T: 'static + Any + Send + Sync,
-    {
-        object
-            .into()
-            .map(|object| ExternObject::new(ctx, object))
-            .map(Self::from_object)
-            .unwrap_or_else(Self::null)
-    }
-
-    /// Creates a new [`ExternRef`] to the given [`ExternObject`].
-    fn from_object(object: ExternObject) -> Self {
-        Self {
-            inner: Some(object),
+impl From<Option<ExternRef>> for UntypedVal {
+    fn from(externref: Option<ExternRef>) -> Self {
+        if externref.is_none() {
+            return UntypedVal::from(0_u64);
         }
-    }
-
-    /// Returns `true` if [`ExternRef`] is `null`.
-    pub fn is_null(&self) -> bool {
-        self.inner.is_none()
-    }
-
-    /// Creates a new [`ExternRef`] which is `null`.
-    pub fn null() -> Self {
-        Self { inner: None }
-    }
-
-    /// Returns a shared reference to the underlying data for this [`ExternRef`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`ExternRef`].
-    pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> Option<&'a dyn Any> {
-        self.inner.map(|object| object.data(ctx))
+        // Safety: This operation is safe since there are no invalid
+        //         bit patterns for [`UntypedVal`] instances. Therefore
+        //         this operation cannot produce invalid [`UntypedVal`]
+        //         instances even if it was possible to arbitrarily modify
+        //         the input [`ExternRef`] instance.
+        let bits = unsafe { mem::transmute::<Option<ExternRef>, u64>(externref) };
+        UntypedVal::from(bits)
     }
 }
 
