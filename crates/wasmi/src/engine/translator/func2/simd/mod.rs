@@ -4,7 +4,7 @@ mod op;
 mod visit;
 
 use crate::{
-    core::{simd::IntoLaneIdx, FuelCostsProvider, TrapCode, Typed, TypedVal, ValType, V128},
+    core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
     engine::translator::{
         func2::{utils::Input, Operand},
         utils::{Instr, Wrap},
@@ -20,6 +20,9 @@ use crate::{
         Reg,
     },
     Error,
+    TrapCode,
+    ValType,
+    V128,
 };
 use wasmparser::MemArg;
 

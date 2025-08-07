@@ -1,8 +1,5 @@
 use super::{LocalIdx, OperandIdx, StackOperand};
-use crate::{
-    core::{TypedVal, ValType},
-    engine::translator::utils::Instr,
-};
+use crate::{core::TypedVal, engine::translator::utils::Instr, ValType};
 
 #[cfg(doc)]
 use super::Stack;

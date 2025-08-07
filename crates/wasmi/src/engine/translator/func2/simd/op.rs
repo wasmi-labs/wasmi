@@ -1,7 +1,8 @@
 use super::IntoLaneIdx;
 use crate::{
-    core::{simd, Typed, V128},
+    core::{simd, Typed},
     ir::{Const32, Instruction, Reg},
+    V128,
 };
 
 pub trait SimdReplaceLane {

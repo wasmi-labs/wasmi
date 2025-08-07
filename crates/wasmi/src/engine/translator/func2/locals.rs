@@ -1,5 +1,5 @@
 use super::Reset;
-use crate::{core::ValType, engine::TranslationError, Error};
+use crate::{engine::TranslationError, Error, ValType};
 use alloc::vec::Vec;
 use core::{cmp, iter};
 

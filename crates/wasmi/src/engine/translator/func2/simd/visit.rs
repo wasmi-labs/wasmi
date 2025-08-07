@@ -4,12 +4,12 @@ use crate::{
         simd::{self, ImmLaneIdx32},
         FuelCostsProvider,
         TypedVal,
-        ValType,
-        V128,
     },
     engine::translator::func2::{op, simd::op as simd_op, Operand},
     ir::{Instruction, Reg},
     Error,
+    ValType,
+    V128,
 };
 use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};

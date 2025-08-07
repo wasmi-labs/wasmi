@@ -33,7 +33,7 @@ use self::{
     utils::{Input, Input16, Input32, Reset, ReusableAllocations},
 };
 use crate::{
-    core::{FuelCostsProvider, IndexType, TrapCode, Typed, TypedVal, UntypedVal, ValType},
+    core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
     engine::{
         translator::{
             comparator::{
@@ -77,6 +77,8 @@ use crate::{
     Engine,
     Error,
     FuncType,
+    TrapCode,
+    ValType,
 };
 use alloc::vec::Vec;
 use core::mem;

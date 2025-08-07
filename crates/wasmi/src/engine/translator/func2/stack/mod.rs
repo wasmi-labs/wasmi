@@ -26,7 +26,7 @@ pub use self::{
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
-    core::{TypedVal, ValType},
+    core::TypedVal,
     engine::{
         translator::{
             func2::{stack::operands::PeekedOperands, LocalIdx},
@@ -37,6 +37,7 @@ use crate::{
     },
     Engine,
     Error,
+    ValType,
 };
 use alloc::vec::Vec;
 

@@ -1,6 +1,6 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
-    core::{FuelCostsProvider, ValType},
+    core::FuelCostsProvider,
     engine::translator::{
         comparator::{
             CmpSelectFusion,
@@ -16,6 +16,7 @@ use crate::{
     module::ModuleHeader,
     Engine,
     Error,
+    ValType,
 };
 use alloc::vec::{self, Vec};
 
