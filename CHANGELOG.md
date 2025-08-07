@@ -8,6 +8,51 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.49.0` - 2025-08-07
+
+This version prepares Wasmi for its 1.0 release.
+
+### Changed
+
+- Deprecate `wasmi::core` module re-export. [#1605]
+  - Public facing definitions are now re-exported from `wasmi`'s
+    crate root which users should use instead.
+- Improve Wasmi's Wasmtime API mirror:
+  - Make `ExternRef` non-nullable and introduce new nullable `Ref` type. [#1603]
+    - Wasmtime uses `Option<ExternRef>` instead which is very similar.
+    - `Ref<ExternRef>` can be converted to `Option<ExternRef>` using the `val` method.
+  - Remove `FuncRef` type in favor of `Ref<Func>` [#1604]
+    - Wasmtime uses `Option<Func>` instead which is very similar.
+    - `Ref<Func>` can be converted to `Option<Func>` using the `val` method.
+  - Deprecate `InstancePre` and `Linker::instantiate` [#1602]
+    - Enable fuel metering and set fuel to zero before instantiation
+      in order to prevent running a Wasm module's `start` function upon
+      instantiation.
+  - Deprecate `LinkerBuilder` type. [#1601]
+    - Use `Linker` or `Instance::new` instead.
+
+## Internal
+
+- Refactor and clean-up Wasmi's `.wast` test facilities.
+  - [#1591] [#1586] [#1585] [#1581] [#1579] [#1592]
+- Add `.wast` tests or convert unit translation tests to `.wast`.
+  - [#1569] [#1575] [#1580]
+
+[#1605]: https://github.com/wasmi-labs/wasmi/pull/1605
+[#1604]: https://github.com/wasmi-labs/wasmi/pull/1604
+[#1603]: https://github.com/wasmi-labs/wasmi/pull/1603
+[#1602]: https://github.com/wasmi-labs/wasmi/pull/1602
+[#1601]: https://github.com/wasmi-labs/wasmi/pull/1601
+[#1591]: https://github.com/wasmi-labs/wasmi/pull/1591
+[#1586]: https://github.com/wasmi-labs/wasmi/pull/1586
+[#1585]: https://github.com/wasmi-labs/wasmi/pull/1585
+[#1581]: https://github.com/wasmi-labs/wasmi/pull/1581
+[#1580]: https://github.com/wasmi-labs/wasmi/pull/1580
+[#1579]: https://github.com/wasmi-labs/wasmi/pull/1579
+[#1592]: https://github.com/wasmi-labs/wasmi/pull/1592
+[#1575]: https://github.com/wasmi-labs/wasmi/pull/1575
+[#1569]: https://github.com/wasmi-labs/wasmi/pull/1569
+
 ## `0.48.0` - 2025-07-21
 
 ### Added
