@@ -239,7 +239,6 @@ macro_rules! foreach_test {
             fn wasmi_fuse_select_f64_gt("wasmi/tests/fuse-select/f64_gt");
             fn wasmi_fuse_select_f64_ge("wasmi/tests/fuse-select/f64_ge");
 
-
             // Wasm `simd` tests
             fn spec_simd_address("spec/simd_address");
             fn spec_simd_align("spec/simd_align");
