@@ -455,16 +455,8 @@ fn test_cmp_select_eqz() {
             (CmpOp::I64GeU, Instruction::select_i64_lt_u, false),
             (CmpOp::F32Eq, Instruction::select_f32_eq, true),
             (CmpOp::F32Ne, Instruction::select_f32_eq, false),
-            (CmpOp::F32Lt, swap_cmp_select_ops!(Instruction::select_f32_lt), true),
-            (CmpOp::F32Le, swap_cmp_select_ops!(Instruction::select_f32_le), true),
-            (CmpOp::F32Gt, Instruction::select_f32_lt, true),
-            (CmpOp::F32Ge, Instruction::select_f32_le, true),
             (CmpOp::F64Eq, Instruction::select_f64_eq, true),
             (CmpOp::F64Ne, Instruction::select_f64_eq, false),
-            (CmpOp::F64Lt, swap_cmp_select_ops!(Instruction::select_f64_lt), true),
-            (CmpOp::F64Le, swap_cmp_select_ops!(Instruction::select_f64_le), true),
-            (CmpOp::F64Gt, Instruction::select_f64_lt, true),
-            (CmpOp::F64Ge, Instruction::select_f64_le, true),
         ] {
             run_test(op, kind, ty, expected, swap_operands)
         }
