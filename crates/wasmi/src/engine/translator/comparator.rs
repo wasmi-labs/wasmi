@@ -475,15 +475,15 @@ impl TryIntoCmpSelectInstr for Instruction {
             I::F32Ne { lhs, rhs, .. } => I::select_f32_eq(result, lhs, rhs),
             I::F32Lt { lhs, rhs, .. } => I::select_f32_lt(result, lhs, rhs),
             I::F32Le { lhs, rhs, .. } => I::select_f32_le(result, lhs, rhs),
-            I::F32NotLt { lhs, rhs, .. } => I::select_f32_lt(result, rhs, lhs),
-            I::F32NotLe { lhs, rhs, .. } => I::select_f32_le(result, rhs, lhs),
+            I::F32NotLt { lhs, rhs, .. } => I::select_f32_lt(result, lhs, rhs),
+            I::F32NotLe { lhs, rhs, .. } => I::select_f32_le(result, lhs, rhs),
             // f64
             I::F64Eq { lhs, rhs, .. } => I::select_f64_eq(result, lhs, rhs),
             I::F64Ne { lhs, rhs, .. } => I::select_f64_eq(result, lhs, rhs),
             I::F64Lt { lhs, rhs, .. } => I::select_f64_lt(result, lhs, rhs),
             I::F64Le { lhs, rhs, .. } => I::select_f64_le(result, lhs, rhs),
-            I::F64NotLt { lhs, rhs, .. } => I::select_f64_lt(result, rhs, lhs),
-            I::F64NotLe { lhs, rhs, .. } => I::select_f64_le(result, rhs, lhs),
+            I::F64NotLt { lhs, rhs, .. } => I::select_f64_lt(result, lhs, rhs),
+            I::F64NotLe { lhs, rhs, .. } => I::select_f64_le(result, lhs, rhs),
             _ => unreachable!("expected to successfully fuse cmp+select"),
         };
         Ok(CmpSelectFusion::Applied {
