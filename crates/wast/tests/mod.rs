@@ -204,6 +204,37 @@ macro_rules! foreach_test {
             fn wasmi_i64_sub("wasmi/tests/op/i64-sub");
             fn wasmi_i64_mul("wasmi/tests/op/i64-mul");
             fn wasmi_i64_sdiv("wasmi/tests/op/i64-sdiv");
+            // Wasmi: fuse br_if + cmp
+            fn wasmi_fuse_br_i32_ge_s("wasmi/tests/fuse-br/i32_ge_s");
+            fn wasmi_fuse_br_i32_ge_u("wasmi/tests/fuse-br/i32_ge_u");
+            fn wasmi_fuse_br_i32_gt_s("wasmi/tests/fuse-br/i32_gt_s");
+            fn wasmi_fuse_br_i32_gt_u("wasmi/tests/fuse-br/i32_gt_u");
+            fn wasmi_fuse_br_i32_le_s("wasmi/tests/fuse-br/i32_le_s");
+            fn wasmi_fuse_br_i32_le_u("wasmi/tests/fuse-br/i32_le_u");
+            fn wasmi_fuse_br_i32_lt_s("wasmi/tests/fuse-br/i32_lt_s");
+            fn wasmi_fuse_br_i32_lt_u("wasmi/tests/fuse-br/i32_lt_u");
+            fn wasmi_fuse_br_i32_and("wasmi/tests/fuse-br/i32_and");
+            fn wasmi_fuse_br_i32_or("wasmi/tests/fuse-br/i32_or");
+            fn wasmi_fuse_br_i32_xor("wasmi/tests/fuse-br/i32_xor");
+            fn wasmi_fuse_br_i64_ge_s("wasmi/tests/fuse-br/i64_ge_s");
+            fn wasmi_fuse_br_i64_ge_u("wasmi/tests/fuse-br/i64_ge_u");
+            fn wasmi_fuse_br_i64_gt_s("wasmi/tests/fuse-br/i64_gt_s");
+            fn wasmi_fuse_br_i64_gt_u("wasmi/tests/fuse-br/i64_gt_u");
+            fn wasmi_fuse_br_i64_le_s("wasmi/tests/fuse-br/i64_le_s");
+            fn wasmi_fuse_br_i64_le_u("wasmi/tests/fuse-br/i64_le_u");
+            fn wasmi_fuse_br_i64_lt_s("wasmi/tests/fuse-br/i64_lt_s");
+            fn wasmi_fuse_br_i64_lt_u("wasmi/tests/fuse-br/i64_lt_u");
+            fn wasmi_fuse_br_i64_and("wasmi/tests/fuse-br/i64_and");
+            fn wasmi_fuse_br_i64_or("wasmi/tests/fuse-br/i64_or");
+            fn wasmi_fuse_br_i64_xor("wasmi/tests/fuse-br/i64_xor");
+            fn wasmi_fuse_br_f32_lt("wasmi/tests/fuse-br/f32_lt");
+            fn wasmi_fuse_br_f32_le("wasmi/tests/fuse-br/f32_le");
+            fn wasmi_fuse_br_f32_gt("wasmi/tests/fuse-br/f32_gt");
+            fn wasmi_fuse_br_f32_ge("wasmi/tests/fuse-br/f32_ge");
+            fn wasmi_fuse_br_f64_lt("wasmi/tests/fuse-br/f64_lt");
+            fn wasmi_fuse_br_f64_le("wasmi/tests/fuse-br/f64_le");
+            fn wasmi_fuse_br_f64_gt("wasmi/tests/fuse-br/f64_gt");
+            fn wasmi_fuse_br_f64_ge("wasmi/tests/fuse-br/f64_ge");
             // Wasmi: fuse if + cmp
             fn wasmi_fuse_if_i32_ge_s("wasmi/tests/fuse-if/i32_ge_s");
             fn wasmi_fuse_if_i32_ge_u("wasmi/tests/fuse-if/i32_ge_u");
