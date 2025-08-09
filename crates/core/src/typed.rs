@@ -16,6 +16,10 @@ macro_rules! impl_typed_for {
 }
 impl_typed_for! {
     bool => ValType::I32;
+    i8 => ValType::I32;
+    u8 => ValType::I32;
+    i16 => ValType::I32;
+    u16 => ValType::I32;
     i32 => ValType::I32;
     u32 => ValType::I32;
     i64 => ValType::I64;
