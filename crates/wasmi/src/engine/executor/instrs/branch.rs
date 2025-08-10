@@ -51,86 +51,6 @@ impl Executor<'_> {
         self.ip.add(offset);
     }
 
-    pub fn execute_branch_table_1(&mut self, index: Reg, len_targets: u32) {
-        let offset = self.fetch_branch_table_offset(index, len_targets);
-        self.ip.add(1);
-        let value = match *self.ip.get() {
-            Instruction::Register { reg } => self.get_register(reg),
-            Instruction::Const32 { value } => UntypedVal::from(u32::from(value)),
-            Instruction::I64Const32 { value } => UntypedVal::from(i64::from(value)),
-            Instruction::F64Const32 { value } => UntypedVal::from(f64::from(value)),
-            unexpected => {
-                // Safety: one of the above instruction parameters is guaranteed to exist by the Wasmi translation.
-                unsafe {
-                    unreachable_unchecked!(
-                        "expected instruction parameter for `Instruction::BranchTable1` but found: {unexpected:?}"
-                    )
-                }
-            }
-        };
-        self.ip.add(offset);
-        if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
-            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
-            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            self.set_register(results.head(), value);
-            self.execute_branch(offset)
-        }
-    }
-
-    pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
-        let offset = self.fetch_branch_table_offset(index, len_targets);
-        self.ip.add(1);
-        let regs = match *self.ip.get() {
-            Instruction::Register2 { regs } => regs,
-            unexpected => {
-                // Safety: Wasmi translation guarantees that `Instruction::Register2` follows.
-                unsafe {
-                    unreachable_unchecked!(
-                        "expected `Instruction::Register2` but found: {unexpected:?}"
-                    )
-                }
-            }
-        };
-        self.ip.add(offset);
-        if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
-            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
-            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            let values = [0, 1].map(|i| self.get_register(regs[i]));
-            let results = results.iter(2);
-            for (result, value) in results.zip(values) {
-                self.set_register(result, value);
-            }
-            self.execute_branch(offset)
-        }
-    }
-
-    pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
-        let offset = self.fetch_branch_table_offset(index, len_targets);
-        self.ip.add(1);
-        let regs = match *self.ip.get() {
-            Instruction::Register3 { regs } => regs,
-            unexpected => {
-                // Safety: Wasmi translation guarantees that `Instruction::Register3` follows.
-                unsafe {
-                    unreachable_unchecked!(
-                        "expected `Instruction::Register3` but found: {unexpected:?}"
-                    )
-                }
-            }
-        };
-        self.ip.add(offset);
-        if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
-            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
-            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            let values = [0, 1, 2].map(|i| self.get_register(regs[i]));
-            let results = results.iter(3);
-            for (result, value) in results.zip(values) {
-                self.set_register(result, value);
-            }
-            self.execute_branch(offset)
-        }
-    }
-
     pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
@@ -155,46 +75,10 @@ impl Executor<'_> {
                 self.execute_copy_span_impl(results, values, len);
                 self.execute_branch(offset)
             }
-            Instruction::BranchTableTargetNonOverlapping { results, offset } => {
-                self.execute_copy_span_impl(results, values, len);
-                self.execute_branch(offset)
-            }
             unexpected => {
                 // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
                 unsafe {
                     unreachable_unchecked!("expected target for `Instruction::BranchTableSpan` but found: {unexpected:?}")
-                }
-            }
-        }
-    }
-
-    pub fn execute_branch_table_many(&mut self, index: Reg, len_targets: u32) {
-        let offset = self.fetch_branch_table_offset(index, len_targets) - 1;
-        self.ip.add(1);
-        let ip_list = self.ip;
-        self.ip = Self::skip_register_list(self.ip);
-        self.ip.add(offset);
-        match *self.ip.get() {
-            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
-            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            Instruction::BranchTableTarget { results, offset } => {
-                self.execute_copy_many_impl(ip_list, results, &[]);
-                self.execute_branch(offset)
-            }
-            Instruction::BranchTableTargetNonOverlapping { results, offset } => {
-                self.execute_copy_many_impl(ip_list, results, &[]);
-                self.execute_branch(offset)
-            }
-            Instruction::Return => {
-                self.copy_many_return_values(ip_list, &[]);
-                // We do not return from this instruction but use the fact that `self.ip`
-                // will point to `Instruction::Return` which does the job for us.
-                // This has some technical advantages for us.
-            }
-            unexpected => {
-                // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
-                unsafe {
-                    unreachable_unchecked!("expected target for `Instruction::BranchTableMany` but found: {unexpected:?}")
                 }
             }
         }

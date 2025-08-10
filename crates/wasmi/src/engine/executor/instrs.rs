@@ -169,20 +169,8 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchTable0 { index, len_targets } => {
                     self.execute_branch_table_0(index, len_targets)
                 }
-                Instr::BranchTable1 { index, len_targets } => {
-                    self.execute_branch_table_1(index, len_targets)
-                }
-                Instr::BranchTable2 { index, len_targets } => {
-                    self.execute_branch_table_2(index, len_targets)
-                }
-                Instr::BranchTable3 { index, len_targets } => {
-                    self.execute_branch_table_3(index, len_targets)
-                }
                 Instr::BranchTableSpan { index, len_targets } => {
                     self.execute_branch_table_span(index, len_targets)
-                }
-                Instr::BranchTableMany { index, len_targets } => {
-                    self.execute_branch_table_many(index, len_targets)
                 }
                 Instr::BranchCmpFallback { lhs, rhs, params } => {
                     self.execute_branch_cmp_fallback(lhs, rhs, params)
@@ -1351,7 +1339,6 @@ impl<'engine> Executor<'engine> {
                 | Instr::I64Const32 { .. }
                 | Instr::F64Const32 { .. }
                 | Instr::BranchTableTarget { .. }
-                | Instr::BranchTableTargetNonOverlapping { .. }
                 | Instr::Register { .. }
                 | Instr::Register2 { .. }
                 | Instr::Register3 { .. }
@@ -2664,21 +2651,6 @@ impl Executor<'_> {
         let rhs = self.get_register_as::<Rhs>(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
-    }
-
-    /// Skips all [`Instruction`]s belonging to an [`Instruction::RegisterList`] encoding.
-    #[inline(always)]
-    fn skip_register_list(ip: InstructionPtr) -> InstructionPtr {
-        let mut ip = ip;
-        while let Instruction::RegisterList { .. } = *ip.get() {
-            ip.add(1);
-        }
-        // We skip an additional `Instruction` because we know that `Instruction::RegisterList` is always followed by one of:
-        // - `Instruction::Register`
-        // - `Instruction::Register2`
-        // - `Instruction::Register3`.
-        ip.add(1);
-        ip
     }
 
     /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
