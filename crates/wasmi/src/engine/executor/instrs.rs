@@ -2504,7 +2504,7 @@ impl Executor<'_> {
 
     /// Executes a generic unary [`Instruction`].
     #[inline(always)]
-    fn execute_unary_t<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
+    fn execute_unary<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
@@ -2515,7 +2515,7 @@ impl Executor<'_> {
 
     /// Executes a fallible generic unary [`Instruction`].
     #[inline(always)]
-    fn try_execute_unary_t<P, R>(
+    fn try_execute_unary<P, R>(
         &mut self,
         result: Reg,
         input: Reg,
@@ -2531,7 +2531,7 @@ impl Executor<'_> {
 
     /// Executes a generic binary [`Instruction`].
     #[inline(always)]
-    fn execute_binary_t<Lhs, Rhs, Result>(
+    fn execute_binary<Lhs, Rhs, Result>(
         &mut self,
         result: Reg,
         lhs: Reg,
@@ -2548,7 +2548,7 @@ impl Executor<'_> {
 
     /// Executes a generic binary [`Instruction`].
     #[inline(always)]
-    fn execute_binary_imm16_rhs_t<Lhs, Rhs, T>(
+    fn execute_binary_imm16_rhs<Lhs, Rhs, T>(
         &mut self,
         result: Reg,
         lhs: Reg,
@@ -2566,7 +2566,7 @@ impl Executor<'_> {
 
     /// Executes a generic binary [`Instruction`] with reversed operands.
     #[inline(always)]
-    fn execute_binary_imm16_lhs_t<Lhs, Rhs, T>(
+    fn execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
         result: Reg,
         lhs: Const16<Lhs>,

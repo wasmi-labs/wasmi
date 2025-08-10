@@ -44,7 +44,7 @@ macro_rules! impl_comparison_imm16_rhs {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
-                self.execute_binary_imm16_rhs_t(result, lhs, rhs, $op)
+                self.execute_binary_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };
@@ -73,7 +73,7 @@ macro_rules! impl_comparison_imm16_lhs {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
-                self.execute_binary_imm16_lhs_t(result, lhs, rhs, $op)
+                self.execute_binary_imm16_lhs(result, lhs, rhs, $op)
             }
         )*
     };
