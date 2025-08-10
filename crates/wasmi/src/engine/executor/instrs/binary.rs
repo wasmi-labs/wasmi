@@ -20,10 +20,8 @@ impl Executor<'_> {
         (Instruction::I32BitXor, execute_i32_bitxor, wasm::i32_bitxor),
         (Instruction::I32And, execute_i32_and, <i32 as UntypedValueExt>::and),
         (Instruction::I32Or, execute_i32_or, <i32 as UntypedValueExt>::or),
-        (Instruction::I32Xor, execute_i32_xor, <i32 as UntypedValueExt>::xor),
         (Instruction::I32Nand, execute_i32_nand, <i32 as UntypedValueExt>::nand),
         (Instruction::I32Nor, execute_i32_nor, <i32 as UntypedValueExt>::nor),
-        (Instruction::I32Xnor, execute_i32_xnor, <i32 as UntypedValueExt>::xnor),
 
         (Instruction::I64Add, execute_i64_add, wasm::i64_add),
         (Instruction::I64Sub, execute_i64_sub, wasm::i64_sub),
@@ -33,10 +31,8 @@ impl Executor<'_> {
         (Instruction::I64BitXor, execute_i64_bitxor, wasm::i64_bitxor),
         (Instruction::I64And, execute_i64_and, <i64 as UntypedValueExt>::and),
         (Instruction::I64Or, execute_i64_or, <i64 as UntypedValueExt>::or),
-        (Instruction::I64Xor, execute_i64_xor, <i64 as UntypedValueExt>::xor),
         (Instruction::I64Nand, execute_i64_nand, <i64 as UntypedValueExt>::nand),
         (Instruction::I64Nor, execute_i64_nor, <i64 as UntypedValueExt>::nor),
-        (Instruction::I64Xnor, execute_i64_xnor, <i64 as UntypedValueExt>::xnor),
 
         (Instruction::I32Shl, execute_i32_shl, wasm::i32_shl),
         (Instruction::I32ShrU, execute_i32_shr_u, wasm::i32_shr_u),
@@ -87,10 +83,8 @@ impl Executor<'_> {
         (i32, Instruction::I32BitXorImm16, execute_i32_bitxor_imm16, wasm::i32_bitxor),
         (i32, Instruction::I32AndImm16, execute_i32_and_imm16, <i32 as UntypedValueExt>::and),
         (i32, Instruction::I32OrImm16, execute_i32_or_imm16, <i32 as UntypedValueExt>::or),
-        (i32, Instruction::I32XorImm16, execute_i32_xor_imm16, <i32 as UntypedValueExt>::xor),
         (i32, Instruction::I32NandImm16, execute_i32_nand_imm16, <i32 as UntypedValueExt>::nand),
         (i32, Instruction::I32NorImm16, execute_i32_nor_imm16, <i32 as UntypedValueExt>::nor),
-        (i32, Instruction::I32XnorImm16, execute_i32_xnor_imm16, <i32 as UntypedValueExt>::xnor),
 
         (i64, Instruction::I64AddImm16, execute_i64_add_imm16, wasm::i64_add),
         (i64, Instruction::I64MulImm16, execute_i64_mul_imm16, wasm::i64_mul),
@@ -99,10 +93,8 @@ impl Executor<'_> {
         (i64, Instruction::I64BitXorImm16, execute_i64_bitxor_imm16, wasm::i64_bitxor),
         (i64, Instruction::I64AndImm16, execute_i64_and_imm16, <i64 as UntypedValueExt>::and),
         (i64, Instruction::I64OrImm16, execute_i64_or_imm16, <i64 as UntypedValueExt>::or),
-        (i64, Instruction::I64XorImm16, execute_i64_xor_imm16, <i64 as UntypedValueExt>::xor),
         (i64, Instruction::I64NandImm16, execute_i64_nand_imm16, <i64 as UntypedValueExt>::nand),
         (i64, Instruction::I64NorImm16, execute_i64_nor_imm16, <i64 as UntypedValueExt>::nor),
-        (i64, Instruction::I64XnorImm16, execute_i64_xnor_imm16, <i64 as UntypedValueExt>::xnor),
     }
 }
 
