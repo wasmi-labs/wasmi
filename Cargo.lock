@@ -1701,10 +1701,8 @@ dependencies = [
 name = "wasmi"
 version = "0.49.1"
 dependencies = [
- "arrayvec",
  "assert_matches",
  "criterion",
- "multi-stash",
  "smallvec",
  "spin",
  "wasmi_collections 0.49.1",
