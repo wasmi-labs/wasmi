@@ -907,7 +907,6 @@ impl UpdateBranchOffset for Instruction {
         use Instruction as I;
         match self {
             | I::Branch { offset }
-            | I::BranchTableTarget { offset, .. }
             | I::BranchTableTargetNonOverlapping { offset, .. } => {
                 offset.init(new_offset);
                 return Ok(());
