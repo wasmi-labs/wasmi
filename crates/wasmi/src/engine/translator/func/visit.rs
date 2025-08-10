@@ -2,7 +2,7 @@ use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
     core::{wasm, FuelCostsProvider, IndexType, TypedVal},
     engine::{
-        translator::func2::{
+        translator::func::{
             op,
             stack::{AcquiredTarget, IfReachability},
             ControlFrameBase,

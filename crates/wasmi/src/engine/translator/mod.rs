@@ -3,7 +3,7 @@
 mod comparator;
 mod driver;
 mod error;
-mod func2;
+mod func;
 mod labels;
 mod relink_result;
 mod utils;
@@ -14,7 +14,7 @@ use crate::Engine;
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
-    func2::{FuncTranslator, FuncTranslatorAllocations},
+    func::{FuncTranslator, FuncTranslatorAllocations},
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{

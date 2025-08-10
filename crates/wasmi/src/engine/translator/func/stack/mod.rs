@@ -29,7 +29,7 @@ use crate::{
     core::TypedVal,
     engine::{
         translator::{
-            func2::{stack::operands::PeekedOperands, LocalIdx},
+            func::{stack::operands::PeekedOperands, LocalIdx},
             labels::LabelRef,
             utils::Instr,
         },

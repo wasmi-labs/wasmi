@@ -1,5 +1,5 @@
 use super::{OperandIdx, Reset};
-use crate::{engine::translator::func2::LocalIdx, Error};
+use crate::{engine::translator::func::LocalIdx, Error};
 use alloc::vec::Vec;
 use core::iter;
 

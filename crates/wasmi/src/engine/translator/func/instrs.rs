@@ -8,7 +8,7 @@ use crate::{
             TryIntoCmpSelectInstr as _,
             UpdateBranchOffset as _,
         },
-        func2::{Operand, Stack, StackLayout, StackSpace},
+        func::{Operand, Stack, StackLayout, StackSpace},
         relink_result::RelinkResult,
         utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
     },
