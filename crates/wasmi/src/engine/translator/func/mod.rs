@@ -815,7 +815,7 @@ impl FuncTranslator {
                 let val0 = self.layout.operand_to_reg(*val0)?;
                 let val1 = self.layout.operand_to_reg(*val1)?;
                 self.instrs.push_instr(
-                    Instruction::copy_many_non_overlapping_ext(results, val0, val1),
+                    Instruction::copy_many_ext(results, val0, val1),
                     consume_fuel_instr,
                     |costs| costs.fuel_for_copying_values(u64::from(len)),
                 )?;

@@ -174,13 +174,9 @@ impl Instruction {
         Self::copy2(span, [value0.into(), value1.into()])
     }
 
-    /// Creates a new [`Instruction::CopyManyNonOverlapping`].
-    pub fn copy_many_non_overlapping_ext(
-        results: RegSpan,
-        head0: impl Into<Reg>,
-        head1: impl Into<Reg>,
-    ) -> Self {
-        Self::copy_many_non_overlapping(results, [head0.into(), head1.into()])
+    /// Creates a new [`Instruction::CopyMany`].
+    pub fn copy_many_ext(results: RegSpan, head0: impl Into<Reg>, head1: impl Into<Reg>) -> Self {
+        Self::copy_many(results, [head0.into(), head1.into()])
     }
 
     /// Creates a new [`Instruction::Register2`] instruction parameter.

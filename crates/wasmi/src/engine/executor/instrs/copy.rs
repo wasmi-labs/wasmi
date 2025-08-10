@@ -82,15 +82,15 @@ impl Executor<'_> {
         }
     }
 
-    /// Executes an [`Instruction::CopyManyNonOverlapping`].
-    pub fn execute_copy_many_non_overlapping(&mut self, results: RegSpan, values: [Reg; 2]) {
+    /// Executes an [`Instruction::CopyMany`].
+    pub fn execute_copy_many(&mut self, results: RegSpan, values: [Reg; 2]) {
         self.ip.add(1);
-        self.ip = self.execute_copy_many_non_overlapping_impl(self.ip, results, &values);
+        self.ip = self.execute_copy_many_impl(self.ip, results, &values);
         self.next_instr()
     }
 
-    /// Internal implementation of [`Instruction::CopyManyNonOverlapping`] execution.
-    pub fn execute_copy_many_non_overlapping_impl(
+    /// Internal implementation of [`Instruction::CopyMany`] execution.
+    pub fn execute_copy_many_impl(
         &mut self,
         ip: InstructionPtr,
         results: RegSpan,

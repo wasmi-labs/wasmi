@@ -1044,8 +1044,8 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Register`]
                 ///     - [`Instruction::Register2`]
                 ///     - [`Instruction::Register3`]
-                #[snake_name(copy_many_non_overlapping)]
-                CopyManyNonOverlapping {
+                #[snake_name(copy_many)]
+                CopyMany {
                     @results: RegSpan,
                     /// The first two input registers to copy.
                     values: [Reg; 2],
