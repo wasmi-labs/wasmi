@@ -5,7 +5,7 @@ use crate::{
         FuelCostsProvider,
         TypedVal,
     },
-    engine::translator::func2::{op, simd::op as simd_op, Operand},
+    engine::translator::func::{op, simd::op as simd_op, Operand},
     ir::{Instruction, Reg},
     Error,
     ValType,

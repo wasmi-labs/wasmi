@@ -6,7 +6,7 @@ mod visit;
 use crate::{
     core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
     engine::translator::{
-        func2::{utils::Input, Operand},
+        func::{utils::Input, Operand},
         utils::{Instr, Wrap},
     },
     ir::{
