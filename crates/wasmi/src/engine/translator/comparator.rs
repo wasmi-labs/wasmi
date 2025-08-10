@@ -125,7 +125,6 @@ impl CompareResult for Instruction {
     }
 }
 
-#[cfg(feature = "experimental-translator")]
 pub trait ReplaceCmpResult: Sized {
     /// Returns `self` `cmp` instruction with the `new_result`.
     ///
@@ -133,7 +132,6 @@ pub trait ReplaceCmpResult: Sized {
     fn replace_cmp_result(&self, new_result: Reg) -> Option<Self>;
 }
 
-#[cfg(feature = "experimental-translator")]
 impl ReplaceCmpResult for Instruction {
     fn replace_cmp_result(&self, new_result: Reg) -> Option<Self> {
         use crate::ir::Instruction as I;

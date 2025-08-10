@@ -56,7 +56,6 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
-experimental-translator = []
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #
