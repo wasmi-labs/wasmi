@@ -9,7 +9,7 @@ macro_rules! impl_fallible_conversion_impls {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, input: Reg) -> Result<(), Error> {
-                self.try_execute_unary_t(result, input, $op)
+                self.try_execute_unary(result, input, $op)
             }
         )*
     };
