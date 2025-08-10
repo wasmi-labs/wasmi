@@ -50,30 +50,20 @@ impl Executor<'_> {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(f64::from(value)))
     }
 
-    /// Executes an [`Instruction::CopySpanNonOverlapping`].
+    /// Executes an [`Instruction::CopySpan`].
     ///
     /// # Note
     ///
     /// - This instruction assumes that `results` and `values` do _not_ overlap
     ///   and thus can copy all the elements without a costly temporary buffer.
     /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
-    pub fn execute_copy_span_non_overlapping(
-        &mut self,
-        results: RegSpan,
-        values: RegSpan,
-        len: u16,
-    ) {
-        self.execute_copy_span_non_overlapping_impl(results, values, len);
+    pub fn execute_copy_span(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+        self.execute_copy_span_impl(results, values, len);
         self.next_instr();
     }
 
-    /// Internal implementation of [`Instruction::CopySpanNonOverlapping`] execution.
-    pub fn execute_copy_span_non_overlapping_impl(
-        &mut self,
-        results: RegSpan,
-        values: RegSpan,
-        len: u16,
-    ) {
+    /// Internal implementation of [`Instruction::CopySpan`] execution.
+    pub fn execute_copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
         let results = results.iter(len);
         let values = values.iter(len);
         for (result, value) in results.into_iter().zip(values.into_iter()) {

@@ -1027,8 +1027,8 @@ macro_rules! for_each_op_grouped {
                     value: Const32<f64>,
                 },
                 /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
-                #[snake_name(copy_span_non_overlapping)]
-                CopySpanNonOverlapping {
+                #[snake_name(copy_span)]
+                CopySpan {
                     @results: RegSpan,
                     /// The contiguous registers holding the inputs of this instruction.
                     values: RegSpan,

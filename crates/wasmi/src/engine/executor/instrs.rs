@@ -396,11 +396,11 @@ impl<'engine> Executor<'engine> {
                 Instr::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
                 Instr::CopyI64Imm32 { result, value } => self.execute_copy_i64imm32(result, value),
                 Instr::CopyF64Imm32 { result, value } => self.execute_copy_f64imm32(result, value),
-                Instr::CopySpanNonOverlapping {
+                Instr::CopySpan {
                     results,
                     values,
                     len,
-                } => self.execute_copy_span_non_overlapping(results, values, len),
+                } => self.execute_copy_span(results, values, len),
                 Instr::CopyMany { results, values } => self.execute_copy_many(results, values),
                 Instr::ReturnCallInternal0 { func } => {
                     self.execute_return_call_internal_0(store.inner_mut(), EngineFunc::from(func))?
