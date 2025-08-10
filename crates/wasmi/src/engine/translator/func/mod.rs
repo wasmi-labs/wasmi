@@ -510,7 +510,7 @@ impl FuncTranslator {
         let fused_copy = match last_copy {
             Instruction::Copy { .. } => Self::try_merge_copy_instr(last_copy, result, value),
             Instruction::Copy2 { .. } => Self::try_merge_copy2_instr(last_copy, result, value),
-            Instruction::CopySpanNonOverlapping { .. } => {
+            Instruction::CopySpan { .. } => {
                 Self::try_merge_copy_span_instr(last_copy, result, value)
             }
             _ => return Ok(None),
@@ -592,7 +592,7 @@ impl FuncTranslator {
             let values = RegSpan::new(last_value0);
             let len = 3_u16;
             debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-            return Some(Instruction::copy_span_non_overlapping(results, values, len));
+            return Some(Instruction::copy_span(results, values, len));
         }
         if result == last_result0.prev() && value == last_value0.prev() {
             // Case: we can prepend `copy_instr`.
@@ -604,7 +604,7 @@ impl FuncTranslator {
             let values = RegSpan::new(value);
             let len = 3_u16;
             debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-            return Some(Instruction::copy_span_non_overlapping(results, values, len));
+            return Some(Instruction::copy_span(results, values, len));
         }
         None
     }
@@ -617,7 +617,7 @@ impl FuncTranslator {
         result: Reg,
         value: Reg,
     ) -> Option<Instruction> {
-        let Instruction::CopySpanNonOverlapping {
+        let Instruction::CopySpan {
             results,
             values,
             len,
@@ -636,9 +636,7 @@ impl FuncTranslator {
                 // Case: cannot merge since resulting `copy_span` has overlapping copies.
                 return None;
             }
-            return Some(Instruction::copy_span_non_overlapping(
-                results, values, new_len,
-            ));
+            return Some(Instruction::copy_span(results, values, new_len));
         }
         if result == last_result0.prev() && value == last_value0.prev() {
             // Case: we can prepend `copy_instr`.
@@ -647,7 +645,7 @@ impl FuncTranslator {
                 // Case: cannot merge since resulting `copy_span` has overlapping copies.
                 return None;
             }
-            return Some(Instruction::copy_span_non_overlapping(
+            return Some(Instruction::copy_span(
                 RegSpan::new(result),
                 RegSpan::new(value),
                 new_len,
@@ -769,7 +767,7 @@ impl FuncTranslator {
         }
         debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
         self.instrs.push_instr(
-            Instruction::copy_span_non_overlapping(results, values, len),
+            Instruction::copy_span(results, values, len),
             consume_fuel_instr,
             |costs| costs.fuel_for_copying_values(u64::from(len)),
         )?;
@@ -815,7 +813,7 @@ impl FuncTranslator {
                 let val0 = self.layout.operand_to_reg(*val0)?;
                 let val1 = self.layout.operand_to_reg(*val1)?;
                 self.instrs.push_instr(
-                    Instruction::copy_many_non_overlapping_ext(results, val0, val1),
+                    Instruction::copy_many_ext(results, val0, val1),
                     consume_fuel_instr,
                     |costs| costs.fuel_for_copying_values(u64::from(len)),
                 )?;

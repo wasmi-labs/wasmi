@@ -401,15 +401,7 @@ impl<'engine> Executor<'engine> {
                     values,
                     len,
                 } => self.execute_copy_span(results, values, len),
-                Instr::CopySpanNonOverlapping {
-                    results,
-                    values,
-                    len,
-                } => self.execute_copy_span_non_overlapping(results, values, len),
                 Instr::CopyMany { results, values } => self.execute_copy_many(results, values),
-                Instr::CopyManyNonOverlapping { results, values } => {
-                    self.execute_copy_many_non_overlapping(results, values)
-                }
                 Instr::ReturnCallInternal0 { func } => {
                     self.execute_return_call_internal_0(store.inner_mut(), EngineFunc::from(func))?
                 }

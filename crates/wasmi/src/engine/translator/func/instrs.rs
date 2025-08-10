@@ -317,7 +317,7 @@ impl InstrEncoder {
     /// This is used for the following n-ary instructions:
     ///
     /// - [`Instruction::ReturnMany`]
-    /// - [`Instruction::CopyManyNonOverlapping`]
+    /// - [`Instruction::CopyMany`]
     /// - [`Instruction::CallInternal`]
     /// - [`Instruction::CallImported`]
     /// - [`Instruction::CallIndirect`]

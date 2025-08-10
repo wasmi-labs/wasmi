@@ -156,10 +156,15 @@ impl Executor<'_> {
                 self.execute_branch(offset)
             }
             Instruction::BranchTableTargetNonOverlapping { results, offset } => {
-                self.execute_copy_span_non_overlapping_impl(results, values, len);
+                self.execute_copy_span_impl(results, values, len);
                 self.execute_branch(offset)
             }
-            _ => {}
+            unexpected => {
+                // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
+                unsafe {
+                    unreachable_unchecked!("expected target for `Instruction::BranchTableSpan` but found: {unexpected:?}")
+                }
+            }
         }
     }
 
@@ -177,7 +182,7 @@ impl Executor<'_> {
                 self.execute_branch(offset)
             }
             Instruction::BranchTableTargetNonOverlapping { results, offset } => {
-                self.execute_copy_many_non_overlapping_impl(ip_list, results, &[]);
+                self.execute_copy_many_impl(ip_list, results, &[]);
                 self.execute_branch(offset)
             }
             Instruction::Return => {

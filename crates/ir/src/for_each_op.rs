@@ -1026,14 +1026,7 @@ macro_rules! for_each_op_grouped {
                     /// The 32-bit encoded `i64` immediate value to copy.
                     value: Const32<f64>,
                 },
-                /// Copies `len` contiguous `values` [`RegSpan`] into `results` [`RegSpan`].
-                ///
-                /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
-                ///
-                /// # Note
-                ///
-                /// This [`Instruction`] serves as an optimization for cases were it is possible
-                /// to copy whole spans instead of many individual register values bit by bit.
+                /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
                 #[snake_name(copy_span)]
                 CopySpan {
                     @results: RegSpan,
@@ -1041,32 +1034,6 @@ macro_rules! for_each_op_grouped {
                     values: RegSpan,
                     /// The amount of copied registers.
                     len: u16,
-                },
-                /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
-                #[snake_name(copy_span_non_overlapping)]
-                CopySpanNonOverlapping {
-                    @results: RegSpan,
-                    /// The contiguous registers holding the inputs of this instruction.
-                    values: RegSpan,
-                    /// The amount of copied registers.
-                    len: u16,
-                },
-                /// Copies some [`Reg`] values into `results` [`RegSpan`].
-                ///
-                /// # Encoding
-                ///
-                /// Must be followed by
-                ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
-                /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
-                #[snake_name(copy_many)]
-                CopyMany {
-                    @results: RegSpan,
-                    /// The first two input registers to copy.
-                    values: [Reg; 2],
                 },
                 /// Variant of [`Instruction::CopyMany`] that assumes that `results` and `values` do not overlap.
                 ///
@@ -1077,8 +1044,8 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Register`]
                 ///     - [`Instruction::Register2`]
                 ///     - [`Instruction::Register3`]
-                #[snake_name(copy_many_non_overlapping)]
-                CopyManyNonOverlapping {
+                #[snake_name(copy_many)]
+                CopyMany {
                     @results: RegSpan,
                     /// The first two input registers to copy.
                     values: [Reg; 2],
