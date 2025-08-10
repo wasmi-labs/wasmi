@@ -103,7 +103,6 @@ impl Executor<'_> {
         (Instruction::SelectI32LeU, execute_select_i32_le_u, wasm::i32_le_u),
         (Instruction::SelectI32And, execute_select_i32_and, <i32 as UntypedValueExt>::and),
         (Instruction::SelectI32Or, execute_select_i32_or, <i32 as UntypedValueExt>::or),
-        (Instruction::SelectI32Xor, execute_select_i32_xor, <i32 as UntypedValueExt>::xor),
         (Instruction::SelectI64Eq, execute_select_i64_eq, wasm::i64_eq),
         (Instruction::SelectI64LtS, execute_select_i64_lt_s, wasm::i64_lt_s),
         (Instruction::SelectI64LtU, execute_select_i64_lt_u, wasm::i64_lt_u),
@@ -111,7 +110,6 @@ impl Executor<'_> {
         (Instruction::SelectI64LeU, execute_select_i64_le_u, wasm::i64_le_u),
         (Instruction::SelectI64And, execute_select_i64_and, <i64 as UntypedValueExt>::and),
         (Instruction::SelectI64Or, execute_select_i64_or, <i64 as UntypedValueExt>::or),
-        (Instruction::SelectI64Xor, execute_select_i64_xor, <i64 as UntypedValueExt>::xor),
         (Instruction::SelectF32Eq, execute_select_f32_eq, wasm::f32_eq),
         (Instruction::SelectF32Lt, execute_select_f32_lt, wasm::f32_lt),
         (Instruction::SelectF32Le, execute_select_f32_le, wasm::f32_le),
@@ -128,7 +126,6 @@ impl Executor<'_> {
         (u32, Instruction::SelectI32LeUImm16Rhs, execute_select_i32_le_u_imm16_rhs, wasm::i32_le_u),
         (i32, Instruction::SelectI32AndImm16, execute_select_i32_and_imm16, UntypedValueExt::and),
         (i32, Instruction::SelectI32OrImm16, execute_select_i32_or_imm16, UntypedValueExt::or),
-        (i32, Instruction::SelectI32XorImm16, execute_select_i32_xor_imm16, UntypedValueExt::xor),
         (i64, Instruction::SelectI64EqImm16, execute_select_i64_eq_imm16, wasm::i64_eq),
         (i64, Instruction::SelectI64LtSImm16Rhs, execute_select_i64_lt_s_imm16_rhs, wasm::i64_lt_s),
         (u64, Instruction::SelectI64LtUImm16Rhs, execute_select_i64_lt_u_imm16_rhs, wasm::i64_lt_u),
@@ -136,6 +133,5 @@ impl Executor<'_> {
         (u64, Instruction::SelectI64LeUImm16Rhs, execute_select_i64_le_u_imm16_rhs, wasm::i64_le_u),
         (i64, Instruction::SelectI64AndImm16, execute_select_i64_and_imm16, UntypedValueExt::and),
         (i64, Instruction::SelectI64OrImm16, execute_select_i64_or_imm16, UntypedValueExt::or),
-        (i64, Instruction::SelectI64XorImm16, execute_select_i64_xor_imm16, UntypedValueExt::xor),
     }
 }

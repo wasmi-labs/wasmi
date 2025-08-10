@@ -49,14 +49,10 @@ impl CompareResult for Instruction {
             | I::I32AndImm16 { result, .. }
             | I::I32Or { result, .. }
             | I::I32OrImm16 { result, .. }
-            | I::I32Xor { result, .. }
-            | I::I32XorImm16 { result, .. }
             | I::I32Nand { result, .. }
             | I::I32NandImm16 { result, .. }
             | I::I32Nor { result, .. }
             | I::I32NorImm16 { result, .. }
-            | I::I32Xnor { result, .. }
-            | I::I32XnorImm16 { result, .. }
             | I::I32Eq { result, .. }
             | I::I32EqImm16 { result, .. }
             | I::I32Ne { result, .. }
@@ -83,14 +79,10 @@ impl CompareResult for Instruction {
             | I::I64AndImm16 { result, .. }
             | I::I64Or { result, .. }
             | I::I64OrImm16 { result, .. }
-            | I::I64Xor { result, .. }
-            | I::I64XorImm16 { result, .. }
             | I::I64Nand { result, .. }
             | I::I64NandImm16 { result, .. }
             | I::I64Nor { result, .. }
             | I::I64NorImm16 { result, .. }
-            | I::I64Xnor { result, .. }
-            | I::I64XnorImm16 { result, .. }
             | I::I64Eq { result, .. }
             | I::I64EqImm16 { result, .. }
             | I::I64Ne { result, .. }
@@ -147,14 +139,10 @@ impl ReplaceCmpResult for Instruction {
             | I::I32AndImm16 { result, .. }
             | I::I32Or { result, .. }
             | I::I32OrImm16 { result, .. }
-            | I::I32Xor { result, .. }
-            | I::I32XorImm16 { result, .. }
             | I::I32Nand { result, .. }
             | I::I32NandImm16 { result, .. }
             | I::I32Nor { result, .. }
             | I::I32NorImm16 { result, .. }
-            | I::I32Xnor { result, .. }
-            | I::I32XnorImm16 { result, .. }
             | I::I32Eq { result, .. }
             | I::I32EqImm16 { result, .. }
             | I::I32Ne { result, .. }
@@ -181,14 +169,10 @@ impl ReplaceCmpResult for Instruction {
             | I::I64AndImm16 { result, .. }
             | I::I64Or { result, .. }
             | I::I64OrImm16 { result, .. }
-            | I::I64Xor { result, .. }
-            | I::I64XorImm16 { result, .. }
             | I::I64Nand { result, .. }
             | I::I64NandImm16 { result, .. }
             | I::I64Nor { result, .. }
             | I::I64NorImm16 { result, .. }
-            | I::I64Xnor { result, .. }
-            | I::I64XnorImm16 { result, .. }
             | I::I64Eq { result, .. }
             | I::I64EqImm16 { result, .. }
             | I::I64Ne { result, .. }
@@ -253,22 +237,18 @@ impl NegateCmpInstr for Instruction {
             // i32 (and, or, xor)
             I::I32BitAnd { result, lhs, rhs } => I::i32_nand(result, lhs, rhs),
             I::I32BitOr { result, lhs, rhs } => I::i32_nor(result, lhs, rhs),
-            I::I32BitXor { result, lhs, rhs } => I::i32_xnor(result, lhs, rhs),
+            I::I32BitXor { result, lhs, rhs } => I::i32_eq(result, lhs, rhs),
             I::I32BitAndImm16 { result, lhs, rhs } => I::i32_nand_imm16(result, lhs, rhs),
             I::I32BitOrImm16 { result, lhs, rhs } => I::i32_nor_imm16(result, lhs, rhs),
-            I::I32BitXorImm16 { result, lhs, rhs } => I::i32_xnor_imm16(result, lhs, rhs),
+            I::I32BitXorImm16 { result, lhs, rhs } => I::i32_eq_imm16(result, lhs, rhs),
             I::I32And { result, lhs, rhs } => I::i32_nand(result, lhs, rhs),
             I::I32Or { result, lhs, rhs } => I::i32_nor(result, lhs, rhs),
-            I::I32Xor { result, lhs, rhs } => I::i32_xnor(result, lhs, rhs),
             I::I32AndImm16 { result, lhs, rhs } => I::i32_nand_imm16(result, lhs, rhs),
             I::I32OrImm16 { result, lhs, rhs } => I::i32_nor_imm16(result, lhs, rhs),
-            I::I32XorImm16 { result, lhs, rhs } => I::i32_xnor_imm16(result, lhs, rhs),
             I::I32Nand { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
             I::I32Nor { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
-            I::I32Xnor { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
             I::I32NandImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
             I::I32NorImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
-            I::I32XnorImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
             // i64
             I::I64Eq { result, lhs, rhs } => I::i64_ne(result, lhs, rhs),
             I::I64Ne { result, lhs, rhs } => I::i64_eq(result, lhs, rhs),
@@ -289,22 +269,18 @@ impl NegateCmpInstr for Instruction {
             // i64 (and, or, xor)
             I::I64BitAnd { result, lhs, rhs } => I::i64_nand(result, lhs, rhs),
             I::I64BitOr { result, lhs, rhs } => I::i64_nor(result, lhs, rhs),
-            I::I64BitXor { result, lhs, rhs } => I::i64_xnor(result, lhs, rhs),
+            I::I64BitXor { result, lhs, rhs } => I::i64_eq(result, lhs, rhs),
             I::I64BitAndImm16 { result, lhs, rhs } => I::i64_nand_imm16(result, lhs, rhs),
             I::I64BitOrImm16 { result, lhs, rhs } => I::i64_nor_imm16(result, lhs, rhs),
-            I::I64BitXorImm16 { result, lhs, rhs } => I::i64_xnor_imm16(result, lhs, rhs),
+            I::I64BitXorImm16 { result, lhs, rhs } => I::i64_eq_imm16(result, lhs, rhs),
             I::I64And { result, lhs, rhs } => I::i64_nand(result, lhs, rhs),
             I::I64Or { result, lhs, rhs } => I::i64_nor(result, lhs, rhs),
-            I::I64Xor { result, lhs, rhs } => I::i64_xnor(result, lhs, rhs),
             I::I64AndImm16 { result, lhs, rhs } => I::i64_nand_imm16(result, lhs, rhs),
             I::I64OrImm16 { result, lhs, rhs } => I::i64_nor_imm16(result, lhs, rhs),
-            I::I64XorImm16 { result, lhs, rhs } => I::i64_xnor_imm16(result, lhs, rhs),
             I::I64Nand { result, lhs, rhs } => I::i64_and(result, lhs, rhs),
             I::I64Nor { result, lhs, rhs } => I::i64_or(result, lhs, rhs),
-            I::I64Xnor { result, lhs, rhs } => I::i64_xor(result, lhs, rhs),
             I::I64NandImm16 { result, lhs, rhs } => I::i64_and_imm16(result, lhs, rhs),
             I::I64NorImm16 { result, lhs, rhs } => I::i64_or_imm16(result, lhs, rhs),
-            I::I64XnorImm16 { result, lhs, rhs } => I::i64_xor_imm16(result, lhs, rhs),
             // f32
             I::F32Eq { result, lhs, rhs } => I::f32_ne(result, lhs, rhs),
             I::F32Ne { result, lhs, rhs } => I::f32_eq(result, lhs, rhs),
@@ -341,17 +317,17 @@ impl LogicalizeCmpInstr for Instruction {
             // Bitwise -> Logical: i32
             I::I32BitAnd { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
             I::I32BitOr { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
-            I::I32BitXor { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
+            I::I32BitXor { result, lhs, rhs } => I::i32_ne(result, lhs, rhs),
             I::I32BitAndImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
             I::I32BitOrImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
-            I::I32BitXorImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
+            I::I32BitXorImm16 { result, lhs, rhs } => I::i32_ne_imm16(result, lhs, rhs),
             // Bitwise -> Logical: i64
             I::I64BitAnd { result, lhs, rhs } => I::i64_and(result, lhs, rhs),
             I::I64BitOr { result, lhs, rhs } => I::i64_or(result, lhs, rhs),
-            I::I64BitXor { result, lhs, rhs } => I::i64_xor(result, lhs, rhs),
+            I::I64BitXor { result, lhs, rhs } => I::i64_ne(result, lhs, rhs),
             I::I64BitAndImm16 { result, lhs, rhs } => I::i64_and_imm16(result, lhs, rhs),
             I::I64BitOrImm16 { result, lhs, rhs } => I::i64_or_imm16(result, lhs, rhs),
-            I::I64BitXorImm16 { result, lhs, rhs } => I::i64_xor_imm16(result, lhs, rhs),
+            I::I64BitXorImm16 { result, lhs, rhs } => I::i64_ne_imm16(result, lhs, rhs),
             // Logical -> Logical
             I::I32Eq { .. } |
             I::I32Ne { .. } |
@@ -371,16 +347,12 @@ impl LogicalizeCmpInstr for Instruction {
             I::I32LtUImm16Lhs { .. } |
             I::I32And { .. } |
             I::I32Or { .. } |
-            I::I32Xor { .. } |
             I::I32AndImm16 { .. } |
             I::I32OrImm16 { .. } |
-            I::I32XorImm16 { .. } |
             I::I32Nand { .. } |
             I::I32Nor { .. } |
-            I::I32Xnor { .. } |
             I::I32NandImm16 { .. } |
             I::I32NorImm16 { .. } |
-            I::I32XnorImm16 { .. } |
             I::I64Eq { .. } |
             I::I64Ne { .. } |
             I::I64LeS { .. } |
@@ -399,16 +371,12 @@ impl LogicalizeCmpInstr for Instruction {
             I::I64LtUImm16Lhs { .. } |
             I::I64And { .. } |
             I::I64Or { .. } |
-            I::I64Xor { .. } |
             I::I64AndImm16 { .. } |
             I::I64OrImm16 { .. } |
-            I::I64XorImm16 { .. } |
             I::I64Nand { .. } |
             I::I64Nor { .. } |
-            I::I64Xnor { .. } |
             I::I64NandImm16 { .. } |
             I::I64NorImm16 { .. } |
-            I::I64XnorImm16 { .. } |
             I::F32Eq { .. } |
             I::F32Ne { .. } |
             I::F32Lt { .. } |
@@ -456,12 +424,14 @@ fn cmp_select_swap_operands(instr: &Instruction) -> bool {
         | I::I32LeUImm16Lhs { .. }
         | I::I32LtSImm16Lhs { .. }
         | I::I32LtUImm16Lhs { .. }
+        | I::I32BitXor { .. }
+        | I::I32BitXorImm16 { .. }
+        | I::I64BitXor { .. }
+        | I::I64BitXorImm16 { .. }
         | I::I32Nand { .. }
         | I::I32Nor { .. }
-        | I::I32Xnor { .. }
         | I::I32NandImm16 { .. }
         | I::I32NorImm16 { .. }
-        | I::I32XnorImm16 { .. }
         | I::I64Ne { .. }
         | I::I64NeImm16 { .. }
         | I::I64LeSImm16Lhs { .. }
@@ -470,10 +440,8 @@ fn cmp_select_swap_operands(instr: &Instruction) -> bool {
         | I::I64LtUImm16Lhs { .. }
         | I::I64Nand { .. }
         | I::I64Nor { .. }
-        | I::I64Xnor { .. }
         | I::I64NandImm16 { .. }
         | I::I64NorImm16 { .. }
-        | I::I64XnorImm16 { .. }
         | I::F32Ne { .. }
         | I::F64Ne { .. }
         | I::F32NotLt { .. }
@@ -516,22 +484,18 @@ impl TryIntoCmpSelectInstr for Instruction {
             // i32 (and, or, xor)
             I::I32BitAnd { lhs, rhs, .. } => I::select_i32_and(result, lhs, rhs),
             I::I32BitOr { lhs, rhs, .. } => I::select_i32_or(result, lhs, rhs),
-            I::I32BitXor { lhs, rhs, .. } => I::select_i32_xor(result, lhs, rhs),
+            I::I32BitXor { lhs, rhs, .. } => I::select_i32_eq(result, lhs, rhs),
             I::I32And { lhs, rhs, .. } => I::select_i32_and(result, lhs, rhs),
             I::I32Or { lhs, rhs, .. } => I::select_i32_or(result, lhs, rhs),
-            I::I32Xor { lhs, rhs, .. } => I::select_i32_xor(result, lhs, rhs),
             I::I32Nand { lhs, rhs, .. } => I::select_i32_and(result, lhs, rhs),
             I::I32Nor { lhs, rhs, .. } => I::select_i32_or(result, lhs, rhs),
-            I::I32Xnor { lhs, rhs, .. } => I::select_i32_xor(result, lhs, rhs),
             I::I32BitAndImm16 { lhs, rhs, .. } => I::select_i32_and_imm16(result, lhs, rhs),
             I::I32BitOrImm16 { lhs, rhs, .. } => I::select_i32_or_imm16(result, lhs, rhs),
-            I::I32BitXorImm16 { lhs, rhs, .. } => I::select_i32_xor_imm16(result, lhs, rhs),
+            I::I32BitXorImm16 { lhs, rhs, .. } => I::select_i32_eq_imm16(result, lhs, rhs),
             I::I32AndImm16 { lhs, rhs, .. } => I::select_i32_and_imm16(result, lhs, rhs),
             I::I32OrImm16 { lhs, rhs, .. } => I::select_i32_or_imm16(result, lhs, rhs),
-            I::I32XorImm16 { lhs, rhs, .. } => I::select_i32_xor_imm16(result, lhs, rhs),
             I::I32NandImm16 { lhs, rhs, .. } => I::select_i32_and_imm16(result, lhs, rhs),
             I::I32NorImm16 { lhs, rhs, .. } => I::select_i32_or_imm16(result, lhs, rhs),
-            I::I32XnorImm16 { lhs, rhs, .. } => I::select_i32_xor_imm16(result, lhs, rhs),
             // i64
             I::I64Eq { lhs, rhs, .. } => I::select_i64_eq(result, lhs, rhs),
             I::I64Ne { lhs, rhs, .. } => I::select_i64_eq(result, lhs, rhs),
@@ -552,22 +516,18 @@ impl TryIntoCmpSelectInstr for Instruction {
             // i64 (and, or, xor)
             I::I64BitAnd { lhs, rhs, .. } => I::select_i64_and(result, lhs, rhs),
             I::I64BitOr { lhs, rhs, .. } => I::select_i64_or(result, lhs, rhs),
-            I::I64BitXor { lhs, rhs, .. } => I::select_i64_xor(result, lhs, rhs),
+            I::I64BitXor { lhs, rhs, .. } => I::select_i64_eq(result, lhs, rhs),
             I::I64And { lhs, rhs, .. } => I::select_i64_and(result, lhs, rhs),
             I::I64Or { lhs, rhs, .. } => I::select_i64_or(result, lhs, rhs),
-            I::I64Xor { lhs, rhs, .. } => I::select_i64_xor(result, lhs, rhs),
             I::I64Nand { lhs, rhs, .. } => I::select_i64_and(result, lhs, rhs),
             I::I64Nor { lhs, rhs, .. } => I::select_i64_or(result, lhs, rhs),
-            I::I64Xnor { lhs, rhs, .. } => I::select_i64_xor(result, lhs, rhs),
             I::I64BitAndImm16 { lhs, rhs, .. } => I::select_i64_and_imm16(result, lhs, rhs),
             I::I64BitOrImm16 { lhs, rhs, .. } => I::select_i64_or_imm16(result, lhs, rhs),
-            I::I64BitXorImm16 { lhs, rhs, .. } => I::select_i64_xor_imm16(result, lhs, rhs),
+            I::I64BitXorImm16 { lhs, rhs, .. } => I::select_i64_eq_imm16(result, lhs, rhs),
             I::I64AndImm16 { lhs, rhs, .. } => I::select_i64_and_imm16(result, lhs, rhs),
             I::I64OrImm16 { lhs, rhs, .. } => I::select_i64_or_imm16(result, lhs, rhs),
-            I::I64XorImm16 { lhs, rhs, .. } => I::select_i64_xor_imm16(result, lhs, rhs),
             I::I64NandImm16 { lhs, rhs, .. } => I::select_i64_and_imm16(result, lhs, rhs),
             I::I64NorImm16 { lhs, rhs, .. } => I::select_i64_or_imm16(result, lhs, rhs),
-            I::I64XnorImm16 { lhs, rhs, .. } => I::select_i64_xor_imm16(result, lhs, rhs),
             // f32
             I::F32Eq { lhs, rhs, .. } => I::select_f32_eq(result, lhs, rhs),
             I::F32Ne { lhs, rhs, .. } => I::select_f32_eq(result, lhs, rhs),
@@ -631,22 +591,18 @@ impl TryIntoCmpBranchInstr for Instruction {
             // i32 (and, or, xor)
             I::I32BitAnd { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
             I::I32BitOr { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
-            I::I32BitXor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
+            I::I32BitXor { lhs, rhs, .. } => I::branch_i32_ne(lhs, rhs, offset),
             I::I32And { lhs, rhs, .. } => I::branch_i32_and(lhs, rhs, offset),
             I::I32Or { lhs, rhs, .. } => I::branch_i32_or(lhs, rhs, offset),
-            I::I32Xor { lhs, rhs, .. } => I::branch_i32_xor(lhs, rhs, offset),
             I::I32Nand { lhs, rhs, .. } => I::branch_i32_nand(lhs, rhs, offset),
             I::I32Nor { lhs, rhs, .. } => I::branch_i32_nor(lhs, rhs, offset),
-            I::I32Xnor { lhs, rhs, .. } => I::branch_i32_xnor(lhs, rhs, offset),
             I::I32BitAndImm16 { lhs, rhs, .. } => I::branch_i32_and_imm16(lhs, rhs, offset),
             I::I32BitOrImm16 { lhs, rhs, .. } => I::branch_i32_or_imm16(lhs, rhs, offset),
-            I::I32BitXorImm16 { lhs, rhs, .. } => I::branch_i32_xor_imm16(lhs, rhs, offset),
+            I::I32BitXorImm16 { lhs, rhs, .. } => I::branch_i32_ne_imm16(lhs, rhs, offset),
             I::I32AndImm16 { lhs, rhs, .. } => I::branch_i32_and_imm16(lhs, rhs, offset),
             I::I32OrImm16 { lhs, rhs, .. } => I::branch_i32_or_imm16(lhs, rhs, offset),
-            I::I32XorImm16 { lhs, rhs, .. } => I::branch_i32_xor_imm16(lhs, rhs, offset),
             I::I32NandImm16 { lhs, rhs, .. } => I::branch_i32_nand_imm16(lhs, rhs, offset),
             I::I32NorImm16 { lhs, rhs, .. } => I::branch_i32_nor_imm16(lhs, rhs, offset),
-            I::I32XnorImm16 { lhs, rhs, .. } => I::branch_i32_xnor_imm16(lhs, rhs, offset),
             // i64
             I::I64Eq { lhs, rhs, .. } => I::branch_i64_eq(lhs, rhs, offset),
             I::I64Ne { lhs, rhs, .. } => I::branch_i64_ne(lhs, rhs, offset),
@@ -667,22 +623,18 @@ impl TryIntoCmpBranchInstr for Instruction {
             // i64 (and, or, xor)
             I::I64BitAnd { lhs, rhs, .. } => I::branch_i64_and(lhs, rhs, offset),
             I::I64BitOr { lhs, rhs, .. } => I::branch_i64_or(lhs, rhs, offset),
-            I::I64BitXor { lhs, rhs, .. } => I::branch_i64_xor(lhs, rhs, offset),
+            I::I64BitXor { lhs, rhs, .. } => I::branch_i64_ne(lhs, rhs, offset),
             I::I64And { lhs, rhs, .. } => I::branch_i64_and(lhs, rhs, offset),
             I::I64Or { lhs, rhs, .. } => I::branch_i64_or(lhs, rhs, offset),
-            I::I64Xor { lhs, rhs, .. } => I::branch_i64_xor(lhs, rhs, offset),
             I::I64Nand { lhs, rhs, .. } => I::branch_i64_nand(lhs, rhs, offset),
             I::I64Nor { lhs, rhs, .. } => I::branch_i64_nor(lhs, rhs, offset),
-            I::I64Xnor { lhs, rhs, .. } => I::branch_i64_xnor(lhs, rhs, offset),
             I::I64BitAndImm16 { lhs, rhs, .. } => I::branch_i64_and_imm16(lhs, rhs, offset),
             I::I64BitOrImm16 { lhs, rhs, .. } => I::branch_i64_or_imm16(lhs, rhs, offset),
-            I::I64BitXorImm16 { lhs, rhs, .. } => I::branch_i64_xor_imm16(lhs, rhs, offset),
+            I::I64BitXorImm16 { lhs, rhs, .. } => I::branch_i64_ne_imm16(lhs, rhs, offset),
             I::I64AndImm16 { lhs, rhs, .. } => I::branch_i64_and_imm16(lhs, rhs, offset),
             I::I64OrImm16 { lhs, rhs, .. } => I::branch_i64_or_imm16(lhs, rhs, offset),
-            I::I64XorImm16 { lhs, rhs, .. } => I::branch_i64_xor_imm16(lhs, rhs, offset),
             I::I64NandImm16 { lhs, rhs, .. } => I::branch_i64_nand_imm16(lhs, rhs, offset),
             I::I64NorImm16 { lhs, rhs, .. } => I::branch_i64_nor_imm16(lhs, rhs, offset),
-            I::I64XnorImm16 { lhs, rhs, .. } => I::branch_i64_xnor_imm16(lhs, rhs, offset),
             // f32
             I::F32Eq { lhs, rhs, .. } => I::branch_f32_eq(lhs, rhs, offset),
             I::F32Ne { lhs, rhs, .. } => I::branch_f32_ne(lhs, rhs, offset),
@@ -726,10 +678,8 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
         let (lhs, rhs) = match *self {
             | I::BranchI32And { lhs, rhs, .. }
             | I::BranchI32Or { lhs, rhs, .. }
-            | I::BranchI32Xor { lhs, rhs, .. }
             | I::BranchI32Nand { lhs, rhs, .. }
             | I::BranchI32Nor { lhs, rhs, .. }
-            | I::BranchI32Xnor { lhs, rhs, .. }
             | I::BranchI32Eq { lhs, rhs, .. }
             | I::BranchI32Ne { lhs, rhs, .. }
             | I::BranchI32LtS { lhs, rhs, .. }
@@ -738,10 +688,8 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchI32LeU { lhs, rhs, .. }
             | I::BranchI64And { lhs, rhs, .. }
             | I::BranchI64Or { lhs, rhs, .. }
-            | I::BranchI64Xor { lhs, rhs, .. }
             | I::BranchI64Nand { lhs, rhs, .. }
             | I::BranchI64Nor { lhs, rhs, .. }
-            | I::BranchI64Xnor { lhs, rhs, .. }
             | I::BranchI64Eq { lhs, rhs, .. }
             | I::BranchI64Ne { lhs, rhs, .. }
             | I::BranchI64LtS { lhs, rhs, .. }
@@ -762,10 +710,8 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             | I::BranchF64NotLe { lhs, rhs, .. } => (lhs, rhs),
             | I::BranchI32AndImm16 { lhs, rhs, .. }
             | I::BranchI32OrImm16 { lhs, rhs, .. }
-            | I::BranchI32XorImm16 { lhs, rhs, .. }
             | I::BranchI32NandImm16 { lhs, rhs, .. }
             | I::BranchI32NorImm16 { lhs, rhs, .. }
-            | I::BranchI32XnorImm16 { lhs, rhs, .. }
             | I::BranchI32EqImm16 { lhs, rhs, .. }
             | I::BranchI32NeImm16 { lhs, rhs, .. }
             | I::BranchI32LtSImm16Rhs { lhs, rhs, .. }
@@ -790,10 +736,8 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             }
             | I::BranchI64AndImm16 { lhs, rhs, .. }
             | I::BranchI64OrImm16 { lhs, rhs, .. }
-            | I::BranchI64XorImm16 { lhs, rhs, .. }
             | I::BranchI64NandImm16 { lhs, rhs, .. }
             | I::BranchI64NorImm16 { lhs, rhs, .. }
-            | I::BranchI64XnorImm16 { lhs, rhs, .. }
             | I::BranchI64EqImm16 { lhs, rhs, .. }
             | I::BranchI64NeImm16 { lhs, rhs, .. }
             | I::BranchI64LtSImm16Rhs { lhs, rhs, .. }
@@ -845,10 +789,8 @@ fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
         // i32 (and,or,xor)
         | I::BranchI32And { .. } => Comparator::I32And,
         | I::BranchI32Or { .. } => Comparator::I32Or,
-        | I::BranchI32Xor { .. } => Comparator::I32Xor,
         | I::BranchI32Nand { .. } => Comparator::I32Nand,
         | I::BranchI32Nor { .. } => Comparator::I32Nor,
-        | I::BranchI32Xnor { .. } => Comparator::I32Xnor,
         // i64
         | I::BranchI64Eq { .. } | I::BranchI64EqImm16 { .. } => Comparator::I64Eq,
         | I::BranchI64Ne { .. } | I::BranchI64NeImm16 { .. } => Comparator::I64Ne,
@@ -916,10 +858,8 @@ impl UpdateBranchOffset for Instruction {
         let offset = match self {
             | I::BranchI32And { offset, .. }
             | I::BranchI32Or { offset, .. }
-            | I::BranchI32Xor { offset, .. }
             | I::BranchI32Nand { offset, .. }
             | I::BranchI32Nor { offset, .. }
-            | I::BranchI32Xnor { offset, .. }
             | I::BranchI32Eq { offset, .. }
             | I::BranchI32Ne { offset, .. }
             | I::BranchI32LtS { offset, .. }
@@ -928,10 +868,8 @@ impl UpdateBranchOffset for Instruction {
             | I::BranchI32LeU { offset, .. }
             | I::BranchI64And { offset, .. }
             | I::BranchI64Or { offset, .. }
-            | I::BranchI64Xor { offset, .. }
             | I::BranchI64Nand { offset, .. }
             | I::BranchI64Nor { offset, .. }
-            | I::BranchI64Xnor { offset, .. }
             | I::BranchI64Eq { offset, .. }
             | I::BranchI64Ne { offset, .. }
             | I::BranchI64LtS { offset, .. }
@@ -952,10 +890,8 @@ impl UpdateBranchOffset for Instruction {
             | I::BranchF64NotLe { offset, .. }
             | I::BranchI32AndImm16 { offset, .. }
             | I::BranchI32OrImm16 { offset, .. }
-            | I::BranchI32XorImm16 { offset, .. }
             | I::BranchI32NandImm16 { offset, .. }
             | I::BranchI32NorImm16 { offset, .. }
-            | I::BranchI32XnorImm16 { offset, .. }
             | I::BranchI32EqImm16 { offset, .. }
             | I::BranchI32NeImm16 { offset, .. }
             | I::BranchI32LtSImm16Lhs { offset, .. }
@@ -968,10 +904,8 @@ impl UpdateBranchOffset for Instruction {
             | I::BranchI32LeUImm16Rhs { offset, .. }
             | I::BranchI64AndImm16 { offset, .. }
             | I::BranchI64OrImm16 { offset, .. }
-            | I::BranchI64XorImm16 { offset, .. }
             | I::BranchI64NandImm16 { offset, .. }
             | I::BranchI64NorImm16 { offset, .. }
-            | I::BranchI64XnorImm16 { offset, .. }
             | I::BranchI64EqImm16 { offset, .. }
             | I::BranchI64NeImm16 { offset, .. }
             | I::BranchI64LtSImm16Lhs { offset, .. }
