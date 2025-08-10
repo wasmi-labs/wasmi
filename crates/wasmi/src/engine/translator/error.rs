@@ -30,6 +30,8 @@ pub enum TranslationError {
     TooManyFunctionResults,
     /// Tried to define a function with too many function parameters.
     TooManyFunctionParams,
+    /// Tried to define a function with too many local variables.
+    TooManyLocalVariables,
     /// The function failed to compiled lazily.
     LazyCompilationFailed,
 }
@@ -98,6 +100,9 @@ impl Display for TranslationError {
             }
             Self::TooManyFunctionParams => {
                 write!(f, "encountered function with too many function parameters")
+            }
+            Self::TooManyLocalVariables => {
+                write!(f, "encountered function with too many local variables")
             }
             Self::LazyCompilationFailed => {
                 write!(

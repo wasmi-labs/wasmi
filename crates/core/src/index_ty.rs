@@ -1,3 +1,5 @@
+use crate::ValType;
+
 /// The index type used for addressing memories and tables.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum IndexType {
@@ -8,6 +10,14 @@ pub enum IndexType {
 }
 
 impl IndexType {
+    /// Returns the [`ValType`] associated to `self`.
+    pub fn ty(&self) -> ValType {
+        match self {
+            IndexType::I32 => ValType::I32,
+            IndexType::I64 => ValType::I64,
+        }
+    }
+
     /// Returns `true` if `self` is [`IndexType::I64`].
     pub fn is_64(&self) -> bool {
         matches!(self, Self::I64)

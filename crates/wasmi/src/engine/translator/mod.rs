@@ -3,7 +3,10 @@
 mod comparator;
 mod driver;
 mod error;
+#[cfg_attr(feature = "experimental-translator", expect(dead_code))]
 mod func;
+#[cfg(feature = "experimental-translator")]
+mod func2;
 mod labels;
 mod relink_result;
 mod utils;
@@ -12,11 +15,13 @@ mod visit_register;
 #[cfg(doc)]
 use crate::Engine;
 
-pub use self::{
-    driver::FuncTranslationDriver,
-    error::TranslationError,
-    func::{FuncTranslator, FuncTranslatorAllocations},
-};
+#[cfg(not(feature = "experimental-translator"))]
+pub use self::func::{FuncTranslator, FuncTranslatorAllocations};
+
+#[cfg(feature = "experimental-translator")]
+pub use self::func2::{FuncTranslator, FuncTranslatorAllocations};
+
+pub use self::{driver::FuncTranslationDriver, error::TranslationError};
 use super::code_map::CompiledFuncEntity;
 use crate::{
     engine::EngineFunc,

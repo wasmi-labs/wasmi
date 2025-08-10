@@ -65,6 +65,10 @@ pub trait WasmInteger:
 
     /// Returns `true` if `self` is equal to zero (0).
     fn is_zero(self) -> bool;
+
+    /// Returns the wrapped negated `self`.
+    #[cfg(feature = "experimental-translator")] // TODO: remove
+    fn wrapping_neg(self) -> Self;
 }
 
 macro_rules! impl_wasm_integer {
@@ -80,6 +84,11 @@ macro_rules! impl_wasm_integer {
                 fn is_zero(self) -> bool {
                     self == 0
                 }
+
+                #[cfg(feature = "experimental-translator")] // TODO: remove
+                fn wrapping_neg(self) -> Self {
+                    Self::wrapping_neg(self)
+                }
             }
         )*
     };
@@ -91,7 +100,7 @@ impl_wasm_integer!(i32, u32, i64, u64);
 /// # Note
 ///
 /// This trait provides some utility methods useful for translation.
-pub trait WasmFloat: Copy + Into<TypedVal> + From<TypedVal> {
+pub trait WasmFloat: Typed + Copy + Into<TypedVal> + From<TypedVal> {
     /// Returns `true` if `self` is any kind of NaN value.
     fn is_nan(self) -> bool;
 
