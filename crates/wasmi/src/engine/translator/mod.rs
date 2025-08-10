@@ -7,13 +7,15 @@ mod func2;
 mod labels;
 mod relink_result;
 mod utils;
-mod visit_register;
 
 #[cfg(doc)]
 use crate::Engine;
 
-pub use self::func2::{FuncTranslator, FuncTranslatorAllocations};
-pub use self::{driver::FuncTranslationDriver, error::TranslationError};
+pub use self::{
+    driver::FuncTranslationDriver,
+    error::TranslationError,
+    func2::{FuncTranslator, FuncTranslatorAllocations},
+};
 use super::code_map::CompiledFuncEntity;
 use crate::{
     engine::EngineFunc,
