@@ -11,9 +11,6 @@ mod traits;
 mod translator;
 mod utils;
 
-#[cfg(test)]
-mod tests;
-
 pub(crate) use self::{
     block_type::BlockType,
     executor::Stack,

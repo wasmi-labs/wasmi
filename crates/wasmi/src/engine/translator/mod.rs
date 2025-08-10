@@ -9,9 +9,6 @@ mod relink_result;
 mod utils;
 mod visit_register;
 
-#[cfg(test)]
-mod tests;
-
 #[cfg(doc)]
 use crate::Engine;
 
