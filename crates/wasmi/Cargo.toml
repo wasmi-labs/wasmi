@@ -30,8 +30,6 @@ spin = { version = "0.9", default-features = false, features = [
     "rwlock",
 ] }
 smallvec = { version = "1.13.1", features = ["union"] }
-multi-stash = { version = "0.2.0" }
-arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
 assert_matches = "1.5"
@@ -44,7 +42,6 @@ std = [
     "wasmi_collections/std",
     "wasmparser/std",
     "spin/std",
-    "arrayvec/std",
 ]
 hash-collections = [
     "wasmi_collections/hash-collections",
