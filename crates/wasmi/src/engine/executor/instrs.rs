@@ -1338,7 +1338,7 @@ impl<'engine> Executor<'engine> {
                 | Instr::Const32 { .. }
                 | Instr::I64Const32 { .. }
                 | Instr::F64Const32 { .. }
-                | Instr::BranchTableTargetNonOverlapping { .. }
+                | Instr::BranchTableTarget { .. }
                 | Instr::Register { .. }
                 | Instr::Register2 { .. }
                 | Instr::Register3 { .. }

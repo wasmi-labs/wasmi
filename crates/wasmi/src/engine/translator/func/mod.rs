@@ -1141,9 +1141,7 @@ impl FuncTranslator {
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())?;
             self.instrs
-                .push_param(Instruction::branch_table_target_non_overlapping(
-                    results, offset,
-                ));
+                .push_param(Instruction::branch_table_target(results, offset));
             frame.branch_to();
         }
         Ok(())

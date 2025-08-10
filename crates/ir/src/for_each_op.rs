@@ -874,7 +874,7 @@ macro_rules! for_each_op_grouped {
                 /// 1. Followed by one of [`Instruction::RegisterSpan`].
                 /// 2. Followed `len_target` times by
                 ///
-                /// - [`Instruction::BranchTableTargetNonOverlapping`]
+                /// - [`Instruction::BranchTableTarget`]
                 #[snake_name(branch_table_span)]
                 BranchTableSpan {
                     /// The register holding the index of the instruction.
@@ -5710,8 +5710,8 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// This always follows [`Instruction::BranchTableSpan`].
-                #[snake_name(branch_table_target_non_overlapping)]
-                BranchTableTargetNonOverlapping {
+                #[snake_name(branch_table_target)]
+                BranchTableTarget {
                     /// The registers where the values are going to be copied.
                     results: RegSpan,
                     /// The branching offset of the branch table target.

@@ -71,7 +71,7 @@ impl Executor<'_> {
         match *self.ip.get() {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            Instruction::BranchTableTargetNonOverlapping { results, offset } => {
+            Instruction::BranchTableTarget { results, offset } => {
                 self.execute_copy_span_impl(results, values, len);
                 self.execute_branch(offset)
             }

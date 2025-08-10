@@ -192,7 +192,7 @@ impl IsInstructionParameter for Instruction {
             | Self::Const32 { .. }
             | Self::I64Const32 { .. }
             | Self::F64Const32 { .. }
-            | Self::BranchTableTargetNonOverlapping { .. }
+            | Self::BranchTableTarget { .. }
             | Self::Imm16AndImm32 { .. }
             | Self::RegisterAndImm32 { .. }
             | Self::RegisterSpan { .. }
