@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.49.1` - 2025-08-10
+
+### Fixes
+
+- Fix negated `f{32,64}.cmp+select` op-code fusion. [#1612]
+
+[#1612]: https://github.com/wasmi-labs/wasmi/pull/1612
+
 ## `0.49.0` - 2025-08-07
 
 This version prepares Wasmi for its 1.0 release.
