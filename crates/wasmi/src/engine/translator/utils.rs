@@ -1,5 +1,5 @@
 use crate::{
-    core::{FuelCostsProvider, Typed, TypedVal, UntypedVal},
+    core::{Typed, TypedVal, UntypedVal},
     ir::{Const16, Instruction, Sign},
     Error,
     ExternRef,
@@ -67,7 +67,6 @@ pub trait WasmInteger:
     fn is_zero(self) -> bool;
 
     /// Returns the wrapped negated `self`.
-    #[cfg(feature = "experimental-translator")] // TODO: remove
     fn wrapping_neg(self) -> Self;
 }
 
@@ -85,7 +84,6 @@ macro_rules! impl_wasm_integer {
                     self == 0
                 }
 
-                #[cfg(feature = "experimental-translator")] // TODO: remove
                 fn wrapping_neg(self) -> Self {
                     Self::wrapping_neg(self)
                 }
@@ -101,28 +99,17 @@ impl_wasm_integer!(i32, u32, i64, u64);
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmFloat: Typed + Copy + Into<TypedVal> + From<TypedVal> {
-    /// Returns `true` if `self` is any kind of NaN value.
-    fn is_nan(self) -> bool;
-
     /// Returns the [`Sign`] of `self`.
     fn sign(self) -> Sign<Self>;
 }
 
 impl WasmFloat for f32 {
-    fn is_nan(self) -> bool {
-        self.is_nan()
-    }
-
     fn sign(self) -> Sign<Self> {
         Sign::from(self)
     }
 }
 
 impl WasmFloat for f64 {
-    fn is_nan(self) -> bool {
-        self.is_nan()
-    }
-
     fn sign(self) -> Sign<Self> {
         Sign::from(self)
     }
@@ -166,27 +153,6 @@ impl_wrap_for! {
     u64 => u8,
     u64 => u16,
     u64 => u32,
-}
-
-/// Fuel metering information for a certain translation state.
-#[derive(Debug, Clone)]
-pub enum FuelInfo {
-    /// Fuel metering is disabled.
-    None,
-    /// Fuel metering is enabled with the following information.
-    Some {
-        /// The [`FuelCostsProvider`] for the function translation.
-        costs: FuelCostsProvider,
-        /// Index to the current [`Instruction::ConsumeFuel`] of a parent Wasm control frame.
-        instr: Instr,
-    },
-}
-
-impl FuelInfo {
-    /// Create a new [`FuelInfo`] for enabled fuel metering.
-    pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
-        Self::Some { costs, instr }
-    }
 }
 
 /// Extension trait to bump the consumed fuel of [`Instruction::ConsumeFuel`].

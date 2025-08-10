@@ -64,11 +64,6 @@ impl FuncType {
         self.core.len_results()
     }
 
-    /// Returns the pair of parameter and result types of the function type.
-    pub(crate) fn params_results(&self) -> (&[ValType], &[ValType]) {
-        self.core.params_results()
-    }
-
     /// Returns `Ok` if the number and types of items in `params` matches as expected by the [`FuncType`].
     ///
     /// # Errors

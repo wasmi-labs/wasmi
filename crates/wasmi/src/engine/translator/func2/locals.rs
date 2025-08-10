@@ -156,7 +156,6 @@ mod tests {
             for ty in tys {
                 locals.register(locals_per_type, ty).unwrap();
             }
-            let locals_per_type = locals_per_type as usize;
             assert_eq!(locals.len(), locals_per_type * tys.len());
             for i in 0..locals.len() {
                 assert_eq!(locals.ty(LocalIdx(i as u32)), tys[i / locals_per_type]);
