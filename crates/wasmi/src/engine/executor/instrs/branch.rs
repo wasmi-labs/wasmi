@@ -152,7 +152,7 @@ impl Executor<'_> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             Instruction::BranchTableTarget { results, offset } => {
-                self.execute_copy_span_impl(results, values, len);
+                self.execute_copy_span_non_overlapping_impl(results, values, len);
                 self.execute_branch(offset)
             }
             Instruction::BranchTableTargetNonOverlapping { results, offset } => {
@@ -173,7 +173,7 @@ impl Executor<'_> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             Instruction::BranchTableTarget { results, offset } => {
-                self.execute_copy_many_impl(ip_list, results, &[]);
+                self.execute_copy_many_non_overlapping_impl(ip_list, results, &[]);
                 self.execute_branch(offset)
             }
             Instruction::BranchTableTargetNonOverlapping { results, offset } => {
