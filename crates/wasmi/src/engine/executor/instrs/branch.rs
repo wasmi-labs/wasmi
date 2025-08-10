@@ -159,7 +159,12 @@ impl Executor<'_> {
                 self.execute_copy_span_impl(results, values, len);
                 self.execute_branch(offset)
             }
-            _ => {}
+            unexpected => {
+                // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
+                unsafe {
+                    unreachable_unchecked!("expected target for `Instruction::BranchTableSpan` but found: {unexpected:?}")
+                }
+            }
         }
     }
 
