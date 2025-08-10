@@ -187,7 +187,6 @@ impl Executor<'_> {
     /// Used by the execution logic for
     ///
     /// - [`Instruction::ReturnMany`]
-    /// - [`Instruction::BranchTableMany`]
     pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Reg]) {
         let (mut caller_sp, results) = self.return_caller_results();
         let mut result = results.head();
