@@ -216,7 +216,7 @@ macro_rules! def_expr {
 #[derive(Debug, Default)]
 pub struct ConstExprStack {
     /// The top-most [`Op`] on the stack.
-    /// 
+    ///
     /// # Note
     /// This is an optimization so that the [`ConstExprStack`] does not
     /// require heap allocations for the common case where only a single
