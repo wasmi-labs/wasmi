@@ -16,7 +16,6 @@ use crate::{
     F32,
     F64,
 };
-use smallvec::SmallVec;
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
 use wasmparser::AbstractHeapType;
@@ -258,22 +257,17 @@ impl ConstExpr {
     /// The constructor assumes that Wasm validation already succeeded
     /// on the input Wasm [`ConstExpr`].
     pub fn new(expr: wasmparser::ConstExpr<'_>) -> Self {
-        /// A buffer required for translation of Wasm const expressions.
-        type TranslationBuffer = SmallVec<[Op; 3]>;
         /// Convenience function to create the various expression operators.
-        fn expr_op<Lhs, Rhs, T>(stack: &mut TranslationBuffer, expr: fn(Lhs, Rhs) -> T) -> Op
+        fn expr_op<Lhs, Rhs, T>(stack: &mut ConstExprStack, expr: fn(Lhs, Rhs) -> T) -> Op
         where
             Lhs: From<UntypedVal> + 'static,
             Rhs: From<UntypedVal> + 'static,
             T: 'static,
             UntypedVal: From<T>,
         {
-            let rhs = stack
-                .pop()
-                .expect("must have rhs operator on the stack due to Wasm validation");
-            let lhs = stack
-                .pop()
-                .expect("must have lhs operator on the stack due to Wasm validation");
+            let (lhs, rhs) = stack
+                .pop2()
+                .expect("must have 2 operators on the stack due to Wasm validation");
             match (lhs, rhs) {
                 (Op::Const(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
@@ -295,7 +289,7 @@ impl ConstExpr {
         }
 
         let mut reader = expr.get_operators_reader();
-        let mut stack = TranslationBuffer::new();
+        let mut stack = ConstExprStack::default();
         loop {
             let wasm_op = reader.read().unwrap_or_else(|error| {
                 panic!("unexpectedly encountered invalid const expression operator: {error}")
