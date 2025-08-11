@@ -60,7 +60,7 @@ This is supposedly the final release before Wasmi 1.0.0.
 
 ## `0.49.0` - 2025-08-07
 
-This version prepares Wasmi for its 1.0 release.
+The deprecations introduced in this version prepares Wasmi for its 1.0 release.
 
 ### Changed
 
