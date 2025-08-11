@@ -224,7 +224,7 @@ impl ConstExpr {
         /// A buffer required for translation of Wasm const expressions.
         type TranslationBuffer = SmallVec<[Op; 3]>;
         /// Convenience function to create the various expression operators.
-        fn expr_op<Lhs, Rhs, T>(stack: &mut TranslationBuffer, expr: fn(Lhs, Rhs) -> T)
+        fn expr_op<Lhs, Rhs, T>(stack: &mut TranslationBuffer, expr: fn(Lhs, Rhs) -> T) -> Op
         where
             Lhs: From<UntypedVal> + 'static,
             Rhs: From<UntypedVal> + 'static,
@@ -237,7 +237,7 @@ impl ConstExpr {
             let lhs = stack
                 .pop()
                 .expect("must have lhs operator on the stack due to Wasm validation");
-            let op = match (lhs, rhs) {
+            match (lhs, rhs) {
                 (Op::Const(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
@@ -254,36 +254,29 @@ impl ConstExpr {
                 (Op::Expr(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
-            };
-            stack.push(op);
+            }
         }
 
         let mut reader = expr.get_operators_reader();
         let mut stack = TranslationBuffer::new();
         loop {
-            let op = reader.read().unwrap_or_else(|error| {
+            let wasm_op = reader.read().unwrap_or_else(|error| {
                 panic!("unexpectedly encountered invalid const expression operator: {error}")
             });
-            match op {
-                wasmparser::Operator::I32Const { value } => {
-                    stack.push(Op::constant(value));
-                }
-                wasmparser::Operator::I64Const { value } => {
-                    stack.push(Op::constant(value));
-                }
+            let op = match wasm_op {
+                wasmparser::Operator::I32Const { value } => Op::constant(value),
+                wasmparser::Operator::I64Const { value } => Op::constant(value),
                 wasmparser::Operator::F32Const { value } => {
-                    stack.push(Op::constant(F32::from_bits(value.bits())));
+                    Op::constant(F32::from_bits(value.bits()))
                 }
                 wasmparser::Operator::F64Const { value } => {
-                    stack.push(Op::constant(F64::from_bits(value.bits())));
+                    Op::constant(F64::from_bits(value.bits()))
                 }
                 #[cfg(feature = "simd")]
                 wasmparser::Operator::V128Const { value } => {
-                    stack.push(Op::constant(V128::from(value.i128() as u128)));
+                    Op::constant(V128::from(value.i128() as u128))
                 }
-                wasmparser::Operator::GlobalGet { global_index } => {
-                    stack.push(Op::global(global_index));
-                }
+                wasmparser::Operator::GlobalGet { global_index } => Op::global(global_index),
                 wasmparser::Operator::RefNull { hty } => {
                     let value = match hty {
                         wasmparser::HeapType::Abstract {
@@ -298,11 +291,9 @@ impl ConstExpr {
                             panic!("encountered invalid heap type for `ref.null`: {invalid:?}")
                         }
                     };
-                    stack.push(Op::constant(value));
+                    Op::constant(value)
                 }
-                wasmparser::Operator::RefFunc { function_index } => {
-                    stack.push(Op::funcref(function_index));
-                }
+                wasmparser::Operator::RefFunc { function_index } => Op::funcref(function_index),
                 wasmparser::Operator::I32Add => expr_op(&mut stack, wasm::i32_add),
                 wasmparser::Operator::I32Sub => expr_op(&mut stack, wasm::i32_sub),
                 wasmparser::Operator::I32Mul => expr_op(&mut stack, wasm::i32_mul),
@@ -312,6 +303,7 @@ impl ConstExpr {
                 wasmparser::Operator::End => break,
                 op => panic!("encountered invalid Wasm const expression operator: {op:?}"),
             };
+            stack.push(op);
         }
         reader
             .ensure_end()
