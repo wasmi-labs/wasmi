@@ -243,8 +243,8 @@ impl ConstExprStack {
 
     /// Pops the 2 top-most [`Op`]s from the [`ConstExprStack`] if any.
     pub fn pop2(&mut self) -> Option<(Op, Op)> {
-        let rhs = self.ops.pop()?;
-        let lhs = self.ops.pop()?;
+        let rhs = self.pop()?;
+        let lhs = self.pop()?;
         Some((lhs, rhs))
     }
 }
