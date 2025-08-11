@@ -291,9 +291,9 @@ impl ConstExpr {
         let mut reader = expr.get_operators_reader();
         let mut stack = ConstExprStack::default();
         loop {
-            let wasm_op = reader.read().unwrap_or_else(|error| {
-                panic!("unexpectedly encountered invalid const expression operator: {error}")
-            });
+            let wasm_op = reader
+                .read()
+                .unwrap_or_else(|error| panic!("invalid const expression operator: {error}"));
             let op = match wasm_op {
                 wasmparser::Operator::I32Const { value } => Op::constant(value),
                 wasmparser::Operator::I64Const { value } => Op::constant(value),
@@ -319,7 +319,7 @@ impl ConstExpr {
                             ty: AbstractHeapType::Extern,
                         } => Val::from(<Ref<ExternRef>>::Null),
                         invalid => {
-                            panic!("encountered invalid heap type for `ref.null`: {invalid:?}")
+                            panic!("invalid heap type for `ref.null`: {invalid:?}")
                         }
                     };
                     Op::constant(value)
@@ -332,20 +332,17 @@ impl ConstExpr {
                 wasmparser::Operator::I64Sub => expr_op(&mut stack, wasm::i64_sub),
                 wasmparser::Operator::I64Mul => expr_op(&mut stack, wasm::i64_mul),
                 wasmparser::Operator::End => break,
-                op => panic!("encountered invalid Wasm const expression operator: {op:?}"),
+                op => panic!("unexpected Wasm const expression operator: {op:?}"),
             };
             stack.push(op);
         }
         reader
             .ensure_end()
-            .expect("due to Wasm validation this is guaranteed to succeed");
+            .expect("Wasm validation requires const expressions to have an `end`");
         let op = stack
             .pop()
-            .expect("due to Wasm validation must have one operator on the stack");
-        assert!(
-            stack.is_empty(),
-            "due to Wasm validation operator stack must be empty now"
-        );
+            .expect("must contain the root const expression at this point");
+        debug_assert!(stack.is_empty());
         Self { op }
     }
 
