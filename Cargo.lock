@@ -1703,7 +1703,6 @@ version = "0.49.1"
 dependencies = [
  "assert_matches",
  "criterion",
- "smallvec",
  "spin",
  "wasmi_collections 0.49.1",
  "wasmi_core 0.49.1",

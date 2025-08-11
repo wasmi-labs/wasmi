@@ -16,9 +16,8 @@ use crate::{
     F32,
     F64,
 };
-use alloc::boxed::Box;
-use core::fmt;
-use smallvec::SmallVec;
+use alloc::{boxed::Box, vec::Vec};
+use core::{fmt, mem};
 use wasmparser::AbstractHeapType;
 
 #[cfg(feature = "simd")]
@@ -213,6 +212,48 @@ macro_rules! def_expr {
     }};
 }
 
+/// Stack to translate [`ConstExpr`].
+#[derive(Debug, Default)]
+pub struct ConstExprStack {
+    /// The top-most [`Op`] on the stack.
+    ///
+    /// # Note
+    /// This is an optimization so that the [`ConstExprStack`] does not
+    /// require heap allocations for the common case where only a single
+    /// stack slot is needed.
+    top: Option<Op>,
+    /// The remaining ops on the stack.
+    ops: Vec<Op>,
+}
+
+impl ConstExprStack {
+    /// Returns `true` if [`ConstExprStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.ops.is_empty()
+    }
+
+    /// Pushes an [`Op`] to the [`ConstExprStack`].
+    pub fn push(&mut self, op: Op) {
+        let old_top = self.top.replace(op);
+        if let Some(old_top) = old_top {
+            self.ops.push(old_top);
+        }
+    }
+
+    /// Pops the top-most [`Op`] from the [`ConstExprStack`] if any.
+    pub fn pop(&mut self) -> Option<Op> {
+        let new_top = self.ops.pop();
+        mem::replace(&mut self.top, new_top)
+    }
+
+    /// Pops the 2 top-most [`Op`]s from the [`ConstExprStack`] if any.
+    pub fn pop2(&mut self) -> Option<(Op, Op)> {
+        let rhs = self.pop()?;
+        let lhs = self.pop()?;
+        Some((lhs, rhs))
+    }
+}
+
 impl ConstExpr {
     /// Creates a new [`ConstExpr`] from the given Wasm [`ConstExpr`].
     ///
@@ -221,23 +262,18 @@ impl ConstExpr {
     /// The constructor assumes that Wasm validation already succeeded
     /// on the input Wasm [`ConstExpr`].
     pub fn new(expr: wasmparser::ConstExpr<'_>) -> Self {
-        /// A buffer required for translation of Wasm const expressions.
-        type TranslationBuffer = SmallVec<[Op; 3]>;
         /// Convenience function to create the various expression operators.
-        fn expr_op<Lhs, Rhs, T>(stack: &mut TranslationBuffer, expr: fn(Lhs, Rhs) -> T)
+        fn expr_op<Lhs, Rhs, T>(stack: &mut ConstExprStack, expr: fn(Lhs, Rhs) -> T) -> Op
         where
             Lhs: From<UntypedVal> + 'static,
             Rhs: From<UntypedVal> + 'static,
             T: 'static,
             UntypedVal: From<T>,
         {
-            let rhs = stack
-                .pop()
-                .expect("must have rhs operator on the stack due to Wasm validation");
-            let lhs = stack
-                .pop()
-                .expect("must have lhs operator on the stack due to Wasm validation");
-            let op = match (lhs, rhs) {
+            let (lhs, rhs) = stack
+                .pop2()
+                .expect("must have 2 operators on the stack due to Wasm validation");
+            match (lhs, rhs) {
                 (Op::Const(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
@@ -254,36 +290,29 @@ impl ConstExpr {
                 (Op::Expr(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
-            };
-            stack.push(op);
+            }
         }
 
         let mut reader = expr.get_operators_reader();
-        let mut stack = TranslationBuffer::new();
+        let mut stack = ConstExprStack::default();
         loop {
-            let op = reader.read().unwrap_or_else(|error| {
-                panic!("unexpectedly encountered invalid const expression operator: {error}")
-            });
-            match op {
-                wasmparser::Operator::I32Const { value } => {
-                    stack.push(Op::constant(value));
-                }
-                wasmparser::Operator::I64Const { value } => {
-                    stack.push(Op::constant(value));
-                }
+            let wasm_op = reader
+                .read()
+                .unwrap_or_else(|error| panic!("invalid const expression operator: {error}"));
+            let op = match wasm_op {
+                wasmparser::Operator::I32Const { value } => Op::constant(value),
+                wasmparser::Operator::I64Const { value } => Op::constant(value),
                 wasmparser::Operator::F32Const { value } => {
-                    stack.push(Op::constant(F32::from_bits(value.bits())));
+                    Op::constant(F32::from_bits(value.bits()))
                 }
                 wasmparser::Operator::F64Const { value } => {
-                    stack.push(Op::constant(F64::from_bits(value.bits())));
+                    Op::constant(F64::from_bits(value.bits()))
                 }
                 #[cfg(feature = "simd")]
                 wasmparser::Operator::V128Const { value } => {
-                    stack.push(Op::constant(V128::from(value.i128() as u128)));
+                    Op::constant(V128::from(value.i128() as u128))
                 }
-                wasmparser::Operator::GlobalGet { global_index } => {
-                    stack.push(Op::global(global_index));
-                }
+                wasmparser::Operator::GlobalGet { global_index } => Op::global(global_index),
                 wasmparser::Operator::RefNull { hty } => {
                     let value = match hty {
                         wasmparser::HeapType::Abstract {
@@ -295,14 +324,12 @@ impl ConstExpr {
                             ty: AbstractHeapType::Extern,
                         } => Val::from(<Ref<ExternRef>>::Null),
                         invalid => {
-                            panic!("encountered invalid heap type for `ref.null`: {invalid:?}")
+                            panic!("invalid heap type for `ref.null`: {invalid:?}")
                         }
                     };
-                    stack.push(Op::constant(value));
+                    Op::constant(value)
                 }
-                wasmparser::Operator::RefFunc { function_index } => {
-                    stack.push(Op::funcref(function_index));
-                }
+                wasmparser::Operator::RefFunc { function_index } => Op::funcref(function_index),
                 wasmparser::Operator::I32Add => expr_op(&mut stack, wasm::i32_add),
                 wasmparser::Operator::I32Sub => expr_op(&mut stack, wasm::i32_sub),
                 wasmparser::Operator::I32Mul => expr_op(&mut stack, wasm::i32_mul),
@@ -310,19 +337,17 @@ impl ConstExpr {
                 wasmparser::Operator::I64Sub => expr_op(&mut stack, wasm::i64_sub),
                 wasmparser::Operator::I64Mul => expr_op(&mut stack, wasm::i64_mul),
                 wasmparser::Operator::End => break,
-                op => panic!("encountered invalid Wasm const expression operator: {op:?}"),
+                op => panic!("unexpected Wasm const expression operator: {op:?}"),
             };
+            stack.push(op);
         }
         reader
             .ensure_end()
-            .expect("due to Wasm validation this is guaranteed to succeed");
+            .expect("Wasm validation requires const expressions to have an `end`");
         let op = stack
             .pop()
-            .expect("due to Wasm validation must have one operator on the stack");
-        assert!(
-            stack.is_empty(),
-            "due to Wasm validation operator stack must be empty now"
-        );
+            .expect("must contain the root const expression at this point");
+        debug_assert!(stack.is_empty());
         Self { op }
     }
 
