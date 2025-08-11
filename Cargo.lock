@@ -691,7 +691,7 @@ dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "wasm-smith",
- "wasmi 0.49.1",
+ "wasmi 0.50.0",
  "wasmi_fuzz",
  "wasmprinter 0.228.0",
 ]
@@ -1700,9 +1700,12 @@ dependencies = [
 [[package]]
 name = "wasmi"
 version = "0.49.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef06bf9378af8ea01a0eaa3881d7f8aecb64320f0b9345089426327f99a6dd7e"
 dependencies = [
- "assert_matches",
- "criterion",
+ "arrayvec",
+ "multi-stash",
+ "smallvec",
  "spin",
  "wasmi_collections 0.49.1",
  "wasmi_core 0.49.1",
@@ -1713,17 +1716,14 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "0.49.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef06bf9378af8ea01a0eaa3881d7f8aecb64320f0b9345089426327f99a6dd7e"
+version = "0.50.0"
 dependencies = [
- "arrayvec",
- "multi-stash",
- "smallvec",
+ "assert_matches",
+ "criterion",
  "spin",
- "wasmi_collections 0.49.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasmi_core 0.49.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasmi_ir 0.49.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi_collections 0.50.0",
+ "wasmi_core 0.50.0",
+ "wasmi_ir 0.50.0",
  "wasmparser 0.228.0",
  "wat",
 ]
@@ -1736,22 +1736,22 @@ checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
 name = "wasmi_c_api"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "wasmi_c_api_impl",
 ]
 
 [[package]]
 name = "wasmi_c_api_impl"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
- "wasmi 0.49.1",
+ "wasmi 0.50.0",
  "wasmi_c_api_macros",
 ]
 
 [[package]]
 name = "wasmi_c_api_macros"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1759,21 +1759,13 @@ dependencies = [
 
 [[package]]
 name = "wasmi_cli"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
- "wasmi 0.49.1",
+ "wasmi 0.50.0",
  "wasmi_wasi",
-]
-
-[[package]]
-name = "wasmi_collections"
-version = "0.49.1"
-dependencies = [
- "hashbrown",
- "string-interner",
 ]
 
 [[package]]
@@ -1782,6 +1774,14 @@ version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef49c4cadd5bf63129a114b9406eb1b08a584d6b4b77f097fb4de6f5d3b7960b"
 dependencies = [
+ "string-interner",
+]
+
+[[package]]
+name = "wasmi_collections"
+version = "0.50.0"
+dependencies = [
+ "hashbrown",
  "string-interner",
 ]
 
@@ -1800,13 +1800,6 @@ dependencies = [
 [[package]]
 name = "wasmi_core"
 version = "0.49.1"
-dependencies = [
- "libm",
-]
-
-[[package]]
-name = "wasmi_core"
-version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e7d90693e54bdadfe66532218ea0b5616da07257adc1017328aabad8652a466"
 dependencies = [
@@ -1814,8 +1807,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmi_core"
+version = "0.50.0"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "wasmi_fuzz"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -1823,16 +1823,9 @@ dependencies = [
  "wasm-smith",
  "wasmi 0.31.2",
  "wasmi 0.49.1",
- "wasmi 0.49.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi 0.50.0",
  "wasmprinter 0.228.0",
  "wasmtime",
-]
-
-[[package]]
-name = "wasmi_ir"
-version = "0.49.1"
-dependencies = [
- "wasmi_core 0.49.1",
 ]
 
 [[package]]
@@ -1841,24 +1834,31 @@ version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8575330c8317e50c420fab0ad18a2cd46984a0078b534b165034cb0ee2f6984"
 dependencies = [
- "wasmi_core 0.49.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi_core 0.49.1",
+]
+
+[[package]]
+name = "wasmi_ir"
+version = "0.50.0"
+dependencies = [
+ "wasmi_core 0.50.0",
 ]
 
 [[package]]
 name = "wasmi_wasi"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "wasi-common",
- "wasmi 0.49.1",
+ "wasmi 0.50.0",
  "wiggle",
 ]
 
 [[package]]
 name = "wasmi_wast"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "anyhow",
- "wasmi 0.49.1",
+ "wasmi 0.50.0",
  "wast 228.0.0",
 ]
 
