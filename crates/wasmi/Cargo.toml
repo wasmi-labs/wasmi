@@ -29,7 +29,6 @@ spin = { version = "0.9", default-features = false, features = [
     "spin_mutex",
     "rwlock",
 ] }
-smallvec = { version = "1.13.1", features = ["union"] }
 
 [dev-dependencies]
 assert_matches = "1.5"
