@@ -1,3 +1,8 @@
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
+
 /// Default value for maximum recursion depth.
 const DEFAULT_MAX_RECURSION_DEPTH: usize = 1000;
 
@@ -15,6 +20,18 @@ const DEFAULT_MAX_CACHED_STACKS: usize = 2;
 pub enum StackConfigError {
     /// The given minimum stack height exceeds the maximum stack height.
     MinStackHeightExceedsMax,
+}
+
+impl Error for StackConfigError {}
+
+impl Display for StackConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            StackConfigError::MinStackHeightExceedsMax => {
+                write!(f, "minimum value stack height exceeds maximum stack height")
+            }
+        }
+    }
 }
 
 /// The Wasmi [`Engine`]'s stack configuration.
