@@ -1,5 +1,5 @@
 use std::{fs::File, io::Read as _};
-use wasmi::{Config, StackLimits};
+use wasmi::Config;
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
@@ -24,7 +24,9 @@ pub fn load_wasm_from_file(file_name: &str) -> Vec<u8> {
 pub fn bench_config() -> Config {
     let mut config = Config::default();
     config.wasm_tail_call(true);
-    config.set_stack_limits(StackLimits::new(1024, 1024 * 1024, 64 * 1024).unwrap());
+    config.set_min_stack_height(1024);
+    config.set_max_stack_height(1024 * 1024);
+    config.set_max_recursion_depth(64 * 1024);
     config
 }
 

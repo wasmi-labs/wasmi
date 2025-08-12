@@ -171,6 +171,8 @@ pub mod errors {
 }
 
 #[expect(deprecated)]
+pub use self::engine::StackLimits;
+#[expect(deprecated)]
 pub use self::linker::{state, LinkerBuilder};
 #[expect(deprecated)]
 pub use self::module::InstancePre;
@@ -184,7 +186,6 @@ pub use self::{
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
-        StackLimits,
         TypedResumableCall,
         TypedResumableCallHostTrap,
         TypedResumableCallOutOfFuel,

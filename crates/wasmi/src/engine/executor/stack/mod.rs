@@ -11,7 +11,7 @@ pub use self::{
         ValueStack,
     },
 };
-use crate::{Instance, StackLimits, TrapCode};
+use crate::{engine::StackConfig, Instance, TrapCode};
 
 /// Returns a [`TrapCode`] signalling a stack overflow.
 #[cold]
@@ -32,12 +32,9 @@ impl Stack {
     /// Creates a new [`Stack`] given the [`Config`].
     ///
     /// [`Config`]: [`crate::Config`]
-    pub fn new(limits: StackLimits) -> Self {
-        let calls = CallStack::new(limits.maximum_recursion_depth);
-        let values = ValueStack::new(
-            limits.initial_value_stack_height,
-            limits.maximum_value_stack_height,
-        );
+    pub fn new(config: &StackConfig) -> Self {
+        let calls = CallStack::new(config.max_recursion_depth());
+        let values = ValueStack::new(config.min_stack_height(), config.max_stack_height());
         Self { calls, values }
     }
 

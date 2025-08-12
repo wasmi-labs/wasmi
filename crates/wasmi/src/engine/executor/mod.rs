@@ -24,9 +24,6 @@ use crate::{
     StoreContextMut,
 };
 
-#[cfg(doc)]
-use crate::engine::StackLimits;
-
 use super::{code_map::CodeMap, ResumableError};
 
 mod cache;
@@ -226,7 +223,7 @@ pub struct EngineExecutor<'engine> {
 fn do_nothing<T>(_: &mut T) {}
 
 impl<'engine> EngineExecutor<'engine> {
-    /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
+    /// Creates a new [`EngineExecutor`] for the given [`Stack`].
     fn new(code_map: &'engine CodeMap, stack: &'engine mut Stack) -> Self {
         Self { code_map, stack }
     }
