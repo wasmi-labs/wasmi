@@ -1,9 +1,6 @@
-use super::{EnforcedLimits, StackLimits};
+use super::{EnforcedLimits, StackConfig};
 use crate::core::FuelCostsProvider;
 use wasmparser::WasmFeatures;
-
-/// The default amount of stacks kept in the cache at most.
-const DEFAULT_CACHED_STACKS: usize = 2;
 
 /// Configuration for an [`Engine`].
 ///
@@ -11,9 +8,7 @@ const DEFAULT_CACHED_STACKS: usize = 2;
 #[derive(Debug, Clone)]
 pub struct Config {
     /// The limits set on the value stack and call stack.
-    stack_limits: StackLimits,
-    /// The amount of Wasm stacks to keep in cache at most.
-    cached_stacks: usize,
+    pub(crate) stack: StackConfig,
     /// The Wasm features used when validating or translating functions.
     features: WasmFeatures,
     /// Is `true` if Wasmi executions shall consume fuel.
@@ -48,8 +43,7 @@ pub enum CompilationMode {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            stack_limits: StackLimits::default(),
-            cached_stacks: DEFAULT_CACHED_STACKS,
+            stack: StackConfig::default(),
             features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
@@ -83,30 +77,60 @@ impl Config {
         features
     }
 
-    /// Sets the [`StackLimits`] for the [`Config`].
-    pub fn set_stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
-        self.stack_limits = stack_limits;
-        self
-    }
-
-    /// Returns the [`StackLimits`] of the [`Config`].
-    pub(super) fn stack_limits(&self) -> StackLimits {
-        self.stack_limits
-    }
-
-    /// Sets the maximum amount of cached stacks for reuse for the [`Config`].
+    /// Sets the maximum recursion depth of the [`Engine`]'s stack during execution.
     ///
     /// # Note
     ///
-    /// Defaults to 2.
-    pub fn set_cached_stacks(&mut self, amount: usize) -> &mut Self {
-        self.cached_stacks = amount;
+    /// An execution traps if it exceeds this limits.
+    pub fn set_max_recursion_depth(&mut self, value: usize) -> &mut Self {
+        self.stack.set_max_recursion_depth(value);
         self
     }
 
-    /// Returns the maximum amount of cached stacks for reuse of the [`Config`].
-    pub(super) fn cached_stacks(&self) -> usize {
-        self.cached_stacks
+    /// Sets the minimum (or initial) height of the [`Engine`]'s value stack in bytes.
+    ///
+    /// # Note
+    ///
+    /// - Lower initial heights may improve memory consumption.
+    /// - Higher initial heights may improve cold start times.
+    ///
+    /// # Panics
+    ///
+    /// If `value` is greater than the current maximum height of the value stack.
+    pub fn set_min_stack_height(&mut self, value: usize) -> &mut Self {
+        if self.stack.set_min_stack_height(value).is_err() {
+            let max = self.stack.max_stack_height();
+            panic!("minimum stack height exceeds maximum: min={value}, max={max}");
+        }
+        self
+    }
+
+    /// Sets the maximum height of the [`Engine`]'s value stack in bytes.
+    ///
+    /// # Note
+    ///
+    /// An execution traps if it exceeds this limits.
+    ///
+    /// # Panics
+    ///
+    /// If `value` is less than the current minimum height of the value stack.
+    pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
+        if self.stack.set_max_stack_height(value).is_err() {
+            let max = self.stack.min_stack_height();
+            panic!("maximum stack height is lower than minimum: min={value}, max={max}");
+        }
+        self
+    }
+
+    /// Sets the maximum number of cached stacks for reuse for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// - A higher value may improve execution performance.
+    /// - A lower value may improve memory consumption.
+    pub fn set_max_cached_stacks(&mut self, value: usize) -> &mut Self {
+        self.stack.set_max_cached_stacks(value);
+        self
     }
 
     /// Enable or disable the [`mutable-global`] Wasm proposal for the [`Config`].

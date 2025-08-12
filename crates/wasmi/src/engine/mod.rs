@@ -32,7 +32,7 @@ use self::{
 pub use self::{
     code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
     config::{CompilationMode, Config},
-    limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
+    limits::{EnforcedLimits, EnforcedLimitsError, StackConfig},
     resumable::{
         ResumableCall,
         ResumableCallHostTrap,
@@ -514,19 +514,16 @@ impl ReusableAllocationStack {
 pub struct EngineStacks {
     /// Stacks to be (re)used.
     stacks: Vec<Stack>,
-    /// Stack limits for newly constructed engine stacks.
-    limits: StackLimits,
-    /// How many stacks should be kept for reuse at most.
-    keep: usize,
+    /// The stack configuration.
+    config: StackConfig,
 }
 
 impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackLimits`].
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: &StackConfig) -> Self {
         Self {
             stacks: Vec::new(),
-            limits: config.stack_limits(),
-            keep: config.cached_stacks(),
+            config: *config,
         }
     }
 
@@ -534,13 +531,13 @@ impl EngineStacks {
     pub fn reuse_or_new(&mut self) -> Stack {
         match self.stacks.pop() {
             Some(stack) => stack,
-            None => Stack::new(self.limits),
+            None => Stack::new(&self.config),
         }
     }
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if stack.capacity() > 0 && self.stacks.len() < self.keep {
+        if stack.capacity() > 0 && self.stacks.len() < self.config.max_cached_stacks() {
             self.stacks.push(stack);
         }
     }
@@ -555,7 +552,7 @@ impl EngineInner {
             code_map: CodeMap::new(config),
             func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
             allocs: Mutex::new(ReusableAllocationStack::default()),
-            stacks: Mutex::new(EngineStacks::new(config)),
+            stacks: Mutex::new(EngineStacks::new(&config.stack)),
         }
     }
 

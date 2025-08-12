@@ -184,7 +184,6 @@ pub use self::{
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
-        StackLimits,
         TypedResumableCall,
         TypedResumableCallHostTrap,
         TypedResumableCallOutOfFuel,

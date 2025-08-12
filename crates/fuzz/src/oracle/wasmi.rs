@@ -11,7 +11,6 @@ use wasmi::{
     Instance,
     Linker,
     Module,
-    StackLimits,
     Store,
     StoreLimits,
     StoreLimitsBuilder,
@@ -62,14 +61,9 @@ impl DifferentialOracleMeta for WasmiOracle {
         //
         // We increase the maximum stack space for Wasmi (register) to avoid
         // common stack overflows in certain generated fuzz test cases this way.
-        config.set_stack_limits(
-            StackLimits::new(
-                1024,             // 1 kiB
-                1024 * 1024 * 10, // 10 MiB
-                1024,
-            )
-            .unwrap(),
-        );
+        config.set_min_stack_height(1024); // 1 kiB
+        config.set_min_stack_height(1024 * 1024 * 10); // 10 MiB
+        config.set_max_recursion_depth(1024);
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
         let engine = Engine::new(&config);
