@@ -519,7 +519,7 @@ pub struct EngineStacks {
 }
 
 impl EngineStacks {
-    /// Creates new [`EngineStacks`] with the given [`StackLimits`].
+    /// Creates new [`EngineStacks`] with the given [`StackConfig`].
     pub fn new(config: &StackConfig) -> Self {
         Self {
             stacks: Vec::new(),
