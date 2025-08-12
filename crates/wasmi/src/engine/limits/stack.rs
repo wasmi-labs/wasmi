@@ -76,7 +76,7 @@ impl StackConfig {
     }
 
     /// Sets the maximum number of stacks that the [`Engine`] keeps for reuse.
-    /// 
+    ///
     /// [`Engine`]: crate::Engine
     pub fn set_max_cached_stacks(&mut self, value: usize) {
         self.max_recursion_depth = value;
@@ -98,7 +98,7 @@ impl StackConfig {
     }
 
     /// Returns the maximum number of stacks that the [`Engine`] keeps for reuse.
-    /// 
+    ///
     /// [`Engine`]: crate::Engine
     pub fn max_cached_stacks(&mut self) -> usize {
         self.max_cached_stacks
