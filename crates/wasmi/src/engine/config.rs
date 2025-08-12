@@ -82,6 +82,8 @@ impl Config {
     /// # Note
     ///
     /// An execution traps if it exceeds this limits.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     pub fn set_max_recursion_depth(&mut self, value: usize) -> &mut Self {
         self.stack.set_max_recursion_depth(value);
         self
@@ -97,6 +99,8 @@ impl Config {
     /// # Panics
     ///
     /// If `value` is greater than the current maximum height of the value stack.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     pub fn set_min_stack_height(&mut self, value: usize) -> &mut Self {
         if self.stack.set_min_stack_height(value).is_err() {
             let max = self.stack.max_stack_height();
@@ -114,6 +118,8 @@ impl Config {
     /// # Panics
     ///
     /// If `value` is less than the current minimum height of the value stack.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
         if self.stack.set_max_stack_height(value).is_err() {
             let max = self.stack.min_stack_height();
