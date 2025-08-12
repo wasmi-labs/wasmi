@@ -11,6 +11,8 @@ mod traits;
 mod translator;
 mod utils;
 
+#[expect(deprecated)]
+pub use self::limits::StackLimits;
 pub(crate) use self::{
     block_type::BlockType,
     executor::Stack,
