@@ -45,6 +45,7 @@ impl ActiveElementSegment {
     }
 }
 
+#[cfg(feature = "parser")]
 impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
     fn from(element_kind: wasmparser::ElementKind<'_>) -> Self {
         match element_kind {
@@ -65,6 +66,7 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
     }
 }
 
+#[cfg(feature = "parser")]
 impl From<wasmparser::Element<'_>> for ElementSegment {
     fn from(element: wasmparser::Element<'_>) -> Self {
         let kind = ElementSegmentKind::from(element.kind);

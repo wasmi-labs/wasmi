@@ -2,7 +2,8 @@
     test,
     feature = "std",
     feature = "serialization",
-    feature = "deserialization"
+    feature = "deserialization",
+    feature = "parser",
 ))]
 
 use super::*;
@@ -111,7 +112,7 @@ fn test_serialize_simple_module() {
     use core::mem::discriminant;
 
     let (module, engine) = create_simple_module();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
 
     // Verify serialized data is not empty
     assert!(!serialized.is_empty());
@@ -136,7 +137,7 @@ fn test_serialize_module_with_imports() {
     use core::mem::discriminant;
 
     let (module, engine) = create_module_with_imports();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
 
     // Verify serialized data is not empty
     assert!(!serialized.is_empty());
@@ -160,7 +161,7 @@ fn test_serialize_module_with_imports() {
 #[test]
 fn test_serialize_module_with_memory() {
     let (module, engine) = create_module_with_memory();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
 
     // Verify serialized data is not empty
     assert!(!serialized.is_empty());
@@ -183,7 +184,7 @@ fn test_serialize_module_with_memory() {
 #[test]
 fn test_serialize_module_with_tables() {
     let (module, engine) = create_module_with_tables();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
 
     // Verify serialized data is not empty
     assert!(!serialized.is_empty());
@@ -206,7 +207,7 @@ fn test_serialize_module_with_tables() {
 #[test]
 fn test_serialize_module_with_globals() {
     let (module, engine) = create_module_with_globals();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
 
     // Verify serialized data is not empty
     assert!(!serialized.is_empty());
@@ -229,7 +230,7 @@ fn test_serialize_module_with_globals() {
 #[test]
 fn test_serialize_deserialize_roundtrip() {
     let (module, engine) = create_simple_module();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
     let (deserialized, deser_engine) = deserialize_module(&serialized).unwrap();
 
     // Verify the deserialized module can be instantiated
@@ -278,7 +279,7 @@ fn test_serialize_empty_module() {
     .unwrap();
     let module = Module::new(&engine, wasm).unwrap();
 
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
     assert!(!serialized.is_empty());
 
     let (deserialized, _engine) = deserialize_module(&serialized).unwrap();
@@ -313,7 +314,7 @@ fn test_serialize_large_module() {
     let wasm = wat::parse_str(&wat).unwrap();
     let module = Module::new(&engine, wasm).unwrap();
 
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
     assert!(!serialized.is_empty());
 
     let (deserialized, _engine) = deserialize_module(&serialized).unwrap();
@@ -323,7 +324,7 @@ fn test_serialize_large_module() {
 #[test]
 fn test_feature_compatibility() {
     let (module, engine) = create_simple_module();
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
 
     let (deserialized, _engine) = deserialize_module(&serialized).unwrap();
     assert_eq!(deserialized.exports().count(), 1);
@@ -332,7 +333,7 @@ fn test_feature_compatibility() {
 #[test]
 fn test_serialize_deserialize_simple_module_with_imports() {
     use crate::func::{Func, TypedFunc};
-    use crate::serialization::{deserialize_module, serialize_module, RequiredFeatures};
+    use crate::serialization::{deserialize_module, serialize_module};
     use crate::{Engine, Linker, Module, Store};
 
     // Create a simple WAT module with imports
@@ -401,9 +402,7 @@ fn test_serialize_deserialize_simple_module_with_imports() {
     assert_eq!(result, 8);
 
     // Serialize the module
-    let features = RequiredFeatures::default();
-    let serialized =
-        serialize_module(&module, &features, &engine).expect("Failed to serialize module");
+    let serialized = serialize_module(&module, &engine).expect("Failed to serialize module");
 
     // Deserialize the module
     let (deserialized_module, deserialized_engine) =
@@ -452,7 +451,7 @@ fn test_serialize_deserialize_simple_module_with_imports() {
 #[test]
 fn test_serialize_deserialize_module_with_global_imports() {
     use crate::func::Func;
-    use crate::serialization::{deserialize_module, serialize_module, RequiredFeatures};
+    use crate::serialization::{deserialize_module, serialize_module};
     use crate::{Engine, Global, Linker, Module, Store};
 
     // Create a WAT module with multiple global imports of the same type
@@ -526,9 +525,7 @@ fn test_serialize_deserialize_module_with_global_imports() {
     assert_eq!(result_b[0].i32().expect("Expected i32"), 100);
 
     // Serialize the module
-    let features = RequiredFeatures::default();
-    let serialized =
-        serialize_module(&module, &features, &engine).expect("Failed to serialize module");
+    let serialized = serialize_module(&module, &engine).expect("Failed to serialize module");
 
     // Deserialize the module
     let (deserialized_module, deserialized_engine) =
@@ -602,7 +599,7 @@ fn test_serialize_deserialize_module_with_global_imports() {
 #[test]
 fn test_serialize_deserialize_module_with_global_exports() {
     use crate::func::TypedFunc;
-    use crate::serialization::{deserialize_module, serialize_module, RequiredFeatures};
+    use crate::serialization::{deserialize_module, serialize_module};
     use crate::{Engine, Module, Store};
 
     // Create a WAT module with global exports similar to the large module
@@ -623,9 +620,7 @@ fn test_serialize_deserialize_module_with_global_exports() {
     let module = Module::new(&engine, wat).expect("Failed to parse module");
 
     // Serialize the module
-    let features = RequiredFeatures::default();
-    let serialized =
-        serialize_module(&module, &features, &engine).expect("Failed to serialize module");
+    let serialized = serialize_module(&module, &engine).expect("Failed to serialize module");
 
     // Deserialize the module
     let (deserialized_module, deser_engine) =
@@ -690,7 +685,7 @@ fn test_serialize_deserialize_table_basic() {
     assert!(table_export.is_some(), "Table export should exist");
 
     // Now test serialization/deserialization
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
     assert!(!serialized.is_empty());
 
     let (deserialized, engine) = deserialize_module(&serialized).unwrap();
@@ -777,7 +772,7 @@ fn test_serialize_deserialize_table_with_elements() {
     assert_eq!(results[0].i32().unwrap(), 456);
 
     // Now test serialization/deserialization
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
     assert!(!serialized.is_empty());
 
     let (deserialized, deser_engine) = deserialize_module(&serialized).unwrap();
@@ -902,7 +897,7 @@ fn test_serialize_deserialize_element_segments() {
     }
 
     // Now test serialization/deserialization
-    let serialized = serialize_module(&module, &RequiredFeatures::default(), &engine).unwrap();
+    let serialized = serialize_module(&module, &engine).unwrap();
     assert!(!serialized.is_empty());
 
     let (deserialized, engine) = deserialize_module(&serialized).unwrap();

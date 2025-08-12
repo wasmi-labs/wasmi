@@ -5,7 +5,7 @@
 
 extern crate alloc;
 use crate::serialization::serialized_module::types::{
-    SerializedExport, SerializedFeatures, SerializedFuncType, SerializedGlobal, SerializedImport,
+    SerializedExport, SerializedFuncType, SerializedGlobal, SerializedImport,
     SerializedInternalFunc,
 };
 use alloc::vec::Vec;
@@ -30,8 +30,6 @@ pub const SERIALIZATION_VERSION: u32 = 1;
 pub struct SerializedModule {
     /// Format version for compatibility checking.
     pub version: u32,
-    /// Required Wasm features for this module.
-    pub(crate) required_features: SerializedFeatures,
     /// Function types (deduplicated).
     pub(crate) func_types: Vec<SerializedFuncType>,
     /// Import declarations.

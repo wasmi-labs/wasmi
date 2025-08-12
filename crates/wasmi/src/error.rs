@@ -1,10 +1,5 @@
 use super::errors::{
-    EnforcedLimitsError,
-    FuncError,
-    GlobalError,
-    InstantiationError,
-    IrError,
-    LinkerError,
+    EnforcedLimitsError, FuncError, GlobalError, InstantiationError, IrError, LinkerError,
 };
 use crate::{
     engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
@@ -13,8 +8,14 @@ use crate::{
 };
 use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};
+
 use wasmi_core::{FuelError, HostError, MemoryError, TableError};
+
+#[cfg(feature = "parser")]
 use wasmparser::BinaryReaderError as WasmError;
+
+#[cfg(feature = "parser")]
+use crate::engine::TranslationError;
 
 #[cfg(feature = "wat")]
 use wat::Error as WatError;
@@ -219,8 +220,10 @@ pub enum ErrorKind {
     Func(FuncError),
     /// Encountered when there is a problem with the Wasm input stream.
     Read(ReadError),
+    #[cfg(feature = "parser")]
     /// Encountered when there is a Wasm parsing or validation error.
     Wasm(WasmError),
+    #[cfg(feature = "parser")]
     /// Encountered when there is a Wasm to Wasmi translation error.
     Translation(TranslationError),
     /// Encountered when an enforced limit is exceeded.
@@ -303,7 +306,9 @@ impl Display for ErrorKind {
             Self::Instantiation(error) => Display::fmt(error, f),
             Self::Fuel(error) => Display::fmt(error, f),
             Self::Read(error) => Display::fmt(error, f),
+            #[cfg(feature = "parser")]
             Self::Wasm(error) => Display::fmt(error, f),
+            #[cfg(feature = "parser")]
             Self::Translation(error) => Display::fmt(error, f),
             Self::Limits(error) => Display::fmt(error, f),
             Self::ResumableHostTrap(error) => Display::fmt(error, f),
@@ -328,6 +333,8 @@ macro_rules! impl_from {
         )*
     }
 }
+
+#[cfg(feature = "parser")]
 impl_from! {
     impl From<TrapCode> for Error::TrapCode;
     impl From<GlobalError> for Error::Global;
@@ -335,8 +342,25 @@ impl_from! {
     impl From<TableError> for Error::Table;
     impl From<LinkerError> for Error::Linker;
     impl From<InstantiationError> for Error::Instantiation;
-    impl From<TranslationError> for Error::Translation;
     impl From<WasmError> for Error::Wasm;
+    impl From<TranslationError> for Error::Translation;
+    impl From<ReadError> for Error::Read;
+    impl From<FuelError> for Error::Fuel;
+    impl From<FuncError> for Error::Func;
+    impl From<EnforcedLimitsError> for Error::Limits;
+    impl From<ResumableHostTrapError> for Error::ResumableHostTrap;
+    impl From<ResumableOutOfFuelError> for Error::ResumableOutOfFuel;
+    impl From<IrError> for Error::Ir;
+}
+
+#[cfg(not(feature = "parser"))]
+impl_from! {
+    impl From<TrapCode> for Error::TrapCode;
+    impl From<GlobalError> for Error::Global;
+    impl From<MemoryError> for Error::Memory;
+    impl From<TableError> for Error::Table;
+    impl From<LinkerError> for Error::Linker;
+    impl From<InstantiationError> for Error::Instantiation;
     impl From<ReadError> for Error::Read;
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;

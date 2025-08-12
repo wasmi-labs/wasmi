@@ -387,6 +387,7 @@ impl ModuleBuilder {
         self.data_segments.reserve(additional);
     }
 
+    #[cfg(feature = "parser")]
     /// Push another parsed data segment to the [`ModuleBuilder`].
     pub fn push_data_segment(&mut self, data: wasmparser::Data) -> Result<(), Error> {
         self.data_segments.push_data_segment(data)

@@ -9,15 +9,12 @@
 use super::FuncIdx;
 use crate::{
     core::{wasm, UntypedVal},
-    ExternRef,
-    Func,
-    Ref,
-    Val,
-    F32,
-    F64,
+    ExternRef, Func, Ref, Val, F32, F64,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
+
+#[cfg(feature = "parser")]
 use wasmparser::AbstractHeapType;
 
 #[cfg(feature = "simd")]
@@ -254,6 +251,49 @@ impl ConstExprStack {
     }
 }
 
+/// Stack to translate [`ConstExpr`].
+#[derive(Debug, Default)]
+pub struct ConstExprStack {
+    /// The top-most [`Op`] on the stack.
+    ///
+    /// # Note
+    /// This is an optimization so that the [`ConstExprStack`] does not
+    /// require heap allocations for the common case where only a single
+    /// stack slot is needed.
+    top: Option<Op>,
+    /// The remaining ops on the stack.
+    ops: Vec<Op>,
+}
+
+impl ConstExprStack {
+    /// Returns `true` if [`ConstExprStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.ops.is_empty()
+    }
+
+    /// Pushes an [`Op`] to the [`ConstExprStack`].
+    pub fn push(&mut self, op: Op) {
+        let old_top = self.top.replace(op);
+        if let Some(old_top) = old_top {
+            self.ops.push(old_top);
+        }
+    }
+
+    /// Pops the top-most [`Op`] from the [`ConstExprStack`] if any.
+    pub fn pop(&mut self) -> Option<Op> {
+        let new_top = self.ops.pop();
+        mem::replace(&mut self.top, new_top)
+    }
+
+    /// Pops the 2 top-most [`Op`]s from the [`ConstExprStack`] if any.
+    pub fn pop2(&mut self) -> Option<(Op, Op)> {
+        let rhs = self.pop()?;
+        let lhs = self.pop()?;
+        Some((lhs, rhs))
+    }
+}
+
+#[cfg(feature = "parser")]
 impl ConstExpr {
     /// Creates a new [`ConstExpr`] from the given Wasm [`ConstExpr`].
     ///
@@ -350,7 +390,9 @@ impl ConstExpr {
         debug_assert!(stack.is_empty());
         Self { op }
     }
+}
 
+impl ConstExpr {
     /// Create a new `ref.func x` [`ConstExpr`].
     ///
     /// # Note

@@ -8,13 +8,13 @@ use crate::Engine;
 use wasmi_core::ReadAs;
 extern crate alloc;
 use crate::serialization::serialized_module::types::{
-    SerializedConstExpr, SerializedExport, SerializedFeatures, SerializedFuncType,
-    SerializedGlobal, SerializedGlobalType, SerializedImport, SerializedInternalFunc,
+    SerializedConstExpr, SerializedExport, SerializedFuncType, SerializedGlobal,
+    SerializedGlobalType, SerializedImport, SerializedInternalFunc,
 };
-use crate::{serialization::RequiredFeatures, ExternType, Module};
+use crate::{ExternType, Module};
 use alloc::vec::Vec;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parser"))]
 mod tests;
 
 /// Serializes a Wasmi module to a compact binary format.
@@ -33,10 +33,9 @@ mod tests;
 /// Returns a `SerializationError` if serialization fails.
 pub fn serialize_module(
     module: &crate::Module,
-    features: &RequiredFeatures,
     engine: &Engine,
 ) -> Result<alloc::vec::Vec<u8>, SerializationError> {
-    let ser = SerializedModule::from_module(module, features, engine)?;
+    let ser = SerializedModule::from_module(module, engine)?;
     postcard::to_allocvec(&ser).map_err(|_e| SerializationError::SerializationFailed {
         cause: "postcard serialization failed",
     })
@@ -45,7 +44,6 @@ pub fn serialize_module(
 impl SerializedModule {
     pub(crate) fn from_module(
         module: &Module,
-        features: &RequiredFeatures,
         engine: &Engine,
     ) -> Result<Self, crate::serialization::error::SerializationError> {
         let engine_config = engine.config();
@@ -216,12 +214,6 @@ impl SerializedModule {
 
         Ok(SerializedModule {
             version: SERIALIZATION_VERSION,
-            required_features: SerializedFeatures {
-                simd: features.simd,
-                bulk_memory: features.bulk_memory,
-                reference_types: features.reference_types,
-                tail_calls: features.tail_calls,
-            },
             func_types,
             imports,
             internal_functions,

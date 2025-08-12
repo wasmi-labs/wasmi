@@ -9,8 +9,6 @@ use wasmi::{
 use crate::args::SerializeArgs;
 
 pub(super) fn serialize(args: SerializeArgs) -> Result<()> {
-    let required_features = args.to_required_features();
-    println!("req feautures: {required_features:?}");
     let engine = wasmi::Engine::default();
 
     let wasm_file = args.module;
@@ -20,16 +18,15 @@ pub(super) fn serialize(args: SerializeArgs) -> Result<()> {
         anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
     })?;
 
-    let bytes = serialize_module(&module, &required_features)
+    let bytes = serialize_module(&module, &engine)
         .map_err(|error| anyhow!("failed to serialize Wasm module {wasm_file:?}: {error}"))?;
 
     let output = args
         .output
         .unwrap_or_else(|| wasm_file.with_extension("wasm.ser"));
 
-    let other_engine = Engine::default();
-    let _deser_module =
-        deserialize_module(&other_engine, &bytes).expect("failed to deserialize back");
+    let (deser_module, other_engine) =
+        deserialize_module(&bytes).expect("failed to deserialize back");
 
     if output == PathBuf::from("-") {
         std::io::stdout().write_all(&bytes)?;
@@ -38,9 +35,8 @@ pub(super) fn serialize(args: SerializeArgs) -> Result<()> {
     }
 
     let read_bytes = fs::read(&output).expect("failed to read bytes");
-    let other_engine = Engine::default();
-    let _deser_module =
-        deserialize_module(&other_engine, &read_bytes).expect("failed to deserialize back");
+    let (deser_module, other_engine) =
+        deserialize_module(&read_bytes).expect("failed to deserialize back");
 
     println!("deser from read okay");
 

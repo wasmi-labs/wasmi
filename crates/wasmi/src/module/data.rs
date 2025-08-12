@@ -144,6 +144,7 @@ impl DataSegmentsBuilder {
     /// # Panics
     ///
     /// If an active data segment has too many bytes.
+    #[cfg(feature = "parser")]
     pub fn push_data_segment(&mut self, segment: wasmparser::Data) -> Result<(), Error> {
         match segment.kind {
             wasmparser::DataKind::Passive => {

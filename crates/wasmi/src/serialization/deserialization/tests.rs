@@ -1,5 +1,5 @@
 use crate::{
-    serialization::{deserialize_module, serialize_module, RequiredFeatures},
+    serialization::{deserialize_module, serialize_module},
     Engine, Linker, Module, Store,
 };
 use alloc::vec::Vec;
@@ -18,10 +18,9 @@ fn imports_roundtrip() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = RequiredFeatures::default();
     // Serialize
-    let ser = crate::serialization::SerializedModule::from_module(&module, &features, &engine)
-        .expect("serialize");
+    let ser =
+        crate::serialization::SerializedModule::from_module(&module, &engine).expect("serialize");
     let bytes = postcard::to_allocvec(&ser).expect("postcard serialize");
     // Deserialize
     let (deser_mod, _other_engine) = deserialize_module(&bytes).expect("failed to deserialize");
@@ -64,10 +63,9 @@ fn addition_module_serialize_deserialize_and_run() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = RequiredFeatures::default();
     // Serialize
-    let ser = crate::serialization::SerializedModule::from_module(&module, &features, &engine)
-        .expect("serialize");
+    let ser =
+        crate::serialization::SerializedModule::from_module(&module, &engine).expect("serialize");
     let bytes = postcard::to_allocvec(&ser).expect("postcard serialize");
     // Deserialize with a new engine
     let (deser_mod, other_engine) =
@@ -100,10 +98,9 @@ fn memory_export_roundtrip() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = RequiredFeatures::default();
 
     // Serialize
-    let bytes = serialize_module(&module, &features, &engine).expect("failed to serialize module");
+    let bytes = serialize_module(&module, &engine).expect("failed to serialize module");
 
     // Deserialize with a new engine
     let (deser_mod, other_engine) =
@@ -159,14 +156,7 @@ fn module_with_host_import_roundtrip() {
     let module = crate::Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
 
     // Serialize the module
-    let features = crate::serialization::RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let bytes = serialize_module(&module, &features, &engine).expect("failed to serialize module");
+    let bytes = serialize_module(&module, &engine).expect("failed to serialize module");
 
     // Deserialize with a new engine
     let (deserialized_module, new_engine) =

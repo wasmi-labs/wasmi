@@ -1,8 +1,6 @@
 use super::*;
 use crate::{
-    serialization::{
-        serialized_module::types::SerializedValType, RequiredFeatures, SerializedExternType,
-    },
+    serialization::{serialized_module::types::SerializedValType, SerializedExternType},
     Engine, Module,
 };
 use wat::parse_str as parse_wat;
@@ -14,14 +12,7 @@ fn serialization_succeeds() {
     let wasm_bytes = parse_wat(wat).expect("Failed to parse WAT");
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let result = SerializedModule::from_module(&module, &features, &engine);
+    let result = SerializedModule::from_module(&module, &engine);
     assert!(
         result.is_ok(),
         "from_module should succeed for minimal module"
@@ -75,14 +66,7 @@ fn functions_extraction() {
     let wasm_bytes = parse_wat(wat).expect("Failed to parse WAT");
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let result = SerializedModule::from_module(&module, &features, &engine);
+    let result = SerializedModule::from_module(&module, &engine);
     assert!(
         result.is_ok(),
         "from_module should succeed for multi-func module"
@@ -375,14 +359,7 @@ fn internal_func_indices_are_correct() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = crate::Engine::default();
     let module = crate::Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = crate::serialization::RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let serialized = super::SerializedModule::from_module(&module, &features, &engine)
+    let serialized = super::SerializedModule::from_module(&module, &engine)
         .expect("Serialization should succeed");
     // There are 2 imported and 3 internal functions, so internal_functions should have length 3
     assert_eq!(serialized.internal_functions.len(), 3);
@@ -406,14 +383,8 @@ fn active_data_segment_bytes_are_preserved() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = crate::Engine::default();
     let module = crate::Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = crate::serialization::RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let serialized = super::SerializedModule::from_module(&module, &features, &engine)
+
+    let serialized = super::SerializedModule::from_module(&module, &engine)
         .expect("Serialization should succeed");
     // There should be one data segment
     assert_eq!(serialized.data_segments.len(), 1);
@@ -440,14 +411,7 @@ fn passive_data_segment_bytes_are_preserved() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = crate::Engine::default();
     let module = crate::Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = crate::serialization::RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let serialized = super::SerializedModule::from_module(&module, &features, &engine)
+    let serialized = super::SerializedModule::from_module(&module, &engine)
         .expect("Serialization should succeed");
     // There should be one data segment
     assert_eq!(serialized.data_segments.len(), 1);
@@ -475,14 +439,7 @@ fn mixed_active_and_passive_data_segments_are_preserved() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = crate::Engine::default();
     let module = crate::Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = crate::serialization::RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let serialized = super::SerializedModule::from_module(&module, &features, &engine)
+    let serialized = super::SerializedModule::from_module(&module, &engine)
         .expect("Serialization should succeed");
     // There should be four data segments
     assert_eq!(serialized.data_segments.len(), 4);
@@ -529,14 +486,8 @@ fn compiled_function_bytes_roundtrip() {
     let wasm_bytes = wat::parse_str(wat).expect("Failed to parse WAT");
     let engine = crate::Engine::default();
     let module = crate::Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let features = crate::serialization::RequiredFeatures {
-        simd: false,
-        bulk_memory: false,
-        reference_types: false,
-        tail_calls: false,
-        function_references: false,
-    };
-    let serialized = super::SerializedModule::from_module(&module, &features, &engine)
+
+    let serialized = super::SerializedModule::from_module(&module, &engine)
         .expect("Serialization should succeed");
     // For now, compiled_funcs is empty, so let's just check the engine's code for the internal function
     // Get the function index for the internal function (should be 0, as there are no imports)

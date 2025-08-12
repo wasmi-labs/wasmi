@@ -17,7 +17,10 @@ exclude = ["benches/wat", "benches/wasm", "tests/spec/testsuite", "**.wast"]
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
-wasmparser = { workspace = true, features = ["validate", "features"] }
+wasmparser = { workspace = true, features = [
+    "validate",
+    "features",
+], optional = true }
 wat = { workspace = true, optional = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
@@ -37,7 +40,7 @@ assert_matches = "1.5"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["std", "wat"]
+default = ["std", "wat", "parser"]
 std = [
     "wasmi_core/std",
     "wasmi_collections/std",
@@ -54,6 +57,10 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
+
+# New feature flags for parser and translation
+parser = ["dep:wasmparser", "wasmparser/validate", "wasmparser/features"]
+translation = ["parser"]                                                  # Translation implies parser
 
 serialization = [
     "dep:serde",

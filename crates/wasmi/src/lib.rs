@@ -88,7 +88,7 @@ extern crate std;
 #[macro_use]
 mod foreach_tuple;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parser"))]
 pub mod tests;
 
 pub mod serialization;

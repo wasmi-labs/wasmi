@@ -7,18 +7,14 @@ mod global;
 mod import;
 pub(crate) mod init_expr;
 mod instantiate;
-mod parser;
 mod read;
+
+#[cfg(feature = "parser")]
 pub(crate) mod utils;
 
-use self::{
-    builder::ModuleBuilder,
-    custom_section::{CustomSections, CustomSectionsBuilder},
-    export::ExternIdx,
-    global::Global,
-    import::{ExternTypeIdx, Import},
-    parser::ModuleParser,
-};
+#[cfg(feature = "parser")]
+mod parser;
+
 pub use self::{
     custom_section::{CustomSection, CustomSectionsIter},
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
@@ -27,20 +23,36 @@ pub use self::{
     instantiate::InstantiationError,
     read::{Read, ReadError},
 };
+use self::{
+    custom_section::{CustomSections, CustomSectionsBuilder},
+    export::ExternIdx,
+    global::Global,
+    import::{ExternTypeIdx, Import},
+};
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
     element::{ElementSegment, ElementSegmentKind},
     init_expr::ConstExpr,
-    utils::WasmiValueType,
 };
 use crate::{
     collections::{map::Iter as MapIter, Map},
     engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
-    Engine, Error, ExternType, FuncType, GlobalType, MemoryType, TableType,
+    Engine, ExternType, FuncType, GlobalType, MemoryType, TableType,
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
+
+#[cfg(feature = "parser")]
+use self::parser::ModuleParser;
+#[cfg(feature = "parser")]
 use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
+
+#[cfg(feature = "parser")]
+use self::builder::ModuleBuilder;
+#[cfg(feature = "parser")]
+pub(crate) use self::utils::WasmiValueType;
+#[cfg(feature = "parser")]
+use crate::Error;
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug, Clone)]
@@ -200,7 +212,34 @@ impl ModuleImports {
     }
 }
 
+#[cfg(feature = "parser")]
 impl Module {
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode stream.
+    ///
+    /// # Note
+    ///
+    /// This parses, validates and translates the Wasm bytecode yielded by `stream`.
+    ///
+    /// # Errors
+    ///
+    /// - If the Wasm bytecode is malformed or fails to validate.
+    /// - If the Wasm bytecode violates restrictions
+    ///   set in the [`Config`] used by the `engine`.
+    /// - If Wasmi cannot translate the Wasm bytecode.
+    ///
+    /// [`Config`]: crate::Config
+    #[deprecated(
+        since = "0.48.0",
+        note = "\
+            This API has been deprecated because it is inefficient and unserused. \
+            Please use the `Module::new` API instead if possible. \
+            If you have an urgent need for this API, please tell us at: https://github.com/wasmi-labs/wasmi \
+        "
+    )]
+    pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
+        ModuleParser::new(engine).parse_streaming(stream)
+    }
+
     /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
     ///
     /// # Note
@@ -249,20 +288,6 @@ impl Module {
         unsafe { parser.parse_buffered_unchecked(wasm) }
     }
 
-    /// Returns the [`Engine`] used during creation of the [`Module`].
-    pub fn engine(&self) -> &Engine {
-        &self.inner.engine
-    }
-
-    pub fn header(&self) -> &ModuleHeader {
-        &self.inner.header
-    }
-
-    /// Returns a shared reference to the [`ModuleHeaderInner`].
-    fn module_header(&self) -> &ModuleHeaderInner {
-        &self.inner.header.inner
-    }
-
     /// Validates `wasm` as a WebAssembly binary given the configuration (via [`Config`]) in `engine`.
     ///
     /// This function performs Wasm validation of the binary input WebAssembly module and
@@ -294,6 +319,22 @@ impl Module {
             }
         }
         Ok(())
+    }
+}
+
+impl Module {
+    /// Returns the [`Engine`] used during creation of the [`Module`].
+    pub fn engine(&self) -> &Engine {
+        &self.inner.engine
+    }
+
+    pub fn header(&self) -> &ModuleHeader {
+        &self.inner.header
+    }
+
+    /// Returns a shared reference to the [`ModuleHeaderInner`].
+    fn module_header(&self) -> &ModuleHeaderInner {
+        &self.inner.header.inner
     }
 
     /// Returns the number of non-imported functions of the [`Module`].

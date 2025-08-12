@@ -25,13 +25,3 @@ mod serialization;
 pub use serialization::serialize_module;
 
 mod tests;
-
-/// Configuration specifying which features are required by the target.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct RequiredFeatures {
-    pub simd: bool,
-    pub bulk_memory: bool,
-    pub reference_types: bool,
-    pub tail_calls: bool,
-    pub function_references: bool,
-}

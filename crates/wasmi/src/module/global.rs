@@ -1,5 +1,8 @@
-use super::{utils::FromWasmparser as _, ConstExpr};
+use super::ConstExpr;
 use crate::GlobalType;
+
+#[cfg(feature = "parser")]
+use super::utils::FromWasmparser;
 
 /// The index of a global variable within a [`Module`].
 ///
@@ -36,6 +39,7 @@ pub struct Global {
     init_expr: ConstExpr,
 }
 
+#[cfg(feature = "parser")]
 impl From<wasmparser::Global<'_>> for Global {
     fn from(global: wasmparser::Global<'_>) -> Self {
         let global_type = GlobalType::from_wasmparser(global.ty);

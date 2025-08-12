@@ -25,7 +25,7 @@ use crate::module::export::TableIdx;
 use crate::module::init_expr::{ConstExpr, Op};
 use wasmi_core::ValType;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parser"))]
 mod tests;
 
 /// Deserializes a Wasmi module from a compact binary format.
@@ -66,19 +66,7 @@ pub fn deserialize_module(data: &[u8]) -> Result<(Module, Engine), Deserializati
 pub(super) fn set_engine_features(
     ser_mod: &SerializedModule,
 ) -> Result<Engine, DeserializationError> {
-    // TODO : find some nice way to communicate which features are ignored / not supported on embedded
-    let wasm_features = &ser_mod.required_features;
     let mut engine_config = Config::default();
-
-    if wasm_features.bulk_memory {
-        engine_config.wasm_bulk_memory(true);
-    };
-    if wasm_features.reference_types {
-        engine_config.wasm_reference_types(true);
-    }
-    if wasm_features.tail_calls {
-        engine_config.wasm_tail_call(true);
-    }
 
     engine_config.consume_fuel(ser_mod.engine_config.use_fuel);
     engine_config.compilation_mode(crate::CompilationMode::Eager); // just always setting this for now

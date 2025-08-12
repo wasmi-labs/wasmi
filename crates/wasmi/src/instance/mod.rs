@@ -1,33 +1,20 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 pub use self::exports::{Export, ExportsIter, Extern, ExternType};
 use super::{
-    engine::DedupFuncType,
-    AsContext,
-    Func,
-    Global,
-    Memory,
-    Module,
-    StoreContext,
-    Stored,
-    Table,
+    engine::DedupFuncType, AsContext, Func, Global, Memory, Module, StoreContext, Stored, Table,
 };
 use crate::{
     collections::{arena::ArenaIndex, Map},
     func::FuncError,
     memory::DataSegment,
-    AsContextMut,
-    ElementSegment,
-    Error,
-    TypedFunc,
-    WasmParams,
-    WasmResults,
+    AsContextMut, ElementSegment, Error, TypedFunc, WasmParams, WasmResults,
 };
 use alloc::{boxed::Box, sync::Arc};
 
 mod builder;
 mod exports;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parser"))]
 mod tests;
 
 /// A raw index to a module instance entity.

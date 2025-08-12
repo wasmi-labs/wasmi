@@ -5,26 +5,34 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
     collections::arena::{Arena, ArenaIndex},
     core::{Fuel, FuelCostsProvider, UntypedVal},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     errors::FuelError,
     ir::{index::InternalFunc, Instruction},
-    module::{FuncIdx, ModuleHeader},
-    Config,
-    Error,
+    Config, Error,
 };
 use alloc::boxed::Box;
 use core::{
-    fmt,
-    mem::{self, MaybeUninit},
+    mem::{self},
     ops::{self, Range},
     pin::Pin,
     slice,
 };
 use spin::Mutex;
+
+#[cfg(feature = "parser")]
+use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
+#[cfg(feature = "parser")]
+use crate::{
+    core::{FuelCostsProvider, FuelError},
+    engine::ResumableOutOfFuelError,
+    module::{FuncIdx, ModuleHeader},
+};
+#[cfg(feature = "parser")]
+use core::{fmt, mem::MaybeUninit};
+#[cfg(feature = "parser")]
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
@@ -72,6 +80,7 @@ impl ArenaIndex for EngineFunc {
 #[derive(Debug)]
 pub struct CodeMap {
     funcs: Mutex<Arena<EngineFunc, FuncEntity>>,
+    #[cfg(feature = "parser")]
     features: WasmFeatures,
 }
 
@@ -214,6 +223,7 @@ impl CodeMap {
     pub fn new(config: &Config) -> Self {
         Self {
             funcs: Mutex::new(Arena::default()),
+            #[cfg(feature = "parser")]
             features: config.wasm_features(),
         }
     }
@@ -245,32 +255,6 @@ impl CodeMap {
         func.init_compiled(entity);
     }
 
-    /// Initializes the [`EngineFunc`] for lazy translation.
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`EngineFunc`].
-    pub fn init_func_as_uncompiled(
-        &self,
-        func: EngineFunc,
-        func_idx: FuncIdx,
-        bytes: &[u8],
-        module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
-    ) {
-        let mut funcs = self.funcs.lock();
-        let Some(func) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
-        };
-        func.init_uncompiled(UncompiledFuncEntity::new(
-            func_idx,
-            bytes,
-            module.clone(),
-            func_to_validate,
-        ));
-    }
-
     /// Returns the [`FuncEntity`] of the [`EngineFunc`].
     ///
     /// # Errors
@@ -286,26 +270,12 @@ impl CodeMap {
     ) -> Result<CompiledFuncRef<'a>, Error> {
         match self.get_compiled(func) {
             Some(cref) => Ok(cref),
+            #[cfg(feature = "parser")]
             None => self.compile_or_wait(fuel, func),
-        }
-    }
-
-    /// Compile `func` or wait for result if another process already started compilation.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[cold]
-    #[inline]
-    fn compile_or_wait<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: EngineFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        match self.get_uncompiled(func) {
-            Some(entity) => self.compile(fuel, func, entity),
-            None => self.wait_for_compilation(func),
+            #[cfg(not(feature = "parser"))]
+            None => Err(Error::new(
+                "Function not compiled - parser feature required",
+            )),
         }
     }
 
@@ -328,6 +298,7 @@ impl CodeMap {
     /// Returns the [`UncompiledFuncEntity`] of `func` if possible, otherwise returns `None`.
     ///
     /// After this operation `func` will be in [`FuncEntity::Compiling`] state.
+    #[cfg(feature = "parser")]
     #[inline]
     fn get_uncompiled(&self, func: EngineFunc) -> Option<UncompiledFuncEntity> {
         let mut funcs = self.funcs.lock();
@@ -353,6 +324,54 @@ impl CodeMap {
         //         `MutexGuard` which is safe because `CodeMap` is append-only and the
         //         returned `CompiledFuncRef` only references `Pin`ned data.
         unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
+    }
+}
+
+#[cfg(feature = "parser")]
+impl CodeMap {
+    /// Compile `func` or wait for result if another process already started compilation.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[cold]
+    #[inline]
+    fn compile_or_wait<'a>(
+        &'a self,
+        fuel: Option<&mut Fuel>,
+        func: EngineFunc,
+    ) -> Result<CompiledFuncRef<'a>, Error> {
+        match self.get_uncompiled(func) {
+            Some(entity) => self.compile(fuel, func, entity),
+            None => self.wait_for_compilation(func),
+        }
+    }
+
+    /// Initializes the [`EngineFunc`] for lazy translation.
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
+    pub fn init_func_as_uncompiled(
+        &self,
+        func: EngineFunc,
+        func_idx: FuncIdx,
+        bytes: &[u8],
+        module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) {
+        let mut funcs = self.funcs.lock();
+        let Some(func) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        func.init_uncompiled(UncompiledFuncEntity::new(
+            func_idx,
+            bytes,
+            module.clone(),
+            func_to_validate,
+        ));
     }
 
     /// Compile and validate the [`UncompiledFuncEntity`] identified by `func`.
@@ -427,6 +446,7 @@ impl CodeMap {
 enum FuncEntity {
     /// The function entity has not yet been initialized.
     Uninit,
+    #[cfg(feature = "parser")]
     /// An internal function that has not yet been compiled.
     Uncompiled(UncompiledFuncEntity),
     /// The function entity is currently compiling.
@@ -462,6 +482,7 @@ impl FuncEntity {
     ///
     /// If `func` has already been initialized.
     #[inline]
+    #[cfg(feature = "parser")]
     pub fn init_uncompiled(&mut self, entity: UncompiledFuncEntity) {
         assert!(matches!(self, Self::Uninit));
         *self = Self::Uncompiled(entity);
@@ -484,6 +505,7 @@ impl FuncEntity {
     ///
     /// Returns a proper error if the [`FuncEntity`] is not uncompiled.
     #[inline]
+    #[cfg(feature = "parser")]
     pub fn get_uncompiled(&mut self) -> Option<UncompiledFuncEntity> {
         match self {
             Self::Uncompiled(_) => {}
@@ -536,6 +558,7 @@ impl FuncEntity {
 #[repr(transparent)]
 pub struct TypeIndex(u32);
 
+#[cfg(feature = "parser")]
 /// An internal uncompiled function entity.
 pub struct UncompiledFuncEntity {
     /// The index of the function within the Wasm module.
@@ -553,6 +576,7 @@ pub struct UncompiledFuncEntity {
     validation: Option<(TypeIndex, ValidatorResources)>,
 }
 
+#[cfg(feature = "parser")]
 impl UncompiledFuncEntity {
     /// Creates a new [`UncompiledFuncEntity`].
     pub fn new(
@@ -677,6 +701,7 @@ impl UncompiledFuncEntity {
     }
 }
 
+#[cfg(feature = "parser")]
 impl fmt::Debug for UncompiledFuncEntity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("UncompiledFuncEntity")
