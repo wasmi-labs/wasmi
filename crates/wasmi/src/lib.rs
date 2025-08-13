@@ -157,8 +157,6 @@ pub mod errors {
     pub use wasmi_core::{FuelError, GlobalError, HostError, MemoryError, TableError};
 }
 
-#[expect(deprecated)]
-pub use self::engine::StackLimits;
 pub use self::{
     engine::{
         CompilationMode,
