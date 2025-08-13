@@ -1,5 +1,5 @@
 use wasmi::{CompilationMode, Config};
-use wasmi_wast::{ParsingMode, RunnerConfig, WastRunner};
+use wasmi_wast::{RunnerConfig, WastRunner};
 
 /// Runs the Wasm test spec identified by the given name.
 fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
@@ -54,13 +54,10 @@ pub enum FuelMetering {
 }
 
 /// Returns [`RunnerConfig`] with `parsing_mode` and apply `adjust_config` to its [`Config`].
-fn runner_config(parsing_mode: ParsingMode, adjust_config: impl Fn(&mut Config)) -> RunnerConfig {
+fn runner_config(adjust_config: impl Fn(&mut Config)) -> RunnerConfig {
     let mut config = mvp_config();
     adjust_config(&mut config);
-    RunnerConfig {
-        config,
-        parsing_mode,
-    }
+    RunnerConfig { config }
 }
 
 /// Returns a closure that applies a [`RunnerConfig`]'s Config for Wasm spec tests.
@@ -509,7 +506,7 @@ mod buffered {
 
     foreach_test! {
         define_test
-        config: runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Disabled));
+        config: runner_config(apply_spec_config(FuelMetering::Disabled));
     }
 }
 
@@ -518,16 +515,7 @@ mod fueled {
 
     foreach_test! {
         define_test
-        config: runner_config(ParsingMode::Buffered, apply_spec_config(FuelMetering::Enabled));
-    }
-}
-
-mod streaming {
-    use super::*;
-
-    foreach_test! {
-        define_test
-        config: runner_config(ParsingMode::Streaming, apply_spec_config(FuelMetering::Disabled));
+        config: runner_config(apply_spec_config(FuelMetering::Enabled));
     }
 }
 
@@ -536,7 +524,7 @@ mod missing_features {
 
     foreach_test_missing_features! {
         define_test
-        config: runner_config(ParsingMode::Buffered, |_|());
+        config: runner_config(|_|());
     }
 }
 
@@ -545,7 +533,7 @@ mod multi_memory {
 
     foreach_test_multi_memory! {
         define_test
-        config: runner_config(ParsingMode::Buffered, |config| {
+        config: runner_config(|config| {
             config
                 .wasm_simd(true)
                 .wasm_mutable_global(true)
@@ -559,7 +547,7 @@ mod custom_page_sizes {
 
     foreach_test_cps! {
         define_test
-        config: runner_config(ParsingMode::Buffered, |config| {
+        config: runner_config(|config| {
             config
                 .wasm_multi_memory(true)
                 .wasm_memory64(true)
@@ -573,7 +561,7 @@ mod memory64 {
 
     foreach_test_memory64! {
         define_test
-        config: runner_config(ParsingMode::Buffered, |config| {
+        config: runner_config(|config| {
             config
                 .wasm_mutable_global(true)
                 .wasm_multi_value(true)

@@ -7,21 +7,10 @@ use wasmi::CompilationMode;
 pub struct FuzzWasmiConfig {
     /// Is `true` if Wasmi shall enable fuel metering for its translation.
     pub consume_fuel: bool,
-    /// Is `true` if Wasmi shall use streaming translation instead of buffered translation.
-    pub parsing_mode: ParsingMode,
     /// Is `true` if Wasmi shall validate the Wasm input during translation.
     pub validation_mode: ValidationMode,
     /// Is `true` if Wasmi shall use lazy translation.
     pub translation_mode: CompilationMode,
-}
-
-/// The Wasmi parsing mode.
-#[derive(Debug, Copy, Clone)]
-pub enum ParsingMode {
-    /// Use buffered parsing.
-    Buffered,
-    /// Use streaming parsing.
-    Streaming,
 }
 
 /// The Wasmi validation mode.
@@ -48,10 +37,6 @@ impl Arbitrary<'_> for FuzzWasmiConfig {
     fn arbitrary(u: &mut Unstructured) -> arbitrary::Result<Self> {
         let bits = u8::arbitrary(u)?;
         let consume_fuel = (bits & 0x1) != 0;
-        let parsing_mode = match (bits >> 1) & 0x1 {
-            0 => ParsingMode::Streaming,
-            _ => ParsingMode::Buffered,
-        };
         let validation_mode = match (bits >> 2) & 0x1 {
             0 => ValidationMode::Unchecked,
             _ => ValidationMode::Checked,
@@ -63,7 +48,6 @@ impl Arbitrary<'_> for FuzzWasmiConfig {
         };
         Ok(Self {
             consume_fuel,
-            parsing_mode,
             validation_mode,
             translation_mode,
         })

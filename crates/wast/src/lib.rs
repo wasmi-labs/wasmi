@@ -41,24 +41,11 @@ use wast::{
 pub struct RunnerConfig {
     /// The Wasmi configuration used for all tests.
     pub config: Config,
-    /// The parsing mode that is used.
-    pub parsing_mode: ParsingMode,
-}
-
-/// The mode in which Wasm is parsed.
-#[derive(Debug, Copy, Clone)]
-pub enum ParsingMode {
-    /// The test runner shall use buffered Wasm compilation.
-    Buffered,
-    /// The test runner shall use streaming Wasm compilation.
-    Streaming,
 }
 
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
 pub struct WastRunner {
-    /// The configuration of the test runner.
-    config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
@@ -82,7 +69,6 @@ impl WastRunner {
         let mut store = Store::new(&engine, ());
         _ = store.set_fuel(0);
         WastRunner {
-            config,
             linker,
             store,
             modules: HashMap::new(),
@@ -338,7 +324,6 @@ impl WastRunner {
     /// Compiles the `wat` and eventually stores it for further processing.
     ///
     /// Returns the compiled Wasm module and its optional name.
-    #[expect(deprecated)]
     fn module_definition<'a>(
         &mut self,
         mut wat: QuoteWat<'a>,
@@ -346,10 +331,7 @@ impl WastRunner {
         let name = wat.name();
         let bytes = wat.encode()?;
         let engine = self.store.engine();
-        let module = match self.config.parsing_mode {
-            ParsingMode::Buffered => Module::new(engine, bytes),
-            ParsingMode::Streaming => Module::new_streaming(engine, &mut &bytes[..]),
-        }?;
+        let module = Module::new(engine, bytes)?;
         Ok((name.map(|n| n.name()), module))
     }
 
