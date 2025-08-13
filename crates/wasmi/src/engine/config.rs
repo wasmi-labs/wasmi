@@ -348,7 +348,7 @@ impl Config {
     ///
     /// This configuration can be used to make Wasmi instrument its internal bytecode
     /// so that it consumes fuel as it executes. Once an execution runs out of fuel
-    /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
+    /// a [`TrapCode::OutOfFuel`](crate::TrapCode::OutOfFuel) trap is raised.
     /// This way users can deterministically halt or yield the execution of WebAssembly code.
     ///
     /// - Use [`Store::set_fuel`](crate::Store::set_fuel) to set the remaining fuel of the [`Store`] before

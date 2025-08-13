@@ -108,11 +108,10 @@ mod table;
 mod value;
 
 /// Definitions from the `wasmi_core` crate.
-#[deprecated(since = "0.49.0", note = "use root `wasmi` definitions instead")]
-pub mod core {
+mod core {
     #[cfg(feature = "simd")]
-    pub(crate) use wasmi_core::simd;
-    pub(crate) use wasmi_core::{
+    pub use wasmi_core::simd;
+    pub use wasmi_core::{
         hint,
         wasm,
         DecodeUntypedSlice,
@@ -136,16 +135,6 @@ pub mod core {
         UntypedError,
         UntypedVal,
         WriteAs,
-    };
-    pub use wasmi_core::{
-        GlobalType,
-        Mutability,
-        ResourceLimiter,
-        TrapCode,
-        ValType,
-        F32,
-        F64,
-        V128,
     };
 }
 
