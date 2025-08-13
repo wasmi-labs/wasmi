@@ -4,8 +4,6 @@ use std::{
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
 use wasi_common::{snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1, Error};
-#[expect(deprecated)]
-use wasmi::{state::Constructing, LinkerBuilder};
 use wasmi::{Caller, Extern, Linker};
 
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s
@@ -771,4 +769,3 @@ macro_rules! apply_wasi_definitions {
 }
 
 apply_wasi_definitions!(add_funcs_to_linker, Linker<T>);
-apply_wasi_definitions!(add_funcs_to_linker, LinkerBuilder<Constructing, T>);

@@ -159,8 +159,6 @@ pub mod errors {
 
 #[expect(deprecated)]
 pub use self::engine::StackLimits;
-#[expect(deprecated)]
-pub use self::linker::{state, LinkerBuilder};
 pub use self::{
     engine::{
         CompilationMode,

@@ -21,13 +21,9 @@ use crate::{
 };
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
-    sync::Arc,
     vec::Vec,
 };
-use core::{
-    fmt::{self, Debug, Display},
-    marker::PhantomData,
-};
+use core::fmt::{self, Debug, Display};
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]
@@ -221,10 +217,6 @@ pub struct Linker<T> {
     /// Primarily required to define [`Linker`] owned host functions
     //  using [`Linker::func_wrap`] and [`Linker::func_new`]. TODO: implement methods
     engine: Engine,
-    /// Definitions shared with other [`Linker`] instances created by the same [`LinkerBuilder`].
-    ///
-    /// `None` if no [`LinkerBuilder`] was used for creation of the [`Linker`].
-    shared: Option<Arc<LinkerInner<T>>>,
     /// Inner linker implementation details.
     inner: LinkerInner<T>,
 }
@@ -233,7 +225,6 @@ impl<T> Clone for Linker<T> {
     fn clone(&self) -> Linker<T> {
         Self {
             engine: self.engine.clone(),
-            shared: self.shared.clone(),
             inner: self.inner.clone(),
         }
     }
@@ -250,17 +241,7 @@ impl<T> Linker<T> {
     pub fn new(engine: &Engine) -> Self {
         Self {
             engine: engine.clone(),
-            shared: None,
             inner: LinkerInner::default(),
-        }
-    }
-
-    /// Creates a new [`LinkerBuilder`] to construct a [`Linker`].
-    #[expect(deprecated)]
-    pub fn build() -> LinkerBuilder<state::Constructing, T> {
-        LinkerBuilder {
-            inner: Arc::new(LinkerInner::default()),
-            marker: PhantomData,
         }
     }
 
@@ -277,24 +258,6 @@ impl<T> Linker<T> {
         self
     }
 
-    /// Ensures that the `name` in `module` is undefined in the shared definitions.
-    ///
-    /// Returns `Ok` if no shared definition exists.
-    ///
-    /// # Errors
-    ///
-    /// If there exists a shared definition for `name` in `module`.
-    fn ensure_undefined(&self, module: &str, name: &str) -> Result<(), LinkerError> {
-        if let Some(shared) = &self.shared {
-            if shared.has_definition(module, name) {
-                return Err(LinkerError::DuplicateDefinition {
-                    import_name: ImportName::new(module, name),
-                });
-            }
-        }
-        Ok(())
-    }
-
     /// Define a new item in this [`Linker`].
     ///
     /// # Errors
@@ -306,7 +269,6 @@ impl<T> Linker<T> {
         name: &str,
         item: impl Into<Extern>,
     ) -> Result<&mut Self, LinkerError> {
-        self.ensure_undefined(module, name)?;
         let key = self.inner.new_import_key(module, name);
         self.inner.insert(key, Definition::Extern(item.into()))?;
         Ok(self)
@@ -326,7 +288,6 @@ impl<T> Linker<T> {
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
-        self.ensure_undefined(module, name)?;
         let func = HostFuncTrampolineEntity::new(ty, func);
         let key = self.inner.new_import_key(module, name);
         self.inner.insert(key, Definition::HostFunc(func))?;
@@ -360,7 +321,6 @@ impl<T> Linker<T> {
         name: &str,
         func: impl IntoFunc<T, Params, Args>,
     ) -> Result<&mut Self, LinkerError> {
-        self.ensure_undefined(module, name)?;
         let func = HostFuncTrampolineEntity::wrap(func);
         let key = self.inner.new_import_key(module, name);
         self.inner.insert(key, Definition::HostFunc(func))?;
@@ -404,11 +364,6 @@ impl<T> Linker<T> {
             context.as_context().store.engine(),
             self.engine()
         ));
-        if let Some(shared) = &self.shared {
-            if let Some(item) = shared.get_definition(module, name) {
-                return Some(item);
-            }
-        }
         self.inner.get_definition(module, name)
     }
 
@@ -542,136 +497,6 @@ impl<T> Linker<T> {
     }
 }
 
-/// Contains type states for the [`LinkerBuilder`] construction process.
-#[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
-pub mod state {
-    /// Signals that the [`LinkerBuilder`] is itself under construction.
-    ///
-    /// [`LinkerBuilder`]: super::LinkerBuilder
-    #[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
-    pub enum Constructing {}
-
-    /// Signals that the [`LinkerBuilder`] is ready to create new [`Linker`] instances.
-    ///
-    /// [`Linker`]: super::Linker
-    /// [`LinkerBuilder`]: super::LinkerBuilder
-    #[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
-    pub enum Ready {}
-}
-
-/// A linker used to define module imports and instantiate module instances.
-///
-/// Create this type via the [`Linker::build`] method.
-#[derive(Debug)]
-#[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
-pub struct LinkerBuilder<State, T> {
-    /// Internal linker implementation details.
-    inner: Arc<LinkerInner<T>>,
-    /// The [`LinkerBuilder`] type state.
-    marker: PhantomData<fn() -> State>,
-}
-
-#[expect(deprecated)]
-impl<T> Clone for LinkerBuilder<state::Ready, T> {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            marker: PhantomData,
-        }
-    }
-}
-
-#[expect(deprecated)]
-impl<T> LinkerBuilder<state::Ready, T> {
-    /// Finishes construction of the [`Linker`] by attaching an [`Engine`].
-    pub fn create(&self, engine: &Engine) -> Linker<T> {
-        Linker {
-            engine: engine.clone(),
-            shared: self.inner.clone().into(),
-            inner: <LinkerInner<T>>::default(),
-        }
-    }
-}
-
-#[expect(deprecated)]
-impl<T> LinkerBuilder<state::Constructing, T> {
-    /// Signals that the [`LinkerBuilder`] is now ready to create new [`Linker`] instances.
-    pub fn finish(self) -> LinkerBuilder<state::Ready, T> {
-        LinkerBuilder {
-            inner: self.inner,
-            marker: PhantomData,
-        }
-    }
-
-    /// Returns an exclusive reference to the underlying [`Linker`] internals if no [`Linker`] has been built, yet.
-    ///
-    /// # Panics
-    ///
-    /// If the [`LinkerBuilder`] has already created a [`Linker`] using [`LinkerBuilder::finish`].
-    fn inner_mut(&mut self) -> &mut LinkerInner<T> {
-        Arc::get_mut(&mut self.inner).unwrap_or_else(|| {
-            unreachable!("tried to define host function in LinkerBuilder after Linker creation")
-        })
-    }
-
-    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
-    ///
-    /// For more information see [`Linker::func_wrap`].
-    ///
-    /// # Errors
-    ///
-    /// If there already is a definition under the same name for this [`Linker`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`LinkerBuilder`] has already created a [`Linker`] using [`LinkerBuilder::finish`].
-    pub fn func_new(
-        &mut self,
-        module: &str,
-        name: &str,
-        ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
-    ) -> Result<&mut Self, LinkerError> {
-        self.inner_mut().func_new(module, name, ty, func)?;
-        Ok(self)
-    }
-
-    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
-    ///
-    /// For information how to use this API see [`Func::wrap`].
-    ///
-    /// This method creates a host function for this [`Linker`] under the given name.
-    /// It is distinct in its ability to create a [`Store`] independent
-    /// host function. Host functions defined this way can be used to instantiate
-    /// instances in multiple different [`Store`] entities.
-    ///
-    /// The same applies to other [`Linker`] methods to define new [`Func`] instances
-    /// such as [`Linker::func_new`].
-    ///
-    /// In a concurrently running program, this means that these host functions
-    /// could be called concurrently if different [`Store`] entities are executing on
-    /// different threads.
-    ///
-    /// # Errors
-    ///
-    /// If there already is a definition under the same name for this [`Linker`].
-    ///
-    /// [`Store`]: crate::Store
-    ///
-    /// # Panics
-    ///
-    /// If the [`LinkerBuilder`] has already created a [`Linker`] using [`LinkerBuilder::finish`].
-    pub fn func_wrap<Params, Args>(
-        &mut self,
-        module: &str,
-        name: &str,
-        func: impl IntoFunc<T, Params, Args>,
-    ) -> Result<&mut Self, LinkerError> {
-        self.inner_mut().func_wrap(module, name, func)?;
-        Ok(self)
-    }
-}
-
 /// Internal [`Linker`] implementation.
 #[derive(Debug)]
 pub struct LinkerInner<T> {
@@ -789,59 +614,6 @@ impl<T> LinkerInner<T> {
         Ok(())
     }
 
-    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
-    ///
-    /// For more information see [`Linker::func_wrap`].
-    ///
-    /// # Errors
-    ///
-    /// If there already is a definition under the same name for this [`Linker`].
-    pub fn func_new(
-        &mut self,
-        module: &str,
-        name: &str,
-        ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
-    ) -> Result<&mut Self, LinkerError> {
-        let func = HostFuncTrampolineEntity::new(ty, func);
-        let key = self.new_import_key(module, name);
-        self.insert(key, Definition::HostFunc(func))?;
-        Ok(self)
-    }
-
-    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
-    ///
-    /// For information how to use this API see [`Func::wrap`].
-    ///
-    /// This method creates a host function for this [`Linker`] under the given name.
-    /// It is distinct in its ability to create a [`Store`] independent
-    /// host function. Host functions defined this way can be used to instantiate
-    /// instances in multiple different [`Store`] entities.
-    ///
-    /// The same applies to other [`Linker`] methods to define new [`Func`] instances
-    /// such as [`Linker::func_new`].
-    ///
-    /// In a concurrently running program, this means that these host functions
-    /// could be called concurrently if different [`Store`] entities are executing on
-    /// different threads.
-    ///
-    /// # Errors
-    ///
-    /// If there already is a definition under the same name for this [`Linker`].
-    ///
-    /// [`Store`]: crate::Store
-    pub fn func_wrap<Params, Args>(
-        &mut self,
-        module: &str,
-        name: &str,
-        func: impl IntoFunc<T, Params, Args>,
-    ) -> Result<&mut Self, LinkerError> {
-        let func = HostFuncTrampolineEntity::wrap(func);
-        let key = self.new_import_key(module, name);
-        self.insert(key, Definition::HostFunc(func))?;
-        Ok(self)
-    }
-
     /// Looks up a [`Definition`] by name in this [`Linker`].
     ///
     /// Returns `None` if this name was not previously defined in this [`Linker`].
@@ -852,14 +624,6 @@ impl<T> LinkerInner<T> {
     fn get_definition(&self, module: &str, name: &str) -> Option<&Definition<T>> {
         let key = self.get_import_key(module, name)?;
         self.definitions.get(&key)
-    }
-
-    /// Returns `true` if [`LinkerInner`] contains a [`Definition`] for `name` in `module`.
-    fn has_definition(&self, module: &str, name: &str) -> bool {
-        let Some(key) = self.get_import_key(module, name) else {
-            return false;
-        };
-        self.definitions.contains_key(&key)
     }
 }
 
@@ -961,100 +725,6 @@ mod tests {
         assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), b_init);
         wasm_set_b.call(&mut store, 200).unwrap();
         assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), 200);
-    }
-
-    #[test]
-    fn build_linker() {
-        let mut builder = <Linker<()>>::build();
-        builder
-            .func_wrap("env", "foo", || std::println!("called foo"))
-            .unwrap();
-        builder
-            .func_new(
-                "env",
-                "bar",
-                FuncType::new([], []),
-                |_caller, _params, _results| {
-                    std::println!("called bar");
-                    Ok(())
-                },
-            )
-            .unwrap();
-        let builder = builder.finish();
-        for _ in 0..3 {
-            let engine = Engine::default();
-            let _ = builder.create(&engine);
-        }
-    }
-
-    #[test]
-    fn linker_builder_uses() {
-        use crate::{Engine, Linker, Module, Store};
-        let wasm = r#"
-            (module
-                (import "host" "func.0" (func $host_func.0))
-                (import "host" "func.1" (func $host_func.1))
-                (func (export "hello")
-                    (call $host_func.0)
-                    (call $host_func.1)
-                )
-            )"#;
-        let engine = Engine::default();
-        let mut builder = <Linker<()>>::build();
-        builder
-            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
-            .unwrap();
-        builder
-            .func_wrap("host", "func.1", |_caller: Caller<()>| ())
-            .unwrap();
-        let linker = builder.finish().create(&engine);
-        let mut store = Store::new(&engine, ());
-        let module = Module::new(&engine, wasm).unwrap();
-        linker.instantiate_and_start(&mut store, &module).unwrap();
-    }
-
-    #[test]
-    fn linker_builder_and_linker_uses() {
-        use crate::{Engine, Linker, Module, Store};
-        let wasm = r#"
-            (module
-                (import "host" "func.0" (func $host_func.0))
-                (import "host" "func.1" (func $host_func.1))
-                (func (export "hello")
-                    (call $host_func.0)
-                    (call $host_func.1)
-                )
-            )"#;
-        let engine = Engine::default();
-        let mut builder = <Linker<()>>::build();
-        builder
-            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
-            .unwrap();
-        let mut linker = builder.finish().create(&engine);
-        linker
-            .func_wrap("host", "func.1", |_caller: Caller<()>| ())
-            .unwrap();
-        let mut store = Store::new(&engine, ());
-        let module = Module::new(&engine, wasm).unwrap();
-        linker.instantiate_and_start(&mut store, &module).unwrap();
-    }
-
-    #[test]
-    fn linker_builder_no_overwrite() {
-        use crate::{Engine, Linker};
-        let engine = Engine::default();
-        let mut builder = <Linker<()>>::build();
-        builder
-            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
-            .unwrap();
-        let mut linker = builder.finish().create(&engine);
-        linker
-            .func_wrap("host", "func.1", |_caller: Caller<()>| ())
-            .unwrap();
-        // The following definition won't shadow the previous 'host/func.0' func and errors instead:
-        linker
-            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
-            .unwrap_err();
     }
 
     #[test]
