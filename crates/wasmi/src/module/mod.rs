@@ -11,8 +11,6 @@ mod parser;
 mod read;
 pub(crate) mod utils;
 
-#[expect(deprecated)]
-pub use self::instantiate::InstancePre;
 use self::{
     builder::ModuleBuilder,
     custom_section::{CustomSections, CustomSectionsBuilder},

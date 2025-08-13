@@ -48,9 +48,7 @@
 //!     linker.func_wrap("host", "hello", |caller: Caller<'_, HostState>, param: i32| {
 //!         println!("Got {param} from WebAssembly and my host state is: {}", caller.data());
 //!     });
-//!     let instance = linker
-//!         .instantiate(&mut store, &module)?
-//!         .start(&mut store)?;
+//!     let instance = linker.instantiate_and_start(&mut store, &module)?;
 //!     // Now we can finally query the exported "hello" function and call it.
 //!     instance
 //!         .get_typed_func::<(), ()>(&store, "hello")?
@@ -163,8 +161,6 @@ pub mod errors {
 pub use self::engine::StackLimits;
 #[expect(deprecated)]
 pub use self::linker::{state, LinkerBuilder};
-#[expect(deprecated)]
-pub use self::module::InstancePre;
 pub use self::{
     engine::{
         CompilationMode,

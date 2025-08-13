@@ -1,12 +1,9 @@
 mod error;
-mod pre;
 
 #[cfg(test)]
 mod tests;
 
 pub use self::error::InstantiationError;
-#[expect(deprecated)]
-pub use self::pre::InstancePre;
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
     core::UntypedVal,
@@ -14,6 +11,7 @@ use crate::{
     errors::MemoryError,
     func::WasmFuncEntity,
     memory::DataSegment,
+    module::FuncIdx,
     value::WithType,
     AsContext,
     AsContextMut,
@@ -50,12 +48,11 @@ impl Module {
     ///
     /// [`Linker`]: struct.Linker.html
     /// [`Func`]: [`crate::Func`]
-    #[expect(deprecated)]
     pub(crate) fn instantiate<I>(
         &self,
         mut context: impl AsContextMut,
         externals: I,
-    ) -> Result<InstancePre, Error>
+    ) -> Result<Instance, Error>
     where
         I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
@@ -73,13 +70,33 @@ impl Module {
         self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
         self.extract_start_fn(&mut builder);
-
         self.initialize_table_elements(&mut context, &mut builder)?;
         self.initialize_memory_data(&mut context, &mut builder)?;
+        Self::start(&mut context, builder, handle)?;
+        Ok(handle)
+    }
 
-        // At this point the module instantiation is nearly done.
-        // The only thing that is missing is to run the `start` function.
-        Ok(InstancePre::new(handle, builder))
+    /// Executes the [`Instance`]'s `start` function if any and finalizes instantiation.
+    fn start(
+        mut store: impl AsContextMut,
+        builder: InstanceEntityBuilder,
+        instance: Instance,
+    ) -> Result<(), Error> {
+        let opt_start_index = builder.get_start().map(FuncIdx::into_u32);
+        store
+            .as_context_mut()
+            .store
+            .inner
+            .initialize_instance(instance, builder.finish());
+        if let Some(start_index) = opt_start_index {
+            let start_func = instance
+                .get_func_by_index(store.as_context_mut(), start_index)
+                .unwrap_or_else(|| {
+                    panic!("encountered invalid start function after validation: {start_index}")
+                });
+            start_func.call(store.as_context_mut(), &[], &mut [])?
+        }
+        Ok(())
     }
 
     /// Extract the Wasm imports from the module and zips them with the given external values.

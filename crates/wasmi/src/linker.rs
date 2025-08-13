@@ -1,5 +1,3 @@
-#[expect(deprecated)]
-use crate::InstancePre;
 use crate::{
     collections::{
         string_interner::{InternHint, Sym as Symbol},
@@ -471,19 +469,12 @@ impl<T> Linker<T> {
     ///
     /// - If the linker does not define imports of the instantiated [`Module`].
     /// - If any imported item does not satisfy its type requirements.
-    #[deprecated(
-        since = "0.49.0",
-        note = "\
-            use `Linker::instantiate_and_start` instead. \
-            Prevent `start` function execution by enabling fuel metering and setting fuel to zero before instantiation. \
-        "
-    )]
-    #[expect(deprecated)]
-    pub fn instantiate(
+    /// - If the `start` function traps.
+    pub fn instantiate_and_start(
         &self,
         mut context: impl AsContextMut<Data = T>,
         module: &Module,
-    ) -> Result<InstancePre, Error> {
+    ) -> Result<Instance, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
         // TODO: possibly add further resource limitation here on number of externals.
         // Not clear that user can't import the same external lots of times to inflate this.
@@ -492,27 +483,6 @@ impl<T> Linker<T> {
             .map(|import| self.process_import(&mut context, import))
             .collect::<Result<Vec<Extern>, Error>>()?;
         module.instantiate(context, externals)
-    }
-
-    /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
-    ///
-    /// # Errors
-    ///
-    /// - If the linker does not define imports of the instantiated [`Module`].
-    /// - If any imported item does not satisfy its type requirements.
-    /// - If the `start` function traps.
-    pub fn instantiate_and_start(
-        &self,
-        mut context: impl AsContextMut<Data = T>,
-        module: &Module,
-    ) -> Result<Instance, Error> {
-        #[expect(deprecated)]
-        self.instantiate(&mut context, module)
-            .and_then(|instance| instance.start(&mut context))
     }
 
     /// Processes a single [`Module`] import.
