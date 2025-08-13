@@ -1,9 +1,9 @@
 use wasmi::{CompilationMode, Config};
-use wasmi_wast::{RunnerConfig, WastRunner};
+use wasmi_wast::WastRunner;
 
 /// Runs the Wasm test spec identified by the given name.
-fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
-    let mut runner = WastRunner::new(config);
+fn process_wast(path: &'static str, wast: &'static str, config: Config) {
+    let mut runner = WastRunner::new(&config);
     if let Err(error) = runner.register_spectest() {
         panic!("{path}: failed to setup Wasm spectest module: {error}");
     }
@@ -53,14 +53,14 @@ pub enum FuelMetering {
     Enabled,
 }
 
-/// Returns [`RunnerConfig`] with `parsing_mode` and apply `adjust_config` to its [`Config`].
-fn runner_config(adjust_config: impl Fn(&mut Config)) -> RunnerConfig {
+/// Returns [`Config`] with `parsing_mode` and apply `adjust_config` to its [`Config`].
+fn runner_config(adjust_config: impl Fn(&mut Config)) -> Config {
     let mut config = mvp_config();
     adjust_config(&mut config);
-    RunnerConfig { config }
+    config
 }
 
-/// Returns a closure that applies a [`RunnerConfig`]'s Config for Wasm spec tests.
+/// Returns a closure that applies a [`Config`]'s Config for Wasm spec tests.
 fn apply_spec_config(fuel_metering: FuelMetering) -> impl Fn(&mut Config) {
     move |config| {
         config

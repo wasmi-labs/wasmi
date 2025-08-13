@@ -36,13 +36,6 @@ use wast::{
     Wat,
 };
 
-/// The configuration for the test runner.
-#[derive(Debug, Clone)]
-pub struct RunnerConfig {
-    /// The Wasmi configuration used for all tests.
-    pub config: Config,
-}
-
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
 pub struct WastRunner {
@@ -61,9 +54,9 @@ pub struct WastRunner {
 }
 
 impl WastRunner {
-    /// Creates a new [`WastRunner`] with the given [`RunnerConfig`].
-    pub fn new(config: RunnerConfig) -> Self {
-        let engine = Engine::new(&config.config);
+    /// Creates a new [`WastRunner`] with the given [`Config`].
+    pub fn new(config: &Config) -> Self {
+        let engine = Engine::new(config);
         let mut linker = Linker::new(&engine);
         linker.allow_shadowing(true);
         let mut store = Store::new(&engine, ());
