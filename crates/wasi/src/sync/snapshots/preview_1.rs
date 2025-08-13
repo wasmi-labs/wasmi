@@ -70,21 +70,6 @@ where
     <Linker<T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
 }
 
-/// Adds the entire WASI API to the Wasmi [`LinkerBuilder`].
-///
-/// For more information view [`add_wasi_snapshot_preview1_to_linker`].
-#[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
-#[expect(deprecated)]
-pub fn add_wasi_snapshot_preview1_to_linker_builder<T, U>(
-    linker: &mut LinkerBuilder<Constructing, T>,
-    wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
-) -> Result<(), Error>
-where
-    U: WasiSnapshotPreview1,
-{
-    <LinkerBuilder<Constructing, T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
-}
-
 // Creates the function item `add_wasi_snapshot_preview1_to_wasmi_linker` which when called adds all
 // `wasi preview_1` functions to the linker
 macro_rules! add_funcs_to_linker {
