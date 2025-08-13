@@ -96,11 +96,7 @@ criterion_group!(
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_linker_setup_same,
-        bench_linker_build_finish_same,
-        bench_linker_build_construct_same,
         bench_linker_setup_unique,
-        bench_linker_build_finish_unique,
-        bench_linker_build_construct_unique,
 );
 criterion_group! {
     name = bench_group_execute;
@@ -480,37 +476,6 @@ fn bench_instantiate_regex_redux(c: &mut Criterion) {
     bench_instantiate_using(c, "regex_redux");
 }
 
-fn bench_linker_build_finish_same(c: &mut Criterion) {
-    let len_funcs = 50;
-    let bench_id = format!("linker/build/finish/same/{len_funcs}");
-    c.bench_function(&bench_id, |b| {
-        let func_names: Vec<String> = (0..len_funcs).map(|i| format!("{i}")).collect();
-        let mut builder = <Linker<()>>::build();
-        for func_name in &func_names {
-            builder.func_wrap("env", func_name, || ()).unwrap();
-        }
-        let builder = builder.finish();
-        b.iter(|| {
-            let engine = Engine::default();
-            _ = builder.create(&engine);
-        })
-    });
-}
-
-fn bench_linker_build_construct_same(c: &mut Criterion) {
-    let len_funcs = 50;
-    let bench_id = format!("linker/build/construct/same/{len_funcs}");
-    c.bench_function(&bench_id, |b| {
-        let func_names: Vec<String> = (0..len_funcs).map(|i| format!("{i}")).collect();
-        b.iter(|| {
-            let mut builder = <Linker<()>>::build();
-            for func_name in &func_names {
-                builder.func_wrap("env", func_name, || ()).unwrap();
-            }
-        })
-    });
-}
-
 fn bench_linker_setup_same(c: &mut Criterion) {
     let len_funcs = 50;
     let bench_id = format!("linker/setup/same/{len_funcs}");
@@ -564,51 +529,6 @@ fn bench_linker_setup_unique(c: &mut Criterion) {
             let mut linker = <Linker<()>>::new(&engine);
             for (func_name, func_type) in &funcs {
                 linker
-                    .func_new(
-                        "env",
-                        func_name,
-                        func_type.clone(),
-                        move |_caller, _params, _results| Ok(()),
-                    )
-                    .unwrap();
-            }
-        })
-    });
-}
-
-fn bench_linker_build_finish_unique(c: &mut Criterion) {
-    let len_funcs = 50;
-    let bench_id = format!("linker/build/finish/unique/{len_funcs}");
-    c.bench_function(&bench_id, |b| {
-        let funcs = generate_unique_host_functions(len_funcs);
-        let mut builder = <Linker<()>>::build();
-        for (func_name, func_type) in &funcs {
-            builder
-                .func_new(
-                    "env",
-                    func_name,
-                    func_type.clone(),
-                    move |_caller, _params, _results| Ok(()),
-                )
-                .unwrap();
-        }
-        let builder = builder.finish();
-        b.iter(|| {
-            let engine = Engine::default();
-            _ = builder.create(&engine);
-        })
-    });
-}
-
-fn bench_linker_build_construct_unique(c: &mut Criterion) {
-    let len_funcs = 50;
-    let bench_id = format!("linker/build/construct/unique/{len_funcs}");
-    c.bench_function(&bench_id, |b| {
-        let funcs = generate_unique_host_functions(len_funcs);
-        b.iter(|| {
-            let mut builder = <Linker<()>>::build();
-            for (func_name, func_type) in &funcs {
-                builder
                     .func_new(
                         "env",
                         func_name,

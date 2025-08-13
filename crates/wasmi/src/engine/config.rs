@@ -1,5 +1,3 @@
-#[expect(deprecated)]
-use super::StackLimits;
 use super::{EnforcedLimits, StackConfig};
 use crate::core::FuelCostsProvider;
 use wasmparser::WasmFeatures;
@@ -77,32 +75,6 @@ impl Config {
         features.set(WasmFeatures::SIMD, cfg!(feature = "simd"));
         features.set(WasmFeatures::RELAXED_SIMD, cfg!(feature = "simd"));
         features
-    }
-
-    /// Sets the [`StackLimits`] for the [`Config`].
-    #[deprecated(
-        since = "0.51.0",
-        note = "\
-            use `Config::set_{min,max}_stack_height`, \
-            `Config::max_recursion_depth` instead"
-    )]
-    #[expect(deprecated)]
-    pub fn set_stack_limits(&mut self, limits: StackLimits) -> &mut Self {
-        self.set_min_stack_height(limits.initial_value_stack_height);
-        self.set_max_stack_height(limits.maximum_value_stack_height);
-        self.set_max_recursion_depth(limits.maximum_recursion_depth);
-        self
-    }
-
-    /// Sets the maximum amount of cached stacks for reuse for the [`Config`].
-    ///
-    /// # Note
-    ///
-    /// Defaults to 2.
-    #[deprecated(since = "0.51.0", note = "use `Config::set_max_cached_stacks` instead")]
-    pub fn set_cached_stacks(&mut self, amount: usize) -> &mut Self {
-        self.set_max_cached_stacks(amount);
-        self
     }
 
     /// Sets the maximum recursion depth of the [`Engine`]'s stack during execution.
@@ -348,7 +320,7 @@ impl Config {
     ///
     /// This configuration can be used to make Wasmi instrument its internal bytecode
     /// so that it consumes fuel as it executes. Once an execution runs out of fuel
-    /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
+    /// a [`TrapCode::OutOfFuel`](crate::TrapCode::OutOfFuel) trap is raised.
     /// This way users can deterministically halt or yield the execution of WebAssembly code.
     ///
     /// - Use [`Store::set_fuel`](crate::Store::set_fuel) to set the remaining fuel of the [`Store`] before

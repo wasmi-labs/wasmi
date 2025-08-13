@@ -145,7 +145,7 @@ impl InstanceEntity {
 /// [`Instance`] in order to execute anything.
 ///
 /// Instances are owned by a [`Store`](crate::Store).
-/// Create new instances using [`Linker::instantiate`](crate::Linker::instantiate).
+/// Create new instances using [`Linker::instantiate_and_start`](crate::Linker::instantiate_and_start).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Instance(Stored<InstanceIdx>);
@@ -187,8 +187,7 @@ impl Instance {
         module: &Module,
         imports: &[Extern],
     ) -> Result<Instance, Error> {
-        let instance_pre = Module::instantiate(module, &mut store, imports.iter().cloned())?;
-        let instance = instance_pre.start(&mut store)?;
+        let instance = Module::instantiate(module, &mut store, imports.iter().cloned())?;
         Ok(instance)
     }
 

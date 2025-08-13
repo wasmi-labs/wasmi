@@ -1,14 +1,9 @@
 #![no_main]
-#![expect(deprecated)]
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use wasmi::{Config, Engine, Module};
-use wasmi_fuzz::{
-    config::{ParsingMode, ValidationMode},
-    FuzzModule,
-    FuzzWasmiConfig,
-};
+use wasmi_fuzz::{config::ValidationMode, FuzzModule, FuzzWasmiConfig};
 
 #[derive(Debug)]
 pub struct FuzzInput {
@@ -39,14 +34,9 @@ fuzz_target!(|input: FuzzInput| {
             return;
         }
     }
-    let status = match (config.parsing_mode, config.validation_mode) {
-        (ParsingMode::Streaming, ValidationMode::Checked) => Module::new_streaming(&engine, wasm),
-        (ParsingMode::Buffered, ValidationMode::Checked) => Module::new(&engine, wasm),
-        (ParsingMode::Streaming, ValidationMode::Unchecked) => {
-            // Safety: we just validated the Wasm input above.
-            unsafe { Module::new_streaming_unchecked(&engine, wasm) }
-        }
-        (ParsingMode::Buffered, ValidationMode::Unchecked) => {
+    let status = match config.validation_mode {
+        ValidationMode::Checked => Module::new(&engine, wasm),
+        ValidationMode::Unchecked => {
             // Safety: we just validated the Wasm input above.
             unsafe { Module::new_unchecked(&engine, wasm) }
         }

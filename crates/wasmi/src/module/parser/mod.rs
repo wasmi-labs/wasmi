@@ -42,7 +42,6 @@ use wasmparser::{
 use crate::Module;
 
 mod buffered;
-mod streaming;
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
 pub struct ModuleParser {
@@ -54,8 +53,6 @@ pub struct ModuleParser {
     parser: WasmParser,
     /// The number of compiled or processed functions.
     engine_funcs: u32,
-    /// Flag, `true` when `stream` is at the end.
-    eof: bool,
 }
 
 impl ModuleParser {
@@ -68,7 +65,6 @@ impl ModuleParser {
             validator: None,
             parser,
             engine_funcs: 0,
-            eof: false,
         }
     }
 

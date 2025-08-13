@@ -48,9 +48,7 @@
 //!     linker.func_wrap("host", "hello", |caller: Caller<'_, HostState>, param: i32| {
 //!         println!("Got {param} from WebAssembly and my host state is: {}", caller.data());
 //!     });
-//!     let instance = linker
-//!         .instantiate(&mut store, &module)?
-//!         .start(&mut store)?;
+//!     let instance = linker.instantiate_and_start(&mut store, &module)?;
 //!     // Now we can finally query the exported "hello" function and call it.
 //!     instance
 //!         .get_typed_func::<(), ()>(&store, "hello")?
@@ -108,11 +106,10 @@ mod table;
 mod value;
 
 /// Definitions from the `wasmi_core` crate.
-#[deprecated(since = "0.49.0", note = "use root `wasmi` definitions instead")]
-pub mod core {
+mod core {
     #[cfg(feature = "simd")]
-    pub(crate) use wasmi_core::simd;
-    pub(crate) use wasmi_core::{
+    pub use wasmi_core::simd;
+    pub use wasmi_core::{
         hint,
         wasm,
         DecodeUntypedSlice,
@@ -137,16 +134,6 @@ pub mod core {
         UntypedVal,
         WriteAs,
     };
-    pub use wasmi_core::{
-        GlobalType,
-        Mutability,
-        ResourceLimiter,
-        TrapCode,
-        ValType,
-        F32,
-        F64,
-        V128,
-    };
 }
 
 /// Definitions from the `wasmi_collections` crate.
@@ -170,12 +157,6 @@ pub mod errors {
     pub use wasmi_core::{FuelError, GlobalError, HostError, MemoryError, TableError};
 }
 
-#[expect(deprecated)]
-pub use self::engine::StackLimits;
-#[expect(deprecated)]
-pub use self::linker::{state, LinkerBuilder};
-#[expect(deprecated)]
-pub use self::module::InstancePre;
 pub use self::{
     engine::{
         CompilationMode,

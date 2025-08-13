@@ -4,8 +4,6 @@ use std::{
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
 use wasi_common::{snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1, Error};
-#[expect(deprecated)]
-use wasmi::{state::Constructing, LinkerBuilder};
 use wasmi::{Caller, Extern, Linker};
 
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s
@@ -33,10 +31,9 @@ fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, wasm
     }
 }
 
-/// Implemented by Wasmi [`Linker`] and [`LinkerBuilder`] to populate them with WASI definitions.
+/// Implemented by Wasmi [`Linker`] to populate them with WASI definitions.
 ///
 /// [`Linker`]: wasmi::Linker
-/// [`LinkerBuilder`]: wasmi::LinkerBuilder
 pub trait AddWasi<T> {
     /// Add Wasi preview1 definitions to `self`.
     fn add_wasi<U>(
@@ -68,21 +65,6 @@ where
     U: WasiSnapshotPreview1,
 {
     <Linker<T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
-}
-
-/// Adds the entire WASI API to the Wasmi [`LinkerBuilder`].
-///
-/// For more information view [`add_wasi_snapshot_preview1_to_linker`].
-#[deprecated(since = "0.49.0", note = "use `Linker` or `Instance::new` instead")]
-#[expect(deprecated)]
-pub fn add_wasi_snapshot_preview1_to_linker_builder<T, U>(
-    linker: &mut LinkerBuilder<Constructing, T>,
-    wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
-) -> Result<(), Error>
-where
-    U: WasiSnapshotPreview1,
-{
-    <LinkerBuilder<Constructing, T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
 }
 
 // Creates the function item `add_wasi_snapshot_preview1_to_wasmi_linker` which when called adds all
@@ -786,4 +768,3 @@ macro_rules! apply_wasi_definitions {
 }
 
 apply_wasi_definitions!(add_funcs_to_linker, Linker<T>);
-apply_wasi_definitions!(add_funcs_to_linker, LinkerBuilder<Constructing, T>);

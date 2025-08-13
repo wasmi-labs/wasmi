@@ -11,8 +11,6 @@ mod parser;
 mod read;
 pub(crate) mod utils;
 
-#[expect(deprecated)]
-pub use self::instantiate::InstancePre;
 use self::{
     builder::ModuleBuilder,
     custom_section::{CustomSections, CustomSectionsBuilder},
@@ -232,32 +230,6 @@ impl Module {
         ModuleParser::new(engine).parse_buffered(wasm)
     }
 
-    /// Creates a new Wasm [`Module`] from the given Wasm bytecode stream.
-    ///
-    /// # Note
-    ///
-    /// This parses, validates and translates the Wasm bytecode yielded by `stream`.
-    ///
-    /// # Errors
-    ///
-    /// - If the Wasm bytecode is malformed or fails to validate.
-    /// - If the Wasm bytecode violates restrictions
-    ///   set in the [`Config`] used by the `engine`.
-    /// - If Wasmi cannot translate the Wasm bytecode.
-    ///
-    /// [`Config`]: crate::Config
-    #[deprecated(
-        since = "0.48.0",
-        note = "\
-            This API has been deprecated because it is inefficient and unserused. \
-            Please use the `Module::new` API instead if possible. \
-            If you have an urgent need for this API, please tell us at: https://github.com/wasmi-labs/wasmi \
-        "
-    )]
-    pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
-        ModuleParser::new(engine).parse_streaming(stream)
-    }
-
     /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
     ///
     /// # Note
@@ -281,42 +253,6 @@ impl Module {
     pub unsafe fn new_unchecked(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
         let parser = ModuleParser::new(engine);
         unsafe { parser.parse_buffered_unchecked(wasm) }
-    }
-
-    /// Creates a new Wasm [`Module`] from the given byte stream.
-    ///
-    /// # Note
-    ///
-    /// This parses and translates the Wasm bytecode yielded by `stream`.
-    ///
-    /// # Safety
-    ///
-    /// - This does _not_ validate the Wasm bytecode.
-    /// - It is the caller's responsibility that the Wasm bytecode is valid.
-    /// - It is the caller's responsibility that the Wasm bytecode adheres
-    ///   to the restrictions set by the used [`Config`] of the `engine`.
-    /// - Violating the above rules is undefined behavior.
-    ///
-    /// # Errors
-    ///
-    /// - If the Wasm bytecode is malformed or contains invalid sections.
-    /// - If the Wasm bytecode fails to be compiled by Wasmi.
-    ///
-    /// [`Config`]: crate::Config
-    #[deprecated(
-        since = "0.48.0",
-        note = "\
-            This API has been deprecated because it is inefficient and unserused. \
-            Please use the `Module::new_unchecked` API instead if possible. \
-            If you have an urgent need for this API, please tell us at: https://github.com/wasmi-labs/wasmi \
-        "
-    )]
-    pub unsafe fn new_streaming_unchecked(
-        engine: &Engine,
-        stream: impl Read,
-    ) -> Result<Self, Error> {
-        let parser = ModuleParser::new(engine);
-        unsafe { parser.parse_streaming_unchecked(stream) }
     }
 
     /// Returns the [`Engine`] used during creation of the [`Module`].

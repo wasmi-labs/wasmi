@@ -11,7 +11,3 @@ pub use self::snapshots::preview_1::{
     add_wasi_snapshot_preview1_to_linker as add_to_linker,
     AddWasi,
 };
-
-#[doc(inline)]
-#[expect(deprecated)]
-pub use self::snapshots::preview_1::add_wasi_snapshot_preview1_to_linker_builder as add_to_linker_builder;
