@@ -8,6 +8,17 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.51.0` - 2025-08-13
+
+### Changed
+
+- Redesign the stack limits `Config` API. [#1631]
+  - Deprecated the `StackLimits` type and `Config::set_stack_limits` method.
+  - Deprecated the `Config::cached_stacks` method.
+  - Added `Config::set_{max_recursion_depth,min_stack_height,max_stack_height}` methods.
+
+[#1631]: https://github.com/wasmi-labs/wasmi/pull/1631
+
 ## `0.50.0` - 2025-08-11
 
 This is supposedly the final release before Wasmi 1.0.0.
