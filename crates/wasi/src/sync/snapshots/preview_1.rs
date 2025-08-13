@@ -31,10 +31,9 @@ fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, wasm
     }
 }
 
-/// Implemented by Wasmi [`Linker`] and [`LinkerBuilder`] to populate them with WASI definitions.
+/// Implemented by Wasmi [`Linker`] to populate them with WASI definitions.
 ///
 /// [`Linker`]: wasmi::Linker
-/// [`LinkerBuilder`]: wasmi::LinkerBuilder
 pub trait AddWasi<T> {
     /// Add Wasi preview1 definitions to `self`.
     fn add_wasi<U>(
