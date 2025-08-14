@@ -40,7 +40,7 @@ macro_rules! define_enum {
         /// The documentation of each [`Instruction`] describes its encoding in the
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
-        #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[derive(Debug)]
         #[non_exhaustive]
         #[repr(u16)]
         pub enum Instruction {
@@ -83,6 +83,13 @@ macro_rules! define_enum {
     };
 }
 for_each_op::for_each_op!(define_enum);
+
+impl Copy for Instruction {}
+impl Clone for Instruction {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
 
 /// Helper trait for [`Instruction::result`] method implementation.
 trait IntoReg: Sized {
