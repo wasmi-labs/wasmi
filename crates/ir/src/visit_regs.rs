@@ -22,7 +22,7 @@ pub trait VisitRegs {
 }
 
 /// Internal trait used to dispatch to a [`VisitRegs`] visitor.
-trait HostVisitor {
+pub trait HostVisitor {
     /// Host the [`VisitRegs`] visitor in the appropriate way.
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V);
 }
@@ -106,7 +106,7 @@ impl_host_visitor_for!(
 impl_host_visitor_for!(ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8,);
 
 /// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.
-pub struct Res<T>(T);
+pub struct Res<T>(pub T);
 
 impl HostVisitor for Res<&'_ mut Reg> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
@@ -139,39 +139,3 @@ impl<const N: u16> HostVisitor for Res<&'_ mut FixedRegSpan<N>> {
         visitor.visit_result_regs(self.0.span_mut(), Some(N));
     }
 }
-
-macro_rules! impl_host_visitor {
-    (
-        $(
-            $( #[doc = $doc:literal] )*
-            #[snake_name($snake_name:ident)]
-            $name:ident
-            $(
-                {
-                    $( @ $result_name:ident: $result_ty:ty, )?
-                    $(
-                        $( #[$field_docs:meta] )*
-                        $field_name:ident: $field_ty:ty
-                    ),*
-                    $(,)?
-                }
-            )?
-        ),* $(,)?
-    ) => {
-        impl<'a> HostVisitor for &'a mut Instruction {
-            fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-                match self {
-                    $(
-                        Instruction::$name { $( $( $result_name, )? $( $field_name, )* )? } => {
-                            $(
-                                $( Res($result_name).host_visitor(visitor); )?
-                                $( $field_name.host_visitor(visitor); )*
-                            )?
-                        }
-                    )*
-                }
-            }
-        }
-    };
-}
-for_each_op!(impl_host_visitor);

@@ -40,7 +40,7 @@ macro_rules! define_enum {
         /// The documentation of each [`Instruction`] describes its encoding in the
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
-        #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[derive(Debug)]
         #[non_exhaustive]
         #[repr(u16)]
         pub enum Instruction {
@@ -79,10 +79,47 @@ macro_rules! define_enum {
                     }
                 }
             )*
+
+            /// Returns the result [`Reg`] for `self`.
+            ///
+            /// Returns `None` if `self` does not statically return a single [`Reg`].
+            pub fn result(&self) -> Option<$crate::Reg> {
+                match *self {
+                    $(
+                        Self::$name { $( $( $result_name, )? )* .. } => {
+                            IntoReg::into_reg((
+                                $( $( $result_name )? )*
+                            ))
+                        }
+                    )*
+                }
+            }
+        }
+
+        impl<'a> $crate::visit_regs::HostVisitor for &'a mut Instruction {
+            fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
+                match self {
+                    $(
+                        Instruction::$name { $( $( $result_name, )? $( $field_name, )* )? } => {
+                            $(
+                                $( $crate::visit_regs::Res($result_name).host_visitor(visitor); )?
+                                $( $field_name.host_visitor(visitor); )*
+                            )?
+                        }
+                    )*
+                }
+            }
         }
     };
 }
 for_each_op::for_each_op!(define_enum);
+
+impl Copy for Instruction {}
+impl Clone for Instruction {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
 
 /// Helper trait for [`Instruction::result`] method implementation.
 trait IntoReg: Sized {
@@ -101,46 +138,6 @@ impl IntoReg for [Reg; 2] {}
 impl IntoReg for RegSpan {}
 impl<const N: u16> IntoReg for FixedRegSpan<N> {}
 impl IntoReg for () {}
-
-macro_rules! define_result {
-    (
-        $(
-            $( #[doc = $doc:literal] )*
-            #[snake_name($snake_name:ident)]
-            $name:ident
-            $(
-                {
-                    $(
-                        @ $result_name:ident: $result_ty:ty,
-                    )?
-                    $(
-                        $( #[$field_docs:meta] )*
-                        $field_name:ident: $field_ty:ty
-                    ),*
-                    $(,)?
-                }
-            )?
-        ),* $(,)?
-    ) => {
-        impl Instruction {
-            /// Returns the result [`Reg`] for `self`.
-            ///
-            /// Returns `None` if `self` does not statically return a single [`Reg`].
-            pub fn result(&self) -> Option<$crate::Reg> {
-                match *self {
-                    $(
-                        Self::$name { $( $( $result_name, )? )* .. } => {
-                            IntoReg::into_reg((
-                                $( $( $result_name )? )*
-                            ))
-                        }
-                    )*
-                }
-            }
-        }
-    };
-}
-for_each_op::for_each_op!(define_result);
 
 impl Instruction {
     /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
