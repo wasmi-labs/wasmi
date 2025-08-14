@@ -2392,9 +2392,10 @@ impl FuncTranslator {
             self.stack.push_operand(selected)?;
             return Ok(());
         }
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
         let condition = self.layout.operand_to_reg(condition)?;
-        let mut true_val = self.layout.operand_to_reg(true_val)?;
-        let mut false_val = self.layout.operand_to_reg(false_val)?;
+        let mut true_val = self.immediate_to_reg(true_val, consume_fuel_instr)?;
+        let mut false_val = self.immediate_to_reg(false_val, consume_fuel_instr)?;
         match self
             .instrs
             .try_fuse_select(ty, condition, &self.layout, &mut self.stack)?
