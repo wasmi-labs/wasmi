@@ -997,11 +997,7 @@ impl FuncTranslator {
     /// - If the immediate `operand` cannot be encoded as `copy` with inline immediate
     ///   a function local constant [`Reg`] will be allocated and returned.
     /// - Returns the associated [`Reg`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
-    fn immediate_to_reg(
-        &mut self,
-        operand: Operand,
-        consume_fuel: Option<Instr>,
-    ) -> Result<Reg, Error> {
+    fn immediate_to_reg(&mut self, operand: Operand) -> Result<Reg, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_reg(operand.local_index()),
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index()),
@@ -1017,6 +1013,7 @@ impl FuncTranslator {
                         Ok(value)
                     }
                     copy_instr => {
+                        let consume_fuel = self.stack.consume_fuel_instr();
                         self.instrs.push_instr(
                             copy_instr,
                             consume_fuel,
@@ -2392,10 +2389,9 @@ impl FuncTranslator {
             self.stack.push_operand(selected)?;
             return Ok(());
         }
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
         let condition = self.layout.operand_to_reg(condition)?;
-        let mut true_val = self.immediate_to_reg(true_val, consume_fuel_instr)?;
-        let mut false_val = self.immediate_to_reg(false_val, consume_fuel_instr)?;
+        let mut true_val = self.immediate_to_reg(true_val)?;
+        let mut false_val = self.immediate_to_reg(false_val)?;
         match self
             .instrs
             .try_fuse_select(ty, condition, &self.layout, &mut self.stack)?
