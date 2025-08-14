@@ -790,7 +790,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         }
         // Case: fallback to generic `memory.grow` instruction
-        let delta = self.layout.operand_to_reg(delta)?;
+        let delta = self.immediate_to_reg(delta)?;
         self.push_instr_with_result(
             index_ty.ty(),
             |result| Instruction::memory_grow(result, delta),
@@ -1776,8 +1776,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst = self.layout.operand_to_reg(dst)?;
-        let src = self.layout.operand_to_reg(src)?;
+        let dst = self.immediate_to_reg(dst)?;
+        let src = self.immediate_to_reg(src)?;
         let len = self.make_input16::<u32>(len)?;
         let instr = match len {
             Input::Immediate(len) => Instruction::memory_init_imm(dst, src, len),
@@ -1806,8 +1806,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
         let src_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(src_mem));
         let min_index_ty = dst_memory_type.index_ty().min(&src_memory_type.index_ty());
-        let dst = self.layout.operand_to_reg(dst)?;
-        let src = self.layout.operand_to_reg(src)?;
+        let dst = self.immediate_to_reg(dst)?;
+        let src = self.immediate_to_reg(src)?;
         let len = self.make_index16(len, min_index_ty)?;
         let instr = match len {
             Input::Reg(len) => Instruction::memory_copy(dst, src, len),
@@ -1824,7 +1824,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, value, len) = self.stack.pop3();
-        let dst = self.layout.operand_to_reg(dst)?;
+        let dst = self.immediate_to_reg(dst)?;
         let value = self.make_input(value, |_, value| {
             let byte = u32::from(value) as u8;
             Ok(Input::Immediate(byte))
@@ -1851,8 +1851,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst = self.layout.operand_to_reg(dst)?;
-        let src = self.layout.operand_to_reg(src)?;
+        let dst = self.immediate_to_reg(dst)?;
+        let src = self.immediate_to_reg(src)?;
         let len = self.make_input16::<u32>(len)?;
         let instr = match len {
             Input::Reg(len) => Instruction::table_init(dst, src, len),
@@ -1881,8 +1881,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_table_type = *self.module.get_type_of_table(TableIdx::from(dst_table));
         let src_table_type = *self.module.get_type_of_table(TableIdx::from(src_table));
         let min_index_ty = dst_table_type.index_ty().min(&src_table_type.index_ty());
-        let dst = self.layout.operand_to_reg(dst)?;
-        let src = self.layout.operand_to_reg(src)?;
+        let dst = self.immediate_to_reg(dst)?;
+        let src = self.immediate_to_reg(src)?;
         let len = self.make_index16(len, min_index_ty)?;
         let instr = match len {
             Input::Reg(len) => Instruction::table_copy(dst, src, len),
@@ -1960,8 +1960,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let dst = self.layout.operand_to_reg(dst)?;
-        let value = self.layout.operand_to_reg(value)?;
+        let dst = self.immediate_to_reg(dst)?;
+        let value = self.immediate_to_reg(value)?;
         let len = self.make_index16(len, table_type.index_ty())?;
         let instr = match len {
             Input::Reg(len) => Instruction::table_fill(dst, len, value),
@@ -2031,7 +2031,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return Ok(());
             }
         }
-        let value = self.layout.operand_to_reg(value)?;
+        let value = self.immediate_to_reg(value)?;
         self.push_instr_with_result(
             index_ty.ty(),
             |result| match delta {
