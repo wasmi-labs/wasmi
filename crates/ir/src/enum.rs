@@ -303,7 +303,7 @@ fn size_of() {
     assert_eq!(::core::mem::align_of::<Instruction>(), 4);
 }
 
-#[cfg(all(test, any(feature = "serialization", feature = "deserialization")))]
+#[cfg(all(test, feature = "serialization", feature = "deserialization"))]
 mod serde_tests {
     use super::*;
 

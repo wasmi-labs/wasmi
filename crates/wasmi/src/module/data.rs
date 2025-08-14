@@ -63,6 +63,7 @@ impl AsRef<[u8]> for PassiveDataSegmentBytes {
     }
 }
 
+#[cfg(feature = "deserialization")]
 impl PassiveDataSegmentBytes {
     pub(crate) fn from_vec(vec: Vec<u8>) -> Self {
         Self {

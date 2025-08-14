@@ -378,6 +378,7 @@ impl ModuleHeaderBuilder {
 
 impl ModuleBuilder {
     /// Sets the data segments for the module, replacing any previously set segments.
+    #[cfg(feature = "deserialization")]
     pub fn set_data_segments(&mut self, data_segments: super::data::DataSegments) {
         self.data_segments = super::data::DataSegmentsBuilder::from_data_segments(data_segments);
     }

@@ -496,12 +496,8 @@ impl Module {
         self.inner.custom_sections.iter()
     }
 
-    /// Returns the start function index if present, as a u32.
-    pub(crate) fn start_func_index(&self) -> Option<u32> {
-        self.module_header().start.map(export::FuncIdx::into_u32)
-    }
-
     /// Returns an iterator over all data segments as InitDataSegment, including their bytes.
+    #[cfg(feature = "serialization")]
     pub(crate) fn all_init_data_segments(
         &self,
     ) -> impl Iterator<Item = crate::module::InitDataSegment<'_>> {
@@ -509,6 +505,7 @@ impl Module {
     }
 
     /// Returns an iterator over all element segments.
+    #[cfg(feature = "serialization")]
     pub(crate) fn element_segments(&self) -> impl Iterator<Item = &ElementSegment> {
         self.module_header().element_segments.iter()
     }

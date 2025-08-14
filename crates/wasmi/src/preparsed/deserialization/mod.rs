@@ -9,7 +9,7 @@ use crate::{
         builder::{ModuleBuilder, ModuleHeaderBuilder, ModuleImportsBuilder},
         ImportName,
     },
-    serialization::{
+    preparsed::{
         DeserializationError, SerializedExternType, SerializedModule, SERIALIZATION_VERSION,
     },
     Engine, FuncType, MemoryType, Module, TableType,
@@ -25,7 +25,7 @@ use crate::module::export::TableIdx;
 use crate::module::init_expr::{ConstExpr, Op};
 use wasmi_core::ValType;
 
-#[cfg(all(test, feature = "parser"))]
+#[cfg(all(test, feature = "parser", feature = "serialization"))]
 mod tests;
 
 /// Deserializes a Wasmi module from a compact binary format.
@@ -44,26 +44,26 @@ mod tests;
 /// Returns a `DeserializationError` if deserialization fails.
 pub fn deserialize_module(data: &[u8]) -> Result<(Module, Engine), DeserializationError> {
     let ser_mod: SerializedModule = postcard::from_bytes(data).map_err(|_e| {
-        crate::serialization::error::DeserializationError::CorruptedData {
+        crate::preparsed::error::DeserializationError::CorruptedData {
             reason: "postcard deserialization failed",
         }
     })?;
 
     if ser_mod.version != SERIALIZATION_VERSION {
         return Err(
-            crate::serialization::error::DeserializationError::UnsupportedVersion {
+            crate::preparsed::error::DeserializationError::UnsupportedVersion {
                 version: ser_mod.version,
                 supported: SERIALIZATION_VERSION,
             },
         );
     }
 
-    let engine = set_engine_features(&ser_mod)?;
+    let engine = configure_engine(&ser_mod)?;
     let module = ser_mod.deserialize(&engine)?;
     Ok((module, engine))
 }
 
-pub(super) fn set_engine_features(
+pub(super) fn configure_engine(
     ser_mod: &SerializedModule,
 ) -> Result<Engine, DeserializationError> {
     let mut engine_config = Config::default();
@@ -245,7 +245,7 @@ impl SerializedModule {
         let mut active_bytes = Vec::new();
         for seg in &self.data_segments {
             match seg {
-                crate::serialization::serialized_module::SerializedDataSegment::Active(active) => {
+                crate::preparsed::serialized_module::SerializedDataSegment::Active(active) => {
                     let offset_expr = ConstExpr {
                         op: Op::Const(crate::module::init_expr::ConstOp {
                             value: active.offset.into(),
@@ -261,9 +261,7 @@ impl SerializedModule {
                     active_bytes.extend_from_slice(&active.bytes);
                     segments.push(segment);
                 }
-                crate::serialization::serialized_module::SerializedDataSegment::Passive(
-                    passive,
-                ) => {
+                crate::preparsed::serialized_module::SerializedDataSegment::Passive(passive) => {
                     let segment = DataSegment {
                         inner: DataSegmentInner::Passive {
                             bytes: PassiveDataSegmentBytes::from_vec(passive.bytes.clone()),

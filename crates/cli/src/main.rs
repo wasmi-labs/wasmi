@@ -1,7 +1,6 @@
 use crate::{
-    args::{Args, Cli},
+    args::Args,
     display::{DisplayExportedFuncs, DisplayFuncType, DisplaySequence, DisplayValue},
-    serialize::serialize,
 };
 use anyhow::{anyhow, bail, Error, Result};
 use clap::Parser;
@@ -12,22 +11,13 @@ use wasmi::{Func, FuncType, Val};
 mod args;
 mod context;
 mod display;
-mod serialize;
 mod utils;
 
 #[cfg(test)]
 mod tests;
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
-
-    match cli {
-        Cli::Args(args) => run(args),
-        Cli::Serialize(args) => serialize(args),
-    }
-}
-
-fn run(args: Args) -> Result<()> {
+    let args = Args::parse();
     let wasm_file = args.wasm_file();
     let wasi_ctx = args.wasi_context()?;
     let mut ctx = Context::new(wasm_file, wasi_ctx, args.fuel(), args.compilation_mode())?;

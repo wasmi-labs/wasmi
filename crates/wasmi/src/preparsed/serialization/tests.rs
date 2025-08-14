@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    serialization::{serialized_module::types::SerializedValType, SerializedExternType},
+    preparsed::{serialized_module::types::SerializedValType, SerializedExternType},
     Engine, Module,
 };
 use wat::parse_str as parse_wat;

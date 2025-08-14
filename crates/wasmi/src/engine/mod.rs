@@ -425,6 +425,7 @@ impl Engine {
     }
 
     /// Returns all Wasmi IR instructions for the given EngineFunc.
+    #[cfg(feature = "serialization")]
     pub(crate) fn get_instructions(
         &self,
         func: crate::engine::EngineFunc,
@@ -436,6 +437,7 @@ impl Engine {
     }
 
     /// Returns a reference to the compiled function data for the given EngineFunc.
+    #[cfg(feature = "serialization")]
     pub(crate) fn get_compiled_func(
         &self,
         func: crate::engine::EngineFunc,

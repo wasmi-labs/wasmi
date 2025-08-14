@@ -333,7 +333,7 @@ fn test_feature_compatibility() {
 #[test]
 fn test_serialize_deserialize_simple_module_with_imports() {
     use crate::func::{Func, TypedFunc};
-    use crate::serialization::{deserialize_module, serialize_module};
+    use crate::preparsed::{deserialize_module, serialize_module};
     use crate::{Engine, Linker, Module, Store};
 
     // Create a simple WAT module with imports
@@ -451,7 +451,7 @@ fn test_serialize_deserialize_simple_module_with_imports() {
 #[test]
 fn test_serialize_deserialize_module_with_global_imports() {
     use crate::func::Func;
-    use crate::serialization::{deserialize_module, serialize_module};
+    use crate::preparsed::{deserialize_module, serialize_module};
     use crate::{Engine, Global, Linker, Module, Store};
 
     // Create a WAT module with multiple global imports of the same type
@@ -599,7 +599,7 @@ fn test_serialize_deserialize_module_with_global_imports() {
 #[test]
 fn test_serialize_deserialize_module_with_global_exports() {
     use crate::func::TypedFunc;
-    use crate::serialization::{deserialize_module, serialize_module};
+    use crate::preparsed::{deserialize_module, serialize_module};
     use crate::{Engine, Module, Store};
 
     // Create a WAT module with global exports similar to the large module

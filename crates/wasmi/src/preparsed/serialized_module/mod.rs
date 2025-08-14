@@ -4,7 +4,7 @@
 //! in its serialized form, optimized for compactness and cross-platform compatibility.
 
 extern crate alloc;
-use crate::serialization::serialized_module::types::{
+use crate::preparsed::serialized_module::types::{
     SerializedExport, SerializedFuncType, SerializedGlobal, SerializedImport,
     SerializedInternalFunc,
 };
@@ -13,9 +13,11 @@ use alloc::vec::Vec;
 pub(crate) mod types;
 
 pub(super) use types::{
-    SerializedDataSegment, SerializedElementSegment, SerializedExternType, SerializedMemoryType,
-    SerializedTableType,
+    SerializedDataSegment, SerializedElementSegment, SerializedMemoryType, SerializedTableType,
 };
+
+#[cfg(feature = "deserialization")]
+pub(super) use types::SerializedExternType;
 
 /// Current serialization format version.
 pub const SERIALIZATION_VERSION: u32 = 1;
@@ -44,8 +46,6 @@ pub struct SerializedModule {
     pub(crate) globals: Vec<SerializedGlobal>,
     /// Export declarations.
     pub(crate) exports: Vec<SerializedExport>,
-    /// Start function index (if any).
-    pub(crate) start: Option<u32>,
     /// The data segments
     pub(crate) data_segments: Vec<SerializedDataSegment>,
     /// The element segments

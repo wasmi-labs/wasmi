@@ -1,19 +1,14 @@
-use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
 use wasmi_core::{Mutability, ReadAs, ValType};
 
 use crate::module::init_expr::ConstExpr;
-use crate::{ExternType, FuncType, GlobalType, ImportType, MemoryType, TableType};
+use crate::{FuncType, GlobalType, MemoryType, TableType};
 
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
-pub(crate) struct SerializedFeatures {
-    pub(crate) simd: bool,
-    pub(crate) bulk_memory: bool,
-    pub(crate) reference_types: bool,
-    pub(crate) tail_calls: bool,
-}
+#[cfg(feature = "serialization")]
+use alloc::borrow::ToOwned;
+
+#[cfg(feature = "serialization")]
+use crate::{ExternType, ImportType};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serialization", derive(serde::Serialize))]
@@ -100,6 +95,7 @@ pub(crate) enum SerializedConstExpr {
     F64Const(u64), // Bit pattern
     V128Const([u8; 16]),
     GlobalGet(u32), // Index into globals
+    #[cfg(feature = "deserialization")]
     RefNull(SerializedValType),
     RefFunc(u32), // Index into functions
 }
@@ -175,9 +171,9 @@ impl From<&SerializedConstExpr> for ConstExpr {
                 // Convert bytes to u128 and then to V128
                 let mut u128_bytes = [0u8; 16];
                 u128_bytes.copy_from_slice(bytes);
-                let u128_val = u128::from_le_bytes(u128_bytes);
                 #[cfg(feature = "simd")]
                 {
+                    let u128_val = u128::from_le_bytes(u128_bytes);
                     Op::Const(ConstOp {
                         value: crate::core::V128::from(u128_val).into(),
                     })
@@ -191,6 +187,7 @@ impl From<&SerializedConstExpr> for ConstExpr {
             SerializedConstExpr::GlobalGet(global_idx) => Op::Global(GlobalOp {
                 global_index: *global_idx,
             }),
+            #[cfg(feature = "deserialization")]
             SerializedConstExpr::RefNull(_val_type) => {
                 // For now, just create a null function reference
                 Op::Const(ConstOp {
@@ -242,6 +239,7 @@ impl From<&GlobalType> for SerializedExternType {
     }
 }
 
+#[cfg(feature = "serialization")]
 impl SerializedExternType {
     pub(crate) fn from_func_type(
         func_ty: &FuncType,
@@ -347,17 +345,11 @@ pub(crate) struct SerializedImport {
     pub(crate) module: alloc::string::String,
     pub(crate) name: alloc::string::String,
     pub(crate) ty: SerializedExternType,
-    pub(crate) func_idx: u32,
-    pub(crate) global_idx: u32, // Global index for global imports
 }
 
+#[cfg(feature = "serialization")]
 impl SerializedImport {
-    pub(crate) fn from_import(
-        import: &ImportType,
-        ser_func_types: &[SerializedFuncType],
-        func_idx: u32,
-        global_idx: u32,
-    ) -> Self {
+    pub(crate) fn from_import(import: &ImportType, ser_func_types: &[SerializedFuncType]) -> Self {
         let module_name = import.module().to_owned();
         let name = import.name().to_owned();
         let ty = match import.ty() {
@@ -372,8 +364,6 @@ impl SerializedImport {
             module: module_name,
             name,
             ty,
-            func_idx,
-            global_idx,
         }
     }
 }
@@ -386,6 +376,7 @@ pub(crate) struct SerializedExport {
     pub(crate) ty: SerializedExternType,
 }
 
+#[cfg(feature = "serialization")]
 impl SerializedExport {
     pub(crate) fn from_export_with_func_idx(name: &str, func_idx: u32) -> Self {
         SerializedExport {
@@ -441,19 +432,9 @@ pub(crate) enum SerializedDataSegment {
 #[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct SerializedInternalFunc {
     pub(crate) type_idx: u32,
-    pub(crate) func_idx: u32,
     pub(crate) len_registers: u16,
     pub(crate) consts: Vec<crate::core::UntypedVal>,
     pub(crate) instructions: Vec<crate::ir::Instruction>,
-}
-
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
-pub struct SerializedCompiledFunc {
-    pub(crate) index: u32,
-    pub(crate) code: Vec<u8>,
-    pub(crate) locals: Vec<SerializedValType>,
 }
 
 /// Serializable representation of an element segment.

@@ -1,5 +1,5 @@
 use crate::{
-    serialization::{deserialize_module, serialize_module},
+    preparsed::{deserialize_module, serialize_module},
     Engine, Linker, Module, Store,
 };
 use alloc::vec::Vec;
@@ -20,7 +20,7 @@ fn imports_roundtrip() {
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
     // Serialize
     let ser =
-        crate::serialization::SerializedModule::from_module(&module, &engine).expect("serialize");
+        crate::preparsed::SerializedModule::from_module(&module, &engine).expect("serialize");
     let bytes = postcard::to_allocvec(&ser).expect("postcard serialize");
     // Deserialize
     let (deser_mod, _other_engine) = deserialize_module(&bytes).expect("failed to deserialize");
@@ -65,11 +65,11 @@ fn addition_module_serialize_deserialize_and_run() {
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
     // Serialize
     let ser =
-        crate::serialization::SerializedModule::from_module(&module, &engine).expect("serialize");
+        crate::preparsed::SerializedModule::from_module(&module, &engine).expect("serialize");
     let bytes = postcard::to_allocvec(&ser).expect("postcard serialize");
     // Deserialize with a new engine
     let (deser_mod, other_engine) =
-        crate::serialization::deserialize_module(&bytes).expect("failed to deserialize");
+        crate::preparsed::deserialize_module(&bytes).expect("failed to deserialize");
     // Run the exported add function
 
     let mut store = Store::new(&other_engine, ());
@@ -104,7 +104,7 @@ fn memory_export_roundtrip() {
 
     // Deserialize with a new engine
     let (deser_mod, other_engine) =
-        crate::serialization::deserialize_module(&bytes).expect("failed to deserialize");
+        crate::preparsed::deserialize_module(&bytes).expect("failed to deserialize");
 
     // Instantiate and check that memory is exported
     let mut store = Store::new(&other_engine, ());

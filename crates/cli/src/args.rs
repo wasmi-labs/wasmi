@@ -8,23 +8,7 @@ use std::{
 };
 use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None, trailing_var_arg = true)]
-pub enum Cli {
-    Args(Args),
-    Serialize(SerializeArgs),
-}
-
-#[derive(Parser, Debug)]
-pub struct SerializeArgs {
-    /// The file containing the WebAssembly module to serialize.
-    #[clap(value_name = "MODULE", value_hint = clap::ValueHint::FilePath)]
-    pub module: PathBuf,
-    /// The output file for the serialized module (or '-' for stdout).
-    #[clap(long, value_name = "OUTPUT", value_hint = clap::ValueHint::FilePath)]
-    pub output: Option<PathBuf>,
-}
-
+/// A CLI flag value key-value argument.
 #[derive(Debug, Clone)]
 struct KeyValue {
     key: String,

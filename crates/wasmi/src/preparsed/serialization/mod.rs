@@ -1,5 +1,5 @@
-use crate::serialization::types::{SerializedActiveDataSegment, SerializedPassiveDataSegment};
-use crate::serialization::{
+use crate::preparsed::types::{SerializedActiveDataSegment, SerializedPassiveDataSegment};
+use crate::preparsed::{
     EngineConfig, SerializationError, SerializedDataSegment, SerializedElementSegment,
     SerializedMemoryType, SerializedModule, SerializedTableType, SERIALIZATION_VERSION,
 };
@@ -7,14 +7,14 @@ use crate::Engine;
 
 use wasmi_core::ReadAs;
 extern crate alloc;
-use crate::serialization::serialized_module::types::{
+use crate::preparsed::serialized_module::types::{
     SerializedConstExpr, SerializedExport, SerializedFuncType, SerializedGlobal,
     SerializedGlobalType, SerializedImport, SerializedInternalFunc,
 };
 use crate::{ExternType, Module};
 use alloc::vec::Vec;
 
-#[cfg(all(test, feature = "parser"))]
+#[cfg(all(test, feature = "parser", feature = "deserialization"))]
 mod tests;
 
 /// Serializes a Wasmi module to a compact binary format.
@@ -45,7 +45,7 @@ impl SerializedModule {
     pub(crate) fn from_module(
         module: &Module,
         engine: &Engine,
-    ) -> Result<Self, crate::serialization::error::SerializationError> {
+    ) -> Result<Self, crate::preparsed::error::SerializationError> {
         let engine_config = engine.config();
         let use_fuel = engine_config.get_consume_fuel();
         let serialized_engine_config = EngineConfig { use_fuel };
@@ -55,9 +55,7 @@ impl SerializedModule {
         let imports = extract_imports(module, &func_types);
         let mut internal_functions = Vec::new();
         let engine = module.engine();
-        let num_imports = module.imports().count();
-        for (internal_idx, (dedup_fn, engine_func)) in module.internal_funcs().enumerate() {
-            let actual_func_idx = num_imports + internal_idx;
+        for (dedup_fn, engine_func) in module.internal_funcs() {
             // Find the function type index as before
             let func_type = engine.resolve_func_type(&dedup_fn, Clone::clone);
             let ser_fn_type = SerializedFuncType::from(&func_type);
@@ -68,7 +66,7 @@ impl SerializedModule {
 
             // Extract function metadata from the engine
             let compiled_func = engine.get_compiled_func(engine_func).map_err(|_| {
-                crate::serialization::error::SerializationError::SerializationFailed {
+                crate::preparsed::error::SerializationError::SerializationFailed {
                     cause: "failed to get compiled function",
                 }
             })?;
@@ -76,17 +74,16 @@ impl SerializedModule {
             // Extract all instructions for this function using the new helper
             let instrs = engine
                 .get_instructions(engine_func)
-                .map_err(|_| {
-                    crate::serialization::error::SerializationError::SerializationFailed {
+                .map_err(
+                    |_| crate::preparsed::error::SerializationError::SerializationFailed {
                         cause: "failed to extract instructions",
-                    }
-                })?
+                    },
+                )?
                 .to_vec();
 
             // Build the serialized function struct
             let serialized_func = SerializedInternalFunc {
                 type_idx: type_index,
-                func_idx: actual_func_idx as u32,
                 len_registers: compiled_func.len_registers(),
                 consts: compiled_func.consts().to_vec(),
                 instructions: instrs,
@@ -146,9 +143,6 @@ impl SerializedModule {
                 }
             }
         }
-
-        // Extract start function index
-        let start = module.start_func_index();
 
         // Extract element segments
         let element_segments = module
@@ -221,7 +215,6 @@ impl SerializedModule {
             memories,
             globals,
             exports,
-            start,
             data_segments,
             element_segments,
             engine_config: serialized_engine_config,
@@ -244,24 +237,13 @@ fn extract_imports(
     module: &Module,
     ser_func_types: &[SerializedFuncType],
 ) -> Vec<SerializedImport> {
-    let mut func_idx = 0;
-    let mut global_idx = 0;
-
     module
         .imports()
         .map(|import| {
             let result = match import.ty() {
-                ExternType::Func(_) => {
-                    let idx = func_idx;
-                    func_idx += 1;
-                    SerializedImport::from_import(&import, ser_func_types, idx, 0)
-                }
-                ExternType::Global(_) => {
-                    let idx = global_idx;
-                    global_idx += 1;
-                    SerializedImport::from_import(&import, ser_func_types, 0, idx)
-                }
-                _ => SerializedImport::from_import(&import, ser_func_types, 0, 0),
+                ExternType::Func(_) => SerializedImport::from_import(&import, ser_func_types),
+                ExternType::Global(_) => SerializedImport::from_import(&import, ser_func_types),
+                _ => SerializedImport::from_import(&import, ser_func_types),
             };
             result
         })

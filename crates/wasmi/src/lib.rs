@@ -91,7 +91,8 @@ mod foreach_tuple;
 #[cfg(all(test, feature = "parser"))]
 pub mod tests;
 
-pub mod serialization;
+#[cfg(any(feature = "serialization", feature = "deserialization"))]
+pub mod preparsed;
 
 pub(crate) mod engine;
 mod error;
