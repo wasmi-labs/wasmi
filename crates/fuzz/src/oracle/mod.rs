@@ -65,6 +65,10 @@ impl Arbitrary<'_> for ChosenOracle {
 impl ChosenOracle {
     /// Configures `fuzz_config` for the chosen differential fuzzing oracle.
     pub fn configure(&self, fuzz_config: &mut FuzzSmithConfig) {
+        // Wasm's `relaxed-simd` is inherently non-deterministic and we cannot
+        // guarantee that all Wasm runtimes behave the same, which confuses the
+        // differential fuzzer. Therefore we disable it.
+        fuzz_config.disable_relaxed_simd();
         match self {
             ChosenOracle::WasmiStack => WasmiStackOracle::configure(fuzz_config),
             ChosenOracle::WasmiV048 => WasmiV048Oracle::configure(fuzz_config),
