@@ -40,7 +40,7 @@ macro_rules! define_enum {
         /// The documentation of each [`Instruction`] describes its encoding in the
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
-        #[derive(Debug)]
+        #[derive(Debug, PartialEq, Eq)]
         #[cfg_attr(feature = "serialization", derive(serde::Serialize))]
         #[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
         #[non_exhaustive]

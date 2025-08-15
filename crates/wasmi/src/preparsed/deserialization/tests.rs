@@ -19,8 +19,7 @@ fn imports_roundtrip() {
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
     // Serialize
-    let ser =
-        crate::preparsed::SerializedModule::from_module(&module, &engine).expect("serialize");
+    let ser = crate::preparsed::SerializedModule::from_module(&module, &engine).expect("serialize");
     let bytes = postcard::to_allocvec(&ser).expect("postcard serialize");
     // Deserialize
     let (deser_mod, _other_engine) = deserialize_module(&bytes).expect("failed to deserialize");
@@ -64,8 +63,7 @@ fn addition_module_serialize_deserialize_and_run() {
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
     // Serialize
-    let ser =
-        crate::preparsed::SerializedModule::from_module(&module, &engine).expect("serialize");
+    let ser = crate::preparsed::SerializedModule::from_module(&module, &engine).expect("serialize");
     let bytes = postcard::to_allocvec(&ser).expect("postcard serialize");
     // Deserialize with a new engine
     let (deser_mod, other_engine) =
@@ -74,10 +72,9 @@ fn addition_module_serialize_deserialize_and_run() {
 
     let mut store = Store::new(&other_engine, ());
     let linker = <Linker<()>>::new(&other_engine);
-    let instantiated = linker
-        .instantiate(&mut store, &deser_mod)
+    let started = linker
+        .instantiate_and_start(&mut store, &deser_mod)
         .expect("failed to instantiate");
-    let started = instantiated.start(&mut store).expect("failed to start");
     let add = started
         .get_typed_func::<(i32, i32), i32>(&mut store, "add")
         .expect("failed to get function");
@@ -109,10 +106,9 @@ fn memory_export_roundtrip() {
     // Instantiate and check that memory is exported
     let mut store = Store::new(&other_engine, ());
     let linker = <Linker<()>>::new(&other_engine);
-    let instantiated = linker
-        .instantiate(&mut store, &deser_mod)
+    let started = linker
+        .instantiate_and_start(&mut store, &deser_mod)
         .expect("failed to instantiate");
-    let started = instantiated.start(&mut store).expect("failed to start");
 
     // Check that memory is exported
     let memory = started
@@ -176,11 +172,9 @@ fn module_with_host_import_roundtrip() {
         .expect("Failed to define host function");
 
     // Instantiate the module
-    let instance = linker
-        .instantiate(&mut store, &deserialized_module)
+    let started = linker
+        .instantiate_and_start(&mut store, &deserialized_module)
         .expect("Failed to instantiate module");
-
-    let started = instance.start(&mut store).expect("failed to start");
 
     // Get the exported function
     let add_reduced = started

@@ -82,68 +82,6 @@ impl Config {
         features
     }
 
-    /// Sets the maximum recursion depth of the [`Engine`]'s stack during execution.
-    ///
-    /// # Note
-    ///
-    /// An execution traps if it exceeds this limits.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    pub fn set_max_recursion_depth(&mut self, value: usize) -> &mut Self {
-        self.stack.set_max_recursion_depth(value);
-        self
-    }
-
-    /// Sets the minimum (or initial) height of the [`Engine`]'s value stack in bytes.
-    ///
-    /// # Note
-    ///
-    /// - Lower initial heights may improve memory consumption.
-    /// - Higher initial heights may improve cold start times.
-    ///
-    /// # Panics
-    ///
-    /// If `value` is greater than the current maximum height of the value stack.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    pub fn set_min_stack_height(&mut self, value: usize) -> &mut Self {
-        if self.stack.set_min_stack_height(value).is_err() {
-            let max = self.stack.max_stack_height();
-            panic!("minimum stack height exceeds maximum: min={value}, max={max}");
-        }
-        self
-    }
-
-    /// Sets the maximum height of the [`Engine`]'s value stack in bytes.
-    ///
-    /// # Note
-    ///
-    /// An execution traps if it exceeds this limits.
-    ///
-    /// # Panics
-    ///
-    /// If `value` is less than the current minimum height of the value stack.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
-        if self.stack.set_max_stack_height(value).is_err() {
-            let max = self.stack.min_stack_height();
-            panic!("maximum stack height is lower than minimum: min={value}, max={max}");
-        }
-        self
-    }
-
-    /// Sets the maximum number of cached stacks for reuse for the [`Config`].
-    ///
-    /// # Note
-    ///
-    /// - A higher value may improve execution performance.
-    /// - A lower value may improve memory consumption.
-    pub fn set_max_cached_stacks(&mut self, value: usize) -> &mut Self {
-        self.stack.set_max_cached_stacks(value);
-        self
-    }
-
     /// Enable or disable the [`mutable-global`] Wasm proposal for the [`Config`].
     ///
     /// # Note
@@ -326,30 +264,66 @@ impl Config {
 }
 
 impl Config {
-    /// Sets the [`StackLimits`] for the [`Config`].
-    pub fn set_stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
-        self.stack_limits = stack_limits;
-        self
-    }
-
-    /// Returns the [`StackLimits`] of the [`Config`].
-    pub(super) fn stack_limits(&self) -> StackLimits {
-        self.stack_limits
-    }
-
-    /// Sets the maximum amount of cached stacks for reuse for the [`Config`].
+    /// Sets the maximum recursion depth of the [`Engine`]'s stack during execution.
     ///
     /// # Note
     ///
-    /// Defaults to 2.
-    pub fn set_cached_stacks(&mut self, amount: usize) -> &mut Self {
-        self.cached_stacks = amount;
+    /// An execution traps if it exceeds this limits.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
+    pub fn set_max_recursion_depth(&mut self, value: usize) -> &mut Self {
+        self.stack.set_max_recursion_depth(value);
         self
     }
 
-    /// Returns the maximum amount of cached stacks for reuse of the [`Config`].
-    pub(super) fn cached_stacks(&self) -> usize {
-        self.cached_stacks
+    /// Sets the minimum (or initial) height of the [`Engine`]'s value stack in bytes.
+    ///
+    /// # Note
+    ///
+    /// - Lower initial heights may improve memory consumption.
+    /// - Higher initial heights may improve cold start times.
+    ///
+    /// # Panics
+    ///
+    /// If `value` is greater than the current maximum height of the value stack.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
+    pub fn set_min_stack_height(&mut self, value: usize) -> &mut Self {
+        if self.stack.set_min_stack_height(value).is_err() {
+            let max = self.stack.max_stack_height();
+            panic!("minimum stack height exceeds maximum: min={value}, max={max}");
+        }
+        self
+    }
+
+    /// Sets the maximum height of the [`Engine`]'s value stack in bytes.
+    ///
+    /// # Note
+    ///
+    /// An execution traps if it exceeds this limits.
+    ///
+    /// # Panics
+    ///
+    /// If `value` is less than the current minimum height of the value stack.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
+    pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
+        if self.stack.set_max_stack_height(value).is_err() {
+            let max = self.stack.min_stack_height();
+            panic!("maximum stack height is lower than minimum: min={value}, max={max}");
+        }
+        self
+    }
+
+    /// Sets the maximum number of cached stacks for reuse for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// - A higher value may improve execution performance.
+    /// - A lower value may improve memory consumption.
+    pub fn set_max_cached_stacks(&mut self, value: usize) -> &mut Self {
+        self.stack.set_max_cached_stacks(value);
+        self
     }
 
     /// Configures whether Wasmi will consume fuel during execution to either halt execution as desired.

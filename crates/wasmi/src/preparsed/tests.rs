@@ -384,12 +384,9 @@ fn test_serialize_deserialize_simple_module_with_imports() {
         .expect("Failed to define add function");
 
     // Create instance with imports
-    let instance = linker
-        .instantiate(&mut store, &module)
+    let started = linker
+        .instantiate_and_start(&mut store, &module)
         .expect("Failed to instantiate module");
-    let started = instance
-        .start(&mut store)
-        .expect("Failed to start instance");
 
     // Test the module works before serialization
     let add: TypedFunc<(i32, i32), i32> = started
@@ -430,12 +427,9 @@ fn test_serialize_deserialize_simple_module_with_imports() {
         .expect("Failed to define add function");
 
     // Create a new instance with the deserialized module
-    let deserialized_instance = deserialized_linker
-        .instantiate(&mut deserialized_store, &deserialized_module)
+    let deserialized_started = deserialized_linker
+        .instantiate_and_start(&mut deserialized_store, &deserialized_module)
         .expect("Failed to instantiate deserialized module");
-    let deserialized_started = deserialized_instance
-        .start(&mut deserialized_store)
-        .expect("Failed to start deserialized instance");
 
     // Test the deserialized module
     let deserialized_add: TypedFunc<(i32, i32), i32> = deserialized_started
@@ -496,12 +490,9 @@ fn test_serialize_deserialize_module_with_global_imports() {
         .expect("Failed to define global_b");
 
     // Create instance with imports
-    let instance = linker
-        .instantiate(&mut store, &module)
+    let started = linker
+        .instantiate_and_start(&mut store, &module)
         .expect("Failed to instantiate module");
-    let started = instance
-        .start(&mut store)
-        .expect("Failed to start instance");
 
     // Test the module works before serialization
     let get_global_a: Func = started
@@ -558,12 +549,9 @@ fn test_serialize_deserialize_module_with_global_imports() {
         .expect("Failed to define global_b");
 
     // Create a new instance with the deserialized module
-    let deserialized_instance = deserialized_linker
-        .instantiate(&mut deserialized_store, &deserialized_module)
+    let deserialized_started = deserialized_linker
+        .instantiate_and_start(&mut deserialized_store, &deserialized_module)
         .expect("Failed to instantiate deserialized module");
-    let deserialized_started = deserialized_instance
-        .start(&mut deserialized_store)
-        .expect("Failed to start deserialized instance");
 
     // Test the deserialized module
     let deserialized_get_global_a: Func = deserialized_started
@@ -634,12 +622,9 @@ fn test_serialize_deserialize_module_with_global_exports() {
     assert!(deserialized_module.get_export("run").is_some());
 
     let linker = crate::Linker::new(&deser_engine);
-    let instance = linker
-        .instantiate(&mut store, &deserialized_module)
+    let started = linker
+        .instantiate_and_start(&mut store, &deserialized_module)
         .expect("Failed to instantiate module");
-    let started = instance
-        .start(&mut store)
-        .expect("Failed to start instance");
 
     // Test that we can instantiate and check the global values
     // Get the global values and verify they match the expected values

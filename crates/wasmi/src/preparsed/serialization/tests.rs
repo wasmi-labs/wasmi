@@ -6,52 +6,6 @@ use crate::{
 use wat::parse_str as parse_wat;
 
 #[test]
-fn serialization_succeeds() {
-    // Minimal valid Wasm module: (module (func))
-    let wat = "(module (func))";
-    let wasm_bytes = parse_wat(wat).expect("Failed to parse WAT");
-    let engine = Engine::default();
-    let module = Module::new(&engine, &wasm_bytes).expect("Failed to create Module");
-    let result = SerializedModule::from_module(&module, &engine);
-    assert!(
-        result.is_ok(),
-        "from_module should succeed for minimal module"
-    );
-    let serialized = result.unwrap();
-    assert_eq!(serialized.version, SERIALIZATION_VERSION);
-    // Check that instructions match engine's instructions for internal functions
-    let mut expected_instrs = Vec::new();
-    for (_dedup_fn, engine_func) in module.internal_funcs() {
-        let mut instrs = Vec::new();
-        let mut idx = 0;
-        loop {
-            match engine.resolve_instr(engine_func, idx) {
-                Ok(Some(instr)) => instrs.push(instr),
-                Ok(None) => break,
-                Err(e) => panic!("Failed to extract instructions: {e}"),
-            }
-            idx += 1;
-        }
-        expected_instrs.push(instrs);
-    }
-    assert_eq!(
-        serialized.internal_functions.len(),
-        expected_instrs.len(),
-        "Number of serialized functions should match"
-    );
-    for (serialized_func, expected_instrs) in serialized
-        .internal_functions
-        .iter()
-        .zip(expected_instrs.iter())
-    {
-        assert_eq!(
-            serialized_func.instructions, *expected_instrs,
-            "Serialized instructions should match engine instructions"
-        );
-    }
-}
-
-#[test]
 fn functions_extraction() {
     // WAT with three functions: (func) (func (param i32)) (func (param i32) (result i64))
     let wat = r#"

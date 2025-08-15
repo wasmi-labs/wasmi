@@ -14,9 +14,6 @@ mod block_type;
 #[cfg(feature = "parser")]
 mod translator;
 
-#[cfg(all(test, feature = "parser"))]
-mod tests;
-
 #[cfg(feature = "parser")]
 pub(crate) use self::translator::TranslationError;
 

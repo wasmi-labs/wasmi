@@ -74,13 +74,13 @@ impl From<&ValType> for SerializedValType {
 impl From<&SerializedValType> for ValType {
     fn from(val: &SerializedValType) -> Self {
         match val {
-            SerializedValType::I32 => crate::core::ValType::I32,
-            SerializedValType::I64 => crate::core::ValType::I64,
-            SerializedValType::F32 => crate::core::ValType::F32,
-            SerializedValType::F64 => crate::core::ValType::F64,
-            SerializedValType::V128 => crate::core::ValType::V128,
-            SerializedValType::FuncRef => crate::core::ValType::FuncRef,
-            SerializedValType::ExternRef => crate::core::ValType::ExternRef,
+            SerializedValType::I32 => crate::ValType::I32,
+            SerializedValType::I64 => crate::ValType::I64,
+            SerializedValType::F32 => crate::ValType::F32,
+            SerializedValType::F64 => crate::ValType::F64,
+            SerializedValType::V128 => crate::ValType::V128,
+            SerializedValType::FuncRef => crate::ValType::FuncRef,
+            SerializedValType::ExternRef => crate::ValType::ExternRef,
         }
     }
 }
@@ -116,7 +116,7 @@ impl From<&ConstExpr> for SerializedConstExpr {
                 // Check if it's a V128 value (when SIMD is enabled)
                 #[cfg(feature = "simd")]
                 {
-                    let v128_val = ReadAs::<crate::core::V128>::read_as(&value);
+                    let v128_val = ReadAs::<crate::V128>::read_as(&value);
                     // If the value is different when read as V128, it's likely a V128
                     if v128_val.as_u128() != i64_val as u128 {
                         return SerializedConstExpr::V128Const(v128_val.as_u128().to_le_bytes());
@@ -175,7 +175,7 @@ impl From<&SerializedConstExpr> for ConstExpr {
                 {
                     let u128_val = u128::from_le_bytes(u128_bytes);
                     Op::Const(ConstOp {
-                        value: crate::core::V128::from(u128_val).into(),
+                        value: crate::V128::from(u128_val).into(),
                     })
                 }
                 #[cfg(not(feature = "simd"))]
@@ -189,10 +189,8 @@ impl From<&SerializedConstExpr> for ConstExpr {
             }),
             #[cfg(feature = "deserialization")]
             SerializedConstExpr::RefNull(_val_type) => {
-                // For now, just create a null function reference
-                Op::Const(ConstOp {
-                    value: crate::FuncRef::null().into(),
-                })
+                // Actually, not sure what to do here, so let's panic
+                unimplemented!("not expecting null references during deserialization")
             }
             SerializedConstExpr::RefFunc(func_idx) => Op::FuncRef(FuncRefOp {
                 function_index: *func_idx,

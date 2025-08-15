@@ -214,32 +214,6 @@ impl ModuleImports {
 
 #[cfg(feature = "parser")]
 impl Module {
-    /// Creates a new Wasm [`Module`] from the given Wasm bytecode stream.
-    ///
-    /// # Note
-    ///
-    /// This parses, validates and translates the Wasm bytecode yielded by `stream`.
-    ///
-    /// # Errors
-    ///
-    /// - If the Wasm bytecode is malformed or fails to validate.
-    /// - If the Wasm bytecode violates restrictions
-    ///   set in the [`Config`] used by the `engine`.
-    /// - If Wasmi cannot translate the Wasm bytecode.
-    ///
-    /// [`Config`]: crate::Config
-    #[deprecated(
-        since = "0.48.0",
-        note = "\
-            This API has been deprecated because it is inefficient and unserused. \
-            Please use the `Module::new` API instead if possible. \
-            If you have an urgent need for this API, please tell us at: https://github.com/wasmi-labs/wasmi \
-        "
-    )]
-    pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
-        ModuleParser::new(engine).parse_streaming(stream)
-    }
-
     /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
     ///
     /// # Note

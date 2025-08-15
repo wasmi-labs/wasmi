@@ -25,11 +25,7 @@ use spin::Mutex;
 #[cfg(feature = "parser")]
 use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 #[cfg(feature = "parser")]
-use crate::{
-    core::{FuelCostsProvider, FuelError},
-    engine::ResumableOutOfFuelError,
-    module::{FuncIdx, ModuleHeader},
-};
+use crate::module::{FuncIdx, ModuleHeader};
 #[cfg(feature = "parser")]
 use core::{fmt, mem::MaybeUninit};
 #[cfg(feature = "parser")]

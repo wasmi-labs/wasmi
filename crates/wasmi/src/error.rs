@@ -2,7 +2,7 @@ use super::errors::{
     EnforcedLimitsError, FuncError, GlobalError, InstantiationError, IrError, LinkerError,
 };
 use crate::{
-    engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
+    engine::{ResumableError, ResumableHostTrapError, ResumableOutOfFuelError},
     module::ReadError,
     TrapCode,
 };
