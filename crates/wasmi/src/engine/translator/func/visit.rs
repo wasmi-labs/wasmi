@@ -24,7 +24,6 @@ use crate::{
     F32,
     F64,
 };
-use ir::Const32;
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -776,16 +775,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     |result| Instruction::memory_size(result, mem),
                     FuelCostsProvider::instance,
                 )?;
-                return Ok(());
-            }
-            if let Ok(delta) = <Const32<u64>>::try_from(delta) {
-                // Case: delta can be 32-bit encoded
-                self.push_instr_with_result(
-                    index_ty.ty(),
-                    |result| Instruction::memory_grow_imm(result, delta),
-                    FuelCostsProvider::instance,
-                )?;
-                self.push_param(Instruction::memory_index(mem))?;
                 return Ok(());
             }
         }
@@ -1778,12 +1767,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let dst = self.immediate_to_reg(dst)?;
         let src = self.immediate_to_reg(src)?;
-        let len = self.make_input16::<u32>(len)?;
-        let instr = match len {
-            Input::Immediate(len) => Instruction::memory_init_imm(dst, src, len),
-            Input::Reg(len) => Instruction::memory_init(dst, src, len),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        let len = self.immediate_to_reg(len)?;
+        self.push_instr(
+            Instruction::memory_init(dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         self.push_param(Instruction::memory_index(mem))?;
         self.push_param(Instruction::data_index(data_index))?;
         Ok(())
@@ -1803,17 +1791,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
-        let src_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(src_mem));
-        let min_index_ty = dst_memory_type.index_ty().min(&src_memory_type.index_ty());
         let dst = self.immediate_to_reg(dst)?;
         let src = self.immediate_to_reg(src)?;
-        let len = self.make_index16(len, min_index_ty)?;
-        let instr = match len {
-            Input::Reg(len) => Instruction::memory_copy(dst, src, len),
-            Input::Immediate(len) => Instruction::memory_copy_imm(dst, src, len),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        let len = self.immediate_to_reg(len)?;
+        self.push_instr(
+            Instruction::memory_copy(dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         self.push_param(Instruction::memory_index(dst_mem))?;
         self.push_param(Instruction::memory_index(src_mem))?;
         Ok(())
@@ -1822,25 +1806,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
-        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, value, len) = self.stack.pop3();
         let dst = self.immediate_to_reg(dst)?;
         let value = self.make_input(value, |_, value| {
             let byte = u32::from(value) as u8;
             Ok(Input::Immediate(byte))
         })?;
-        let len = self.make_index16(len, memory_type.index_ty())?;
-        let instr: Instruction = match (value, len) {
-            (Input::Reg(value), Input::Reg(len)) => Instruction::memory_fill(dst, value, len),
-            (Input::Reg(value), Input::Immediate(len)) => {
-                Instruction::memory_fill_exact(dst, value, len)
-            }
-            (Input::Immediate(value), Input::Reg(len)) => {
-                Instruction::memory_fill_imm(dst, value, len)
-            }
-            (Input::Immediate(value), Input::Immediate(len)) => {
-                Instruction::memory_fill_imm_exact(dst, value, len)
-            }
+        let len = self.immediate_to_reg(len)?;
+        let instr: Instruction = match value {
+            Input::Reg(value) => Instruction::memory_fill(dst, value, len),
+            Input::Immediate(value) => Instruction::memory_fill_imm(dst, value, len),
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
         self.push_param(Instruction::memory_index(mem))?;
@@ -1853,12 +1828,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let dst = self.immediate_to_reg(dst)?;
         let src = self.immediate_to_reg(src)?;
-        let len = self.make_input16::<u32>(len)?;
-        let instr = match len {
-            Input::Reg(len) => Instruction::table_init(dst, src, len),
-            Input::Immediate(len) => Instruction::table_init_imm(dst, src, len),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        let len = self.immediate_to_reg(len)?;
+        self.push_instr(
+            Instruction::table_init(dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         self.push_param(Instruction::table_index(table))?;
         self.push_param(Instruction::elem_index(elem_index))?;
         Ok(())
@@ -1878,17 +1852,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst_table_type = *self.module.get_type_of_table(TableIdx::from(dst_table));
-        let src_table_type = *self.module.get_type_of_table(TableIdx::from(src_table));
-        let min_index_ty = dst_table_type.index_ty().min(&src_table_type.index_ty());
         let dst = self.immediate_to_reg(dst)?;
         let src = self.immediate_to_reg(src)?;
-        let len = self.make_index16(len, min_index_ty)?;
-        let instr = match len {
-            Input::Reg(len) => Instruction::table_copy(dst, src, len),
-            Input::Immediate(len) => Instruction::table_copy_imm(dst, src, len),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        let len = self.immediate_to_reg(len)?;
+        self.push_instr(
+            Instruction::table_copy(dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         self.push_param(Instruction::table_index(dst_table))?;
         self.push_param(Instruction::table_index(src_table))?;
         Ok(())
@@ -1959,15 +1929,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_fill(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
-        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let dst = self.immediate_to_reg(dst)?;
         let value = self.immediate_to_reg(value)?;
-        let len = self.make_index16(len, table_type.index_ty())?;
-        let instr = match len {
-            Input::Reg(len) => Instruction::table_fill(dst, len, value),
-            Input::Immediate(len) => Instruction::table_fill_imm(dst, len, value),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        let len = self.immediate_to_reg(len)?;
+        self.push_instr(
+            Instruction::table_fill(dst, len, value),
+            FuelCostsProvider::instance,
+        )?;
         self.push_param(Instruction::table_index(table))?;
         Ok(())
     }
@@ -2015,9 +1983,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let index_ty = table_type.index_ty();
         let (value, delta) = self.stack.pop2();
-        let delta = self.make_index16(delta, index_ty)?;
-        if let Input::Immediate(delta) = delta {
-            if u64::from(delta) == 0 {
+        if let Operand::Immediate(delta) = delta {
+            let delta = delta.val();
+            let delta = match index_ty {
+                IndexType::I32 => u64::from(u32::from(delta)),
+                IndexType::I64 => u64::from(delta),
+            };
+            if delta == 0 {
                 // Case: growing by 0 elements.
                 //
                 // Since `table.grow` returns the `table.size` before the
@@ -2032,12 +2004,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         }
         let value = self.immediate_to_reg(value)?;
+        let delta = self.immediate_to_reg(delta)?;
         self.push_instr_with_result(
             index_ty.ty(),
-            |result| match delta {
-                Input::Reg(delta) => Instruction::table_grow(result, delta, value),
-                Input::Immediate(delta) => Instruction::table_grow_imm(result, delta, value),
-            },
+            |result| Instruction::table_grow(result, delta, value),
             FuelCostsProvider::instance,
         )?;
         self.push_param(Instruction::table_index(table))?;

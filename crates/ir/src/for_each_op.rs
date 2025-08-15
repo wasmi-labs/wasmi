@@ -5129,27 +5129,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of copied elements.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` field.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the tables.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
-                #[snake_name(table_copy_imm)]
-                TableCopyImm {
-                    /// The start index of the `dst` table.
-                    dst: Reg,
-                    /// The start index of the `src` table.
-                    src: Reg,
-                    /// The number of copied elements.
-                    len: Const16<u64>,
-                },
 
                 /// Wasm `table.init <table> <elem>` instruction.
                 ///
@@ -5170,27 +5149,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of copied elements.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` field.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the tables.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
-                /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
-                #[snake_name(table_init_imm)]
-                TableInitImm {
-                    /// The start index of the `dst` table.
-                    dst: Reg,
-                    /// The start index of the `src` table.
-                    src: Reg,
-                    /// The number of copied elements.
-                    len: Const16<u32>,
-                },
 
                 /// Wasm `table.fill <table>` instruction: `table[dst..dst+len] = value`
                 ///
@@ -5206,20 +5164,6 @@ macro_rules! for_each_op_grouped {
                     /// The value of the filled elements.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::TableFill`] with 16-bit constant `len` index.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
-                #[snake_name(table_fill_imm)]
-                TableFillImm {
-                    /// The start index of the table to fill.
-                    dst: Reg,
-                    /// The number of elements to fill.
-                    len: Const16<u64>,
-                    /// The value of the filled elements.
-                    value: Reg,
-                },
 
                 /// Wasm `table.grow <table>` instruction.
                 ///
@@ -5231,19 +5175,6 @@ macro_rules! for_each_op_grouped {
                     @result: Reg,
                     /// The number of elements to add to the table.
                     delta: Reg,
-                    /// The value that is used to fill up the new cells.
-                    value: Reg,
-                },
-                /// Variant of [`Instruction::TableGrow`] with 16-bit constant `delta`.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
-                #[snake_name(table_grow_imm)]
-                TableGrowImm {
-                    @result: Reg,
-                    /// The number of elements to add to the table.
-                    delta: Const16<u64>,
                     /// The value that is used to fill up the new cells.
                     value: Reg,
                 },
@@ -5278,17 +5209,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of pages to add to the memory.
                     delta: Reg,
                 },
-                /// Variant of [`Instruction::MemoryGrow`] with 16-bit constant `delta`.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_grow_imm)]
-                MemoryGrowImm {
-                    @result: Reg,
-                    /// The number of pages to add to the memory.
-                    delta: Const32<u64>,
-                },
 
                 /// Wasm `memory.copy` instruction.
                 ///
@@ -5308,27 +5228,6 @@ macro_rules! for_each_op_grouped {
                     src: Reg,
                     /// The number of copied bytes.
                     len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
-                ///
-                /// # Note
-                ///
-                /// This instruction copies _exactly_ `len` elements between the memories.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
-                #[snake_name(memory_copy_imm)]
-                MemoryCopyImm {
-                    /// The start index of the `dst` memory.
-                    dst: Reg,
-                    /// The start index of the `src` memory.
-                    src: Reg,
-                    /// The number of copied bytes.
-                    len: Const16<u64>,
                 },
 
                 /// Wasm `memory.fill` instruction.
@@ -5361,34 +5260,6 @@ macro_rules! for_each_op_grouped {
                     /// The number of bytes to fill.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `len` value.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_fill_exact)]
-                MemoryFillExact {
-                    /// The start index of the memory to fill.
-                    dst: Reg,
-                    /// The byte value used to fill the memory.
-                    value: Reg,
-                    /// The number of bytes to fill.
-                    len: Const16<u64>,
-                },
-                /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
-                ///
-                /// # Encoding
-                ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
-                #[snake_name(memory_fill_imm_exact)]
-                MemoryFillImmExact {
-                    /// The start index of the memory to fill.
-                    dst: Reg,
-                    /// The byte value used to fill the memory.
-                    value: u8,
-                    /// The number of bytes to fill.
-                    len: Const16<u64>,
-                },
 
                 /// Wasm `memory.init <data>` instruction.
                 ///
@@ -5408,23 +5279,6 @@ macro_rules! for_each_op_grouped {
                     src: Reg,
                     /// The number of bytes to initialize.
                     len: Reg,
-                },
-                /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` field.
-                ///
-                /// # Encoding
-                ///
-                /// This [`Instruction`] must be followed by
-                ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
-                #[snake_name(memory_init_imm)]
-                MemoryInitImm {
-                    /// The start index of the `dst` memory.
-                    dst: Reg,
-                    /// The start index of the `src` data segment.
-                    src: Reg,
-                    /// The number of initialized bytes.
-                    len: Const16<u32>,
                 },
 
                 /// A [`Table`] instruction parameter.

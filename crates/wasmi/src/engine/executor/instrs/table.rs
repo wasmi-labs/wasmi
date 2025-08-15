@@ -5,7 +5,6 @@ use crate::{
     errors::TableError,
     ir::{
         index::{Elem, Table},
-        Const16,
         Const32,
         Instruction,
         Reg,
@@ -155,22 +154,7 @@ impl Executor<'_> {
         self.execute_table_copy_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::TableCopyImm`].
-    pub fn execute_table_copy_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
     /// Executes a generic `table.copy` instruction.
-    #[inline(never)]
     fn execute_table_copy_impl(
         &mut self,
         store: &mut StoreInner,
@@ -211,22 +195,7 @@ impl Executor<'_> {
         self.execute_table_init_impl(store, dst, src, len)
     }
 
-    /// Executes an [`Instruction::TableInitImm`].
-    pub fn execute_table_init_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
     /// Executes a generic `table.init` instruction.
-    #[inline(never)]
     fn execute_table_init_impl(
         &mut self,
         store: &mut StoreInner,
@@ -257,21 +226,7 @@ impl Executor<'_> {
         self.execute_table_fill_impl(store, dst, len, value)
     }
 
-    /// Executes an [`Instruction::TableFillImm`].
-    pub fn execute_table_fill_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        len: Const16<u64>,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
     /// Executes a generic `table.fill` instruction.
-    #[inline(never)]
     fn execute_table_fill_impl(
         &mut self,
         store: &mut StoreInner,
@@ -299,20 +254,7 @@ impl Executor<'_> {
         self.execute_table_grow_impl(store, result, delta, value)
     }
 
-    /// Executes an [`Instruction::TableGrowImm`].
-    pub fn execute_table_grow_imm(
-        &mut self,
-        store: &mut PrunedStore,
-        result: Reg,
-        delta: Const16<u64>,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let delta: u64 = delta.into();
-        self.execute_table_grow_impl(store, result, delta, value)
-    }
-
     /// Executes a generic `table.grow` instruction.
-    #[inline(never)]
     fn execute_table_grow_impl(
         &mut self,
         store: &mut PrunedStore,
