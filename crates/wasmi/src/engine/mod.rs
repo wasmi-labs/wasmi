@@ -1,29 +1,34 @@
 //! The Wasmi interpreter.
 
-mod block_type;
-mod code_map;
+pub(crate) mod code_map;
 mod config;
 mod executor;
 mod func_types;
 mod limits;
 mod resumable;
 mod traits;
-mod translator;
 mod utils;
 
-pub(crate) use self::{
+#[cfg(feature = "parser")]
+mod block_type;
+#[cfg(feature = "parser")]
+mod translator;
+
+#[cfg(feature = "parser")]
+pub(crate) use self::translator::TranslationError;
+
+#[cfg(feature = "parser")]
+use self::{
     block_type::BlockType,
-    executor::Stack,
-    func_types::DedupFuncType,
     translator::{
-        FuncTranslationDriver,
-        FuncTranslator,
-        FuncTranslatorAllocations,
-        LazyFuncTranslator,
-        ValidatingFuncTranslator,
-        WasmTranslator,
+        FuncTranslationDriver, FuncTranslator, FuncTranslatorAllocations, LazyFuncTranslator,
+        ValidatingFuncTranslator, WasmTranslator,
     },
 };
+
+#[cfg(feature = "parser")]
+use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
+
 use self::{
     code_map::{CodeMap, CompiledFuncEntity},
     func_types::FuncTypeRegistry,
@@ -34,27 +39,18 @@ pub use self::{
     config::{CompilationMode, Config},
     limits::{EnforcedLimits, EnforcedLimitsError, StackConfig},
     resumable::{
-        ResumableCall,
-        ResumableCallHostTrap,
-        ResumableCallOutOfFuel,
-        ResumableError,
-        ResumableHostTrapError,
-        ResumableOutOfFuelError,
-        TypedResumableCall,
-        TypedResumableCallHostTrap,
-        TypedResumableCallOutOfFuel,
+        ResumableCall, ResumableCallHostTrap, ResumableCallOutOfFuel, ResumableError,
+        ResumableHostTrapError, ResumableOutOfFuelError, TypedResumableCall,
+        TypedResumableCallHostTrap, TypedResumableCallOutOfFuel,
     },
     traits::{CallParams, CallResults},
-    translator::TranslationError,
 };
+pub(crate) use self::{executor::Stack, func_types::DedupFuncType};
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
     func::FuncInOut,
     module::{FuncIdx, ModuleHeader},
-    Error,
-    Func,
-    FuncType,
-    StoreContextMut,
+    Error, Func, FuncType, StoreContextMut,
 };
 use alloc::{
     sync::{Arc, Weak},
@@ -62,7 +58,6 @@ use alloc::{
 };
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
-use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 
 #[cfg(doc)]
 use crate::Store;
@@ -110,7 +105,7 @@ type Guarded<Idx> = GuardedEntity<EngineIdx, Idx>;
 ///   Most of its API has a `&self` receiver, so can be shared easily.
 #[derive(Debug, Clone)]
 pub struct Engine {
-    inner: Arc<EngineInner>,
+    pub(crate) inner: Arc<EngineInner>,
 }
 
 /// A weak reference to an [`Engine`].
@@ -175,7 +170,7 @@ impl Engine {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
+    pub(crate) fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
     where
         F: FnOnce(&FuncType) -> R,
     {
@@ -207,6 +202,7 @@ impl Engine {
     ///
     /// - If function translation fails.
     /// - If function validation fails.
+    #[cfg(feature = "parser")]
     pub(crate) fn translate_func(
         &self,
         func_index: FuncIdx,
@@ -227,21 +223,25 @@ impl Engine {
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "parser")]
     pub(crate) fn get_translation_allocs(&self) -> FuncTranslatorAllocations {
         self.inner.get_translation_allocs()
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "parser")]
     pub(crate) fn get_allocs(&self) -> (FuncTranslatorAllocations, FuncValidatorAllocations) {
         self.inner.get_allocs()
     }
 
     /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "parser")]
     pub(crate) fn recycle_translation_allocs(&self, allocs: FuncTranslatorAllocations) {
         self.inner.recycle_translation_allocs(allocs)
     }
 
     /// Recycles the given [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "parser")]
     pub(crate) fn recycle_allocs(
         &self,
         translation: FuncTranslatorAllocations,
@@ -261,6 +261,7 @@ impl Engine {
     ///
     /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`EngineFunc`].
+    #[cfg(feature = "parser")]
     fn init_lazy_func(
         &self,
         func_idx: FuncIdx,
@@ -419,6 +420,27 @@ impl Engine {
     pub(crate) fn recycle_stack(&self, stack: Stack) {
         self.inner.recycle_stack(stack)
     }
+
+    /// Returns all Wasmi IR instructions for the given EngineFunc.
+    #[cfg(feature = "serialization")]
+    pub(crate) fn get_instructions(
+        &self,
+        func: crate::engine::EngineFunc,
+    ) -> Result<&[crate::ir::Instruction], crate::Error> {
+        self.inner
+            .code_map
+            .get(None, func)
+            .map(|func_ref| func_ref.instrs())
+    }
+
+    /// Returns a reference to the compiled function data for the given EngineFunc.
+    #[cfg(feature = "serialization")]
+    pub(crate) fn get_compiled_func(
+        &self,
+        func: crate::engine::EngineFunc,
+    ) -> Result<crate::engine::code_map::CompiledFuncRef<'_>, crate::Error> {
+        self.inner.code_map.get(None, func)
+    }
 }
 
 /// The internal state of the Wasmi [`Engine`].
@@ -427,7 +449,7 @@ pub struct EngineInner {
     /// The [`Config`] of the engine.
     config: Config,
     /// Stores information about all compiled functions.
-    code_map: CodeMap,
+    pub(crate) code_map: CodeMap,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -436,6 +458,7 @@ pub struct EngineInner {
     /// comparison very fast. This helps to speed up indirect calls.
     func_types: RwLock<FuncTypeRegistry>,
     /// Reusable allocation stacks.
+    #[cfg(feature = "parser")]
     allocs: Mutex<ReusableAllocationStack>,
     /// Reusable engine stacks for Wasm execution.
     ///
@@ -446,6 +469,7 @@ pub struct EngineInner {
 }
 
 /// Stacks to hold and distribute reusable allocations.
+#[cfg(feature = "parser")]
 pub struct ReusableAllocationStack {
     /// The maximum height of each of the allocations stacks.
     max_height: usize,
@@ -455,6 +479,7 @@ pub struct ReusableAllocationStack {
     validation: Vec<FuncValidatorAllocations>,
 }
 
+#[cfg(feature = "parser")]
 impl Default for ReusableAllocationStack {
     fn default() -> Self {
         Self {
@@ -465,6 +490,7 @@ impl Default for ReusableAllocationStack {
     }
 }
 
+#[cfg(feature = "parser")]
 impl core::fmt::Debug for ReusableAllocationStack {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.debug_struct("ReusableAllocationStack")
@@ -477,6 +503,7 @@ impl core::fmt::Debug for ReusableAllocationStack {
     }
 }
 
+#[cfg(feature = "parser")]
 impl ReusableAllocationStack {
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
     pub fn get_translation_allocs(&mut self) -> FuncTranslatorAllocations {
@@ -551,6 +578,7 @@ impl EngineInner {
             config: config.clone(),
             code_map: CodeMap::new(config),
             func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
+            #[cfg(feature = "parser")]
             allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(&config.stack)),
         }
@@ -589,6 +617,7 @@ impl EngineInner {
     /// Translates the Wasm function using the [`Engine`].
     ///
     /// For more information read [`Engine::translate_func`].
+    #[cfg(feature = "parser")]
     fn translate_func(
         &self,
         func_index: FuncIdx,
@@ -643,11 +672,13 @@ impl EngineInner {
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "parser")]
     fn get_translation_allocs(&self) -> FuncTranslatorAllocations {
         self.allocs.lock().get_translation_allocs()
     }
 
     /// Returns reusable [`FuncValidatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "parser")]
     fn get_validation_allocs(&self) -> FuncValidatorAllocations {
         self.allocs.lock().get_validation_allocs()
     }
@@ -659,6 +690,7 @@ impl EngineInner {
     /// This method is a bit more efficient than calling both
     /// - [`EngineInner::get_translation_allocs`]
     /// - [`EngineInner::get_validation_allocs`]
+    #[cfg(feature = "parser")]
     fn get_allocs(&self) -> (FuncTranslatorAllocations, FuncValidatorAllocations) {
         let mut allocs = self.allocs.lock();
         let translation = allocs.get_translation_allocs();
@@ -667,11 +699,13 @@ impl EngineInner {
     }
 
     /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "parser")]
     fn recycle_translation_allocs(&self, allocs: FuncTranslatorAllocations) {
         self.allocs.lock().recycle_translation_allocs(allocs)
     }
 
     /// Recycles the given [`FuncValidatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "parser")]
     fn recycle_validation_allocs(&self, allocs: FuncValidatorAllocations) {
         self.allocs.lock().recycle_validation_allocs(allocs)
     }
@@ -683,6 +717,7 @@ impl EngineInner {
     /// This method is a bit more efficient than calling both
     /// - [`EngineInner::recycle_translation_allocs`]
     /// - [`EngineInner::recycle_validation_allocs`]
+    #[cfg(feature = "parser")]
     fn recycle_allocs(
         &self,
         translation: FuncTranslatorAllocations,
@@ -719,6 +754,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`EngineFunc`].
+    #[cfg(feature = "parser")]
     fn init_lazy_func(
         &self,
         func_idx: FuncIdx,

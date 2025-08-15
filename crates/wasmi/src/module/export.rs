@@ -82,6 +82,7 @@ pub enum ExternIdx {
     Global(GlobalIdx),
 }
 
+#[cfg(feature = "parser")]
 impl ExternIdx {
     /// Create a new [`ExternIdx`] from the given [`wasmparser::ExternalKind`] and `index`.
     ///

@@ -14,6 +14,6 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-wasmi = { workspace = true, features = ["std", "simd"] }
+wasmi = { workspace = true, features = ["std", "simd", "parser"] }
 wast = { workspace = true, features = ["wasm-module"] }
 anyhow = "1.0"

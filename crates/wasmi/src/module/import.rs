@@ -1,7 +1,10 @@
-use super::utils::FromWasmparser as _;
 use crate::{GlobalType, MemoryType, TableType};
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
+
+#[cfg(feature = "parser")]
+use super::utils::FromWasmparser as _;
+#[cfg(feature = "parser")]
 use wasmparser::TypeRef;
 
 /// A [`Module`] import item.
@@ -60,6 +63,7 @@ impl ImportName {
     }
 }
 
+#[cfg(feature = "parser")]
 impl From<wasmparser::Import<'_>> for Import {
     fn from(import: wasmparser::Import) -> Self {
         let kind = match import.ty {

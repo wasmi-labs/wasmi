@@ -52,6 +52,9 @@ wasi-common = { version = "34.0.0", default-features = false }
 wiggle = { version = "34.0.0", default-features = false }
 wasmtime = { version = "34.0.0", default-features = false }
 
+# Other dependencies
+postcard = { version = "1.1.2", default-features = false }
+
 [profile.bench]
 lto = "fat"
 codegen-units = 1

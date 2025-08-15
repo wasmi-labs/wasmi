@@ -1,7 +1,7 @@
 mod engine;
 mod stack;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parser"))]
 mod tests;
 
 pub use self::{

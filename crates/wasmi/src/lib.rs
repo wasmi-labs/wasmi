@@ -88,10 +88,13 @@ extern crate std;
 #[macro_use]
 mod foreach_tuple;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parser"))]
 pub mod tests;
 
-mod engine;
+#[cfg(any(feature = "serialization", feature = "deserialization"))]
+pub mod preparsed;
+
+pub(crate) mod engine;
 mod error;
 mod func;
 mod global;
@@ -99,7 +102,7 @@ mod instance;
 mod limits;
 mod linker;
 mod memory;
-mod module;
+pub(crate) mod module;
 mod reftype;
 mod store;
 mod table;

@@ -1,5 +1,7 @@
 use super::{EnforcedLimits, StackConfig};
 use crate::core::FuelCostsProvider;
+
+#[cfg(feature = "parser")]
 use wasmparser::WasmFeatures;
 
 /// Configuration for an [`Engine`].
@@ -10,6 +12,7 @@ pub struct Config {
     /// The limits set on the value stack and call stack.
     pub(crate) stack: StackConfig,
     /// The Wasm features used when validating or translating functions.
+    #[cfg(feature = "parser")]
     features: WasmFeatures,
     /// Is `true` if Wasmi executions shall consume fuel.
     consume_fuel: bool,
@@ -44,6 +47,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             stack: StackConfig::default(),
+            #[cfg(feature = "parser")]
             features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
@@ -54,6 +58,7 @@ impl Default for Config {
     }
 }
 
+#[cfg(feature = "parser")]
 impl Config {
     /// Returns the default [`WasmFeatures`].
     fn default_features() -> WasmFeatures {
@@ -75,68 +80,6 @@ impl Config {
         features.set(WasmFeatures::SIMD, cfg!(feature = "simd"));
         features.set(WasmFeatures::RELAXED_SIMD, cfg!(feature = "simd"));
         features
-    }
-
-    /// Sets the maximum recursion depth of the [`Engine`]'s stack during execution.
-    ///
-    /// # Note
-    ///
-    /// An execution traps if it exceeds this limits.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    pub fn set_max_recursion_depth(&mut self, value: usize) -> &mut Self {
-        self.stack.set_max_recursion_depth(value);
-        self
-    }
-
-    /// Sets the minimum (or initial) height of the [`Engine`]'s value stack in bytes.
-    ///
-    /// # Note
-    ///
-    /// - Lower initial heights may improve memory consumption.
-    /// - Higher initial heights may improve cold start times.
-    ///
-    /// # Panics
-    ///
-    /// If `value` is greater than the current maximum height of the value stack.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    pub fn set_min_stack_height(&mut self, value: usize) -> &mut Self {
-        if self.stack.set_min_stack_height(value).is_err() {
-            let max = self.stack.max_stack_height();
-            panic!("minimum stack height exceeds maximum: min={value}, max={max}");
-        }
-        self
-    }
-
-    /// Sets the maximum height of the [`Engine`]'s value stack in bytes.
-    ///
-    /// # Note
-    ///
-    /// An execution traps if it exceeds this limits.
-    ///
-    /// # Panics
-    ///
-    /// If `value` is less than the current minimum height of the value stack.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
-        if self.stack.set_max_stack_height(value).is_err() {
-            let max = self.stack.min_stack_height();
-            panic!("maximum stack height is lower than minimum: min={value}, max={max}");
-        }
-        self
-    }
-
-    /// Sets the maximum number of cached stacks for reuse for the [`Config`].
-    ///
-    /// # Note
-    ///
-    /// - A higher value may improve execution performance.
-    /// - A lower value may improve memory consumption.
-    pub fn set_max_cached_stacks(&mut self, value: usize) -> &mut Self {
-        self.stack.set_max_cached_stacks(value);
-        self
     }
 
     /// Enable or disable the [`mutable-global`] Wasm proposal for the [`Config`].
@@ -314,6 +257,75 @@ impl Config {
         self
     }
 
+    /// Returns the [`WasmFeatures`] represented by the [`Config`].
+    pub(crate) fn wasm_features(&self) -> WasmFeatures {
+        self.features
+    }
+}
+
+impl Config {
+    /// Sets the maximum recursion depth of the [`Engine`]'s stack during execution.
+    ///
+    /// # Note
+    ///
+    /// An execution traps if it exceeds this limits.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
+    pub fn set_max_recursion_depth(&mut self, value: usize) -> &mut Self {
+        self.stack.set_max_recursion_depth(value);
+        self
+    }
+
+    /// Sets the minimum (or initial) height of the [`Engine`]'s value stack in bytes.
+    ///
+    /// # Note
+    ///
+    /// - Lower initial heights may improve memory consumption.
+    /// - Higher initial heights may improve cold start times.
+    ///
+    /// # Panics
+    ///
+    /// If `value` is greater than the current maximum height of the value stack.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
+    pub fn set_min_stack_height(&mut self, value: usize) -> &mut Self {
+        if self.stack.set_min_stack_height(value).is_err() {
+            let max = self.stack.max_stack_height();
+            panic!("minimum stack height exceeds maximum: min={value}, max={max}");
+        }
+        self
+    }
+
+    /// Sets the maximum height of the [`Engine`]'s value stack in bytes.
+    ///
+    /// # Note
+    ///
+    /// An execution traps if it exceeds this limits.
+    ///
+    /// # Panics
+    ///
+    /// If `value` is less than the current minimum height of the value stack.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
+    pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
+        if self.stack.set_max_stack_height(value).is_err() {
+            let max = self.stack.min_stack_height();
+            panic!("maximum stack height is lower than minimum: min={value}, max={max}");
+        }
+        self
+    }
+
+    /// Sets the maximum number of cached stacks for reuse for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// - A higher value may improve execution performance.
+    /// - A lower value may improve memory consumption.
+    pub fn set_max_cached_stacks(&mut self, value: usize) -> &mut Self {
+        self.stack.set_max_cached_stacks(value);
+        self
+    }
+
     /// Configures whether Wasmi will consume fuel during execution to either halt execution as desired.
     ///
     /// # Note
@@ -393,10 +405,5 @@ impl Config {
     /// [`Engine`]: crate::Engine
     pub(crate) fn get_enforced_limits(&self) -> &EnforcedLimits {
         &self.limits
-    }
-
-    /// Returns the [`WasmFeatures`] represented by the [`Config`].
-    pub(crate) fn wasm_features(&self) -> WasmFeatures {
-        self.features
     }
 }

@@ -1,32 +1,12 @@
 use super::{
-    data::DataSegmentsBuilder,
-    export::ExternIdx,
-    import::FuncTypeIdx,
-    ConstExpr,
-    CustomSectionsBuilder,
-    DataSegments,
-    ElementSegment,
-    ExternTypeIdx,
-    FuncIdx,
-    Global,
-    Import,
-    ImportName,
-    Imported,
-    Module,
-    ModuleHeader,
-    ModuleHeaderInner,
-    ModuleImports,
-    ModuleInner,
+    data::DataSegmentsBuilder, export::ExternIdx, import::FuncTypeIdx, ConstExpr,
+    CustomSectionsBuilder, DataSegments, ElementSegment, ExternTypeIdx, FuncIdx, Global, Import,
+    ImportName, Imported, Module, ModuleHeader, ModuleHeaderInner, ModuleImports, ModuleInner,
 };
 use crate::{
     collections::Map,
     engine::{DedupFuncType, EngineFuncSpan},
-    Engine,
-    Error,
-    FuncType,
-    GlobalType,
-    MemoryType,
-    TableType,
+    Engine, Error, FuncType, GlobalType, MemoryType, TableType,
 };
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 
@@ -397,11 +377,18 @@ impl ModuleHeaderBuilder {
 }
 
 impl ModuleBuilder {
+    /// Sets the data segments for the module, replacing any previously set segments.
+    #[cfg(feature = "deserialization")]
+    pub fn set_data_segments(&mut self, data_segments: super::data::DataSegments) {
+        self.data_segments = super::data::DataSegmentsBuilder::from_data_segments(data_segments);
+    }
+
     /// Reserve space for at least `additional` new data segments.
     pub fn reserve_data_segments(&mut self, additional: usize) {
         self.data_segments.reserve(additional);
     }
 
+    #[cfg(feature = "parser")]
     /// Push another parsed data segment to the [`ModuleBuilder`].
     pub fn push_data_segment(&mut self, data: wasmparser::Data) -> Result<(), Error> {
         self.data_segments.push_data_segment(data)

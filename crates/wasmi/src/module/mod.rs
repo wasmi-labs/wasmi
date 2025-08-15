@@ -1,24 +1,20 @@
-mod builder;
-mod custom_section;
-mod data;
-mod element;
-mod export;
+pub(crate) mod builder;
+pub(crate) mod custom_section;
+pub(crate) mod data;
+pub(crate) mod element;
+pub(crate) mod export;
 mod global;
 mod import;
-mod init_expr;
+pub(crate) mod init_expr;
 mod instantiate;
-mod parser;
 mod read;
+
+#[cfg(feature = "parser")]
 pub(crate) mod utils;
 
-use self::{
-    builder::ModuleBuilder,
-    custom_section::{CustomSections, CustomSectionsBuilder},
-    export::ExternIdx,
-    global::Global,
-    import::{ExternTypeIdx, Import},
-    parser::ModuleParser,
-};
+#[cfg(feature = "parser")]
+mod parser;
+
 pub use self::{
     custom_section::{CustomSection, CustomSectionsIter},
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
@@ -27,56 +23,66 @@ pub use self::{
     instantiate::InstantiationError,
     read::{Read, ReadError},
 };
+use self::{
+    custom_section::{CustomSections, CustomSectionsBuilder},
+    export::ExternIdx,
+    global::Global,
+    import::{ExternTypeIdx, Import},
+};
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
     element::{ElementSegment, ElementSegmentKind},
     init_expr::ConstExpr,
-    utils::WasmiValueType,
 };
 use crate::{
-    collections::Map,
+    collections::{map::Iter as MapIter, Map},
     engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
-    Engine,
-    Error,
-    ExternType,
-    FuncType,
-    GlobalType,
-    MemoryType,
-    TableType,
+    Engine, ExternType, FuncType, GlobalType, MemoryType, TableType,
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
+
+#[cfg(feature = "parser")]
+use self::parser::ModuleParser;
+#[cfg(feature = "parser")]
 use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
+
+#[cfg(feature = "parser")]
+use self::builder::ModuleBuilder;
+#[cfg(feature = "parser")]
+pub(crate) use self::utils::WasmiValueType;
+#[cfg(feature = "parser")]
+use crate::Error;
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug, Clone)]
 pub struct Module {
-    inner: Arc<ModuleInner>,
+    pub(crate) inner: Arc<ModuleInner>,
 }
 
 /// The internal data of a [`Module`].
 #[derive(Debug)]
-struct ModuleInner {
+pub(crate) struct ModuleInner {
     engine: Engine,
-    header: ModuleHeader,
-    data_segments: DataSegments,
+    pub(crate) header: ModuleHeader,
+    pub(crate) data_segments: DataSegments,
     custom_sections: CustomSections,
 }
 
 /// A parsed and validated WebAssembly module header.
 #[derive(Debug, Clone)]
 pub struct ModuleHeader {
-    inner: Arc<ModuleHeaderInner>,
+    pub(crate) inner: Arc<ModuleHeaderInner>,
 }
 
 #[derive(Debug)]
-struct ModuleHeaderInner {
+pub(crate) struct ModuleHeaderInner {
     engine: EngineWeak,
     func_types: Arc<[DedupFuncType]>,
     imports: ModuleImports,
     funcs: Box<[DedupFuncType]>,
     tables: Box<[TableType]>,
-    memories: Box<[MemoryType]>,
+    pub(crate) memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
     globals_init: Box<[ConstExpr]>,
     exports: Map<Box<str>, ExternIdx>,
@@ -206,6 +212,7 @@ impl ModuleImports {
     }
 }
 
+#[cfg(feature = "parser")]
 impl Module {
     /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
     ///
@@ -255,16 +262,6 @@ impl Module {
         unsafe { parser.parse_buffered_unchecked(wasm) }
     }
 
-    /// Returns the [`Engine`] used during creation of the [`Module`].
-    pub fn engine(&self) -> &Engine {
-        &self.inner.engine
-    }
-
-    /// Returns a shared reference to the [`ModuleHeaderInner`].
-    fn module_header(&self) -> &ModuleHeaderInner {
-        &self.inner.header.inner
-    }
-
     /// Validates `wasm` as a WebAssembly binary given the configuration (via [`Config`]) in `engine`.
     ///
     /// This function performs Wasm validation of the binary input WebAssembly module and
@@ -296,6 +293,22 @@ impl Module {
             }
         }
         Ok(())
+    }
+}
+
+impl Module {
+    /// Returns the [`Engine`] used during creation of the [`Module`].
+    pub fn engine(&self) -> &Engine {
+        &self.inner.engine
+    }
+
+    pub fn header(&self) -> &ModuleHeader {
+        &self.inner.header
+    }
+
+    /// Returns a shared reference to the [`ModuleHeaderInner`].
+    fn module_header(&self) -> &ModuleHeaderInner {
+        &self.inner.header.inner
     }
 
     /// Returns the number of non-imported functions of the [`Module`].
@@ -357,7 +370,7 @@ impl Module {
     }
 
     /// Returns an iterator over the [`MemoryType`] of internal linear memories.
-    fn internal_memories(&self) -> SliceIter<'_, MemoryType> {
+    pub(crate) fn internal_memories(&self) -> SliceIter<'_, MemoryType> {
         let header = self.module_header();
         let len_imported = header.imports.len_memories;
         // We skip the first `len_imported` elements in `memories`
@@ -368,7 +381,7 @@ impl Module {
     }
 
     /// Returns an iterator over the [`TableType`] of internal tables.
-    fn internal_tables(&self) -> SliceIter<'_, TableType> {
+    pub(crate) fn internal_tables(&self) -> SliceIter<'_, TableType> {
         let header = self.module_header();
         let len_imported = header.imports.len_tables;
         // We skip the first `len_imported` elements in `memories`
@@ -379,7 +392,7 @@ impl Module {
     }
 
     /// Returns an iterator over the internally defined [`Global`].
-    fn internal_globals(&self) -> InternalGlobalsIter<'_> {
+    pub(crate) fn internal_globals(&self) -> InternalGlobalsIter<'_> {
         let header = self.module_header();
         let len_imported = header.imports.len_globals;
         // We skip the first `len_imported` elements in `globals`
@@ -395,6 +408,11 @@ impl Module {
     /// Returns an iterator over the exports of the [`Module`].
     pub fn exports(&self) -> ModuleExportsIter<'_> {
         ModuleExportsIter::new(self)
+    }
+
+    /// Returns an iterator over the exports with their actual indices.
+    pub fn exports_with_indices(&self) -> ModuleExportsWithIndicesIter<'_> {
+        ModuleExportsWithIndicesIter::new(self)
     }
 
     /// Looks up an export in this [`Module`] by its `name`.
@@ -451,6 +469,20 @@ impl Module {
     pub fn custom_sections(&self) -> CustomSectionsIter<'_> {
         self.inner.custom_sections.iter()
     }
+
+    /// Returns an iterator over all data segments as InitDataSegment, including their bytes.
+    #[cfg(feature = "serialization")]
+    pub(crate) fn all_init_data_segments(
+        &self,
+    ) -> impl Iterator<Item = crate::module::InitDataSegment<'_>> {
+        self.inner.data_segments.into_iter()
+    }
+
+    /// Returns an iterator over all element segments.
+    #[cfg(feature = "serialization")]
+    pub(crate) fn element_segments(&self) -> impl Iterator<Item = &ElementSegment> {
+        self.module_header().element_segments.iter()
+    }
 }
 
 /// An iterator over the imports of a [`Module`].
@@ -462,6 +494,28 @@ pub struct ModuleImportsIter<'a> {
     tables: SliceIter<'a, TableType>,
     memories: SliceIter<'a, MemoryType>,
     globals: SliceIter<'a, GlobalType>,
+}
+
+/// An iterator over the exports of a [`Module`] with their actual indices.
+#[derive(Debug)]
+pub struct ModuleExportsWithIndicesIter<'a> {
+    exports: MapIter<'a, Box<str>, ExternIdx>,
+}
+
+impl<'a> ModuleExportsWithIndicesIter<'a> {
+    pub(super) fn new(module: &'a Module) -> Self {
+        Self {
+            exports: module.module_header().exports.iter(),
+        }
+    }
+}
+
+impl<'a> Iterator for ModuleExportsWithIndicesIter<'a> {
+    type Item = (&'a str, ExternIdx);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.exports.next().map(|(name, idx)| (name.as_ref(), *idx))
+    }
 }
 
 impl<'a> Iterator for ModuleImportsIter<'a> {
