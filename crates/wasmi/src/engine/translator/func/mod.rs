@@ -1843,23 +1843,6 @@ impl FuncTranslator {
         }
     }
 
-    /// Creates a new 16-bit encoded [`Input16`] from the given `operand`.
-    pub fn make_input16<T>(&mut self, operand: Operand) -> Result<Input16<T>, Error>
-    where
-        T: From<TypedVal> + Into<UntypedVal> + TryInto<Const16<T>> + Copy,
-    {
-        self.make_input(operand, |this, imm| {
-            let opd16 = match T::from(imm).try_into() {
-                Ok(rhs) => Input::Immediate(rhs),
-                Err(_) => {
-                    let rhs = this.layout.const_to_reg(imm)?;
-                    Input::Reg(rhs)
-                }
-            };
-            Ok(opd16)
-        })
-    }
-
     /// Create a new generic [`Input`] from the given `operand`.
     fn make_input<R>(
         &mut self,

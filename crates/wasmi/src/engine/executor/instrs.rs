@@ -1219,31 +1219,17 @@ impl<'engine> Executor<'engine> {
                 Instr::TableCopy { dst, src, len } => {
                     self.execute_table_copy(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableCopyImm { dst, src, len } => {
-                    self.execute_table_copy_imm(store.inner_mut(), dst, src, len)?
-                }
                 Instr::TableInit { dst, src, len } => {
                     self.execute_table_init(store.inner_mut(), dst, src, len)?
                 }
-                Instr::TableInitImm { dst, src, len } => {
-                    self.execute_table_init_imm(store.inner_mut(), dst, src, len)?
-                }
                 Instr::TableFill { dst, len, value } => {
                     self.execute_table_fill(store.inner_mut(), dst, len, value)?
-                }
-                Instr::TableFillImm { dst, len, value } => {
-                    self.execute_table_fill_imm(store.inner_mut(), dst, len, value)?
                 }
                 Instr::TableGrow {
                     result,
                     delta,
                     value,
                 } => self.execute_table_grow(store, result, delta, value)?,
-                Instr::TableGrowImm {
-                    result,
-                    delta,
-                    value,
-                } => self.execute_table_grow_imm(store, result, delta, value)?,
                 Instr::ElemDrop { index } => self.execute_element_drop(store.inner_mut(), index),
                 Instr::DataDrop { index } => self.execute_data_drop(store.inner_mut(), index),
                 Instr::MemorySize { result, memory } => {
@@ -1252,14 +1238,8 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?
                 }
-                Instr::MemoryGrowImm { result, delta } => {
-                    self.execute_memory_grow_imm(store, result, delta)?
-                }
                 Instr::MemoryCopy { dst, src, len } => {
                     self.execute_memory_copy(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryCopyImm { dst, src, len } => {
-                    self.execute_memory_copy_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::MemoryFill { dst, value, len } => {
                     self.execute_memory_fill(store.inner_mut(), dst, value, len)?
@@ -1267,17 +1247,8 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryFillImm { dst, value, len } => {
                     self.execute_memory_fill_imm(store.inner_mut(), dst, value, len)?
                 }
-                Instr::MemoryFillExact { dst, value, len } => {
-                    self.execute_memory_fill_exact(store.inner_mut(), dst, value, len)?
-                }
-                Instr::MemoryFillImmExact { dst, value, len } => {
-                    self.execute_memory_fill_imm_exact(store.inner_mut(), dst, value, len)?
-                }
                 Instr::MemoryInit { dst, src, len } => {
                     self.execute_memory_init(store.inner_mut(), dst, src, len)?
-                }
-                Instr::MemoryInitImm { dst, src, len } => {
-                    self.execute_memory_init_imm(store.inner_mut(), dst, src, len)?
                 }
                 Instr::TableIndex { .. }
                 | Instr::MemoryIndex { .. }

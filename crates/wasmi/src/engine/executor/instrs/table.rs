@@ -5,7 +5,6 @@ use crate::{
     errors::TableError,
     ir::{
         index::{Elem, Table},
-        Const16,
         Const32,
         Instruction,
         Reg,
@@ -152,39 +151,13 @@ impl Executor<'_> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
         let len: u64 = self.get_register_as(len);
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableCopyImm`].
-    pub fn execute_table_copy_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_table_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes a generic `table.copy` instruction.
-    #[inline(never)]
-    fn execute_table_copy_impl(
-        &mut self,
-        store: &mut StoreInner,
-        dst_index: u64,
-        src_index: u64,
-        len: u64,
-    ) -> Result<(), Error> {
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
         if dst_table_index == src_table_index {
             // Case: copy within the same table
             let table = self.get_table(dst_table_index);
             let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
-            table.copy_within(dst_index, src_index, len, Some(fuel))?;
+            table.copy_within(dst, src, len, Some(fuel))?;
         } else {
             // Case: copy between two different tables
             let dst_table = self.get_table(dst_table_index);
@@ -192,7 +165,7 @@ impl Executor<'_> {
             // Copy from one table to another table:
             let (dst_table, src_table, fuel) =
                 store.resolve_table_pair_and_fuel(&dst_table, &src_table);
-            CoreTable::copy(dst_table, dst_index, src_table, src_index, len, Some(fuel))?;
+            CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel))?;
         }
         self.try_next_instr_at(3)
     }
@@ -208,39 +181,13 @@ impl Executor<'_> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::TableInitImm`].
-    pub fn execute_table_init_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_table_init_impl(store, dst, src, len)
-    }
-
-    /// Executes a generic `table.init` instruction.
-    #[inline(never)]
-    fn execute_table_init_impl(
-        &mut self,
-        store: &mut StoreInner,
-        dst_index: u64,
-        src_index: u32,
-        len: u32,
-    ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
         let (table, element, fuel) = store.resolve_table_init_params(
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );
-        table.init(element.as_ref(), dst_index, src_index, len, Some(fuel))?;
+        table.init(element.as_ref(), dst, src, len, Some(fuel))?;
         self.try_next_instr_at(3)
     }
 
@@ -254,31 +201,6 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let len: u64 = self.get_register_as(len);
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
-    /// Executes an [`Instruction::TableFillImm`].
-    pub fn execute_table_fill_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        len: Const16<u64>,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_table_fill_impl(store, dst, len, value)
-    }
-
-    /// Executes a generic `table.fill` instruction.
-    #[inline(never)]
-    fn execute_table_fill_impl(
-        &mut self,
-        store: &mut StoreInner,
-        dst: u64,
-        len: u64,
-        value: Reg,
-    ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let value = self.get_register(value);
         let table = self.get_table(table_index);
@@ -296,30 +218,6 @@ impl Executor<'_> {
         value: Reg,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
-        self.execute_table_grow_impl(store, result, delta, value)
-    }
-
-    /// Executes an [`Instruction::TableGrowImm`].
-    pub fn execute_table_grow_imm(
-        &mut self,
-        store: &mut PrunedStore,
-        result: Reg,
-        delta: Const16<u64>,
-        value: Reg,
-    ) -> Result<(), Error> {
-        let delta: u64 = delta.into();
-        self.execute_table_grow_impl(store, result, delta, value)
-    }
-
-    /// Executes a generic `table.grow` instruction.
-    #[inline(never)]
-    fn execute_table_grow_impl(
-        &mut self,
-        store: &mut PrunedStore,
-        result: Reg,
-        delta: u64,
-        value: Reg,
-    ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do

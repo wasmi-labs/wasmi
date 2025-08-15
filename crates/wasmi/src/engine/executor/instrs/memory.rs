@@ -4,8 +4,6 @@ use crate::{
     errors::MemoryError,
     ir::{
         index::{Data, Memory},
-        Const16,
-        Const32,
         Instruction,
         Reg,
     },
@@ -77,28 +75,6 @@ impl Executor<'_> {
         delta: Reg,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
-        self.execute_memory_grow_impl(store, result, delta)
-    }
-
-    /// Executes an [`Instruction::MemoryGrowImm`].
-    pub fn execute_memory_grow_imm(
-        &mut self,
-        store: &mut PrunedStore,
-        result: Reg,
-        delta: Const32<u64>,
-    ) -> Result<(), Error> {
-        let delta = u64::from(delta);
-        self.execute_memory_grow_impl(store, result, delta)
-    }
-
-    /// Executes a generic `memory.grow` instruction.
-    #[inline(never)]
-    fn execute_memory_grow_impl(
-        &mut self,
-        store: &mut PrunedStore,
-        result: Reg,
-        delta: u64,
-    ) -> Result<(), Error> {
         let memory = self.fetch_memory_index(1);
         if delta == 0 {
             // Case: growing by 0 pages means there is nothing to do
@@ -146,36 +122,10 @@ impl Executor<'_> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
         let len: u64 = self.get_register_as(len);
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryCopyImm`].
-    pub fn execute_memory_copy_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
-        self.execute_memory_copy_impl(store, dst, src, len)
-    }
-
-    /// Executes a generic `memory.copy` instruction.
-    #[inline(never)]
-    fn execute_memory_copy_impl(
-        &mut self,
-        store: &mut StoreInner,
-        dst_index: u64,
-        src_index: u64,
-        len: u64,
-    ) -> Result<(), Error> {
-        let Ok(dst_index) = usize::try_from(dst_index) else {
+        let Ok(dst_index) = usize::try_from(dst) else {
             return Err(Error::from(TrapCode::MemoryOutOfBounds));
         };
-        let Ok(src_index) = usize::try_from(src_index) else {
+        let Ok(src_index) = usize::try_from(src) else {
             return Err(Error::from(TrapCode::MemoryOutOfBounds));
         };
         let Ok(len) = usize::try_from(len) else {
@@ -260,33 +210,6 @@ impl Executor<'_> {
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
-    /// Executes an [`Instruction::MemoryFillExact`].
-    pub fn execute_memory_fill_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        value: Reg,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = len.into();
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
-    /// Executes an [`Instruction::MemoryFillImmExact`].
-    pub fn execute_memory_fill_imm_exact(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        value: u8,
-        len: Const16<u64>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = len.into();
-        self.execute_memory_fill_impl(store, dst, value, len)
-    }
-
     /// Executes a generic `memory.fill` instruction.
     #[inline(never)]
     fn execute_memory_fill_impl(
@@ -326,32 +249,6 @@ impl Executor<'_> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes an [`Instruction::MemoryInitImm`].
-    pub fn execute_memory_init_imm(
-        &mut self,
-        store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Const16<u32>,
-    ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
-        self.execute_memory_init_impl(store, dst, src, len)
-    }
-
-    /// Executes a generic `memory.init` instruction.
-    #[inline(never)]
-    fn execute_memory_init_impl(
-        &mut self,
-        store: &mut StoreInner,
-        dst: u64,
-        src: u32,
-        len: u32,
-    ) -> Result<(), Error> {
         let Ok(dst_index) = usize::try_from(dst) else {
             return Err(Error::from(TrapCode::MemoryOutOfBounds));
         };
