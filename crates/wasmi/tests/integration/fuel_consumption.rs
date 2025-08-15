@@ -74,5 +74,5 @@ fn check_fuel_consumption(given_fuel: u64, consumed_fuel: u64) {
 
 #[test]
 fn fuel_consumption_01() {
-    check_fuel_consumption(3, 3);
+    check_fuel_consumption(4, 4);
 }
