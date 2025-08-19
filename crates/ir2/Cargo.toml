@@ -21,9 +21,6 @@ exclude = [
 [dependencies]
 wasmi_core = { workspace = true }
 
-[build-dependencies]
-indoc = "2"
-
 [features]
 default = ["std"]
 std = [
