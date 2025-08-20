@@ -1,6 +1,6 @@
 use crate::build::{
     isa::Isa,
-    op::{BinaryOp, FieldTy, Input, Op, Ty, UnaryOp},
+    op::{BinaryOp, BinaryOpKind, FieldTy, Input, Op, Ty, UnaryOp, CmpOpKind},
     token::{CamelCase, Ident, SnakeCase},
 };
 use core::fmt::{self, Display};
@@ -73,8 +73,8 @@ impl Display for DisplayEnum<Isa> {
 impl Display for DisplayEnum<&'_ Op> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.val {
-            Op::Unary(op) => write!(f, "{}", self.map(op)),
-            Op::Binary(_op) => Ok(()),
+            Op::Unary(op) => self.map(op).fmt(f),
+            Op::Binary(op) => self.map(op).fmt(f),
             Op::CmpBranch(_op) => Ok(()),
             Op::CmpSelect(_op) => Ok(()),
             Op::Load(_op) => Ok(()),
@@ -135,6 +135,32 @@ impl DisplayEnum<&'_ UnaryOp> {
             {indent0}{result_ident}{ident}{input_ident}_Ss {{\n\
             {indent1}result: {result_field},\n\
             {indent1}value: {value_field},\n\
+            {indent0}}},\n\
+            ",
+        )
+    }
+}
+
+impl Display for DisplayEnum<&'_ BinaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let kind = self.val.kind;
+        let ident = CamelCase(kind.ident());
+        let result_ident = CamelCase(Ident::from(kind.result_ty()));
+        let result_ty = FieldTy::Stack;
+        let lhs_ty = kind.lhs_field(self.val.lhs);
+        let rhs_ty = kind.rhs_field(self.val.rhs);
+        let result_suffix = CamelCase(Input::Stack);
+        let lhs_suffix = SnakeCase(self.val.lhs);
+        let rhs_suffix = SnakeCase(self.val.rhs);
+        write!(
+            f,
+            "\
+            {indent0}{result_ident}{ident}_S{lhs_suffix}{rhs_suffix} {{\n\
+            {indent1}result: {result_ty},\n\
+            {indent1}lhs: {lhs_ty},\n\
+            {indent1}rhs: {rhs_ty},\n\
             {indent0}}},\n\
             ",
         )

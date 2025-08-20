@@ -1,5 +1,5 @@
 use crate::build::{
-    op::{UnaryOp, UnaryOpKind},
+    op::{BinaryOp, BinaryOpKind, Commutativity, Input, UnaryOp, UnaryOpKind},
     Op,
 };
 
@@ -17,6 +17,7 @@ impl Isa {
 pub fn wasmi_isa() -> Isa {
     let mut isa = Isa::default();
     add_unary_ops(&mut isa);
+    add_binary_ops(&mut isa);
     isa
 }
 
@@ -65,5 +66,73 @@ fn add_unary_ops(isa: &mut Isa) {
     ];
     for op in ops {
         isa.push_op(Op::Unary(UnaryOp::new(op)));
+    }
+}
+
+fn add_binary_ops(isa: &mut Isa) {
+    let ops = [
+        // i32
+        BinaryOpKind::I32Add,
+        BinaryOpKind::I32Sub,
+        BinaryOpKind::I32Mul,
+        BinaryOpKind::S32Div,
+        BinaryOpKind::U32Div,
+        BinaryOpKind::S32Rem,
+        BinaryOpKind::U32Rem,
+        BinaryOpKind::I32BitAnd,
+        BinaryOpKind::I32BitOr,
+        BinaryOpKind::I32BitXor,
+        BinaryOpKind::I32Shl,
+        BinaryOpKind::S32Shr,
+        BinaryOpKind::U32Shr,
+        BinaryOpKind::I32Rotl,
+        BinaryOpKind::I32Rotr,
+        // i64
+        BinaryOpKind::I64Add,
+        BinaryOpKind::I64Sub,
+        BinaryOpKind::I64Mul,
+        BinaryOpKind::S64Div,
+        BinaryOpKind::U64Div,
+        BinaryOpKind::S64Rem,
+        BinaryOpKind::U64Rem,
+        BinaryOpKind::I64BitAnd,
+        BinaryOpKind::I64BitOr,
+        BinaryOpKind::I64BitXor,
+        BinaryOpKind::I64Shl,
+        BinaryOpKind::S64Shr,
+        BinaryOpKind::U64Shr,
+        BinaryOpKind::I64Rotl,
+        BinaryOpKind::I64Rotr,
+        // f32
+        BinaryOpKind::F32Add,
+        BinaryOpKind::F32Sub,
+        BinaryOpKind::F32Mul,
+        BinaryOpKind::F32Div,
+        BinaryOpKind::F32Min,
+        BinaryOpKind::F32Max,
+        BinaryOpKind::F32Copysign,
+        // f64
+        BinaryOpKind::F64Add,
+        BinaryOpKind::F64Sub,
+        BinaryOpKind::F64Mul,
+        BinaryOpKind::F64Div,
+        BinaryOpKind::F64Min,
+        BinaryOpKind::F64Max,
+        BinaryOpKind::F64Copysign,
+    ];
+    for op in ops {
+        isa.push_op(Op::Binary(BinaryOp::new(op, Input::Stack, Input::Stack)));
+        isa.push_op(Op::Binary(BinaryOp::new(
+            op,
+            Input::Stack,
+            Input::Immediate,
+        )));
+        if matches!(op.commutativity(), Commutativity::NonCommutative) {
+            isa.push_op(Op::Binary(BinaryOp::new(
+                op,
+                Input::Immediate,
+                Input::Stack,
+            )));
+        }
     }
 }
