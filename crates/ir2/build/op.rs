@@ -69,6 +69,14 @@ pub struct Field {
     ty: FieldTy,
 }
 
+impl Display for Field {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let ident = SnakeCase(self.ident);
+        let ty = self.ty;
+        write!(f, "{ident}: {ty}")
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct UnaryOp {
     pub kind: UnaryOpKind,
