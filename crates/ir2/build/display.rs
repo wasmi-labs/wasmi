@@ -15,6 +15,8 @@ use crate::build::{
         UnaryOp,
     },
     token::{CamelCase, Ident, SnakeCase},
+    IntoMaybe as _,
+    Maybe,
 };
 use core::fmt::{self, Display};
 
@@ -241,9 +243,9 @@ impl Display for DisplayEnum<&'_ LoadOp> {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
         let kind = self.val.kind;
-        let ident = CamelCase(kind.ident());
+        let ident = DisplayIdent(self.val);
         let result_ty = FieldTy::Stack;
-        let result_ident = kind.result_ident().map(CamelCase);
+        let result_ident = kind.ident_prefix().map(CamelCase);
         let result_suffix = CamelCase(Input::Stack);
         let ptr_suffix = SnakeCase(self.val.ptr);
         let (ptr_ty, offset_ty) = match self.val.ptr {
@@ -269,23 +271,10 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             true => "Offset16",
             false => "",
         };
-        match result_ident {
-            Some(result_ident) => {
-                write!(
-                    f,
-                    "{indent0}{result_ident}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix} {{\n",
-                )?;
-            }
-            None => {
-                write!(
-                    f,
-                    "{indent0}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix} {{\n",
-                )?;
-            }
-        }
         write!(
             f,
             "\
+            {indent0}{ident} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}ptr: {ptr_ty},\n\
             ",
@@ -313,5 +302,23 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             ",
         )?;
         Ok(())
+    }
+}
+
+pub struct DisplayIdent<T>(pub T);
+
+impl Display for DisplayIdent<&'_ LoadOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let kind = self.0.kind;
+        let ident = CamelCase(kind.ident());
+        let result_suffix = CamelCase(Input::Stack);
+        let ptr_suffix = SnakeCase(self.0.ptr);
+        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).into_maybe();
+        let mem0_ident = self.0.mem0.then(|| "Mem0").unwrap_or_default();
+        let offset16_ident = self.0.offset16.then(|| "Offset16").unwrap_or_default();
+        write!(
+            f,
+            "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}",
+        )
     }
 }
