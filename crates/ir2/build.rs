@@ -1,4 +1,10 @@
-use std::{fs, path::Path, env, path::PathBuf};
+#![allow(warnings)]
+
+use std::{
+    env,
+    fs,
+    path::{Path, PathBuf},
+};
 
 #[path = "build/mod.rs"]
 mod build;
