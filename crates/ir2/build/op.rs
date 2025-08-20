@@ -258,8 +258,8 @@ impl UnaryOpKind {
 #[derive(Copy, Clone)]
 pub struct BinaryOp {
     pub kind: BinaryOpKind,
-    pub lhs: FieldTy,
-    pub rhs: FieldTy,
+    pub lhs: Input,
+    pub rhs: Input,
 }
 
 #[derive(Copy, Clone)]
@@ -470,32 +470,32 @@ impl BinaryOpKind {
             | Self::I32Sub
             | Self::I32Mul
             | Self::S32Div
-            | Self::U32Div
             | Self::S32Rem
-            | Self::U32Rem
             | Self::I32BitAnd
             | Self::I32BitOr
             | Self::I32BitXor
             | Self::I32Shl
             | Self::S32Shr
-            | Self::U32Shr
             | Self::I32Rotl
             | Self::I32Rotr => Ty::I32,
+            | Self::U32Div
+            | Self::U32Rem
+            | Self::U32Shr => Ty::U32,
             | Self::I64Add
             | Self::I64Sub
             | Self::I64Mul
             | Self::S64Div
-            | Self::U64Div
             | Self::S64Rem
-            | Self::U64Rem
             | Self::I64BitAnd
             | Self::I64BitOr
             | Self::I64BitXor
             | Self::I64Shl
             | Self::S64Shr
-            | Self::U64Shr
             | Self::I64Rotl
             | Self::I64Rotr => Ty::I64,
+            | Self::U64Div
+            | Self::U64Rem
+            | Self::U64Shr => Ty::U64,
             | Self::F32Add
             | Self::F32Sub
             | Self::F32Mul
@@ -588,7 +588,7 @@ pub enum Commutativity {
 }
 
 impl BinaryOp {
-    pub fn new(kind: BinaryOpKind, lhs: FieldTy, rhs: FieldTy) -> Self {
+    pub fn new(kind: BinaryOpKind, lhs: Input, rhs: Input) -> Self {
         Self { kind, lhs, rhs }
     }
 }
