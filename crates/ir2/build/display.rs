@@ -322,3 +322,25 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         )
     }
 }
+
+pub struct DisplayIndented<T> {
+    val: T,
+    indent: Indent,
+}
+
+impl<T> DisplayIndented<T> {
+    pub fn new(val: T, indent: Indent) -> Self {
+        Self { val, indent }
+    }
+}
+
+impl<T> Display for DisplayIndented<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let val = &self.val;
+        write!(f, "{indent}{val}")
+    }
+}
