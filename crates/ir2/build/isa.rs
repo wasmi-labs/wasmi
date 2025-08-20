@@ -4,6 +4,7 @@ use crate::build::{
         BinaryOpKind,
         CmpBranchOp,
         CmpOpKind,
+        CmpSelectOp,
         Commutativity,
         Input,
         UnaryOp,
@@ -28,6 +29,7 @@ pub fn wasmi_isa() -> Isa {
     add_unary_ops(&mut isa);
     add_binary_ops(&mut isa);
     add_cmp_branch_ops(&mut isa);
+    add_cmp_select_ops(&mut isa);
     isa
 }
 
@@ -199,6 +201,54 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
         )));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(Op::CmpBranch(CmpBranchOp::new(
+                op,
+                Input::Immediate,
+                Input::Stack,
+            )));
+        }
+    }
+}
+
+fn add_cmp_select_ops(isa: &mut Isa) {
+    let ops = [
+        // i32
+        CmpOpKind::I32Eq,
+        CmpOpKind::I32And,
+        CmpOpKind::I32Or,
+        CmpOpKind::S32Lt,
+        CmpOpKind::S32Le,
+        CmpOpKind::U32Lt,
+        CmpOpKind::U32Le,
+        // i64
+        CmpOpKind::I64Eq,
+        CmpOpKind::I64And,
+        CmpOpKind::I64Or,
+        CmpOpKind::S64Lt,
+        CmpOpKind::S64Le,
+        CmpOpKind::U64Lt,
+        CmpOpKind::U64Le,
+        // f32
+        CmpOpKind::F32Eq,
+        CmpOpKind::F32Lt,
+        CmpOpKind::F32Le,
+        // f64
+        CmpOpKind::F64Eq,
+        CmpOpKind::F64Lt,
+        CmpOpKind::F64Le,
+    ];
+    for op in ops {
+        isa.push_op(Op::CmpSelect(CmpSelectOp::new(
+            op,
+            Input::Stack,
+            Input::Stack,
+        )));
+        isa.push_op(Op::CmpSelect(CmpSelectOp::new(
+            op,
+            Input::Stack,
+            Input::Immediate,
+        )));
+        if matches!(op.commutativity(), Commutativity::NonCommutative) {
+            isa.push_op(Op::CmpSelect(CmpSelectOp::new(
                 op,
                 Input::Immediate,
                 Input::Stack,
