@@ -139,10 +139,14 @@ impl UnaryOpKind {
             | Self::S64TruncSatF32 | Self::U64TruncSatF32 => Ty::F32,
             | Self::S64TruncSatF64 | Self::U64TruncSatF64 | Self::F32DemoteF64 => Ty::F64,
             | Self::F64PromoteF32 => Ty::F32,
-            | Self::F32ConvertS32 | Self::F32ConvertU32 => Ty::I32,
-            | Self::F32ConvertS64 | Self::F32ConvertU64 => Ty::I64,
-            | Self::F64ConvertS32 | Self::F64ConvertU32 => Ty::I32,
-            | Self::F64ConvertS64 | Self::F64ConvertU64 => Ty::I64,
+            | Self::F32ConvertS32 => Ty::I32,
+            | Self::F32ConvertU32 => Ty::U32,
+            | Self::F32ConvertS64 => Ty::I64,
+            | Self::F32ConvertU64 => Ty::U64,
+            | Self::F64ConvertS32 => Ty::I32,
+            | Self::F64ConvertU32 => Ty::U32,
+            | Self::F64ConvertS64 => Ty::I64,
+            | Self::F64ConvertU64 => Ty::U64,
         }
     }
 

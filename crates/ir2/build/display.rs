@@ -91,9 +91,9 @@ impl Display for DisplayEnum<&'_ Op> {
 impl Display for DisplayEnum<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.val.kind.is_conversion() {
-            self.display_unary(f)
-        } else {
             self.display_conversion(f)
+        } else {
+            self.display_unary(f)
         }
     }
 }
@@ -113,7 +113,7 @@ impl DisplayEnum<&'_ UnaryOp> {
             {indent0}{result_ident}{ident}_Ss {{\n\
             {indent1}result: {result_field},\n\
             {indent1}value: {value_field},\n\
-            {indent0}}}\n\
+            {indent0}}},\n\
             ",
         )
     }
@@ -135,7 +135,7 @@ impl DisplayEnum<&'_ UnaryOp> {
             {indent0}{result_ident}{ident}{input_ident}_Ss {{\n\
             {indent1}result: {result_field},\n\
             {indent1}value: {value_field},\n\
-            {indent0}}}\n\
+            {indent0}}},\n\
             ",
         )
     }
