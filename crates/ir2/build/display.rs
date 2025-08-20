@@ -18,7 +18,10 @@ use crate::build::{
     IntoMaybe as _,
     Maybe,
 };
-use core::fmt::{self, Display};
+use core::{
+    fmt::{self, Display},
+    ops::Not,
+};
 
 #[derive(Copy, Clone, Default)]
 pub struct Indent(usize);
