@@ -22,6 +22,47 @@ pub struct GenericOp<const N: usize> {
     pub fields: [Field; N],
 }
 
+pub enum Maybe<T> {
+    Some(T),
+    None,
+}
+
+impl<T> Display for Maybe<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Maybe::Some(field) = self {
+            field.fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+pub trait IntoMaybe<T> {
+    fn into_maybe(self) -> Maybe<T>;
+}
+impl<T> IntoMaybe<T> for Option<T> {
+    fn into_maybe(self) -> Maybe<T> {
+        Maybe::from(self)
+    }
+}
+
+impl<T> From<T> for Maybe<T> {
+    fn from(value: T) -> Self {
+        Maybe::Some(value)
+    }
+}
+
+impl<T> From<Option<T>> for Maybe<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(value) => Self::Some(value),
+            None => Self::None,
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct Field {
     ident: Ident,
