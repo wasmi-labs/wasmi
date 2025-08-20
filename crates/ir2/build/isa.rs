@@ -81,6 +81,23 @@ fn add_unary_ops(isa: &mut Isa) {
         UnaryOpKind::F64ConvertS64,
         UnaryOpKind::F64ConvertU64,
         UnaryOpKind::F64PromoteF32,
+        // f2i conversions
+        UnaryOpKind::S32TruncF32,
+        UnaryOpKind::U32TruncF32,
+        UnaryOpKind::S32TruncF64,
+        UnaryOpKind::U32TruncF64,
+        UnaryOpKind::S64TruncF32,
+        UnaryOpKind::U64TruncF32,
+        UnaryOpKind::S64TruncF64,
+        UnaryOpKind::U64TruncF64,
+        UnaryOpKind::S32TruncSatF32,
+        UnaryOpKind::U32TruncSatF32,
+        UnaryOpKind::S32TruncSatF64,
+        UnaryOpKind::U32TruncSatF64,
+        UnaryOpKind::S64TruncSatF32,
+        UnaryOpKind::U64TruncSatF32,
+        UnaryOpKind::S64TruncSatF64,
+        UnaryOpKind::U64TruncSatF64,
     ];
     for op in ops {
         isa.push_op(Op::Unary(UnaryOp::new(op)));
@@ -89,6 +106,38 @@ fn add_unary_ops(isa: &mut Isa) {
 
 fn add_binary_ops(isa: &mut Isa) {
     let ops = [
+        // comparisons: i32
+        BinaryOpKind::Cmp(CmpOpKind::I32Eq),
+        BinaryOpKind::Cmp(CmpOpKind::I32NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::I32And),
+        BinaryOpKind::Cmp(CmpOpKind::I32NotAnd),
+        BinaryOpKind::Cmp(CmpOpKind::I32Or),
+        BinaryOpKind::Cmp(CmpOpKind::I32NotOr),
+        BinaryOpKind::Cmp(CmpOpKind::S32Lt),
+        BinaryOpKind::Cmp(CmpOpKind::S32Le),
+        BinaryOpKind::Cmp(CmpOpKind::U32Lt),
+        BinaryOpKind::Cmp(CmpOpKind::U32Le),
+        // comparisons: i64
+        BinaryOpKind::Cmp(CmpOpKind::I64Eq),
+        BinaryOpKind::Cmp(CmpOpKind::I64NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::I64And),
+        BinaryOpKind::Cmp(CmpOpKind::I64NotAnd),
+        BinaryOpKind::Cmp(CmpOpKind::I64Or),
+        BinaryOpKind::Cmp(CmpOpKind::I64NotOr),
+        BinaryOpKind::Cmp(CmpOpKind::S64Lt),
+        BinaryOpKind::Cmp(CmpOpKind::S64Le),
+        BinaryOpKind::Cmp(CmpOpKind::U64Lt),
+        BinaryOpKind::Cmp(CmpOpKind::U64Le),
+        // comparisons: f32
+        BinaryOpKind::Cmp(CmpOpKind::F32Eq),
+        BinaryOpKind::Cmp(CmpOpKind::F32NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::F32Lt),
+        BinaryOpKind::Cmp(CmpOpKind::F32Le),
+        // comparisons: f64
+        BinaryOpKind::Cmp(CmpOpKind::F64Eq),
+        BinaryOpKind::Cmp(CmpOpKind::F64NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::F64Lt),
+        BinaryOpKind::Cmp(CmpOpKind::F64Le),
         // i32
         BinaryOpKind::I32Add,
         BinaryOpKind::I32Sub,
