@@ -478,9 +478,7 @@ impl BinaryOpKind {
             | Self::S32Shr
             | Self::I32Rotl
             | Self::I32Rotr => Ty::I32,
-            | Self::U32Div
-            | Self::U32Rem
-            | Self::U32Shr => Ty::U32,
+            | Self::U32Div | Self::U32Rem | Self::U32Shr => Ty::U32,
             | Self::I64Add
             | Self::I64Sub
             | Self::I64Mul
@@ -493,9 +491,7 @@ impl BinaryOpKind {
             | Self::S64Shr
             | Self::I64Rotl
             | Self::I64Rotr => Ty::I64,
-            | Self::U64Div
-            | Self::U64Rem
-            | Self::U64Shr => Ty::U64,
+            | Self::U64Div | Self::U64Rem | Self::U64Shr => Ty::U64,
             | Self::F32Add
             | Self::F32Sub
             | Self::F32Mul
@@ -857,9 +853,8 @@ impl CmpOpKind {
             | Self::I32Or
             | Self::I32NotOr
             | Self::S32Lt
-            | Self::U32Lt
-            | Self::S32Le
-            | Self::U32Le => Ty::I32,
+            | Self::S32Le => Ty::I32,
+            | Self::U32Lt | Self::U32Le => Ty::U32,
             | Self::I64Eq
             | Self::I64NotEq
             | Self::I64And
@@ -867,9 +862,8 @@ impl CmpOpKind {
             | Self::I64Or
             | Self::I64NotOr
             | Self::S64Lt
-            | Self::U64Lt
-            | Self::S64Le
-            | Self::U64Le => Ty::I64,
+            | Self::S64Le => Ty::I64,
+            | Self::U64Lt | Self::U64Le => Ty::U64,
             | Self::F32Eq
             | Self::F32NotEq
             | Self::F32Lt

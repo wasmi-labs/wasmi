@@ -1,5 +1,14 @@
 use crate::build::{
-    op::{BinaryOp, BinaryOpKind, Commutativity, Input, UnaryOp, UnaryOpKind},
+    op::{
+        BinaryOp,
+        BinaryOpKind,
+        CmpBranchOp,
+        CmpOpKind,
+        Commutativity,
+        Input,
+        UnaryOp,
+        UnaryOpKind,
+    },
     Op,
 };
 
@@ -18,6 +27,7 @@ pub fn wasmi_isa() -> Isa {
     let mut isa = Isa::default();
     add_unary_ops(&mut isa);
     add_binary_ops(&mut isa);
+    add_cmp_branch_ops(&mut isa);
     isa
 }
 
@@ -129,6 +139,66 @@ fn add_binary_ops(isa: &mut Isa) {
         )));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(Op::Binary(BinaryOp::new(
+                op,
+                Input::Immediate,
+                Input::Stack,
+            )));
+        }
+    }
+}
+
+fn add_cmp_branch_ops(isa: &mut Isa) {
+    let ops = [
+        // i32
+        CmpOpKind::I32Eq,
+        CmpOpKind::I32NotEq,
+        CmpOpKind::I32And,
+        CmpOpKind::I32NotAnd,
+        CmpOpKind::I32Or,
+        CmpOpKind::I32NotOr,
+        CmpOpKind::S32Lt,
+        CmpOpKind::S32Le,
+        CmpOpKind::U32Lt,
+        CmpOpKind::U32Le,
+        // i64
+        CmpOpKind::I64Eq,
+        CmpOpKind::I64NotEq,
+        CmpOpKind::I64And,
+        CmpOpKind::I64NotAnd,
+        CmpOpKind::I64Or,
+        CmpOpKind::I64NotOr,
+        CmpOpKind::S64Lt,
+        CmpOpKind::S64Le,
+        CmpOpKind::U64Lt,
+        CmpOpKind::U64Le,
+        // f32
+        CmpOpKind::F32Eq,
+        CmpOpKind::F32NotEq,
+        CmpOpKind::F32Lt,
+        CmpOpKind::F32NotLt,
+        CmpOpKind::F32Le,
+        CmpOpKind::F32NotLe,
+        // f64
+        CmpOpKind::F64Eq,
+        CmpOpKind::F64NotEq,
+        CmpOpKind::F64Lt,
+        CmpOpKind::F64NotLt,
+        CmpOpKind::F64Le,
+        CmpOpKind::F64NotLe,
+    ];
+    for op in ops {
+        isa.push_op(Op::CmpBranch(CmpBranchOp::new(
+            op,
+            Input::Stack,
+            Input::Stack,
+        )));
+        isa.push_op(Op::CmpBranch(CmpBranchOp::new(
+            op,
+            Input::Stack,
+            Input::Immediate,
+        )));
+        if matches!(op.commutativity(), Commutativity::NonCommutative) {
+            isa.push_op(Op::CmpBranch(CmpBranchOp::new(
                 op,
                 Input::Immediate,
                 Input::Stack,
