@@ -743,8 +743,6 @@ pub enum FieldTy {
     F64,
     NonZeroU32,
     NonZeroU64,
-    NonZeroI32,
-    NonZeroI64,
     SignF32,
     SignF64,
     Address,
@@ -779,8 +777,6 @@ impl Display for FieldTy {
             Self::F64 => "f64",
             Self::NonZeroU32 => "NonZero<u32>",
             Self::NonZeroU64 => "NonZero<u64>",
-            Self::NonZeroI32 => "NonZero<i32>",
-            Self::NonZeroI64 => "NonZero<i64>",
             Self::SignF32 => "Sign<f32>",
             Self::SignF64 => "Sign<f64>",
             Self::Address => "Address",
@@ -1043,23 +1039,6 @@ impl LoadOpKind {
             LoadOpKind::U64Load16 => Some(Ident::U64),
             LoadOpKind::S64Load32 => Some(Ident::S64),
             LoadOpKind::U64Load32 => Some(Ident::U64),
-        }
-    }
-
-    pub fn result_ty(&self) -> Ty {
-        match self {
-            LoadOpKind::Load32 => Ty::U32,
-            LoadOpKind::Load64 => Ty::U64,
-            LoadOpKind::S32Load8 => Ty::S32,
-            LoadOpKind::U32Load8 => Ty::U32,
-            LoadOpKind::S32Load16 => Ty::S32,
-            LoadOpKind::U32Load16 => Ty::U32,
-            LoadOpKind::S64Load8 => Ty::S64,
-            LoadOpKind::U64Load8 => Ty::U64,
-            LoadOpKind::S64Load16 => Ty::S64,
-            LoadOpKind::U64Load16 => Ty::U64,
-            LoadOpKind::S64Load32 => Ty::S64,
-            LoadOpKind::U64Load32 => Ty::U64,
         }
     }
 }

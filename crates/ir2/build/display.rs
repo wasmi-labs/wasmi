@@ -1,23 +1,8 @@
 use crate::build::{
     isa::Isa,
-    op::{
-        BinaryOp,
-        BinaryOpKind,
-        CmpBranchOp,
-        CmpOpKind,
-        CmpSelectOp,
-        Field,
-        FieldTy,
-        Input,
-        LoadOp,
-        Op,
-        StoreOp,
-        Ty,
-        UnaryOp,
-    },
+    op::{BinaryOp, CmpBranchOp, CmpSelectOp, Field, FieldTy, Input, LoadOp, Op, StoreOp, UnaryOp},
     token::{CamelCase, Ident, SnakeCase},
     IntoMaybe as _,
-    Maybe,
 };
 use core::{
     fmt::{self, Display},
@@ -246,12 +231,8 @@ impl Display for DisplayEnum<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let kind = self.val.kind;
         let ident = DisplayIdent(self.val);
         let result_ty = FieldTy::Stack;
-        let result_ident = kind.ident_prefix().map(CamelCase);
-        let result_suffix = CamelCase(Input::Stack);
-        let ptr_suffix = SnakeCase(self.val.ptr);
         let (ptr_ty, offset_ty) = match self.val.ptr {
             Input::Stack => {
                 let ptr = FieldTy::Stack;
@@ -305,11 +286,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let kind = self.val.kind;
         let ident = DisplayIdent(self.val);
-        let result_ty = FieldTy::Stack;
-        let result_suffix = CamelCase(Input::Stack);
-        let ptr_suffix = SnakeCase(self.val.ptr);
         let ptr_ty = self.val.kind.ptr_ty(self.val.ptr);
         let value_ty = self.val.kind.value_ty(self.val.value);
         let offset_field = self
