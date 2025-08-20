@@ -6,6 +6,7 @@ use crate::build::{
         CmpBranchOp,
         CmpOpKind,
         CmpSelectOp,
+        Field,
         FieldTy,
         Input,
         LoadOp,
@@ -96,7 +97,7 @@ impl Display for DisplayEnum<&'_ Op> {
             Op::CmpBranch(op) => self.map(op).fmt(f),
             Op::CmpSelect(op) => self.map(op).fmt(f),
             Op::Load(op) => self.map(op).fmt(f),
-            Op::Store(_op) => Ok(()),
+            Op::Store(op) => self.map(op).fmt(f),
             Op::Generic0(_op) => Ok(()),
             Op::Generic1(_op) => Ok(()),
             Op::Generic2(_op) => Ok(()),
@@ -300,6 +301,45 @@ impl Display for DisplayEnum<&'_ LoadOp> {
     }
 }
 
+impl Display for DisplayEnum<&'_ StoreOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let kind = self.val.kind;
+        let ident = DisplayIdent(self.val);
+        let result_ty = FieldTy::Stack;
+        let result_suffix = CamelCase(Input::Stack);
+        let ptr_suffix = SnakeCase(self.val.ptr);
+        let ptr_ty = self.val.kind.ptr_ty(self.val.ptr);
+        let value_ty = self.val.kind.value_ty(self.val.value);
+        let offset_field = self
+            .val
+            .kind
+            .offset_ty(self.val.ptr, self.val.offset16)
+            .map(|offset| Field::new(Ident::Offset, offset))
+            .map(|field| DisplayIndented::new(field, indent1))
+            .into_maybe();
+        let mem_field = self
+            .val
+            .mem0
+            .not()
+            .then(|| Field::new(Ident::Memory, FieldTy::Memory))
+            .map(|field| DisplayIndented::new(field, indent1))
+            .into_maybe();
+        write!(
+            f,
+            "\
+            {indent0}{ident} {{\n\
+            {indent1}ptr: {ptr_ty},\n\
+            {offset_field}\n\
+            {indent1}value: {value_ty},\n\
+            {mem_field}\n\
+            {indent0}}},\n\
+            ",
+        )
+    }
+}
+
 pub struct DisplayIdent<T>(pub T);
 
 impl Display for DisplayIdent<&'_ LoadOp> {
@@ -314,6 +354,22 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         write!(
             f,
             "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}",
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ StoreOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let kind = self.0.kind;
+        let ident = CamelCase(kind.ident());
+        let ptr_suffix = CamelCase(self.0.ptr);
+        let value_suffix = SnakeCase(self.0.value);
+        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).into_maybe();
+        let mem0_ident = self.0.mem0.then(|| "Mem0").unwrap_or_default();
+        let offset16_ident = self.0.offset16.then(|| "Offset16").unwrap_or_default();
+        write!(
+            f,
+            "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{ptr_suffix}{value_suffix}",
         )
     }
 }
