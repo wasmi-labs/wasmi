@@ -1,6 +1,17 @@
 use crate::build::{
     isa::Isa,
-    op::{BinaryOp, BinaryOpKind, CmpBranchOp, CmpOpKind, FieldTy, Input, Op, Ty, UnaryOp},
+    op::{
+        BinaryOp,
+        BinaryOpKind,
+        CmpBranchOp,
+        CmpOpKind,
+        CmpSelectOp,
+        FieldTy,
+        Input,
+        Op,
+        Ty,
+        UnaryOp,
+    },
     token::{CamelCase, Ident, SnakeCase},
 };
 use core::fmt::{self, Display};
@@ -76,7 +87,7 @@ impl Display for DisplayEnum<&'_ Op> {
             Op::Unary(op) => self.map(op).fmt(f),
             Op::Binary(op) => self.map(op).fmt(f),
             Op::CmpBranch(op) => self.map(op).fmt(f),
-            Op::CmpSelect(_op) => Ok(()),
+            Op::CmpSelect(op) => self.map(op).fmt(f),
             Op::Load(_op) => Ok(()),
             Op::Store(_op) => Ok(()),
             Op::Generic0(_op) => Ok(()),
@@ -187,6 +198,36 @@ impl Display for DisplayEnum<&'_ CmpBranchOp> {
             {indent1}offset: BranchOffset,\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\
+            {indent0}}},\n\
+            ",
+        )
+    }
+}
+
+impl Display for DisplayEnum<&'_ CmpSelectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let cmp = self.val.cmp;
+        let ident = CamelCase(cmp.ident());
+        let input_ident = CamelCase(Ident::from(cmp.input_ty()));
+        let result_ty = FieldTy::Stack;
+        let lhs_ty = cmp.input_field(self.val.lhs);
+        let rhs_ty = cmp.input_field(self.val.rhs);
+        let result_suffix = CamelCase(Input::Stack);
+        let lhs_suffix = SnakeCase(self.val.lhs);
+        let rhs_suffix = SnakeCase(self.val.rhs);
+        let val_true = FieldTy::Stack;
+        let val_false = FieldTy::Stack;
+        write!(
+            f,
+            "\
+            {indent0}Select{input_ident}{ident}_S{lhs_suffix}{rhs_suffix} {{\n\
+            {indent1}result: {result_ty},\n\
+            {indent1}lhs: {lhs_ty},\n\
+            {indent1}rhs: {rhs_ty},\n\
+            {indent1}val_true: {val_true},\n\
+            {indent1}val_false: {val_false},\n\
             {indent0}}},\n\
             ",
         )
