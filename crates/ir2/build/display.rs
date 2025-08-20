@@ -10,6 +10,7 @@ use crate::build::{
         Input,
         LoadOp,
         Op,
+        StoreOp,
         Ty,
         UnaryOp,
     },
@@ -242,7 +243,7 @@ impl Display for DisplayEnum<&'_ LoadOp> {
         let kind = self.val.kind;
         let ident = CamelCase(kind.ident());
         let result_ty = FieldTy::Stack;
-        let result_ident = CamelCase(Ident::from(kind.result_ty()));
+        let result_ident = kind.result_ident().map(CamelCase);
         let result_suffix = CamelCase(Input::Stack);
         let ptr_suffix = SnakeCase(self.val.ptr);
         let (ptr_ty, offset_ty) = match self.val.ptr {
@@ -268,10 +269,23 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             true => "Offset16",
             false => "",
         };
+        match result_ident {
+            Some(result_ident) => {
+                write!(
+                    f,
+                    "{indent0}{result_ident}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix} {{\n",
+                )?;
+            }
+            None => {
+                write!(
+                    f,
+                    "{indent0}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix} {{\n",
+                )?;
+            }
+        }
         write!(
             f,
             "\
-            {indent0}{result_ident}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}ptr: {ptr_ty},\n\
             ",
