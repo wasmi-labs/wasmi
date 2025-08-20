@@ -6,7 +6,7 @@ extern crate alloc;
 extern crate std;
 
 mod error;
-mod index;
+pub mod index;
 mod op;
 mod primitive;
 mod span;
