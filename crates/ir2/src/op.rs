@@ -1,4 +1,4 @@
-use crate::{BranchOffset, Sign, Stack};
+use crate::{index::Memory, Address, BranchOffset, Offset16, Sign, Stack};
 use core::num::NonZero;
 
 include!(concat!(env!("OUT_DIR"), "/op.rs"));

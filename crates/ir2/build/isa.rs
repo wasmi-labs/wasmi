@@ -7,6 +7,8 @@ use crate::build::{
         CmpSelectOp,
         Commutativity,
         Input,
+        LoadOp,
+        LoadOpKind,
         UnaryOp,
         UnaryOpKind,
     },
@@ -30,6 +32,7 @@ pub fn wasmi_isa() -> Isa {
     add_binary_ops(&mut isa);
     add_cmp_branch_ops(&mut isa);
     add_cmp_select_ops(&mut isa);
+    add_load_ops(&mut isa);
     isa
 }
 
@@ -254,5 +257,33 @@ fn add_cmp_select_ops(isa: &mut Isa) {
                 Input::Stack,
             )));
         }
+    }
+}
+
+fn add_load_ops(isa: &mut Isa) {
+    let ops = [
+        // i32
+        LoadOpKind::I32Load,
+        LoadOpKind::S32Load8,
+        LoadOpKind::S32Load16,
+        LoadOpKind::U32Load8,
+        LoadOpKind::U32Load16,
+        // i64
+        LoadOpKind::I64Load,
+        LoadOpKind::S64Load8,
+        LoadOpKind::S64Load16,
+        LoadOpKind::S64Load32,
+        LoadOpKind::U64Load8,
+        LoadOpKind::U64Load16,
+        LoadOpKind::U64Load32,
+        // f32
+        LoadOpKind::F32Load,
+        // f64
+        LoadOpKind::F64Load,
+    ];
+    for op in ops {
+        isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, false, false)));
+        isa.push_op(Op::Load(LoadOp::new(op, Input::Immediate, false, false)));
+        isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, true, true)));
     }
 }
