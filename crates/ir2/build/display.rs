@@ -107,6 +107,8 @@ impl DisplayEnum<&'_ UnaryOp> {
         let kind = self.val.kind;
         let ident = CamelCase(kind.ident());
         let result_ident = CamelCase(Ident::from(kind.result_ty()));
+        let result_suffix = CamelCase(Input::Stack);
+        let value_suffix = SnakeCase(Input::Stack);
         let result_field = FieldTy::Stack;
         let value_field = FieldTy::Stack;
         let indent0 = self.indent;
@@ -114,7 +116,7 @@ impl DisplayEnum<&'_ UnaryOp> {
         write!(
             f,
             "\
-            {indent0}{result_ident}{ident}_Ss {{\n\
+            {indent0}{result_ident}{ident}_{result_suffix}{value_suffix} {{\n\
             {indent1}result: {result_field},\n\
             {indent1}value: {value_field},\n\
             {indent0}}},\n\
@@ -127,8 +129,8 @@ impl DisplayEnum<&'_ UnaryOp> {
         let ident = CamelCase(kind.ident());
         let result_ident = CamelCase(Ident::from(kind.result_ty()));
         let input_ident = CamelCase(Ident::from(kind.input_ty()));
-        let result_id = CamelCase(Input::Stack);
-        let value_id = CamelCase(Input::Stack);
+        let result_suffix = CamelCase(Input::Stack);
+        let value_suffix = SnakeCase(Input::Stack);
         let result_field = FieldTy::Stack;
         let value_field = FieldTy::Stack;
         let indent0 = self.indent;
@@ -136,7 +138,7 @@ impl DisplayEnum<&'_ UnaryOp> {
         write!(
             f,
             "\
-            {indent0}{result_ident}{ident}{input_ident}_Ss {{\n\
+            {indent0}{result_ident}{ident}{input_ident}_{result_suffix}{value_suffix} {{\n\
             {indent1}result: {result_field},\n\
             {indent1}value: {value_field},\n\
             {indent0}}},\n\
@@ -178,17 +180,17 @@ impl Display for DisplayEnum<&'_ CmpBranchOp> {
         let cmp = self.val.cmp;
         let ident = CamelCase(cmp.ident());
         let input_ident = CamelCase(Ident::from(cmp.input_ty()));
-        let result_ty = FieldTy::Stack;
         let lhs_ty = cmp.input_field(self.val.lhs);
         let rhs_ty = cmp.input_field(self.val.rhs);
+        let offset_ty = FieldTy::BranchOffset;
         let result_suffix = CamelCase(Input::Stack);
         let lhs_suffix = SnakeCase(self.val.lhs);
         let rhs_suffix = SnakeCase(self.val.rhs);
         write!(
             f,
             "\
-            {indent0}Branch{input_ident}{ident}_S{lhs_suffix}{rhs_suffix} {{\n\
-            {indent1}offset: BranchOffset,\n\
+            {indent0}Branch{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
+            {indent1}offset: {offset_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\
             {indent0}}},\n\
@@ -215,7 +217,7 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
         write!(
             f,
             "\
-            {indent0}Select{input_ident}{ident}_S{lhs_suffix}{rhs_suffix} {{\n\
+            {indent0}Select{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\
