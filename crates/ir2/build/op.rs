@@ -1023,7 +1023,7 @@ impl LoadOpKind {
         }
     }
 
-    pub fn result_ident(&self) -> Option<Ident> {
+    pub fn ident_prefix(&self) -> Option<Ident> {
         match self {
             LoadOpKind::Load32 => None,
             LoadOpKind::Load64 => None,
