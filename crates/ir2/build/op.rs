@@ -225,20 +225,14 @@ impl UnaryOpKind {
             | Self::F64Trunc
             | Self::F64Nearest
             | Self::F64Sqrt => Ty::F64,
-            | Self::S32TruncF32 | Self::U32TruncF32 | Self::S32TruncF64 | Self::U32TruncF64 => {
-                Ty::I32
-            }
-            | Self::S64TruncF32 | Self::U64TruncF32 | Self::S64TruncF64 | Self::U64TruncF64 => {
-                Ty::I64
-            }
-            | Self::S32TruncSatF32
-            | Self::U32TruncSatF32
-            | Self::S32TruncSatF64
-            | Self::U32TruncSatF64 => Ty::I32,
-            | Self::S64TruncSatF32
-            | Self::U64TruncSatF32
-            | Self::S64TruncSatF64
-            | Self::U64TruncSatF64 => Ty::I64,
+            | Self::S32TruncF32 | Self::S32TruncF64 => Ty::I32,
+            | Self::U32TruncF32 | Self::U32TruncF64 => Ty::U32,
+            | Self::S64TruncF32 | Self::S64TruncF64 => Ty::I64,
+            | Self::U64TruncF32 | Self::U64TruncF64 => Ty::U64,
+            | Self::S32TruncSatF32 | Self::S32TruncSatF64 => Ty::I32,
+            | Self::U32TruncSatF32 | Self::U32TruncSatF64 => Ty::U32,
+            | Self::S64TruncSatF32 | Self::S64TruncSatF64 => Ty::I64,
+            | Self::U64TruncSatF32 | Self::U64TruncSatF64 => Ty::U64,
             | Self::F32DemoteF64 => Ty::F32,
             | Self::F64PromoteF32 => Ty::F64,
             | Self::F32ConvertS32
@@ -420,6 +414,14 @@ impl BinaryOpKind {
             Self::F64Max => Ident::Max,
             Self::F64Copysign => Ident::Copysign,
         }
+    }
+
+    pub fn ident_prefix(&self) -> Ident {
+        let ty = match self {
+            BinaryOpKind::Cmp(op) => op.input_ty(),
+            _ => self.result_ty(),
+        };
+        Ident::from(ty)
     }
 
     pub fn lhs_field(&self, input: Input) -> FieldTy {
@@ -906,18 +908,16 @@ impl CmpOpKind {
             | Self::I32And
             | Self::I32NotAnd
             | Self::I32Or
-            | Self::I32NotOr
-            | Self::S32Lt
-            | Self::S32Le => Ty::I32,
+            | Self::I32NotOr => Ty::I32,
+            | Self::S32Lt | Self::S32Le => Ty::S32,
             | Self::U32Lt | Self::U32Le => Ty::U32,
             | Self::I64Eq
             | Self::I64NotEq
             | Self::I64And
             | Self::I64NotAnd
             | Self::I64Or
-            | Self::I64NotOr
-            | Self::S64Lt
-            | Self::S64Le => Ty::I64,
+            | Self::I64NotOr => Ty::I64,
+            | Self::S64Lt | Self::S64Le => Ty::S64,
             | Self::U64Lt | Self::U64Le => Ty::U64,
             | Self::F32Eq
             | Self::F32NotEq

@@ -166,7 +166,7 @@ impl Display for DisplayEnum<&'_ BinaryOp> {
         let indent1 = indent0.inc();
         let kind = self.val.kind;
         let ident = CamelCase(kind.ident());
-        let result_ident = CamelCase(Ident::from(kind.result_ty()));
+        let ident_prefix = CamelCase(kind.ident_prefix());
         let result_ty = FieldTy::Stack;
         let lhs_ty = kind.lhs_field(self.val.lhs);
         let rhs_ty = kind.rhs_field(self.val.rhs);
@@ -176,7 +176,7 @@ impl Display for DisplayEnum<&'_ BinaryOp> {
         write!(
             f,
             "\
-            {indent0}{result_ident}{ident}_S{lhs_suffix}{rhs_suffix} {{\n\
+            {indent0}{ident_prefix}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\
