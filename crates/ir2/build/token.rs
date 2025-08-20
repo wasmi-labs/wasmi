@@ -81,6 +81,7 @@ define_ident!(
     Load8: load8,
     Load16: load16,
     Load32: load32,
+    Load64: load64,
 
     Copy: copy,
     Fill: fill,

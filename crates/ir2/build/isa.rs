@@ -262,24 +262,21 @@ fn add_cmp_select_ops(isa: &mut Isa) {
 
 fn add_load_ops(isa: &mut Isa) {
     let ops = [
+        // Generic
+        LoadOpKind::Load32,
+        LoadOpKind::Load64,
         // i32
-        LoadOpKind::I32Load,
         LoadOpKind::S32Load8,
         LoadOpKind::S32Load16,
         LoadOpKind::U32Load8,
         LoadOpKind::U32Load16,
         // i64
-        LoadOpKind::I64Load,
         LoadOpKind::S64Load8,
         LoadOpKind::S64Load16,
         LoadOpKind::S64Load32,
         LoadOpKind::U64Load8,
         LoadOpKind::U64Load16,
         LoadOpKind::U64Load32,
-        // f32
-        LoadOpKind::F32Load,
-        // f64
-        LoadOpKind::F64Load,
     ];
     for op in ops {
         isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, false, false)));

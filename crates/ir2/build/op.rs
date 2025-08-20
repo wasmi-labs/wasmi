@@ -942,58 +942,69 @@ impl LoadOp {
 
 #[derive(Copy, Clone)]
 pub enum LoadOpKind {
-    I32Load,
+    Load32,
+    Load64,
     S32Load8,
     U32Load8,
     S32Load16,
     U32Load16,
-    I64Load,
     S64Load8,
     U64Load8,
     S64Load16,
     U64Load16,
     S64Load32,
     U64Load32,
-    F32Load,
-    F64Load,
 }
 
 impl LoadOpKind {
     pub fn ident(&self) -> Ident {
         match self {
-            Self::I32Load => Ident::Load,
+            Self::Load32 => Ident::Load32,
+            Self::Load64 => Ident::Load64,
             Self::S32Load8 => Ident::Load8,
             Self::U32Load8 => Ident::Load8,
             Self::S32Load16 => Ident::Load16,
             Self::U32Load16 => Ident::Load16,
-            Self::I64Load => Ident::Load,
             Self::S64Load8 => Ident::Load8,
             Self::U64Load8 => Ident::Load8,
             Self::S64Load16 => Ident::Load16,
             Self::U64Load16 => Ident::Load16,
             Self::S64Load32 => Ident::Load32,
             Self::U64Load32 => Ident::Load32,
-            Self::F32Load => Ident::Load,
-            Self::F64Load => Ident::Load,
+        }
+    }
+
+    pub fn result_ident(&self) -> Option<Ident> {
+        match self {
+            LoadOpKind::Load32 => None,
+            LoadOpKind::Load64 => None,
+            LoadOpKind::S32Load8 => Some(Ident::S32),
+            LoadOpKind::U32Load8 => Some(Ident::U32),
+            LoadOpKind::S32Load16 => Some(Ident::S32),
+            LoadOpKind::U32Load16 => Some(Ident::U32),
+            LoadOpKind::S64Load8 => Some(Ident::S64),
+            LoadOpKind::U64Load8 => Some(Ident::U64),
+            LoadOpKind::S64Load16 => Some(Ident::S64),
+            LoadOpKind::U64Load16 => Some(Ident::U64),
+            LoadOpKind::S64Load32 => Some(Ident::S64),
+            LoadOpKind::U64Load32 => Some(Ident::U64),
         }
     }
 
     pub fn result_ty(&self) -> Ty {
         match self {
-            LoadOpKind::I32Load => Ty::I32,
+            LoadOpKind::Load32 => Ty::U32,
+            LoadOpKind::Load64 => Ty::U64,
             LoadOpKind::S32Load8 => Ty::S32,
             LoadOpKind::U32Load8 => Ty::U32,
             LoadOpKind::S32Load16 => Ty::S32,
             LoadOpKind::U32Load16 => Ty::U32,
-            LoadOpKind::I64Load => Ty::I64,
             LoadOpKind::S64Load8 => Ty::S64,
             LoadOpKind::U64Load8 => Ty::U64,
             LoadOpKind::S64Load16 => Ty::S64,
             LoadOpKind::U64Load16 => Ty::U64,
             LoadOpKind::S64Load32 => Ty::S64,
             LoadOpKind::U64Load32 => Ty::U64,
-            LoadOpKind::F32Load => Ty::F32,
-            LoadOpKind::F64Load => Ty::F64,
         }
     }
 }
@@ -1001,15 +1012,15 @@ impl LoadOpKind {
 #[derive(Copy, Clone)]
 pub struct StoreOp {
     /// The kind of the load operator.
-    kind: StoreOpKind,
+    pub kind: StoreOpKind,
     /// The `ptr` input type.
-    ptr: Input,
+    pub ptr: Input,
     /// The `value` input type.
-    value: Input,
+    pub value: Input,
     /// True, if the operator is always operating on (`memory 0`).
-    mem0: bool,
+    pub mem0: bool,
     /// True, if the operator uses a 16-bit offset field.
-    offset16: bool,
+    pub offset16: bool,
 }
 
 #[derive(Copy, Clone)]
