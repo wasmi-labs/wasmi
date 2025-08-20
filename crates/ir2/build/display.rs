@@ -263,14 +263,6 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             false => Some(FieldTy::Memory),
             true => None,
         };
-        let mem0_ident = match self.val.mem0 {
-            true => "Mem0",
-            false => "",
-        };
-        let offset16_ident = match self.val.offset16 {
-            true => "Offset16",
-            false => "",
-        };
         write!(
             f,
             "\
