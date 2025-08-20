@@ -9,6 +9,8 @@ use crate::build::{
         Input,
         LoadOp,
         LoadOpKind,
+        StoreOp,
+        StoreOpKind,
         UnaryOp,
         UnaryOpKind,
     },
@@ -33,6 +35,7 @@ pub fn wasmi_isa() -> Isa {
     add_cmp_branch_ops(&mut isa);
     add_cmp_select_ops(&mut isa);
     add_load_ops(&mut isa);
+    add_store_ops(&mut isa);
     isa
 }
 
@@ -282,5 +285,57 @@ fn add_load_ops(isa: &mut Isa) {
         isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, false, false)));
         isa.push_op(Op::Load(LoadOp::new(op, Input::Immediate, false, false)));
         isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, true, true)));
+    }
+}
+
+fn add_store_ops(isa: &mut Isa) {
+    let ops = [
+        // Generic
+        StoreOpKind::Store32,
+        StoreOpKind::Store64,
+        // i32
+        StoreOpKind::I32Store8,
+        StoreOpKind::I32Store16,
+        // i64
+        StoreOpKind::I64Store8,
+        StoreOpKind::I64Store16,
+        StoreOpKind::I64Store32,
+    ];
+    for op in ops {
+        isa.push_op(Op::Store(StoreOp::new(
+            op,
+            Input::Stack,
+            Input::Stack,
+            false,
+            false,
+        )));
+        isa.push_op(Op::Store(StoreOp::new(
+            op,
+            Input::Stack,
+            Input::Immediate,
+            false,
+            false,
+        )));
+        isa.push_op(Op::Store(StoreOp::new(
+            op,
+            Input::Immediate,
+            Input::Stack,
+            false,
+            false,
+        )));
+        isa.push_op(Op::Store(StoreOp::new(
+            op,
+            Input::Stack,
+            Input::Stack,
+            true,
+            true,
+        )));
+        isa.push_op(Op::Store(StoreOp::new(
+            op,
+            Input::Stack,
+            Input::Immediate,
+            true,
+            true,
+        )));
     }
 }

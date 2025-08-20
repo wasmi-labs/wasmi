@@ -77,6 +77,7 @@ define_ident!(
     Store8: store8,
     Store16: store16,
     Store32: store32,
+    Store64: store64,
     Load: load,
     Load8: load8,
     Load16: load16,
@@ -139,4 +140,6 @@ define_ident!(
     Demote: demote,
     Promote: promote,
     Convert: convert,
+
+    Offset: offset,
 );

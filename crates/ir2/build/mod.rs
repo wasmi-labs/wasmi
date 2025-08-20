@@ -6,7 +6,7 @@ pub mod token;
 use self::{
     display::{DisplayEnum, Indent},
     isa::Isa,
-    op::{BinaryOp, Op, UnaryOp},
+    op::{BinaryOp, IntoMaybe, Maybe, Op, UnaryOp},
     token::{CamelCase, Ident, SnakeCase},
 };
 use core::fmt::{self, Display, Error as FmtError, Write as _};

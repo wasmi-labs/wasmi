@@ -69,11 +69,17 @@ pub struct Field {
     ty: FieldTy,
 }
 
+impl Field {
+    pub fn new(ident: Ident, ty: FieldTy) -> Self {
+        Self { ident, ty }
+    }
+}
+
 impl Display for Field {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ident = SnakeCase(self.ident);
         let ty = self.ty;
-        write!(f, "{ident}: {ty}")
+        write!(f, "{ident}: {ty},")
     }
 }
 
@@ -1072,47 +1078,85 @@ pub struct StoreOp {
     pub offset16: bool,
 }
 
+impl StoreOp {
+    pub fn new(kind: StoreOpKind, ptr: Input, value: Input, mem0: bool, offset16: bool) -> Self {
+        Self {
+            kind,
+            ptr,
+            value,
+            mem0,
+            offset16,
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum StoreOpKind {
-    I32Store,
+    // Generic
+    Store32,
+    Store64,
+    // i32
     I32Store8,
     I32Store16,
-    I64Store,
+    // i64
     I64Store8,
     I64Store16,
     I64Store32,
-    F32Store,
-    F64Store,
 }
 
 impl StoreOpKind {
     pub fn ident(&self) -> Ident {
         match self {
-            Self::I32Store => Ident::Store,
+            Self::Store32 => Ident::Store32,
+            Self::Store64 => Ident::Store64,
             Self::I32Store8 => Ident::Store8,
             Self::I32Store16 => Ident::Store16,
-            Self::I64Store => Ident::Store,
             Self::I64Store8 => Ident::Store8,
             Self::I64Store16 => Ident::Store16,
             Self::I64Store32 => Ident::Store32,
-            Self::F32Store => Ident::Store,
-            Self::F64Store => Ident::Store,
+        }
+    }
+
+    pub fn ident_prefix(&self) -> Option<Ident> {
+        match self {
+            StoreOpKind::Store32 => None,
+            StoreOpKind::Store64 => None,
+            StoreOpKind::I32Store8 => Some(Ident::I32),
+            StoreOpKind::I32Store16 => Some(Ident::I32),
+            StoreOpKind::I64Store8 => Some(Ident::I64),
+            StoreOpKind::I64Store16 => Some(Ident::I64),
+            StoreOpKind::I64Store32 => Some(Ident::I64),
+        }
+    }
+
+    pub fn ptr_ty(&self, ptr: Input) -> FieldTy {
+        match ptr {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::Address,
+        }
+    }
+
+    pub fn offset_ty(&self, ptr: Input, offset16: bool) -> Option<FieldTy> {
+        match ptr {
+            Input::Stack => match offset16 {
+                true => Some(FieldTy::Offset16),
+                false => Some(FieldTy::U64),
+            },
+            Input::Immediate => None,
         }
     }
 
     pub fn value_ty(&self, input: Input) -> FieldTy {
         match input {
-            Input::Stack => return FieldTy::Stack,
+            Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
-                Self::I32Store => FieldTy::I32,
+                Self::Store32 => FieldTy::U32,
+                Self::Store64 => FieldTy::U64,
                 Self::I32Store8 => FieldTy::I8,
                 Self::I32Store16 => FieldTy::I16,
-                Self::I64Store => FieldTy::I64,
                 Self::I64Store8 => FieldTy::I8,
                 Self::I64Store16 => FieldTy::I16,
                 Self::I64Store32 => FieldTy::I32,
-                Self::F32Store => FieldTy::F32,
-                Self::F64Store => FieldTy::F64,
             },
         }
     }
