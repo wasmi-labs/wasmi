@@ -8,6 +8,7 @@ use crate::build::{
         CmpSelectOp,
         FieldTy,
         Input,
+        LoadOp,
         Op,
         Ty,
         UnaryOp,
@@ -88,7 +89,7 @@ impl Display for DisplayEnum<&'_ Op> {
             Op::Binary(op) => self.map(op).fmt(f),
             Op::CmpBranch(op) => self.map(op).fmt(f),
             Op::CmpSelect(op) => self.map(op).fmt(f),
-            Op::Load(_op) => Ok(()),
+            Op::Load(op) => self.map(op).fmt(f),
             Op::Store(_op) => Ok(()),
             Op::Generic0(_op) => Ok(()),
             Op::Generic1(_op) => Ok(()),
@@ -231,5 +232,72 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
             {indent0}}},\n\
             ",
         )
+    }
+}
+
+impl Display for DisplayEnum<&'_ LoadOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let kind = self.val.kind;
+        let ident = CamelCase(kind.ident());
+        let result_ty = FieldTy::Stack;
+        let result_ident = CamelCase(Ident::from(kind.result_ty()));
+        let result_suffix = CamelCase(Input::Stack);
+        let ptr_suffix = SnakeCase(self.val.ptr);
+        let (ptr_ty, offset_ty) = match self.val.ptr {
+            Input::Stack => {
+                let ptr = FieldTy::Stack;
+                let offset = match self.val.offset16 {
+                    true => FieldTy::Offset16,
+                    false => FieldTy::U64,
+                };
+                (ptr, Some(offset))
+            }
+            Input::Immediate => (FieldTy::Address, None),
+        };
+        let mem_ty = match self.val.mem0 {
+            false => Some(FieldTy::Memory),
+            true => None,
+        };
+        let mem0_ident = match self.val.mem0 {
+            true => "Mem0",
+            false => "",
+        };
+        let offset16_ident = match self.val.offset16 {
+            true => "Offset16",
+            false => "",
+        };
+        write!(
+            f,
+            "\
+            {indent0}{result_ident}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix} {{\n\
+            {indent1}result: {result_ty},\n\
+            {indent1}ptr: {ptr_ty},\n\
+            ",
+        )?;
+        if let Some(offset) = offset_ty {
+            write!(
+                f,
+                "\
+                    {indent1}offset: {offset},\n\
+                "
+            )?;
+        }
+        if let Some(mem) = mem_ty {
+            write!(
+                f,
+                "\
+                    {indent1}mem: {mem},\n\
+                "
+            )?;
+        }
+        write!(
+            f,
+            "\
+            {indent0}}},\n\
+            ",
+        )?;
+        Ok(())
     }
 }

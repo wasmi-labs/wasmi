@@ -920,13 +920,24 @@ impl CmpOpKind {
 #[derive(Copy, Clone)]
 pub struct LoadOp {
     /// The kind of the load operator.
-    kind: LoadOpKind,
+    pub kind: LoadOpKind,
     /// The `ptr` field type.
-    ptr: Input,
+    pub ptr: Input,
     /// True, if the operator is always operating on (`memory 0`).
-    mem0: bool,
+    pub mem0: bool,
     /// True, if the operator uses a 16-bit offset field.
-    offset16: bool,
+    pub offset16: bool,
+}
+
+impl LoadOp {
+    pub fn new(kind: LoadOpKind, ptr: Input, mem0: bool, offset16: bool) -> Self {
+        Self {
+            kind,
+            ptr,
+            mem0,
+            offset16,
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
