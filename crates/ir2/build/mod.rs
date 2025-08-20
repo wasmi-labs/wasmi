@@ -49,9 +49,6 @@ pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
     )?;
     std::println!("out_dir = {out_dir:?}");
     fs::create_dir_all(out_dir)?;
-    fs::write(out_dir.join("instruction.rs"), contents)?;
-    // let mut ctx = Context::default();
-    // define_ops(&mut ctx);
-    // generate_ops(&ctx)?;
+    fs::write(out_dir.join("op.rs"), contents)?;
     Ok(())
 }

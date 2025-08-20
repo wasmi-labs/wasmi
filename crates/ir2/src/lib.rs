@@ -7,7 +7,7 @@ extern crate std;
 
 mod error;
 mod index;
-mod ops;
+mod op;
 mod primitive;
 mod span;
 
@@ -16,7 +16,7 @@ use wasmi_core as core;
 pub use self::{
     error::Error,
     index::Stack,
-    ops::Instruction,
+    op::Op,
     primitive::{Address, BlockFuel, BranchOffset, Offset16, Sign},
     span::{BoundedStackSpan, FixedStackSpan, StackSpan},
 };

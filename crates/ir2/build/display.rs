@@ -54,7 +54,7 @@ impl Display for DisplayEnum<Isa> {
         write!(
             f,
             "\
-            {indent}pub enum Instruction {{\n\
+            {indent}pub enum Op {{\n\
         "
         )?;
         for op in &self.val.ops {
