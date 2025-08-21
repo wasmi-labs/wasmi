@@ -1,5 +1,40 @@
 use core::fmt::{self, Display};
 
+#[derive(Copy, Clone)]
+pub enum Case {
+    Camel,
+    Snake,
+}
+
+impl Case {
+    pub fn wrap<T>(self, value: T) -> ChosenCase<T> {
+        match self {
+            Self::Camel => ChosenCase::Camel(value),
+            Self::Snake => ChosenCase::Snake(value),
+        }
+    }
+}
+
+/// Runtime selected casing, either [`CamelCase`] or [`SnakeCase`].
+pub enum ChosenCase<T> {
+    Camel(T),
+    Snake(T),
+}
+
+impl<T> Display for ChosenCase<T>
+where
+    CamelCase<T>: Display,
+    SnakeCase<T>: Display,
+    T: Clone,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Camel(value) => write!(f, "{}", CamelCase(value.clone())),
+            Self::Snake(value) => write!(f, "{}", SnakeCase(value.clone())),
+        }
+    }
+}
+
 /// Camel-case tokens, e.g. `HelloWorld`.
 pub struct CamelCase<T>(pub T);
 
