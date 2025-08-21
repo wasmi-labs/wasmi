@@ -513,7 +513,7 @@ impl BinaryOpKind {
 
     pub fn rhs_field(&self, input: Input) -> FieldTy {
         match input {
-            Input::Stack => return FieldTy::Stack,
+            Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
                 | Self::Cmp(cmp) => cmp.input_field(input),
                 | Self::I32Add
