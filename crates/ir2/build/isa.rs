@@ -45,6 +45,7 @@ pub fn wasmi_isa() -> Isa {
     add_store_ops(&mut isa);
     add_control_ops(&mut isa);
     add_copy_ops(&mut isa);
+    add_call_ops(&mut isa);
     add_memory_ops(&mut isa);
     add_table_ops(&mut isa);
     isa
@@ -454,6 +455,53 @@ fn add_copy_ops(isa: &mut Isa) {
                 Field::new(Ident::Results, FieldTy::StackSpan),
                 Field::new(Ident::Values, FieldTy::StackSpan),
                 Field::new(Ident::Len, FieldTy::U16),
+            ],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_call_ops(isa: &mut Isa) {
+    let ops = [
+        Op::from(GenericOp::new(
+            Ident::CallInternal,
+            [
+                Field::new(Ident::Results, FieldTy::StackSpan),
+                Field::new(Ident::Func, FieldTy::InternalFunc),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::CallImported,
+            [
+                Field::new(Ident::Results, FieldTy::StackSpan),
+                Field::new(Ident::Func, FieldTy::Func),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::CallIndirect,
+            [
+                Field::new(Ident::Results, FieldTy::StackSpan),
+                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::FuncType, FieldTy::FuncType),
+                Field::new(Ident::Table, FieldTy::Table),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::ReturnCallInternal,
+            [Field::new(Ident::Func, FieldTy::InternalFunc)],
+        )),
+        Op::from(GenericOp::new(
+            Ident::ReturnCallImported,
+            [Field::new(Ident::Func, FieldTy::Func)],
+        )),
+        Op::from(GenericOp::new(
+            Ident::ReturnCallIndirect,
+            [
+                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::FuncType, FieldTy::FuncType),
+                Field::new(Ident::Table, FieldTy::Table),
             ],
         )),
     ];

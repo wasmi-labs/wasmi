@@ -101,8 +101,12 @@ define_ident!(
     Trap: trap,
 
     Call: call,
+    CallInternal: call_internal,
+    CallImported: call_imported,
     CallIndirect: call_indirect,
     ReturnCall: return_call,
+    ReturnCallInternal: return_call_internal,
+    ReturnCallImported: return_call_imported,
     ReturnCallIndirect: return_call_indirect,
 
     U8: r#u8,
@@ -155,6 +159,7 @@ define_ident!(
     Delta: delta,
     Dst: dst,
     Src: src,
+    Index: index,
     DstMemory: dst_memory,
     SrcMemory: src_memory,
     DstTable: dst_table,
