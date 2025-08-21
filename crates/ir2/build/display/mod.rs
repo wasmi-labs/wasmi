@@ -18,7 +18,7 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
     },
-    token::{CamelCase, Ident, SnakeCase},
+    token::{CamelCase, Case, Ident, SnakeCase},
 };
 use core::{
     fmt::{self, Display},
@@ -247,7 +247,7 @@ impl Display for DisplayEnum<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent(self.val);
+        let ident = DisplayIdent::camel(self.val);
         let result_ty = FieldTy::Stack;
         let (ptr_ty, offset_ty) = match self.val.ptr {
             Input::Stack => {
@@ -291,7 +291,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent(self.val);
+        let ident = DisplayIdent::camel(self.val);
         let ptr_ty = self.val.kind.ptr_ty(self.val.ptr);
         let value_ty = self.val.kind.value_ty(self.val.value);
         let offset_field = self
@@ -402,26 +402,52 @@ impl Display for DisplayEnum<&'_ TableSetOp> {
     }
 }
 
-pub struct DisplayIdent<T>(pub T);
+pub struct DisplayIdent<T> {
+    value: T,
+    case: Case,
+}
+
+impl<T> DisplayIdent<T> {
+    pub fn camel(value: T) -> Self {
+        Self {
+            value,
+            case: Case::Camel,
+        }
+    }
+
+    #[expect(dead_code)]
+    pub fn snake(value: T) -> Self {
+        Self {
+            value,
+            case: Case::Snake,
+        }
+    }
+}
 
 impl Display for DisplayIdent<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let kind = self.0.kind;
-        let ident = CamelCase(kind.ident());
-        let result_suffix = CamelCase(Input::Stack);
-        let ptr_suffix = SnakeCase(self.0.ptr);
-        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).display_maybe();
+        let case = self.case;
+        let kind = self.value.kind;
+        let ident = case.wrap(kind.ident());
+        let result_suffix = case.wrap(Input::Stack);
+        let ptr_suffix = SnakeCase(self.value.ptr);
+        let ident_prefix = self
+            .value
+            .kind
+            .ident_prefix()
+            .map(|v| case.wrap(v))
+            .display_maybe();
         let mem0_ident = self
-            .0
+            .value
             .mem0
             .then_some(Ident::Mem0)
-            .map(CamelCase)
+            .map(|v| case.wrap(v))
             .display_maybe();
         let offset16_ident = self
-            .0
+            .value
             .offset16
             .then_some(Ident::Offset16)
-            .map(CamelCase)
+            .map(|v| case.wrap(v))
             .display_maybe();
         write!(
             f,
@@ -432,22 +458,28 @@ impl Display for DisplayIdent<&'_ LoadOp> {
 
 impl Display for DisplayIdent<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let kind = self.0.kind;
-        let ident = CamelCase(kind.ident());
-        let ptr_suffix = CamelCase(self.0.ptr);
-        let value_suffix = SnakeCase(self.0.value);
-        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).display_maybe();
+        let case = self.case;
+        let kind = self.value.kind;
+        let ident = case.wrap(kind.ident());
+        let ptr_suffix = case.wrap(self.value.ptr);
+        let value_suffix = SnakeCase(self.value.value);
+        let ident_prefix = self
+            .value
+            .kind
+            .ident_prefix()
+            .map(|v| case.wrap(v))
+            .display_maybe();
         let mem0_ident = self
-            .0
+            .value
             .mem0
             .then_some(Ident::Mem0)
-            .map(CamelCase)
+            .map(|v| case.wrap(v))
             .display_maybe();
         let offset16_ident = self
-            .0
+            .value
             .offset16
             .then_some(Ident::Offset16)
-            .map(CamelCase)
+            .map(|v| case.wrap(v))
             .display_maybe();
         write!(
             f,
