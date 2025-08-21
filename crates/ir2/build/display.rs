@@ -366,7 +366,7 @@ impl Display for DisplayEnum<&'_ TableGetOp> {
         let result_ty = FieldTy::Stack;
         let index_ty = match self.val.index {
             Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U64,
+            Input::Immediate => FieldTy::U32,
         };
         let table_ty = FieldTy::Table;
         let result_suffix = CamelCase(Input::Stack);
@@ -391,7 +391,7 @@ impl Display for DisplayEnum<&'_ TableSetOp> {
         let ident = CamelCase(Ident::TableSet);
         let index_ty = match self.val.index {
             Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U64,
+            Input::Immediate => FieldTy::U32,
         };
         let value_ty = match self.val.value {
             Input::Stack => FieldTy::Stack,
