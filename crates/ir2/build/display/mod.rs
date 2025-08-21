@@ -411,8 +411,18 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let result_suffix = CamelCase(Input::Stack);
         let ptr_suffix = SnakeCase(self.0.ptr);
         let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).display_maybe();
-        let mem0_ident = self.0.mem0.then_some("Mem0").display_maybe();
-        let offset16_ident = self.0.offset16.then_some("Offset16").display_maybe();
+        let mem0_ident = self
+            .0
+            .mem0
+            .then_some(Ident::Mem0)
+            .map(CamelCase)
+            .display_maybe();
+        let offset16_ident = self
+            .0
+            .offset16
+            .then_some(Ident::Offset16)
+            .map(CamelCase)
+            .display_maybe();
         write!(
             f,
             "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}",
@@ -427,8 +437,18 @@ impl Display for DisplayIdent<&'_ StoreOp> {
         let ptr_suffix = CamelCase(self.0.ptr);
         let value_suffix = SnakeCase(self.0.value);
         let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).display_maybe();
-        let mem0_ident = self.0.mem0.then_some("Mem0").display_maybe();
-        let offset16_ident = self.0.offset16.then_some("Offset16").display_maybe();
+        let mem0_ident = self
+            .0
+            .mem0
+            .then_some(Ident::Mem0)
+            .map(CamelCase)
+            .display_maybe();
+        let offset16_ident = self
+            .0
+            .offset16
+            .then_some(Ident::Offset16)
+            .map(CamelCase)
+            .display_maybe();
         write!(
             f,
             "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{ptr_suffix}{value_suffix}",

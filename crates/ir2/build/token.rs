@@ -168,4 +168,6 @@ define_ident!(
     GlobalSet32: global_set32,
     GlobalSet64: global_set64,
     RefFunc: ref_func,
+    Mem0: mem0,
+    Offset16: offset16,
 );
