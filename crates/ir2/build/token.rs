@@ -82,6 +82,9 @@ define_ident!(
     Load64: load64,
 
     Copy: copy,
+    Copy32: copy32,
+    Copy64: copy64,
+    CopySpan: copy_span,
     Fill: fill,
     Init: init,
     Grow: grow,
@@ -139,4 +142,14 @@ define_ident!(
     Convert: convert,
 
     Offset: offset,
+    TrapCode: trap_code,
+    ConsumeFuel: consume_fuel,
+    Fuel: fuel,
+    Return: r#return,
+    ReturnSpan: return_span,
+    Values: values,
+    Value: value,
+    Result: result,
+    Results: results,
+    Len: len,
 );
