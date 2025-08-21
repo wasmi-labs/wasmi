@@ -164,4 +164,8 @@ define_ident!(
     MemoryCopy: memory_copy,
     MemoryFill: memory_fill,
     MemoryInit: memory_init,
+    GlobalGet: global_get,
+    GlobalSet: global_set,
+    GlobalSet32: global_set32,
+    GlobalSet64: global_set64,
 );
