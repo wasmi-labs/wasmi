@@ -74,7 +74,7 @@ impl Display for DisplayEnum<Isa> {
             f,
             "\
             {indent}pub enum Op {{\n\
-            {variants}
+            {variants}\
             {indent}}}\n\
         "
         )
@@ -344,7 +344,7 @@ impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
             f,
             "\
             {indent0}{ident} {{\n\
-            {fields}
+            {fields}\
             {indent0}}},\n\
             ",
         )
