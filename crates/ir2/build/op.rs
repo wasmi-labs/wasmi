@@ -19,24 +19,32 @@ pub enum Op {
     Generic5(GenericOp<5>),
 }
 
-macro_rules! impl_from_generic_op {
-    ( $($op:ident < $n:literal >),* $(,)? ) => {
+macro_rules! impl_from_for_op {
+    ( $($op_ty:ty: $variant:ident),* $(,)? ) => {
         $(
-            impl From<GenericOp<$n>> for Op {
-                fn from(op: GenericOp<$n>) -> Self {
-                    Op::$op(op)
+            impl From<$op_ty> for Op {
+                fn from(op: $op_ty) -> Self {
+                    Op::$variant(op)
                 }
             }
         )*
     };
 }
-impl_from_generic_op! {
-    Generic0<0>,
-    Generic1<1>,
-    Generic2<2>,
-    Generic3<3>,
-    Generic4<4>,
-    Generic5<5>,
+impl_from_for_op! {
+    UnaryOp: Unary,
+    BinaryOp: Binary,
+    CmpBranchOp: CmpBranch,
+    CmpSelectOp: CmpSelect,
+    LoadOp: Load,
+    StoreOp: Store,
+    TableGetOp: TableGet,
+    TableSetOp: TableSet,
+    GenericOp<0>: Generic0,
+    GenericOp<1>: Generic1,
+    GenericOp<2>: Generic2,
+    GenericOp<3>: Generic3,
+    GenericOp<4>: Generic4,
+    GenericOp<5>: Generic5,
 }
 
 #[derive(Copy, Clone)]
