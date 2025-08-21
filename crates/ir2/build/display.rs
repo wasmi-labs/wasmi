@@ -69,22 +69,15 @@ impl<T> DisplayEnum<T> {
 impl Display for DisplayEnum<Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
+        let variants = DisplaySequence(self.val.ops.iter().map(|op| self.scoped(op)));
         write!(
             f,
             "\
             {indent}pub enum Op {{\n\
-        "
-        )?;
-        for op in &self.val.ops {
-            write!(f, "{}", self.scoped(op))?;
-        }
-        write!(
-            f,
-            "\
+            {variants}
             {indent}}}\n\
         "
-        )?;
-        Ok(())
+        )
     }
 }
 
