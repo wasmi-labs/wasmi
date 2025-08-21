@@ -724,8 +724,6 @@ pub enum Ty {
     F32,
     /// A 64-bit float type.
     F64,
-    /// A general reference type.
-    Ref,
 }
 
 impl Display for Ty {
@@ -739,7 +737,6 @@ impl Display for Ty {
             Ty::U64 => "u64",
             Ty::F32 => "f32",
             Ty::F64 => "f64",
-            Ty::Ref => "ref",
         };
         write!(f, "{s}")
     }
@@ -756,7 +753,6 @@ impl From<Ty> for Ident {
             Ty::U64 => Self::U64,
             Ty::F32 => Self::F32,
             Ty::F64 => Self::F64,
-            Ty::Ref => Self::Ref,
         }
     }
 }

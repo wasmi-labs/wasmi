@@ -110,7 +110,6 @@ define_ident!(
     S64: s64,
     F32: r#f32,
     F64: r#f64,
-    Ref: r#ref,
 
     Clz: clz,
     Ctz: ctz,
@@ -168,4 +167,5 @@ define_ident!(
     GlobalSet: global_set,
     GlobalSet32: global_set32,
     GlobalSet64: global_set64,
+    RefFunc: ref_func,
 );
