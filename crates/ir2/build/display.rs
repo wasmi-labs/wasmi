@@ -188,6 +188,7 @@ impl Display for DisplayEnum<&'_ CmpBranchOp> {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
         let cmp = self.val.cmp;
+        let branch = CamelCase(Ident::Branch);
         let ident = CamelCase(cmp.ident());
         let input_ident = CamelCase(Ident::from(cmp.input_ty()));
         let lhs_ty = cmp.input_field(self.val.lhs);
@@ -199,7 +200,7 @@ impl Display for DisplayEnum<&'_ CmpBranchOp> {
         write!(
             f,
             "\
-            {indent0}Branch{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
+            {indent0}{branch}{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
             {indent1}offset: {offset_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\
@@ -214,6 +215,7 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
         let cmp = self.val.cmp;
+        let select = CamelCase(Ident::Select);
         let ident = CamelCase(cmp.ident());
         let input_ident = CamelCase(Ident::from(cmp.input_ty()));
         let result_ty = FieldTy::Stack;
@@ -227,7 +229,7 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
         write!(
             f,
             "\
-            {indent0}Select{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
+            {indent0}{select}{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\

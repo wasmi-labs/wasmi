@@ -1,5 +1,3 @@
-#![allow(unused_imports, dead_code)]
-
 mod display;
 mod isa;
 mod op;
@@ -8,7 +6,7 @@ pub mod token;
 use self::{
     display::{DisplayEnum, Indent},
     isa::Isa,
-    op::{BinaryOp, IntoMaybe, Maybe, Op, UnaryOp},
+    op::{IntoMaybe, Op},
     token::{CamelCase, Ident, SnakeCase},
 };
 use core::fmt::{self, Display, Error as FmtError, Write as _};
