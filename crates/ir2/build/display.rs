@@ -378,3 +378,17 @@ where
         write!(f, "{t0}{t1}")
     }
 }
+
+pub struct DisplaySequence<T>(pub T);
+
+impl<T> Display for DisplaySequence<T>
+where
+    T: IntoIterator<Item: Display> + Clone,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for item in self.0.clone() {
+            write!(f, "{item}")?;
+        }
+        Ok(())
+    }
+}
