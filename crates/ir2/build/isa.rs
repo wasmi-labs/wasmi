@@ -6,6 +6,9 @@ use crate::build::{
         CmpOpKind,
         CmpSelectOp,
         Commutativity,
+        Field,
+        FieldTy,
+        GenericOp,
         Input,
         LoadOp,
         LoadOpKind,
@@ -14,6 +17,7 @@ use crate::build::{
         UnaryOp,
         UnaryOpKind,
     },
+    token::Ident,
     Op,
 };
 
@@ -37,6 +41,8 @@ pub fn wasmi_isa() -> Isa {
     add_cmp_select_ops(&mut isa);
     add_load_ops(&mut isa);
     add_store_ops(&mut isa);
+    add_control_ops(&mut isa);
+    add_copy_ops(&mut isa);
     isa
 }
 
@@ -387,5 +393,67 @@ fn add_store_ops(isa: &mut Isa) {
             true,
             true,
         )));
+    }
+}
+
+fn add_control_ops(isa: &mut Isa) {
+    let ops = [
+        Op::Generic1(GenericOp::new(
+            Ident::Trap,
+            [Field::new(Ident::TrapCode, FieldTy::TrapCode)],
+        )),
+        Op::Generic1(GenericOp::new(
+            Ident::ConsumeFuel,
+            [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
+        )),
+        Op::Generic0(GenericOp::new(Ident::Return, [])),
+        Op::Generic1(GenericOp::new(
+            Ident::ReturnSpan,
+            [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
+        )),
+        Op::Generic1(GenericOp::new(
+            Ident::Branch,
+            [Field::new(Ident::Values, FieldTy::StackSpan)],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_copy_ops(isa: &mut Isa) {
+    let ops = [
+        Op::Generic2(GenericOp::new(
+            Ident::Copy,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+            ],
+        )),
+        Op::Generic2(GenericOp::new(
+            Ident::Copy32,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::U32),
+            ],
+        )),
+        Op::Generic2(GenericOp::new(
+            Ident::Copy64,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::U64),
+            ],
+        )),
+        Op::Generic3(GenericOp::new(
+            Ident::CopySpan,
+            [
+                Field::new(Ident::Results, FieldTy::StackSpan),
+                Field::new(Ident::Values, FieldTy::StackSpan),
+                Field::new(Ident::Len, FieldTy::U16),
+            ],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
     }
 }
