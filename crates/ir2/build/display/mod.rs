@@ -260,41 +260,30 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             }
             Input::Immediate => (FieldTy::Address, None),
         };
-        let mem_ty = match self.val.mem0 {
-            false => Some(FieldTy::Memory),
-            true => None,
-        };
+        let offset_field = offset_ty
+            .map(|ty| Field::new(Ident::Offset, ty))
+            .map(|field| (indent1, field, "\n"))
+            .map(DisplayConcat::from)
+            .display_maybe();
+        let memory_field = self
+            .val
+            .mem0
+            .then_some(FieldTy::Memory)
+            .map(|ty| Field::new(Ident::Memory, ty))
+            .map(|field| (indent1, field, "\n"))
+            .map(DisplayConcat::from)
+            .display_maybe();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}ptr: {ptr_ty},\n\
-            ",
-        )?;
-        if let Some(offset) = offset_ty {
-            write!(
-                f,
-                "\
-                    {indent1}offset: {offset},\n\
-                "
-            )?;
-        }
-        if let Some(mem) = mem_ty {
-            write!(
-                f,
-                "\
-                    {indent1}mem: {mem},\n\
-                "
-            )?;
-        }
-        write!(
-            f,
-            "\
+            {offset_field}\
+            {memory_field}\
             {indent0}}},\n\
             ",
-        )?;
-        Ok(())
+        )
     }
 }
 
