@@ -460,7 +460,7 @@ impl BinaryOpKind {
 
     pub fn lhs_field(&self, input: Input) -> FieldTy {
         match input {
-            Input::Stack => return FieldTy::Stack,
+            Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
                 | Self::Cmp(cmp) => cmp.input_field(input),
                 | Self::I32Add
@@ -765,7 +765,6 @@ impl From<Ty> for Ident {
 pub enum FieldTy {
     Stack,
     StackSpan,
-    BoundedStackSpan,
     U8,
     U16,
     U32,
@@ -800,7 +799,6 @@ impl Display for FieldTy {
         let s = match self {
             Self::Stack => "Stack",
             Self::StackSpan => "StackSpan",
-            Self::BoundedStackSpan => "BoundedStackSpan",
             Self::U8 => "u8",
             Self::U16 => "u16",
             Self::U32 => "u32",
