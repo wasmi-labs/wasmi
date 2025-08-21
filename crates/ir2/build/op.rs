@@ -19,6 +19,26 @@ pub enum Op {
     Generic5(GenericOp<5>),
 }
 
+macro_rules! impl_from_generic_op {
+    ( $($op:ident < $n:literal >),* $(,)? ) => {
+        $(
+            impl From<GenericOp<$n>> for Op {
+                fn from(op: GenericOp<$n>) -> Self {
+                    Op::$op(op)
+                }
+            }
+        )*
+    };
+}
+impl_from_generic_op! {
+    Generic0<0>,
+    Generic1<1>,
+    Generic2<2>,
+    Generic3<3>,
+    Generic4<4>,
+    Generic5<5>,
+}
+
 #[derive(Copy, Clone)]
 pub struct GenericOp<const N: usize> {
     pub ident: Ident,
