@@ -16,7 +16,6 @@ use crate::build::{
         UnaryOp,
     },
     token::{CamelCase, Ident, SnakeCase},
-    IntoMaybe as _,
 };
 use core::{
     fmt::{self, Display},
@@ -309,14 +308,14 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .offset_ty(self.val.ptr, self.val.offset16)
             .map(|offset| Field::new(Ident::Offset, offset))
             .map(|field| DisplayPair(indent1, field))
-            .into_maybe();
+            .display_maybe();
         let mem_field = self
             .val
             .mem0
             .not()
             .then(|| Field::new(Ident::Memory, FieldTy::Memory))
             .map(|field| DisplayPair(indent1, field))
-            .into_maybe();
+            .display_maybe();
         write!(
             f,
             "\
@@ -416,9 +415,9 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let ident = CamelCase(kind.ident());
         let result_suffix = CamelCase(Input::Stack);
         let ptr_suffix = SnakeCase(self.0.ptr);
-        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).into_maybe();
-        let mem0_ident = self.0.mem0.then_some("Mem0").into_maybe();
-        let offset16_ident = self.0.offset16.then_some("Offset16").into_maybe();
+        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).display_maybe();
+        let mem0_ident = self.0.mem0.then_some("Mem0").display_maybe();
+        let offset16_ident = self.0.offset16.then_some("Offset16").display_maybe();
         write!(
             f,
             "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}",
@@ -432,9 +431,9 @@ impl Display for DisplayIdent<&'_ StoreOp> {
         let ident = CamelCase(kind.ident());
         let ptr_suffix = CamelCase(self.0.ptr);
         let value_suffix = SnakeCase(self.0.value);
-        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).into_maybe();
-        let mem0_ident = self.0.mem0.then_some("Mem0").into_maybe();
-        let offset16_ident = self.0.offset16.then_some("Offset16").into_maybe();
+        let ident_prefix = self.0.kind.ident_prefix().map(CamelCase).display_maybe();
+        let mem0_ident = self.0.mem0.then_some("Mem0").display_maybe();
+        let offset16_ident = self.0.offset16.then_some("Offset16").display_maybe();
         write!(
             f,
             "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{ptr_suffix}{value_suffix}",
@@ -467,5 +466,46 @@ where
             write!(f, "{item}")?;
         }
         Ok(())
+    }
+}
+
+pub enum DisplayMaybe<T> {
+    Some(T),
+    None,
+}
+
+impl<T> Display for DisplayMaybe<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let DisplayMaybe::Some(field) = self {
+            field.fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+pub trait IntoDisplayMaybe<T> {
+    fn display_maybe(self) -> DisplayMaybe<T>;
+}
+impl<T> IntoDisplayMaybe<T> for Option<T> {
+    fn display_maybe(self) -> DisplayMaybe<T> {
+        DisplayMaybe::from(self)
+    }
+}
+
+impl<T> From<T> for DisplayMaybe<T> {
+    fn from(value: T) -> Self {
+        DisplayMaybe::Some(value)
+    }
+}
+
+impl<T> From<Option<T>> for DisplayMaybe<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(value) => Self::Some(value),
+            None => Self::None,
+        }
     }
 }
