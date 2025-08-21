@@ -1,6 +1,18 @@
 use crate::build::{
     isa::Isa,
-    op::{BinaryOp, CmpBranchOp, CmpSelectOp, Field, FieldTy, Input, LoadOp, Op, StoreOp, UnaryOp},
+    op::{
+        BinaryOp,
+        CmpBranchOp,
+        CmpSelectOp,
+        Field,
+        FieldTy,
+        GenericOp,
+        Input,
+        LoadOp,
+        Op,
+        StoreOp,
+        UnaryOp,
+    },
     token::{CamelCase, Ident, SnakeCase},
     IntoMaybe as _,
 };
@@ -296,14 +308,14 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .kind
             .offset_ty(self.val.ptr, self.val.offset16)
             .map(|offset| Field::new(Ident::Offset, offset))
-            .map(|field| DisplayIndented::new(field, indent1))
+            .map(|field| DisplayPair(indent1, field))
             .into_maybe();
         let mem_field = self
             .val
             .mem0
             .not()
             .then(|| Field::new(Ident::Memory, FieldTy::Memory))
-            .map(|field| DisplayIndented::new(field, indent1))
+            .map(|field| DisplayPair(indent1, field))
             .into_maybe();
         write!(
             f,
@@ -353,24 +365,16 @@ impl Display for DisplayIdent<&'_ StoreOp> {
     }
 }
 
-pub struct DisplayIndented<T> {
-    val: T,
-    indent: Indent,
-}
+pub struct DisplayPair<T0, T1>(pub T0, pub T1);
 
-impl<T> DisplayIndented<T> {
-    pub fn new(val: T, indent: Indent) -> Self {
-        Self { val, indent }
-    }
-}
-
-impl<T> Display for DisplayIndented<T>
+impl<T0, T1> Display for DisplayPair<T0, T1>
 where
-    T: Display,
+    T0: Display,
+    T1: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent = self.indent;
-        let val = &self.val;
-        write!(f, "{indent}{val}")
+        let t0 = &self.0;
+        let t1 = &self.1;
+        write!(f, "{t0}{t1}")
     }
 }
