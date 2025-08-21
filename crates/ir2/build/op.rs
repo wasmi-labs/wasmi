@@ -600,56 +600,6 @@ impl BinaryOpKind {
         }
     }
 
-    pub fn input_ty(&self) -> Ty {
-        match self {
-            | Self::Cmp(cmp) => cmp.input_ty(),
-            | Self::I32Add
-            | Self::I32Sub
-            | Self::I32Mul
-            | Self::S32Div
-            | Self::U32Div
-            | Self::S32Rem
-            | Self::U32Rem
-            | Self::I32BitAnd
-            | Self::I32BitOr
-            | Self::I32BitXor
-            | Self::I32Shl
-            | Self::S32Shr
-            | Self::U32Shr
-            | Self::I32Rotl
-            | Self::I32Rotr => Ty::I32,
-            | Self::I64Add
-            | Self::I64Sub
-            | Self::I64Mul
-            | Self::S64Div
-            | Self::U64Div
-            | Self::S64Rem
-            | Self::U64Rem
-            | Self::I64BitAnd
-            | Self::I64BitOr
-            | Self::I64BitXor
-            | Self::I64Shl
-            | Self::S64Shr
-            | Self::U64Shr
-            | Self::I64Rotl
-            | Self::I64Rotr => Ty::I64,
-            | Self::F32Add
-            | Self::F32Sub
-            | Self::F32Mul
-            | Self::F32Div
-            | Self::F32Min
-            | Self::F32Max
-            | Self::F32Copysign => Ty::F32,
-            | Self::F64Add
-            | Self::F64Sub
-            | Self::F64Mul
-            | Self::F64Div
-            | Self::F64Min
-            | Self::F64Max
-            | Self::F64Copysign => Ty::F64,
-        }
-    }
-
     pub fn commutativity(&self) -> Commutativity {
         match self {
             | Self::Cmp(cmp) => cmp.commutativity(),
