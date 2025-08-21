@@ -45,6 +45,7 @@ pub fn wasmi_isa() -> Isa {
     add_store_ops(&mut isa);
     add_control_ops(&mut isa);
     add_copy_ops(&mut isa);
+    add_memory_ops(&mut isa);
     add_table_ops(&mut isa);
     isa
 }
@@ -517,6 +518,62 @@ fn add_table_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::ElemDrop,
             [Field::new(Ident::Elem, FieldTy::Elem)],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_memory_ops(isa: &mut Isa) {
+    let ops = [
+        Op::from(GenericOp::new(
+            Ident::DataDrop,
+            [Field::new(Ident::Data, FieldTy::Data)],
+        )),
+        Op::from(GenericOp::new(
+            Ident::MemorySize,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Memory, FieldTy::Memory),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::MemoryGrow,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Delta, FieldTy::Stack),
+                Field::new(Ident::Memory, FieldTy::Memory),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::MemoryCopy,
+            [
+                Field::new(Ident::DstMemory, FieldTy::Memory),
+                Field::new(Ident::SrcMemory, FieldTy::Memory),
+                Field::new(Ident::Dst, FieldTy::Stack),
+                Field::new(Ident::Src, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::MemoryFill,
+            [
+                Field::new(Ident::Memory, FieldTy::Memory),
+                Field::new(Ident::Dst, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::MemoryInit,
+            [
+                Field::new(Ident::Memory, FieldTy::Memory),
+                Field::new(Ident::Data, FieldTy::Data),
+                Field::new(Ident::Dst, FieldTy::Stack),
+                Field::new(Ident::Src, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::Stack),
+            ],
         )),
     ];
     for op in ops {
