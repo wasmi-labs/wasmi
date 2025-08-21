@@ -95,11 +95,11 @@ impl Display for DisplayEnum<&'_ Op> {
             Op::CmpSelect(op) => self.map(op).fmt(f),
             Op::Load(op) => self.map(op).fmt(f),
             Op::Store(op) => self.map(op).fmt(f),
-            Op::Generic0(_op) => Ok(()),
-            Op::Generic1(_op) => Ok(()),
-            Op::Generic2(_op) => Ok(()),
-            Op::Generic3(_op) => Ok(()),
-            Op::Generic4(_op) => Ok(()),
+            Op::Generic0(op) => self.map(op).fmt(f),
+            Op::Generic1(op) => self.map(op).fmt(f),
+            Op::Generic2(op) => self.map(op).fmt(f),
+            Op::Generic3(op) => self.map(op).fmt(f),
+            Op::Generic4(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -325,6 +325,28 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             {offset_field}\n\
             {indent1}value: {value_ty},\n\
             {mem_field}\n\
+            {indent0}}},\n\
+            ",
+        )
+    }
+}
+
+impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let ident = CamelCase(self.val.ident);
+        let fields = DisplaySequence(
+            self.val
+                .fields
+                .into_iter()
+                .map(move |field| DisplayPair(indent1, DisplayPair(field, "\n"))),
+        );
+        write!(
+            f,
+            "\
+            {indent0}{ident} {{\n\
+            {fields}
             {indent0}}},\n\
             ",
         )
