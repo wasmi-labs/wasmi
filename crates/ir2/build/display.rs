@@ -11,6 +11,8 @@ use crate::build::{
         LoadOp,
         Op,
         StoreOp,
+        TableGetOp,
+        TableSetOp,
         UnaryOp,
     },
     token::{CamelCase, Ident, SnakeCase},
@@ -95,6 +97,8 @@ impl Display for DisplayEnum<&'_ Op> {
             Op::CmpSelect(op) => self.map(op).fmt(f),
             Op::Load(op) => self.map(op).fmt(f),
             Op::Store(op) => self.map(op).fmt(f),
+            Op::TableGet(op) => self.map(op).fmt(f),
+            Op::TableSet(op) => self.map(op).fmt(f),
             Op::Generic0(op) => self.map(op).fmt(f),
             Op::Generic1(op) => self.map(op).fmt(f),
             Op::Generic2(op) => self.map(op).fmt(f),
@@ -348,6 +352,61 @@ impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
             "\
             {indent0}{ident} {{\n\
             {fields}
+            {indent0}}},\n\
+            ",
+        )
+    }
+}
+
+impl Display for DisplayEnum<&'_ TableGetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let ident = CamelCase(Ident::TableGet);
+        let result_ty = FieldTy::Stack;
+        let index_ty = match self.val.index {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::U64,
+        };
+        let table_ty = FieldTy::Table;
+        let result_suffix = CamelCase(Input::Stack);
+        let index_suffix = SnakeCase(self.val.index);
+        write!(
+            f,
+            "\
+            {indent0}{ident}_{result_suffix}{index_suffix} {{\n\
+            {indent1}result: {result_ty},\n\
+            {indent1}index: {index_ty},\n\
+            {indent1}table: {table_ty},\n\
+            {indent0}}},\n\
+            ",
+        )
+    }
+}
+
+impl Display for DisplayEnum<&'_ TableSetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent0 = self.indent;
+        let indent1 = indent0.inc();
+        let ident = CamelCase(Ident::TableSet);
+        let index_ty = match self.val.index {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::U64,
+        };
+        let value_ty = match self.val.value {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::U64,
+        };
+        let table_ty = FieldTy::Table;
+        let index_suffix = CamelCase(self.val.index);
+        let value_suffix = SnakeCase(self.val.value);
+        write!(
+            f,
+            "\
+            {indent0}{ident}_{index_suffix}{value_suffix} {{\n\
+            {indent1}table: {table_ty},\n\
+            {indent1}index: {index_ty},\n\
+            {indent1}value: {value_ty},\n\
             {indent0}}},\n\
             ",
         )

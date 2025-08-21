@@ -152,4 +152,6 @@ define_ident!(
     Result: result,
     Results: results,
     Len: len,
+    TableGet: table_get,
+    TableSet: table_set,
 );
