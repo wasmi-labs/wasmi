@@ -100,6 +100,7 @@ impl Display for DisplayEnum<&'_ Op> {
             Op::Generic2(op) => self.map(op).fmt(f),
             Op::Generic3(op) => self.map(op).fmt(f),
             Op::Generic4(op) => self.map(op).fmt(f),
+            Op::Generic5(op) => self.map(op).fmt(f),
         }
     }
 }
