@@ -401,20 +401,20 @@ fn add_store_ops(isa: &mut Isa) {
 
 fn add_control_ops(isa: &mut Isa) {
     let ops = [
-        Op::Generic1(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::Trap,
             [Field::new(Ident::TrapCode, FieldTy::TrapCode)],
         )),
-        Op::Generic1(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::ConsumeFuel,
             [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
         )),
-        Op::Generic0(GenericOp::new(Ident::Return, [])),
-        Op::Generic1(GenericOp::new(
+        Op::from(GenericOp::new(Ident::Return, [])),
+        Op::from(GenericOp::new(
             Ident::ReturnSpan,
             [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
         )),
-        Op::Generic1(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::Branch,
             [Field::new(Ident::Values, FieldTy::StackSpan)],
         )),
@@ -426,28 +426,28 @@ fn add_control_ops(isa: &mut Isa) {
 
 fn add_copy_ops(isa: &mut Isa) {
     let ops = [
-        Op::Generic2(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::Copy,
             [
                 Field::new(Ident::Result, FieldTy::Stack),
                 Field::new(Ident::Value, FieldTy::Stack),
             ],
         )),
-        Op::Generic2(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::Copy32,
             [
                 Field::new(Ident::Result, FieldTy::Stack),
                 Field::new(Ident::Value, FieldTy::U32),
             ],
         )),
-        Op::Generic2(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::Copy64,
             [
                 Field::new(Ident::Result, FieldTy::Stack),
                 Field::new(Ident::Value, FieldTy::U64),
             ],
         )),
-        Op::Generic3(GenericOp::new(
+        Op::from(GenericOp::new(
             Ident::CopySpan,
             [
                 Field::new(Ident::Results, FieldTy::StackSpan),
