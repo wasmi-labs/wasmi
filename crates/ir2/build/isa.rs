@@ -467,6 +467,13 @@ fn add_copy_ops(isa: &mut Isa) {
 fn add_call_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(
+            Ident::RefFunc,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Func, FieldTy::Func),
+            ],
+        )),
+        Op::from(GenericOp::new(
             Ident::CallInternal,
             [
                 Field::new(Ident::Results, FieldTy::StackSpan),
