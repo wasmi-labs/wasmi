@@ -14,6 +14,8 @@ use crate::build::{
         LoadOpKind,
         StoreOp,
         StoreOpKind,
+        TableGetOp,
+        TableSetOp,
         UnaryOp,
         UnaryOpKind,
     },
@@ -43,6 +45,7 @@ pub fn wasmi_isa() -> Isa {
     add_store_ops(&mut isa);
     add_control_ops(&mut isa);
     add_copy_ops(&mut isa);
+    add_table_ops(&mut isa);
     isa
 }
 
@@ -452,6 +455,20 @@ fn add_copy_ops(isa: &mut Isa) {
                 Field::new(Ident::Len, FieldTy::U16),
             ],
         )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_table_ops(isa: &mut Isa) {
+    let ops = [
+        Op::TableGet(TableGetOp::new(Input::Stack)),
+        Op::TableGet(TableGetOp::new(Input::Immediate)),
+        Op::TableSet(TableSetOp::new(Input::Stack, Input::Stack)),
+        Op::TableSet(TableSetOp::new(Input::Stack, Input::Immediate)),
+        Op::TableSet(TableSetOp::new(Input::Immediate, Input::Stack)),
+        Op::TableSet(TableSetOp::new(Input::Immediate, Input::Immediate)),
     ];
     for op in ops {
         isa.push_op(op);

@@ -9,6 +9,8 @@ pub enum Op {
     CmpSelect(CmpSelectOp),
     Load(LoadOp),
     Store(StoreOp),
+    TableGet(TableGetOp),
+    TableSet(TableSetOp),
     Generic0(GenericOp<0>),
     Generic1(GenericOp<1>),
     Generic2(GenericOp<2>),
@@ -1147,6 +1149,32 @@ impl StoreOpKind {
                 Self::I64Store32 => FieldTy::I32,
             },
         }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct TableGetOp {
+    /// The `index` type.
+    pub index: Input,
+}
+
+impl TableGetOp {
+    pub fn new(index: Input) -> Self {
+        Self { index }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct TableSetOp {
+    /// The `index` input.
+    pub index: Input,
+    /// The `value` input.
+    pub value: Input,
+}
+
+impl TableSetOp {
+    pub fn new(index: Input, value: Input) -> Self {
+        Self { index, value }
     }
 }
 
