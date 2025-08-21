@@ -469,6 +469,55 @@ fn add_table_ops(isa: &mut Isa) {
         Op::TableSet(TableSetOp::new(Input::Stack, Input::Immediate)),
         Op::TableSet(TableSetOp::new(Input::Immediate, Input::Stack)),
         Op::TableSet(TableSetOp::new(Input::Immediate, Input::Immediate)),
+        Op::from(GenericOp::new(
+            Ident::TableSize,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Table, FieldTy::Table),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::TableGrow,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Delta, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Table, FieldTy::Table),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::TableCopy,
+            [
+                Field::new(Ident::DstTable, FieldTy::Table),
+                Field::new(Ident::SrcTable, FieldTy::Table),
+                Field::new(Ident::Dst, FieldTy::Stack),
+                Field::new(Ident::Src, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::TableFill,
+            [
+                Field::new(Ident::Table, FieldTy::Table),
+                Field::new(Ident::Dst, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::TableInit,
+            [
+                Field::new(Ident::Table, FieldTy::Table),
+                Field::new(Ident::Elem, FieldTy::Elem),
+                Field::new(Ident::Dst, FieldTy::Stack),
+                Field::new(Ident::Src, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::ElemDrop,
+            [Field::new(Ident::Elem, FieldTy::Elem)],
+        )),
     ];
     for op in ops {
         isa.push_op(op);
