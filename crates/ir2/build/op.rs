@@ -14,6 +14,7 @@ pub enum Op {
     Generic2(GenericOp<2>),
     Generic3(GenericOp<3>),
     Generic4(GenericOp<4>),
+    Generic5(GenericOp<5>),
 }
 
 #[derive(Copy, Clone)]
