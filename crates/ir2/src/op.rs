@@ -1,6 +1,6 @@
 use crate::{
     core::TrapCode,
-    index::{Memory, Table},
+    index::{Elem, Memory, Table},
     Address,
     BlockFuel,
     BranchOffset,
