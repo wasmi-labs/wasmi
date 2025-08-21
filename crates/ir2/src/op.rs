@@ -1,6 +1,6 @@
 use crate::{
     core::TrapCode,
-    index::{Data, Elem, Func, FuncType, InternalFunc, Memory, Table},
+    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
     Address,
     BlockFuel,
     BranchOffset,

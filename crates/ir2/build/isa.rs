@@ -46,6 +46,7 @@ pub fn wasmi_isa() -> Isa {
     add_control_ops(&mut isa);
     add_copy_ops(&mut isa);
     add_call_ops(&mut isa);
+    add_global_ops(&mut isa);
     add_memory_ops(&mut isa);
     add_table_ops(&mut isa);
     isa
@@ -502,6 +503,42 @@ fn add_call_ops(isa: &mut Isa) {
                 Field::new(Ident::Index, FieldTy::Stack),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),
+            ],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_global_ops(isa: &mut Isa) {
+    let ops = [
+        Op::from(GenericOp::new(
+            Ident::GlobalGet,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Global, FieldTy::Global),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::GlobalSet,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Global, FieldTy::Global),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::GlobalSet32,
+            [
+                Field::new(Ident::Result, FieldTy::U32),
+                Field::new(Ident::Global, FieldTy::Global),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::GlobalSet64,
+            [
+                Field::new(Ident::Result, FieldTy::U64),
+                Field::new(Ident::Global, FieldTy::Global),
             ],
         )),
     ];
