@@ -307,14 +307,16 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .kind
             .offset_ty(self.val.ptr, self.val.offset16)
             .map(|offset| Field::new(Ident::Offset, offset))
-            .map(|field| DisplayPair(indent1, field))
+            .map(|field| (indent1, field))
+            .map(DisplayConcat::from)
             .display_maybe();
         let mem_field = self
             .val
             .mem0
             .not()
             .then(|| Field::new(Ident::Memory, FieldTy::Memory))
-            .map(|field| DisplayPair(indent1, field))
+            .map(|field| (indent1, field))
+            .map(DisplayConcat::from)
             .display_maybe();
         write!(
             f,
@@ -339,7 +341,8 @@ impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
             self.val
                 .fields
                 .into_iter()
-                .map(move |field| DisplayPair(indent1, DisplayPair(field, "\n"))),
+                .map(move |field| (indent1, field, "\n"))
+                .map(DisplayConcat::from),
         );
         write!(
             f,
@@ -441,17 +444,40 @@ impl Display for DisplayIdent<&'_ StoreOp> {
     }
 }
 
-pub struct DisplayPair<T0, T1>(pub T0, pub T1);
+pub struct DisplayConcat<T>(pub T);
 
-impl<T0, T1> Display for DisplayPair<T0, T1>
+impl<T0, T1> From<(T0, T1)> for DisplayConcat<(T0, T1)> {
+    fn from(value: (T0, T1)) -> Self {
+        Self(value)
+    }
+}
+
+impl<T0, T1, T2> From<(T0, T1, T2)> for DisplayConcat<(T0, T1, T2)> {
+    fn from(value: (T0, T1, T2)) -> Self {
+        Self(value)
+    }
+}
+
+impl<T0, T1> Display for DisplayConcat<(T0, T1)>
 where
     T0: Display,
     T1: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let t0 = &self.0;
-        let t1 = &self.1;
+        let (t0, t1) = &self.0;
         write!(f, "{t0}{t1}")
+    }
+}
+
+impl<T0, T1, T2> Display for DisplayConcat<(T0, T1, T2)>
+where
+    T0: Display,
+    T1: Display,
+    T2: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (t0, t1, t2) = &self.0;
+        write!(f, "{t0}{t1}{t2}")
     }
 }
 
