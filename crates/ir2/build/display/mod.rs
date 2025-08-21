@@ -310,7 +310,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .kind
             .offset_ty(self.val.ptr, self.val.offset16)
             .map(|offset| Field::new(Ident::Offset, offset))
-            .map(|field| (indent1, field))
+            .map(|field| (indent1, field, "\n"))
             .map(DisplayConcat::from)
             .display_maybe();
         let mem_field = self
@@ -318,7 +318,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .mem0
             .not()
             .then(|| Field::new(Ident::Memory, FieldTy::Memory))
-            .map(|field| (indent1, field))
+            .map(|field| (indent1, field, "\n"))
             .map(DisplayConcat::from)
             .display_maybe();
         write!(
@@ -326,9 +326,9 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             "\
             {indent0}{ident} {{\n\
             {indent1}ptr: {ptr_ty},\n\
-            {offset_field}\n\
+            {offset_field}\
             {indent1}value: {value_ty},\n\
-            {mem_field}\n\
+            {mem_field}\
             {indent0}}},\n\
             ",
         )
