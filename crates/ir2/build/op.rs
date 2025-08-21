@@ -1,26 +1,20 @@
 use crate::build::{CamelCase, Ident, SnakeCase};
 use core::fmt::{self, Display};
 
-#[derive(Copy, Clone)]
-pub enum Op {
-    Unary(UnaryOp),
-    Binary(BinaryOp),
-    CmpBranch(CmpBranchOp),
-    CmpSelect(CmpSelectOp),
-    Load(LoadOp),
-    Store(StoreOp),
-    TableGet(TableGetOp),
-    TableSet(TableSetOp),
-    Generic0(GenericOp<0>),
-    Generic1(GenericOp<1>),
-    Generic2(GenericOp<2>),
-    Generic3(GenericOp<3>),
-    Generic4(GenericOp<4>),
-    Generic5(GenericOp<5>),
-}
-
 macro_rules! impl_from_for_op {
-    ( $($op_ty:ty: $variant:ident),* $(,)? ) => {
+    (
+        $( #[$attr:meta] )*
+        pub enum Op {
+            $($variant:ident($op_ty:ty)),* $(,)?
+        }
+    ) => {
+        $( #[$attr] )*
+        pub enum Op {
+            $(
+                $variant($op_ty),
+            )*
+        }
+
         $(
             impl From<$op_ty> for Op {
                 fn from(op: $op_ty) -> Self {
@@ -31,20 +25,23 @@ macro_rules! impl_from_for_op {
     };
 }
 impl_from_for_op! {
-    UnaryOp: Unary,
-    BinaryOp: Binary,
-    CmpBranchOp: CmpBranch,
-    CmpSelectOp: CmpSelect,
-    LoadOp: Load,
-    StoreOp: Store,
-    TableGetOp: TableGet,
-    TableSetOp: TableSet,
-    GenericOp<0>: Generic0,
-    GenericOp<1>: Generic1,
-    GenericOp<2>: Generic2,
-    GenericOp<3>: Generic3,
-    GenericOp<4>: Generic4,
-    GenericOp<5>: Generic5,
+    #[derive(Copy, Clone)]
+    pub enum Op {
+        Unary(UnaryOp),
+        Binary(BinaryOp),
+        CmpBranch(CmpBranchOp),
+        CmpSelect(CmpSelectOp),
+        Load(LoadOp),
+        Store(StoreOp),
+        TableGet(TableGetOp),
+        TableSet(TableSetOp),
+        Generic0(GenericOp<0>),
+        Generic1(GenericOp<1>),
+        Generic2(GenericOp<2>),
+        Generic3(GenericOp<3>),
+        Generic4(GenericOp<4>),
+        Generic5(GenericOp<5>),
+    }
 }
 
 #[derive(Copy, Clone)]
