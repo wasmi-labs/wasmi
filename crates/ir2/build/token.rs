@@ -16,6 +16,7 @@ impl Case {
 }
 
 /// Runtime selected casing, either [`CamelCase`] or [`SnakeCase`].
+#[derive(Copy, Clone)]
 pub enum ChosenCase<T> {
     Camel(T),
     Snake(T),
@@ -40,6 +41,22 @@ pub struct CamelCase<T>(pub T);
 
 /// Snake-case tokens, e.g. `hello_world`.
 pub struct SnakeCase<T>(pub T);
+
+/// A word separator as required by some casings, e.g. snake case uses `_`.
+#[derive(Copy, Clone)]
+pub struct Sep;
+
+impl Display for CamelCase<Sep> {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())
+    }
+}
+
+impl Display for SnakeCase<Sep> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "_")
+    }
+}
 
 macro_rules! define_ident {
     (
