@@ -1,7 +1,7 @@
 use crate::build::{
-    display::utils::IntoDisplayMaybe as _,
+    display::utils::{DisplayConcat, IntoDisplayMaybe as _},
     op::{Input, LoadOp, StoreOp},
-    token::{Case, Ident, SnakeCase},
+    token::{Case, Ident, Sep, SnakeCase},
 };
 use core::fmt::{self, Display};
 
@@ -34,23 +34,27 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let ident = case.wrap(kind.ident());
         let result_suffix = case.wrap(Input::Stack);
         let ptr_suffix = SnakeCase(self.value.ptr);
+        let sep = case.wrap(Sep);
         let ident_prefix = self
             .value
             .kind
             .ident_prefix()
-            .map(|v| case.wrap(v))
+            .map(|v| (case.wrap(v), sep))
+            .map(DisplayConcat::from)
             .display_maybe();
         let mem0_ident = self
             .value
             .mem0
             .then_some(Ident::Mem0)
-            .map(|v| case.wrap(v))
+            .map(|v| (sep, case.wrap(v)))
+            .map(DisplayConcat::from)
             .display_maybe();
         let offset16_ident = self
             .value
             .offset16
             .then_some(Ident::Offset16)
-            .map(|v| case.wrap(v))
+            .map(|v| (sep, case.wrap(v)))
+            .map(DisplayConcat::from)
             .display_maybe();
         write!(
             f,
@@ -66,23 +70,27 @@ impl Display for DisplayIdent<&'_ StoreOp> {
         let ident = case.wrap(kind.ident());
         let ptr_suffix = case.wrap(self.value.ptr);
         let value_suffix = SnakeCase(self.value.value);
+        let sep = case.wrap(Sep);
         let ident_prefix = self
             .value
             .kind
             .ident_prefix()
-            .map(|v| case.wrap(v))
+            .map(|v| (case.wrap(v), sep))
+            .map(DisplayConcat::from)
             .display_maybe();
         let mem0_ident = self
             .value
             .mem0
             .then_some(Ident::Mem0)
-            .map(|v| case.wrap(v))
+            .map(|v| (sep, case.wrap(v)))
+            .map(DisplayConcat::from)
             .display_maybe();
         let offset16_ident = self
             .value
             .offset16
             .then_some(Ident::Offset16)
-            .map(|v| case.wrap(v))
+            .map(|v| (sep, case.wrap(v)))
+            .map(DisplayConcat::from)
             .display_maybe();
         write!(
             f,
