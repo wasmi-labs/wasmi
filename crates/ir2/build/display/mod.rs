@@ -177,21 +177,16 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
         let cmp = self.val.cmp;
-        let select = CamelCase(Ident::Select);
-        let ident = CamelCase(cmp.ident());
-        let input_ident = CamelCase(Ident::from(cmp.input_ty()));
+        let ident = DisplayIdent::camel(self.val);
         let result_ty = FieldTy::Stack;
         let lhs_ty = cmp.input_field(self.val.lhs);
         let rhs_ty = cmp.input_field(self.val.rhs);
-        let result_suffix = CamelCase(Input::Stack);
-        let lhs_suffix = SnakeCase(self.val.lhs);
-        let rhs_suffix = SnakeCase(self.val.rhs);
         let val_true = FieldTy::Stack;
         let val_false = FieldTy::Stack;
         write!(
             f,
             "\
-            {indent0}{select}{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
+            {indent0}{ident} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\

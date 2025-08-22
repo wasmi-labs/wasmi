@@ -1,6 +1,6 @@
 use crate::build::{
     display::utils::{DisplayConcat, IntoDisplayMaybe as _},
-    op::{BinaryOp, CmpBranchOp, Input, LoadOp, StoreOp, UnaryOp},
+    op::{BinaryOp, CmpBranchOp, CmpSelectOp, Input, LoadOp, StoreOp, UnaryOp},
     token::{Case, Ident, Sep, SnakeCase},
 };
 use core::fmt::{self, Display};
@@ -81,6 +81,23 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
         write!(
             f,
             "{branch}{sep}{input_ident}{sep}{ident}_{lhs_suffix}{rhs_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ CmpSelectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let cmp = self.value.cmp;
+        let select = case.wrap(Ident::Select);
+        let ident = case.wrap(cmp.ident());
+        let input_ident = case.wrap(Ident::from(cmp.input_ty()));
+        let result_suffix = case.wrap(Input::Stack);
+        let lhs_suffix = SnakeCase(self.value.lhs);
+        let rhs_suffix = SnakeCase(self.value.rhs);
+        write!(
+            f,
+            "{select}{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
         )
     }
 }
