@@ -17,5 +17,5 @@ pub use self::{
     index::Stack,
     op::Op,
     primitive::{Address, BlockFuel, BranchOffset, Offset16, Sign},
-    span::{BoundedStackSpan, FixedStackSpan, StackSpan},
+    span::{BoundedStackSpan, FixedStackSpan, StackSpan, StackSpanIter},
 };
