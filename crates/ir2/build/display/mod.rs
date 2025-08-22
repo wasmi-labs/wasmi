@@ -132,19 +132,15 @@ impl Display for DisplayEnum<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
+        let ident = DisplayIdent::camel(self.val);
         let kind = self.val.kind;
-        let ident = CamelCase(kind.ident());
-        let ident_prefix = CamelCase(kind.ident_prefix());
         let result_ty = FieldTy::Stack;
         let lhs_ty = kind.lhs_field(self.val.lhs);
         let rhs_ty = kind.rhs_field(self.val.rhs);
-        let result_suffix = CamelCase(Input::Stack);
-        let lhs_suffix = SnakeCase(self.val.lhs);
-        let rhs_suffix = SnakeCase(self.val.rhs);
         write!(
             f,
             "\
-            {indent0}{ident_prefix}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix} {{\n\
+            {indent0}{ident} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}lhs: {lhs_ty},\n\
             {indent1}rhs: {rhs_ty},\n\
