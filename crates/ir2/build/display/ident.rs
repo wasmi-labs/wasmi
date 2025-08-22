@@ -1,6 +1,6 @@
 use crate::build::{
     display::utils::{DisplayConcat, IntoDisplayMaybe as _},
-    op::{Input, LoadOp, StoreOp},
+    op::{Input, LoadOp, StoreOp, UnaryOp},
     token::{Case, Ident, Sep, SnakeCase},
 };
 use core::fmt::{self, Display};
@@ -24,6 +24,30 @@ impl<T> DisplayIdent<T> {
             value,
             case: Case::Snake,
         }
+    }
+}
+
+impl Display for DisplayIdent<&'_ UnaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let kind = self.value.kind;
+        let ident = case.wrap(kind.ident());
+        let sep = case.wrap(Sep);
+        let ident_prefix = DisplayConcat((case.wrap(Ident::from(kind.result_ty())), sep));
+        let ident_suffix = self
+            .value
+            .kind
+            .is_conversion()
+            .then_some(Ident::from(kind.input_ty()))
+            .map(|i| (sep, case.wrap(i)))
+            .map(DisplayConcat)
+            .display_maybe();
+        let result_suffix = case.wrap(Input::Stack);
+        let value_suffix = SnakeCase(Input::Stack);
+        write!(
+            f,
+            "{ident_prefix}{ident}{ident_suffix}_{result_suffix}{value_suffix}"
+        )
     }
 }
 
