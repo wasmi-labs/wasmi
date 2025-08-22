@@ -111,41 +111,16 @@ impl Display for DisplayEnum<&'_ Op> {
 
 impl Display for DisplayEnum<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.val.kind.is_conversion() {
-            self.display_conversion(f)
-        } else {
-            self.display_unary(f)
-        }
-    }
-}
-
-impl DisplayEnum<&'_ UnaryOp> {
-    fn display_unary(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let kind = self.val.kind;
         let ident = CamelCase(kind.ident());
         let result_ident = CamelCase(Ident::from(kind.result_ty()));
-        let result_suffix = CamelCase(Input::Stack);
-        let value_suffix = SnakeCase(Input::Stack);
-        let result_field = FieldTy::Stack;
-        let value_field = FieldTy::Stack;
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        write!(
-            f,
-            "\
-            {indent0}{result_ident}{ident}_{result_suffix}{value_suffix} {{\n\
-            {indent1}result: {result_field},\n\
-            {indent1}value: {value_field},\n\
-            {indent0}}},\n\
-            ",
-        )
-    }
-
-    fn display_conversion(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let kind = self.val.kind;
-        let ident = CamelCase(kind.ident());
-        let result_ident = CamelCase(Ident::from(kind.result_ty()));
-        let input_ident = CamelCase(Ident::from(kind.input_ty()));
+        let input_ident = self
+            .val
+            .kind
+            .is_conversion()
+            .then_some(Ident::from(kind.input_ty()))
+            .map(CamelCase)
+            .display_maybe();
         let result_suffix = CamelCase(Input::Stack);
         let value_suffix = SnakeCase(Input::Stack);
         let result_field = FieldTy::Stack;
