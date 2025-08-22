@@ -40,21 +40,21 @@ impl Display for DisplayIdent<&'_ LoadOp> {
             .kind
             .ident_prefix()
             .map(|v| (case.wrap(v), sep))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         let mem0_ident = self
             .value
             .mem0
             .then_some(Ident::Mem0)
             .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         let offset16_ident = self
             .value
             .offset16
             .then_some(Ident::Offset16)
             .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         write!(
             f,
@@ -76,21 +76,21 @@ impl Display for DisplayIdent<&'_ StoreOp> {
             .kind
             .ident_prefix()
             .map(|v| (case.wrap(v), sep))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         let mem0_ident = self
             .value
             .mem0
             .then_some(Ident::Mem0)
             .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         let offset16_ident = self
             .value
             .offset16
             .then_some(Ident::Offset16)
             .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         write!(
             f,
