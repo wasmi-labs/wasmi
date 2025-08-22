@@ -111,18 +111,7 @@ impl Display for DisplayEnum<&'_ Op> {
 
 impl Display for DisplayEnum<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let kind = self.val.kind;
-        let ident = CamelCase(kind.ident());
-        let result_ident = CamelCase(Ident::from(kind.result_ty()));
-        let input_ident = self
-            .val
-            .kind
-            .is_conversion()
-            .then_some(Ident::from(kind.input_ty()))
-            .map(CamelCase)
-            .display_maybe();
-        let result_suffix = CamelCase(Input::Stack);
-        let value_suffix = SnakeCase(Input::Stack);
+        let ident = DisplayIdent::camel(self.val);
         let result_field = FieldTy::Stack;
         let value_field = FieldTy::Stack;
         let indent0 = self.indent;
@@ -130,7 +119,7 @@ impl Display for DisplayEnum<&'_ UnaryOp> {
         write!(
             f,
             "\
-            {indent0}{result_ident}{ident}{input_ident}_{result_suffix}{value_suffix} {{\n\
+            {indent0}{ident} {{\n\
             {indent1}result: {result_field},\n\
             {indent1}value: {value_field},\n\
             {indent0}}},\n\
