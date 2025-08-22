@@ -79,6 +79,7 @@ impl Display for DisplayEnum<Isa> {
         write!(
             f,
             "\
+            {indent}#[allow(non_camel_case_types)]
             {indent}pub enum Op {{\n\
             {variants}\
             {indent}}}\n\
