@@ -1,6 +1,6 @@
 use crate::build::{
     display::utils::{DisplayConcat, IntoDisplayMaybe as _},
-    op::{Input, LoadOp, StoreOp, UnaryOp},
+    op::{BinaryOp, Input, LoadOp, StoreOp, UnaryOp},
     token::{Case, Ident, Sep, SnakeCase},
 };
 use core::fmt::{self, Display};
@@ -47,6 +47,23 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
         write!(
             f,
             "{ident_prefix}{ident}{ident_suffix}_{result_suffix}{value_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ BinaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let sep = case.wrap(Sep);
+        let kind = self.value.kind;
+        let ident = case.wrap(kind.ident());
+        let ident_prefix = case.wrap(kind.ident_prefix());
+        let result_suffix = case.wrap(Input::Stack);
+        let lhs_suffix = SnakeCase(self.value.lhs);
+        let rhs_suffix = SnakeCase(self.value.rhs);
+        write!(
+            f,
+            "{ident_prefix}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
         )
     }
 }
