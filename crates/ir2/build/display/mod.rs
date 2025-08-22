@@ -243,7 +243,7 @@ impl Display for DisplayEnum<&'_ LoadOp> {
         let offset_field = offset_ty
             .map(|ty| Field::new(Ident::Offset, ty))
             .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         let memory_field = self
             .val
@@ -251,7 +251,7 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             .then_some(FieldTy::Memory)
             .map(|ty| Field::new(Ident::Memory, ty))
             .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         write!(
             f,
@@ -280,7 +280,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .offset_ty(self.val.ptr, self.val.offset16)
             .map(|offset| Field::new(Ident::Offset, offset))
             .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         let mem_field = self
             .val
@@ -288,7 +288,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             .not()
             .then(|| Field::new(Ident::Memory, FieldTy::Memory))
             .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat::from)
+            .map(DisplayConcat)
             .display_maybe();
         write!(
             f,
@@ -314,7 +314,7 @@ impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
                 .fields
                 .into_iter()
                 .map(move |field| (indent1, field, ",\n"))
-                .map(DisplayConcat::from),
+                .map(DisplayConcat),
         );
         write!(
             f,

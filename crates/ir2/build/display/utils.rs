@@ -2,18 +2,6 @@ use core::fmt::{self, Display};
 
 pub struct DisplayConcat<T>(pub T);
 
-impl<T0, T1> From<(T0, T1)> for DisplayConcat<(T0, T1)> {
-    fn from(value: (T0, T1)) -> Self {
-        Self(value)
-    }
-}
-
-impl<T0, T1, T2> From<(T0, T1, T2)> for DisplayConcat<(T0, T1, T2)> {
-    fn from(value: (T0, T1, T2)) -> Self {
-        Self(value)
-    }
-}
-
 impl<T0, T1> Display for DisplayConcat<(T0, T1)>
 where
     T0: Display,
