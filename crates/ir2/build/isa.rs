@@ -414,6 +414,18 @@ fn add_control_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(Ident::Return, [])),
         Op::from(GenericOp::new(
+            Ident::ReturnStack,
+            [Field::new(Ident::Value, FieldTy::Stack)],
+        )),
+        Op::from(GenericOp::new(
+            Ident::Return32,
+            [Field::new(Ident::Value, FieldTy::U32)],
+        )),
+        Op::from(GenericOp::new(
+            Ident::Return64,
+            [Field::new(Ident::Value, FieldTy::U64)],
+        )),
+        Op::from(GenericOp::new(
             Ident::ReturnSpan,
             [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
         )),
