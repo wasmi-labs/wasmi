@@ -229,4 +229,16 @@ define_ident!(
     RefFunc: ref_func,
     Mem0: mem0,
     Offset16: offset16,
+
+    I64Add128: i64_add128,
+    I64Sub128: i64_sub128,
+    S64MulWide: s64_mul_wide,
+    U64MulWide: u64_mul_wide,
+
+    Lhs: lhs,
+    Rhs: rhs,
+    LhsLo: lhs_lo,
+    LhsHi: lhs_hi,
+    RhsLo: rhs_lo,
+    RhsHi: rhs_hi,
 );
