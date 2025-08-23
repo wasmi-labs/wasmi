@@ -123,6 +123,8 @@ define_ident!(
     BitXor: bit_xor,
 
     Branch: branch,
+    BranchTable: branch_table,
+    BranchTableSpan: branch_table_span,
     Select: select,
     Store8: store8,
     Store16: store16,
@@ -196,6 +198,8 @@ define_ident!(
     Result: result,
     Results: results,
     Len: len,
+    LenTargets: len_targets,
+    LenValues: len_values,
     Delta: delta,
     Dst: dst,
     Src: src,

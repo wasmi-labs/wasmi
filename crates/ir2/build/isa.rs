@@ -433,6 +433,22 @@ fn add_control_ops(isa: &mut Isa) {
             Ident::Branch,
             [Field::new(Ident::Values, FieldTy::StackSpan)],
         )),
+        Op::from(GenericOp::new(
+            Ident::BranchTable,
+            [
+                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::Len, FieldTy::U16),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::BranchTableSpan,
+            [
+                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::LenTargets, FieldTy::U16),
+                Field::new(Ident::Values, FieldTy::StackSpan),
+                Field::new(Ident::LenValues, FieldTy::U16),
+            ],
+        )),
     ];
     for op in ops {
         isa.push_op(op);
