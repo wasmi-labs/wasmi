@@ -49,6 +49,7 @@ pub fn wasmi_isa() -> Isa {
     add_global_ops(&mut isa);
     add_memory_ops(&mut isa);
     add_table_ops(&mut isa);
+    add_wide_arithmetic(&mut isa);
     isa
 }
 
@@ -693,6 +694,50 @@ fn add_memory_ops(isa: &mut Isa) {
                 Field::new(Ident::Dst, FieldTy::Stack),
                 Field::new(Ident::Src, FieldTy::Stack),
                 Field::new(Ident::Len, FieldTy::Stack),
+            ],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_wide_arithmetic(isa: &mut Isa) {
+    let ops = [
+        Op::from(GenericOp::new(
+            Ident::I64Add128,
+            [
+                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
+                Field::new(Ident::LhsLo, FieldTy::Stack),
+                Field::new(Ident::LhsHi, FieldTy::Stack),
+                Field::new(Ident::RhsLo, FieldTy::Stack),
+                Field::new(Ident::RhsHi, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::I64Sub128,
+            [
+                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
+                Field::new(Ident::LhsLo, FieldTy::Stack),
+                Field::new(Ident::LhsHi, FieldTy::Stack),
+                Field::new(Ident::RhsLo, FieldTy::Stack),
+                Field::new(Ident::RhsHi, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::S64MulWide,
+            [
+                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
+                Field::new(Ident::Lhs, FieldTy::Stack),
+                Field::new(Ident::Rhs, FieldTy::Stack),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::U64MulWide,
+            [
+                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
+                Field::new(Ident::Lhs, FieldTy::Stack),
+                Field::new(Ident::Rhs, FieldTy::Stack),
             ],
         )),
     ];

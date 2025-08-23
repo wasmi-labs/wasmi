@@ -670,6 +670,7 @@ impl From<Ty> for Ident {
 pub enum FieldTy {
     Stack,
     StackSpan,
+    FixedStackSpan2,
     U8,
     U16,
     U32,
@@ -704,6 +705,7 @@ impl Display for FieldTy {
         let s = match self {
             Self::Stack => "Stack",
             Self::StackSpan => "StackSpan",
+            Self::FixedStackSpan2 => "FixedStackSpan<2>",
             Self::U8 => "u8",
             Self::U16 => "u16",
             Self::U32 => "u32",
