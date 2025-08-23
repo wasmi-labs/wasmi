@@ -186,7 +186,7 @@ define_ident!(
     TrapCode: trap_code,
     ConsumeFuel: consume_fuel,
     Fuel: fuel,
-    Return: return,
+    Return: r#return,
     Return32: return32,
     Return64: return64,
     ReturnStack: return_stack,
