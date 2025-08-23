@@ -36,7 +36,7 @@ impl Isa {
 
 pub fn wasmi_isa() -> Isa {
     let mut isa = Isa::default();
-    isa.ops.reserve(500);
+    isa.ops.reserve_exact(500);
     add_unary_ops(&mut isa);
     add_binary_ops(&mut isa);
     add_cmp_branch_ops(&mut isa);
