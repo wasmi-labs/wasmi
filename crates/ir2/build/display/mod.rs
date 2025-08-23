@@ -22,7 +22,7 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
     },
-    token::{CamelCase, Ident, SnakeCase},
+    token::Ident,
 };
 use core::{
     fmt::{self, Display},
@@ -283,7 +283,7 @@ impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = CamelCase(self.val.ident);
+        let ident = DisplayIdent::camel(self.val);
         let fields = DisplaySequence(
             self.val
                 .fields
@@ -306,19 +306,17 @@ impl Display for DisplayEnum<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = CamelCase(Ident::TableGet);
+        let ident = DisplayIdent::camel(self.val);
         let result_ty = FieldTy::Stack;
         let index_ty = match self.val.index {
             Input::Stack => FieldTy::Stack,
             Input::Immediate => FieldTy::U32,
         };
         let table_ty = FieldTy::Table;
-        let result_suffix = CamelCase(Input::Stack);
-        let index_suffix = SnakeCase(self.val.index);
         write!(
             f,
             "\
-            {indent0}{ident}_{result_suffix}{index_suffix} {{\n\
+            {indent0}{ident} {{\n\
             {indent1}result: {result_ty},\n\
             {indent1}index: {index_ty},\n\
             {indent1}table: {table_ty},\n\
@@ -332,7 +330,7 @@ impl Display for DisplayEnum<&'_ TableSetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = CamelCase(Ident::TableSet);
+        let ident = DisplayIdent::camel(self.val);
         let index_ty = match self.val.index {
             Input::Stack => FieldTy::Stack,
             Input::Immediate => FieldTy::U32,
@@ -342,12 +340,10 @@ impl Display for DisplayEnum<&'_ TableSetOp> {
             Input::Immediate => FieldTy::U64,
         };
         let table_ty = FieldTy::Table;
-        let index_suffix = CamelCase(self.val.index);
-        let value_suffix = SnakeCase(self.val.value);
         write!(
             f,
             "\
-            {indent0}{ident}_{index_suffix}{value_suffix} {{\n\
+            {indent0}{ident} {{\n\
             {indent1}table: {table_ty},\n\
             {indent1}index: {index_ty},\n\
             {indent1}value: {value_ty},\n\

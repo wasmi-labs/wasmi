@@ -1,6 +1,18 @@
 use crate::build::{
     display::utils::{DisplayConcat, IntoDisplayMaybe as _},
-    op::{BinaryOp, CmpBranchOp, CmpSelectOp, Input, LoadOp, StoreOp, UnaryOp},
+    op::{
+        BinaryOp,
+        CmpBranchOp,
+        CmpSelectOp,
+        GenericOp,
+        Input,
+        LoadOp,
+        Op,
+        StoreOp,
+        TableGetOp,
+        TableSetOp,
+        UnaryOp,
+    },
     token::{Case, Ident, Sep, SnakeCase},
 };
 use core::fmt::{self, Display};
@@ -23,6 +35,34 @@ impl<T> DisplayIdent<T> {
         Self {
             value,
             case: Case::Snake,
+        }
+    }
+
+    pub fn map<V>(&self, value: V) -> DisplayIdent<V> {
+        DisplayIdent {
+            value,
+            case: self.case,
+        }
+    }
+}
+
+impl Display for DisplayIdent<&'_ Op> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.value {
+            Op::Unary(op) => self.map(op).fmt(f),
+            Op::Binary(op) => self.map(op).fmt(f),
+            Op::CmpBranch(op) => self.map(op).fmt(f),
+            Op::CmpSelect(op) => self.map(op).fmt(f),
+            Op::Load(op) => self.map(op).fmt(f),
+            Op::Store(op) => self.map(op).fmt(f),
+            Op::TableGet(op) => self.map(op).fmt(f),
+            Op::TableSet(op) => self.map(op).fmt(f),
+            Op::Generic0(op) => self.map(op).fmt(f),
+            Op::Generic1(op) => self.map(op).fmt(f),
+            Op::Generic2(op) => self.map(op).fmt(f),
+            Op::Generic3(op) => self.map(op).fmt(f),
+            Op::Generic4(op) => self.map(op).fmt(f),
+            Op::Generic5(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -171,5 +211,32 @@ impl Display for DisplayIdent<&'_ StoreOp> {
             f,
             "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{ptr_suffix}{value_suffix}",
         )
+    }
+}
+
+impl<const N: usize> Display for DisplayIdent<&'_ GenericOp<N>> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let ident = self.case.wrap(self.value.ident);
+        write!(f, "{ident}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ TableGetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let ident = case.wrap(Ident::TableGet);
+        let result_suffix = case.wrap(Input::Stack);
+        let index_suffix = SnakeCase(self.value.index);
+        write!(f, "{ident}_{result_suffix}{index_suffix}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ TableSetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let ident = case.wrap(Ident::TableSet);
+        let index_suffix = case.wrap(self.value.index);
+        let value_suffix = SnakeCase(self.value.value);
+        write!(f, "{ident}_{index_suffix}{value_suffix}")
     }
 }
