@@ -79,21 +79,6 @@ macro_rules! define_enum {
                     }
                 }
             )*
-
-            /// Returns the result [`Reg`] for `self`.
-            ///
-            /// Returns `None` if `self` does not statically return a single [`Reg`].
-            pub fn result(&self) -> Option<$crate::Reg> {
-                match *self {
-                    $(
-                        Self::$name { $( $( $result_name, )? )* .. } => {
-                            IntoReg::into_reg((
-                                $( $( $result_name )? )*
-                            ))
-                        }
-                    )*
-                }
-            }
         }
 
         impl<'a> $crate::visit_regs::HostVisitor for &'a mut Instruction {
@@ -120,24 +105,6 @@ impl Clone for Instruction {
         *self
     }
 }
-
-/// Helper trait for [`Instruction::result`] method implementation.
-trait IntoReg: Sized {
-    /// Converts `self` into a [`Reg`] if possible.
-    fn into_reg(self) -> Option<Reg> {
-        None
-    }
-}
-
-impl IntoReg for Reg {
-    fn into_reg(self) -> Option<Reg> {
-        Some(self)
-    }
-}
-impl IntoReg for [Reg; 2] {}
-impl IntoReg for RegSpan {}
-impl<const N: u16> IntoReg for FixedRegSpan<N> {}
-impl IntoReg for () {}
 
 impl Instruction {
     /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
