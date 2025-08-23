@@ -4,6 +4,7 @@ use crate::{
     Address,
     BlockFuel,
     BranchOffset,
+    FixedStackSpan,
     Offset16,
     Sign,
     Stack,
