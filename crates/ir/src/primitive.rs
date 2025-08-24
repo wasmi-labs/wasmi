@@ -3,10 +3,16 @@ use core::marker::PhantomData;
 
 /// The sign of a value.
 #[derive(Debug)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct Sign<T> {
     /// Whether the sign value is positive.
     is_positive: bool,
     /// Required for the Rust compiler.
+    #[cfg_attr(
+        any(feature = "serialization", feature = "deserialization"),
+        serde(skip)
+    )]
     marker: PhantomData<fn() -> T>,
 }
 
@@ -73,6 +79,8 @@ impl_sign_for!(f32, f64);
 /// This defines how much the instruction pointer is offset
 /// upon taking the respective branch.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct BranchOffset16(i16);
 
 impl From<i16> for BranchOffset16 {
@@ -133,6 +141,8 @@ impl BranchOffset16 {
 /// This defines how much the instruction pointer is offset
 /// upon taking the respective branch.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct BranchOffset(i32);
 
 impl From<i32> for BranchOffset {
@@ -194,6 +204,8 @@ impl BranchOffset {
 ///
 /// [`Instruction::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct BlockFuel(u32);
 
@@ -283,6 +295,8 @@ macro_rules! define_comparator {
     ( $( $name:ident ),* $(,)? ) => {
         /// Encodes the conditional branch comparator.
         #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+        #[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
         #[repr(u32)]
         pub enum Comparator {
             $( $name ),*
@@ -318,6 +332,8 @@ for_each_comparator!(define_comparator);
 ///
 /// [`Instruction::BranchCmpFallback`]: crate::Instruction::BranchCmpFallback
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct ComparatorAndOffset {
     /// Encodes the actual binary operator for the conditional branch.
     pub cmp: Comparator,
@@ -358,6 +374,8 @@ impl From<ComparatorAndOffset> for UntypedVal {
 
 /// A typed shift amount for shift and rotate instructions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct ShiftAmount<T> {
     /// The underlying wrapped shift amount.
     value: Const16<T>,
@@ -418,16 +436,22 @@ impl_shift_amount! {
 
 /// A 64-bit offset in Wasmi bytecode.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Offset64(u64);
 
 /// The high 32 bits of an [`Offset64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Offset64Hi(pub(crate) u32);
 
 /// The low 32 bits of an [`Offset64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Offset64Lo(pub(crate) u32);
 
@@ -483,6 +507,8 @@ impl From<Offset64> for u64 {
 
 /// An 8-bit encoded load or store address offset.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Offset8(u8);
 
@@ -504,6 +530,8 @@ impl From<Offset8> for Offset64 {
 
 /// A 16-bit encoded load or store address offset.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Offset16(Const16<u64>);
 
@@ -523,6 +551,8 @@ impl From<Offset16> for Offset64 {
 
 /// A 64-bit memory address used for some load and store instructions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Address(u64);
 
@@ -554,6 +584,8 @@ impl From<Address> for u64 {
 
 /// A 32-bit memory address used for some load and store instructions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct Address32(u32);
 

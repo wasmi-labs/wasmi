@@ -14,6 +14,8 @@ use crate::{Error, Reg};
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct RegSpan(Reg);
 
@@ -58,6 +60,8 @@ impl RegSpan {
 
 /// A [`RegSpan`] with a statically known number of [`Reg`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 #[repr(transparent)]
 pub struct FixedRegSpan<const N: u16> {
     /// The underlying [`RegSpan`] without the known length.
@@ -148,6 +152,8 @@ impl<const N: u16> IntoIterator for FixedRegSpan<N> {
 
 /// A [`RegSpan`] with a known number of [`Reg`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct BoundedRegSpan {
     /// The first [`Reg`] in `self`.
     span: RegSpan,
@@ -216,7 +222,9 @@ impl IntoIterator for BoundedRegSpan {
 }
 
 /// A [`RegSpanIter`] iterator yielding contiguous [`Reg`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialization", derive(serde::Deserialize))]
 pub struct RegSpanIter {
     /// The next [`Reg`] in the [`RegSpanIter`].
     next: Reg,

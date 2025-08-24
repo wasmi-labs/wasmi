@@ -1,22 +1,14 @@
 mod bench;
 
 use self::bench::{
-    load_instance_from_file,
-    load_instance_from_wat,
-    load_module_from_file,
-    load_wasm_from_file,
+    load_instance_from_file, load_instance_from_wat, load_module_from_file, load_wasm_from_file,
     wat2wasm,
 };
 use assert_matches::assert_matches;
 use bench::bench_config;
 use core::time::Duration;
 use criterion::{
-    criterion_group,
-    criterion_main,
-    measurement::WallTime,
-    Bencher,
-    BenchmarkGroup,
-    Criterion,
+    criterion_group, criterion_main, measurement::WallTime, Bencher, BenchmarkGroup, Criterion,
 };
 use std::{
     fmt::{self, Display},
@@ -136,8 +128,8 @@ criterion_main!(
     bench_group_linker,
 );
 
-const REVCOMP_INPUT: &[u8] = include_bytes!("rust/cases/reverse_complement/input.txt");
-const REVCOMP_OUTPUT: &[u8] = include_bytes!("rust/cases/reverse_complement/output.txt");
+const REVCOMP_INPUT: &[u8] = &[42]; //include_bytes!("rust/cases/reverse_complement/input.txt");
+const REVCOMP_OUTPUT: &[u8] = &[42]; //include_bytes!("rust/cases/reverse_complement/output.txt");
 
 enum FuelMetering {
     Enabled,

@@ -9,15 +9,12 @@
 use super::FuncIdx;
 use crate::{
     core::{wasm, UntypedVal},
-    ExternRef,
-    Func,
-    Ref,
-    Val,
-    F32,
-    F64,
+    ExternRef, Func, Ref, Val, F32, F64,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
+
+#[cfg(feature = "parser")]
 use wasmparser::AbstractHeapType;
 
 #[cfg(feature = "simd")]
@@ -77,7 +74,7 @@ pub enum Op {
 #[derive(Debug)]
 pub struct ConstOp {
     /// The underlying precomputed untyped value.
-    value: UntypedVal,
+    pub(crate) value: UntypedVal,
 }
 
 impl Eval for ConstOp {
@@ -91,7 +88,7 @@ impl Eval for ConstOp {
 #[derive(Debug)]
 pub struct GlobalOp {
     /// The index of the global variable.
-    global_index: u32,
+    pub(crate) global_index: u32,
 }
 
 impl Eval for GlobalOp {
@@ -105,7 +102,7 @@ impl Eval for GlobalOp {
 #[derive(Debug)]
 pub struct FuncRefOp {
     /// The index of the function.
-    function_index: u32,
+    pub(crate) function_index: u32,
 }
 
 impl Eval for FuncRefOp {
@@ -193,7 +190,7 @@ impl Eval for Op {
 #[derive(Debug)]
 pub struct ConstExpr {
     /// The root operator of the [`ConstExpr`].
-    op: Op,
+    pub(crate) op: Op,
 }
 
 impl Eval for ConstExpr {
@@ -254,6 +251,7 @@ impl ConstExprStack {
     }
 }
 
+#[cfg(feature = "parser")]
 impl ConstExpr {
     /// Creates a new [`ConstExpr`] from the given Wasm [`ConstExpr`].
     ///
@@ -350,7 +348,9 @@ impl ConstExpr {
         debug_assert!(stack.is_empty());
         Self { op }
     }
+}
 
+impl ConstExpr {
     /// Create a new `ref.func x` [`ConstExpr`].
     ///
     /// # Note

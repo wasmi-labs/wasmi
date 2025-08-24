@@ -11,22 +11,21 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
-exclude = [
-    "benches/wat",
-    "benches/wasm",
-    "tests/spec/testsuite",
-    "**.wast",
-]
+exclude = ["benches/wat", "benches/wasm", "tests/spec/testsuite", "**.wast"]
 
 [dependencies]
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"], optional = true }
 wasmi_core = { workspace = true }
 
 [features]
 default = ["std"]
-std = [
-    "wasmi_core/std",
-]
+std = ["wasmi_core/std"]
 simd = ["wasmi_core/simd"]
+serialization = ["dep:serde", "wasmi_core/serialization"]
+deserialization = ["dep:serde", "wasmi_core/deserialization"]
 
 [package.metadata.docs.rs]
 features = ["std", "simd"]
+
+[dev-dependencies]
+bincode = "1.3"
