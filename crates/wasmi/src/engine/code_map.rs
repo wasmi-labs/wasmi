@@ -639,10 +639,10 @@ impl UncompiledFuncEntity {
             VALIDATE_FUEL_PER_BYTE + COMPILE_FUEL_PER_BYTE;
 
         let func_idx = self.func_index;
-        let bytes = mem::take(&mut self.bytes);
+        let wasm_bytes = self.bytes.as_slice();
         let needs_validation = self.validation.is_some();
         let compilation_fuel = |_costs: &FuelCostsProvider| {
-            let len_bytes = bytes.as_slice().len() as u64;
+            let len_bytes = wasm_bytes.len() as u64;
             let fuel_per_byte = match needs_validation {
                 false => COMPILE_FUEL_PER_BYTE,
                 true => VALIDATE_AND_COMPILE_FUEL_PER_BYTE,
@@ -677,7 +677,7 @@ impl UncompiledFuncEntity {
                 };
                 let validator = func_to_validate.into_validator(allocs.1);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                let allocs = FuncTranslationDriver::new(0, wasm_bytes, translator)?.translate(
                     |compiled_func| {
                         result.write(compiled_func);
                     },
@@ -687,7 +687,7 @@ impl UncompiledFuncEntity {
             None => {
                 let allocs = engine.get_translation_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs)?;
-                let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                let allocs = FuncTranslationDriver::new(0, wasm_bytes, translator)?.translate(
                     |compiled_func| {
                         result.write(compiled_func);
                     },
