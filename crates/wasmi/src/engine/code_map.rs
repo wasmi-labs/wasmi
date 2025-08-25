@@ -366,11 +366,11 @@ impl CodeMap {
         &'a self,
         fuel: Option<&mut Fuel>,
         func: EngineFunc,
-        mut entity: UncompiledFuncEntity,
+        mut uncompiled: UncompiledFuncEntity,
     ) -> Result<CompiledFuncRef<'a>, Error> {
         // Note: it is important that compilation happens without locking the `CodeMap`
         //       since compilation can take a prolonged time.
-        let compiled_func = entity.compile(fuel, &self.features);
+        let compiled_func = uncompiled.compile(fuel, &self.features);
         let mut funcs = self.funcs.lock();
         let Some(entity) = funcs.get_mut(func) else {
             panic!("encountered invalid internal function: {func:?}")
