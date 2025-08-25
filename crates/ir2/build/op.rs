@@ -45,18 +45,6 @@ impl_from_for_op! {
 }
 
 #[derive(Copy, Clone)]
-pub struct GenericOp<const N: usize> {
-    pub ident: Ident,
-    pub fields: [Field; N],
-}
-
-impl<const N: usize> GenericOp<N> {
-    pub fn new(ident: Ident, fields: [Field; N]) -> Self {
-        Self { ident, fields }
-    }
-}
-
-#[derive(Copy, Clone)]
 pub struct Field {
     pub ident: Ident,
     pub ty: FieldTy,
@@ -73,6 +61,18 @@ impl Display for Field {
         let ident = SnakeCase(self.ident);
         let ty = self.ty;
         write!(f, "{ident}: {ty}")
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct GenericOp<const N: usize> {
+    pub ident: Ident,
+    pub fields: [Field; N],
+}
+
+impl<const N: usize> GenericOp<N> {
+    pub fn new(ident: Ident, fields: [Field; N]) -> Self {
+        Self { ident, fields }
     }
 }
 
