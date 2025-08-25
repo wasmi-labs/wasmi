@@ -11,10 +11,8 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         CmpSelectOp,
-        Field,
         FieldTy,
         GenericOp,
-        Input,
         LoadOp,
         Op,
         StoreOp,
@@ -22,12 +20,8 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
     },
-    token::Ident,
 };
-use core::{
-    fmt::{self, Display},
-    ops::Not,
-};
+use core::fmt::{self, Display};
 
 #[derive(Copy, Clone, Default)]
 pub struct Indent(usize);
@@ -111,17 +105,18 @@ impl Display for DisplayEnum<&'_ Op> {
 
 impl Display for DisplayEnum<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ident = DisplayIdent::camel(self.val);
-        let result_field = FieldTy::Stack;
-        let value_field = FieldTy::Stack;
         let indent0 = self.indent;
         let indent1 = indent0.inc();
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let result_field = op.result_field();
+        let value_field = op.value_field();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}result: {result_field},\n\
-            {indent1}value: {value_field},\n\
+            {indent1}{result_field},\n\
+            {indent1}{value_field},\n\
             {indent0}}},\n\
             ",
         )
@@ -132,18 +127,18 @@ impl Display for DisplayEnum<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent::camel(self.val);
-        let kind = self.val.kind;
-        let result_ty = FieldTy::Stack;
-        let lhs_ty = kind.lhs_field(self.val.lhs);
-        let rhs_ty = kind.rhs_field(self.val.rhs);
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let result_field = op.result_field();
+        let lhs_field = op.lhs_field();
+        let rhs_field = op.rhs_field();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}result: {result_ty},\n\
-            {indent1}lhs: {lhs_ty},\n\
-            {indent1}rhs: {rhs_ty},\n\
+            {indent1}{result_field},\n\
+            {indent1}{lhs_field},\n\
+            {indent1}{rhs_field},\n\
             {indent0}}},\n\
             ",
         )
@@ -154,18 +149,18 @@ impl Display for DisplayEnum<&'_ CmpBranchOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let cmp = self.val.cmp;
-        let ident = DisplayIdent::camel(self.val);
-        let lhs_ty = cmp.input_field(self.val.lhs);
-        let rhs_ty = cmp.input_field(self.val.rhs);
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let lhs_field = op.lhs_field();
+        let rhs_field = op.rhs_field();
         let offset_ty = FieldTy::BranchOffset;
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
             {indent1}offset: {offset_ty},\n\
-            {indent1}lhs: {lhs_ty},\n\
-            {indent1}rhs: {rhs_ty},\n\
+            {indent1}{lhs_field},\n\
+            {indent1}{rhs_field},\n\
             {indent0}}},\n\
             ",
         )
@@ -176,22 +171,22 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let cmp = self.val.cmp;
-        let ident = DisplayIdent::camel(self.val);
-        let result_ty = FieldTy::Stack;
-        let lhs_ty = cmp.input_field(self.val.lhs);
-        let rhs_ty = cmp.input_field(self.val.rhs);
-        let val_true = FieldTy::Stack;
-        let val_false = FieldTy::Stack;
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let result_field = op.result_field();
+        let lhs_field = op.lhs_field();
+        let rhs_field = op.rhs_field();
+        let val_true_field = op.val_true_field();
+        let val_false_field = op.val_false_field();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}result: {result_ty},\n\
-            {indent1}lhs: {lhs_ty},\n\
-            {indent1}rhs: {rhs_ty},\n\
-            {indent1}val_true: {val_true},\n\
-            {indent1}val_false: {val_false},\n\
+            {indent1}{result_field},\n\
+            {indent1}{lhs_field},\n\
+            {indent1}{rhs_field},\n\
+            {indent1}{val_true_field},\n\
+            {indent1}{val_false_field},\n\
             {indent0}}},\n\
             ",
         )
@@ -202,29 +197,17 @@ impl Display for DisplayEnum<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent::camel(self.val);
-        let result_ty = FieldTy::Stack;
-        let (ptr_ty, offset_ty) = match self.val.ptr {
-            Input::Stack => {
-                let ptr = FieldTy::Stack;
-                let offset = match self.val.offset16 {
-                    true => FieldTy::Offset16,
-                    false => FieldTy::U64,
-                };
-                (ptr, Some(offset))
-            }
-            Input::Immediate => (FieldTy::Address, None),
-        };
-        let offset_field = offset_ty
-            .map(|ty| Field::new(Ident::Offset, ty))
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let result_field = op.result_field();
+        let ptr_field = op.ptr_field();
+        let offset_field = op
+            .offset_field()
             .map(|field| (indent1, field, ",\n"))
             .map(DisplayConcat)
             .display_maybe();
-        let memory_field = self
-            .val
-            .mem0
-            .then_some(FieldTy::Memory)
-            .map(|ty| Field::new(Ident::Memory, ty))
+        let memory_field = op
+            .memory_field()
             .map(|field| (indent1, field, ",\n"))
             .map(DisplayConcat)
             .display_maybe();
@@ -232,8 +215,8 @@ impl Display for DisplayEnum<&'_ LoadOp> {
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}result: {result_ty},\n\
-            {indent1}ptr: {ptr_ty},\n\
+            {indent1}{result_field},\n\
+            {indent1}{ptr_field},\n\
             {offset_field}\
             {memory_field}\
             {indent0}}},\n\
@@ -246,22 +229,17 @@ impl Display for DisplayEnum<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent::camel(self.val);
-        let ptr_ty = self.val.kind.ptr_ty(self.val.ptr);
-        let value_ty = self.val.kind.value_ty(self.val.value);
-        let offset_field = self
-            .val
-            .kind
-            .offset_ty(self.val.ptr, self.val.offset16)
-            .map(|offset| Field::new(Ident::Offset, offset))
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let ptr_field = op.ptr_field();
+        let offset_field = op
+            .offset_field()
             .map(|field| (indent1, field, ",\n"))
             .map(DisplayConcat)
             .display_maybe();
-        let mem_field = self
-            .val
-            .mem0
-            .not()
-            .then(|| Field::new(Ident::Memory, FieldTy::Memory))
+        let value_field = op.value_field();
+        let memory_field = op
+            .memory_field()
             .map(|field| (indent1, field, ",\n"))
             .map(DisplayConcat)
             .display_maybe();
@@ -269,10 +247,10 @@ impl Display for DisplayEnum<&'_ StoreOp> {
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}ptr: {ptr_ty},\n\
+            {indent1}{ptr_field},\n\
             {offset_field}\
-            {indent1}value: {value_ty},\n\
-            {mem_field}\
+            {indent1}{value_field},\n\
+            {memory_field}\
             {indent0}}},\n\
             ",
         )
@@ -306,20 +284,18 @@ impl Display for DisplayEnum<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent::camel(self.val);
-        let result_ty = FieldTy::Stack;
-        let index_ty = match self.val.index {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U32,
-        };
-        let table_ty = FieldTy::Table;
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let result_field = op.result_field();
+        let index_field = op.index_field();
+        let table_field = op.table_field();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}result: {result_ty},\n\
-            {indent1}index: {index_ty},\n\
-            {indent1}table: {table_ty},\n\
+            {indent1}{result_field},\n\
+            {indent1}{index_field},\n\
+            {indent1}{table_field},\n\
             {indent0}}},\n\
             ",
         )
@@ -330,23 +306,18 @@ impl Display for DisplayEnum<&'_ TableSetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
-        let ident = DisplayIdent::camel(self.val);
-        let index_ty = match self.val.index {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U32,
-        };
-        let value_ty = match self.val.value {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U64,
-        };
-        let table_ty = FieldTy::Table;
+        let op = self.val;
+        let ident = DisplayIdent::camel(op);
+        let index_field = op.index_field();
+        let value_field = op.value_field();
+        let table_field = op.table_field();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}table: {table_ty},\n\
-            {indent1}index: {index_ty},\n\
-            {indent1}value: {value_ty},\n\
+            {indent1}{table_field},\n\
+            {indent1}{index_field},\n\
+            {indent1}{value_field},\n\
             {indent0}}},\n\
             ",
         )
