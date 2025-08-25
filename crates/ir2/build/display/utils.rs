@@ -1,5 +1,23 @@
 use core::fmt::{self, Display};
 
+#[derive(Copy, Clone, Default)]
+pub struct Indent(usize);
+
+impl Indent {
+    pub fn inc(self) -> Self {
+        Self(self.0 + 1)
+    }
+}
+
+impl Display for Indent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for _ in 0..self.0 {
+            write!(f, "    ")?;
+        }
+        Ok(())
+    }
+}
+
 pub struct DisplayConcat<T>(pub T);
 
 impl<T0, T1> Display for DisplayConcat<(T0, T1)>
