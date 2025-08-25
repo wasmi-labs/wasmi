@@ -1,13 +1,13 @@
 //! Tests to check if wasmi's fuel metering works as intended.
 
 use std::fmt::Debug;
-use wasmi::{Config, Engine, Error, Func, Linker, Module, Store, TrapCode};
+use wasmi::{CompilationMode, Config, Engine, Error, Func, Linker, Module, Store, TrapCode};
 
 /// Setup [`Engine`] and [`Store`] for fuel metering.
-fn test_setup() -> (Store<()>, Linker<()>) {
+fn test_setup(mode: CompilationMode) -> (Store<()>, Linker<()>) {
     let mut config = Config::default();
     config.consume_fuel(true);
-    config.compilation_mode(wasmi::CompilationMode::Eager);
+    config.compilation_mode(mode);
     let engine = Engine::new(&config);
     let store = Store::new(&engine, ());
     let linker = Linker::new(&engine);
@@ -24,8 +24,8 @@ fn create_module(store: &Store<()>, bytes: &[u8]) -> Module {
 }
 
 /// Setup [`Store`] and [`Instance`] for fuel metering.
-fn default_test_setup(wasm: &[u8]) -> (Store<()>, Func) {
-    let (mut store, linker) = test_setup();
+fn default_test_setup(mode: CompilationMode, wasm: &[u8]) -> (Store<()>, Func) {
+    let (mut store, linker) = test_setup(mode);
     let module = create_module(&store, wasm);
     let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
     let func = instance.get_func(&store, "test").unwrap();
@@ -38,37 +38,45 @@ fn default_test_setup(wasm: &[u8]) -> (Store<()>, Func) {
 ///
 /// We just check if the call succeeded, not if the results are correct.
 /// That is to be determined by another kind of test.
+#[track_caller]
 fn assert_success<T>(call_result: Result<T, Error>)
 where
     T: Debug,
 {
-    assert!(call_result.is_ok());
+    if let Err(error) = call_result {
+        panic!("expected `Ok` but got: {error}")
+    }
 }
 
 /// Asserts that the call trapped with [`TrapCode::OutOfFuel`].
+#[track_caller]
 fn assert_out_of_fuel<T>(call_result: Result<T, Error>)
 where
     T: Debug,
 {
-    assert!(matches!(
-        call_result.unwrap_err().as_trap_code(),
-        Some(TrapCode::OutOfFuel)
-    ));
+    let Err(error) = call_result else {
+        panic!("expected `out of fuel` error but got `Ok`")
+    };
+    assert_eq!(
+        error.as_trap_code(),
+        Some(TrapCode::OutOfFuel),
+        "expected `out of fuel` but got: {error}"
+    );
 }
 
-#[test]
-fn metered_i32_add() {
-    let wasm = r#"
-        (module
-            (func (export "test") (param $a i32) (param $b i32) (result i32)
-                (i32.add
-                    (local.get $a)
-                    (local.get $b)
-                )
+const WASM_INPUT: &str = r#"
+    (module
+        (func (export "test") (param $a i32) (param $b i32) (result i32)
+            (i32.add
+                (local.get $a)
+                (local.get $b)
             )
         )
-    "#;
-    let (mut store, func) = default_test_setup(wasm.as_bytes());
+    )
+"#;
+
+fn run_test(mode: CompilationMode, final_fuel: u64) {
+    let (mut store, func) = default_test_setup(mode, WASM_INPUT.as_bytes());
     let func = func.typed::<(i32, i32), i32>(&store).unwrap();
     // No fuel -> no success.
     assert_out_of_fuel(func.call(&mut store, (1, 2)));
@@ -78,7 +86,22 @@ fn metered_i32_add() {
     assert_out_of_fuel(func.call(&mut store, (1, 2)));
     assert_eq!(store.get_fuel().ok(), Some(1));
     // Now add enough fuel, so execution should succeed.
-    store.set_fuel(10).unwrap();
+    store.set_fuel(100).unwrap();
     assert_success(func.call(&mut store, (1, 2)));
-    assert_eq!(store.get_fuel().ok(), Some(7));
+    assert_eq!(store.get_fuel().ok(), Some(final_fuel));
+}
+
+#[test]
+fn metered_i32_add_eager() {
+    run_test(CompilationMode::Eager, 97)
+}
+
+#[test]
+fn metered_i32_add_lazy_translation() {
+    run_test(CompilationMode::LazyTranslation, 48)
+}
+
+#[test]
+fn metered_i32_add_lazy() {
+    run_test(CompilationMode::Lazy, 34)
 }
