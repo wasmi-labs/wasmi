@@ -21,37 +21,34 @@ pub trait HostVisitor {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V);
 }
 
-/// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.
-pub struct Res<T>(pub T);
-
-impl HostVisitor for Res<&'_ mut Reg> {
+impl HostVisitor for &'_ mut Reg {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-        visitor.visit_result_reg(self.0);
+        visitor.visit_result_reg(self);
     }
 }
 
-impl HostVisitor for Res<&'_ mut [Reg; 2]> {
+impl HostVisitor for &'_ mut [Reg; 2] {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-        visitor.visit_result_reg(&mut self.0[0]);
-        visitor.visit_result_reg(&mut self.0[1]);
+        visitor.visit_result_reg(&mut self[0]);
+        visitor.visit_result_reg(&mut self[1]);
     }
 }
 
-impl HostVisitor for Res<&'_ mut RegSpan> {
+impl HostVisitor for &'_ mut RegSpan {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-        visitor.visit_result_regs(self.0, None);
+        visitor.visit_result_regs(self, None);
     }
 }
 
-impl HostVisitor for Res<&'_ mut BoundedRegSpan> {
+impl HostVisitor for &'_ mut BoundedRegSpan {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-        let len = self.0.len();
-        visitor.visit_result_regs(self.0.span_mut(), Some(len));
+        let len = self.len();
+        visitor.visit_result_regs(self.span_mut(), Some(len));
     }
 }
 
-impl<const N: u16> HostVisitor for Res<&'_ mut FixedRegSpan<N>> {
+impl<const N: u16> HostVisitor for &'_ mut FixedRegSpan<N> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-        visitor.visit_result_regs(self.0.span_mut(), Some(N));
+        visitor.visit_result_regs(self.span_mut(), Some(N));
     }
 }

@@ -87,7 +87,7 @@ macro_rules! define_enum {
                     $(
                         Instruction::$name { $( $( $result_name, )? .. )? } => {
                             $(
-                                $( $crate::visit_regs::Res($result_name).host_visitor(visitor); )?
+                                $( $result_name.host_visitor(visitor); )?
                             )?
                         }
                     )*
