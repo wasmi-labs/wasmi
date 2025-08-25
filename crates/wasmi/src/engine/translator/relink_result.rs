@@ -1,6 +1,6 @@
 use crate::{
     engine::EngineFunc,
-    ir::{index, Instruction, Reg, RegSpan, VisitRegs},
+    ir::{index, Instruction, Reg, RegSpan, VisitResults},
     module::ModuleHeader,
     Engine,
     Error,
@@ -47,7 +47,7 @@ impl Visitor {
     }
 }
 
-impl VisitRegs for Visitor {
+impl VisitResults for Visitor {
     #[inline]
     fn visit_result_reg(&mut self, reg: &mut Reg) {
         if self.replaced.is_err() {
@@ -58,12 +58,6 @@ impl VisitRegs for Visitor {
 
     #[inline(always)]
     fn visit_result_regs(&mut self, _reg: &mut RegSpan, _len: Option<u16>) {}
-
-    #[inline(always)]
-    fn visit_input_reg(&mut self, _reg: &mut Reg) {}
-
-    #[inline(always)]
-    fn visit_input_regs(&mut self, _regs: &mut RegSpan, _len: Option<u16>) {}
 }
 
 impl RelinkResult for Instruction {
@@ -97,7 +91,7 @@ impl RelinkResult for Instruction {
             instr => {
                 // Fallback: only relink results of instructions with statically known single results.
                 let mut visitor = Visitor::new(new_result, old_result);
-                instr.visit_regs(&mut visitor);
+                instr.visit_results(&mut visitor);
                 visitor.replaced
             }
         }
