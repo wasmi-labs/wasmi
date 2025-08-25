@@ -74,6 +74,12 @@ impl<const N: usize> GenericOp<N> {
     pub fn new(ident: Ident, fields: [Field; N]) -> Self {
         Self { ident, fields }
     }
+
+    pub fn has_result(&self) -> bool {
+        self.fields
+            .iter()
+            .any(|field| matches!(field.ident, Ident::Result))
+    }
 }
 
 #[derive(Copy, Clone)]
