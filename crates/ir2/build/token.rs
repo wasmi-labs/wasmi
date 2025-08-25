@@ -241,4 +241,7 @@ define_ident!(
     LhsHi: lhs_hi,
     RhsLo: rhs_lo,
     RhsHi: rhs_hi,
+    Ptr: ptr,
+    ValTrue: val_true,
+    ValFalse: val_false,
 );
