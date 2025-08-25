@@ -24,32 +24,32 @@ use crate::build::{
 };
 use core::fmt::{self, Display};
 
-pub struct DisplayEnum<T> {
+pub struct DisplayOp<T> {
     pub val: T,
     pub indent: Indent,
 }
 
-impl<T> DisplayEnum<T> {
+impl<T> DisplayOp<T> {
     pub fn new(val: T, indent: Indent) -> Self {
         Self { val, indent }
     }
 
-    pub fn scoped<V>(&self, val: V) -> DisplayEnum<V> {
-        DisplayEnum {
+    pub fn scoped<V>(&self, val: V) -> DisplayOp<V> {
+        DisplayOp {
             val,
             indent: self.indent.inc(),
         }
     }
 
-    pub fn map<V>(&self, val: V) -> DisplayEnum<V> {
-        DisplayEnum {
+    pub fn map<V>(&self, val: V) -> DisplayOp<V> {
+        DisplayOp {
             val,
             indent: self.indent,
         }
     }
 }
 
-impl Display for DisplayEnum<Isa> {
+impl Display for DisplayOp<Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let variants = DisplaySequence(self.val.ops.iter().map(|op| self.scoped(op)));
@@ -65,7 +65,7 @@ impl Display for DisplayEnum<Isa> {
     }
 }
 
-impl Display for DisplayEnum<&'_ Op> {
+impl Display for DisplayOp<&'_ Op> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.val {
             Op::Unary(op) => self.map(op).fmt(f),
@@ -86,7 +86,7 @@ impl Display for DisplayEnum<&'_ Op> {
     }
 }
 
-impl Display for DisplayEnum<&'_ UnaryOp> {
+impl Display for DisplayOp<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -106,7 +106,7 @@ impl Display for DisplayEnum<&'_ UnaryOp> {
     }
 }
 
-impl Display for DisplayEnum<&'_ BinaryOp> {
+impl Display for DisplayOp<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -128,7 +128,7 @@ impl Display for DisplayEnum<&'_ BinaryOp> {
     }
 }
 
-impl Display for DisplayEnum<&'_ CmpBranchOp> {
+impl Display for DisplayOp<&'_ CmpBranchOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -150,7 +150,7 @@ impl Display for DisplayEnum<&'_ CmpBranchOp> {
     }
 }
 
-impl Display for DisplayEnum<&'_ CmpSelectOp> {
+impl Display for DisplayOp<&'_ CmpSelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -176,7 +176,7 @@ impl Display for DisplayEnum<&'_ CmpSelectOp> {
     }
 }
 
-impl Display for DisplayEnum<&'_ LoadOp> {
+impl Display for DisplayOp<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -208,7 +208,7 @@ impl Display for DisplayEnum<&'_ LoadOp> {
     }
 }
 
-impl Display for DisplayEnum<&'_ StoreOp> {
+impl Display for DisplayOp<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -240,7 +240,7 @@ impl Display for DisplayEnum<&'_ StoreOp> {
     }
 }
 
-impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
+impl<const N: usize> Display for DisplayOp<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -263,7 +263,7 @@ impl<const N: usize> Display for DisplayEnum<&'_ GenericOp<N>> {
     }
 }
 
-impl Display for DisplayEnum<&'_ TableGetOp> {
+impl Display for DisplayOp<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
@@ -285,7 +285,7 @@ impl Display for DisplayEnum<&'_ TableGetOp> {
     }
 }
 
-impl Display for DisplayEnum<&'_ TableSetOp> {
+impl Display for DisplayOp<&'_ TableSetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent0 = self.indent;
         let indent1 = indent0.inc();
