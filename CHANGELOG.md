@@ -8,6 +8,15 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.51.1` - 2025-08-25
+
+### Fixed
+
+- Fixed a bug that caused lazily compiled functions to be stuck
+  at compiling when running out of fuel during translation. [#1648]
+
+[#1648]: https://github.com/wasmi-labs/wasmi/pull/1648
+
 ## `0.51.0` - 2025-08-13
 
 ### Changed
