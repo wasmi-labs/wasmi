@@ -15,6 +15,7 @@ use crate::{
     module::{FuncIdx, ModuleHeader},
     Config,
     Error,
+    TrapCode,
 };
 use alloc::boxed::Box;
 use core::{
@@ -366,11 +367,11 @@ impl CodeMap {
         &'a self,
         fuel: Option<&mut Fuel>,
         func: EngineFunc,
-        mut entity: UncompiledFuncEntity,
+        mut uncompiled: UncompiledFuncEntity,
     ) -> Result<CompiledFuncRef<'a>, Error> {
         // Note: it is important that compilation happens without locking the `CodeMap`
         //       since compilation can take a prolonged time.
-        let compiled_func = entity.compile(fuel, &self.features);
+        let compiled_func = uncompiled.compile(fuel, &self.features);
         let mut funcs = self.funcs.lock();
         let Some(entity) = funcs.get_mut(func) else {
             panic!("encountered invalid internal function: {func:?}")
@@ -379,6 +380,10 @@ impl CodeMap {
             Ok(compiled_func) => {
                 let cref = entity.set_compiled(compiled_func);
                 Ok(self.adjust_cref_lifetime(cref))
+            }
+            Err(error) if error.as_trap_code() == Some(TrapCode::OutOfFuel) => {
+                entity.set_uncompiled(uncompiled);
+                Err(error)
             }
             Err(error) => {
                 entity.set_failed_to_compile();
@@ -502,6 +507,28 @@ impl FuncEntity {
         }
     }
 
+    /// Sets the state back to [`UncompiledFuncEntity`] if possible.
+    ///
+    /// # Panics
+    ///
+    /// If the current state was not [`FuncEntity::Compiling`].
+    #[inline]
+    pub fn set_uncompiled(&mut self, uncompiled: UncompiledFuncEntity) {
+        match mem::replace(self, FuncEntity::Uncompiled(uncompiled)) {
+            Self::Compiling => {}
+            unexpected => {
+                // Safety: we just asserted that `self` must be an uncompiled function
+                //         since otherwise we would have returned `None` above.
+                //         Since this is a performance critical path we need to leave out this check.
+                unsafe {
+                    unreachable_unchecked!(
+                        "can only set `Compiling` back to `UncompiledFuncEntity` but found: {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
     /// Sets the [`FuncEntity`] as [`CompiledFuncEntity`].
     ///
     /// Returns a [`CompiledFuncRef`] to the [`CompiledFuncEntity`].
@@ -617,10 +644,10 @@ impl UncompiledFuncEntity {
             VALIDATE_FUEL_PER_BYTE + COMPILE_FUEL_PER_BYTE;
 
         let func_idx = self.func_index;
-        let bytes = mem::take(&mut self.bytes);
+        let wasm_bytes = self.bytes.as_slice();
         let needs_validation = self.validation.is_some();
         let compilation_fuel = |_costs: &FuelCostsProvider| {
-            let len_bytes = bytes.as_slice().len() as u64;
+            let len_bytes = wasm_bytes.len() as u64;
             let fuel_per_byte = match needs_validation {
                 false => COMPILE_FUEL_PER_BYTE,
                 true => VALIDATE_AND_COMPILE_FUEL_PER_BYTE,
@@ -655,7 +682,7 @@ impl UncompiledFuncEntity {
                 };
                 let validator = func_to_validate.into_validator(allocs.1);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                let allocs = FuncTranslationDriver::new(0, wasm_bytes, translator)?.translate(
                     |compiled_func| {
                         result.write(compiled_func);
                     },
@@ -665,7 +692,7 @@ impl UncompiledFuncEntity {
             None => {
                 let allocs = engine.get_translation_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs)?;
-                let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                let allocs = FuncTranslationDriver::new(0, wasm_bytes, translator)?.translate(
                     |compiled_func| {
                         result.write(compiled_func);
                     },
