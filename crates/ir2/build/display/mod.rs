@@ -1,6 +1,7 @@
 mod ident;
 mod utils;
 
+pub use self::utils::Indent;
 use self::{
     ident::DisplayIdent,
     utils::{DisplayConcat, DisplaySequence, IntoDisplayMaybe as _},
@@ -22,24 +23,6 @@ use crate::build::{
     },
 };
 use core::fmt::{self, Display};
-
-#[derive(Copy, Clone, Default)]
-pub struct Indent(usize);
-
-impl Indent {
-    pub fn inc(self) -> Self {
-        Self(self.0 + 1)
-    }
-}
-
-impl Display for Indent {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for _ in 0..self.0 {
-            write!(f, "    ")?;
-        }
-        Ok(())
-    }
-}
 
 pub struct DisplayEnum<T> {
     pub val: T,
