@@ -559,22 +559,22 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::GlobalSet,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
                 Field::new(Ident::Global, FieldTy::Global),
+                Field::new(Ident::Value, FieldTy::Stack),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::GlobalSet32,
             [
-                Field::new(Ident::Result, FieldTy::U32),
                 Field::new(Ident::Global, FieldTy::Global),
+                Field::new(Ident::Value, FieldTy::U32),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::GlobalSet64,
             [
-                Field::new(Ident::Result, FieldTy::U64),
                 Field::new(Ident::Global, FieldTy::Global),
+                Field::new(Ident::Value, FieldTy::U64),
             ],
         )),
     ];
