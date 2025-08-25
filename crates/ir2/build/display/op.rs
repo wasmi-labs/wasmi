@@ -46,7 +46,7 @@ impl<T> DisplayOp<T> {
     }
 }
 
-impl Display for DisplayOp<Isa> {
+impl Display for DisplayOp<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let variants = DisplaySequence(self.val.ops.iter().map(|op| self.scoped(op)));
