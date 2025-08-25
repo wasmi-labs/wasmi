@@ -43,5 +43,5 @@ pub use self::{
     },
     r#enum::Instruction,
     span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
-    visit_regs::VisitRegs,
+    visit_regs::VisitResults,
 };

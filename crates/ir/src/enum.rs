@@ -81,8 +81,8 @@ macro_rules! define_enum {
             )*
         }
 
-        impl<'a> $crate::visit_regs::HostVisitor for &'a mut Instruction {
-            fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
+        impl<'a> $crate::visit_regs::ResultsVisitor for &'a mut Instruction {
+            fn host_visitor<V: VisitResults>(self, visitor: &mut V) {
                 match self {
                     $(
                         Instruction::$name { $( $( $result_name, )? .. )? } => {
