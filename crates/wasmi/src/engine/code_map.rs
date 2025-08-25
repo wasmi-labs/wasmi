@@ -15,6 +15,7 @@ use crate::{
     module::{FuncIdx, ModuleHeader},
     Config,
     Error,
+    TrapCode,
 };
 use alloc::boxed::Box;
 use core::{
@@ -379,6 +380,10 @@ impl CodeMap {
             Ok(compiled_func) => {
                 let cref = entity.set_compiled(compiled_func);
                 Ok(self.adjust_cref_lifetime(cref))
+            }
+            Err(error) if error.as_trap_code() == Some(TrapCode::OutOfFuel) => {
+                entity.set_uncompiled(uncompiled);
+                Err(error)
             }
             Err(error) => {
                 entity.set_failed_to_compile();
