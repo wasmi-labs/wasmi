@@ -45,8 +45,10 @@ pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
     let isa = isa::wasmi_isa();
     write!(
         &mut contents,
-        "{}",
-        <DisplayOp<Isa>>::new(isa, Indent::default())
+        "\
+        {}\n\
+        ",
+        DisplayOp::new(&isa, Indent::default()),
     )?;
     std::println!("out_dir = {out_dir:?}");
     fs::create_dir_all(out_dir)?;
