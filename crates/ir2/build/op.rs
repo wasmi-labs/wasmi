@@ -85,6 +85,14 @@ impl UnaryOp {
     pub fn new(kind: UnaryOpKind) -> Self {
         Self { kind }
     }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn value_field(&self) -> Field {
+        Field::new(Ident::Value, FieldTy::Stack)
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -304,6 +312,24 @@ pub struct BinaryOp {
     pub rhs: Input,
 }
 
+impl BinaryOp {
+    pub fn new(kind: BinaryOpKind, lhs: Input, rhs: Input) -> Self {
+        Self { kind, lhs, rhs }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn lhs_field(&self) -> Field {
+        Field::new(Ident::Lhs, self.kind.lhs_field(self.lhs))
+    }
+
+    pub fn rhs_field(&self) -> Field {
+        Field::new(Ident::Rhs, self.kind.rhs_field(self.rhs))
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum BinaryOpKind {
     // Compare operators.
@@ -417,7 +443,7 @@ impl BinaryOpKind {
         Ident::from(ty)
     }
 
-    pub fn lhs_field(&self, input: Input) -> FieldTy {
+    fn lhs_field(&self, input: Input) -> FieldTy {
         match input {
             Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
@@ -470,7 +496,7 @@ impl BinaryOpKind {
         }
     }
 
-    pub fn rhs_field(&self, input: Input) -> FieldTy {
+    fn rhs_field(&self, input: Input) -> FieldTy {
         match input {
             Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
@@ -583,12 +609,6 @@ pub enum Commutativity {
     NonCommutative,
 }
 
-impl BinaryOp {
-    pub fn new(kind: BinaryOpKind, lhs: Input, rhs: Input) -> Self {
-        Self { kind, lhs, rhs }
-    }
-}
-
 #[derive(Copy, Clone)]
 pub struct CmpBranchOp {
     pub cmp: CmpOpKind,
@@ -599,6 +619,14 @@ pub struct CmpBranchOp {
 impl CmpBranchOp {
     pub fn new(cmp: CmpOpKind, lhs: Input, rhs: Input) -> Self {
         Self { cmp, lhs, rhs }
+    }
+
+    pub fn lhs_field(&self) -> Field {
+        Field::new(Ident::Lhs, self.cmp.input_field(self.lhs))
+    }
+
+    pub fn rhs_field(&self) -> Field {
+        Field::new(Ident::Rhs, self.cmp.input_field(self.rhs))
     }
 }
 
@@ -612,6 +640,26 @@ pub struct CmpSelectOp {
 impl CmpSelectOp {
     pub fn new(cmp: CmpOpKind, lhs: Input, rhs: Input) -> Self {
         Self { cmp, lhs, rhs }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn lhs_field(&self) -> Field {
+        Field::new(Ident::Lhs, self.cmp.input_field(self.lhs))
+    }
+
+    pub fn rhs_field(&self) -> Field {
+        Field::new(Ident::Rhs, self.cmp.input_field(self.rhs))
+    }
+
+    pub fn val_true_field(&self) -> Field {
+        Field::new(Ident::ValTrue, FieldTy::Stack)
+    }
+
+    pub fn val_false_field(&self) -> Field {
+        Field::new(Ident::ValFalse, FieldTy::Stack)
     }
 }
 
@@ -800,7 +848,7 @@ impl CmpOpKind {
         }
     }
 
-    pub fn input_field(&self, input: Input) -> FieldTy {
+    fn input_field(&self, input: Input) -> FieldTy {
         match input {
             Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
@@ -930,6 +978,36 @@ impl LoadOp {
             offset16,
         }
     }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn ptr_field(&self) -> Field {
+        let ptr_ty = match self.ptr {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::Address,
+        };
+        Field::new(Ident::Ptr, ptr_ty)
+    }
+
+    pub fn offset_field(&self) -> Option<Field> {
+        let offset_ty = match self.ptr {
+            Input::Stack => match self.offset16 {
+                true => FieldTy::Offset16,
+                false => FieldTy::U64,
+            },
+            Input::Immediate => return None,
+        };
+        Some(Field::new(Ident::Offset, offset_ty))
+    }
+
+    pub fn memory_field(&self) -> Option<Field> {
+        if self.mem0 {
+            return None;
+        }
+        Some(Field::new(Ident::Memory, FieldTy::Memory))
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -1008,6 +1086,37 @@ impl StoreOp {
             offset16,
         }
     }
+
+    pub fn ptr_field(&self) -> Field {
+        let ptr_ty = match self.ptr {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::Address,
+        };
+        Field::new(Ident::Ptr, ptr_ty)
+    }
+
+    pub fn offset_field(&self) -> Option<Field> {
+        let offset_ty = match self.ptr {
+            Input::Stack => match self.offset16 {
+                true => FieldTy::Offset16,
+                false => FieldTy::U64,
+            },
+            Input::Immediate => return None,
+        };
+        Some(Field::new(Ident::Offset, offset_ty))
+    }
+
+    pub fn value_field(&self) -> Field {
+        let value_ty = self.kind.value_ty(self.value);
+        Field::new(Ident::Value, value_ty)
+    }
+
+    pub fn memory_field(&self) -> Option<Field> {
+        if self.mem0 {
+            return None;
+        }
+        Some(Field::new(Ident::Memory, FieldTy::Memory))
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -1049,24 +1158,7 @@ impl StoreOpKind {
         }
     }
 
-    pub fn ptr_ty(&self, ptr: Input) -> FieldTy {
-        match ptr {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::Address,
-        }
-    }
-
-    pub fn offset_ty(&self, ptr: Input, offset16: bool) -> Option<FieldTy> {
-        match ptr {
-            Input::Stack => match offset16 {
-                true => Some(FieldTy::Offset16),
-                false => Some(FieldTy::U64),
-            },
-            Input::Immediate => None,
-        }
-    }
-
-    pub fn value_ty(&self, input: Input) -> FieldTy {
+    fn value_ty(&self, input: Input) -> FieldTy {
         match input {
             Input::Stack => FieldTy::Stack,
             Input::Immediate => match self {
@@ -1092,6 +1184,22 @@ impl TableGetOp {
     pub fn new(index: Input) -> Self {
         Self { index }
     }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn index_field(&self) -> Field {
+        let index_ty = match self.index {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::U32,
+        };
+        Field::new(Ident::Index, index_ty)
+    }
+
+    pub fn table_field(&self) -> Field {
+        Field::new(Ident::Table, FieldTy::Table)
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -1105,6 +1213,26 @@ pub struct TableSetOp {
 impl TableSetOp {
     pub fn new(index: Input, value: Input) -> Self {
         Self { index, value }
+    }
+
+    pub fn index_field(&self) -> Field {
+        let index_ty = match self.index {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::U32,
+        };
+        Field::new(Ident::Index, index_ty)
+    }
+
+    pub fn value_field(&self) -> Field {
+        let value_ty = match self.value {
+            Input::Stack => FieldTy::Stack,
+            Input::Immediate => FieldTy::U64,
+        };
+        Field::new(Ident::Value, value_ty)
+    }
+
+    pub fn table_field(&self) -> Field {
+        Field::new(Ident::Table, FieldTy::Table)
     }
 }
 
