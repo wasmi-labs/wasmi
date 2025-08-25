@@ -4,7 +4,7 @@ mod op;
 pub mod token;
 
 use self::{
-    display::{DisplayEnum, Indent},
+    display::{DisplayOp, Indent},
     isa::Isa,
     op::Op,
     token::{CamelCase, Ident, SnakeCase},
@@ -46,7 +46,7 @@ pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
     write!(
         &mut contents,
         "{}",
-        <DisplayEnum<Isa>>::new(isa, Indent::default())
+        <DisplayOp<Isa>>::new(isa, Indent::default())
     )?;
     std::println!("out_dir = {out_dir:?}");
     fs::create_dir_all(out_dir)?;
