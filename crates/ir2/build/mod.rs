@@ -5,7 +5,6 @@ pub mod token;
 
 use self::{
     display::{DisplayOp, Indent},
-    isa::Isa,
     op::Op,
     token::{CamelCase, Ident, SnakeCase},
 };
