@@ -7,7 +7,7 @@ impl Instruction {
     }
 }
 
-/// Implemented by [`Reg`] visitors to visit result [`Reg`]s of an [`Instruction`] via [`Instruction::visit_regs`].
+/// Implemented by [`Reg`] visitors to visit result [`Reg`]s of an [`Instruction`] via [`Instruction::visit_results`].
 pub trait VisitResults {
     /// Visits a [`Reg`] storing the result of an [`Instruction`].
     fn visit_result_reg(&mut self, reg: &mut Reg);
@@ -15,9 +15,9 @@ pub trait VisitResults {
     fn visit_result_regs(&mut self, reg: &mut RegSpan, len: Option<u16>);
 }
 
-/// Internal trait used to dispatch to a [`VisitRegs`] visitor.
+/// Internal trait used to dispatch to a [`VisitResults`] visitor.
 pub trait ResultsVisitor {
-    /// Host the [`VisitRegs`] visitor in the appropriate way.
+    /// Host the [`VisitResults`] visitor in the appropriate way.
     fn host_visitor<V: VisitResults>(self, visitor: &mut V);
 }
 
