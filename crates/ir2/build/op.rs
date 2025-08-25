@@ -58,8 +58,8 @@ impl<const N: usize> GenericOp<N> {
 
 #[derive(Copy, Clone)]
 pub struct Field {
-    ident: Ident,
-    ty: FieldTy,
+    pub ident: Ident,
+    pub ty: FieldTy,
 }
 
 impl Field {
