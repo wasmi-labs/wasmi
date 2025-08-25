@@ -12,7 +12,7 @@ mod immeditate;
 pub mod index;
 mod primitive;
 mod span;
-mod visit_regs;
+mod visit_results;
 
 #[cfg(test)]
 mod tests;
@@ -43,5 +43,5 @@ pub use self::{
     },
     r#enum::Instruction,
     span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
-    visit_regs::VisitResults,
+    visit_results::VisitResults,
 };
