@@ -58,12 +58,6 @@ impl VisitRegs for Visitor {
 
     #[inline(always)]
     fn visit_result_regs(&mut self, _reg: &mut RegSpan, _len: Option<u16>) {}
-
-    #[inline(always)]
-    fn visit_input_reg(&mut self, _reg: &mut Reg) {}
-
-    #[inline(always)]
-    fn visit_input_regs(&mut self, _regs: &mut RegSpan, _len: Option<u16>) {}
 }
 
 impl RelinkResult for Instruction {
