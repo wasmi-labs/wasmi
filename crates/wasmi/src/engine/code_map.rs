@@ -502,6 +502,28 @@ impl FuncEntity {
         }
     }
 
+    /// Sets the state back to [`UncompiledFuncEntity`] if possible.
+    ///
+    /// # Panics
+    ///
+    /// If the current state was not [`FuncEntity::Compiling`].
+    #[inline]
+    pub fn set_uncompiled(&mut self, uncompiled: UncompiledFuncEntity) {
+        match mem::replace(self, FuncEntity::Uncompiled(uncompiled)) {
+            Self::Compiling => {}
+            unexpected => {
+                // Safety: we just asserted that `self` must be an uncompiled function
+                //         since otherwise we would have returned `None` above.
+                //         Since this is a performance critical path we need to leave out this check.
+                unsafe {
+                    unreachable_unchecked!(
+                        "can only set `Compiling` back to `UncompiledFuncEntity` but found: {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
     /// Sets the [`FuncEntity`] as [`CompiledFuncEntity`].
     ///
     /// Returns a [`CompiledFuncRef`] to the [`CompiledFuncEntity`].
