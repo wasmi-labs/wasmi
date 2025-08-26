@@ -9,7 +9,6 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         CmpSelectOp,
-        FieldTy,
         GenericOp,
         LoadOp,
         Op,
@@ -133,14 +132,14 @@ impl Display for DisplayOp<&'_ CmpBranchOp> {
         let ident = DisplayIdent::camel(op);
         let lhs_field = op.lhs_field();
         let rhs_field = op.rhs_field();
-        let offset_ty = FieldTy::BranchOffset;
+        let offset_field = op.offset_field();
         write!(
             f,
             "\
             {indent0}{ident} {{\n\
-            {indent1}offset: {offset_ty},\n\
             {indent1}{lhs_field},\n\
             {indent1}{rhs_field},\n\
+            {indent1}{offset_field},\n\
             {indent0}}},\n\
             ",
         )
