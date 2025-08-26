@@ -8,7 +8,7 @@ use self::{
     op::Op,
     token::{CamelCase, Ident, SnakeCase},
 };
-use crate::build::display::DisplayResultMut;
+use crate::build::display::{DisplayConstructor, DisplayResultMut};
 use core::fmt::{self, Display, Error as FmtError, Write as _};
 use std::{fs, io::Error as IoError, path::Path};
 
@@ -48,9 +48,11 @@ pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
         "\
         {}\n\
         {}\n\
+        {}\n\
         ",
         DisplayOp::new(&isa, Indent::default()),
         DisplayResultMut::new(&isa, Indent::default()),
+        DisplayConstructor::new(&isa, Indent::default()),
     )?;
     std::println!("out_dir = {out_dir:?}");
     fs::create_dir_all(out_dir)?;
