@@ -17,7 +17,7 @@ pub use self::{
     encode::{Encode, Encoder},
     error::Error,
     index::Stack,
-    op::Op,
+    op::{Op, OpCode},
     primitive::{Address, BlockFuel, BranchOffset, Offset16, Sign},
     span::{BoundedStackSpan, FixedStackSpan, StackSpan, StackSpanIter},
 };
