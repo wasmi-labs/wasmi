@@ -47,15 +47,31 @@ where
     }
 }
 
-pub struct DisplaySequence<T>(pub T);
+pub struct DisplaySequence<I, S> {
+    iter: I,
+    sep: S,
+}
 
-impl<T> Display for DisplaySequence<T>
+impl<I, S> DisplaySequence<I, S> {
+    pub fn new(sep: S, iter: I) -> Self {
+        Self { sep, iter }
+    }
+}
+
+impl<I, S> Display for DisplaySequence<I, S>
 where
-    T: IntoIterator<Item: Display> + Clone,
+    I: IntoIterator<Item: Display> + Clone,
+    S: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for item in self.0.clone() {
-            write!(f, "{item}")?;
+        let mut iter = self.iter.clone().into_iter();
+        let Some(first) = iter.next() else {
+            return Ok(());
+        };
+        write!(f, "{}", first)?;
+        let sep = &self.sep;
+        for item in iter {
+            write!(f, "{sep}{item}")?;
         }
         Ok(())
     }
