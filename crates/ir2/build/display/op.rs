@@ -78,7 +78,7 @@ impl Display for DisplayOp<&'_ Isa> {
         write!(
             f,
             "\
-            {indent}#[allow(non_camel_case_types)]
+            {indent}#[allow(non_camel_case_types)]\n\
             {indent}pub enum Op {{\n\
                         {variants}\n\
             {indent}}}\n\
