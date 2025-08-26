@@ -1,7 +1,7 @@
 use crate::build::{
     display::{
         ident::DisplayIdent,
-        utils::{DisplayConcat, DisplaySequence, IntoDisplayMaybe as _},
+        utils::{DisplayConcat, DisplaySequence},
         Indent,
     },
     isa::Isa,
@@ -9,6 +9,7 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         CmpSelectOp,
+        Field,
         GenericOp,
         LoadOp,
         Op,
@@ -42,6 +43,31 @@ impl<T> DisplayOp<T> {
             val,
             indent: self.indent,
         }
+    }
+}
+
+impl<'a, T> DisplayOp<&'a T>
+where
+    DisplayIdent<&'a T>: Display,
+{
+    fn display_variant(&self, f: &mut fmt::Formatter<'_>, fields: &[Option<Field>]) -> fmt::Result {
+        let indent = self.indent;
+        let ident = DisplayIdent::camel(self.val);
+        let fields = DisplaySequence(
+            fields
+                .iter()
+                .filter_map(Option::as_ref)
+                .map(|field| (indent.inc(), field, ",\n"))
+                .map(DisplayConcat),
+        );
+        write!(
+            f,
+            "\
+            {indent}{ident} {{\n\
+                {fields}\
+            {indent}}},\n\
+            ",
+        )
     }
 }
 
@@ -84,221 +110,63 @@ impl Display for DisplayOp<&'_ Op> {
 
 impl Display for DisplayOp<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let result_field = op.result_field();
-        let value_field = op.value_field();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{result_field},\n\
-            {indent1}{value_field},\n\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let result_field = op.result_field();
-        let lhs_field = op.lhs_field();
-        let rhs_field = op.rhs_field();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{result_field},\n\
-            {indent1}{lhs_field},\n\
-            {indent1}{rhs_field},\n\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ CmpBranchOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let lhs_field = op.lhs_field();
-        let rhs_field = op.rhs_field();
-        let offset_field = op.offset_field();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{lhs_field},\n\
-            {indent1}{rhs_field},\n\
-            {indent1}{offset_field},\n\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ CmpSelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let result_field = op.result_field();
-        let lhs_field = op.lhs_field();
-        let rhs_field = op.rhs_field();
-        let val_true_field = op.val_true_field();
-        let val_false_field = op.val_false_field();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{result_field},\n\
-            {indent1}{lhs_field},\n\
-            {indent1}{rhs_field},\n\
-            {indent1}{val_true_field},\n\
-            {indent1}{val_false_field},\n\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let result_field = op.result_field();
-        let ptr_field = op.ptr_field();
-        let offset_field = op
-            .offset_field()
-            .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat)
-            .display_maybe();
-        let memory_field = op
-            .memory_field()
-            .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat)
-            .display_maybe();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{result_field},\n\
-            {indent1}{ptr_field},\n\
-            {offset_field}\
-            {memory_field}\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields();
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let ptr_field = op.ptr_field();
-        let offset_field = op
-            .offset_field()
-            .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat)
-            .display_maybe();
-        let value_field = op.value_field();
-        let memory_field = op
-            .memory_field()
-            .map(|field| (indent1, field, ",\n"))
-            .map(DisplayConcat)
-            .display_maybe();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{ptr_field},\n\
-            {offset_field}\
-            {indent1}{value_field},\n\
-            {memory_field}\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl<const N: usize> Display for DisplayOp<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let ident = DisplayIdent::camel(self.val);
-        let fields = DisplaySequence(
-            self.val
-                .fields
-                .into_iter()
-                .map(move |field| (indent1, field, ",\n"))
-                .map(DisplayConcat),
-        );
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {fields}\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields.map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let result_field = op.result_field();
-        let index_field = op.index_field();
-        let table_field = op.table_field();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{result_field},\n\
-            {indent1}{index_field},\n\
-            {indent1}{table_field},\n\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ TableSetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent0 = self.indent;
-        let indent1 = indent0.inc();
-        let op = self.val;
-        let ident = DisplayIdent::camel(op);
-        let index_field = op.index_field();
-        let value_field = op.value_field();
-        let table_field = op.table_field();
-        write!(
-            f,
-            "\
-            {indent0}{ident} {{\n\
-            {indent1}{table_field},\n\
-            {indent1}{index_field},\n\
-            {indent1}{value_field},\n\
-            {indent0}}},\n\
-            ",
-        )
+        let fields = self.val.fields().map(Option::from);
+        self.display_variant(f, &fields)
     }
 }
