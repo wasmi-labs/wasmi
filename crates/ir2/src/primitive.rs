@@ -9,7 +9,7 @@ pub struct OutOfBoundsConst;
 #[derive(Debug)]
 pub struct Sign<T> {
     /// Whether the sign value is positive.
-    is_positive: bool,
+    pub(crate) is_positive: bool,
     /// Required for the Rust compiler.
     marker: PhantomData<fn() -> T>,
 }
@@ -47,6 +47,11 @@ impl<T> Sign<T> {
     /// Creates a new typed [`Sign`] that has negative polarity.
     pub fn neg() -> Self {
         Self::new(false)
+    }
+
+    /// Returns `true` if [`Sign`] is positive.
+    pub(crate) fn is_positive(self) -> bool {
+        self.is_positive
     }
 }
 
