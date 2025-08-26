@@ -46,7 +46,8 @@ where
     fn display_variant(&self, f: &mut fmt::Formatter<'_>, fields: &[Option<Field>]) -> fmt::Result {
         let indent = self.indent;
         let ident = DisplayIdent::camel(self.val);
-        let fields = DisplaySequence(
+        let fields = DisplaySequence::new(
+            "",
             fields
                 .iter()
                 .filter_map(Option::as_ref)
@@ -67,7 +68,8 @@ where
 impl Display for DisplayOp<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let variants = DisplaySequence(
+        let variants = DisplaySequence::new(
+            "",
             self.val
                 .ops
                 .iter()

@@ -48,14 +48,16 @@ impl<'a, T> DisplayConstructor<&'a T> {
         let indent = self.indent;
         let snake_ident = DisplayIdent::snake(self.value);
         let camel_ident = DisplayIdent::camel(self.value);
-        let fn_params = DisplaySequence(
+        let fn_params = DisplaySequence::new(
+            "",
             fields
                 .iter()
                 .filter_map(Option::as_ref)
                 .map(|param| (param, ", "))
                 .map(DisplayConcat),
         );
-        let struct_params = DisplaySequence(
+        let struct_params = DisplaySequence::new(
+            "",
             fields
                 .iter()
                 .filter_map(Option::as_ref)
@@ -76,7 +78,8 @@ impl<'a, T> DisplayConstructor<&'a T> {
 impl Display for DisplayConstructor<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let variants = DisplaySequence(
+        let variants = DisplaySequence::new(
+            "",
             self.value
                 .ops
                 .iter()

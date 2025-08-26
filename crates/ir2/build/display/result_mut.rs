@@ -48,7 +48,8 @@ impl<'a, T> DisplayResultMut<&'a T> {
 impl Display for DisplayResultMut<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let variants = DisplaySequence(
+        let variants = DisplaySequence::new(
+            "",
             self.value
                 .ops
                 .iter()
