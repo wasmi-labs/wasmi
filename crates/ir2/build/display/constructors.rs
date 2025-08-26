@@ -1,9 +1,5 @@
 use crate::build::{
-    display::{
-        ident::DisplayIdent,
-        utils::{DisplayConcat, DisplaySequence},
-        Indent,
-    },
+    display::{ident::DisplayIdent, utils::DisplaySequence, Indent},
     isa::Isa,
     op::{
         BinaryOp,
@@ -48,21 +44,14 @@ impl<'a, T> DisplayConstructor<&'a T> {
         let indent = self.indent;
         let snake_ident = DisplayIdent::snake(self.value);
         let camel_ident = DisplayIdent::camel(self.value);
-        let fn_params = DisplaySequence::new(
-            "",
-            fields
-                .iter()
-                .filter_map(Option::as_ref)
-                .map(|param| (param, ", "))
-                .map(DisplayConcat),
-        );
+        let fn_params = DisplaySequence::new(", ", fields.iter().filter_map(Option::as_ref));
         let struct_params = DisplaySequence::new(
-            "",
+            ", ",
             fields
                 .iter()
                 .filter_map(Option::as_ref)
-                .map(|param| (SnakeCase(param.ident), ", "))
-                .map(DisplayConcat),
+                .map(|param| param.ident)
+                .map(SnakeCase),
         );
         write!(
             f,
@@ -83,7 +72,7 @@ impl Display for DisplayConstructor<&'_ Isa> {
             self.value
                 .ops
                 .iter()
-                .map(|op| DisplayConstructor::new(op, indent.inc_by(3))),
+                .map(|op| DisplayConstructor::new(op, indent.inc_by(1))),
         );
         write!(
             f,

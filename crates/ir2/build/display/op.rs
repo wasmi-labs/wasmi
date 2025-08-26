@@ -47,19 +47,19 @@ where
         let indent = self.indent;
         let ident = DisplayIdent::camel(self.val);
         let fields = DisplaySequence::new(
-            "",
+            ",\n",
             fields
                 .iter()
                 .filter_map(Option::as_ref)
-                .map(|field| (indent.inc(), field, ",\n"))
+                .map(|field| (indent.inc(), field))
                 .map(DisplayConcat),
         );
         write!(
             f,
             "\
             {indent}{ident} {{\n\
-                {fields}\
-            {indent}}},\n\
+                {fields}\n\
+            {indent}}}\
             ",
         )
     }
@@ -69,7 +69,7 @@ impl Display for DisplayOp<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let variants = DisplaySequence::new(
-            "",
+            ",\n",
             self.val
                 .ops
                 .iter()
@@ -80,7 +80,7 @@ impl Display for DisplayOp<&'_ Isa> {
             "\
             {indent}#[allow(non_camel_case_types)]
             {indent}pub enum Op {{\n\
-                        {variants}\
+                        {variants}\n\
             {indent}}}\n\
         "
         )
