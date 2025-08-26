@@ -30,7 +30,6 @@ impl<T> DisplayIdent<T> {
         }
     }
 
-    #[expect(dead_code)]
     pub fn snake(value: T) -> Self {
         Self {
             value,
