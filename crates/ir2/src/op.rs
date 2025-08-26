@@ -21,6 +21,13 @@ impl Clone for Op {
     }
 }
 
+impl Copy for OpCode {}
+impl Clone for OpCode {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
 #[test]
 fn op_size_of_and_alignment() {
     assert_eq!(core::mem::size_of::<Op>(), 24);
