@@ -47,7 +47,7 @@ impl Display for Error {
 
 pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
     let mut contents = String::new();
-    contents.reserve_exact(50_000);
+    contents.reserve(350_000);
     let isa = isa::wasmi_isa();
     write!(
         &mut contents,
