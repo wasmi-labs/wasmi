@@ -12,6 +12,7 @@ use crate::{
     Stack,
     StackSpan,
 };
+use core::num::NonZero;
 
 /// Types that can encode types that implement [`Encode`].
 pub trait Encoder {
@@ -89,7 +90,7 @@ macro_rules! impl_encode_for_primitive {
         )*
     };
 }
-impl_encode_for_primitive!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize,);
+impl_encode_for_primitive!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize, f32, f64);
 
 macro_rules! impl_encode_using {
     ( $($ty:ty as $prim:ty = $e:expr),* $(,)? ) => {
@@ -127,6 +128,9 @@ impl_encode_using! {
     StackSpan as Stack = StackSpan::head,
     FixedStackSpan<2> as StackSpan = <FixedStackSpan<2>>::span,
     BoundedStackSpan as StackSpan = |bounded: BoundedStackSpan| { bounded.span() },
+
+    NonZero<u32> as u32 = NonZero::get,
+    NonZero<u64> as u64 = NonZero::get,
 
     TrapCode as u8 = |code: TrapCode| -> u8 {
         match code {
