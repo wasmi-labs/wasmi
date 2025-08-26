@@ -31,13 +31,6 @@ impl<T> DisplayOp<T> {
         Self { val, indent }
     }
 
-    pub fn scoped<V>(&self, val: V) -> DisplayOp<V> {
-        DisplayOp {
-            val,
-            indent: self.indent.inc(),
-        }
-    }
-
     pub fn map<V>(&self, val: V) -> DisplayOp<V> {
         DisplayOp {
             val,
@@ -74,7 +67,12 @@ where
 impl Display for DisplayOp<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let variants = DisplaySequence(self.val.ops.iter().map(|op| self.scoped(op)));
+        let variants = DisplaySequence(
+            self.val
+                .ops
+                .iter()
+                .map(|op| DisplayOp::new(op, indent.inc())),
+        );
         write!(
             f,
             "\
