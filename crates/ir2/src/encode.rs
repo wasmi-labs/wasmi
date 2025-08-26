@@ -7,6 +7,7 @@ use crate::{
     BranchOffset,
     FixedStackSpan,
     Offset16,
+    OpCode,
     Sign,
     Stack,
     StackSpan,
@@ -26,6 +27,14 @@ pub trait Encoder {
     /// If the encoder cannot encode more `bytes`.
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<Self::Pos, Self::Error>;
 
+    /// Encodes the [`OpCode`] to `self`.
+    ///
+    /// # Note
+    /// This API allows the encoder to customize encoding of [`OpCode`], e.g. to
+    /// allow for direct or indirect threading encodings where the [`OpCode`] is
+    /// either encoded as function pointer or as `u16` value respectively.
+    fn encode_op_code(&mut self, code: OpCode) -> Result<Self::Pos, Self::Error>;
+
     /// Registers an encoded [`BranchOffset`] to the encoder.
     ///
     /// # Errors
@@ -44,6 +53,15 @@ pub trait Encode {
     fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
     where
         E: Encoder;
+}
+
+impl Encode for OpCode {
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.encode_op_code(*self)
+    }
 }
 
 impl Encode for BranchOffset {
