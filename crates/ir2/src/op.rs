@@ -27,6 +27,11 @@ impl Clone for OpCode {
         *self
     }
 }
+impl From<OpCode> for u16 {
+    fn from(code: OpCode) -> Self {
+        code as u16
+    }
+}
 
 #[test]
 fn op_size_of_and_alignment() {
