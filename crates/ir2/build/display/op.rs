@@ -54,7 +54,7 @@ impl Display for DisplayOp<&'_ Isa> {
             "\
             {indent}#[allow(non_camel_case_types)]
             {indent}pub enum Op {{\n\
-            {variants}\
+                        {variants}\
             {indent}}}\n\
         "
         )
