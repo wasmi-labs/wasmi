@@ -99,6 +99,10 @@ impl UnaryOp {
     pub fn value_field(&self) -> Field {
         Field::new(Ident::Value, FieldTy::Stack)
     }
+
+    pub fn fields(&self) -> [Field; 2] {
+        [self.result_field(), self.value_field()]
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -333,6 +337,10 @@ impl BinaryOp {
 
     pub fn rhs_field(&self) -> Field {
         Field::new(Ident::Rhs, self.kind.rhs_field(self.rhs))
+    }
+
+    pub fn fields(&self) -> [Field; 3] {
+        [self.result_field(), self.lhs_field(), self.rhs_field()]
     }
 }
 
@@ -634,6 +642,14 @@ impl CmpBranchOp {
     pub fn rhs_field(&self) -> Field {
         Field::new(Ident::Rhs, self.cmp.input_field(self.rhs))
     }
+
+    pub fn offset_field(&self) -> Field {
+        Field::new(Ident::Offset, FieldTy::BranchOffset)
+    }
+
+    pub fn fields(&self) -> [Field; 3] {
+        [self.lhs_field(), self.rhs_field(), self.offset_field()]
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -666,6 +682,16 @@ impl CmpSelectOp {
 
     pub fn val_false_field(&self) -> Field {
         Field::new(Ident::ValFalse, FieldTy::Stack)
+    }
+
+    pub fn fields(&self) -> [Field; 5] {
+        [
+            self.result_field(),
+            self.lhs_field(),
+            self.rhs_field(),
+            self.val_true_field(),
+            self.val_false_field(),
+        ]
     }
 }
 
@@ -1014,6 +1040,15 @@ impl LoadOp {
         }
         Some(Field::new(Ident::Memory, FieldTy::Memory))
     }
+
+    pub fn fields(&self) -> [Option<Field>; 4] {
+        [
+            Some(self.result_field()),
+            Some(self.ptr_field()),
+            self.offset_field(),
+            self.memory_field(),
+        ]
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -1123,6 +1158,15 @@ impl StoreOp {
         }
         Some(Field::new(Ident::Memory, FieldTy::Memory))
     }
+
+    pub fn fields(&self) -> [Option<Field>; 4] {
+        [
+            Some(self.ptr_field()),
+            self.offset_field(),
+            Some(self.value_field()),
+            self.memory_field(),
+        ]
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -1206,6 +1250,10 @@ impl TableGetOp {
     pub fn table_field(&self) -> Field {
         Field::new(Ident::Table, FieldTy::Table)
     }
+
+    pub fn fields(&self) -> [Field; 3] {
+        [self.result_field(), self.index_field(), self.table_field()]
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -1239,6 +1287,10 @@ impl TableSetOp {
 
     pub fn table_field(&self) -> Field {
         Field::new(Ident::Table, FieldTy::Table)
+    }
+
+    pub fn fields(&self) -> [Field; 3] {
+        [self.index_field(), self.value_field(), self.table_field()]
     }
 }
 
