@@ -84,6 +84,15 @@ impl<const N: u16> FixedStackSpan<N> {
         Ok(Self { span })
     }
 
+    /// Creates a new [`StackSpan`] starting with the given `start` [`Stack`].
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for making sure that `span` is valid for a length of `N`.
+    pub unsafe fn new_unchecked(span: StackSpan) -> Self {
+        Self { span }
+    }
+
     /// Returns a [`StackSpanIter`] yielding `N` [`Stack`]s.
     pub fn iter(&self) -> StackSpanIter {
         self.span.iter(self.len())
