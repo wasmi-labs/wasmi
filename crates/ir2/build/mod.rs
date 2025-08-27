@@ -62,10 +62,10 @@ impl Default for Config {
 
 pub fn generate_code(config: &Config) -> Result<(), Error> {
     fs::create_dir_all(&config.out_dir)?;
-    let isa = isa::wasmi_isa(&config);
+    let isa = isa::wasmi_isa(config);
     let mut buffer = String::new();
-    generate_op_rs(&config, &isa, &mut buffer)?;
-    generate_encode_rs(&config, &isa, &mut buffer)?;
+    generate_op_rs(config, &isa, &mut buffer)?;
+    generate_encode_rs(config, &isa, &mut buffer)?;
     Ok(())
 }
 
