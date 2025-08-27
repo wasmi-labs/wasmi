@@ -4,6 +4,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+mod decode;
 mod encode;
 mod error;
 pub mod index;
@@ -14,6 +15,7 @@ mod span;
 use wasmi_core as core;
 
 pub use self::{
+    decode::{Decode, Decoder},
     encode::{Encode, Encoder},
     error::Error,
     index::Stack,
