@@ -7,6 +7,7 @@ use crate::{
     BranchOffset,
     FixedStackSpan,
     Offset16,
+    Op,
     OpCode,
     Sign,
     Stack,
@@ -148,3 +149,5 @@ impl_encode_using! {
         }
     },
 }
+
+include!(concat!(env!("OUT_DIR"), "/encode.rs"));

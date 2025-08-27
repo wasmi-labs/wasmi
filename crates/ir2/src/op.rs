@@ -4,8 +4,6 @@ use crate::{
     Address,
     BlockFuel,
     BranchOffset,
-    Encode,
-    Encoder,
     FixedStackSpan,
     Offset16,
     Sign,

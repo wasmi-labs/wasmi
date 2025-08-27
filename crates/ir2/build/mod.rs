@@ -12,6 +12,7 @@ use self::{
         DisplayResultMut,
         Indent,
     },
+    isa::Isa,
     op::Op,
     token::{CamelCase, Ident, SnakeCase},
 };
@@ -46,26 +47,50 @@ impl Display for Error {
 }
 
 pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
-    let mut contents = String::new();
-    contents.reserve(350_000);
+    fs::create_dir_all(out_dir)?;
     let isa = isa::wasmi_isa();
+    let mut buffer = String::new();
+    generate_op_rs(out_dir, &isa, &mut buffer)?;
+    generate_encode_rs(out_dir, &isa, &mut buffer)?;
+    Ok(())
+}
+
+fn generate_op_rs(out_dir: &Path, isa: &Isa, contents: &mut String) -> Result<(), Error> {
+    const EXPECTED_SIZE: usize = 180_000;
+    contents.clear();
+    contents.reserve_exact(EXPECTED_SIZE);
     write!(
-        &mut contents,
+        contents,
         "\
         {}\n\
         {}\n\
         {}\n\
         {}\n\
-        {}\n\
         ",
-        DisplayOp::new(&isa, Indent::default()),
-        DisplayResultMut::new(&isa, Indent::default()),
-        DisplayConstructor::new(&isa, Indent::default()),
-        DisplayOpCode::new(&isa, Indent::default()),
-        DisplayEncode::new(&isa, Indent::default()),
+        DisplayOp::new(isa, Indent::default()),
+        DisplayResultMut::new(isa, Indent::default()),
+        DisplayConstructor::new(isa, Indent::default()),
+        DisplayOpCode::new(isa, Indent::default()),
     )?;
-    std::println!("out_dir = {out_dir:?}");
-    fs::create_dir_all(out_dir)?;
+    let len_contents = contents.len();
+    assert!(
+        len_contents <= EXPECTED_SIZE,
+        "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
+    );
     fs::write(out_dir.join("op.rs"), contents)?;
+    Ok(())
+}
+
+fn generate_encode_rs(out_dir: &Path, isa: &Isa, contents: &mut String) -> Result<(), Error> {
+    const EXPECTED_SIZE: usize = 150_000;
+    contents.clear();
+    contents.reserve_exact(EXPECTED_SIZE);
+    write!(contents, "{}", DisplayEncode::new(isa, Indent::default()),)?;
+    let len_contents = contents.len();
+    assert!(
+        len_contents <= EXPECTED_SIZE,
+        "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
+    );
+    fs::write(out_dir.join("encode.rs"), contents)?;
     Ok(())
 }
