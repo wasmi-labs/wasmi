@@ -32,7 +32,7 @@ impl<T> Eq for Sign<T> {}
 
 impl<T> Sign<T> {
     /// Create a new typed [`Sign`] with the given value.
-    fn new(is_positive: bool) -> Self {
+    pub(crate) fn new(is_positive: bool) -> Self {
         Self {
             is_positive,
             marker: PhantomData,
