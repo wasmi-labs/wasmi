@@ -1087,18 +1087,18 @@ impl LoadOpKind {
 
     pub fn ident_prefix(&self) -> Option<Ident> {
         match self {
-            LoadOpKind::Load32 => None,
-            LoadOpKind::Load64 => None,
-            LoadOpKind::S32Load8 => Some(Ident::S32),
-            LoadOpKind::U32Load8 => Some(Ident::U32),
-            LoadOpKind::S32Load16 => Some(Ident::S32),
-            LoadOpKind::U32Load16 => Some(Ident::U32),
-            LoadOpKind::S64Load8 => Some(Ident::S64),
-            LoadOpKind::U64Load8 => Some(Ident::U64),
-            LoadOpKind::S64Load16 => Some(Ident::S64),
-            LoadOpKind::U64Load16 => Some(Ident::U64),
-            LoadOpKind::S64Load32 => Some(Ident::S64),
-            LoadOpKind::U64Load32 => Some(Ident::U64),
+            Self::Load32 => None,
+            Self::Load64 => None,
+            Self::S32Load8 => Some(Ident::S32),
+            Self::U32Load8 => Some(Ident::U32),
+            Self::S32Load16 => Some(Ident::S32),
+            Self::U32Load16 => Some(Ident::U32),
+            Self::S64Load8 => Some(Ident::S64),
+            Self::U64Load8 => Some(Ident::U64),
+            Self::S64Load16 => Some(Ident::S64),
+            Self::U64Load16 => Some(Ident::U64),
+            Self::S64Load32 => Some(Ident::S64),
+            Self::U64Load32 => Some(Ident::U64),
         }
     }
 }
@@ -1198,13 +1198,13 @@ impl StoreOpKind {
 
     pub fn ident_prefix(&self) -> Option<Ident> {
         match self {
-            StoreOpKind::Store32 => None,
-            StoreOpKind::Store64 => None,
-            StoreOpKind::I32Store8 => Some(Ident::I32),
-            StoreOpKind::I32Store16 => Some(Ident::I32),
-            StoreOpKind::I64Store8 => Some(Ident::I64),
-            StoreOpKind::I64Store16 => Some(Ident::I64),
-            StoreOpKind::I64Store32 => Some(Ident::I64),
+            Self::Store32 => None,
+            Self::Store64 => None,
+            Self::I32Store8 => Some(Ident::I32),
+            Self::I32Store16 => Some(Ident::I32),
+            Self::I64Store8 => Some(Ident::I64),
+            Self::I64Store16 => Some(Ident::I64),
+            Self::I64Store32 => Some(Ident::I64),
         }
     }
 
