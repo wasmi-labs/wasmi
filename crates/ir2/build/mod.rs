@@ -17,7 +17,7 @@ use self::{
     token::{CamelCase, Ident, SnakeCase},
 };
 use core::fmt::{self, Display, Error as FmtError, Write as _};
-use std::{fs, io::Error as IoError, path::Path};
+use std::{env, fs, io::Error as IoError, path::PathBuf};
 
 #[derive(Debug)]
 pub enum Error {
@@ -46,16 +46,28 @@ impl Display for Error {
     }
 }
 
-pub fn generate_code(out_dir: &Path) -> Result<(), Error> {
-    fs::create_dir_all(out_dir)?;
+pub struct Config {
+    out_dir: PathBuf,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            out_dir: PathBuf::from(env::var("OUT_DIR").unwrap()),
+        }
+    }
+}
+
+pub fn generate_code(config: &Config) -> Result<(), Error> {
+    fs::create_dir_all(&config.out_dir)?;
     let isa = isa::wasmi_isa();
     let mut buffer = String::new();
-    generate_op_rs(out_dir, &isa, &mut buffer)?;
-    generate_encode_rs(out_dir, &isa, &mut buffer)?;
+    generate_op_rs(&config, &isa, &mut buffer)?;
+    generate_encode_rs(&config, &isa, &mut buffer)?;
     Ok(())
 }
 
-fn generate_op_rs(out_dir: &Path, isa: &Isa, contents: &mut String) -> Result<(), Error> {
+fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     const EXPECTED_SIZE: usize = 180_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
@@ -77,11 +89,11 @@ fn generate_op_rs(out_dir: &Path, isa: &Isa, contents: &mut String) -> Result<()
         len_contents <= EXPECTED_SIZE,
         "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
     );
-    fs::write(out_dir.join("op.rs"), contents)?;
+    fs::write(config.out_dir.join("op.rs"), contents)?;
     Ok(())
 }
 
-fn generate_encode_rs(out_dir: &Path, isa: &Isa, contents: &mut String) -> Result<(), Error> {
+fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     const EXPECTED_SIZE: usize = 150_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
@@ -91,6 +103,6 @@ fn generate_encode_rs(out_dir: &Path, isa: &Isa, contents: &mut String) -> Resul
         len_contents <= EXPECTED_SIZE,
         "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
     );
-    fs::write(out_dir.join("encode.rs"), contents)?;
+    fs::write(config.out_dir.join("encode.rs"), contents)?;
     Ok(())
 }

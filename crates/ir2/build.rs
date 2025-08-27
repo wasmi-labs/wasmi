@@ -1,16 +1,13 @@
-use std::{
-    env,
-    fs,
-    path::{Path, PathBuf},
-};
+use self::build::Config;
+use std::{fs, path::Path};
 
 #[path = "build/mod.rs"]
 mod build;
 
 fn main() {
     watch_dir_recursively(Path::new("build"));
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    build::generate_code(&out_dir).unwrap()
+    let config = Config::default();
+    build::generate_code(&config).unwrap()
 }
 
 fn watch_dir_recursively(path: &Path) {
