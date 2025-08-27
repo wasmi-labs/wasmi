@@ -48,19 +48,21 @@ impl Display for Error {
 
 pub struct Config {
     out_dir: PathBuf,
+    simd: bool,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             out_dir: PathBuf::from(env::var("OUT_DIR").unwrap()),
+            simd: env::var("CARGO_FEATURE_SIMD").is_ok(),
         }
     }
 }
 
 pub fn generate_code(config: &Config) -> Result<(), Error> {
     fs::create_dir_all(&config.out_dir)?;
-    let isa = isa::wasmi_isa();
+    let isa = isa::wasmi_isa(&config);
     let mut buffer = String::new();
     generate_op_rs(&config, &isa, &mut buffer)?;
     generate_encode_rs(&config, &isa, &mut buffer)?;

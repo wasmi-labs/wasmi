@@ -244,4 +244,8 @@ define_ident!(
     Ptr: ptr,
     ValTrue: val_true,
     ValFalse: val_false,
+
+    Copy128: copy128,
+    ValueLo: value_lo,
+    ValueHi: value_hi,
 );
