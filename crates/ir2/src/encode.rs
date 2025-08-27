@@ -91,7 +91,9 @@ macro_rules! impl_encode_for_primitive {
         )*
     };
 }
-impl_encode_for_primitive!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize, f32, f64);
+impl_encode_for_primitive!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64
+);
 
 macro_rules! impl_encode_using {
     ( $($ty:ty as $prim:ty = $e:expr),* $(,)? ) => {
