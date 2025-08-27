@@ -77,6 +77,17 @@ impl Encode for BranchOffset {
     }
 }
 
+impl Encode for BoundedStackSpan {
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        let pos = self.span().encode(encoder)?;
+        self.len().encode(encoder)?;
+        Ok(pos)
+    }
+}
+
 macro_rules! impl_encode_for_primitive {
     ( $($ty:ty),* $(,)? ) => {
         $(
@@ -130,7 +141,6 @@ impl_encode_using! {
 
     StackSpan as Stack = StackSpan::head,
     FixedStackSpan<2> as StackSpan = <FixedStackSpan<2>>::span,
-    BoundedStackSpan as StackSpan = |bounded: BoundedStackSpan| { bounded.span() },
 
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
