@@ -92,10 +92,7 @@ impl Display for DisplayEncode<&'_ Isa> {
             f,
             "\
             {indent}impl Encode for Op {{\n\
-            {indent}    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>\n\
-            {indent}    where\n\
-            {indent}        E: Encoder,\n\
-            {indent}    {{\n\
+            {indent}    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {{\n\
             {indent}        match self {{\n\
                                 {impls}\n\
             {indent}        }}\n\
