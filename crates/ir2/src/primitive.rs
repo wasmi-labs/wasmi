@@ -218,6 +218,12 @@ impl TryFrom<u64> for Offset16 {
     }
 }
 
+impl From<u16> for Offset16 {
+    fn from(offset: u16) -> Self {
+        Self(offset)
+    }
+}
+
 impl From<Offset16> for u16 {
     fn from(offset: Offset16) -> Self {
         offset.0
