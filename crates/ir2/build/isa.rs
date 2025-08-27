@@ -20,6 +20,7 @@ use crate::build::{
         UnaryOpKind,
     },
     token::Ident,
+    Config,
     Op,
 };
 
@@ -34,7 +35,7 @@ impl Isa {
     }
 }
 
-pub fn wasmi_isa() -> Isa {
+pub fn wasmi_isa(config: &Config) -> Isa {
     let mut isa = Isa::default();
     isa.ops.reserve_exact(500);
     add_unary_ops(&mut isa);
@@ -49,7 +50,8 @@ pub fn wasmi_isa() -> Isa {
     add_global_ops(&mut isa);
     add_memory_ops(&mut isa);
     add_table_ops(&mut isa);
-    add_wide_arithmetic(&mut isa);
+    add_wide_arithmetic_ops(&mut isa);
+    add_simd_ops(&mut isa, config);
     isa
 }
 
@@ -702,7 +704,7 @@ fn add_memory_ops(isa: &mut Isa) {
     }
 }
 
-fn add_wide_arithmetic(isa: &mut Isa) {
+fn add_wide_arithmetic_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(
             Ident::I64Add128,
@@ -741,6 +743,23 @@ fn add_wide_arithmetic(isa: &mut Isa) {
             ],
         )),
     ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_simd_ops(isa: &mut Isa, config: &Config) {
+    if !config.simd {
+        return;
+    }
+    let ops = [Op::from(GenericOp::new(
+        Ident::Copy128,
+        [
+            Field::new(Ident::Result, FieldTy::Stack),
+            Field::new(Ident::ValueLo, FieldTy::U64),
+            Field::new(Ident::ValueHi, FieldTy::U64),
+        ],
+    ))];
     for op in ops {
         isa.push_op(op);
     }
