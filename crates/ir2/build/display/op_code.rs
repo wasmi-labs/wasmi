@@ -42,7 +42,7 @@ impl Display for DisplayOpCode<&'_ Isa> {
             f,
             "\
             {indent}#[allow(non_camel_case_types)]\n\
-            {indent}#[repr(u16)]
+            {indent}#[repr(u16)]\n\
             {indent}pub enum OpCode {{\n\
                         {variants}\n\
             {indent}}}\n\
