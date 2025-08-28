@@ -559,28 +559,28 @@ impl BinaryOpKind {
             | Self::I32Add
             | Self::I32Sub
             | Self::I32Mul
-            | Self::S32Div
-            | Self::S32Rem
             | Self::I32BitAnd
             | Self::I32BitOr
             | Self::I32BitXor
             | Self::I32Shl
-            | Self::S32Shr
             | Self::I32Rotl
             | Self::I32Rotr => Ty::I32,
+            | Self::S32Div
+            | Self::S32Rem
+            | Self::S32Shr => Ty::S32,
             | Self::U32Div | Self::U32Rem | Self::U32Shr => Ty::U32,
             | Self::I64Add
             | Self::I64Sub
             | Self::I64Mul
-            | Self::S64Div
-            | Self::S64Rem
             | Self::I64BitAnd
             | Self::I64BitOr
             | Self::I64BitXor
             | Self::I64Shl
-            | Self::S64Shr
             | Self::I64Rotl
             | Self::I64Rotr => Ty::I64,
+            | Self::S64Div
+            | Self::S64Rem
+            | Self::S64Shr => Ty::S64,
             | Self::U64Div | Self::U64Rem | Self::U64Shr => Ty::U64,
             | Self::F32Add
             | Self::F32Sub
