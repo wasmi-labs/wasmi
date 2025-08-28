@@ -1,9 +1,5 @@
 use crate::build::{
-    display::{
-        ident::DisplayIdent,
-        utils::{DisplayConcat, DisplaySequence},
-        Indent,
-    },
+    display::{ident::DisplayIdent, utils::DisplaySequence, Indent},
     isa::Isa,
     op::{
         BinaryOp,
@@ -55,23 +51,11 @@ impl<'a, T> DisplayEncode<&'a T> {
                 .map(|field| field.ident)
                 .map(SnakeCase),
         );
-        let encode_params = DisplaySequence::new(
-            "",
-            fields
-                .iter()
-                .filter_map(Option::as_ref)
-                .map(|field| field.ident)
-                .map(SnakeCase)
-                .map(|param| (indent.inc(), param, ".encode(encoder)?;\n"))
-                .map(DisplayConcat),
-        );
         write!(
             f,
             "\
             {indent}Self::{camel_ident} {{ {match_params} }} => {{\n\
-            {indent}    let pos = OpCode::{camel_ident}.encode(encoder)?;\n\
-                        {encode_params}\
-            {indent}    Ok(pos)\n\
+            {indent}    (OpCode::{camel_ident}, {match_params}).encode(encoder)\n\
             {indent}}}\n\
             "
         )
