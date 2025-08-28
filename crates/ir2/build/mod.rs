@@ -6,6 +6,7 @@ pub mod token;
 use self::{
     display::{
         DisplayConstructor,
+        DisplayDecode,
         DisplayEncode,
         DisplayOp,
         DisplayOpCode,
@@ -66,6 +67,7 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
     let mut buffer = String::new();
     generate_op_rs(config, &isa, &mut buffer)?;
     generate_encode_rs(config, &isa, &mut buffer)?;
+    generate_decode_rs(config, &isa, &mut buffer)?;
     Ok(())
 }
 
@@ -99,12 +101,26 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
     const EXPECTED_SIZE: usize = 150_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
-    write!(contents, "{}", DisplayEncode::new(isa, Indent::default()),)?;
+    write!(contents, "{}", DisplayEncode::new(isa, Indent::default()))?;
     let len_contents = contents.len();
     assert!(
         len_contents <= EXPECTED_SIZE,
         "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
     );
     fs::write(config.out_dir.join("encode.rs"), contents)?;
+    Ok(())
+}
+
+fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
+    const EXPECTED_SIZE: usize = 35_000;
+    contents.clear();
+    contents.reserve_exact(EXPECTED_SIZE);
+    write!(contents, "{}", DisplayDecode::new(isa, Indent::default()))?;
+    let len_contents = contents.len();
+    assert!(
+        len_contents <= EXPECTED_SIZE,
+        "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
+    );
+    fs::write(config.out_dir.join("decode.rs"), contents)?;
     Ok(())
 }
