@@ -162,4 +162,30 @@ impl_encode_using! {
     },
 }
 
+macro_rules! for_tuple {
+    ( $mac:ident ) => {
+        $mac! { T0 }
+        $mac! { T0, T1 }
+        $mac! { T0, T1, T2 }
+        $mac! { T0, T1, T2, T3 }
+        $mac! { T0, T1, T2, T3, T4 }
+        $mac! { T0, T1, T2, T3, T4, T5 }
+        $mac! { T0, T1, T2, T3, T4, T5, T6 }
+    };
+}
+macro_rules! impl_encode_for_tuple {
+    ( $t0:ident $(, $t:ident)* $(,)? ) => {
+        impl<$t0: Encode $(, $t: Encode)*> Encode for ($t0, $($t,)*) {
+            fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+                #[allow(non_snake_case)]
+                let ($t0, $($t,)*) = self;
+                let pos = $t0.encode(encoder)?;
+                $( $t.encode(encoder)?; )*
+                Ok(pos)
+            }
+        }
+    };
+}
+for_tuple!(impl_encode_for_tuple);
+
 include!(concat!(env!("OUT_DIR"), "/encode.rs"));
