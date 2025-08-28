@@ -14,6 +14,7 @@ mod span;
 
 use wasmi_core as core;
 
+#[doc(inline)]
 pub use self::{
     decode::{Decode, Decoder},
     encode::{Encode, Encoder},
