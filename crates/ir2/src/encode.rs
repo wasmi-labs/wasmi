@@ -188,4 +188,10 @@ macro_rules! impl_encode_for_tuple {
 }
 for_tuple!(impl_encode_for_tuple);
 
+impl<T: Encode> Encode for &'_ T {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        <T as Encode>::encode(*self, encoder)
+    }
+}
+
 include!(concat!(env!("OUT_DIR"), "/encode.rs"));
