@@ -1,3 +1,21 @@
+#![allow(non_camel_case_types)]
+
+mod op;
+
+use self::op::{
+    BinaryOp,
+    CmpBranchOp,
+    CmpSelectOp,
+    LoadOpMem0Offset16_Ss,
+    LoadOp_Si,
+    LoadOp_Ss,
+    StoreOpMem0Offset16_S,
+    StoreOp_I,
+    StoreOp_S,
+    TableGet,
+    TableSet,
+    UnaryOp,
+};
 use crate::{
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
@@ -108,3 +126,5 @@ impl_decode_using! {
         }
     },
 }
+
+include!(concat!(env!("OUT_DIR"), "/decode.rs"));

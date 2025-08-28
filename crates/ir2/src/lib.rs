@@ -4,7 +4,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod decode;
+pub mod decode;
 mod encode;
 mod error;
 pub mod index;
