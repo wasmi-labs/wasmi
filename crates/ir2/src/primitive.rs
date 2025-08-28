@@ -139,9 +139,9 @@ impl BranchOffset {
     }
 }
 
-/// The accumulated fuel to execute a block via [`Instruction::ConsumeFuel`].
+/// The accumulated fuel to execute a block via [`Op::ConsumeFuel`].
 ///
-/// [`Instruction::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
+/// [`Op::ConsumeFuel`]: crate::Op::ConsumeFuel
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct BlockFuel(u64);
