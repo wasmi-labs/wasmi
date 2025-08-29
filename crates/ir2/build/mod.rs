@@ -112,7 +112,7 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
 }
 
 fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 35_000;
+    const EXPECTED_SIZE: usize = 40_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
     write!(contents, "{}", DisplayDecode::new(isa, Indent::default()))?;

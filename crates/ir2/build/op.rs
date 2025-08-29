@@ -804,6 +804,10 @@ pub enum FieldTy {
     Data,
     TrapCode,
     BlockFuel,
+    ImmLaneIdx16,
+    ImmLaneIdx8,
+    ImmLaneIdx4,
+    ImmLaneIdx2,
 }
 
 impl Display for FieldTy {
@@ -839,6 +843,10 @@ impl Display for FieldTy {
             Self::Data => "Data",
             Self::TrapCode => "TrapCode",
             Self::BlockFuel => "BlockFuel",
+            Self::ImmLaneIdx16 => "ImmLaneIdx<16>",
+            Self::ImmLaneIdx8 => "ImmLaneIdx<8>",
+            Self::ImmLaneIdx4 => "ImmLaneIdx<4>",
+            Self::ImmLaneIdx2 => "ImmLaneIdx<2>",
         };
         write!(f, "{s}")
     }

@@ -775,10 +775,60 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
                 Field::new(Ident::ValueHi, FieldTy::U64),
             ],
         )),
+        // Splat Ops
         Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Stack)),
         Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Immediate)),
         Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Stack)),
         Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Immediate)),
+        // Extract Ops
+        Op::from(GenericOp::new(
+            Ident::S8x16ExtractLane,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Lane, FieldTy::ImmLaneIdx16),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::U8x16ExtractLane,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Lane, FieldTy::ImmLaneIdx16),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::S16x8ExtractLane,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Lane, FieldTy::ImmLaneIdx8),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::U16x8ExtractLane,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Lane, FieldTy::ImmLaneIdx8),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::U32x4ExtractLane,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Lane, FieldTy::ImmLaneIdx4),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::U64x2ExtractLane,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Lane, FieldTy::ImmLaneIdx2),
+            ],
+        )),
     ];
     for op in ops {
         isa.push_op(op);
