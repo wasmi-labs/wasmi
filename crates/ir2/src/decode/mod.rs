@@ -16,6 +16,8 @@ use self::op::{
     TableSet,
     UnaryOp,
 };
+#[cfg(feature = "simd")]
+use crate::core::simd::ImmLaneIdx;
 use crate::{
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
@@ -113,6 +115,13 @@ impl_decode_using! {
     TrapCode as u8 = |code: u8| -> TrapCode {
         TrapCode::try_from(code).unwrap_unchecked()
     },
+}
+
+#[cfg(feature = "simd")]
+impl<const N: u8> Decode for ImmLaneIdx<N> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        ImmLaneIdx::try_from(u8::decode(decoder)).unwrap_unchecked()
+    }
 }
 
 include!(concat!(env!("OUT_DIR"), "/decode.rs"));

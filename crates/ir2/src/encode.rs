@@ -1,3 +1,5 @@
+#[cfg(feature = "simd")]
+use crate::core::simd::ImmLaneIdx;
 use crate::{
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
@@ -146,6 +148,16 @@ impl_encode_using! {
     NonZero<u64> as u64 = NonZero::get,
 
     TrapCode as u8 = |code: TrapCode| -> u8 { code as _ },
+}
+
+#[cfg(feature = "simd")]
+impl<const N: u8> Encode for ImmLaneIdx<N> {
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        u8::from(*self).encode(encoder)
+    }
 }
 
 macro_rules! for_tuple {
