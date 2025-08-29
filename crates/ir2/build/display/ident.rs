@@ -5,9 +5,9 @@ use crate::build::{
         CmpBranchOp,
         CmpSelectOp,
         GenericOp,
-        Input,
         LoadOp,
         Op,
+        OperandKind,
         StoreOp,
         TableGetOp,
         TableSetOp,
@@ -81,8 +81,8 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
             .map(|i| (sep, case.wrap(i)))
             .map(DisplayConcat)
             .display_maybe();
-        let result_suffix = case.wrap(Input::Stack);
-        let value_suffix = SnakeCase(Input::Stack);
+        let result_suffix = case.wrap(OperandKind::Stack);
+        let value_suffix = SnakeCase(OperandKind::Stack);
         write!(
             f,
             "{ident_prefix}{ident}{ident_suffix}_{result_suffix}{value_suffix}"
@@ -97,7 +97,7 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
         let kind = self.value.kind;
         let ident = case.wrap(kind.ident());
         let ident_prefix = case.wrap(kind.ident_prefix());
-        let result_suffix = case.wrap(Input::Stack);
+        let result_suffix = case.wrap(OperandKind::Stack);
         let lhs_suffix = SnakeCase(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
@@ -131,7 +131,7 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
         let select = case.wrap(Ident::Select);
         let ident = case.wrap(cmp.ident());
         let input_ident = case.wrap(Ident::from(cmp.input_ty()));
-        let result_suffix = case.wrap(Input::Stack);
+        let result_suffix = case.wrap(OperandKind::Stack);
         let lhs_suffix = SnakeCase(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
@@ -146,7 +146,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let case = self.case;
         let kind = self.value.kind;
         let ident = case.wrap(kind.ident());
-        let result_suffix = case.wrap(Input::Stack);
+        let result_suffix = case.wrap(OperandKind::Stack);
         let ptr_suffix = SnakeCase(self.value.ptr);
         let sep = case.wrap(Sep);
         let ident_prefix = self
@@ -224,7 +224,7 @@ impl Display for DisplayIdent<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let ident = case.wrap(Ident::TableGet);
-        let result_suffix = case.wrap(Input::Stack);
+        let result_suffix = case.wrap(OperandKind::Stack);
         let index_suffix = SnakeCase(self.value.index);
         write!(f, "{ident}_{result_suffix}{index_suffix}")
     }

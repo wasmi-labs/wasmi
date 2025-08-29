@@ -9,9 +9,9 @@ use crate::build::{
         CmpBranchOp,
         CmpSelectOp,
         GenericOp,
-        Input,
         LoadOp,
         Op,
+        OperandKind,
         StoreOp,
         TableGetOp,
         TableSetOp,
@@ -119,7 +119,7 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();
-        let result_suffix = CamelCase(Input::Stack);
+        let result_suffix = CamelCase(OperandKind::Stack);
         let ptr_suffix = SnakeCase(op.ptr);
         writeln!(
             f,

@@ -64,27 +64,30 @@ impl Display for Field {
     }
 }
 
+/// The kind of an operand of an [`Op`].
 #[derive(Copy, Clone)]
-pub enum Input {
+pub enum OperandKind {
+    /// The operand is a [`Stack`] index.
     Stack,
+    /// The operand is an immediate value.
     Immediate,
 }
 
-impl Display for CamelCase<Input> {
+impl Display for CamelCase<OperandKind> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            Input::Stack => "S",
-            Input::Immediate => "I",
+            OperandKind::Stack => "S",
+            OperandKind::Immediate => "I",
         };
         write!(f, "{s}")
     }
 }
 
-impl Display for SnakeCase<Input> {
+impl Display for SnakeCase<OperandKind> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            Input::Stack => "s",
-            Input::Immediate => "i",
+            OperandKind::Stack => "s",
+            OperandKind::Immediate => "i",
         };
         write!(f, "{s}")
     }
@@ -344,12 +347,12 @@ impl UnaryOpKind {
 #[derive(Copy, Clone)]
 pub struct BinaryOp {
     pub kind: BinaryOpKind,
-    pub lhs: Input,
-    pub rhs: Input,
+    pub lhs: OperandKind,
+    pub rhs: OperandKind,
 }
 
 impl BinaryOp {
-    pub fn new(kind: BinaryOpKind, lhs: Input, rhs: Input) -> Self {
+    pub fn new(kind: BinaryOpKind, lhs: OperandKind, rhs: OperandKind) -> Self {
         Self { kind, lhs, rhs }
     }
 
@@ -483,10 +486,10 @@ impl BinaryOpKind {
         Ident::from(ty)
     }
 
-    fn lhs_field(&self, input: Input) -> FieldTy {
+    fn lhs_field(&self, input: OperandKind) -> FieldTy {
         match input {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => match self {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => match self {
                 | Self::Cmp(cmp) => cmp.input_field(input),
                 | Self::I32Add
                 | Self::I32Sub
@@ -536,10 +539,10 @@ impl BinaryOpKind {
         }
     }
 
-    fn rhs_field(&self, input: Input) -> FieldTy {
+    fn rhs_field(&self, input: OperandKind) -> FieldTy {
         match input {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => match self {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => match self {
                 | Self::Cmp(cmp) => cmp.input_field(input),
                 | Self::I32Add
                 | Self::I32Sub
@@ -591,9 +594,7 @@ impl BinaryOpKind {
             | Self::I32Shl
             | Self::I32Rotl
             | Self::I32Rotr => Ty::I32,
-            | Self::S32Div
-            | Self::S32Rem
-            | Self::S32Shr => Ty::S32,
+            | Self::S32Div | Self::S32Rem | Self::S32Shr => Ty::S32,
             | Self::U32Div | Self::U32Rem | Self::U32Shr => Ty::U32,
             | Self::I64Add
             | Self::I64Sub
@@ -604,9 +605,7 @@ impl BinaryOpKind {
             | Self::I64Shl
             | Self::I64Rotl
             | Self::I64Rotr => Ty::I64,
-            | Self::S64Div
-            | Self::S64Rem
-            | Self::S64Shr => Ty::S64,
+            | Self::S64Div | Self::S64Rem | Self::S64Shr => Ty::S64,
             | Self::U64Div | Self::U64Rem | Self::U64Shr => Ty::U64,
             | Self::F32Add
             | Self::F32Sub
@@ -652,12 +651,12 @@ pub enum Commutativity {
 #[derive(Copy, Clone)]
 pub struct CmpBranchOp {
     pub cmp: CmpOpKind,
-    pub lhs: Input,
-    pub rhs: Input,
+    pub lhs: OperandKind,
+    pub rhs: OperandKind,
 }
 
 impl CmpBranchOp {
-    pub fn new(cmp: CmpOpKind, lhs: Input, rhs: Input) -> Self {
+    pub fn new(cmp: CmpOpKind, lhs: OperandKind, rhs: OperandKind) -> Self {
         Self { cmp, lhs, rhs }
     }
 
@@ -681,12 +680,12 @@ impl CmpBranchOp {
 #[derive(Copy, Clone)]
 pub struct CmpSelectOp {
     pub cmp: CmpOpKind,
-    pub lhs: Input,
-    pub rhs: Input,
+    pub lhs: OperandKind,
+    pub rhs: OperandKind,
 }
 
 impl CmpSelectOp {
-    pub fn new(cmp: CmpOpKind, lhs: Input, rhs: Input) -> Self {
+    pub fn new(cmp: CmpOpKind, lhs: OperandKind, rhs: OperandKind) -> Self {
         Self { cmp, lhs, rhs }
     }
 
@@ -906,10 +905,10 @@ impl CmpOpKind {
         }
     }
 
-    fn input_field(&self, input: Input) -> FieldTy {
+    fn input_field(&self, input: OperandKind) -> FieldTy {
         match input {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => match self {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => match self {
                 | Self::I32Eq
                 | Self::I32NotEq
                 | Self::I32And
@@ -1020,7 +1019,7 @@ pub struct LoadOp {
     /// The kind of the load operator.
     pub kind: LoadOpKind,
     /// The `ptr` field type.
-    pub ptr: Input,
+    pub ptr: OperandKind,
     /// True, if the operator is always operating on (`memory 0`).
     pub mem0: bool,
     /// True, if the operator uses a 16-bit offset field.
@@ -1028,7 +1027,7 @@ pub struct LoadOp {
 }
 
 impl LoadOp {
-    pub fn new(kind: LoadOpKind, ptr: Input, mem0: bool, offset16: bool) -> Self {
+    pub fn new(kind: LoadOpKind, ptr: OperandKind, mem0: bool, offset16: bool) -> Self {
         Self {
             kind,
             ptr,
@@ -1043,19 +1042,19 @@ impl LoadOp {
 
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::Address,
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            Input::Stack => match self.offset16 {
+            OperandKind::Stack => match self.offset16 {
                 true => FieldTy::Offset16,
                 false => FieldTy::U64,
             },
-            Input::Immediate => return None,
+            OperandKind::Immediate => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -1134,9 +1133,9 @@ pub struct StoreOp {
     /// The kind of the load operator.
     pub kind: StoreOpKind,
     /// The `ptr` input type.
-    pub ptr: Input,
+    pub ptr: OperandKind,
     /// The `value` input type.
-    pub value: Input,
+    pub value: OperandKind,
     /// True, if the operator is always operating on (`memory 0`).
     pub mem0: bool,
     /// True, if the operator uses a 16-bit offset field.
@@ -1144,7 +1143,13 @@ pub struct StoreOp {
 }
 
 impl StoreOp {
-    pub fn new(kind: StoreOpKind, ptr: Input, value: Input, mem0: bool, offset16: bool) -> Self {
+    pub fn new(
+        kind: StoreOpKind,
+        ptr: OperandKind,
+        value: OperandKind,
+        mem0: bool,
+        offset16: bool,
+    ) -> Self {
         Self {
             kind,
             ptr,
@@ -1156,19 +1161,19 @@ impl StoreOp {
 
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::Address,
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            Input::Stack => match self.offset16 {
+            OperandKind::Stack => match self.offset16 {
                 true => FieldTy::Offset16,
                 false => FieldTy::U64,
             },
-            Input::Immediate => return None,
+            OperandKind::Immediate => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -1234,10 +1239,10 @@ impl StoreOpKind {
         }
     }
 
-    fn value_ty(&self, input: Input) -> FieldTy {
+    fn value_ty(&self, input: OperandKind) -> FieldTy {
         match input {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => match self {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => match self {
                 Self::Store32 => FieldTy::U32,
                 Self::Store64 => FieldTy::U64,
                 Self::I32Store8 => FieldTy::I8,
@@ -1253,11 +1258,11 @@ impl StoreOpKind {
 #[derive(Copy, Clone)]
 pub struct TableGetOp {
     /// The `index` type.
-    pub index: Input,
+    pub index: OperandKind,
 }
 
 impl TableGetOp {
-    pub fn new(index: Input) -> Self {
+    pub fn new(index: OperandKind) -> Self {
         Self { index }
     }
 
@@ -1267,8 +1272,8 @@ impl TableGetOp {
 
     pub fn index_field(&self) -> Field {
         let index_ty = match self.index {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U32,
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => FieldTy::U32,
         };
         Field::new(Ident::Index, index_ty)
     }
@@ -1285,28 +1290,28 @@ impl TableGetOp {
 #[derive(Copy, Clone)]
 pub struct TableSetOp {
     /// The `index` input.
-    pub index: Input,
+    pub index: OperandKind,
     /// The `value` input.
-    pub value: Input,
+    pub value: OperandKind,
 }
 
 impl TableSetOp {
-    pub fn new(index: Input, value: Input) -> Self {
+    pub fn new(index: OperandKind, value: OperandKind) -> Self {
         Self { index, value }
     }
 
     pub fn index_field(&self) -> Field {
         let index_ty = match self.index {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U32,
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => FieldTy::U32,
         };
         Field::new(Ident::Index, index_ty)
     }
 
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
-            Input::Stack => FieldTy::Stack,
-            Input::Immediate => FieldTy::U64,
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => FieldTy::U64,
         };
         Field::new(Ident::Value, value_ty)
     }

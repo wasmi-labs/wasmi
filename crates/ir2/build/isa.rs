@@ -9,9 +9,9 @@ use crate::build::{
         Field,
         FieldTy,
         GenericOp,
-        Input,
         LoadOp,
         LoadOpKind,
+        OperandKind,
         StoreOp,
         StoreOpKind,
         TableGetOp,
@@ -204,17 +204,21 @@ fn add_binary_ops(isa: &mut Isa) {
         BinaryOpKind::F64Copysign,
     ];
     for op in ops {
-        isa.push_op(Op::Binary(BinaryOp::new(op, Input::Stack, Input::Stack)));
         isa.push_op(Op::Binary(BinaryOp::new(
             op,
-            Input::Stack,
-            Input::Immediate,
+            OperandKind::Stack,
+            OperandKind::Stack,
+        )));
+        isa.push_op(Op::Binary(BinaryOp::new(
+            op,
+            OperandKind::Stack,
+            OperandKind::Immediate,
         )));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(Op::Binary(BinaryOp::new(
                 op,
-                Input::Immediate,
-                Input::Stack,
+                OperandKind::Immediate,
+                OperandKind::Stack,
             )));
         }
     }
@@ -262,19 +266,19 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
     for op in ops {
         isa.push_op(Op::CmpBranch(CmpBranchOp::new(
             op,
-            Input::Stack,
-            Input::Stack,
+            OperandKind::Stack,
+            OperandKind::Stack,
         )));
         isa.push_op(Op::CmpBranch(CmpBranchOp::new(
             op,
-            Input::Stack,
-            Input::Immediate,
+            OperandKind::Stack,
+            OperandKind::Immediate,
         )));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(Op::CmpBranch(CmpBranchOp::new(
                 op,
-                Input::Immediate,
-                Input::Stack,
+                OperandKind::Immediate,
+                OperandKind::Stack,
             )));
         }
     }
@@ -310,19 +314,19 @@ fn add_cmp_select_ops(isa: &mut Isa) {
     for op in ops {
         isa.push_op(Op::CmpSelect(CmpSelectOp::new(
             op,
-            Input::Stack,
-            Input::Stack,
+            OperandKind::Stack,
+            OperandKind::Stack,
         )));
         isa.push_op(Op::CmpSelect(CmpSelectOp::new(
             op,
-            Input::Stack,
-            Input::Immediate,
+            OperandKind::Stack,
+            OperandKind::Immediate,
         )));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(Op::CmpSelect(CmpSelectOp::new(
                 op,
-                Input::Immediate,
-                Input::Stack,
+                OperandKind::Immediate,
+                OperandKind::Stack,
             )));
         }
     }
@@ -347,9 +351,14 @@ fn add_load_ops(isa: &mut Isa) {
         LoadOpKind::U64Load32,
     ];
     for op in ops {
-        isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, false, false)));
-        isa.push_op(Op::Load(LoadOp::new(op, Input::Immediate, false, false)));
-        isa.push_op(Op::Load(LoadOp::new(op, Input::Stack, true, true)));
+        isa.push_op(Op::Load(LoadOp::new(op, OperandKind::Stack, false, false)));
+        isa.push_op(Op::Load(LoadOp::new(
+            op,
+            OperandKind::Immediate,
+            false,
+            false,
+        )));
+        isa.push_op(Op::Load(LoadOp::new(op, OperandKind::Stack, true, true)));
     }
 }
 
@@ -369,36 +378,36 @@ fn add_store_ops(isa: &mut Isa) {
     for op in ops {
         isa.push_op(Op::Store(StoreOp::new(
             op,
-            Input::Stack,
-            Input::Stack,
+            OperandKind::Stack,
+            OperandKind::Stack,
             false,
             false,
         )));
         isa.push_op(Op::Store(StoreOp::new(
             op,
-            Input::Stack,
-            Input::Immediate,
+            OperandKind::Stack,
+            OperandKind::Immediate,
             false,
             false,
         )));
         isa.push_op(Op::Store(StoreOp::new(
             op,
-            Input::Immediate,
-            Input::Stack,
+            OperandKind::Immediate,
+            OperandKind::Stack,
             false,
             false,
         )));
         isa.push_op(Op::Store(StoreOp::new(
             op,
-            Input::Stack,
-            Input::Stack,
+            OperandKind::Stack,
+            OperandKind::Stack,
             true,
             true,
         )));
         isa.push_op(Op::Store(StoreOp::new(
             op,
-            Input::Stack,
-            Input::Immediate,
+            OperandKind::Stack,
+            OperandKind::Immediate,
             true,
             true,
         )));
@@ -587,12 +596,15 @@ fn add_global_ops(isa: &mut Isa) {
 
 fn add_table_ops(isa: &mut Isa) {
     let ops = [
-        Op::TableGet(TableGetOp::new(Input::Stack)),
-        Op::TableGet(TableGetOp::new(Input::Immediate)),
-        Op::TableSet(TableSetOp::new(Input::Stack, Input::Stack)),
-        Op::TableSet(TableSetOp::new(Input::Stack, Input::Immediate)),
-        Op::TableSet(TableSetOp::new(Input::Immediate, Input::Stack)),
-        Op::TableSet(TableSetOp::new(Input::Immediate, Input::Immediate)),
+        Op::TableGet(TableGetOp::new(OperandKind::Stack)),
+        Op::TableGet(TableGetOp::new(OperandKind::Immediate)),
+        Op::TableSet(TableSetOp::new(OperandKind::Stack, OperandKind::Stack)),
+        Op::TableSet(TableSetOp::new(OperandKind::Stack, OperandKind::Immediate)),
+        Op::TableSet(TableSetOp::new(OperandKind::Immediate, OperandKind::Stack)),
+        Op::TableSet(TableSetOp::new(
+            OperandKind::Immediate,
+            OperandKind::Immediate,
+        )),
         Op::from(GenericOp::new(
             Ident::TableSize,
             [
