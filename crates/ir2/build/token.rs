@@ -250,6 +250,7 @@ define_ident!(
     ValueHi: value_hi,
     V128Splat: v128_splat,
 
+    V128: v128,
     Lane: lane,
     S8x16ExtractLane: s8x16_extract_lane,
     U8x16ExtractLane: u8x16_extract_lane,
@@ -257,4 +258,5 @@ define_ident!(
     U16x8ExtractLane: u16x8_extract_lane,
     U32x4ExtractLane: u32x4_extract_lane,
     U64x2ExtractLane: u64x2_extract_lane,
+    ReplaceLane: replace_lane,
 );

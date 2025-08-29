@@ -1,3 +1,5 @@
+#[cfg(feature = "simd")]
+use crate::core::simd::ImmLaneIdx;
 use crate::{
     index::{Memory, Table},
     Address,
@@ -226,6 +228,27 @@ impl<I: Decode, V: Decode> Decode for TableSet<I, V> {
             table: Decode::decode(decoder),
             index: Decode::decode(decoder),
             value: Decode::decode(decoder),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
+pub struct V128ReplaceLaneOp<V, const N: u8> {
+    pub result: Stack,
+    pub v128: Stack,
+    pub value: V,
+    pub lane: ImmLaneIdx<N>,
+}
+
+#[cfg(feature = "simd")]
+impl<V: Decode, const N: u8> Decode for V128ReplaceLaneOp<V, N> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self {
+            result: Decode::decode(decoder),
+            v128: Decode::decode(decoder),
+            value: Decode::decode(decoder),
+            lane: Decode::decode(decoder),
         }
     }
 }

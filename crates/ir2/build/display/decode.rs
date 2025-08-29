@@ -12,10 +12,12 @@ use crate::build::{
         LoadOp,
         Op,
         OperandKind,
+        ReplaceLaneWidth,
         StoreOp,
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128ReplaceLaneOp,
         V128SplatOp,
     },
     token::{CamelCase, SnakeCase},
@@ -73,6 +75,7 @@ impl Display for DisplayDecode<&'_ Op> {
             Op::Generic4(op) => self.map(op).fmt(f),
             Op::Generic5(op) => self.map(op).fmt(f),
             Op::V128Splat(op) => self.map(op).fmt(f),
+            Op::V128ReplaceLane(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -217,5 +220,23 @@ impl Display for DisplayDecode<&'_ V128SplatOp> {
         let camel_ident = DisplayIdent::camel(op);
         let value_ty = op.value_field().ty;
         writeln!(f, "pub type {camel_ident} = UnaryOp<{value_ty}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ V128ReplaceLaneOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let value_ty = op.value_field().ty;
+        let lane_items = match op.width {
+            ReplaceLaneWidth::W8 => "16",
+            ReplaceLaneWidth::W16 => "8",
+            ReplaceLaneWidth::W32 => "4",
+            ReplaceLaneWidth::W64 => "2",
+        };
+        writeln!(
+            f,
+            "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {lane_items}>;"
+        )
     }
 }

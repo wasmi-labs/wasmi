@@ -8,11 +8,13 @@ use crate::build::{
         LoadOp,
         Op,
         OperandKind,
+        ReplaceLaneWidth,
         SplatType,
         StoreOp,
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128ReplaceLaneOp,
         V128SplatOp,
     },
     token::{Case, Ident, Sep, SnakeCase},
@@ -65,6 +67,7 @@ impl Display for DisplayIdent<&'_ Op> {
             Op::Generic4(op) => self.map(op).fmt(f),
             Op::Generic5(op) => self.map(op).fmt(f),
             Op::V128Splat(op) => self.map(op).fmt(f),
+            Op::V128ReplaceLane(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -255,5 +258,28 @@ impl Display for DisplayIdent<&'_ V128SplatOp> {
         let result_suffix = case.wrap(OperandKind::Stack);
         let value_suffix = SnakeCase(op.value);
         write!(f, "{ident}{width}_{result_suffix}{value_suffix}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let sep = case.wrap(Sep);
+        let v128 = case.wrap(Ident::V128);
+        let ident = case.wrap(Ident::ReplaceLane);
+        let width = match op.width {
+            ReplaceLaneWidth::W8 => "8x16",
+            ReplaceLaneWidth::W16 => "16x8",
+            ReplaceLaneWidth::W32 => "32x4",
+            ReplaceLaneWidth::W64 => "64x2",
+        };
+        let result_suffix = case.wrap(OperandKind::Stack);
+        let v128_suffix = SnakeCase(OperandKind::Stack);
+        let value_suffix = SnakeCase(op.value);
+        write!(
+            f,
+            "{v128}{sep}{ident}{width}_{result_suffix}{v128_suffix}{value_suffix}"
+        )
     }
 }

@@ -2,6 +2,8 @@
 
 mod op;
 
+#[cfg(feature = "simd")]
+use self::op::V128ReplaceLaneOp;
 use self::op::{
     BinaryOp,
     CmpBranchOp,
