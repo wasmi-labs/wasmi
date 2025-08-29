@@ -145,21 +145,7 @@ impl_encode_using! {
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
 
-    TrapCode as u8 = |code: TrapCode| -> u8 {
-        match code {
-            TrapCode::UnreachableCodeReached => 0,
-            TrapCode::MemoryOutOfBounds => 1,
-            TrapCode::TableOutOfBounds => 2,
-            TrapCode::IndirectCallToNull => 3,
-            TrapCode::IntegerDivisionByZero => 4,
-            TrapCode::IntegerOverflow => 5,
-            TrapCode::BadConversionToInteger => 6,
-            TrapCode::StackOverflow => 7,
-            TrapCode::BadSignature => 8,
-            TrapCode::OutOfFuel => 9,
-            TrapCode::GrowthOperationLimited => 10,
-        }
-    },
+    TrapCode as u8 = |code: TrapCode| -> u8 { code as _ },
 }
 
 macro_rules! for_tuple {

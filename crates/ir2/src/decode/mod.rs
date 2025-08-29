@@ -111,19 +111,7 @@ impl_decode_using! {
     NonZero<u64> as u64 = |value| unsafe { NonZero::new_unchecked(value) },
 
     TrapCode as u8 = |code: u8| -> TrapCode {
-        match code {
-            0 => TrapCode::UnreachableCodeReached,
-            1 => TrapCode::MemoryOutOfBounds,
-            2 => TrapCode::TableOutOfBounds,
-            3 => TrapCode::IndirectCallToNull,
-            4 => TrapCode::IntegerDivisionByZero,
-            5 => TrapCode::IntegerOverflow,
-            6 => TrapCode::BadConversionToInteger,
-            7 => TrapCode::StackOverflow,
-            8 => TrapCode::BadSignature,
-            9 => TrapCode::OutOfFuel,
-            _ => TrapCode::GrowthOperationLimited,
-        }
+        TrapCode::try_from(code).unwrap_unchecked()
     },
 }
 
