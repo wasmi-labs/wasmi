@@ -12,6 +12,7 @@ use crate::build::{
         LoadOp,
         LoadOpKind,
         OperandKind,
+        ReplaceLaneWidth,
         SplatType,
         StoreOp,
         StoreOpKind,
@@ -19,6 +20,7 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
         UnaryOpKind,
+        V128ReplaceLaneOp,
         V128SplatOp,
     },
     token::Ident,
@@ -828,6 +830,39 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
                 Field::new(Ident::Value, FieldTy::Stack),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx2),
             ],
+        )),
+        // ReplaceLane Ops
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W8,
+            OperandKind::Stack,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W8,
+            OperandKind::Immediate,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W16,
+            OperandKind::Stack,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W16,
+            OperandKind::Immediate,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W32,
+            OperandKind::Stack,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W32,
+            OperandKind::Immediate,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W64,
+            OperandKind::Stack,
+        )),
+        Op::from(V128ReplaceLaneOp::new(
+            ReplaceLaneWidth::W64,
+            OperandKind::Immediate,
         )),
     ];
     for op in ops {

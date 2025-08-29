@@ -13,6 +13,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128ReplaceLaneOp,
         V128SplatOp,
     },
     token::SnakeCase,
@@ -106,6 +107,7 @@ impl Display for DisplayEncode<&'_ Op> {
             Op::Generic4(op) => self.map(op).fmt(f),
             Op::Generic5(op) => self.map(op).fmt(f),
             Op::V128Splat(op) => self.map(op).fmt(f),
+            Op::V128ReplaceLane(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -174,6 +176,13 @@ impl<const N: usize> Display for DisplayEncode<&'_ GenericOp<N>> {
 }
 
 impl Display for DisplayEncode<&'_ V128SplatOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let fields = self.value.fields().map(Option::from);
+        self.display_encode(f, &fields)
+    }
+}
+
+impl Display for DisplayEncode<&'_ V128ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fields = self.value.fields().map(Option::from);
         self.display_encode(f, &fields)

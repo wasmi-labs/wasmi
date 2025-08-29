@@ -12,6 +12,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128ReplaceLaneOp,
         V128SplatOp,
     },
 };
@@ -91,6 +92,7 @@ impl Display for DisplayResultMut<&'_ Op> {
             Op::Generic4(op) => self.map(op).fmt(f),
             Op::Generic5(op) => self.map(op).fmt(f),
             Op::V128Splat(op) => self.map(op).fmt(f),
+            Op::V128ReplaceLane(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -153,6 +155,12 @@ impl<const N: usize> Display for DisplayResultMut<&'_ GenericOp<N>> {
 }
 
 impl Display for DisplayResultMut<&'_ V128SplatOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.display_match_arm(f)
+    }
+}
+
+impl Display for DisplayResultMut<&'_ V128ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display_match_arm(f)
     }

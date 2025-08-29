@@ -42,6 +42,7 @@ impl_from_for_op! {
         Generic4(GenericOp<4>),
         Generic5(GenericOp<5>),
         V128Splat(V128SplatOp),
+        V128ReplaceLane(V128ReplaceLaneOp),
     }
 }
 
@@ -1370,5 +1371,67 @@ impl V128SplatOp {
 
     pub fn fields(&self) -> [Field; 2] {
         [self.result_field(), self.value_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct V128ReplaceLaneOp {
+    /// The type of the value to be splatted.
+    pub width: ReplaceLaneWidth,
+    /// The `value` used for replacing.
+    pub value: OperandKind,
+}
+
+#[derive(Copy, Clone)]
+pub enum ReplaceLaneWidth {
+    W8,
+    W16,
+    W32,
+    W64,
+}
+
+impl V128ReplaceLaneOp {
+    pub fn new(width: ReplaceLaneWidth, value: OperandKind) -> Self {
+        Self { width, value }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn v128_field(&self) -> Field {
+        Field::new(Ident::V128, FieldTy::Stack)
+    }
+
+    pub fn value_field(&self) -> Field {
+        let value_ty = match self.value {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => match self.width {
+                ReplaceLaneWidth::W8 => FieldTy::U8,
+                ReplaceLaneWidth::W16 => FieldTy::U16,
+                ReplaceLaneWidth::W32 => FieldTy::U32,
+                ReplaceLaneWidth::W64 => FieldTy::U64,
+            },
+        };
+        Field::new(Ident::Value, value_ty)
+    }
+
+    pub fn lane_field(&self) -> Field {
+        let lane_ty = match self.width {
+            ReplaceLaneWidth::W8 => FieldTy::ImmLaneIdx16,
+            ReplaceLaneWidth::W16 => FieldTy::ImmLaneIdx8,
+            ReplaceLaneWidth::W32 => FieldTy::ImmLaneIdx4,
+            ReplaceLaneWidth::W64 => FieldTy::ImmLaneIdx2,
+        };
+        Field::new(Ident::Lane, lane_ty)
+    }
+
+    pub fn fields(&self) -> [Field; 4] {
+        [
+            self.result_field(),
+            self.v128_field(),
+            self.value_field(),
+            self.lane_field(),
+        ]
     }
 }
