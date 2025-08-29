@@ -780,7 +780,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
         Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Immediate)),
         Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Stack)),
         Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Immediate)),
-        // Extract Ops
+        // ExtractLane Ops
         Op::from(GenericOp::new(
             Ident::S8x16ExtractLane,
             [
