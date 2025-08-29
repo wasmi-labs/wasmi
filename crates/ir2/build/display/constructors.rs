@@ -13,7 +13,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
-        V128Splat,
+        V128SplatOp,
     },
     token::SnakeCase,
 };
@@ -171,7 +171,7 @@ impl<const N: usize> Display for DisplayConstructor<&'_ GenericOp<N>> {
     }
 }
 
-impl Display for DisplayConstructor<&'_ V128Splat> {
+impl Display for DisplayConstructor<&'_ V128SplatOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fields = self.value.fields().map(Option::from);
         self.display_constructor(f, &fields)

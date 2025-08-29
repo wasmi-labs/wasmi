@@ -16,7 +16,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
-        V128Splat,
+        V128SplatOp,
     },
     token::{CamelCase, SnakeCase},
     Isa,
@@ -211,7 +211,7 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
     }
 }
 
-impl Display for DisplayDecode<&'_ V128Splat> {
+impl Display for DisplayDecode<&'_ V128SplatOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);

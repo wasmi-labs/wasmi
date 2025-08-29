@@ -13,7 +13,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
-        V128Splat,
+        V128SplatOp,
     },
     token::{Case, Ident, Sep, SnakeCase},
 };
@@ -243,7 +243,7 @@ impl Display for DisplayIdent<&'_ TableSetOp> {
     }
 }
 
-impl Display for DisplayIdent<&'_ V128Splat> {
+impl Display for DisplayIdent<&'_ V128SplatOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let op = self.value;

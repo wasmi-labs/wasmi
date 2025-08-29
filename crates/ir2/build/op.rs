@@ -41,7 +41,7 @@ impl_from_for_op! {
         Generic3(GenericOp<3>),
         Generic4(GenericOp<4>),
         Generic5(GenericOp<5>),
-        V128Splat(V128Splat),
+        V128Splat(V128SplatOp),
     }
 }
 
@@ -1327,7 +1327,7 @@ impl TableSetOp {
 }
 
 #[derive(Copy, Clone)]
-pub struct V128Splat {
+pub struct V128SplatOp {
     /// The type of the value to be splatted.
     pub ty: SplatType,
     /// The `value` to be splatted.
@@ -1340,7 +1340,7 @@ pub enum SplatType {
     U64,
 }
 
-impl V128Splat {
+impl V128SplatOp {
     pub fn new(ty: SplatType, value: OperandKind) -> Self {
         Self { ty, value }
     }
