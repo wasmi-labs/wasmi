@@ -16,6 +16,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128Splat,
     },
     token::{CamelCase, SnakeCase},
     Isa,
@@ -71,6 +72,7 @@ impl Display for DisplayDecode<&'_ Op> {
             Op::Generic3(op) => self.map(op).fmt(f),
             Op::Generic4(op) => self.map(op).fmt(f),
             Op::Generic5(op) => self.map(op).fmt(f),
+            Op::V128Splat(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -78,7 +80,7 @@ impl Display for DisplayDecode<&'_ Op> {
 impl Display for DisplayDecode<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let camel_ident = DisplayIdent::camel(self.value);
-        writeln!(f, "pub type {camel_ident} = UnaryOp;")
+        writeln!(f, "pub type {camel_ident} = UnaryOp<Stack>;")
     }
 }
 
@@ -206,5 +208,14 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
             {indent}}}\n\
             "
         )
+    }
+}
+
+impl Display for DisplayDecode<&'_ V128Splat> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let value_ty = op.value_field().ty;
+        writeln!(f, "pub type {camel_ident} = UnaryOp<{value_ty}>;")
     }
 }

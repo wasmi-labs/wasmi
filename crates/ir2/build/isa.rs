@@ -12,12 +12,14 @@ use crate::build::{
         LoadOp,
         LoadOpKind,
         OperandKind,
+        SplatType,
         StoreOp,
         StoreOpKind,
         TableGetOp,
         TableSetOp,
         UnaryOp,
         UnaryOpKind,
+        V128Splat,
     },
     token::Ident,
     Config,
@@ -764,14 +766,20 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     if !config.simd {
         return;
     }
-    let ops = [Op::from(GenericOp::new(
-        Ident::Copy128,
-        [
-            Field::new(Ident::Result, FieldTy::Stack),
-            Field::new(Ident::ValueLo, FieldTy::U64),
-            Field::new(Ident::ValueHi, FieldTy::U64),
-        ],
-    ))];
+    let ops = [
+        Op::from(GenericOp::new(
+            Ident::Copy128,
+            [
+                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::ValueLo, FieldTy::U64),
+                Field::new(Ident::ValueHi, FieldTy::U64),
+            ],
+        )),
+        Op::from(V128Splat::new(SplatType::U32, OperandKind::Stack)),
+        Op::from(V128Splat::new(SplatType::U32, OperandKind::Immediate)),
+        Op::from(V128Splat::new(SplatType::U64, OperandKind::Stack)),
+        Op::from(V128Splat::new(SplatType::U64, OperandKind::Immediate)),
+    ];
     for op in ops {
         isa.push_op(op);
     }

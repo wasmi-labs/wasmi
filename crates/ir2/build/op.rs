@@ -41,6 +41,7 @@ impl_from_for_op! {
         Generic3(GenericOp<3>),
         Generic4(GenericOp<4>),
         Generic5(GenericOp<5>),
+        V128Splat(V128Splat),
     }
 }
 
@@ -1322,5 +1323,44 @@ impl TableSetOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.index_field(), self.value_field(), self.table_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct V128Splat {
+    /// The type of the value to be splatted.
+    pub ty: SplatType,
+    /// The `value` to be splatted.
+    pub value: OperandKind,
+}
+
+#[derive(Copy, Clone)]
+pub enum SplatType {
+    U32,
+    U64,
+}
+
+impl V128Splat {
+    pub fn new(ty: SplatType, value: OperandKind) -> Self {
+        Self { ty, value }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn value_field(&self) -> Field {
+        let value_ty = match self.value {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => match self.ty {
+                SplatType::U32 => FieldTy::U32,
+                SplatType::U64 => FieldTy::U64,
+            },
+        };
+        Field::new(Ident::Value, value_ty)
+    }
+
+    pub fn fields(&self) -> [Field; 2] {
+        [self.result_field(), self.value_field()]
     }
 }

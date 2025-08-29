@@ -9,12 +9,12 @@ use crate::{
 };
 
 #[derive(Copy, Clone)]
-pub struct UnaryOp {
+pub struct UnaryOp<V> {
     pub result: Stack,
-    pub value: Stack,
+    pub value: V,
 }
 
-impl Decode for UnaryOp {
+impl<V: Decode> Decode for UnaryOp<V> {
     unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
         Self {
             result: Decode::decode(decoder),

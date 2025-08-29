@@ -8,10 +8,12 @@ use crate::build::{
         LoadOp,
         Op,
         OperandKind,
+        SplatType,
         StoreOp,
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128Splat,
     },
     token::{Case, Ident, Sep, SnakeCase},
 };
@@ -62,6 +64,7 @@ impl Display for DisplayIdent<&'_ Op> {
             Op::Generic3(op) => self.map(op).fmt(f),
             Op::Generic4(op) => self.map(op).fmt(f),
             Op::Generic5(op) => self.map(op).fmt(f),
+            Op::V128Splat(op) => self.map(op).fmt(f),
         }
     }
 }
@@ -237,5 +240,20 @@ impl Display for DisplayIdent<&'_ TableSetOp> {
         let index_suffix = case.wrap(self.value.index);
         let value_suffix = SnakeCase(self.value.value);
         write!(f, "{ident}_{index_suffix}{value_suffix}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ V128Splat> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::V128Splat);
+        let width = match op.ty {
+            SplatType::U32 => "32",
+            SplatType::U64 => "64",
+        };
+        let result_suffix = case.wrap(OperandKind::Stack);
+        let value_suffix = SnakeCase(op.value);
+        write!(f, "{ident}{width}_{result_suffix}{value_suffix}")
     }
 }
