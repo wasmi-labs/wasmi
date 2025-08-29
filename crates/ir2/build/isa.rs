@@ -19,7 +19,7 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
         UnaryOpKind,
-        V128Splat,
+        V128SplatOp,
     },
     token::Ident,
     Config,
@@ -775,10 +775,10 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
                 Field::new(Ident::ValueHi, FieldTy::U64),
             ],
         )),
-        Op::from(V128Splat::new(SplatType::U32, OperandKind::Stack)),
-        Op::from(V128Splat::new(SplatType::U32, OperandKind::Immediate)),
-        Op::from(V128Splat::new(SplatType::U64, OperandKind::Stack)),
-        Op::from(V128Splat::new(SplatType::U64, OperandKind::Immediate)),
+        Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Stack)),
+        Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Immediate)),
+        Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Stack)),
+        Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Immediate)),
     ];
     for op in ops {
         isa.push_op(op);
