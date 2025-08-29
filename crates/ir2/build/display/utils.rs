@@ -68,7 +68,7 @@ where
         let Some(first) = iter.next() else {
             return Ok(());
         };
-        write!(f, "{}", first)?;
+        write!(f, "{first}")?;
         let sep = &self.sep;
         for item in iter {
             write!(f, "{sep}{item}")?;
