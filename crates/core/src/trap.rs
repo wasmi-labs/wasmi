@@ -211,25 +211,70 @@ impl StdError for Trap {
     }
 }
 
-/// Error type which can be thrown by wasm code or by host environment.
-///
-/// See [`Trap`] for details.
-///
-/// [`Trap`]: struct.Trap.html
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum TrapCode {
+/// An invalid [`TrapCode`] integer value.
+#[derive(Debug, Copy, Clone)]
+pub struct InvalidTrapCode;
+
+macro_rules! generate_trap_code {
+    (
+        $( $(#[$attr:meta])* $ident:ident = $discr:literal ),* $(,)?
+    ) => {
+        /// Error type which can be thrown by wasm code or by host environment.
+        ///
+        /// See [`Trap`] for details.
+        ///
+        /// [`Trap`]: struct.Trap.html
+        #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[repr(u8)]
+        pub enum TrapCode {
+            $(
+                $( #[$attr] )*
+                $ident = $discr
+            ),*
+        }
+
+        impl From<TrapCode> for u8 {
+            fn from(trap_code: TrapCode) -> Self {
+                trap_code as _
+            }
+        }
+
+        impl TryFrom<u8> for TrapCode {
+            type Error = InvalidTrapCode;
+
+            fn try_from(value: u8) -> Result<Self, Self::Error> {
+                match value {
+                    $( $discr => Ok(TrapCode::$ident), )*
+                    _ => Err(InvalidTrapCode),
+                }
+            }
+        }
+
+        #[test]
+        fn trap_code_conversion() {
+            $(
+                assert_eq!(
+                    TrapCode::try_from(TrapCode::$ident as u8).unwrap(),
+                    TrapCode::$ident,
+                );
+            )*
+            assert!(TrapCode::try_from(u8::MAX).is_err());
+        }
+    };
+}
+generate_trap_code! {
     /// Wasm code executed `unreachable` opcode.
     ///
     /// This indicates that unreachable Wasm code was actually reached.
     /// This opcode have a similar purpose as `ud2` in x86.
-    UnreachableCodeReached,
+    UnreachableCodeReached = 0,
 
     /// Attempt to load or store at the address which
     /// lies outside of bounds of the memory.
     ///
     /// Since addresses are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative addresses (i.e. they will always wrap).
-    MemoryOutOfBounds,
+    MemoryOutOfBounds = 1,
 
     /// Attempt to access table element at index which
     /// lies outside of bounds.
@@ -239,36 +284,36 @@ pub enum TrapCode {
     ///
     /// Since indexes are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative indexes (i.e. they will always wrap).
-    TableOutOfBounds,
+    TableOutOfBounds = 2,
 
     /// Indicates that a `call_indirect` instruction called a function at
     /// an uninitialized (i.e. `null`) table index.
-    IndirectCallToNull,
+    IndirectCallToNull = 3,
 
     /// Attempt to divide by zero.
     ///
     /// This trap typically can happen if `div` or `rem` is executed with
     /// zero as divider.
-    IntegerDivisionByZero,
+    IntegerDivisionByZero = 4,
 
     /// An integer arithmetic operation caused an overflow.
     ///
     /// This can happen when trying to do signed division (or get the remainder)
     /// -2<sup>N-1</sup> over -1. This is because the result +2<sup>N-1</sup>
     /// isn't representable as a N-bit signed integer.
-    IntegerOverflow,
+    IntegerOverflow = 5,
 
     /// Attempted to make an invalid conversion to an integer type.
     ///
     /// This can for example happen when trying to truncate NaNs,
     /// infinity, or value for which the result is out of range into an integer.
-    BadConversionToInteger,
+    BadConversionToInteger = 6,
 
     /// Stack overflow.
     ///
     /// This is likely caused by some infinite or very deep recursion.
     /// Extensive inlining might also be the cause of stack overflow.
-    StackOverflow,
+    StackOverflow = 7,
 
     /// Attempt to invoke a function with mismatching signature.
     ///
@@ -276,21 +321,21 @@ pub enum TrapCode {
     /// specify the expected signature of function. If an indirect call is executed
     /// with an index that points to a function with signature different of what is
     /// expected by this indirect call, this trap is raised.
-    BadSignature,
+    BadSignature = 8,
 
     /// This trap is raised when a WebAssembly execution ran out of fuel.
     ///
     /// The Wasmi execution engine can be configured to instrument its
     /// internal bytecode so that fuel is consumed for each executed instruction.
     /// This is useful to deterministically halt or yield a WebAssembly execution.
-    OutOfFuel,
+    OutOfFuel = 9,
 
     /// This trap is raised when a growth operation was attempted and an
     /// installed `wasmi::ResourceLimiter` returned `Err(...)` from the
     /// associated `table_growing` or `memory_growing` method, indicating a
     /// desire on the part of the embedder to trap the interpreter rather than
     /// merely fail the growth operation.
-    GrowthOperationLimited,
+    GrowthOperationLimited = 10,
 }
 
 impl TrapCode {
