@@ -1,7 +1,7 @@
 use crate::Error;
 use core::marker::PhantomData;
 
-/// Error that may occur upon converting values to [`Const16`].
+/// Error that may occur upon converting values to [`Address`] and [`Offset16`].
 #[derive(Debug, Copy, Clone)]
 pub struct OutOfBoundsConst;
 
