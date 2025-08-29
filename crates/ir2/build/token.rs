@@ -249,4 +249,12 @@ define_ident!(
     ValueLo: value_lo,
     ValueHi: value_hi,
     V128Splat: v128_splat,
+
+    Lane: lane,
+    S8x16ExtractLane: s8x16_extract_lane,
+    U8x16ExtractLane: u8x16_extract_lane,
+    S16x8ExtractLane: s16x8_extract_lane,
+    U16x8ExtractLane: u16x8_extract_lane,
+    U32x4ExtractLane: u32x4_extract_lane,
+    U64x2ExtractLane: u64x2_extract_lane,
 );
