@@ -248,4 +248,5 @@ define_ident!(
     Copy128: copy128,
     ValueLo: value_lo,
     ValueHi: value_hi,
+    V128Splat: v128_splat,
 );
