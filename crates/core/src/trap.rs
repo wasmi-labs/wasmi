@@ -235,9 +235,7 @@ macro_rules! generate_trap_code {
 
         impl From<TrapCode> for u8 {
             fn from(trap_code: TrapCode) -> Self {
-                match trap_code {
-                    $( TrapCode::$ident => $discr, )*
-                }
+                trap_code as _
             }
         }
 
