@@ -65,6 +65,32 @@ impl Display for Field {
 }
 
 #[derive(Copy, Clone)]
+pub enum Input {
+    Stack,
+    Immediate,
+}
+
+impl Display for CamelCase<Input> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0 {
+            Input::Stack => "S",
+            Input::Immediate => "I",
+        };
+        write!(f, "{s}")
+    }
+}
+
+impl Display for SnakeCase<Input> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0 {
+            Input::Stack => "s",
+            Input::Immediate => "i",
+        };
+        write!(f, "{s}")
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct GenericOp<const N: usize> {
     pub ident: Ident,
     pub fields: [Field; N],
@@ -1291,31 +1317,5 @@ impl TableSetOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.index_field(), self.value_field(), self.table_field()]
-    }
-}
-
-#[derive(Copy, Clone)]
-pub enum Input {
-    Stack,
-    Immediate,
-}
-
-impl Display for CamelCase<Input> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0 {
-            Input::Stack => "S",
-            Input::Immediate => "I",
-        };
-        write!(f, "{s}")
-    }
-}
-
-impl Display for SnakeCase<Input> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0 {
-            Input::Stack => "s",
-            Input::Immediate => "i",
-        };
-        write!(f, "{s}")
     }
 }
