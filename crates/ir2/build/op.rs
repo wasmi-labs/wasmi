@@ -201,6 +201,74 @@ pub enum UnaryOpKind {
     F64ConvertU32,
     F64ConvertS64,
     F64ConvertU64,
+
+    // SIMD: Generic Unary Ops
+    V128Not,
+    V128AnyTrue,
+    // SIMD: `i8x16` Unary Ops
+    I8x16Abs,
+    I8x16Neg,
+    I8x16Popcnt,
+    I8x16AllTrue,
+    I8x16Bitmask,
+    // SIMD: `i16x8` Unary Ops
+    I16x8Abs,
+    I16x8Neg,
+    I16x8AllTrue,
+    I16x8Bitmask,
+    S16x8ExtaddPairwiseI8x16,
+    U16x8ExtaddPairwiseI8x16,
+    S16x8ExtendLowI8x16,
+    U16x8ExtendLowI8x16,
+    S16x8ExtendHighI8x16,
+    U16x8ExtendHighI8x16,
+    // SIMD: `i32x4` Unary Ops
+    I32x4Abs,
+    I32x4Neg,
+    I32x4AllTrue,
+    I32x4Bitmask,
+    S32x4ExtaddPairwiseI16x8,
+    U32x4ExtaddPairwiseI16x8,
+    S32x4ExtendLowI16x8,
+    U32x4ExtendLowI16x8,
+    S32x4ExtendHighI16x8,
+    U32x4ExtendHighI16x8,
+    // SIMD: `i64x2` Unary Ops
+    I64x2Abs,
+    I64x2Neg,
+    I64x2AllTrue,
+    I64x2Bitmask,
+    S64x2ExtendLowI32x4,
+    U64x2ExtendLowI32x4,
+    S64x2ExtendHighI32x4,
+    U64x2ExtendHighI32x4,
+    // SIMD: `f32x4` Unary Ops
+    F32x4DemoteZeroF64x2,
+    F32x4Ceil,
+    F32x4Floor,
+    F32x4Trunc,
+    F32x4Nearest,
+    F32x4Abs,
+    F32x4Neg,
+    F32x4Sqrt,
+    // SIMD: `f64x2` Unary Ops
+    F64x2PromoteLowF32x4,
+    F64x2Ceil,
+    F64x2Floor,
+    F64x2Trunc,
+    F64x2Nearest,
+    F64x2Abs,
+    F64x2Neg,
+    F64x2Sqrt,
+    // SIMD: Conversions
+    S32x4TruncSatF32x4,
+    U32x4TruncSatF32x4,
+    S32x4TruncSatZeroF64x2,
+    U32x4TruncSatZeroF64x2,
+    F32x4ConvertS32x4,
+    F32x4ConvertU32x4,
+    F64x2ConvertLowS32x4,
+    F64x2ConvertLowU32x4,
 }
 
 impl UnaryOpKind {
@@ -245,6 +313,70 @@ impl UnaryOpKind {
             | Self::F64ConvertU32 => Ty::U32,
             | Self::F64ConvertS64 => Ty::I64,
             | Self::F64ConvertU64 => Ty::U64,
+
+            // SIMD: Generic Unary Ops
+            | Self::V128Not | Self::V128AnyTrue => Ty::V128,
+            // SIMD: `i8x16` Unary Ops
+            | Self::I8x16Abs
+            | Self::I8x16Neg
+            | Self::I8x16Popcnt
+            | Self::I8x16AllTrue
+            | Self::I8x16Bitmask => Ty::I8x16,
+            // SIMD: `i16x8` Unary Ops
+            | Self::I16x8Abs | Self::I16x8Neg | Self::I16x8AllTrue | Self::I16x8Bitmask => {
+                Ty::I16x8
+            }
+            | Self::S16x8ExtaddPairwiseI8x16
+            | Self::S16x8ExtendLowI8x16
+            | Self::S16x8ExtendHighI8x16
+            | Self::U16x8ExtaddPairwiseI8x16
+            | Self::U16x8ExtendLowI8x16
+            | Self::U16x8ExtendHighI8x16 => Ty::I8x16,
+            // SIMD: `i32x4` Unary Ops
+            | Self::I32x4Abs | Self::I32x4Neg | Self::I32x4AllTrue | Self::I32x4Bitmask => {
+                Ty::I32x4
+            }
+            | Self::S32x4ExtaddPairwiseI16x8
+            | Self::S32x4ExtendLowI16x8
+            | Self::S32x4ExtendHighI16x8
+            | Self::U32x4ExtaddPairwiseI16x8
+            | Self::U32x4ExtendLowI16x8
+            | Self::U32x4ExtendHighI16x8 => Ty::I16x8,
+            // SIMD: `i64x2` Unary Ops
+            | Self::I64x2Abs | Self::I64x2Neg | Self::I64x2AllTrue | Self::I64x2Bitmask => {
+                Ty::I64x2
+            }
+            | Self::S64x2ExtendLowI32x4
+            | Self::S64x2ExtendHighI32x4
+            | Self::U64x2ExtendLowI32x4
+            | Self::U64x2ExtendHighI32x4 => Ty::I32x4,
+            // SIMD: `f32x4` Unary Ops
+            | Self::F32x4DemoteZeroF64x2 => Ty::F64x2,
+            | Self::F32x4Ceil
+            | Self::F32x4Floor
+            | Self::F32x4Trunc
+            | Self::F32x4Nearest
+            | Self::F32x4Abs
+            | Self::F32x4Neg
+            | Self::F32x4Sqrt => Ty::F32x4,
+            // SIMD: `f64x2` Unary Ops
+            | Self::F64x2PromoteLowF32x4 => Ty::F32x4,
+            | Self::F64x2Ceil
+            | Self::F64x2Floor
+            | Self::F64x2Trunc
+            | Self::F64x2Nearest
+            | Self::F64x2Abs
+            | Self::F64x2Neg
+            | Self::F64x2Sqrt => Ty::F64x2,
+            // SIMD: Conversions
+            | Self::S32x4TruncSatF32x4 => Ty::F32x4,
+            | Self::S32x4TruncSatZeroF64x2 => Ty::F64x2,
+            | Self::U32x4TruncSatF32x4 => Ty::F32x4,
+            | Self::U32x4TruncSatZeroF64x2 => Ty::F64x2,
+            | Self::F32x4ConvertS32x4 => Ty::S32x4,
+            | Self::F32x4ConvertU32x4 => Ty::U32x4,
+            | Self::F64x2ConvertLowS32x4 => Ty::S32x4,
+            | Self::F64x2ConvertLowU32x4 => Ty::U32x4,
         }
     }
 
@@ -286,6 +418,65 @@ impl UnaryOpKind {
             | Self::F64ConvertU32
             | Self::F64ConvertS64
             | Self::F64ConvertU64 => Ty::F64,
+
+            // SIMD: Generic Unary Ops
+            | Self::V128Not | Self::V128AnyTrue => Ty::V128,
+            // SIMD: `i8x16` Unary Ops
+            | Self::I8x16Abs
+            | Self::I8x16Neg
+            | Self::I8x16Popcnt
+            | Self::I8x16AllTrue
+            | Self::I8x16Bitmask => Ty::I8x16,
+            // SIMD: `i16x8` Unary Ops
+            | Self::I16x8Abs => Ty::I16x8,
+            | Self::I16x8Neg => Ty::I16x8,
+            | Self::I16x8AllTrue => Ty::I16x8,
+            | Self::I16x8Bitmask => Ty::I16x8,
+            | Self::S16x8ExtaddPairwiseI8x16
+            | Self::S16x8ExtendLowI8x16
+            | Self::S16x8ExtendHighI8x16 => Ty::S16x8,
+            | Self::U16x8ExtaddPairwiseI8x16
+            | Self::U16x8ExtendLowI8x16
+            | Self::U16x8ExtendHighI8x16 => Ty::U16x8,
+            // SIMD: `i32x4` Unary Ops
+            | Self::I32x4Abs | Self::I32x4Neg | Self::I32x4AllTrue | Self::I32x4Bitmask => {
+                Ty::I32x4
+            }
+            | Self::S32x4ExtaddPairwiseI16x8
+            | Self::S32x4ExtendLowI16x8
+            | Self::S32x4ExtendHighI16x8 => Ty::S32x4,
+            | Self::U32x4ExtaddPairwiseI16x8
+            | Self::U32x4ExtendLowI16x8
+            | Self::U32x4ExtendHighI16x8 => Ty::U32x4,
+            // SIMD: `i64x2` Unary Ops
+            | Self::I64x2Abs | Self::I64x2Neg | Self::I64x2AllTrue | Self::I64x2Bitmask => {
+                Ty::I64x2
+            }
+            | Self::S64x2ExtendLowI32x4 | Self::S64x2ExtendHighI32x4 => Ty::S64x2,
+            | Self::U64x2ExtendLowI32x4 | Self::U64x2ExtendHighI32x4 => Ty::U64x2,
+            // SIMD: `f32x4` Unary Ops
+            | Self::F32x4DemoteZeroF64x2
+            | Self::F32x4Ceil
+            | Self::F32x4Floor
+            | Self::F32x4Trunc
+            | Self::F32x4Nearest
+            | Self::F32x4Abs
+            | Self::F32x4Neg
+            | Self::F32x4Sqrt => Ty::F32x4,
+            // SIMD: `f64x2` Unary Ops
+            | Self::F64x2PromoteLowF32x4
+            | Self::F64x2Ceil
+            | Self::F64x2Floor
+            | Self::F64x2Trunc
+            | Self::F64x2Nearest
+            | Self::F64x2Abs
+            | Self::F64x2Neg
+            | Self::F64x2Sqrt => Ty::F64x2,
+            // SIMD: Conversions
+            | Self::S32x4TruncSatF32x4 | Self::S32x4TruncSatZeroF64x2 => Ty::S32x4,
+            | Self::U32x4TruncSatF32x4 | Self::U32x4TruncSatZeroF64x2 => Ty::U32x4,
+            | Self::F32x4ConvertS32x4 | Self::F32x4ConvertU32x4 => Ty::F32x4,
+            | Self::F64x2ConvertLowS32x4 | Self::F64x2ConvertLowU32x4 => Ty::F64x2,
         }
     }
 
@@ -343,6 +534,74 @@ impl UnaryOpKind {
             Self::F64ConvertU32 => Ident::Convert,
             Self::F64ConvertS64 => Ident::Convert,
             Self::F64ConvertU64 => Ident::Convert,
+
+            // SIMD: Generic Unary Ops
+            Self::V128Not => Ident::Not,
+            Self::V128AnyTrue => Ident::AnyTrue,
+            // SIMD: `i8x16` Unary Ops
+            Self::I8x16Abs => Ident::Abs,
+            Self::I8x16Neg => Ident::Neg,
+            Self::I8x16Popcnt => Ident::Popcnt,
+            Self::I8x16AllTrue => Ident::AllTrue,
+            Self::I8x16Bitmask => Ident::Bitmask,
+            // SIMD: `i16x8` Unary Ops
+            Self::I16x8Abs => Ident::Abs,
+            Self::I16x8Neg => Ident::Neg,
+            Self::I16x8AllTrue => Ident::AllTrue,
+            Self::I16x8Bitmask => Ident::Bitmask,
+            Self::S16x8ExtaddPairwiseI8x16 => Ident::ExtaddPairwise,
+            Self::U16x8ExtaddPairwiseI8x16 => Ident::ExtaddPairwise,
+            Self::S16x8ExtendLowI8x16 => Ident::ExtendLow,
+            Self::U16x8ExtendLowI8x16 => Ident::ExtendLow,
+            Self::S16x8ExtendHighI8x16 => Ident::ExtendHigh,
+            Self::U16x8ExtendHighI8x16 => Ident::ExtendHigh,
+            // SIMD: `i32x4` Unary Ops
+            Self::I32x4Abs => Ident::Abs,
+            Self::I32x4Neg => Ident::Neg,
+            Self::I32x4AllTrue => Ident::AllTrue,
+            Self::I32x4Bitmask => Ident::Bitmask,
+            Self::S32x4ExtaddPairwiseI16x8 => Ident::ExtaddPairwise,
+            Self::U32x4ExtaddPairwiseI16x8 => Ident::ExtaddPairwise,
+            Self::S32x4ExtendLowI16x8 => Ident::ExtendLow,
+            Self::U32x4ExtendLowI16x8 => Ident::ExtendLow,
+            Self::S32x4ExtendHighI16x8 => Ident::ExtendHigh,
+            Self::U32x4ExtendHighI16x8 => Ident::ExtendHigh,
+            // SIMD: `i64x2` Unary Ops
+            Self::I64x2Abs => Ident::Abs,
+            Self::I64x2Neg => Ident::Neg,
+            Self::I64x2AllTrue => Ident::AllTrue,
+            Self::I64x2Bitmask => Ident::Bitmask,
+            Self::S64x2ExtendLowI32x4 => Ident::ExtendLow,
+            Self::U64x2ExtendLowI32x4 => Ident::ExtendLow,
+            Self::S64x2ExtendHighI32x4 => Ident::ExtendHigh,
+            Self::U64x2ExtendHighI32x4 => Ident::ExtendHigh,
+            // SIMD: `f32x4` Unary Ops
+            Self::F32x4DemoteZeroF64x2 => Ident::DemoteZero,
+            Self::F32x4Ceil => Ident::Ceil,
+            Self::F32x4Floor => Ident::Floor,
+            Self::F32x4Trunc => Ident::Trunc,
+            Self::F32x4Nearest => Ident::Nearest,
+            Self::F32x4Abs => Ident::Abs,
+            Self::F32x4Neg => Ident::Neg,
+            Self::F32x4Sqrt => Ident::Sqrt,
+            // SIMD: `f64x2` Unary Ops
+            Self::F64x2PromoteLowF32x4 => Ident::PromoteLow,
+            Self::F64x2Ceil => Ident::Ceil,
+            Self::F64x2Floor => Ident::Floor,
+            Self::F64x2Trunc => Ident::Trunc,
+            Self::F64x2Nearest => Ident::Nearest,
+            Self::F64x2Abs => Ident::Abs,
+            Self::F64x2Neg => Ident::Neg,
+            Self::F64x2Sqrt => Ident::Sqrt,
+            // SIMD: Conversions
+            Self::S32x4TruncSatF32x4 => Ident::TruncSat,
+            Self::U32x4TruncSatF32x4 => Ident::TruncSat,
+            Self::S32x4TruncSatZeroF64x2 => Ident::TruncSatZero,
+            Self::U32x4TruncSatZeroF64x2 => Ident::TruncSatZero,
+            Self::F32x4ConvertS32x4 => Ident::Convert,
+            Self::F32x4ConvertU32x4 => Ident::Convert,
+            Self::F64x2ConvertLowS32x4 => Ident::ConvertLow,
+            Self::F64x2ConvertLowU32x4 => Ident::ConvertLow,
         }
     }
 }

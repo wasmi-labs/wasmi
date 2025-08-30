@@ -765,6 +765,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     add_simd_replace_lane_ops(isa);
     add_simd_binary_ops(isa);
     add_simd_shift_ops(isa);
+    add_simd_unary_ops(isa);
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
@@ -981,6 +982,85 @@ fn add_simd_shift_ops(isa: &mut Isa) {
     ];
     for kind in kinds {
         isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
-        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Immediate));
+        isa.push_op(BinaryOp::new(
+            kind,
+            OperandKind::Stack,
+            OperandKind::Immediate,
+        ));
+    }
+}
+
+fn add_simd_unary_ops(isa: &mut Isa) {
+    let kinds = [
+        // SIMD: Generic Unary Ops
+        UnaryOpKind::V128Not,
+        UnaryOpKind::V128AnyTrue,
+        // SIMD: `i8x16` Unary Ops
+        UnaryOpKind::I8x16Abs,
+        UnaryOpKind::I8x16Neg,
+        UnaryOpKind::I8x16Popcnt,
+        UnaryOpKind::I8x16AllTrue,
+        UnaryOpKind::I8x16Bitmask,
+        // SIMD: `i16x8` Unary Ops
+        UnaryOpKind::I16x8Abs,
+        UnaryOpKind::I16x8Neg,
+        UnaryOpKind::I16x8AllTrue,
+        UnaryOpKind::I16x8Bitmask,
+        UnaryOpKind::S16x8ExtaddPairwiseI8x16,
+        UnaryOpKind::U16x8ExtaddPairwiseI8x16,
+        UnaryOpKind::S16x8ExtendLowI8x16,
+        UnaryOpKind::U16x8ExtendLowI8x16,
+        UnaryOpKind::S16x8ExtendHighI8x16,
+        UnaryOpKind::U16x8ExtendHighI8x16,
+        // SIMD: `i32x4` Unary Ops
+        UnaryOpKind::I32x4Abs,
+        UnaryOpKind::I32x4Neg,
+        UnaryOpKind::I32x4AllTrue,
+        UnaryOpKind::I32x4Bitmask,
+        UnaryOpKind::S32x4ExtaddPairwiseI16x8,
+        UnaryOpKind::U32x4ExtaddPairwiseI16x8,
+        UnaryOpKind::S32x4ExtendLowI16x8,
+        UnaryOpKind::U32x4ExtendLowI16x8,
+        UnaryOpKind::S32x4ExtendHighI16x8,
+        UnaryOpKind::U32x4ExtendHighI16x8,
+        // SIMD: `i64x2` Unary Ops
+        UnaryOpKind::I64x2Abs,
+        UnaryOpKind::I64x2Neg,
+        UnaryOpKind::I64x2AllTrue,
+        UnaryOpKind::I64x2Bitmask,
+        UnaryOpKind::S64x2ExtendLowI32x4,
+        UnaryOpKind::U64x2ExtendLowI32x4,
+        UnaryOpKind::S64x2ExtendHighI32x4,
+        UnaryOpKind::U64x2ExtendHighI32x4,
+        // SIMD: `f32x4` Unary Ops
+        UnaryOpKind::F32x4DemoteZeroF64x2,
+        UnaryOpKind::F32x4Ceil,
+        UnaryOpKind::F32x4Floor,
+        UnaryOpKind::F32x4Trunc,
+        UnaryOpKind::F32x4Nearest,
+        UnaryOpKind::F32x4Abs,
+        UnaryOpKind::F32x4Neg,
+        UnaryOpKind::F32x4Sqrt,
+        // SIMD: `f64x2` Unary Ops
+        UnaryOpKind::F64x2PromoteLowF32x4,
+        UnaryOpKind::F64x2Ceil,
+        UnaryOpKind::F64x2Floor,
+        UnaryOpKind::F64x2Trunc,
+        UnaryOpKind::F64x2Nearest,
+        UnaryOpKind::F64x2Abs,
+        UnaryOpKind::F64x2Neg,
+        UnaryOpKind::F64x2Sqrt,
+        // SIMD: Conversions
+        UnaryOpKind::S32x4TruncSatF32x4,
+        UnaryOpKind::U32x4TruncSatF32x4,
+        UnaryOpKind::S32x4TruncSatZeroF64x2,
+        UnaryOpKind::U32x4TruncSatZeroF64x2,
+        UnaryOpKind::F32x4ConvertS32x4,
+        UnaryOpKind::F32x4ConvertU32x4,
+        UnaryOpKind::F64x2ConvertLowS32x4,
+        UnaryOpKind::F64x2ConvertLowU32x4,
+    ];
+    for kind in kinds {
+        isa.push_op(UnaryOp::new(kind));
     }
 }
