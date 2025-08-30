@@ -539,6 +539,19 @@ pub enum BinaryOpKind {
     F64x2Max,
     F64x2Pmin,
     F64x2Pmax,
+    // Simd Shift Ops
+    I8x16Shl,
+    S8x16Shr,
+    U8x16Shr,
+    I16x8Shl,
+    S16x8Shr,
+    U16x8Shr,
+    I32x4Shl,
+    S32x4Shr,
+    U32x4Shr,
+    I64x2Shl,
+    S64x2Shr,
+    U64x2Shr,
 }
 
 impl BinaryOpKind {
@@ -700,6 +713,19 @@ impl BinaryOpKind {
             Self::F64x2Max => Ident::Max,
             Self::F64x2Pmin => Ident::Pmin,
             Self::F64x2Pmax => Ident::Pmax,
+            // Simd Shift Ops
+            Self::I8x16Shl => Ident::Shl,
+            Self::S8x16Shr => Ident::Shr,
+            Self::U8x16Shr => Ident::Shr,
+            Self::I16x8Shl => Ident::Shl,
+            Self::S16x8Shr => Ident::Shr,
+            Self::U16x8Shr => Ident::Shr,
+            Self::I32x4Shl => Ident::Shl,
+            Self::S32x4Shr => Ident::Shr,
+            Self::U32x4Shr => Ident::Shr,
+            Self::I64x2Shl => Ident::Shl,
+            Self::S64x2Shr => Ident::Shr,
+            Self::U64x2Shr => Ident::Shr,
         }
     }
 
@@ -827,6 +853,19 @@ impl BinaryOpKind {
             | Self::F64x2Max
             | Self::F64x2Pmin
             | Self::F64x2Pmax => Ty::F64x2,
+            // Simd Shift Ops
+            | Self::I8x16Shl => Ty::I8x16,
+            | Self::S8x16Shr => Ty::S8x16,
+            | Self::U8x16Shr => Ty::U8x16,
+            | Self::I16x8Shl => Ty::I16x8,
+            | Self::S16x8Shr => Ty::S16x8,
+            | Self::U16x8Shr => Ty::U16x8,
+            | Self::I32x4Shl => Ty::I32x4,
+            | Self::S32x4Shr => Ty::S32x4,
+            | Self::U32x4Shr => Ty::U32x4,
+            | Self::I64x2Shl => Ty::I64x2,
+            | Self::S64x2Shr => Ty::S64x2,
+            | Self::U64x2Shr => Ty::U64x2,
         };
         Ident::from(ty)
     }
@@ -924,6 +963,18 @@ impl BinaryOpKind {
                 | Self::F64Min
                 | Self::F64Max => FieldTy::F64,
                 | Self::F64Copysign => FieldTy::SignF64,
+                | Self::I8x16Shl
+                | Self::S8x16Shr
+                | Self::U8x16Shr
+                | Self::I16x8Shl
+                | Self::S16x8Shr
+                | Self::U16x8Shr
+                | Self::I32x4Shl
+                | Self::S32x4Shr
+                | Self::U32x4Shr
+                | Self::I64x2Shl
+                | Self::S64x2Shr
+                | Self::U64x2Shr => FieldTy::U8,
                 _ => panic!("operator cannot have an immediate `rhs` field"),
             },
         }
