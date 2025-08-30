@@ -119,6 +119,12 @@ impl_decode_using! {
     },
 }
 
+impl<const N: usize, T: Decode> Decode for [T; N] {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        core::array::from_fn(|_| <T as Decode>::decode(decoder))
+    }
+}
+
 #[cfg(feature = "simd")]
 impl<const N: u8> Decode for ImmLaneIdx<N> {
     unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
