@@ -764,6 +764,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     add_simd_extract_lane_ops(isa);
     add_simd_replace_lane_ops(isa);
     add_simd_binary_ops(isa);
+    add_simd_shift_ops(isa);
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
@@ -960,5 +961,26 @@ fn add_simd_binary_ops(isa: &mut Isa) {
     ];
     for kind in kinds {
         isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
+    }
+}
+
+fn add_simd_shift_ops(isa: &mut Isa) {
+    let kinds = [
+        BinaryOpKind::I8x16Shl,
+        BinaryOpKind::S8x16Shr,
+        BinaryOpKind::U8x16Shr,
+        BinaryOpKind::I16x8Shl,
+        BinaryOpKind::S16x8Shr,
+        BinaryOpKind::U16x8Shr,
+        BinaryOpKind::I32x4Shl,
+        BinaryOpKind::S32x4Shr,
+        BinaryOpKind::U32x4Shr,
+        BinaryOpKind::I64x2Shl,
+        BinaryOpKind::S64x2Shr,
+        BinaryOpKind::U64x2Shr,
+    ];
+    for kind in kinds {
+        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Immediate));
     }
 }
