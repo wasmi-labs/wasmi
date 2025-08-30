@@ -843,7 +843,9 @@ fn add_simd_replace_lane_ops(isa: &mut Isa) {
 
 fn add_simd_binary_ops(isa: &mut Isa) {
     let kinds = [
+        // Miscellaneous
         BinaryOpKind::I8x16Swizzle,
+        // Integer Comparisons
         BinaryOpKind::I8x16Eq,
         BinaryOpKind::I8x16NotEq,
         BinaryOpKind::I16x8Eq,
@@ -868,6 +870,7 @@ fn add_simd_binary_ops(isa: &mut Isa) {
         BinaryOpKind::U32x4Le,
         BinaryOpKind::U64x2Lt,
         BinaryOpKind::U64x2Le,
+        // Float Comparisons
         BinaryOpKind::F32x4Eq,
         BinaryOpKind::F32x4NotEq,
         BinaryOpKind::F32x4Lt,
@@ -876,6 +879,7 @@ fn add_simd_binary_ops(isa: &mut Isa) {
         BinaryOpKind::F64x2NotEq,
         BinaryOpKind::F64x2Lt,
         BinaryOpKind::F64x2Le,
+        // Bitwise
         BinaryOpKind::V128And,
         BinaryOpKind::V128AndNot,
         BinaryOpKind::V128Or,
