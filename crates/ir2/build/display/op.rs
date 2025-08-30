@@ -24,18 +24,18 @@ use crate::build::{
 use core::fmt::{self, Display};
 
 pub struct DisplayOp<T> {
-    pub val: T,
+    pub value: T,
     pub indent: Indent,
 }
 
 impl<T> DisplayOp<T> {
     pub fn new(val: T, indent: Indent) -> Self {
-        Self { val, indent }
+        Self { value: val, indent }
     }
 
     pub fn map<V>(&self, val: V) -> DisplayOp<V> {
         DisplayOp {
-            val,
+            value: val,
             indent: self.indent,
         }
     }
@@ -47,7 +47,7 @@ where
 {
     fn display_variant(&self, f: &mut fmt::Formatter<'_>, fields: &[Option<Field>]) -> fmt::Result {
         let indent = self.indent;
-        let ident = DisplayIdent::camel(self.val);
+        let ident = DisplayIdent::camel(self.value);
         let fields = DisplaySequence::new(
             ",\n",
             fields
@@ -72,7 +72,7 @@ impl Display for DisplayOp<&'_ Isa> {
         let indent = self.indent;
         let variants = DisplaySequence::new(
             ",\n",
-            self.val
+            self.value
                 .ops
                 .iter()
                 .map(|op| DisplayOp::new(op, indent.inc())),
@@ -114,77 +114,77 @@ impl Display for DisplayOp<&'_ Op> {
 
 impl Display for DisplayOp<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ CmpBranchOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ CmpSelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields();
+        let fields = self.value.fields();
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl<const N: usize> Display for DisplayOp<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields.map(Option::from);
+        let fields = self.value.fields.map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ TableSetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ V128SplatOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
 
 impl Display for DisplayOp<&'_ V128ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.val.fields().map(Option::from);
+        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
