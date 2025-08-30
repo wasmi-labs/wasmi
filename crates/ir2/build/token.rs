@@ -94,13 +94,18 @@ macro_rules! define_ident {
 }
 define_ident!(
     Add: add,
+    AddSat: add_sat,
     Sub: sub,
+    SubSat: sub_sat,
     Mul: mul,
     Div: div,
     Rem: rem,
     Min: min,
     Max: max,
+    Pmin: pmin,
+    Pmax: pmax,
     Copysign: copysign,
+    Avgr: avgr,
 
     Shl: shl,
     Shr: shr,
@@ -278,4 +283,14 @@ define_ident!(
     ReplaceLane: replace_lane,
     Swizzle: swizzle,
     I8x16Shuffle: i8x16_shuffle,
+    Q15MulrSat: q15_mulr_sat,
+    NarrowI16x8: narrow_i16x8,
+    NarrowI32x4: narrow_i32x4,
+    ExtmulLowI8x16: extmul_low_i8x16,
+    ExtmulHighI8x16: extmul_high_i8x16,
+    ExtmulLowI16x8: extmul_low_i16x8,
+    ExtmulHighI16x8: extmul_high_i16x8,
+    ExtmulLowI32x4: extmul_low_i32x4,
+    ExtmulHighI32x4: extmul_high_i32x4,
+    DotI16x8: dot_i16x8,
 );

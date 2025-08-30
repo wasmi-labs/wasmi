@@ -466,6 +466,79 @@ pub enum BinaryOpKind {
     V128AndNot,
     V128Or,
     V128Xor,
+    // i8x16 Ops
+    S8x16NarrowI16x8,
+    U8x16NarrowI16x8,
+    I8x16Add,
+    S8x16AddSat,
+    U8x16AddSat,
+    I8x16Sub,
+    S8x16SubSat,
+    U8x16SubSat,
+    S8x16Min,
+    U8x16Min,
+    S8x16Max,
+    U8x16Max,
+    U8x16Avgr,
+    // i16x8 Ops
+    S16x8Q15MulrSat,
+    S16x8NarrowI32x4,
+    U16x8NarrowI32x4,
+    S16x8ExtmulLowI8x16,
+    U16x8ExtmulLowI8x16,
+    S16x8ExtmulHighI8x16,
+    U16x8ExtmulHighI8x16,
+    I16x8Add,
+    S16x8AddSat,
+    U16x8AddSat,
+    I16x8Sub,
+    S16x8SubSat,
+    U16x8SubSat,
+    I16x8Mul,
+    S16x8Min,
+    U16x8Min,
+    S16x8Max,
+    U16x8Max,
+    U16x8Avgr,
+    // i32x4 Ops
+    I32x4Add,
+    I32x4Sub,
+    I32x4Mul,
+    S32x4Min,
+    U32x4Min,
+    S32x4Max,
+    U32x4Max,
+    S32x4DotI16x8,
+    S32x4ExtmulLowI16x8,
+    U32x4ExtmulLowI16x8,
+    S32x4ExtmulHighI16x8,
+    U32x4ExtmulHighI16x8,
+    // i64x2 Ops
+    I64x2Add,
+    I64x2Sub,
+    I64x2Mul,
+    S64x2ExtmulLowI32x4,
+    U64x2ExtmulLowI32x4,
+    S64x2ExtmulHighI32x4,
+    U64x2ExtmulHighI32x4,
+    // f32x4 Ops
+    F32x4Add,
+    F32x4Sub,
+    F32x4Mul,
+    F32x4Div,
+    F32x4Min,
+    F32x4Max,
+    F32x4Pmin,
+    F32x4Pmax,
+    // f64x2 Ops
+    F64x2Add,
+    F64x2Sub,
+    F64x2Mul,
+    F64x2Div,
+    F64x2Min,
+    F64x2Max,
+    F64x2Pmin,
+    F64x2Pmax,
 }
 
 impl BinaryOpKind {
@@ -554,6 +627,79 @@ impl BinaryOpKind {
             Self::V128AndNot => Ident::AndNot,
             Self::V128Or => Ident::Or,
             Self::V128Xor => Ident::Xor,
+            // i8x16 Ops
+            Self::S8x16NarrowI16x8 => Ident::NarrowI16x8,
+            Self::U8x16NarrowI16x8 => Ident::NarrowI16x8,
+            Self::I8x16Add => Ident::Add,
+            Self::S8x16AddSat => Ident::AddSat,
+            Self::U8x16AddSat => Ident::AddSat,
+            Self::I8x16Sub => Ident::Sub,
+            Self::S8x16SubSat => Ident::SubSat,
+            Self::U8x16SubSat => Ident::SubSat,
+            Self::S8x16Min => Ident::Min,
+            Self::U8x16Min => Ident::Min,
+            Self::S8x16Max => Ident::Max,
+            Self::U8x16Max => Ident::Max,
+            Self::U8x16Avgr => Ident::Avgr,
+            // i16x8 Ops
+            Self::S16x8Q15MulrSat => Ident::Q15MulrSat,
+            Self::S16x8NarrowI32x4 => Ident::NarrowI32x4,
+            Self::U16x8NarrowI32x4 => Ident::NarrowI32x4,
+            Self::S16x8ExtmulLowI8x16 => Ident::ExtmulLowI8x16,
+            Self::U16x8ExtmulLowI8x16 => Ident::ExtmulLowI8x16,
+            Self::S16x8ExtmulHighI8x16 => Ident::ExtmulHighI8x16,
+            Self::U16x8ExtmulHighI8x16 => Ident::ExtmulHighI8x16,
+            Self::I16x8Add => Ident::Add,
+            Self::S16x8AddSat => Ident::AddSat,
+            Self::U16x8AddSat => Ident::AddSat,
+            Self::I16x8Sub => Ident::Sub,
+            Self::S16x8SubSat => Ident::SubSat,
+            Self::U16x8SubSat => Ident::SubSat,
+            Self::I16x8Mul => Ident::Mul,
+            Self::S16x8Min => Ident::Min,
+            Self::U16x8Min => Ident::Min,
+            Self::S16x8Max => Ident::Max,
+            Self::U16x8Max => Ident::Max,
+            Self::U16x8Avgr => Ident::Avgr,
+            // i32x4 Ops
+            Self::I32x4Add => Ident::Add,
+            Self::I32x4Sub => Ident::Sub,
+            Self::I32x4Mul => Ident::Mul,
+            Self::S32x4Min => Ident::Min,
+            Self::U32x4Min => Ident::Min,
+            Self::S32x4Max => Ident::Max,
+            Self::U32x4Max => Ident::Max,
+            Self::S32x4DotI16x8 => Ident::DotI16x8,
+            Self::S32x4ExtmulLowI16x8 => Ident::ExtmulLowI16x8,
+            Self::U32x4ExtmulLowI16x8 => Ident::ExtmulLowI16x8,
+            Self::S32x4ExtmulHighI16x8 => Ident::ExtmulHighI16x8,
+            Self::U32x4ExtmulHighI16x8 => Ident::ExtmulHighI16x8,
+            // i64x2 Ops
+            Self::I64x2Add => Ident::Add,
+            Self::I64x2Sub => Ident::Sub,
+            Self::I64x2Mul => Ident::Mul,
+            Self::S64x2ExtmulLowI32x4 => Ident::ExtmulLowI32x4,
+            Self::U64x2ExtmulLowI32x4 => Ident::ExtmulLowI32x4,
+            Self::S64x2ExtmulHighI32x4 => Ident::ExtmulHighI32x4,
+            Self::U64x2ExtmulHighI32x4 => Ident::ExtmulHighI32x4,
+            // f32x4 Ops
+            Self::F32x4Add => Ident::Add,
+            Self::F32x4Sub => Ident::Sub,
+            Self::F32x4Mul => Ident::Mul,
+            Self::F32x4Div => Ident::Div,
+            Self::F32x4Min => Ident::Min,
+            Self::F32x4Max => Ident::Max,
+            Self::F32x4Pmin => Ident::Pmin,
+            Self::F32x4Pmax => Ident::Pmax,
+            // f64x2 Ops
+            Self::F64x2Add => Ident::Add,
+            Self::F64x2Sub => Ident::Sub,
+            Self::F64x2Mul => Ident::Mul,
+            Self::F64x2Div => Ident::Div,
+            Self::F64x2Min => Ident::Min,
+            Self::F64x2Max => Ident::Max,
+            Self::F64x2Pmin => Ident::Pmin,
+            Self::F64x2Pmax => Ident::Pmax,
         }
     }
 
@@ -612,6 +758,79 @@ impl BinaryOpKind {
             | Self::F32x4Eq | Self::F32x4NotEq | Self::F32x4Lt | Self::F32x4Le => Ty::F32x4,
             | Self::F64x2Eq | Self::F64x2NotEq | Self::F64x2Lt | Self::F64x2Le => Ty::F64x2,
             | Self::V128And | Self::V128AndNot | Self::V128Or | Self::V128Xor => Ty::V128,
+            // i8x16 Ops
+            | Self::S8x16NarrowI16x8 => Ty::S8x16,
+            | Self::U8x16NarrowI16x8 => Ty::U8x16,
+            | Self::I8x16Add => Ty::I8x16,
+            | Self::S8x16AddSat => Ty::S8x16,
+            | Self::U8x16AddSat => Ty::U8x16,
+            | Self::I8x16Sub => Ty::I8x16,
+            | Self::S8x16SubSat => Ty::S8x16,
+            | Self::U8x16SubSat => Ty::U8x16,
+            | Self::S8x16Min => Ty::S8x16,
+            | Self::U8x16Min => Ty::U8x16,
+            | Self::S8x16Max => Ty::S8x16,
+            | Self::U8x16Max => Ty::U8x16,
+            | Self::U8x16Avgr => Ty::U8x16,
+            // i16x8 Ops
+            | Self::S16x8Q15MulrSat => Ty::S16x8,
+            | Self::S16x8NarrowI32x4 => Ty::S16x8,
+            | Self::U16x8NarrowI32x4 => Ty::U16x8,
+            | Self::S16x8ExtmulLowI8x16 => Ty::S16x8,
+            | Self::U16x8ExtmulLowI8x16 => Ty::U16x8,
+            | Self::S16x8ExtmulHighI8x16 => Ty::S16x8,
+            | Self::U16x8ExtmulHighI8x16 => Ty::U16x8,
+            | Self::I16x8Add => Ty::I16x8,
+            | Self::S16x8AddSat => Ty::S16x8,
+            | Self::U16x8AddSat => Ty::U16x8,
+            | Self::I16x8Sub => Ty::I16x8,
+            | Self::S16x8SubSat => Ty::S16x8,
+            | Self::U16x8SubSat => Ty::U16x8,
+            | Self::I16x8Mul => Ty::I16x8,
+            | Self::S16x8Min => Ty::S16x8,
+            | Self::U16x8Min => Ty::U16x8,
+            | Self::S16x8Max => Ty::S16x8,
+            | Self::U16x8Max => Ty::U16x8,
+            | Self::U16x8Avgr => Ty::U16x8,
+            // i32x4 Ops
+            | Self::I32x4Add
+            | Self::I32x4Sub
+            | Self::I32x4Mul => Ty::I32x4,
+            | Self::S32x4Min => Ty::S32x4,
+            | Self::U32x4Min => Ty::U32x4,
+            | Self::S32x4Max => Ty::S32x4,
+            | Self::U32x4Max => Ty::U32x4,
+            | Self::S32x4DotI16x8 => Ty::S32x4,
+            | Self::S32x4ExtmulLowI16x8 => Ty::S32x4,
+            | Self::U32x4ExtmulLowI16x8 => Ty::U32x4,
+            | Self::S32x4ExtmulHighI16x8 => Ty::S32x4,
+            | Self::U32x4ExtmulHighI16x8 => Ty::U32x4,
+            // i64x2 Ops
+            | Self::I64x2Add
+            | Self::I64x2Sub
+            | Self::I64x2Mul => Ty::I64x2,
+            | Self::S64x2ExtmulLowI32x4 => Ty::S64x2,
+            | Self::U64x2ExtmulLowI32x4 => Ty::U64x2,
+            | Self::S64x2ExtmulHighI32x4 => Ty::S64x2,
+            | Self::U64x2ExtmulHighI32x4 => Ty::U64x2,
+            // f32x4 Ops
+            | Self::F32x4Add
+            | Self::F32x4Sub
+            | Self::F32x4Mul
+            | Self::F32x4Div
+            | Self::F32x4Min
+            | Self::F32x4Max
+            | Self::F32x4Pmin
+            | Self::F32x4Pmax => Ty::F32x4,
+            // f64x2 Ops
+            | Self::F64x2Add
+            | Self::F64x2Sub
+            | Self::F64x2Mul
+            | Self::F64x2Div
+            | Self::F64x2Min
+            | Self::F64x2Max
+            | Self::F64x2Pmin
+            | Self::F64x2Pmax => Ty::F64x2,
         };
         Ident::from(ty)
     }
