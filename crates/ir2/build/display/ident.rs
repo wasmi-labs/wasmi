@@ -59,7 +59,7 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
             .value
             .kind
             .is_conversion()
-            .then_some(Ident::from(kind.input_ty()))
+            .then_some(Ident::from(kind.value_ty()))
             .map(|i| (sep, case.wrap(i)))
             .map(DisplayConcat)
             .display_maybe();
