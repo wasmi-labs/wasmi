@@ -96,7 +96,7 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
         let cmp = self.value.cmp;
         let branch = case.wrap(Ident::Branch);
         let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(Ident::from(cmp.input_ty()));
+        let input_ident = case.wrap(Ident::from(cmp.ident_prefix()));
         let lhs_suffix = case.wrap(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
@@ -112,7 +112,7 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
         let cmp = self.value.cmp;
         let select = case.wrap(Ident::Select);
         let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(Ident::from(cmp.input_ty()));
+        let input_ident = case.wrap(Ident::from(cmp.ident_prefix()));
         let result_suffix = case.wrap(OperandKind::Stack);
         let lhs_suffix = SnakeCase(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
