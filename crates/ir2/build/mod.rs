@@ -73,7 +73,7 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
 }
 
 fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 200_000;
+    const EXPECTED_SIZE: usize = 225_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
     write!(
@@ -113,7 +113,7 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
 }
 
 fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 40_000;
+    const EXPECTED_SIZE: usize = 45_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
     write!(contents, "{}", DisplayDecode::new(isa, Indent::default()))?;
