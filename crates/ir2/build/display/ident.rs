@@ -8,13 +8,11 @@ use crate::build::{
         LoadOp,
         OperandKind,
         ReplaceLaneWidth,
-        SplatType,
         StoreOp,
         TableGetOp,
         TableSetOp,
         UnaryOp,
         V128ReplaceLaneOp,
-        V128SplatOp,
     },
     token::{Case, Ident, Sep, SnakeCase},
 };
@@ -51,20 +49,19 @@ impl<T> DisplayIdent<T> {
 impl Display for DisplayIdent<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
-        let kind = self.value.kind;
+        let op = self.value;
+        let kind = op.kind;
         let ident = case.wrap(kind.ident());
         let sep = case.wrap(Sep);
-        let ident_prefix = DisplayConcat((case.wrap(Ident::from(kind.result_ty())), sep));
-        let ident_suffix = self
-            .value
-            .kind
+        let ident_prefix = DisplayConcat((case.wrap(kind.result_ty()), sep));
+        let ident_suffix = kind
             .is_conversion()
-            .then_some(Ident::from(kind.value_ty()))
+            .then_some(kind.value_ty())
             .map(|i| (sep, case.wrap(i)))
             .map(DisplayConcat)
             .display_maybe();
         let result_suffix = case.wrap(OperandKind::Stack);
-        let value_suffix = SnakeCase(OperandKind::Stack);
+        let value_suffix = SnakeCase(op.value);
         write!(
             f,
             "{ident_prefix}{ident}{ident_suffix}_{result_suffix}{value_suffix}"
@@ -96,7 +93,7 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
         let cmp = self.value.cmp;
         let branch = case.wrap(Ident::Branch);
         let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(Ident::from(cmp.ident_prefix()));
+        let input_ident = case.wrap(cmp.ident_prefix());
         let lhs_suffix = case.wrap(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
@@ -112,7 +109,7 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
         let cmp = self.value.cmp;
         let select = case.wrap(Ident::Select);
         let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(Ident::from(cmp.ident_prefix()));
+        let input_ident = case.wrap(cmp.ident_prefix());
         let result_suffix = case.wrap(OperandKind::Stack);
         let lhs_suffix = SnakeCase(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
@@ -219,21 +216,6 @@ impl Display for DisplayIdent<&'_ TableSetOp> {
         let index_suffix = case.wrap(self.value.index);
         let value_suffix = SnakeCase(self.value.value);
         write!(f, "{ident}_{index_suffix}{value_suffix}")
-    }
-}
-
-impl Display for DisplayIdent<&'_ V128SplatOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let case = self.case;
-        let op = self.value;
-        let ident = case.wrap(Ident::V128Splat);
-        let width = match op.ty {
-            SplatType::U32 => "32",
-            SplatType::U64 => "64",
-        };
-        let result_suffix = case.wrap(OperandKind::Stack);
-        let value_suffix = SnakeCase(op.value);
-        write!(f, "{ident}{width}_{result_suffix}{value_suffix}")
     }
 }
 

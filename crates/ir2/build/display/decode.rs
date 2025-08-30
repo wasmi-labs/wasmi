@@ -17,7 +17,6 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
         V128ReplaceLaneOp,
-        V128SplatOp,
     },
     token::{CamelCase, SnakeCase},
     Isa,
@@ -187,15 +186,6 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
             {indent}}}\n\
             "
         )
-    }
-}
-
-impl Display for DisplayDecode<&'_ V128SplatOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let op = self.value;
-        let camel_ident = DisplayIdent::camel(op);
-        let value_ty = op.value_field().ty;
-        writeln!(f, "pub type {camel_ident} = UnaryOp<{value_ty}>;")
     }
 }
 

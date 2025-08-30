@@ -13,7 +13,6 @@ use crate::build::{
         LoadOpKind,
         OperandKind,
         ReplaceLaneWidth,
-        SplatType,
         StoreOp,
         StoreOpKind,
         TableGetOp,
@@ -21,7 +20,6 @@ use crate::build::{
         UnaryOp,
         UnaryOpKind,
         V128ReplaceLaneOp,
-        V128SplatOp,
     },
     token::Ident,
     Config,
@@ -126,7 +124,7 @@ fn add_unary_ops(isa: &mut Isa) {
         UnaryOpKind::U64TruncSatF64,
     ];
     for op in ops {
-        isa.push_op(UnaryOp::new(op));
+        isa.push_op(UnaryOp::new(op, OperandKind::Stack));
     }
 }
 
@@ -769,10 +767,10 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
-    let kinds = [SplatType::U32, SplatType::U64];
+    let kinds = [UnaryOpKind::V128Splat32, UnaryOpKind::V128Splat64];
     for kind in kinds {
-        isa.push_op(V128SplatOp::new(kind, OperandKind::Immediate));
-        isa.push_op(V128SplatOp::new(kind, OperandKind::Stack));
+        isa.push_op(UnaryOp::new(kind, OperandKind::Stack));
+        isa.push_op(UnaryOp::new(kind, OperandKind::Immediate));
     }
 }
 
@@ -1061,6 +1059,6 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         UnaryOpKind::F64x2ConvertLowU32x4,
     ];
     for kind in kinds {
-        isa.push_op(UnaryOp::new(kind));
+        isa.push_op(UnaryOp::new(kind, OperandKind::Stack));
     }
 }
