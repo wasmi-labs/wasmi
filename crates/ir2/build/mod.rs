@@ -77,26 +77,21 @@ fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(
         true => 225_000,
         false => 175_000,
     };
-    contents.clear();
-    contents.reserve_exact(expected_size);
-    write!(
-        contents,
-        "\
-        {}\n\
-        {}\n\
-        {}\n\
-        {}\n\
-        ",
-        DisplayOp::new(isa, Indent::default()),
-        DisplayResultMut::new(isa, Indent::default()),
-        DisplayConstructor::new(isa, Indent::default()),
-        DisplayOpCode::new(isa, Indent::default()),
-    )?;
-    let len_contents = contents.len();
-    assert!(
-        len_contents <= expected_size,
-        "reserved bytes: {expected_size}, contents.len() = {len_contents}",
-    );
+    write_to_buffer(contents, expected_size, |buffer| {
+        write!(
+            buffer,
+            "\
+            {}\n\
+            {}\n\
+            {}\n\
+            {}\n\
+            ",
+            DisplayOp::new(isa, Indent::default()),
+            DisplayResultMut::new(isa, Indent::default()),
+            DisplayConstructor::new(isa, Indent::default()),
+            DisplayOpCode::new(isa, Indent::default()),
+        )
+    })?;
     fs::write(config.out_dir.join("op.rs"), contents)?;
     Ok(())
 }
@@ -106,14 +101,9 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
         true => 95_000,
         false => 75_000,
     };
-    contents.clear();
-    contents.reserve_exact(expected_size);
-    write!(contents, "{}", DisplayEncode::new(isa, Indent::default()))?;
-    let len_contents = contents.len();
-    assert!(
-        len_contents <= expected_size,
-        "reserved bytes: {expected_size}, contents.len() = {len_contents}",
-    );
+    write_to_buffer(contents, expected_size, |buffer| {
+        write!(buffer, "{}", DisplayEncode::new(isa, Indent::default()))
+    })?;
     fs::write(config.out_dir.join("encode.rs"), contents)?;
     Ok(())
 }
@@ -123,14 +113,25 @@ fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
         true => 45_000,
         false => 35_000,
     };
-    contents.clear();
-    contents.reserve_exact(expected_size);
-    write!(contents, "{}", DisplayDecode::new(isa, Indent::default()))?;
-    let len_contents = contents.len();
+    write_to_buffer(contents, expected_size, |buffer| {
+        write!(buffer, "{}", DisplayDecode::new(isa, Indent::default()))
+    })?;
+    fs::write(config.out_dir.join("decode.rs"), contents)?;
+    Ok(())
+}
+
+fn write_to_buffer(
+    buffer: &mut String,
+    expected_size: usize,
+    f: impl FnOnce(&mut String) -> fmt::Result,
+) -> Result<(), Error> {
+    buffer.clear();
+    buffer.reserve_exact(expected_size);
+    f(buffer)?;
+    let len_contents = buffer.len();
     assert!(
         len_contents <= expected_size,
         "reserved bytes: {expected_size}, contents.len() = {len_contents}",
     );
-    fs::write(config.out_dir.join("decode.rs"), contents)?;
     Ok(())
 }
