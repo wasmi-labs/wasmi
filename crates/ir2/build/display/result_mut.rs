@@ -12,7 +12,6 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
         V128ReplaceLaneOp,
-        V128SplatOp,
     },
 };
 use core::fmt::{self, Display};
@@ -126,12 +125,6 @@ impl<const N: usize> Display for DisplayResultMut<&'_ GenericOp<N>> {
         if !self.value.has_result() {
             return Ok(());
         }
-        self.display_match_arm(f)
-    }
-}
-
-impl Display for DisplayResultMut<&'_ V128SplatOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display_match_arm(f)
     }
 }

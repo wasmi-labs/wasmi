@@ -19,7 +19,6 @@ macro_rules! apply_macro_for_ops {
             Generic3(GenericOp<3>),
             Generic4(GenericOp<4>),
             Generic5(GenericOp<5>),
-            V128Splat(V128SplatOp),
             V128ReplaceLane(V128ReplaceLaneOp),
         }
     };
@@ -117,11 +116,12 @@ impl<const N: usize> GenericOp<N> {
 #[derive(Copy, Clone)]
 pub struct UnaryOp {
     pub kind: UnaryOpKind,
+    pub value: OperandKind,
 }
 
 impl UnaryOp {
-    pub fn new(kind: UnaryOpKind) -> Self {
-        Self { kind }
+    pub fn new(kind: UnaryOpKind, value: OperandKind) -> Self {
+        Self { kind, value }
     }
 
     pub fn result_field(&self) -> Field {
@@ -129,7 +129,17 @@ impl UnaryOp {
     }
 
     pub fn value_field(&self) -> Field {
-        Field::new(Ident::Value, FieldTy::Stack)
+        let ty = match self.value {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => {
+                let value_ty = self.kind.value_ty();
+                match value_ty.to_field_ty() {
+                    Some(ty) => ty,
+                    None => panic!("no `FieldTy` for `Ty`: {value_ty}"),
+                }
+            }
+        };
+        Field::new(Ident::Value, ty)
     }
 
     pub fn fields(&self) -> [Field; 2] {
@@ -203,6 +213,8 @@ pub enum UnaryOpKind {
     F64ConvertU64,
 
     // SIMD: Generic Unary Ops
+    V128Splat32,
+    V128Splat64,
     V128Not,
     V128AnyTrue,
     // SIMD: `i8x16` Unary Ops
@@ -315,6 +327,8 @@ impl UnaryOpKind {
             | Self::F64ConvertU64 => Ty::U64,
 
             // SIMD: Generic Unary Ops
+            | Self::V128Splat32 => Ty::B32,
+            | Self::V128Splat64 => Ty::B64,
             | Self::V128Not | Self::V128AnyTrue => Ty::V128,
             // SIMD: `i8x16` Unary Ops
             | Self::I8x16Abs
@@ -420,7 +434,7 @@ impl UnaryOpKind {
             | Self::F64ConvertU64 => Ty::F64,
 
             // SIMD: Generic Unary Ops
-            | Self::V128Not | Self::V128AnyTrue => Ty::V128,
+            | Self::V128Splat32 | Self::V128Splat64 | Self::V128Not | Self::V128AnyTrue => Ty::V128,
             // SIMD: `i8x16` Unary Ops
             | Self::I8x16Abs
             | Self::I8x16Neg
@@ -536,6 +550,8 @@ impl UnaryOpKind {
             Self::F64ConvertU64 => Ident::Convert,
 
             // SIMD: Generic Unary Ops
+            Self::V128Splat32 => Ident::Splat,
+            Self::V128Splat64 => Ident::Splat,
             Self::V128Not => Ident::Not,
             Self::V128AnyTrue => Ident::AnyTrue,
             // SIMD: `i8x16` Unary Ops
@@ -988,8 +1004,8 @@ impl BinaryOpKind {
         }
     }
 
-    pub fn ident_prefix(&self) -> Ident {
-        let ty = match self {
+    pub fn ident_prefix(&self) -> Ty {
+        match self {
             | BinaryOpKind::Cmp(op) => op.ident_prefix(),
             | Self::I32Add
             | Self::I32Sub
@@ -1125,8 +1141,7 @@ impl BinaryOpKind {
             | Self::I64x2Shl => Ty::I64x2,
             | Self::S64x2Shr => Ty::S64x2,
             | Self::U64x2Shr => Ty::U64x2,
-        };
-        Ident::from(ty)
+        }
     }
 
     fn lhs_field(&self, input: OperandKind) -> FieldTy {
@@ -1349,6 +1364,10 @@ pub enum Ty {
     U32,
     /// A unsigned 64-bit integer type.
     U64,
+    /// A generic 32-bits value.
+    B32,
+    /// A generic 64-bits value.
+    B64,
     /// A 32-bit float type.
     F32,
     /// A 64-bit float type.
@@ -1385,6 +1404,21 @@ pub enum Ty {
     F64x2,
 }
 
+impl Ty {
+    pub fn to_field_ty(self) -> Option<FieldTy> {
+        let ty = match self {
+            | Ty::S32 | Ty::I32 => FieldTy::I32,
+            | Ty::S64 | Ty::I64 => FieldTy::I64,
+            | Ty::B32 | Ty::U32 => FieldTy::U32,
+            | Ty::B64 | Ty::U64 => FieldTy::U64,
+            | Ty::F32 => FieldTy::F32,
+            | Ty::F64 => FieldTy::F64,
+            _ => return None,
+        };
+        Some(ty)
+    }
+}
+
 impl Display for Ty {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
@@ -1394,6 +1428,8 @@ impl Display for Ty {
             Ty::S64 => "i64",
             Ty::U32 => "u32",
             Ty::U64 => "u64",
+            Ty::B32 => "32",
+            Ty::B64 => "64",
             Ty::F32 => "f32",
             Ty::F64 => "f64",
             Ty::V128 => "v128",
@@ -1416,33 +1452,42 @@ impl Display for Ty {
     }
 }
 
-impl From<Ty> for Ident {
-    fn from(ty: Ty) -> Self {
-        match ty {
-            Ty::I32 => Self::I32,
-            Ty::I64 => Self::I64,
-            Ty::S32 => Self::S32,
-            Ty::S64 => Self::S64,
-            Ty::U32 => Self::U32,
-            Ty::U64 => Self::U64,
-            Ty::F32 => Self::F32,
-            Ty::F64 => Self::F64,
-            Ty::V128 => Self::V128,
-            Ty::I8x16 => Self::I8x16,
-            Ty::I16x8 => Self::I16x8,
-            Ty::I32x4 => Self::I32x4,
-            Ty::I64x2 => Self::I64x2,
-            Ty::U8x16 => Self::U8x16,
-            Ty::U16x8 => Self::U16x8,
-            Ty::U32x4 => Self::U32x4,
-            Ty::U64x2 => Self::U64x2,
-            Ty::S8x16 => Self::S8x16,
-            Ty::S16x8 => Self::S16x8,
-            Ty::S32x4 => Self::S32x4,
-            Ty::S64x2 => Self::S64x2,
-            Ty::F32x4 => Self::F32x4,
-            Ty::F64x2 => Self::F64x2,
-        }
+impl Display for SnakeCase<Ty> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for CamelCase<Ty> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self.0 {
+            Ty::I32 => "I32",
+            Ty::I64 => "I64",
+            Ty::S32 => "I32",
+            Ty::S64 => "I64",
+            Ty::U32 => "U32",
+            Ty::U64 => "U64",
+            Ty::B32 => "32",
+            Ty::B64 => "64",
+            Ty::F32 => "F32",
+            Ty::F64 => "F64",
+            Ty::V128 => "V128",
+            Ty::I8x16 => "I8x16",
+            Ty::I16x8 => "I16x8",
+            Ty::I32x4 => "I32x4",
+            Ty::I64x2 => "I64x2",
+            Ty::U8x16 => "U8x16",
+            Ty::U16x8 => "U16x8",
+            Ty::U32x4 => "U32x4",
+            Ty::U64x2 => "U64x2",
+            Ty::S8x16 => "S8x16",
+            Ty::S16x8 => "S16x8",
+            Ty::S32x4 => "S32x4",
+            Ty::S64x2 => "S64x2",
+            Ty::F32x4 => "F32x4",
+            Ty::F64x2 => "F64x2",
+        };
+        write!(f, "{s}")
     }
 }
 
@@ -2007,45 +2052,6 @@ impl TableSetOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.index_field(), self.value_field(), self.table_field()]
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct V128SplatOp {
-    /// The type of the value to be splatted.
-    pub ty: SplatType,
-    /// The `value` to be splatted.
-    pub value: OperandKind,
-}
-
-#[derive(Copy, Clone)]
-pub enum SplatType {
-    U32,
-    U64,
-}
-
-impl V128SplatOp {
-    pub fn new(ty: SplatType, value: OperandKind) -> Self {
-        Self { ty, value }
-    }
-
-    pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
-    }
-
-    pub fn value_field(&self) -> Field {
-        let value_ty = match self.value {
-            OperandKind::Stack => FieldTy::Stack,
-            OperandKind::Immediate => match self.ty {
-                SplatType::U32 => FieldTy::U32,
-                SplatType::U64 => FieldTy::U64,
-            },
-        };
-        Field::new(Ident::Value, value_ty)
-    }
-
-    pub fn fields(&self) -> [Field; 2] {
-        [self.result_field(), self.value_field()]
     }
 }
 
