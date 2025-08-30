@@ -559,8 +559,59 @@ impl BinaryOpKind {
 
     pub fn ident_prefix(&self) -> Ident {
         let ty = match self {
-            BinaryOpKind::Cmp(op) => op.input_ty(),
-            _ => self.result_ty(),
+            | BinaryOpKind::Cmp(op) => op.ident_prefix(),
+            | Self::I32Add
+            | Self::I32Sub
+            | Self::I32Mul
+            | Self::I32BitAnd
+            | Self::I32BitOr
+            | Self::I32BitXor
+            | Self::I32Shl
+            | Self::I32Rotl
+            | Self::I32Rotr => Ty::I32,
+            | Self::S32Div | Self::S32Rem | Self::S32Shr => Ty::S32,
+            | Self::U32Div | Self::U32Rem | Self::U32Shr => Ty::U32,
+            | Self::I64Add
+            | Self::I64Sub
+            | Self::I64Mul
+            | Self::I64BitAnd
+            | Self::I64BitOr
+            | Self::I64BitXor
+            | Self::I64Shl
+            | Self::I64Rotl
+            | Self::I64Rotr => Ty::I64,
+            | Self::S64Div | Self::S64Rem | Self::S64Shr => Ty::S64,
+            | Self::U64Div | Self::U64Rem | Self::U64Shr => Ty::U64,
+            | Self::F32Add
+            | Self::F32Sub
+            | Self::F32Mul
+            | Self::F32Div
+            | Self::F32Min
+            | Self::F32Max
+            | Self::F32Copysign => Ty::F32,
+            | Self::F64Add
+            | Self::F64Sub
+            | Self::F64Mul
+            | Self::F64Div
+            | Self::F64Min
+            | Self::F64Max
+            | Self::F64Copysign => Ty::F64,
+            | Self::I8x16Swizzle => Ty::I8x16,
+            | Self::I8x16Eq | Self::I8x16NotEq => Ty::I8x16,
+            | Self::I16x8Eq | Self::I16x8NotEq => Ty::I16x8,
+            | Self::I32x4Eq | Self::I32x4NotEq => Ty::I32x4,
+            | Self::I64x2Eq | Self::I64x2NotEq => Ty::I64x2,
+            | Self::S8x16Lt | Self::S8x16Le => Ty::S8x16,
+            | Self::S16x8Lt | Self::S16x8Le => Ty::S16x8,
+            | Self::S32x4Lt | Self::S32x4Le => Ty::S32x4,
+            | Self::S64x2Lt | Self::S64x2Le => Ty::S64x2,
+            | Self::U8x16Lt | Self::U8x16Le => Ty::U8x16,
+            | Self::U16x8Lt | Self::U16x8Le => Ty::U16x8,
+            | Self::U32x4Lt | Self::U32x4Le => Ty::U32x4,
+            | Self::U64x2Lt | Self::U64x2Le => Ty::U64x2,
+            | Self::F32x4Eq | Self::F32x4NotEq | Self::F32x4Lt | Self::F32x4Le => Ty::F32x4,
+            | Self::F64x2Eq | Self::F64x2NotEq | Self::F64x2Lt | Self::F64x2Le => Ty::F64x2,
+            | Self::V128And | Self::V128AndNot | Self::V128Or | Self::V128Xor => Ty::V128,
         };
         Ident::from(ty)
     }
@@ -660,64 +711,6 @@ impl BinaryOpKind {
                 | Self::F64Copysign => FieldTy::SignF64,
                 _ => panic!("operator cannot have an immediate `rhs` field"),
             },
-        }
-    }
-
-    pub fn result_ty(&self) -> Ty {
-        match self {
-            | Self::Cmp(_) => Ty::I32,
-            | Self::I32Add
-            | Self::I32Sub
-            | Self::I32Mul
-            | Self::I32BitAnd
-            | Self::I32BitOr
-            | Self::I32BitXor
-            | Self::I32Shl
-            | Self::I32Rotl
-            | Self::I32Rotr => Ty::I32,
-            | Self::S32Div | Self::S32Rem | Self::S32Shr => Ty::S32,
-            | Self::U32Div | Self::U32Rem | Self::U32Shr => Ty::U32,
-            | Self::I64Add
-            | Self::I64Sub
-            | Self::I64Mul
-            | Self::I64BitAnd
-            | Self::I64BitOr
-            | Self::I64BitXor
-            | Self::I64Shl
-            | Self::I64Rotl
-            | Self::I64Rotr => Ty::I64,
-            | Self::S64Div | Self::S64Rem | Self::S64Shr => Ty::S64,
-            | Self::U64Div | Self::U64Rem | Self::U64Shr => Ty::U64,
-            | Self::F32Add
-            | Self::F32Sub
-            | Self::F32Mul
-            | Self::F32Div
-            | Self::F32Min
-            | Self::F32Max
-            | Self::F32Copysign => Ty::F32,
-            | Self::F64Add
-            | Self::F64Sub
-            | Self::F64Mul
-            | Self::F64Div
-            | Self::F64Min
-            | Self::F64Max
-            | Self::F64Copysign => Ty::F64,
-            | Self::I8x16Swizzle => Ty::I8x16,
-            | Self::I8x16Eq | Self::I8x16NotEq => Ty::I8x16,
-            | Self::I16x8Eq | Self::I16x8NotEq => Ty::I16x8,
-            | Self::I32x4Eq | Self::I32x4NotEq => Ty::I32x4,
-            | Self::I64x2Eq | Self::I64x2NotEq => Ty::I64x2,
-            | Self::S8x16Lt | Self::S8x16Le => Ty::S8x16,
-            | Self::S16x8Lt | Self::S16x8Le => Ty::S16x8,
-            | Self::S32x4Lt | Self::S32x4Le => Ty::S32x4,
-            | Self::S64x2Lt | Self::S64x2Le => Ty::S64x2,
-            | Self::U8x16Lt | Self::U8x16Le => Ty::U8x16,
-            | Self::U16x8Lt | Self::U16x8Le => Ty::U16x8,
-            | Self::U32x4Lt | Self::U32x4Le => Ty::U32x4,
-            | Self::U64x2Lt | Self::U64x2Le => Ty::U64x2,
-            | Self::F32x4Eq | Self::F32x4NotEq | Self::F32x4Lt | Self::F32x4Le => Ty::F32x4,
-            | Self::F64x2Eq | Self::F64x2NotEq | Self::F64x2Lt | Self::F64x2Le => Ty::F64x2,
-            | Self::V128And | Self::V128AndNot | Self::V128Or | Self::V128Xor => Ty::V128,
         }
     }
 
@@ -1110,7 +1103,7 @@ impl CmpOpKind {
         }
     }
 
-    pub fn input_ty(&self) -> Ty {
+    pub fn ident_prefix(&self) -> Ty {
         match self {
             | Self::I32Eq
             | Self::I32NotEq
