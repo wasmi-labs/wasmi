@@ -739,6 +739,23 @@ fn add_wide_arithmetic_ops(isa: &mut Isa) {
     isa.push_ops(ops);
 }
 
+fn add_simd_ops(isa: &mut Isa, config: &Config) {
+    if !config.simd {
+        return;
+    }
+    isa.push_op(GenericOp::new(
+        Ident::Copy128,
+        [
+            Field::new(Ident::Result, FieldTy::Stack),
+            Field::new(Ident::ValueLo, FieldTy::U64),
+            Field::new(Ident::ValueHi, FieldTy::U64),
+        ],
+    ));
+    add_simd_splat_ops(isa);
+    add_simd_extract_lane_ops(isa);
+    add_simd_replace_lane_ops(isa);
+}
+
 fn add_simd_splat_ops(isa: &mut Isa) {
     let kinds = [SplatType::U32, SplatType::U64];
     for kind in kinds {
@@ -812,21 +829,4 @@ fn add_simd_replace_lane_ops(isa: &mut Isa) {
         isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Stack));
         isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Immediate));
     }
-}
-
-fn add_simd_ops(isa: &mut Isa, config: &Config) {
-    if !config.simd {
-        return;
-    }
-    isa.push_op(GenericOp::new(
-        Ident::Copy128,
-        [
-            Field::new(Ident::Result, FieldTy::Stack),
-            Field::new(Ident::ValueLo, FieldTy::U64),
-            Field::new(Ident::ValueHi, FieldTy::U64),
-        ],
-    ));
-    add_simd_splat_ops(isa);
-    add_simd_extract_lane_ops(isa);
-    add_simd_replace_lane_ops(isa);
 }
