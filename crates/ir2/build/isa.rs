@@ -34,8 +34,14 @@ pub struct Isa {
 }
 
 impl Isa {
-    fn push_op(&mut self, op: Op) {
-        self.ops.push(op);
+    fn push_op(&mut self, op: impl Into<Op>) {
+        self.ops.push(op.into());
+    }
+
+    fn push_ops(&mut self, ops: impl IntoIterator<Item = Op>) {
+        for op in ops {
+            self.ops.push(op);
+        }
     }
 }
 
@@ -120,7 +126,7 @@ fn add_unary_ops(isa: &mut Isa) {
         UnaryOpKind::U64TruncSatF64,
     ];
     for op in ops {
-        isa.push_op(Op::Unary(UnaryOp::new(op)));
+        isa.push_op(UnaryOp::new(op));
     }
 }
 
@@ -208,22 +214,18 @@ fn add_binary_ops(isa: &mut Isa) {
         BinaryOpKind::F64Copysign,
     ];
     for op in ops {
-        isa.push_op(Op::Binary(BinaryOp::new(
-            op,
-            OperandKind::Stack,
-            OperandKind::Stack,
-        )));
-        isa.push_op(Op::Binary(BinaryOp::new(
+        isa.push_op(BinaryOp::new(op, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(BinaryOp::new(
             op,
             OperandKind::Stack,
             OperandKind::Immediate,
-        )));
+        ));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
-            isa.push_op(Op::Binary(BinaryOp::new(
+            isa.push_op(BinaryOp::new(
                 op,
                 OperandKind::Immediate,
                 OperandKind::Stack,
-            )));
+            ));
         }
     }
 }
@@ -268,22 +270,18 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
         CmpOpKind::F64NotLe,
     ];
     for op in ops {
-        isa.push_op(Op::CmpBranch(CmpBranchOp::new(
-            op,
-            OperandKind::Stack,
-            OperandKind::Stack,
-        )));
-        isa.push_op(Op::CmpBranch(CmpBranchOp::new(
+        isa.push_op(CmpBranchOp::new(op, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(CmpBranchOp::new(
             op,
             OperandKind::Stack,
             OperandKind::Immediate,
-        )));
+        ));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
-            isa.push_op(Op::CmpBranch(CmpBranchOp::new(
+            isa.push_op(CmpBranchOp::new(
                 op,
                 OperandKind::Immediate,
                 OperandKind::Stack,
-            )));
+            ));
         }
     }
 }
@@ -316,22 +314,18 @@ fn add_cmp_select_ops(isa: &mut Isa) {
         CmpOpKind::F64Le,
     ];
     for op in ops {
-        isa.push_op(Op::CmpSelect(CmpSelectOp::new(
-            op,
-            OperandKind::Stack,
-            OperandKind::Stack,
-        )));
-        isa.push_op(Op::CmpSelect(CmpSelectOp::new(
+        isa.push_op(CmpSelectOp::new(op, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(CmpSelectOp::new(
             op,
             OperandKind::Stack,
             OperandKind::Immediate,
-        )));
+        ));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
-            isa.push_op(Op::CmpSelect(CmpSelectOp::new(
+            isa.push_op(CmpSelectOp::new(
                 op,
                 OperandKind::Immediate,
                 OperandKind::Stack,
-            )));
+            ));
         }
     }
 }
@@ -355,14 +349,9 @@ fn add_load_ops(isa: &mut Isa) {
         LoadOpKind::U64Load32,
     ];
     for op in ops {
-        isa.push_op(Op::Load(LoadOp::new(op, OperandKind::Stack, false, false)));
-        isa.push_op(Op::Load(LoadOp::new(
-            op,
-            OperandKind::Immediate,
-            false,
-            false,
-        )));
-        isa.push_op(Op::Load(LoadOp::new(op, OperandKind::Stack, true, true)));
+        isa.push_op(LoadOp::new(op, OperandKind::Stack, false, false));
+        isa.push_op(LoadOp::new(op, OperandKind::Immediate, false, false));
+        isa.push_op(LoadOp::new(op, OperandKind::Stack, true, true));
     }
 }
 
@@ -380,41 +369,41 @@ fn add_store_ops(isa: &mut Isa) {
         StoreOpKind::I64Store32,
     ];
     for op in ops {
-        isa.push_op(Op::Store(StoreOp::new(
+        isa.push_op(StoreOp::new(
             op,
             OperandKind::Stack,
             OperandKind::Stack,
             false,
             false,
-        )));
-        isa.push_op(Op::Store(StoreOp::new(
-            op,
-            OperandKind::Stack,
-            OperandKind::Immediate,
-            false,
-            false,
-        )));
-        isa.push_op(Op::Store(StoreOp::new(
-            op,
-            OperandKind::Immediate,
-            OperandKind::Stack,
-            false,
-            false,
-        )));
-        isa.push_op(Op::Store(StoreOp::new(
-            op,
-            OperandKind::Stack,
-            OperandKind::Stack,
-            true,
-            true,
-        )));
-        isa.push_op(Op::Store(StoreOp::new(
+        ));
+        isa.push_op(StoreOp::new(
             op,
             OperandKind::Stack,
             OperandKind::Immediate,
+            false,
+            false,
+        ));
+        isa.push_op(StoreOp::new(
+            op,
+            OperandKind::Immediate,
+            OperandKind::Stack,
+            false,
+            false,
+        ));
+        isa.push_op(StoreOp::new(
+            op,
+            OperandKind::Stack,
+            OperandKind::Stack,
             true,
             true,
-        )));
+        ));
+        isa.push_op(StoreOp::new(
+            op,
+            OperandKind::Stack,
+            OperandKind::Immediate,
+            true,
+            true,
+        ));
     }
 }
 
@@ -466,9 +455,7 @@ fn add_control_ops(isa: &mut Isa) {
             ],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_ops(ops);
 }
 
 fn add_copy_ops(isa: &mut Isa) {
@@ -503,9 +490,7 @@ fn add_copy_ops(isa: &mut Isa) {
             ],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_ops(ops);
 }
 
 fn add_call_ops(isa: &mut Isa) {
@@ -557,9 +542,7 @@ fn add_call_ops(isa: &mut Isa) {
             ],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_ops(ops);
 }
 
 fn add_global_ops(isa: &mut Isa) {
@@ -593,9 +576,7 @@ fn add_global_ops(isa: &mut Isa) {
             ],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_ops(ops);
 }
 
 fn add_table_ops(isa: &mut Isa) {
@@ -659,9 +640,7 @@ fn add_table_ops(isa: &mut Isa) {
             [Field::new(Ident::Elem, FieldTy::Elem)],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_ops(ops);
 }
 
 fn add_memory_ops(isa: &mut Isa) {
@@ -715,9 +694,7 @@ fn add_memory_ops(isa: &mut Isa) {
             ],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_ops(ops);
 }
 
 fn add_wide_arithmetic_ops(isa: &mut Isa) {
@@ -759,30 +736,19 @@ fn add_wide_arithmetic_ops(isa: &mut Isa) {
             ],
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
+    isa.push_ops(ops);
+}
+
+fn add_simd_splat_ops(isa: &mut Isa) {
+    let kinds = [SplatType::U32, SplatType::U64];
+    for kind in kinds {
+        isa.push_op(V128SplatOp::new(kind, OperandKind::Immediate));
+        isa.push_op(V128SplatOp::new(kind, OperandKind::Stack));
     }
 }
 
-fn add_simd_ops(isa: &mut Isa, config: &Config) {
-    if !config.simd {
-        return;
-    }
+fn add_simd_extract_lane_ops(isa: &mut Isa) {
     let ops = [
-        Op::from(GenericOp::new(
-            Ident::Copy128,
-            [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::ValueLo, FieldTy::U64),
-                Field::new(Ident::ValueHi, FieldTy::U64),
-            ],
-        )),
-        // Splat Ops
-        Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Stack)),
-        Op::from(V128SplatOp::new(SplatType::U32, OperandKind::Immediate)),
-        Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Stack)),
-        Op::from(V128SplatOp::new(SplatType::U64, OperandKind::Immediate)),
-        // ExtractLane Ops
         Op::from(GenericOp::new(
             Ident::S8x16ExtractLane,
             [
@@ -831,7 +797,12 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx2),
             ],
         )),
-        // ReplaceLane Ops
+    ];
+    isa.push_ops(ops);
+}
+
+fn add_simd_replace_lane_ops(isa: &mut Isa) {
+    let ops = [
         Op::from(V128ReplaceLaneOp::new(
             ReplaceLaneWidth::W8,
             OperandKind::Stack,
@@ -865,7 +836,22 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             OperandKind::Immediate,
         )),
     ];
-    for op in ops {
-        isa.push_op(op);
+    isa.push_ops(ops);
+}
+
+fn add_simd_ops(isa: &mut Isa, config: &Config) {
+    if !config.simd {
+        return;
     }
+    isa.push_op(GenericOp::new(
+        Ident::Copy128,
+        [
+            Field::new(Ident::Result, FieldTy::Stack),
+            Field::new(Ident::ValueLo, FieldTy::U64),
+            Field::new(Ident::ValueHi, FieldTy::U64),
+        ],
+    ));
+    add_simd_splat_ops(isa);
+    add_simd_extract_lane_ops(isa);
+    add_simd_replace_lane_ops(isa);
 }
