@@ -273,10 +273,10 @@ pub enum UnaryOpKind {
 
 impl UnaryOpKind {
     pub fn is_conversion(&self) -> bool {
-        self.input_ty() != self.result_ty()
+        self.value_ty() != self.result_ty()
     }
 
-    pub fn input_ty(&self) -> Ty {
+    pub fn value_ty(&self) -> Ty {
         match self {
             | Self::I32Clz | Self::I32Ctz | Self::I32Popcnt => Ty::I32,
             | Self::I64Clz | Self::I64Ctz | Self::I64Popcnt | Self::I32WrapI64 => Ty::I64,
