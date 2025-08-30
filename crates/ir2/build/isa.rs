@@ -802,41 +802,16 @@ fn add_simd_extract_lane_ops(isa: &mut Isa) {
 }
 
 fn add_simd_replace_lane_ops(isa: &mut Isa) {
-    let ops = [
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W8,
-            OperandKind::Stack,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W8,
-            OperandKind::Immediate,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W16,
-            OperandKind::Stack,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W16,
-            OperandKind::Immediate,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W32,
-            OperandKind::Stack,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W32,
-            OperandKind::Immediate,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W64,
-            OperandKind::Stack,
-        )),
-        Op::from(V128ReplaceLaneOp::new(
-            ReplaceLaneWidth::W64,
-            OperandKind::Immediate,
-        )),
+    let widths = [
+        ReplaceLaneWidth::W8,
+        ReplaceLaneWidth::W16,
+        ReplaceLaneWidth::W32,
+        ReplaceLaneWidth::W64,
     ];
-    isa.push_ops(ops);
+    for width in widths {
+        isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Stack));
+        isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Immediate));
+    }
 }
 
 fn add_simd_ops(isa: &mut Isa, config: &Config) {
