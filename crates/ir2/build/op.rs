@@ -1,14 +1,35 @@
 use crate::build::{CamelCase, Ident, SnakeCase};
 use core::fmt::{self, Display};
 
+macro_rules! apply_macro_for_ops {
+    ($mac:ident $(, $param:ident)* $(,)?) => {
+        $mac! {
+            $($param,)*
+            Unary(UnaryOp),
+            Binary(BinaryOp),
+            CmpBranch(CmpBranchOp),
+            CmpSelect(CmpSelectOp),
+            Load(LoadOp),
+            Store(StoreOp),
+            TableGet(TableGetOp),
+            TableSet(TableSetOp),
+            Generic0(GenericOp<0>),
+            Generic1(GenericOp<1>),
+            Generic2(GenericOp<2>),
+            Generic3(GenericOp<3>),
+            Generic4(GenericOp<4>),
+            Generic5(GenericOp<5>),
+            V128Splat(V128SplatOp),
+            V128ReplaceLane(V128ReplaceLaneOp),
+        }
+    };
+}
+
 macro_rules! impl_from_for_op {
     (
-        $( #[$attr:meta] )*
-        pub enum Op {
-            $($variant:ident($op_ty:ty)),* $(,)?
-        }
+        $($variant:ident($op_ty:ty)),* $(,)?
     ) => {
-        $( #[$attr] )*
+        #[derive(Copy, Clone)]
         pub enum Op {
             $(
                 $variant($op_ty),
@@ -24,27 +45,7 @@ macro_rules! impl_from_for_op {
         )*
     };
 }
-impl_from_for_op! {
-    #[derive(Copy, Clone)]
-    pub enum Op {
-        Unary(UnaryOp),
-        Binary(BinaryOp),
-        CmpBranch(CmpBranchOp),
-        CmpSelect(CmpSelectOp),
-        Load(LoadOp),
-        Store(StoreOp),
-        TableGet(TableGetOp),
-        TableSet(TableSetOp),
-        Generic0(GenericOp<0>),
-        Generic1(GenericOp<1>),
-        Generic2(GenericOp<2>),
-        Generic3(GenericOp<3>),
-        Generic4(GenericOp<4>),
-        Generic5(GenericOp<5>),
-        V128Splat(V128SplatOp),
-        V128ReplaceLane(V128ReplaceLaneOp),
-    }
-}
+apply_macro_for_ops!(impl_from_for_op);
 
 #[derive(Copy, Clone)]
 pub struct Field {

@@ -6,7 +6,6 @@ use crate::build::{
         CmpSelectOp,
         GenericOp,
         LoadOp,
-        Op,
         OperandKind,
         ReplaceLaneWidth,
         SplatType,
@@ -22,8 +21,8 @@ use crate::build::{
 use core::fmt::{self, Display};
 
 pub struct DisplayIdent<T> {
-    value: T,
-    case: Case,
+    pub value: T,
+    pub case: Case,
 }
 
 impl<T> DisplayIdent<T> {
@@ -45,29 +44,6 @@ impl<T> DisplayIdent<T> {
         DisplayIdent {
             value,
             case: self.case,
-        }
-    }
-}
-
-impl Display for DisplayIdent<&'_ Op> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.value {
-            Op::Unary(op) => self.map(op).fmt(f),
-            Op::Binary(op) => self.map(op).fmt(f),
-            Op::CmpBranch(op) => self.map(op).fmt(f),
-            Op::CmpSelect(op) => self.map(op).fmt(f),
-            Op::Load(op) => self.map(op).fmt(f),
-            Op::Store(op) => self.map(op).fmt(f),
-            Op::TableGet(op) => self.map(op).fmt(f),
-            Op::TableSet(op) => self.map(op).fmt(f),
-            Op::Generic0(op) => self.map(op).fmt(f),
-            Op::Generic1(op) => self.map(op).fmt(f),
-            Op::Generic2(op) => self.map(op).fmt(f),
-            Op::Generic3(op) => self.map(op).fmt(f),
-            Op::Generic4(op) => self.map(op).fmt(f),
-            Op::Generic5(op) => self.map(op).fmt(f),
-            Op::V128Splat(op) => self.map(op).fmt(f),
-            Op::V128ReplaceLane(op) => self.map(op).fmt(f),
         }
     }
 }
