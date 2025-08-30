@@ -751,9 +751,19 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::ValueHi, FieldTy::U64),
         ],
     ));
+    isa.push_op(GenericOp::new(
+        Ident::I8x16Shuffle,
+        [
+            Field::new(Ident::Result, FieldTy::Stack),
+            Field::new(Ident::Lhs, FieldTy::Stack),
+            Field::new(Ident::Rhs, FieldTy::Stack),
+            Field::new(Ident::Selector, FieldTy::Array16ImmLaneIdx32),
+        ],
+    ));
     add_simd_splat_ops(isa);
     add_simd_extract_lane_ops(isa);
     add_simd_replace_lane_ops(isa);
+    add_simd_binary_ops(isa);
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
@@ -828,5 +838,50 @@ fn add_simd_replace_lane_ops(isa: &mut Isa) {
     for width in widths {
         isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Stack));
         isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Immediate));
+    }
+}
+
+fn add_simd_binary_ops(isa: &mut Isa) {
+    let kinds = [
+        BinaryOpKind::I8x16Swizzle,
+        BinaryOpKind::I8x16Eq,
+        BinaryOpKind::I8x16NotEq,
+        BinaryOpKind::I16x8Eq,
+        BinaryOpKind::I16x8NotEq,
+        BinaryOpKind::I32x4Eq,
+        BinaryOpKind::I32x4NotEq,
+        BinaryOpKind::I64x2Eq,
+        BinaryOpKind::I64x2NotEq,
+        BinaryOpKind::S8x16Lt,
+        BinaryOpKind::S8x16Le,
+        BinaryOpKind::S16x8Lt,
+        BinaryOpKind::S16x8Le,
+        BinaryOpKind::S32x4Lt,
+        BinaryOpKind::S32x4Le,
+        BinaryOpKind::S64x2Lt,
+        BinaryOpKind::S64x2Le,
+        BinaryOpKind::U8x16Lt,
+        BinaryOpKind::U8x16Le,
+        BinaryOpKind::U16x8Lt,
+        BinaryOpKind::U16x8Le,
+        BinaryOpKind::U32x4Lt,
+        BinaryOpKind::U32x4Le,
+        BinaryOpKind::U64x2Lt,
+        BinaryOpKind::U64x2Le,
+        BinaryOpKind::F32x4Eq,
+        BinaryOpKind::F32x4NotEq,
+        BinaryOpKind::F32x4Lt,
+        BinaryOpKind::F32x4Le,
+        BinaryOpKind::F64x2Eq,
+        BinaryOpKind::F64x2NotEq,
+        BinaryOpKind::F64x2Lt,
+        BinaryOpKind::F64x2Le,
+        BinaryOpKind::V128And,
+        BinaryOpKind::V128AndNot,
+        BinaryOpKind::V128Or,
+        BinaryOpKind::V128Xor,
+    ];
+    for kind in kinds {
+        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
     }
 }
