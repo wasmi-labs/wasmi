@@ -793,9 +793,7 @@ impl BinaryOpKind {
             | Self::U16x8Max => Ty::U16x8,
             | Self::U16x8Avgr => Ty::U16x8,
             // i32x4 Ops
-            | Self::I32x4Add
-            | Self::I32x4Sub
-            | Self::I32x4Mul => Ty::I32x4,
+            | Self::I32x4Add | Self::I32x4Sub | Self::I32x4Mul => Ty::I32x4,
             | Self::S32x4Min => Ty::S32x4,
             | Self::U32x4Min => Ty::U32x4,
             | Self::S32x4Max => Ty::S32x4,
@@ -806,9 +804,7 @@ impl BinaryOpKind {
             | Self::S32x4ExtmulHighI16x8 => Ty::S32x4,
             | Self::U32x4ExtmulHighI16x8 => Ty::U32x4,
             // i64x2 Ops
-            | Self::I64x2Add
-            | Self::I64x2Sub
-            | Self::I64x2Mul => Ty::I64x2,
+            | Self::I64x2Add | Self::I64x2Sub | Self::I64x2Mul => Ty::I64x2,
             | Self::S64x2ExtmulLowI32x4 => Ty::S64x2,
             | Self::U64x2ExtmulLowI32x4 => Ty::U64x2,
             | Self::S64x2ExtmulHighI32x4 => Ty::S64x2,
