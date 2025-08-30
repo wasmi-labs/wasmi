@@ -73,9 +73,12 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
 }
 
 fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 225_000;
+    let expected_size = match config.simd {
+        true => 225_000,
+        false => 175_000,
+    };
     contents.clear();
-    contents.reserve_exact(EXPECTED_SIZE);
+    contents.reserve_exact(expected_size);
     write!(
         contents,
         "\
@@ -91,36 +94,42 @@ fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(
     )?;
     let len_contents = contents.len();
     assert!(
-        len_contents <= EXPECTED_SIZE,
-        "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
+        len_contents <= expected_size,
+        "reserved bytes: {expected_size}, contents.len() = {len_contents}",
     );
     fs::write(config.out_dir.join("op.rs"), contents)?;
     Ok(())
 }
 
 fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 150_000;
+    let expected_size = match config.simd {
+        true => 95_000,
+        false => 75_000,
+    };
     contents.clear();
-    contents.reserve_exact(EXPECTED_SIZE);
+    contents.reserve_exact(expected_size);
     write!(contents, "{}", DisplayEncode::new(isa, Indent::default()))?;
     let len_contents = contents.len();
     assert!(
-        len_contents <= EXPECTED_SIZE,
-        "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
+        len_contents <= expected_size,
+        "reserved bytes: {expected_size}, contents.len() = {len_contents}",
     );
     fs::write(config.out_dir.join("encode.rs"), contents)?;
     Ok(())
 }
 
 fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 45_000;
+    let expected_size = match config.simd {
+        true => 45_000,
+        false => 35_000,
+    };
     contents.clear();
-    contents.reserve_exact(EXPECTED_SIZE);
+    contents.reserve_exact(expected_size);
     write!(contents, "{}", DisplayDecode::new(isa, Indent::default()))?;
     let len_contents = contents.len();
     assert!(
-        len_contents <= EXPECTED_SIZE,
-        "reserved bytes: {EXPECTED_SIZE}, contents.len() = {len_contents}",
+        len_contents <= expected_size,
+        "reserved bytes: {expected_size}, contents.len() = {len_contents}",
     );
     fs::write(config.out_dir.join("decode.rs"), contents)?;
     Ok(())
