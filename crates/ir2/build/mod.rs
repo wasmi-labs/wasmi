@@ -74,7 +74,7 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
 
 fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 230_000,
+        true => 255_000,
         false => 175_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
@@ -98,7 +98,7 @@ fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(
 
 fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 100_000,
+        true => 110_000,
         false => 75_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
@@ -110,7 +110,7 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
 
 fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 45_000,
+        true => 50_000,
         false => 35_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
