@@ -192,4 +192,17 @@ impl<T: Encode> Encode for &'_ T {
     }
 }
 
+impl<const N: usize, T: Encode> Encode for [T; N] {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        let Some((first, rest)) = self.split_first() else {
+            panic!("cannot encode zero-sized arrays")
+        };
+        let pos = first.encode(encoder)?;
+        for item in rest {
+            item.encode(encoder)?;
+        }
+        Ok(pos)
+    }
+}
+
 include!(concat!(env!("OUT_DIR"), "/encode.rs"));
