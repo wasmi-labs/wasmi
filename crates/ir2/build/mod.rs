@@ -1,6 +1,7 @@
+#[macro_use]
+mod op;
 mod display;
 mod isa;
-mod op;
 pub mod token;
 
 use self::{
