@@ -120,6 +120,7 @@ fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
     Ok(())
 }
 
+#[track_caller]
 fn write_to_buffer(
     buffer: &mut String,
     expected_size: usize,
