@@ -428,6 +428,44 @@ pub enum BinaryOpKind {
     F64Min,
     F64Max,
     F64Copysign,
+    // Simd Operators
+    I8x16Swizzle,
+    I8x16Eq,
+    I8x16NotEq,
+    I16x8Eq,
+    I16x8NotEq,
+    I32x4Eq,
+    I32x4NotEq,
+    I64x2Eq,
+    I64x2NotEq,
+    S8x16Lt,
+    S8x16Le,
+    S16x8Lt,
+    S16x8Le,
+    S32x4Lt,
+    S32x4Le,
+    S64x2Lt,
+    S64x2Le,
+    U8x16Lt,
+    U8x16Le,
+    U16x8Lt,
+    U16x8Le,
+    U32x4Lt,
+    U32x4Le,
+    U64x2Lt,
+    U64x2Le,
+    F32x4Eq,
+    F32x4NotEq,
+    F32x4Lt,
+    F32x4Le,
+    F64x2Eq,
+    F64x2NotEq,
+    F64x2Lt,
+    F64x2Le,
+    V128And,
+    V128AndNot,
+    V128Or,
+    V128Xor,
 }
 
 impl BinaryOpKind {
@@ -478,6 +516,44 @@ impl BinaryOpKind {
             Self::F64Min => Ident::Min,
             Self::F64Max => Ident::Max,
             Self::F64Copysign => Ident::Copysign,
+            // Simd Ops
+            Self::I8x16Swizzle => Ident::Swizzle,
+            Self::I8x16Eq => Ident::Eq,
+            Self::I8x16NotEq => Ident::NotEq,
+            Self::I16x8Eq => Ident::Eq,
+            Self::I16x8NotEq => Ident::NotEq,
+            Self::I32x4Eq => Ident::Eq,
+            Self::I32x4NotEq => Ident::NotEq,
+            Self::I64x2Eq => Ident::Eq,
+            Self::I64x2NotEq => Ident::NotEq,
+            Self::S8x16Lt => Ident::Lt,
+            Self::S8x16Le => Ident::Le,
+            Self::S16x8Lt => Ident::Lt,
+            Self::S16x8Le => Ident::Le,
+            Self::S32x4Lt => Ident::Lt,
+            Self::S32x4Le => Ident::Le,
+            Self::S64x2Lt => Ident::Lt,
+            Self::S64x2Le => Ident::Le,
+            Self::U8x16Lt => Ident::Lt,
+            Self::U8x16Le => Ident::Le,
+            Self::U16x8Lt => Ident::Lt,
+            Self::U16x8Le => Ident::Le,
+            Self::U32x4Lt => Ident::Lt,
+            Self::U32x4Le => Ident::Le,
+            Self::U64x2Lt => Ident::Lt,
+            Self::U64x2Le => Ident::Le,
+            Self::F32x4Eq => Ident::Eq,
+            Self::F32x4NotEq => Ident::NotEq,
+            Self::F32x4Lt => Ident::Lt,
+            Self::F32x4Le => Ident::Le,
+            Self::F64x2Eq => Ident::Eq,
+            Self::F64x2NotEq => Ident::NotEq,
+            Self::F64x2Lt => Ident::Lt,
+            Self::F64x2Le => Ident::Le,
+            Self::V128And => Ident::And,
+            Self::V128AndNot => Ident::AndNot,
+            Self::V128Or => Ident::Or,
+            Self::V128Xor => Ident::Xor,
         }
     }
 
@@ -538,6 +614,7 @@ impl BinaryOpKind {
                 | Self::F64Min
                 | Self::F64Max
                 | Self::F64Copysign => FieldTy::F64,
+                _ => panic!("operator cannot have an immediate `lhs` field"),
             },
         }
     }
@@ -581,6 +658,7 @@ impl BinaryOpKind {
                 | Self::F64Min
                 | Self::F64Max => FieldTy::F64,
                 | Self::F64Copysign => FieldTy::SignF64,
+                _ => panic!("operator cannot have an immediate `rhs` field"),
             },
         }
     }
@@ -624,6 +702,22 @@ impl BinaryOpKind {
             | Self::F64Min
             | Self::F64Max
             | Self::F64Copysign => Ty::F64,
+            | Self::I8x16Swizzle => Ty::I8x16,
+            | Self::I8x16Eq | Self::I8x16NotEq => Ty::I8x16,
+            | Self::I16x8Eq | Self::I16x8NotEq => Ty::I16x8,
+            | Self::I32x4Eq | Self::I32x4NotEq => Ty::I32x4,
+            | Self::I64x2Eq | Self::I64x2NotEq => Ty::I64x2,
+            | Self::S8x16Lt | Self::S8x16Le => Ty::S8x16,
+            | Self::S16x8Lt | Self::S16x8Le => Ty::S16x8,
+            | Self::S32x4Lt | Self::S32x4Le => Ty::S32x4,
+            | Self::S64x2Lt | Self::S64x2Le => Ty::S64x2,
+            | Self::U8x16Lt | Self::U8x16Le => Ty::U8x16,
+            | Self::U16x8Lt | Self::U16x8Le => Ty::U16x8,
+            | Self::U32x4Lt | Self::U32x4Le => Ty::U32x4,
+            | Self::U64x2Lt | Self::U64x2Le => Ty::U64x2,
+            | Self::F32x4Eq | Self::F32x4NotEq | Self::F32x4Lt | Self::F32x4Le => Ty::F32x4,
+            | Self::F64x2Eq | Self::F64x2NotEq | Self::F64x2Lt | Self::F64x2Le => Ty::F64x2,
+            | Self::V128And | Self::V128AndNot | Self::V128Or | Self::V128Xor => Ty::V128,
         }
     }
 
@@ -741,6 +835,36 @@ pub enum Ty {
     F32,
     /// A 64-bit float type.
     F64,
+    /// A generic `simd` vector type.
+    V128,
+    /// A `i8x16` vector type for `simd`.
+    I8x16,
+    /// A `i16x8` vector type for `simd`.
+    I16x8,
+    /// A `i32x4` vector type for `simd`.
+    I32x4,
+    /// A `i64x2` vector type for `simd`.
+    I64x2,
+    /// A `u8x16` vector type for `simd`.
+    U8x16,
+    /// A `u16x8` vector type for `simd`.
+    U16x8,
+    /// A `u32x4` vector type for `simd`.
+    U32x4,
+    /// A `u64x2` vector type for `simd`.
+    U64x2,
+    /// A `s8x16` vector type for `simd`.
+    S8x16,
+    /// A `s16x8` vector type for `simd`.
+    S16x8,
+    /// A `s32x4` vector type for `simd`.
+    S32x4,
+    /// A `s64x2` vector type for `simd`.
+    S64x2,
+    /// A `f32x4` vector type for `simd`.
+    F32x4,
+    /// A `f64x2` vector type for `simd`.
+    F64x2,
 }
 
 impl Display for Ty {
@@ -754,6 +878,21 @@ impl Display for Ty {
             Ty::U64 => "u64",
             Ty::F32 => "f32",
             Ty::F64 => "f64",
+            Ty::V128 => "v128",
+            Ty::I8x16 => "i8x16",
+            Ty::I16x8 => "i16x8",
+            Ty::I32x4 => "i32x4",
+            Ty::I64x2 => "i64x2",
+            Ty::U8x16 => "u8x16",
+            Ty::U16x8 => "u16x8",
+            Ty::U32x4 => "u32x4",
+            Ty::U64x2 => "u64x2",
+            Ty::S8x16 => "s8x16",
+            Ty::S16x8 => "s16x8",
+            Ty::S32x4 => "s32x4",
+            Ty::S64x2 => "s64x2",
+            Ty::F32x4 => "f32x4",
+            Ty::F64x2 => "f64x2",
         };
         write!(f, "{s}")
     }
@@ -770,6 +909,21 @@ impl From<Ty> for Ident {
             Ty::U64 => Self::U64,
             Ty::F32 => Self::F32,
             Ty::F64 => Self::F64,
+            Ty::V128 => Self::V128,
+            Ty::I8x16 => Self::I8x16,
+            Ty::I16x8 => Self::I16x8,
+            Ty::I32x4 => Self::I32x4,
+            Ty::I64x2 => Self::I64x2,
+            Ty::U8x16 => Self::U8x16,
+            Ty::U16x8 => Self::U16x8,
+            Ty::U32x4 => Self::U32x4,
+            Ty::U64x2 => Self::U64x2,
+            Ty::S8x16 => Self::S8x16,
+            Ty::S16x8 => Self::S16x8,
+            Ty::S32x4 => Self::S32x4,
+            Ty::S64x2 => Self::S64x2,
+            Ty::F32x4 => Self::F32x4,
+            Ty::F64x2 => Self::F64x2,
         }
     }
 }
@@ -806,6 +960,7 @@ pub enum FieldTy {
     Data,
     TrapCode,
     BlockFuel,
+    Array16ImmLaneIdx32,
     ImmLaneIdx16,
     ImmLaneIdx8,
     ImmLaneIdx4,
@@ -845,6 +1000,7 @@ impl Display for FieldTy {
             Self::Data => "Data",
             Self::TrapCode => "TrapCode",
             Self::BlockFuel => "BlockFuel",
+            Self::Array16ImmLaneIdx32 => "[ImmLaneIdx<32>; 16]",
             Self::ImmLaneIdx16 => "ImmLaneIdx<16>",
             Self::ImmLaneIdx8 => "ImmLaneIdx<8>",
             Self::ImmLaneIdx4 => "ImmLaneIdx<4>",

@@ -73,7 +73,7 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
 }
 
 fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
-    const EXPECTED_SIZE: usize = 190_000;
+    const EXPECTED_SIZE: usize = 200_000;
     contents.clear();
     contents.reserve_exact(EXPECTED_SIZE);
     write!(
