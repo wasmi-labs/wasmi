@@ -252,3 +252,51 @@ impl<V: Decode, const N: u8> Decode for V128ReplaceLaneOp<V, N> {
         }
     }
 }
+
+#[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
+pub struct V128LoadLaneOp_Ss<LaneIdx> {
+    pub result: Stack,
+    pub ptr: Stack,
+    pub offset: u64,
+    pub memory: Memory,
+    pub v128: Stack,
+    pub lane: LaneIdx,
+}
+
+#[cfg(feature = "simd")]
+impl<LaneIdx: Decode> Decode for V128LoadLaneOp_Ss<LaneIdx> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self {
+            result: Decode::decode(decoder),
+            ptr: Decode::decode(decoder),
+            offset: Decode::decode(decoder),
+            memory: Decode::decode(decoder),
+            v128: Decode::decode(decoder),
+            lane: Decode::decode(decoder),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
+pub struct V128LoadLaneOpMem0Offset16_Ss<LaneIdx> {
+    pub result: Stack,
+    pub ptr: Stack,
+    pub offset: Offset16,
+    pub v128: Stack,
+    pub lane: LaneIdx,
+}
+
+#[cfg(feature = "simd")]
+impl<LaneIdx: Decode> Decode for V128LoadLaneOpMem0Offset16_Ss<LaneIdx> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self {
+            result: Decode::decode(decoder),
+            ptr: Decode::decode(decoder),
+            offset: Decode::decode(decoder),
+            v128: Decode::decode(decoder),
+            lane: Decode::decode(decoder),
+        }
+    }
+}

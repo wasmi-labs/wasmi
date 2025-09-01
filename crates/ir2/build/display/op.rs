@@ -16,6 +16,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
 };
@@ -151,6 +152,13 @@ impl Display for DisplayOp<&'_ TableSetOp> {
 }
 
 impl Display for DisplayOp<&'_ V128ReplaceLaneOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let fields = self.value.fields().map(Option::from);
+        self.display_variant(f, &fields)
+    }
+}
+
+impl Display for DisplayOp<&'_ V128LoadLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)

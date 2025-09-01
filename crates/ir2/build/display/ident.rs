@@ -11,6 +11,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
     token::{Case, Ident, Sep, SnakeCase},
@@ -232,6 +233,38 @@ impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
         write!(
             f,
             "{v128}{sep}{ident}{width}_{result_suffix}{v128_suffix}{value_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ V128LoadLaneOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let sep = case.wrap(Sep);
+        let v128 = case.wrap(Ident::V128);
+        let ident = case.wrap(Ident::LoadLane);
+        let width = u8::from(op.width);
+        let result_suffix = case.wrap(OperandKind::Stack);
+        let ptr_suffix = SnakeCase(op.ptr);
+        let v128_suffix = SnakeCase(OperandKind::Stack);
+        let mem0_ident = self
+            .value
+            .mem0
+            .then_some(Ident::Mem0)
+            .map(|v| (sep, case.wrap(v)))
+            .map(DisplayConcat)
+            .display_maybe();
+        let offset16_ident = self
+            .value
+            .offset16
+            .then_some(Ident::Offset16)
+            .map(|v| (sep, case.wrap(v)))
+            .map(DisplayConcat)
+            .display_maybe();
+        write!(
+            f,
+            "{v128}{sep}{ident}{width}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}{v128_suffix}"
         )
     }
 }

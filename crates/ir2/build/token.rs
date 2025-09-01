@@ -271,6 +271,7 @@ define_ident!(
     U32x4ExtractLane: u32x4_extract_lane,
     U64x2ExtractLane: u64x2_extract_lane,
     ReplaceLane: replace_lane,
+    LoadLane: load_lane,
     Swizzle: swizzle,
     I8x16Shuffle: i8x16_shuffle,
     Q15MulrSat: q15_mulr_sat,

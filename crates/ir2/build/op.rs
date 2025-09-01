@@ -20,6 +20,7 @@ macro_rules! apply_macro_for_ops {
             Generic4(GenericOp<4>),
             Generic5(GenericOp<5>),
             V128ReplaceLane(V128ReplaceLaneOp),
+            V128LoadLane(V128LoadLaneOp),
         }
     };
 }
@@ -2193,6 +2194,84 @@ impl V128ReplaceLaneOp {
             self.v128_field(),
             self.value_field(),
             self.lane_field(),
+        ]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct V128LoadLaneOp {
+    /// The type of the value to be splatted.
+    pub width: LaneWidth,
+    /// The `value` used for replacing.
+    pub ptr: OperandKind,
+    /// True, if the operator is always operating on (`memory 0`).
+    pub mem0: bool,
+    /// True, if the operator uses a 16-bit offset field.
+    pub offset16: bool,
+}
+
+impl V128LoadLaneOp {
+    pub fn new(width: LaneWidth, ptr: OperandKind, mem0: bool, offset16: bool) -> Self {
+        Self {
+            width,
+            ptr,
+            mem0,
+            offset16,
+        }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Stack)
+    }
+
+    pub fn ptr_field(&self) -> Field {
+        let ptr_ty = match self.ptr {
+            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Immediate => FieldTy::Address,
+        };
+        Field::new(Ident::Ptr, ptr_ty)
+    }
+
+    pub fn offset_field(&self) -> Option<Field> {
+        let offset_ty = match self.ptr {
+            OperandKind::Stack => match self.offset16 {
+                true => FieldTy::Offset16,
+                false => FieldTy::U64,
+            },
+            OperandKind::Immediate => return None,
+        };
+        Some(Field::new(Ident::Offset, offset_ty))
+    }
+
+    pub fn v128_field(&self) -> Field {
+        Field::new(Ident::V128, FieldTy::Stack)
+    }
+
+    pub fn memory_field(&self) -> Option<Field> {
+        if self.mem0 {
+            return None;
+        }
+        Some(Field::new(Ident::Memory, FieldTy::Memory))
+    }
+
+    pub fn laneidx_field(&self) -> Field {
+        let ty = match self.width {
+            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
+            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
+            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
+            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
+        };
+        Field::new(Ident::Lane, ty)
+    }
+
+    pub fn fields(&self) -> [Option<Field>; 6] {
+        [
+            Some(self.result_field()),
+            Some(self.ptr_field()),
+            self.offset_field(),
+            self.memory_field(),
+            Some(self.v128_field()),
+            Some(self.laneidx_field()),
         ]
     }
 }

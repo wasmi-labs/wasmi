@@ -19,6 +19,7 @@ use crate::build::{
         TableSetOp,
         UnaryOp,
         UnaryOpKind,
+        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
     token::Ident,
@@ -1085,7 +1086,22 @@ fn add_simd_load_ops(isa: &mut Isa) {
         isa.push_op(LoadOp::new(op, OperandKind::Stack, false, false));
         isa.push_op(LoadOp::new(op, OperandKind::Stack, true, true));
     }
+    let widths = [
+        LaneWidth::W8,
+        LaneWidth::W16,
+        LaneWidth::W32,
+        LaneWidth::W64,
+    ];
+    for width in widths {
+        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Stack, false, false));
+        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Stack, true, true));
+    }
 }
 
 fn add_simd_store_ops(_isa: &mut Isa) {
+    // v128.store memarg: (i32 v128) -> ()
+    // v128.store8_lane memarg laneidx: (i32 v128) -> ()
+    // v128.store16_lane memarg laneidx: (i32 v128) -> ()
+    // v128.store32_lane memarg laneidx: (i32 v128) -> ()
+    // v128.store64_lane memarg laneidx: (i32 v128) -> ()
 }

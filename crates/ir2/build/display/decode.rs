@@ -15,6 +15,7 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         UnaryOp,
+        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
     token::{CamelCase, SnakeCase},
@@ -197,6 +198,23 @@ impl Display for DisplayDecode<&'_ V128ReplaceLaneOp> {
         writeln!(
             f,
             "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {len_lanes}>;"
+        )
+    }
+}
+
+impl Display for DisplayDecode<&'_ V128LoadLaneOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let result_suffix = CamelCase(OperandKind::Stack);
+        let mem0_offset16 = (op.mem0 && op.offset16)
+            .then_some("Mem0Offset16")
+            .display_maybe();
+        let ptr_suffix = SnakeCase(op.ptr);
+        let laneidx = op.width.to_laneidx();
+        writeln!(
+            f,
+            "pub type {camel_ident} = V128LoadLaneOp{mem0_offset16}_{result_suffix}{ptr_suffix}<{laneidx}>;"
         )
     }
 }

@@ -2,8 +2,6 @@
 
 mod op;
 
-#[cfg(feature = "simd")]
-use self::op::V128ReplaceLaneOp;
 use self::op::{
     BinaryOp,
     CmpBranchOp,
@@ -18,6 +16,8 @@ use self::op::{
     TableSet,
     UnaryOp,
 };
+#[cfg(feature = "simd")]
+use self::op::{V128LoadLaneOpMem0Offset16_Ss, V128LoadLaneOp_Ss, V128ReplaceLaneOp};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
