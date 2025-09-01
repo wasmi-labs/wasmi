@@ -1808,6 +1808,7 @@ impl LoadOp {
 
 #[derive(Copy, Clone)]
 pub enum LoadOpKind {
+    // Scalar
     Load32,
     Load64,
     S32Load8,
@@ -1820,6 +1821,20 @@ pub enum LoadOpKind {
     U64Load16,
     S64Load32,
     U64Load32,
+    // Simd
+    V128Load,
+    S16x8Load8x8,
+    U16x8Load8x8,
+    S32x4Load16x4,
+    U32x4Load16x4,
+    S64x2Load32x2,
+    U64x2Load32x2,
+    V128Load8Splat,
+    V128Load16Splat,
+    V128Load32Splat,
+    V128Load64Splat,
+    V128Load32Zero,
+    V128Load64Zero,
 }
 
 impl LoadOpKind {
@@ -1837,24 +1852,50 @@ impl LoadOpKind {
             Self::U64Load16 => Ident::Load16,
             Self::S64Load32 => Ident::Load32,
             Self::U64Load32 => Ident::Load32,
+            Self::V128Load => Ident::Load,
+            Self::S16x8Load8x8 => Ident::Load8x8,
+            Self::U16x8Load8x8 => Ident::Load8x8,
+            Self::S32x4Load16x4 => Ident::Load16x4,
+            Self::U32x4Load16x4 => Ident::Load16x4,
+            Self::S64x2Load32x2 => Ident::Load32x2,
+            Self::U64x2Load32x2 => Ident::Load32x2,
+            Self::V128Load8Splat => Ident::Load8Splat,
+            Self::V128Load16Splat => Ident::Load16Splat,
+            Self::V128Load32Splat => Ident::Load32Splat,
+            Self::V128Load64Splat => Ident::Load64Splat,
+            Self::V128Load32Zero => Ident::Load32Zero,
+            Self::V128Load64Zero => Ident::Load64Zero,
         }
     }
 
-    pub fn ident_prefix(&self) -> Option<Ident> {
-        match self {
-            Self::Load32 => None,
-            Self::Load64 => None,
-            Self::S32Load8 => Some(Ident::S32),
-            Self::U32Load8 => Some(Ident::U32),
-            Self::S32Load16 => Some(Ident::S32),
-            Self::U32Load16 => Some(Ident::U32),
-            Self::S64Load8 => Some(Ident::S64),
-            Self::U64Load8 => Some(Ident::U64),
-            Self::S64Load16 => Some(Ident::S64),
-            Self::U64Load16 => Some(Ident::U64),
-            Self::S64Load32 => Some(Ident::S64),
-            Self::U64Load32 => Some(Ident::U64),
-        }
+    pub fn ident_prefix(&self) -> Option<Ty> {
+        let prefix = match self {
+            | Self::Load32 | Self::Load64 => return None,
+            | Self::S32Load8 => Ty::S32,
+            | Self::U32Load8 => Ty::U32,
+            | Self::S32Load16 => Ty::S32,
+            | Self::U32Load16 => Ty::U32,
+            | Self::S64Load8 => Ty::S64,
+            | Self::U64Load8 => Ty::U64,
+            | Self::S64Load16 => Ty::S64,
+            | Self::U64Load16 => Ty::U64,
+            | Self::S64Load32 => Ty::S64,
+            | Self::U64Load32 => Ty::U64,
+            | Self::V128Load => Ty::V128,
+            | Self::S16x8Load8x8 => Ty::S16x8,
+            | Self::U16x8Load8x8 => Ty::U16x8,
+            | Self::S32x4Load16x4 => Ty::S32x4,
+            | Self::U32x4Load16x4 => Ty::U32x4,
+            | Self::S64x2Load32x2 => Ty::S64x2,
+            | Self::U64x2Load32x2 => Ty::U64x2,
+            | Self::V128Load8Splat => Ty::V128,
+            | Self::V128Load16Splat => Ty::V128,
+            | Self::V128Load32Splat => Ty::V128,
+            | Self::V128Load64Splat => Ty::V128,
+            | Self::V128Load32Zero => Ty::V128,
+            | Self::V128Load64Zero => Ty::V128,
+        };
+        Some(prefix)
     }
 }
 

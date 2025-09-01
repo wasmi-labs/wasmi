@@ -764,6 +764,8 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     add_simd_binary_ops(isa);
     add_simd_shift_ops(isa);
     add_simd_unary_ops(isa);
+    add_simd_load_ops(isa);
+    add_simd_store_ops(isa);
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
@@ -1061,4 +1063,29 @@ fn add_simd_unary_ops(isa: &mut Isa) {
     for kind in kinds {
         isa.push_op(UnaryOp::new(kind, OperandKind::Stack));
     }
+}
+
+fn add_simd_load_ops(isa: &mut Isa) {
+    let ops = [
+        LoadOpKind::V128Load,
+        LoadOpKind::S16x8Load8x8,
+        LoadOpKind::U16x8Load8x8,
+        LoadOpKind::S32x4Load16x4,
+        LoadOpKind::U32x4Load16x4,
+        LoadOpKind::S64x2Load32x2,
+        LoadOpKind::U64x2Load32x2,
+        LoadOpKind::V128Load8Splat,
+        LoadOpKind::V128Load16Splat,
+        LoadOpKind::V128Load32Splat,
+        LoadOpKind::V128Load64Splat,
+        LoadOpKind::V128Load32Zero,
+        LoadOpKind::V128Load64Zero,
+    ];
+    for op in ops {
+        isa.push_op(LoadOp::new(op, OperandKind::Stack, false, false));
+        isa.push_op(LoadOp::new(op, OperandKind::Stack, true, true));
+    }
+}
+
+fn add_simd_store_ops(_isa: &mut Isa) {
 }
