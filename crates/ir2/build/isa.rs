@@ -9,10 +9,10 @@ use crate::build::{
         Field,
         FieldTy,
         GenericOp,
+        LaneWidth,
         LoadOp,
         LoadOpKind,
         OperandKind,
-        ReplaceLaneWidth,
         StoreOp,
         StoreOpKind,
         TableGetOp,
@@ -832,10 +832,10 @@ fn add_simd_extract_lane_ops(isa: &mut Isa) {
 
 fn add_simd_replace_lane_ops(isa: &mut Isa) {
     let widths = [
-        ReplaceLaneWidth::W8,
-        ReplaceLaneWidth::W16,
-        ReplaceLaneWidth::W32,
-        ReplaceLaneWidth::W64,
+        LaneWidth::W8,
+        LaneWidth::W16,
+        LaneWidth::W32,
+        LaneWidth::W64,
     ];
     for width in widths {
         isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Stack));

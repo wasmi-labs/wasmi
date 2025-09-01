@@ -7,7 +7,6 @@ use crate::build::{
         GenericOp,
         LoadOp,
         OperandKind,
-        ReplaceLaneWidth,
         StoreOp,
         TableGetOp,
         TableSetOp,
@@ -226,12 +225,7 @@ impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
         let sep = case.wrap(Sep);
         let v128 = case.wrap(Ident::V128);
         let ident = case.wrap(Ident::ReplaceLane);
-        let width = match op.width {
-            ReplaceLaneWidth::W8 => "8x16",
-            ReplaceLaneWidth::W16 => "16x8",
-            ReplaceLaneWidth::W32 => "32x4",
-            ReplaceLaneWidth::W64 => "64x2",
-        };
+        let width = op.width;
         let result_suffix = case.wrap(OperandKind::Stack);
         let v128_suffix = SnakeCase(OperandKind::Stack);
         let value_suffix = SnakeCase(op.value);

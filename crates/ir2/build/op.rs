@@ -2097,23 +2097,62 @@ impl TableSetOp {
 }
 
 #[derive(Copy, Clone)]
-pub struct V128ReplaceLaneOp {
-    /// The type of the value to be splatted.
-    pub width: ReplaceLaneWidth,
-    /// The `value` used for replacing.
-    pub value: OperandKind,
-}
-
-#[derive(Copy, Clone)]
-pub enum ReplaceLaneWidth {
+pub enum LaneWidth {
     W8,
     W16,
     W32,
     W64,
 }
 
+impl Display for LaneWidth {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let width = u8::from(*self);
+        let len_lanes = self.len_lanes();
+        write!(f, "{width}x{len_lanes}")
+    }
+}
+
+impl From<LaneWidth> for u8 {
+    fn from(width: LaneWidth) -> Self {
+        match width {
+            LaneWidth::W8 => 8,
+            LaneWidth::W16 => 16,
+            LaneWidth::W32 => 32,
+            LaneWidth::W64 => 64,
+        }
+    }
+}
+
+impl LaneWidth {
+    pub fn len_lanes(self) -> u8 {
+        match self {
+            Self::W8 => 16,
+            Self::W16 => 8,
+            Self::W32 => 4,
+            Self::W64 => 2,
+        }
+    }
+
+    pub fn to_laneidx(self) -> FieldTy {
+        match self {
+            Self::W8 => FieldTy::ImmLaneIdx16,
+            Self::W16 => FieldTy::ImmLaneIdx8,
+            Self::W32 => FieldTy::ImmLaneIdx4,
+            Self::W64 => FieldTy::ImmLaneIdx2,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct V128ReplaceLaneOp {
+    /// The type of the value to be splatted.
+    pub width: LaneWidth,
+    /// The `value` used for replacing.
+    pub value: OperandKind,
+}
+
 impl V128ReplaceLaneOp {
-    pub fn new(width: ReplaceLaneWidth, value: OperandKind) -> Self {
+    pub fn new(width: LaneWidth, value: OperandKind) -> Self {
         Self { width, value }
     }
 
@@ -2129,10 +2168,10 @@ impl V128ReplaceLaneOp {
         let value_ty = match self.value {
             OperandKind::Stack => FieldTy::Stack,
             OperandKind::Immediate => match self.width {
-                ReplaceLaneWidth::W8 => FieldTy::U8,
-                ReplaceLaneWidth::W16 => FieldTy::U16,
-                ReplaceLaneWidth::W32 => FieldTy::U32,
-                ReplaceLaneWidth::W64 => FieldTy::U64,
+                LaneWidth::W8 => FieldTy::U8,
+                LaneWidth::W16 => FieldTy::U16,
+                LaneWidth::W32 => FieldTy::U32,
+                LaneWidth::W64 => FieldTy::U64,
             },
         };
         Field::new(Ident::Value, value_ty)
@@ -2140,10 +2179,10 @@ impl V128ReplaceLaneOp {
 
     pub fn lane_field(&self) -> Field {
         let lane_ty = match self.width {
-            ReplaceLaneWidth::W8 => FieldTy::ImmLaneIdx16,
-            ReplaceLaneWidth::W16 => FieldTy::ImmLaneIdx8,
-            ReplaceLaneWidth::W32 => FieldTy::ImmLaneIdx4,
-            ReplaceLaneWidth::W64 => FieldTy::ImmLaneIdx2,
+            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
+            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
+            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
+            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
         };
         Field::new(Ident::Lane, lane_ty)
     }

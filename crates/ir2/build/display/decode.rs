@@ -11,7 +11,6 @@ use crate::build::{
         GenericOp,
         LoadOp,
         OperandKind,
-        ReplaceLaneWidth,
         StoreOp,
         TableGetOp,
         TableSetOp,
@@ -194,15 +193,10 @@ impl Display for DisplayDecode<&'_ V128ReplaceLaneOp> {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
         let value_ty = op.value_field().ty;
-        let lane_items = match op.width {
-            ReplaceLaneWidth::W8 => "16",
-            ReplaceLaneWidth::W16 => "8",
-            ReplaceLaneWidth::W32 => "4",
-            ReplaceLaneWidth::W64 => "2",
-        };
+        let len_lanes = op.width.len_lanes();
         writeln!(
             f,
-            "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {lane_items}>;"
+            "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {len_lanes}>;"
         )
     }
 }
