@@ -15,9 +15,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::Register2`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::Register2` but found {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::Register2` but found {unexpected:?}")
                 }
             }
         }

@@ -24,9 +24,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::TableIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::TableIndex` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::TableIndex` but found: {unexpected:?}")
                 }
             }
         }
@@ -41,9 +39,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::ElemIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::ElemIndex` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::ElemIndex` but found: {unexpected:?}")
                 }
             }
         }

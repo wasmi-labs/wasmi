@@ -35,9 +35,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::MemoryIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::Register3` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::Register3` but found: {unexpected:?}")
                 }
             }
         }

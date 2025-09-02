@@ -34,9 +34,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::Register`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::Register` but found {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::Register` but found {unexpected:?}")
                 }
             }
         }
@@ -52,9 +50,7 @@ impl Executor<'_> {
         match addr.get().filter_register_and_lane::<LaneType>() {
             Ok(value) => value,
             Err(instr) => unsafe {
-                unreachable_unchecked!(
-                    "expected an `Op::RegisterAndImm32` but found: {instr:?}"
-                )
+                unreachable_unchecked!("expected an `Op::RegisterAndImm32` but found: {instr:?}")
             },
         }
     }
@@ -79,11 +75,7 @@ impl Executor<'_> {
             Op::Const32 { value } => value.into(),
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::Const32`] exists.
-                unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::Const32` but found {unexpected:?}"
-                    )
-                }
+                unsafe { unreachable_unchecked!("expected `Op::Const32` but found {unexpected:?}") }
             }
         }
     }
@@ -97,9 +89,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::I64Const32`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::I64Const32` but found {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::I64Const32` but found {unexpected:?}")
                 }
             }
         }
@@ -114,9 +104,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::F64Const32`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::F64Const32` but found {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::F64Const32` but found {unexpected:?}")
                 }
             }
         }
@@ -573,9 +561,7 @@ impl Executor<'_> {
         match addr.get().filter_lane_and_memory() {
             Ok(value) => value,
             Err(instr) => unsafe {
-                unreachable_unchecked!(
-                    "expected an `Op::Imm16AndImm32` but found: {instr:?}"
-                )
+                unreachable_unchecked!("expected an `Op::Imm16AndImm32` but found: {instr:?}")
             },
         }
     }

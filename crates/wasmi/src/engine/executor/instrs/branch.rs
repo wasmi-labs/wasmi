@@ -51,9 +51,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that `Op::RegisterSpan` follows.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::RegisterSpan` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::RegisterSpan` but found: {unexpected:?}")
                 }
             }
         };
@@ -70,7 +68,9 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translator guarantees that one of the above `Op` variants exists.
                 unsafe {
-                    unreachable_unchecked!("expected target for `Op::BranchTableSpan` but found: {unexpected:?}")
+                    unreachable_unchecked!(
+                        "expected target for `Op::BranchTableSpan` but found: {unexpected:?}"
+                    )
                 }
             }
         }

@@ -42,9 +42,7 @@ impl Executor<'_> {
         match addr.get().filter_imm16_and_offset_hi::<T>() {
             Ok(value) => value,
             Err(instr) => unsafe {
-                unreachable_unchecked!(
-                    "expected an `Op::RegisterAndImm32` but found: {instr:?}"
-                )
+                unreachable_unchecked!("expected an `Op::RegisterAndImm32` but found: {instr:?}")
             },
         }
     }

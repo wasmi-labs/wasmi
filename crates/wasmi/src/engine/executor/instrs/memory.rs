@@ -22,9 +22,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::MemoryIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::MemoryIndex` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::MemoryIndex` but found: {unexpected:?}")
                 }
             }
         }
@@ -39,9 +37,7 @@ impl Executor<'_> {
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::DataIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Op::DataIndex` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::DataIndex` but found: {unexpected:?}")
                 }
             }
         }
