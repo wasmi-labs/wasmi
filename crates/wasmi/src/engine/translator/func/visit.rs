@@ -1775,7 +1775,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         })?;
         let len = self.immediate_to_reg(len)?;
         let instr: Op = match value {
-            Input::Reg(value) => Op::memory_fill(dst, value, len),
+            Input::Slot(value) => Op::memory_fill(dst, value, len),
             Input::Immediate(value) => Op::memory_fill_imm(dst, value, len),
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
@@ -1900,7 +1900,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.push_instr_with_result(
             item_ty,
             |result| match index {
-                Input::Reg(index) => Op::table_get(result, index),
+                Input::Slot(index) => Op::table_get(result, index),
                 Input::Immediate(index) => Op::table_get_imm(result, index),
             },
             FuelCostsProvider::instance,
@@ -1918,7 +1918,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index = self.make_index32(index, index_ty)?;
         let value = self.layout.operand_to_reg(value)?;
         let instr = match index {
-            Input::Reg(index) => Op::table_set(index, value),
+            Input::Slot(index) => Op::table_set(index, value),
             Input::Immediate(index) => Op::table_set_at(value, index),
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;

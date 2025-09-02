@@ -5,7 +5,7 @@ use crate::{
     ir::{
         index::{Data, Memory},
         Op,
-        Reg,
+        Slot,
     },
     store::{PrunedStore, StoreInner},
     Error,
@@ -51,13 +51,13 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Op::MemorySize`].
-    pub fn execute_memory_size(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
+    pub fn execute_memory_size(&mut self, store: &StoreInner, result: Slot, memory: Memory) {
         self.execute_memory_size_impl(store, result, memory);
         self.next_instr()
     }
 
     /// Underlying implementation of [`Op::MemorySize`].
-    fn execute_memory_size_impl(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
+    fn execute_memory_size_impl(&mut self, store: &StoreInner, result: Slot, memory: Memory) {
         let memory = self.get_memory(memory);
         let size = store.resolve_memory(&memory).size();
         self.set_register(result, size);
@@ -67,8 +67,8 @@ impl Executor<'_> {
     pub fn execute_memory_grow(
         &mut self,
         store: &mut PrunedStore,
-        result: Reg,
-        delta: Reg,
+        result: Slot,
+        delta: Slot,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
         let memory = self.fetch_memory_index(1);
@@ -111,9 +111,9 @@ impl Executor<'_> {
     pub fn execute_memory_copy(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Slot,
+        src: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
@@ -183,9 +183,9 @@ impl Executor<'_> {
     pub fn execute_memory_fill(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        value: Reg,
-        len: Reg,
+        dst: Slot,
+        value: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let value: u8 = self.get_register_as(value);
@@ -197,9 +197,9 @@ impl Executor<'_> {
     pub fn execute_memory_fill_imm(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
+        dst: Slot,
         value: u8,
-        len: Reg,
+        len: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let len: u64 = self.get_register_as(len);
@@ -238,9 +238,9 @@ impl Executor<'_> {
     pub fn execute_memory_init(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Slot,
+        src: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);

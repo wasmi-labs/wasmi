@@ -2,29 +2,32 @@ use super::{Executor, InstructionPtr, UntypedValueExt};
 use crate::{
     core::{wasm, ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{Const16, Op, Reg},
+    ir::{Const16, Op, Slot},
 };
 
 impl Executor<'_> {
-    /// Fetches two [`Reg`]s.
-    fn fetch_register_2(&self) -> (Reg, Reg) {
+    /// Fetches two [`Slot`]s.
+    fn fetch_register_2(&self) -> (Slot, Slot) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Op::Register2 { regs: [reg0, reg1] } => (reg0, reg1),
+            Op::Slot2 { regs: [reg0, reg1] } => (reg0, reg1),
             unexpected => {
-                // Safety: Wasmi translation guarantees that [`Op::Register2`] exists.
-                unsafe {
-                    unreachable_unchecked!("expected `Op::Register2` but found {unexpected:?}")
-                }
+                // Safety: Wasmi translation guarantees that [`Op::Slot2`] exists.
+                unsafe { unreachable_unchecked!("expected `Op::Slot2` but found {unexpected:?}") }
             }
         }
     }
 
     /// Executes a fused `cmp`+`select` instruction.
     #[inline(always)]
-    fn execute_cmp_select_impl<T>(&mut self, result: Reg, lhs: Reg, rhs: Reg, f: fn(T, T) -> bool)
-    where
+    fn execute_cmp_select_impl<T>(
+        &mut self,
+        result: Slot,
+        lhs: Slot,
+        rhs: Slot,
+        f: fn(T, T) -> bool,
+    ) where
         UntypedVal: ReadAs<T>,
     {
         let (true_val, false_val) = self.fetch_register_2();
@@ -42,8 +45,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_cmp_select_imm_rhs_impl<T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Slot,
+        lhs: Slot,
         rhs: Const16<T>,
         f: fn(T, T) -> bool,
     ) where
@@ -70,7 +73,7 @@ macro_rules! impl_cmp_select_for {
     ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($doc_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Slot) {
                 self.execute_cmp_select_impl(result, lhs, rhs, $op)
             }
         )*
@@ -85,7 +88,7 @@ macro_rules! impl_cmp_select_imm_rhs_for {
     ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($doc_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Const16<$ty>) {
                 self.execute_cmp_select_imm_rhs_impl::<$ty>(result, lhs, rhs, $op)
             }
         )*

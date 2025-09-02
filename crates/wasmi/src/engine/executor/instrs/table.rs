@@ -7,7 +7,7 @@ use crate::{
         index::{Elem, Table},
         Const32,
         Op,
-        Reg,
+        Slot,
     },
     store::{PrunedStore, StoreInner},
     Error,
@@ -49,8 +49,8 @@ impl Executor<'_> {
     pub fn execute_table_get(
         &mut self,
         store: &StoreInner,
-        result: Reg,
-        index: Reg,
+        result: Slot,
+        index: Slot,
     ) -> Result<(), Error> {
         let index: u64 = self.get_register_as(index);
         self.execute_table_get_impl(store, result, index)
@@ -60,7 +60,7 @@ impl Executor<'_> {
     pub fn execute_table_get_imm(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Slot,
         index: Const32<u64>,
     ) -> Result<(), Error> {
         let index: u64 = index.into();
@@ -71,7 +71,7 @@ impl Executor<'_> {
     fn execute_table_get_impl(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Slot,
         index: u64,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
@@ -85,13 +85,13 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Op::TableSize`].
-    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    pub fn execute_table_size(&mut self, store: &StoreInner, result: Slot, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
     }
 
     /// Executes a generic `table.size` instruction.
-    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Slot, table_index: Table) {
         let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
         self.set_register(result, size);
@@ -101,8 +101,8 @@ impl Executor<'_> {
     pub fn execute_table_set(
         &mut self,
         store: &mut StoreInner,
-        index: Reg,
-        value: Reg,
+        index: Slot,
+        value: Slot,
     ) -> Result<(), Error> {
         let index: u64 = self.get_register_as(index);
         self.execute_table_set_impl(store, index, value)
@@ -113,7 +113,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         index: Const32<u64>,
-        value: Reg,
+        value: Slot,
     ) -> Result<(), Error> {
         let index: u64 = index.into();
         self.execute_table_set_impl(store, index, value)
@@ -124,7 +124,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         index: u64,
-        value: Reg,
+        value: Slot,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.get_table(table_index);
@@ -140,9 +140,9 @@ impl Executor<'_> {
     pub fn execute_table_copy(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Slot,
+        src: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
@@ -170,9 +170,9 @@ impl Executor<'_> {
     pub fn execute_table_init(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Slot,
+        src: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
@@ -191,9 +191,9 @@ impl Executor<'_> {
     pub fn execute_table_fill(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        len: Reg,
-        value: Reg,
+        dst: Slot,
+        len: Slot,
+        value: Slot,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let len: u64 = self.get_register_as(len);
@@ -209,9 +209,9 @@ impl Executor<'_> {
     pub fn execute_table_grow(
         &mut self,
         store: &mut PrunedStore,
-        result: Reg,
-        delta: Reg,
-        value: Reg,
+        result: Slot,
+        delta: Slot,
+        value: Slot,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
         let table_index = self.fetch_table_index(1);

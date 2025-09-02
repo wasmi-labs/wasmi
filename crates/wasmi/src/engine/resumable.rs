@@ -2,7 +2,7 @@ use super::Func;
 use crate::{
     engine::Stack,
     func::{CallResultsTuple, FuncError},
-    ir::RegSpan,
+    ir::SlotSpan,
     AsContext,
     AsContextMut,
     Engine,
@@ -57,7 +57,7 @@ pub struct ResumableHostTrapError {
     /// The host function that returned the error.
     host_func: Func,
     /// The result registers of the caller of the host function.
-    caller_results: RegSpan,
+    caller_results: SlotSpan,
 }
 
 impl core::error::Error for ResumableHostTrapError {}
@@ -71,7 +71,7 @@ impl fmt::Display for ResumableHostTrapError {
 impl ResumableHostTrapError {
     /// Creates a new [`ResumableHostTrapError`].
     #[cold]
-    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
+    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: SlotSpan) -> Self {
         Self {
             host_error,
             host_func,
@@ -89,8 +89,8 @@ impl ResumableHostTrapError {
         &self.host_func
     }
 
-    /// Returns the caller results [`RegSpan`] of the [`ResumableHostTrapError`].
-    pub(crate) fn caller_results(&self) -> &RegSpan {
+    /// Returns the caller results [`SlotSpan`] of the [`ResumableHostTrapError`].
+    pub(crate) fn caller_results(&self) -> &SlotSpan {
         &self.caller_results
     }
 }
@@ -276,7 +276,7 @@ pub struct ResumableCallHostTrap {
     /// # Note
     ///
     /// This is only needed for the register-machine Wasmi engine backend.
-    caller_results: RegSpan,
+    caller_results: SlotSpan,
 }
 
 impl ResumableCallHostTrap {
@@ -286,7 +286,7 @@ impl ResumableCallHostTrap {
         func: Func,
         host_func: Func,
         host_error: Error,
-        caller_results: RegSpan,
+        caller_results: SlotSpan,
         stack: Stack,
     ) -> Self {
         Self {
@@ -302,7 +302,7 @@ impl ResumableCallHostTrap {
     /// # Note
     ///
     /// This should only be called from the register-machine Wasmi engine backend.
-    pub(super) fn update(&mut self, host_func: Func, host_error: Error, caller_results: RegSpan) {
+    pub(super) fn update(&mut self, host_func: Func, host_error: Error, caller_results: SlotSpan) {
         self.host_func = host_func;
         self.host_error = host_error;
         self.caller_results = caller_results;
@@ -346,12 +346,12 @@ impl ResumableCallHostTrap {
         self.host_error
     }
 
-    /// Returns the caller results [`RegSpan`].
+    /// Returns the caller results [`SlotSpan`].
     ///
     /// # Note
     ///
     /// This is `Some` only for [`ResumableCallHostTrap`] originating from the register-machine Wasmi engine.
-    pub(crate) fn caller_results(&self) -> RegSpan {
+    pub(crate) fn caller_results(&self) -> SlotSpan {
         self.caller_results
     }
 
@@ -435,7 +435,7 @@ impl ResumableCallOutOfFuel {
         self,
         host_func: Func,
         host_error: Error,
-        caller_results: RegSpan,
+        caller_results: SlotSpan,
     ) -> ResumableCallHostTrap {
         ResumableCallHostTrap {
             common: self.common,

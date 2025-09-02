@@ -1,4 +1,4 @@
-use crate::ir::{Const16, Const32, Reg};
+use crate::ir::{Const16, Const32, Slot};
 
 /// Bail out early in case the current code is unreachable.
 ///
@@ -22,7 +22,7 @@ macro_rules! bail_unreachable {
 /// [`Op`]: crate::ir::Op
 macro_rules! swap_ops {
     ($make_instr:path) => {{
-        |result: $crate::ir::Reg, lhs, rhs| -> $crate::ir::Op { $make_instr(result, rhs, lhs) }
+        |result: $crate::ir::Slot, lhs, rhs| -> $crate::ir::Op { $make_instr(result, rhs, lhs) }
     }};
 }
 
@@ -57,8 +57,8 @@ pub type Input32<T> = Input<Const32<T>>;
 
 /// A concrete input to a Wasmi instruction.
 pub enum Input<T> {
-    /// A [`Reg`] operand.
-    Reg(Reg),
+    /// A [`Slot`] operand.
+    Slot(Slot),
     /// A 16-bit encoded immediate value operand.
     Immediate(T),
 }

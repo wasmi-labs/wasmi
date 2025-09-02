@@ -17,7 +17,7 @@ impl Reset for LocalsHead {
 }
 
 impl LocalsHead {
-    /// Registers `amount` of locals.
+    /// Slots `amount` of locals.
     ///
     /// # Errors
     ///

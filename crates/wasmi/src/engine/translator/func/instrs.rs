@@ -12,7 +12,7 @@ use crate::{
         relink_result::RelinkResult,
         utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
     },
-    ir::{BranchOffset, Op, Reg},
+    ir::{BranchOffset, Op, Slot},
     module::ModuleHeader,
     Engine,
     Error,
@@ -155,8 +155,8 @@ impl InstrEncoder {
     ///   the new result which shall replace the `old_result`.
     pub fn try_replace_result(
         &mut self,
-        new_result: Reg,
-        old_result: Reg,
+        new_result: Slot,
+        old_result: Slot,
         layout: &StackLayout,
         module: &ModuleHeader,
     ) -> Result<bool, Error> {
@@ -187,7 +187,7 @@ impl InstrEncoder {
     pub fn try_fuse_select(
         &mut self,
         ty: ValType,
-        select_condition: Reg,
+        select_condition: Slot,
         layout: &StackLayout,
         stack: &mut Stack,
     ) -> Result<Option<bool>, Error> {
@@ -327,7 +327,7 @@ impl InstrEncoder {
     ) -> Result<(), Error> {
         let mut remaining = operands;
         let mut operand_to_reg =
-            |operand: &Operand| -> Result<Reg, Error> { layout.operand_to_reg(*operand) };
+            |operand: &Operand| -> Result<Slot, Error> { layout.operand_to_reg(*operand) };
         let instr = loop {
             match remaining {
                 [] => return Ok(()),

@@ -1,4 +1,4 @@
-use crate::ir::{Address32, Offset16, Offset64Lo, Op, Reg};
+use crate::ir::{Address32, Offset16, Offset64Lo, Op, Slot};
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
 pub trait StoreWrapOperator {
@@ -9,11 +9,11 @@ pub trait StoreWrapOperator {
     /// The type of the value as (at most) 16-bit encoded instruction parameter.
     type Param;
 
-    fn store(ptr: Reg, offset_lo: Offset64Lo) -> Op;
-    fn store_imm(ptr: Reg, offset_lo: Offset64Lo) -> Op;
-    fn store_offset16(ptr: Reg, offset: Offset16, value: Reg) -> Op;
-    fn store_offset16_imm(ptr: Reg, offset: Offset16, value: Self::Param) -> Op;
-    fn store_at(value: Reg, address: Address32) -> Op;
+    fn store(ptr: Slot, offset_lo: Offset64Lo) -> Op;
+    fn store_imm(ptr: Slot, offset_lo: Offset64Lo) -> Op;
+    fn store_offset16(ptr: Slot, offset: Offset16, value: Slot) -> Op;
+    fn store_offset16_imm(ptr: Slot, offset: Offset16, value: Self::Param) -> Op;
+    fn store_at(value: Slot, address: Address32) -> Op;
     fn store_at_imm(value: Self::Param, address: Address32) -> Op;
 }
 
@@ -39,23 +39,23 @@ macro_rules! impl_store_wrap {
                 type Wrapped = $wrapped_ty;
                 type Param = $param_ty;
 
-                fn store(ptr: Reg, offset_lo: Offset64Lo) -> Op {
+                fn store(ptr: Slot, offset_lo: Offset64Lo) -> Op {
                     $store(ptr, offset_lo)
                 }
 
-                fn store_imm(ptr: Reg, offset_lo: Offset64Lo) -> Op {
+                fn store_imm(ptr: Slot, offset_lo: Offset64Lo) -> Op {
                     $store_imm(ptr, offset_lo)
                 }
 
-                fn store_offset16(ptr: Reg, offset: Offset16, value: Reg) -> Op {
+                fn store_offset16(ptr: Slot, offset: Offset16, value: Slot) -> Op {
                     $store_offset16(ptr, offset, value)
                 }
 
-                fn store_offset16_imm(ptr: Reg, offset: Offset16, value: Self::Param) -> Op {
+                fn store_offset16_imm(ptr: Slot, offset: Offset16, value: Self::Param) -> Op {
                     $store_offset16_imm(ptr, offset, value)
                 }
 
-                fn store_at(value: Reg, address: Address32) -> Op {
+                fn store_at(value: Slot, address: Address32) -> Op {
                     $store_at(value, address)
                 }
 

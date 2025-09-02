@@ -1,5 +1,5 @@
 use super::Reset;
-use crate::{core::UntypedVal, engine::TranslationError, ir::Reg, Error};
+use crate::{core::UntypedVal, engine::TranslationError, ir::Slot, Error};
 use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
@@ -8,19 +8,19 @@ use core::{iter::Rev, slice::Iter as SliceIter};
 
 /// A pool of deduplicated function local constant values.
 ///
-/// - Those constant values are identified by their associated [`Reg`].
+/// - Those constant values are identified by their associated [`Slot`].
 /// - All constant values are also deduplicated so that no duplicates
 ///   are stored in a [`ConstRegistry`]. This also means that deciding if two
-///   [`Reg`] values refer to the equal constant values can be efficiently
-///   done by comparing the [`Reg`] indices without resolving to their
+///   [`Slot`] values refer to the equal constant values can be efficiently
+///   done by comparing the [`Slot`] indices without resolving to their
 ///   underlying constant values.
 #[derive(Debug, Default)]
 pub struct ConstRegistry {
-    /// Mapping from constant [`UntypedVal`] values to [`Reg`] indices.
-    const2idx: BTreeMap<UntypedVal, Reg>,
-    /// Mapping from [`Reg`] indices to constant [`UntypedVal`] values.
+    /// Mapping from constant [`UntypedVal`] values to [`Slot`] indices.
+    const2idx: BTreeMap<UntypedVal, Slot>,
+    /// Mapping from [`Slot`] indices to constant [`UntypedVal`] values.
     idx2const: Vec<UntypedVal>,
-    /// The [`Reg`] index for the next allocated function local constant value.
+    /// The [`Slot`] index for the next allocated function local constant value.
     next_idx: i16,
 }
 
@@ -33,7 +33,7 @@ impl Reset for ConstRegistry {
 }
 
 impl ConstRegistry {
-    /// The maximum index for [`Reg`] referring to function local constant values.
+    /// The maximum index for [`Slot`] referring to function local constant values.
     ///
     /// # Note
     ///
@@ -43,7 +43,7 @@ impl ConstRegistry {
         -1
     }
 
-    /// The mininmum index for [`Reg`] referring to function local constant values.
+    /// The mininmum index for [`Slot`] referring to function local constant values.
     ///
     /// # Note
     ///
@@ -63,14 +63,14 @@ impl ConstRegistry {
     /// # Errors
     ///
     /// If too many constant values have been allocated for this [`ConstRegistry`].
-    pub fn alloc(&mut self, value: UntypedVal) -> Result<Reg, Error> {
+    pub fn alloc(&mut self, value: UntypedVal) -> Result<Slot, Error> {
         if self.next_idx == Self::last_index() {
             return Err(Error::from(TranslationError::TooManyFuncLocalConstValues));
         }
         match self.const2idx.entry(value) {
             btree_map::Entry::Occupied(entry) => Ok(*entry.get()),
             btree_map::Entry::Vacant(entry) => {
-                let register = Reg::from(self.next_idx);
+                let register = Slot::from(self.next_idx);
                 self.next_idx -= 1;
                 entry.insert(register);
                 self.idx2const.push(value);

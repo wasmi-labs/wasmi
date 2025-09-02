@@ -1,7 +1,7 @@
 use super::IntoLaneIdx;
 use crate::{
     core::{simd, Typed},
-    ir::{Const32, Op, Reg},
+    ir::{Const32, Op, Slot},
     V128,
 };
 
@@ -15,11 +15,11 @@ pub trait SimdReplaceLane {
         value: Self::Item,
     ) -> V128;
 
-    fn replace_lane(result: Reg, input: Reg, lane: <Self::Item as IntoLaneIdx>::LaneIdx) -> Op;
+    fn replace_lane(result: Slot, input: Slot, lane: <Self::Item as IntoLaneIdx>::LaneIdx) -> Op;
 
     fn replace_lane_imm(
-        result: Reg,
-        input: Reg,
+        result: Slot,
+        input: Slot,
         lane: <Self::Item as IntoLaneIdx>::LaneIdx,
         value: Self::Immediate,
     ) -> Op;
@@ -60,16 +60,16 @@ macro_rules! impl_replace_lane {
                 }
 
                 fn replace_lane(
-                    result: Reg,
-                    input: Reg,
+                    result: Slot,
+                    input: Slot,
                     lane: <Self::Item as IntoLaneIdx>::LaneIdx,
                 ) -> Op {
                     $replace_lane(result, input, lane)
                 }
 
                 fn replace_lane_imm(
-                    result: Reg,
-                    input: Reg,
+                    result: Slot,
+                    input: Slot,
                     lane: <Self::Item as IntoLaneIdx>::LaneIdx,
                     value: Self::Immediate,
                 ) -> Op {

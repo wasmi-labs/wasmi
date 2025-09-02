@@ -17,7 +17,7 @@ use crate::{
         Offset64Lo,
         Offset8,
         Op,
-        Reg,
+        Slot,
     },
     Error,
     TrapCode,
@@ -30,7 +30,7 @@ impl FuncTranslator {
     /// Generically translate any of the Wasm `simd` splat instructions.
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
-        make_instr: fn(result: Reg, value: Reg) -> Op,
+        make_instr: fn(result: Slot, value: Slot) -> Op,
         const_eval: fn(Wrapped) -> V128,
     ) -> Result<(), Error>
     where
@@ -57,7 +57,7 @@ impl FuncTranslator {
     fn translate_extract_lane<T: IntoLaneIdx, R>(
         &mut self,
         lane: u8,
-        make_instr: fn(result: Reg, input: Reg, lane: T::LaneIdx) -> Op,
+        make_instr: fn(result: Slot, input: Slot, lane: T::LaneIdx) -> Op,
         const_eval: fn(input: V128, lane: T::LaneIdx) -> R,
     ) -> Result<(), Error>
     where
@@ -106,18 +106,18 @@ impl FuncTranslator {
                     Some(imm) => Ok(Input::Immediate(imm)),
                     None => {
                         let imm = this.layout.const_to_reg(value)?;
-                        Ok(Input::Reg(imm))
+                        Ok(Input::Slot(imm))
                     }
                 }
             })?;
         let param = match value {
-            Input::Reg(value) => Some(Op::register(value)),
+            Input::Slot(value) => Some(Op::register(value)),
             Input::Immediate(value) => T::replace_lane_imm_param(value),
         };
         self.push_instr_with_result(
             <T::Item as Typed>::TY,
             |result| match value {
-                Input::Reg(_) => T::replace_lane(result, input, lane),
+                Input::Slot(_) => T::replace_lane(result, input, lane),
                 Input::Immediate(value) => T::replace_lane_imm(result, input, lane, value),
             },
             FuelCostsProvider::simd,
@@ -131,7 +131,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm unary instruction.
     fn translate_simd_unary<T>(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Op,
+        make_instr: fn(result: Slot, input: Slot) -> Op,
         const_eval: fn(input: V128) -> T,
     ) -> Result<(), Error>
     where
@@ -157,7 +157,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm binary instruction.
     fn translate_simd_binary(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
         const_eval: fn(lhs: V128, rhs: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -181,7 +181,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm ternary instruction.
     fn translate_simd_ternary(
         &mut self,
-        make_instr: fn(result: Reg, a: Reg, b: Reg) -> Op,
+        make_instr: fn(result: Slot, a: Slot, b: Slot) -> Op,
         const_eval: fn(lhas: V128, b: V128, c: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -208,8 +208,8 @@ impl FuncTranslator {
     /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
-        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: <T as IntoShiftAmount>::Output) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_imm: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Output) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
@@ -251,8 +251,8 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Op,
-        make_instr_at: fn(result: Reg, address: Address32) -> Op,
+        make_instr: fn(result: Slot, offset_lo: Offset64Lo) -> Op,
+        make_instr_at: fn(result: Slot, address: Address32) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -300,10 +300,10 @@ impl FuncTranslator {
     fn translate_v128_load_lane_at<T: Typed, LaneType>(
         &mut self,
         memory: Memory,
-        x: Reg,
+        x: Slot,
         lane: LaneType,
         address: Address32,
-        make_instr_at: fn(result: Reg, address: Address32) -> Op,
+        make_instr_at: fn(result: Slot, address: Address32) -> Op,
     ) -> Result<(), Error>
     where
         LaneType: Into<u8>,
@@ -325,9 +325,9 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Op,
-        make_instr_offset8: fn(ptr: Reg, value: Reg, offset: Offset8, lane: T::LaneIdx) -> Op,
-        make_instr_at: fn(value: Reg, address: Address32) -> Op,
+        make_instr: fn(ptr: Slot, offset_lo: Offset64Lo) -> Op,
+        make_instr_offset8: fn(ptr: Slot, value: Slot, offset: Offset8, lane: T::LaneIdx) -> Op,
+        make_instr_at: fn(value: Slot, address: Address32) -> Op,
         translate_imm: fn(
             &mut Self,
             memarg: MemArg,
@@ -394,9 +394,9 @@ impl FuncTranslator {
         &mut self,
         memory: index::Memory,
         address: Address32,
-        value: Reg,
+        value: Slot,
         lane: T::LaneIdx,
-        make_instr_at: fn(value: Reg, address: Address32) -> Op,
+        make_instr_at: fn(value: Slot, address: Address32) -> Op,
     ) -> Result<(), Error> {
         self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
         self.push_param(Op::lane_and_memory_index(lane, memory))?;
@@ -406,11 +406,11 @@ impl FuncTranslator {
     fn translate_v128_store_lane_mem0<LaneType>(
         &mut self,
         memory: Memory,
-        ptr: Reg,
+        ptr: Slot,
         offset: u64,
-        value: Reg,
+        value: Slot,
         lane: LaneType,
-        make_instr_offset8: fn(Reg, Reg, Offset8, LaneType) -> Op,
+        make_instr_offset8: fn(Slot, Slot, Offset8, LaneType) -> Op,
     ) -> Result<Option<Instr>, Error> {
         if !memory.is_default() {
             return Ok(None);

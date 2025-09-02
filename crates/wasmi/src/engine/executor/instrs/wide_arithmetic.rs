@@ -2,17 +2,17 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::wasm,
     engine::utils::unreachable_unchecked,
-    ir::{FixedRegSpan, Op, Reg},
+    ir::{FixedSlotSpan, Op, Slot},
 };
 
 /// Parameters for the `i64.add128` and `i64.sub128` instructions.
 struct Params128 {
     /// The register storing the high 64-bit part of the `lhs` parameter value.
-    lhs_hi: Reg,
+    lhs_hi: Slot,
     /// The register storing the low 64-bit part of the `rhs` parameter value.
-    rhs_lo: Reg,
+    rhs_lo: Slot,
     /// The register storing the low 64-bit part of the `rhs` parameter value.
-    rhs_hi: Reg,
+    rhs_hi: Slot,
 }
 
 /// Function signature for `i64.binop128` handlers.
@@ -27,22 +27,20 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Op::Register3 { regs } => Params128 {
+            Op::Slot3 { regs } => Params128 {
                 lhs_hi: regs[0],
                 rhs_lo: regs[1],
                 rhs_hi: regs[2],
             },
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::MemoryIndex`] exists.
-                unsafe {
-                    unreachable_unchecked!("expected `Op::Register3` but found: {unexpected:?}")
-                }
+                unsafe { unreachable_unchecked!("expected `Op::Slot3` but found: {unexpected:?}") }
             }
         }
     }
 
     /// Executes a generic Wasm `i64.binop128` instruction.
-    fn execute_i64_binop128(&mut self, results: [Reg; 2], lhs_lo: Reg, binop: BinOp128Fn) {
+    fn execute_i64_binop128(&mut self, results: [Slot; 2], lhs_lo: Slot, binop: BinOp128Fn) {
         let Params128 {
             lhs_hi,
             rhs_lo,
@@ -59,21 +57,21 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Op::I64Add128`].
-    pub fn execute_i64_add128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
+    pub fn execute_i64_add128(&mut self, results: [Slot; 2], lhs_lo: Slot) {
         self.execute_i64_binop128(results, lhs_lo, wasm::i64_add128)
     }
 
     /// Executes an [`Op::I64Sub128`].
-    pub fn execute_i64_sub128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
+    pub fn execute_i64_sub128(&mut self, results: [Slot; 2], lhs_lo: Slot) {
         self.execute_i64_binop128(results, lhs_lo, wasm::i64_sub128)
     }
 
     /// Executes a generic Wasm `i64.mul_wide_sx` instruction.
     fn execute_i64_mul_wide_sx(
         &mut self,
-        results: FixedRegSpan<2>,
-        lhs: Reg,
-        rhs: Reg,
+        results: FixedSlotSpan<2>,
+        lhs: Slot,
+        rhs: Slot,
         mul_wide: I64MulWideFn,
     ) {
         let lhs: i64 = self.get_register_as(lhs);
@@ -86,12 +84,12 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Op::I64MulWideS`].
-    pub fn execute_i64_mul_wide_s(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
+    pub fn execute_i64_mul_wide_s(&mut self, results: FixedSlotSpan<2>, lhs: Slot, rhs: Slot) {
         self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_s)
     }
 
     /// Executes an [`Op::I64MulWideU`].
-    pub fn execute_i64_mul_wide_u(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
+    pub fn execute_i64_mul_wide_u(&mut self, results: FixedSlotSpan<2>, lhs: Slot, rhs: Slot) {
         self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_u)
     }
 }

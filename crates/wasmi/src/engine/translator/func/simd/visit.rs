@@ -6,7 +6,7 @@ use crate::{
         TypedVal,
     },
     engine::translator::func::{op, simd::op as simd_op, Operand},
-    ir::{Op, Reg},
+    ir::{Op, Slot},
     Error,
     ValType,
     V128,
@@ -25,7 +25,7 @@ impl FuncTranslator {
 /// Used to swap operands of binary [`Op`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Reg, lhs, rhs| -> Op { $fn_name(result, rhs, lhs) }
+        |result: Slot, lhs, rhs| -> Op { $fn_name(result, rhs, lhs) }
     };
 }
 

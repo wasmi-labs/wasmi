@@ -93,7 +93,7 @@ impl Reset for OperandStack {
 }
 
 impl OperandStack {
-    /// Register `amount` local variables.
+    /// Slot `amount` local variables.
     ///
     /// # Errors
     ///
