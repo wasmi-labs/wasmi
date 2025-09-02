@@ -828,6 +828,13 @@ pub enum BinaryOpKind {
     I64x2Shl,
     S64x2Shr,
     U64x2Shr,
+    // Relaxed SIMD
+    S16x8RelaxedDotI8x16I7x16,
+    S32x4RelaxedDotI8x16I7x16Add,
+    F32x4RelaxedMadd,
+    F32x4RelaxedNmadd,
+    F64x2RelaxedMadd,
+    F64x2RelaxedNmadd,
 }
 
 impl BinaryOpKind {
@@ -1002,6 +1009,13 @@ impl BinaryOpKind {
             Self::I64x2Shl => Ident::Shl,
             Self::S64x2Shr => Ident::Shr,
             Self::U64x2Shr => Ident::Shr,
+            // Relaxed SIMD
+            Self::S16x8RelaxedDotI8x16I7x16 => Ident::RelaxedDotI8x16I7x16,
+            Self::S32x4RelaxedDotI8x16I7x16Add => Ident::RelaxedDotI8x16I7x16Add,
+            Self::F32x4RelaxedMadd => Ident::RelaxedMadd,
+            Self::F32x4RelaxedNmadd => Ident::RelaxedNmadd,
+            Self::F64x2RelaxedMadd => Ident::RelaxedMadd,
+            Self::F64x2RelaxedNmadd => Ident::RelaxedNmadd,
         }
     }
 
@@ -1142,6 +1156,11 @@ impl BinaryOpKind {
             | Self::I64x2Shl => Ty::I64x2,
             | Self::S64x2Shr => Ty::S64x2,
             | Self::U64x2Shr => Ty::U64x2,
+            // Relaxed SIMD
+            | Self::S16x8RelaxedDotI8x16I7x16 => Ty::S16x8,
+            | Self::S32x4RelaxedDotI8x16I7x16Add => Ty::S32x4,
+            | Self::F32x4RelaxedMadd | Self::F32x4RelaxedNmadd => Ty::F32x4,
+            | Self::F64x2RelaxedMadd | Self::F64x2RelaxedNmadd => Ty::F64x2,
         }
     }
 

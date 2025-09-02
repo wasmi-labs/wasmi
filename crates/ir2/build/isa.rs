@@ -767,6 +767,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     add_simd_unary_ops(isa);
     add_simd_load_ops(isa);
     add_simd_store_ops(isa);
+    add_relaxed_simd_ops(isa);
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
@@ -1121,5 +1122,19 @@ fn add_simd_store_ops(isa: &mut Isa) {
             true,
             true,
         ));
+    }
+}
+
+fn add_relaxed_simd_ops(isa: &mut Isa) {
+    let kinds = [
+        BinaryOpKind::S16x8RelaxedDotI8x16I7x16,
+        BinaryOpKind::S32x4RelaxedDotI8x16I7x16Add,
+        BinaryOpKind::F32x4RelaxedMadd,
+        BinaryOpKind::F32x4RelaxedNmadd,
+        BinaryOpKind::F64x2RelaxedMadd,
+        BinaryOpKind::F64x2RelaxedNmadd,
+    ];
+    for kind in kinds {
+        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
     }
 }
