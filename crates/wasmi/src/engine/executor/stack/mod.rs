@@ -3,13 +3,7 @@ mod values;
 
 pub use self::{
     calls::{CallFrame, CallStack, StackOffsets},
-    values::{
-        BaseValueStackOffset,
-        FrameParams,
-        FrameRegisters,
-        FrameValueStackOffset,
-        ValueStack,
-    },
+    values::{BaseValueStackOffset, FrameParams, FrameSlots, FrameValueStackOffset, ValueStack},
 };
 use crate::{engine::StackConfig, Instance, TrapCode};
 
@@ -70,9 +64,9 @@ impl Stack {
     ///
     /// # Safety
     ///
-    /// Any [`FrameRegisters`] allocated within the range `from..to` on the [`ValueStack`]
+    /// Any [`FrameSlots`] allocated within the range `from..to` on the [`ValueStack`]
     /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
-    /// all [`FrameRegisters`] affected by this.
+    /// all [`FrameSlots`] affected by this.
     #[inline]
     #[must_use]
     pub unsafe fn merge_call_frames(&mut self, callee: &mut CallFrame) -> Option<Instance> {

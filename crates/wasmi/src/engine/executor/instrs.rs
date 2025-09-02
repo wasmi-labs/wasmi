@@ -4,12 +4,12 @@ use crate::{
     core::{hint, wasm, ReadAs, UntypedVal, WriteAs},
     engine::{
         code_map::CodeMap,
-        executor::stack::{CallFrame, FrameRegisters, ValueStack},
+        executor::stack::{CallFrame, FrameSlots, ValueStack},
         utils::unreachable_unchecked,
         DedupFuncType,
         EngineFunc,
     },
-    ir::{index, BlockFuel, Const16, Offset64Hi, Op, Reg, ShiftAmount},
+    ir::{index, BlockFuel, Const16, Offset64Hi, Op, ShiftAmount, Slot},
     memory::DataSegment,
     store::{PrunedStore, StoreInner},
     table::ElementSegment,
@@ -89,7 +89,7 @@ pub fn execute_instrs<'engine>(
 #[derive(Debug)]
 struct Executor<'engine> {
     /// Stores the value stack of live values on the Wasm stack.
-    sp: FrameRegisters,
+    sp: FrameSlots,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// The cached instance and instance related data.
@@ -141,13 +141,13 @@ impl<'engine> Executor<'engine> {
                 Instr::Return => {
                     forward_return!(self.execute_return(store.inner_mut()))
                 }
-                Instr::ReturnReg { value } => {
+                Instr::ReturnSlot { value } => {
                     forward_return!(self.execute_return_reg(store.inner_mut(), value))
                 }
-                Instr::ReturnReg2 { values } => {
+                Instr::ReturnSlot2 { values } => {
                     forward_return!(self.execute_return_reg2(store.inner_mut(), values))
                 }
-                Instr::ReturnReg3 { values } => {
+                Instr::ReturnSlot3 { values } => {
                     forward_return!(self.execute_return_reg3(store.inner_mut(), values))
                 }
                 Instr::ReturnImm32 { value } => {
@@ -1258,13 +1258,13 @@ impl<'engine> Executor<'engine> {
                 | Instr::I64Const32 { .. }
                 | Instr::F64Const32 { .. }
                 | Instr::BranchTableTarget { .. }
-                | Instr::Register { .. }
-                | Instr::Register2 { .. }
-                | Instr::Register3 { .. }
-                | Instr::RegisterAndImm32 { .. }
+                | Instr::Slot { .. }
+                | Instr::Slot2 { .. }
+                | Instr::Slot3 { .. }
+                | Instr::SlotAndImm32 { .. }
                 | Instr::Imm16AndImm32 { .. }
-                | Instr::RegisterSpan { .. }
-                | Instr::RegisterList { .. }
+                | Instr::SlotSpan { .. }
+                | Instr::SlotList { .. }
                 | Instr::CallIndirectParams { .. }
                 | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
                 #[cfg(feature = "simd")]
@@ -2278,18 +2278,18 @@ impl Executor<'_> {
         fn get_element_segment(&self, index: index::Elem) -> ElementSegment;
     }
 
-    /// Returns the [`Reg`] value.
-    fn get_register(&self, register: Reg) -> UntypedVal {
+    /// Returns the [`Slot`] value.
+    fn get_stack_slot(&self, slot: Slot) -> UntypedVal {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.get(register) }
+        unsafe { self.sp.get(slot) }
     }
 
-    /// Returns the [`Reg`] value.
-    fn get_register_as<T>(&self, register: Reg) -> T
+    /// Returns the [`Slot`] value as type `T`.
+    fn get_stack_slot_as<T>(&self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
     {
@@ -2298,21 +2298,21 @@ impl Executor<'_> {
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.read_as::<T>(register) }
+        unsafe { self.sp.read_as::<T>(slot) }
     }
 
-    /// Sets the [`Reg`] value to `value`.
-    fn set_register(&mut self, register: Reg, value: impl Into<UntypedVal>) {
+    /// Sets the [`Slot`] value to `value`.
+    fn set_stack_slot(&mut self, slot: Slot, value: impl Into<UntypedVal>) {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.set(register, value.into()) };
+        unsafe { self.sp.set(slot, value.into()) };
     }
 
-    /// Sets the [`Reg`] value to `value`.
-    fn set_register_as<T>(&mut self, register: Reg, value: T)
+    /// Sets the [`Slot`] value to `value` of type `T`.
+    fn set_stack_slot_as<T>(&mut self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
@@ -2321,7 +2321,7 @@ impl Executor<'_> {
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.write_as::<T>(register, value) };
+        unsafe { self.sp.write_as::<T>(slot, value) };
     }
 
     /// Shifts the instruction pointer to the next instruction.
@@ -2368,8 +2368,8 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Returns the [`FrameRegisters`] of the [`CallFrame`].
-    fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> FrameRegisters {
+    /// Returns the [`FrameSlots`] of the [`CallFrame`].
+    fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> FrameSlots {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
         //         valid for all register indices used by the associated function body.
@@ -2392,7 +2392,7 @@ impl Executor<'_> {
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame_impl(
         value_stack: &mut ValueStack,
-        sp: &mut FrameRegisters,
+        sp: &mut FrameSlots,
         ip: &mut InstructionPtr,
         frame: &CallFrame,
     ) {
@@ -2402,12 +2402,12 @@ impl Executor<'_> {
 
     /// Executes a generic unary [`Op`].
     #[inline(always)]
-    fn execute_unary<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
+    fn execute_unary<P, R>(&mut self, result: Slot, input: Slot, op: fn(P) -> R)
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
-        let value = self.get_register_as::<P>(input);
-        self.set_register_as::<R>(result, op(value));
+        let value = self.get_stack_slot_as::<P>(input);
+        self.set_stack_slot_as::<R>(result, op(value));
         self.next_instr();
     }
 
@@ -2415,15 +2415,15 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_unary<P, R>(
         &mut self,
-        result: Reg,
-        input: Reg,
+        result: Slot,
+        input: Slot,
         op: fn(P) -> Result<R, TrapCode>,
     ) -> Result<(), Error>
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
-        let value = self.get_register_as::<P>(input);
-        self.set_register_as::<R>(result, op(value)?);
+        let value = self.get_stack_slot_as::<P>(input);
+        self.set_stack_slot_as::<R>(result, op(value)?);
         self.try_next_instr()
     }
 
@@ -2431,16 +2431,16 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_binary<Lhs, Rhs, Result>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Reg,
+        result: Slot,
+        lhs: Slot,
+        rhs: Slot,
         op: fn(Lhs, Rhs) -> Result,
     ) where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<Result>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<Result>(result, op(lhs, rhs));
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<Result>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2448,17 +2448,17 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_binary_imm16_rhs<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Slot,
+        lhs: Slot,
         rhs: Const16<Rhs>,
         op: fn(Lhs, Rhs) -> T,
     ) where
         Rhs: From<Const16<Rhs>>,
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2466,17 +2466,17 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
+        result: Slot,
         lhs: Const16<Lhs>,
-        rhs: Reg,
+        rhs: Slot,
         op: fn(Lhs, Rhs) -> T,
     ) where
         Lhs: From<Const16<Lhs>>,
         UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
         let lhs = Lhs::from(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2484,17 +2484,17 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_shift_by<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Slot,
+        lhs: Slot,
         rhs: ShiftAmount<Rhs>,
         op: fn(Lhs, Rhs) -> T,
     ) where
         Rhs: From<ShiftAmount<Rhs>>,
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2502,17 +2502,17 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_binary<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Reg,
+        result: Slot,
+        lhs: Slot,
+        rhs: Slot,
         op: fn(Lhs, Rhs) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2520,8 +2520,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_divrem_imm16_rhs<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Slot,
+        lhs: Slot,
         rhs: Const16<Rhs>,
         op: fn(Lhs, Rhs) -> Result<T, Error>,
     ) -> Result<(), Error>
@@ -2529,9 +2529,9 @@ impl Executor<'_> {
         Rhs: From<Const16<Rhs>>,
         UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2539,17 +2539,17 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_divrem_imm16_rhs<Lhs, NonZeroT, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Slot,
+        lhs: Slot,
         rhs: Const16<NonZeroT>,
         op: fn(Lhs, NonZeroT) -> T,
     ) where
         NonZeroT: From<Const16<NonZeroT>>,
         UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = <NonZeroT>::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr()
     }
 
@@ -2557,9 +2557,9 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
+        result: Slot,
         lhs: Const16<Lhs>,
-        rhs: Reg,
+        rhs: Slot,
         op: fn(Lhs, Rhs) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2567,8 +2567,8 @@ impl Executor<'_> {
         UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
         let lhs = Lhs::from(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2592,14 +2592,14 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Op`].
-    unsafe fn fetch_reg_and_offset_hi(&self) -> (Reg, Offset64Hi) {
+    /// Fetches the [`Slot`] and [`Offset64Hi`] parameters for a load or store [`Op`].
+    unsafe fn fetch_reg_and_offset_hi(&self) -> (Slot, Offset64Hi) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match addr.get().filter_register_and_offset_hi() {
             Ok(value) => value,
             Err(instr) => unsafe {
-                unreachable_unchecked!("expected an `Op::RegisterAndImm32` but found: {instr:?}")
+                unreachable_unchecked!("expected an `Op::SlotAndImm32` but found: {instr:?}")
             },
         }
     }
@@ -2643,10 +2643,10 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Op::RefFunc`].
-    fn execute_ref_func(&mut self, result: Reg, func_index: index::Func) {
+    fn execute_ref_func(&mut self, result: Slot, func_index: index::Func) {
         let func = self.get_func(func_index);
         let funcref = <Ref<Func>>::from(func);
-        self.set_register(result, funcref);
+        self.set_stack_slot(result, funcref);
         self.next_instr();
     }
 }

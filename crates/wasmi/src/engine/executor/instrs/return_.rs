@@ -1,8 +1,8 @@
 use super::{ControlFlow, Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::{executor::stack::FrameRegisters, utils::unreachable_unchecked},
-    ir::{AnyConst32, BoundedRegSpan, Const32, Op, Reg, RegSpan},
+    engine::{executor::stack::FrameSlots, utils::unreachable_unchecked},
+    ir::{AnyConst32, BoundedSlotSpan, Const32, Op, Slot, SlotSpan},
     store::StoreInner,
 };
 use core::slice;
@@ -42,10 +42,10 @@ impl Executor<'_> {
         self.return_impl(store)
     }
 
-    /// Returns the [`FrameRegisters`] of the caller and the [`RegSpan`] of the results.
+    /// Returns the [`FrameSlots`] of the caller and the [`SlotSpan`] of the results.
     ///
-    /// The returned [`FrameRegisters`] is valid for all [`Reg`] in the returned [`RegSpan`].
-    fn return_caller_results(&mut self) -> (FrameRegisters, RegSpan) {
+    /// The returned [`FrameSlots`] is valid for all [`Slot`] in the returned [`SlotSpan`].
+    fn return_caller_results(&mut self) -> (FrameSlots, SlotSpan) {
         let (callee, caller) = self
             .stack
             .calls
@@ -70,7 +70,7 @@ impl Executor<'_> {
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.stack.values.root_stack_ptr();
-                let results = RegSpan::new(Reg::from(0));
+                let results = SlotSpan::new(Slot::from(0));
                 (dst_sp, results)
             }
         }
@@ -93,31 +93,39 @@ impl Executor<'_> {
         self.return_impl(store)
     }
 
-    /// Execute an [`Op::ReturnReg`] returning a single [`Reg`] value.
-    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ControlFlow {
-        self.execute_return_value(store, value, Self::get_register)
+    /// Execute an [`Op::ReturnSlot`] returning a single [`Slot`] value.
+    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Slot) -> ControlFlow {
+        self.execute_return_value(store, value, Self::get_stack_slot)
     }
 
-    /// Execute an [`Op::ReturnReg2`] returning two [`Reg`] values.
-    pub fn execute_return_reg2(&mut self, store: &mut StoreInner, values: [Reg; 2]) -> ControlFlow {
+    /// Execute an [`Op::ReturnSlot2`] returning two [`Slot`] values.
+    pub fn execute_return_reg2(
+        &mut self,
+        store: &mut StoreInner,
+        values: [Slot; 2],
+    ) -> ControlFlow {
         self.execute_return_reg_n_impl::<2>(store, values)
     }
 
-    /// Execute an [`Op::ReturnReg3`] returning three [`Reg`] values.
-    pub fn execute_return_reg3(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
+    /// Execute an [`Op::ReturnSlot3`] returning three [`Slot`] values.
+    pub fn execute_return_reg3(
+        &mut self,
+        store: &mut StoreInner,
+        values: [Slot; 3],
+    ) -> ControlFlow {
         self.execute_return_reg_n_impl::<3>(store, values)
     }
 
-    /// Executes an [`Op::ReturnReg2`] or [`Op::ReturnReg3`] generically.
+    /// Executes an [`Op::ReturnSlot2`] or [`Op::ReturnSlot3`] generically.
     fn execute_return_reg_n_impl<const N: usize>(
         &mut self,
         store: &mut StoreInner,
-        values: [Reg; N],
+        values: [Slot; N],
     ) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         debug_assert!(u16::try_from(N).is_ok());
         for (result, value) in results.iter(N as u16).zip(values) {
-            let value = self.get_register(value);
+            let value = self.get_stack_slot(value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
@@ -158,7 +166,7 @@ impl Executor<'_> {
     pub fn execute_return_span(
         &mut self,
         store: &mut StoreInner,
-        values: BoundedRegSpan,
+        values: BoundedSlotSpan,
     ) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
@@ -167,14 +175,18 @@ impl Executor<'_> {
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            let value = self.get_register(value);
+            let value = self.get_stack_slot(value);
             unsafe { caller_sp.set(result, value) }
         }
         self.return_impl(store)
     }
 
     /// Execute an [`Op::ReturnMany`] returning many values.
-    pub fn execute_return_many(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
+    pub fn execute_return_many(
+        &mut self,
+        store: &mut StoreInner,
+        values: [Slot; 3],
+    ) -> ControlFlow {
         self.ip.add(1);
         self.copy_many_return_values(self.ip, &values);
         self.return_impl(store)
@@ -187,12 +199,12 @@ impl Executor<'_> {
     /// Used by the execution logic for
     ///
     /// - [`Op::ReturnMany`]
-    pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Reg]) {
+    pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Slot]) {
         let (mut caller_sp, results) = self.return_caller_results();
         let mut result = results.head();
-        let mut copy_results = |values: &[Reg]| {
+        let mut copy_results = |values: &[Slot]| {
             for value in values {
-                let value = self.get_register(*value);
+                let value = self.get_stack_slot(*value);
                 // Safety: The `callee.results()` always refer to a span of valid
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
@@ -203,19 +215,19 @@ impl Executor<'_> {
         };
         copy_results(values);
         let mut ip = ip;
-        while let Op::RegisterList { regs } = ip.get() {
+        while let Op::SlotList { regs } = ip.get() {
             copy_results(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Op::Register { reg } => slice::from_ref(reg),
-            Op::Register2 { regs } => regs,
-            Op::Register3 { regs } => regs,
+            Op::Slot { slot } => slice::from_ref(slot),
+            Op::Slot2 { slots } => slots,
+            Op::Slot3 { slots } => slots,
             unexpected => {
-                // Safety: Wasmi translation guarantees that a register-list finalizer exists.
+                // Safety: Wasmi translation guarantees that a slot-list finalizer exists.
                 unsafe {
                     unreachable_unchecked!(
-                        "unexpected register-list finalizer but found: {unexpected:?}"
+                        "unexpected slot-list finalizer but found: {unexpected:?}"
                     )
                 }
             }

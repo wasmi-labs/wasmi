@@ -194,12 +194,12 @@ impl IsInstructionParameter for Op {
             | Self::F64Const32 { .. }
             | Self::BranchTableTarget { .. }
             | Self::Imm16AndImm32 { .. }
-            | Self::RegisterAndImm32 { .. }
-            | Self::RegisterSpan { .. }
-            | Self::Register { .. }
-            | Self::Register2 { .. }
-            | Self::Register3 { .. }
-            | Self::RegisterList { .. }
+            | Self::SlotAndImm32 { .. }
+            | Self::SlotSpan { .. }
+            | Self::Slot { .. }
+            | Self::Slot2 { .. }
+            | Self::Slot3 { .. }
+            | Self::SlotList { .. }
             | Self::CallIndirectParams { .. }
             | Self::CallIndirectParamsImm16 { .. }
         )

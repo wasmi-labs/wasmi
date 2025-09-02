@@ -14,7 +14,7 @@ use crate::{
         ResumableCallOutOfFuel,
     },
     func::HostFuncEntity,
-    ir::{Reg, RegSpan},
+    ir::{Slot, SlotSpan},
     store::CallHooks,
     CallHook,
     Error,
@@ -270,7 +270,7 @@ impl<'engine> EngineExecutor<'engine> {
                     CallFrame::new(
                         InstructionPtr::new(compiled_func.instrs().as_ptr()),
                         offsets,
-                        RegSpan::new(Reg::from(0)),
+                        SlotSpan::new(Slot::from(0)),
                     ),
                     Some(instance),
                 )?;
@@ -314,7 +314,7 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         store: &mut Store<T>,
         params: impl CallParams,
-        caller_results: RegSpan,
+        caller_results: SlotSpan,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Error>
     where

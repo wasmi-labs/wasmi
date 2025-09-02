@@ -1,5 +1,5 @@
 use super::Executor;
-use crate::{core::wasm, ir::Reg};
+use crate::{core::wasm, ir::Slot};
 
 #[cfg(doc)]
 use crate::ir::Op;

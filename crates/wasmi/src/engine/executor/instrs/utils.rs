@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    ir::{index::Memory, Offset64Hi, Reg},
+    ir::{index::Memory, Offset64Hi, Slot},
     store::StoreInner,
 };
 
@@ -11,7 +11,7 @@ macro_rules! impl_unary_executors {
     ( $( (Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg) {
+            pub fn $fn_name(&mut self, result: Slot, input: Slot) {
                 self.execute_unary(result, input, $op)
             }
         )*
@@ -22,7 +22,7 @@ macro_rules! impl_binary_executors {
     ( $( (Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Slot) {
                 self.execute_binary(result, lhs, rhs, $op)
             }
         )*
@@ -31,8 +31,8 @@ macro_rules! impl_binary_executors {
 
 impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Op`].
-    pub fn fetch_value_and_offset_hi(&self) -> (Reg, Offset64Hi) {
-        // Safety: Wasmi translation guarantees that `Op::RegisterAndImm32` exists.
+    pub fn fetch_value_and_offset_hi(&self) -> (Slot, Offset64Hi) {
+        // Safety: Wasmi translation guarantees that `Op::SlotAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 

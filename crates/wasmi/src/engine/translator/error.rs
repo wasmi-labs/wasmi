@@ -17,9 +17,9 @@ pub enum TranslationError {
     /// Fuel required for a block is out of bounds.
     BlockFuelOutOfBounds,
     /// Tried to allocate more registers than possible.
-    AllocatedTooManyRegisters,
+    AllocatedTooManySlots,
     /// Tried to use an out of bounds register index.
-    RegisterOutOfBounds,
+    SlotOutOfBounds,
     /// Pushed too many values on the emulated value stack during translation.
     EmulatedValueStackOverflow,
     /// Tried to allocate too many or large provider slices.
@@ -74,13 +74,13 @@ impl Display for TranslationError {
                     "fuel required to execute a block is out of bounds for wasmi bytecode"
                 )
             }
-            Self::AllocatedTooManyRegisters => {
+            Self::AllocatedTooManySlots => {
                 write!(
                     f,
                     "translation requires more registers for a function than available"
                 )
             }
-            Self::RegisterOutOfBounds => {
+            Self::SlotOutOfBounds => {
                 write!(f, "tried to access out of bounds register index")
             }
             Self::EmulatedValueStackOverflow => {

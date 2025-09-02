@@ -2,51 +2,51 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::utils::unreachable_unchecked,
-    ir::{AnyConst32, Const32, FixedRegSpan, Op, Reg, RegSpan},
+    ir::{AnyConst32, Const32, FixedSlotSpan, Op, Slot, SlotSpan},
 };
 use core::slice;
 
 impl Executor<'_> {
     /// Executes a generic `copy` [`Op`].
-    fn execute_copy_impl<T>(&mut self, result: Reg, value: T, f: fn(&mut Self, T) -> UntypedVal) {
+    fn execute_copy_impl<T>(&mut self, result: Slot, value: T, f: fn(&mut Self, T) -> UntypedVal) {
         let value = f(self, value);
-        self.set_register(result, value);
+        self.set_stack_slot(result, value);
         self.next_instr()
     }
 
     /// Executes an [`Op::Copy`].
-    pub fn execute_copy(&mut self, result: Reg, value: Reg) {
-        self.execute_copy_impl(result, value, |this, value| this.get_register(value))
+    pub fn execute_copy(&mut self, result: Slot, value: Slot) {
+        self.execute_copy_impl(result, value, |this, value| this.get_stack_slot(value))
     }
 
     /// Executes an [`Op::Copy2`].
-    pub fn execute_copy_2(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
+    pub fn execute_copy_2(&mut self, results: FixedSlotSpan<2>, values: [Slot; 2]) {
         self.execute_copy_2_impl(results, values);
         self.next_instr()
     }
 
     /// Internal implementation of [`Op::Copy2`] execution.
-    fn execute_copy_2_impl(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
+    fn execute_copy_2_impl(&mut self, results: FixedSlotSpan<2>, values: [Slot; 2]) {
         let result0 = results.span().head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
-        let tmp = self.get_register(values[1]);
-        self.set_register(result0, self.get_register(values[0]));
-        self.set_register(result1, tmp);
+        let tmp = self.get_stack_slot(values[1]);
+        self.set_stack_slot(result0, self.get_stack_slot(values[0]));
+        self.set_stack_slot(result1, tmp);
     }
 
     /// Executes an [`Op::CopyImm32`].
-    pub fn execute_copy_imm32(&mut self, result: Reg, value: AnyConst32) {
+    pub fn execute_copy_imm32(&mut self, result: Slot, value: AnyConst32) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(u32::from(value)))
     }
 
     /// Executes an [`Op::CopyI64Imm32`].
-    pub fn execute_copy_i64imm32(&mut self, result: Reg, value: Const32<i64>) {
+    pub fn execute_copy_i64imm32(&mut self, result: Slot, value: Const32<i64>) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(i64::from(value)))
     }
 
     /// Executes an [`Op::CopyF64Imm32`].
-    pub fn execute_copy_f64imm32(&mut self, result: Reg, value: Const32<f64>) {
+    pub fn execute_copy_f64imm32(&mut self, result: Slot, value: Const32<f64>) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(f64::from(value)))
     }
 
@@ -57,23 +57,23 @@ impl Executor<'_> {
     /// - This instruction assumes that `results` and `values` do _not_ overlap
     ///   and thus can copy all the elements without a costly temporary buffer.
     /// - If `results` and `values` _do_ overlap [`Op::CopySpan`] is used.
-    pub fn execute_copy_span(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+    pub fn execute_copy_span(&mut self, results: SlotSpan, values: SlotSpan, len: u16) {
         self.execute_copy_span_impl(results, values, len);
         self.next_instr();
     }
 
     /// Internal implementation of [`Op::CopySpan`] execution.
-    pub fn execute_copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+    pub fn execute_copy_span_impl(&mut self, results: SlotSpan, values: SlotSpan, len: u16) {
         let results = results.iter(len);
         let values = values.iter(len);
         for (result, value) in results.into_iter().zip(values.into_iter()) {
-            let value = self.get_register(value);
-            self.set_register(result, value);
+            let value = self.get_stack_slot(value);
+            self.set_stack_slot(result, value);
         }
     }
 
     /// Executes an [`Op::CopyMany`].
-    pub fn execute_copy_many(&mut self, results: RegSpan, values: [Reg; 2]) {
+    pub fn execute_copy_many(&mut self, results: SlotSpan, values: [Slot; 2]) {
         self.ip.add(1);
         self.ip = self.execute_copy_many_impl(self.ip, results, &values);
         self.next_instr()
@@ -83,33 +83,31 @@ impl Executor<'_> {
     pub fn execute_copy_many_impl(
         &mut self,
         ip: InstructionPtr,
-        results: RegSpan,
-        values: &[Reg],
+        results: SlotSpan,
+        values: &[Slot],
     ) -> InstructionPtr {
         let mut ip = ip;
         let mut result = results.head();
-        let mut copy_values = |values: &[Reg]| {
+        let mut copy_values = |values: &[Slot]| {
             for &value in values {
-                let value = self.get_register(value);
-                self.set_register(result, value);
+                let value = self.get_stack_slot(value);
+                self.set_stack_slot(result, value);
                 result = result.next();
             }
         };
         copy_values(values);
-        while let Op::RegisterList { regs } = ip.get() {
+        while let Op::SlotList { regs } = ip.get() {
             copy_values(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Op::Register { reg } => slice::from_ref(reg),
-            Op::Register2 { regs } => regs,
-            Op::Register3 { regs } => regs,
+            Op::Slot { slot } => slice::from_ref(slot),
+            Op::Slot2 { slots } => slots,
+            Op::Slot3 { slots } => slots,
             unexpected => {
-                // Safety: Wasmi translator guarantees that register-list finalizer exists.
+                // Safety: Wasmi translator guarantees that slot-list finalizer exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected register-list finalizer but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected slot-list finalizer but found: {unexpected:?}")
                 }
             }
         };

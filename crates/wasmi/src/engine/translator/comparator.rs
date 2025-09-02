@@ -1,6 +1,6 @@
 use crate::{
     core::UntypedVal,
-    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Op, Reg},
+    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Op, Slot},
     Error,
 };
 
@@ -8,26 +8,26 @@ use crate::{
 ///
 /// # Note
 ///
-/// This allows to cheaply convert immediate values to [`Reg`]s.
+/// This allows to cheaply convert immediate values to [`Slot`]s.
 ///
 /// # Errors
 ///
-/// If the function local constant allocation from immediate value to [`Reg`] failed.
+/// If the function local constant allocation from immediate value to [`Slot`] failed.
 pub trait AllocConst {
-    /// Allocates a new function local constant value and returns its [`Reg`].
+    /// Allocates a new function local constant value and returns its [`Slot`].
     ///
     /// # Note
     ///
-    /// Constant values allocated this way are deduplicated and return shared [`Reg`].
-    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error>;
+    /// Constant values allocated this way are deduplicated and return shared [`Slot`].
+    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Slot, Error>;
 }
 
-/// Extension trait to return [`Reg`] result of compare [`Op`]s.
+/// Extension trait to return [`Slot`] result of compare [`Op`]s.
 pub trait CompareResult {
-    /// Returns the result [`Reg`] of the compare [`Op`].
+    /// Returns the result [`Slot`] of the compare [`Op`].
     ///
     /// Returns `None` if the [`Op`] is not a compare instruction.
-    fn compare_result(&self) -> Option<Reg>;
+    fn compare_result(&self) -> Option<Slot>;
 
     /// Returns `true` if `self` is a compare [`Op`].
     fn is_compare_instr(&self) -> bool {
@@ -36,7 +36,7 @@ pub trait CompareResult {
 }
 
 impl CompareResult for Op {
-    fn compare_result(&self) -> Option<Reg> {
+    fn compare_result(&self) -> Option<Slot> {
         let result = match *self {
             | Op::I32BitAnd { result, .. }
             | Op::I32BitAndImm16 { result, .. }
@@ -120,11 +120,11 @@ pub trait ReplaceCmpResult: Sized {
     /// Returns `self` `cmp` instruction with the `new_result`.
     ///
     /// Returns `None` if `self` is not a `cmp` instruction.
-    fn replace_cmp_result(&self, new_result: Reg) -> Option<Self>;
+    fn replace_cmp_result(&self, new_result: Slot) -> Option<Self>;
 }
 
 impl ReplaceCmpResult for Op {
-    fn replace_cmp_result(&self, new_result: Reg) -> Option<Self> {
+    fn replace_cmp_result(&self, new_result: Slot) -> Option<Self> {
         let mut copy = *self;
         match &mut copy {
             | Op::I32BitAnd { result, .. }
@@ -394,7 +394,7 @@ impl LogicalizeCmpInstr for Op {
 pub trait TryIntoCmpSelectInstr: Sized {
     fn try_into_cmp_select_instr(
         &self,
-        get_result: impl FnOnce() -> Result<Reg, Error>,
+        get_result: impl FnOnce() -> Result<Slot, Error>,
     ) -> Result<CmpSelectFusion, Error>;
 }
 
@@ -446,7 +446,7 @@ fn cmp_select_swap_operands(instr: &Op) -> bool {
 impl TryIntoCmpSelectInstr for Op {
     fn try_into_cmp_select_instr(
         &self,
-        get_result: impl FnOnce() -> Result<Reg, Error>,
+        get_result: impl FnOnce() -> Result<Slot, Error>,
     ) -> Result<CmpSelectFusion, Error> {
         if !self.is_compare_instr() {
             return Ok(CmpSelectFusion::Unapplied);

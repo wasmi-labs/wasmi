@@ -7,7 +7,7 @@ use crate::{
         index::{Elem, Table},
         Const32,
         Op,
-        Reg,
+        Slot,
     },
     store::{PrunedStore, StoreInner},
     Error,
@@ -49,10 +49,10 @@ impl Executor<'_> {
     pub fn execute_table_get(
         &mut self,
         store: &StoreInner,
-        result: Reg,
-        index: Reg,
+        result: Slot,
+        index: Slot,
     ) -> Result<(), Error> {
-        let index: u64 = self.get_register_as(index);
+        let index: u64 = self.get_stack_slot_as(index);
         self.execute_table_get_impl(store, result, index)
     }
 
@@ -60,7 +60,7 @@ impl Executor<'_> {
     pub fn execute_table_get_imm(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Slot,
         index: Const32<u64>,
     ) -> Result<(), Error> {
         let index: u64 = index.into();
@@ -71,7 +71,7 @@ impl Executor<'_> {
     fn execute_table_get_impl(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Slot,
         index: u64,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
@@ -80,31 +80,31 @@ impl Executor<'_> {
             .resolve_table(&table)
             .get_untyped(index)
             .ok_or(TrapCode::TableOutOfBounds)?;
-        self.set_register(result, value);
+        self.set_stack_slot(result, value);
         self.try_next_instr_at(2)
     }
 
     /// Executes an [`Op::TableSize`].
-    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    pub fn execute_table_size(&mut self, store: &StoreInner, result: Slot, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
     }
 
     /// Executes a generic `table.size` instruction.
-    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Slot, table_index: Table) {
         let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
-        self.set_register(result, size);
+        self.set_stack_slot(result, size);
     }
 
     /// Executes an [`Op::TableSet`].
     pub fn execute_table_set(
         &mut self,
         store: &mut StoreInner,
-        index: Reg,
-        value: Reg,
+        index: Slot,
+        value: Slot,
     ) -> Result<(), Error> {
-        let index: u64 = self.get_register_as(index);
+        let index: u64 = self.get_stack_slot_as(index);
         self.execute_table_set_impl(store, index, value)
     }
 
@@ -113,7 +113,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         index: Const32<u64>,
-        value: Reg,
+        value: Slot,
     ) -> Result<(), Error> {
         let index: u64 = index.into();
         self.execute_table_set_impl(store, index, value)
@@ -124,11 +124,11 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         index: u64,
-        value: Reg,
+        value: Slot,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.get_table(table_index);
-        let value = self.get_register(value);
+        let value = self.get_stack_slot(value);
         store
             .resolve_table_mut(&table)
             .set_untyped(index, value)
@@ -140,13 +140,13 @@ impl Executor<'_> {
     pub fn execute_table_copy(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Slot,
+        src: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let src: u64 = self.get_stack_slot_as(src);
+        let len: u64 = self.get_stack_slot_as(len);
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
         if dst_table_index == src_table_index {
@@ -170,13 +170,13 @@ impl Executor<'_> {
     pub fn execute_table_init(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Slot,
+        src: Slot,
+        len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let src: u32 = self.get_stack_slot_as(src);
+        let len: u32 = self.get_stack_slot_as(len);
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
         let (table, element, fuel) = store.resolve_table_init_params(
@@ -191,14 +191,14 @@ impl Executor<'_> {
     pub fn execute_table_fill(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        len: Reg,
-        value: Reg,
+        dst: Slot,
+        len: Slot,
+        value: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let len: u64 = self.get_stack_slot_as(len);
         let table_index = self.fetch_table_index(1);
-        let value = self.get_register(value);
+        let value = self.get_stack_slot(value);
         let table = self.get_table(table_index);
         let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
         table.fill_untyped(dst, value, len, Some(fuel))?;
@@ -209,11 +209,11 @@ impl Executor<'_> {
     pub fn execute_table_grow(
         &mut self,
         store: &mut PrunedStore,
-        result: Reg,
-        delta: Reg,
-        value: Reg,
+        result: Slot,
+        delta: Slot,
+        value: Slot,
     ) -> Result<(), Error> {
-        let delta: u64 = self.get_register_as(delta);
+        let delta: u64 = self.get_stack_slot_as(delta);
         let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
@@ -221,7 +221,7 @@ impl Executor<'_> {
             return self.try_next_instr_at(2);
         }
         let table = self.get_table(table_index);
-        let value = self.get_register(value);
+        let value = self.get_stack_slot(value);
         let return_value = match store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory) => {
@@ -239,7 +239,7 @@ impl Executor<'_> {
             }
             Err(error) => panic!("encountered unexpected error: {error}"),
         };
-        self.set_register(result, return_value);
+        self.set_stack_slot(result, return_value);
         self.try_next_instr_at(2)
     }
 

@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{wasm, UntypedVal, WriteAs},
-    ir::{index::Memory, Address32, Offset16, Offset64, Offset64Hi, Offset64Lo, Reg},
+    ir::{index::Memory, Address32, Offset16, Offset64, Offset64Hi, Offset64Lo, Slot},
     store::StoreInner,
     Error,
     TrapCode,
@@ -21,8 +21,8 @@ type WasmLoadAtOp<T> = fn(memory: &[u8], address: usize) -> Result<T, TrapCode>;
 
 impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Op`].
-    fn fetch_ptr_and_offset_hi(&self) -> (Reg, Offset64Hi) {
-        // Safety: Wasmi translation guarantees that `Op::RegisterAndImm32` exists.
+    fn fetch_ptr_and_offset_hi(&self) -> (Slot, Offset64Hi) {
+        // Safety: Wasmi translation guarantees that `Op::SlotAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 
@@ -43,7 +43,7 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         memory: Memory,
-        result: Reg,
+        result: Slot,
         address: u64,
         offset: Offset64,
         load_extend: WasmLoadOp<T>,
@@ -53,7 +53,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_memory_bytes(memory, store);
         let loaded_value = load_extend(memory, address, u64::from(offset))?;
-        self.set_register_as::<T>(result, loaded_value);
+        self.set_stack_slot_as::<T>(result, loaded_value);
         Ok(())
     }
 
@@ -74,7 +74,7 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         memory: Memory,
-        result: Reg,
+        result: Slot,
         address: Address32,
         load_extend_at: WasmLoadAtOp<T>,
     ) -> Result<(), Error>
@@ -83,7 +83,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_memory_bytes(memory, store);
         let loaded_value = load_extend_at(memory, usize::from(address))?;
-        self.set_register_as::<T>(result, loaded_value);
+        self.set_stack_slot_as::<T>(result, loaded_value);
         Ok(())
     }
 
@@ -102,7 +102,7 @@ impl Executor<'_> {
     /// - `i64.load32_u`
     fn execute_load_extend_mem0<T>(
         &mut self,
-        result: Reg,
+        result: Slot,
         address: u64,
         offset: Offset64,
         load_extend: WasmLoadOp<T>,
@@ -112,7 +112,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_default_memory_bytes();
         let loaded_value = load_extend(memory, address, u64::from(offset))?;
-        self.set_register_as::<T>(result, loaded_value);
+        self.set_stack_slot_as::<T>(result, loaded_value);
         Ok(())
     }
 
@@ -120,7 +120,7 @@ impl Executor<'_> {
     fn execute_load_impl<T>(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Slot,
         offset_lo: Offset64Lo,
         load_extend: WasmLoadOp<T>,
     ) -> Result<(), Error>
@@ -129,7 +129,7 @@ impl Executor<'_> {
     {
         let (ptr, offset_hi) = self.fetch_ptr_and_offset_hi();
         let memory = self.fetch_optional_memory(2);
-        let address = self.get_register_as::<u64>(ptr);
+        let address = self.get_stack_slot_as::<u64>(ptr);
         let offset = Offset64::combine(offset_hi, offset_lo);
         self.execute_load_extend::<T>(store, memory, result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
@@ -139,7 +139,7 @@ impl Executor<'_> {
     fn execute_load_at_impl<T>(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Slot,
         address: Address32,
         load_extend_at: WasmLoadAtOp<T>,
     ) -> Result<(), Error>
@@ -154,15 +154,15 @@ impl Executor<'_> {
     /// Executes a generic `load_offset16` [`Op`].
     fn execute_load_offset16_impl<T>(
         &mut self,
-        result: Reg,
-        ptr: Reg,
+        result: Slot,
+        ptr: Slot,
         offset: Offset16,
         load_extend: WasmLoadOp<T>,
     ) -> Result<(), Error>
     where
         UntypedVal: WriteAs<T>,
     {
-        let address = self.get_register_as::<u64>(ptr);
+        let address = self.get_stack_slot_as::<u64>(ptr);
         let offset = Offset64::from(offset);
         self.execute_load_extend_mem0::<T>(result, address, offset, load_extend)?;
         self.try_next_instr()
@@ -182,17 +182,17 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_load), "`].")]
-            pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+            pub fn $fn_load(&mut self, store: &StoreInner, result: Slot, offset_lo: Offset64Lo) -> Result<(), Error> {
                 self.execute_load_impl(store, result, offset_lo, $load_fn)
             }
 
             #[doc = concat!("Executes an [`Op::", stringify!($var_load_at), "`].")]
-            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Address32) -> Result<(), Error> {
+            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Slot, address: Address32) -> Result<(), Error> {
                 self.execute_load_at_impl(store, result, address, $load_at_fn)
             }
 
             #[doc = concat!("Executes an [`Op::", stringify!($var_load_off16), "`].")]
-            pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Offset16) -> Result<(), Error> {
+            pub fn $fn_load_off16(&mut self, result: Slot, ptr: Slot, offset: Offset16) -> Result<(), Error> {
                 self.execute_load_offset16_impl::<$ty>(result, ptr, offset, $load_fn)
             }
         )*

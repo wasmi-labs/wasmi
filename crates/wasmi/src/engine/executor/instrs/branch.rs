@@ -2,7 +2,7 @@ use super::{Executor, UntypedValueCmpExt, UntypedValueExt};
 use crate::{
     core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Const16, Op, Reg},
+    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Const16, Op, Slot},
 };
 use core::cmp;
 
@@ -30,28 +30,28 @@ impl Executor<'_> {
     }
 
     /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
-    fn fetch_branch_table_offset(&self, index: Reg, len_targets: u32) -> usize {
-        let index: u32 = self.get_register_as::<u32>(index);
+    fn fetch_branch_table_offset(&self, index: Slot, len_targets: u32) -> usize {
+        let index: u32 = self.get_stack_slot_as::<u32>(index);
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
         cmp::min(index, max_index) as usize + 1
     }
 
-    pub fn execute_branch_table_0(&mut self, index: Reg, len_targets: u32) {
+    pub fn execute_branch_table_0(&mut self, index: Slot, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(offset);
     }
 
-    pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
+    pub fn execute_branch_table_span(&mut self, index: Slot, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let values = match *self.ip.get() {
-            Op::RegisterSpan { span } => span,
+            Op::SlotSpan { span } => span,
             unexpected => {
-                // Safety: Wasmi translation guarantees that `Op::RegisterSpan` follows.
+                // Safety: Wasmi translation guarantees that `Op::SlotSpan` follows.
                 unsafe {
-                    unreachable_unchecked!("expected `Op::RegisterSpan` but found: {unexpected:?}")
+                    unreachable_unchecked!("expected `Op::SlotSpan` but found: {unexpected:?}")
                 }
             }
         };
@@ -80,15 +80,15 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_branch_binop<T>(
         &mut self,
-        lhs: Reg,
-        rhs: Reg,
+        lhs: Slot,
+        rhs: Slot,
         offset: impl Into<BranchOffset>,
         f: fn(T, T) -> bool,
     ) where
         UntypedVal: ReadAs<T>,
     {
-        let lhs: T = self.get_register_as(lhs);
-        let rhs: T = self.get_register_as(rhs);
+        let lhs: T = self.get_stack_slot_as(lhs);
+        let rhs: T = self.get_stack_slot_as(rhs);
         if f(lhs, rhs) {
             return self.branch_to(offset.into());
         }
@@ -98,7 +98,7 @@ impl Executor<'_> {
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
     fn execute_branch_binop_imm16_rhs<T>(
         &mut self,
-        lhs: Reg,
+        lhs: Slot,
         rhs: Const16<T>,
         offset: BranchOffset16,
         f: fn(T, T) -> bool,
@@ -106,7 +106,7 @@ impl Executor<'_> {
         T: From<Const16<T>>,
         UntypedVal: ReadAs<T>,
     {
-        let lhs: T = self.get_register_as(lhs);
+        let lhs: T = self.get_stack_slot_as(lhs);
         let rhs = T::from(rhs);
         if f(lhs, rhs) {
             return self.branch_to16(offset);
@@ -118,7 +118,7 @@ impl Executor<'_> {
     fn execute_branch_binop_imm16_lhs<T>(
         &mut self,
         lhs: Const16<T>,
-        rhs: Reg,
+        rhs: Slot,
         offset: BranchOffset16,
         f: fn(T, T) -> bool,
     ) where
@@ -126,7 +126,7 @@ impl Executor<'_> {
         UntypedVal: ReadAs<T>,
     {
         let lhs = T::from(lhs);
-        let rhs: T = self.get_register_as(rhs);
+        let rhs: T = self.get_stack_slot_as(rhs);
         if f(lhs, rhs) {
             return self.branch_to16(offset);
         }
@@ -168,7 +168,7 @@ macro_rules! impl_execute_branch_binop {
             $(
                 #[doc = concat!("Executes an [`Op::", stringify!($op_name), "`].")]
                 #[inline(always)]
-                pub fn $fn_name(&mut self, lhs: Reg, rhs: Reg, offset: BranchOffset16) {
+                pub fn $fn_name(&mut self, lhs: Slot, rhs: Slot, offset: BranchOffset16) {
                     self.execute_branch_binop::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
@@ -218,7 +218,7 @@ macro_rules! impl_execute_branch_binop_imm16_rhs {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Op::", stringify!($op_name), "`].")]
-                pub fn $fn_name(&mut self, lhs: Reg, rhs: Const16<$ty>, offset: BranchOffset16) {
+                pub fn $fn_name(&mut self, lhs: Slot, rhs: Const16<$ty>, offset: BranchOffset16) {
                     self.execute_branch_binop_imm16_rhs::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
@@ -254,7 +254,7 @@ macro_rules! impl_execute_branch_binop_imm16_lhs {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Op::", stringify!($op_name), "`].")]
-                pub fn $fn_name(&mut self, lhs: Const16<$ty>, rhs: Reg, offset: BranchOffset16) {
+                pub fn $fn_name(&mut self, lhs: Const16<$ty>, rhs: Slot, offset: BranchOffset16) {
                     self.execute_branch_binop_imm16_lhs::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
@@ -275,9 +275,9 @@ impl_execute_branch_binop_imm16_lhs! {
 
 impl Executor<'_> {
     /// Executes an [`Op::BranchCmpFallback`].
-    pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
+    pub fn execute_branch_cmp_fallback(&mut self, lhs: Slot, rhs: Slot, params: Slot) {
         use Comparator as C;
-        let params: u64 = self.get_register_as(params);
+        let params: u64 = self.get_stack_slot_as(params);
         let Some(params) = ComparatorAndOffset::from_u64(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };

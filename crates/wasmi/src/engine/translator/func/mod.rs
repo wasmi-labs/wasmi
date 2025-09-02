@@ -56,22 +56,22 @@ use crate::{
         Address,
         Address32,
         AnyConst16,
-        BoundedRegSpan,
+        BoundedSlotSpan,
         BranchOffset,
         BranchOffset16,
         Comparator,
         ComparatorAndOffset,
         Const16,
         Const32,
-        FixedRegSpan,
+        FixedSlotSpan,
         IntoShiftAmount,
         Offset16,
         Offset64,
         Offset64Lo,
         Op,
-        Reg,
-        RegSpan,
         Sign,
+        Slot,
+        SlotSpan,
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx, WasmiValueType},
     Engine,
@@ -115,7 +115,7 @@ pub struct FuncTranslator {
     locals: LocalsRegistry,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
-    /// Registers and pins labels and tracks their users.
+    /// Slots and pins labels and tracks their users.
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
     instrs: InstrEncoder,
@@ -134,7 +134,7 @@ pub struct FuncTranslatorAllocations {
     locals: LocalsRegistry,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
-    /// Registers and pins labels and tracks their users.
+    /// Slots and pins labels and tracks their users.
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
     instrs: InstrEncoderAllocations,
@@ -188,7 +188,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<Self::Allocations, Error> {
         let Some(frame_size) = self.frame_size() else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         self.update_branch_offsets()?;
         finalize(CompiledFuncEntity::new(
@@ -277,7 +277,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Registers an `amount` of local variables of type `ty`.
+    /// Slots an `amount` of local variables of type `ty`.
     fn register_locals(&mut self, amount: u32, ty: ValType) -> Result<(), Error> {
         let Ok(amount) = usize::try_from(amount) else {
             panic!(
@@ -344,24 +344,24 @@ impl FuncTranslator {
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
-    /// Returns the [`RegSpan`] of a call instruction before manipulating the operand stack.
-    fn call_regspan(&self, len_params: usize) -> Result<RegSpan, Error> {
+    /// Returns the [`SlotSpan`] of a call instruction before manipulating the operand stack.
+    fn call_regspan(&self, len_params: usize) -> Result<SlotSpan, Error> {
         let height = self.stack.height();
         let Some(start) = height.checked_sub(len_params) else {
-            panic!("operand stack underflow while evaluating call `RegSpan`");
+            panic!("operand stack underflow while evaluating call `SlotSpan`");
         };
         let start = self.layout.temp_to_reg(OperandIdx::from(start))?;
-        Ok(RegSpan::new(start))
+        Ok(SlotSpan::new(start))
     }
 
     /// Push `results` as [`TempOperand`] onto the [`Stack`] tagged to `instr`.
     ///
-    /// Returns the [`RegSpan`] identifying the pushed operands if any.
+    /// Returns the [`SlotSpan`] identifying the pushed operands if any.
     fn push_results(
         &mut self,
         instr: Instr,
         results: &[ValType],
-    ) -> Result<Option<RegSpan>, Error> {
+    ) -> Result<Option<SlotSpan>, Error> {
         let (first, rest) = match results.split_first() {
             Some((first, rest)) => (first, rest),
             None => return Ok(None),
@@ -371,7 +371,7 @@ impl FuncTranslator {
             self.stack.push_temp(*result, Some(instr))?;
         }
         let start = self.layout.temp_to_reg(first)?;
-        Ok(Some(RegSpan::new(start)))
+        Ok(Some(SlotSpan::new(start)))
     }
 
     /// Returns the [`Engine`] for which the function is compiled.
@@ -447,7 +447,7 @@ impl FuncTranslator {
     /// - This does _not_ encode a copy if the copy is a no-op.
     fn encode_copies(
         &mut self,
-        results: RegSpan,
+        results: SlotSpan,
         len_values: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<(), Error> {
@@ -475,7 +475,7 @@ impl FuncTranslator {
     /// This won't encode a copy if `result` and `value` yields a no-op copy.
     fn encode_copy(
         &mut self,
-        result: Reg,
+        result: Slot,
         value: Operand,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<Option<Instr>, Error> {
@@ -524,7 +524,7 @@ impl FuncTranslator {
     /// Tries to merge two [`Op::Copy`] instructions and returns the result.
     ///
     /// Returns `None` if merging was not possible.
-    fn try_merge_copy_instr(last_copy: Op, result: Reg, value: Reg) -> Option<Op> {
+    fn try_merge_copy_instr(last_copy: Op, result: Slot, value: Slot) -> Option<Op> {
         let Op::Copy {
             result: last_result,
             value: last_value,
@@ -540,11 +540,11 @@ impl FuncTranslator {
         }
         if result == last_result.next() {
             // Case: we can append `copy_instrs`.
-            return Some(Op::copy2_ext(RegSpan::new(last_result), last_value, value));
+            return Some(Op::copy2_ext(SlotSpan::new(last_result), last_value, value));
         }
         if result == last_result.prev() {
             // Case: we can prepend `copy_instr`.
-            return Some(Op::copy2_ext(RegSpan::new(result), value, last_value));
+            return Some(Op::copy2_ext(SlotSpan::new(result), value, last_value));
         }
         None
     }
@@ -552,7 +552,7 @@ impl FuncTranslator {
     /// Tries to merge an [`Op::Copy2`] and an [`Op::Copy`] and returns the result.
     ///
     /// Returns `None` if merging was not possible.
-    fn try_merge_copy2_instr(last_copy: Op, result: Reg, value: Reg) -> Option<Op> {
+    fn try_merge_copy2_instr(last_copy: Op, result: Slot, value: Slot) -> Option<Op> {
         let Op::Copy2 { results, values } = last_copy else {
             // Case: `last_copy` does not refer to a mergable copy instruction.
             return None;
@@ -570,10 +570,10 @@ impl FuncTranslator {
                 // Case: cannot merge since `value` is overwritten by `last_copy`.
                 return None;
             }
-            let results = RegSpan::new(last_result0);
-            let values = RegSpan::new(last_value0);
+            let results = SlotSpan::new(last_result0);
+            let values = SlotSpan::new(last_value0);
             let len = 3_u16;
-            debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+            debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
             return Some(Op::copy_span(results, values, len));
         }
         if result == last_result0.prev() && value == last_value0.prev() {
@@ -582,10 +582,10 @@ impl FuncTranslator {
                 // Case: cannot merge since `result` overwrites results of `last_copy`.
                 return None;
             }
-            let results = RegSpan::new(result);
-            let values = RegSpan::new(value);
+            let results = SlotSpan::new(result);
+            let values = SlotSpan::new(value);
             let len = 3_u16;
-            debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+            debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
             return Some(Op::copy_span(results, values, len));
         }
         None
@@ -594,7 +594,7 @@ impl FuncTranslator {
     /// Tries to merge an [`Op::CopySpan`] and an [`Op::Copy`] and returns the result.
     ///
     /// Returns `None` if merging was not possible.
-    fn try_merge_copy_span_instr(last_copy: Op, result: Reg, value: Reg) -> Option<Op> {
+    fn try_merge_copy_span_instr(last_copy: Op, result: Slot, value: Slot) -> Option<Op> {
         let Op::CopySpan {
             results,
             values,
@@ -610,7 +610,7 @@ impl FuncTranslator {
         if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
             // Case: we can append `copy_instr`.
             let new_len = len + 1;
-            if RegSpan::has_overlapping_copies(results, values, new_len) {
+            if SlotSpan::has_overlapping_copies(results, values, new_len) {
                 // Case: cannot merge since resulting `copy_span` has overlapping copies.
                 return None;
             }
@@ -619,13 +619,13 @@ impl FuncTranslator {
         if result == last_result0.prev() && value == last_value0.prev() {
             // Case: we can prepend `copy_instr`.
             let new_len = len + 1;
-            if RegSpan::has_overlapping_copies(results, values, new_len) {
+            if SlotSpan::has_overlapping_copies(results, values, new_len) {
                 // Case: cannot merge since resulting `copy_span` has overlapping copies.
                 return None;
             }
             return Some(Op::copy_span(
-                RegSpan::new(result),
-                RegSpan::new(value),
+                SlotSpan::new(result),
+                SlotSpan::new(value),
                 new_len,
             ));
         }
@@ -636,7 +636,7 @@ impl FuncTranslator {
     ///
     /// Returns `None` if the resulting copy instruction is a no-op.
     fn make_copy_instr(
-        result: Reg,
+        result: Slot,
         value: Operand,
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
@@ -664,7 +664,7 @@ impl FuncTranslator {
 
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
     fn make_copy_imm_instr(
-        result: Reg,
+        result: Slot,
         value: TypedVal,
         layout: &mut StackLayout,
     ) -> Result<Op, Error> {
@@ -706,7 +706,7 @@ impl FuncTranslator {
     /// This won't encode a copy if the resulting copy instruction is a no-op.
     fn encode_copy2(
         &mut self,
-        results: RegSpan,
+        results: SlotSpan,
         val0: Operand,
         val1: Operand,
         consume_fuel_instr: Option<Instr>,
@@ -734,8 +734,8 @@ impl FuncTranslator {
     /// This won't encode a copy if the resulting copy instruction is a no-op.
     fn encode_copy_span(
         &mut self,
-        results: RegSpan,
-        values: RegSpan,
+        results: SlotSpan,
+        values: SlotSpan,
         len: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<(), Error> {
@@ -743,7 +743,7 @@ impl FuncTranslator {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
         }
-        debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
+        debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
         self.instrs.push_instr(
             Op::copy_span(results, values, len),
             consume_fuel_instr,
@@ -761,7 +761,7 @@ impl FuncTranslator {
     ///   of noop copies between `results` and `values`.
     fn encode_copy_many(
         &mut self,
-        results: RegSpan,
+        results: SlotSpan,
         len: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<(), Error> {
@@ -803,12 +803,12 @@ impl FuncTranslator {
 
     /// Tries to strip noop copies from the start of the `copy_many`.
     ///
-    /// Returns the stripped `results` [`RegSpan`] and `values` slice of [`Operand`]s.
+    /// Returns the stripped `results` [`SlotSpan`] and `values` slice of [`Operand`]s.
     fn copy_many_strip_noop_start<'a>(
-        results: RegSpan,
+        results: SlotSpan,
         values: &'a [Operand],
         layout: &StackLayout,
-    ) -> Result<(RegSpan, &'a [Operand]), Error> {
+    ) -> Result<(SlotSpan, &'a [Operand]), Error> {
         let mut result = results.head();
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
@@ -827,14 +827,14 @@ impl FuncTranslator {
             result = result.next();
             values = rest;
         }
-        Ok((RegSpan::new(result), values))
+        Ok((SlotSpan::new(result), values))
     }
 
     /// Tries to strip noop copies from the end of the `copy_many`.
     ///
     /// Returns the stripped `values` slice of [`Operand`]s.
     fn copy_many_strip_noop_end<'a>(
-        results: RegSpan,
+        results: SlotSpan,
         values: &'a [Operand],
         layout: &StackLayout,
     ) -> Result<&'a [Operand], Error> {
@@ -872,7 +872,7 @@ impl FuncTranslator {
     /// - `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
     ///   is written to in the first copy but read from in the third.
     fn has_overlapping_copies(
-        results: RegSpan,
+        results: SlotSpan,
         values: &[Operand],
         layout: &StackLayout,
     ) -> Result<bool, Error> {
@@ -907,23 +907,23 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    /// Returns the results [`RegSpan`] of the `frame` if any.
-    fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<RegSpan>, Error> {
+    /// Returns the results [`SlotSpan`] of the `frame` if any.
+    fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<SlotSpan>, Error> {
         Self::frame_results_impl(frame, &self.engine, &self.layout)
     }
 
-    /// Returns the results [`RegSpan`] of the `frame` if any.
+    /// Returns the results [`SlotSpan`] of the `frame` if any.
     fn frame_results_impl(
         frame: &impl ControlFrameBase,
         engine: &Engine,
         layout: &StackLayout,
-    ) -> Result<Option<RegSpan>, Error> {
+    ) -> Result<Option<SlotSpan>, Error> {
         if frame.len_branch_params(engine) == 0 {
             return Ok(None);
         }
         let height = frame.height();
         let start = layout.temp_to_reg(OperandIdx::from(height))?;
-        let span = RegSpan::new(start);
+        let span = SlotSpan::new(start);
         Ok(Some(span))
     }
 
@@ -966,16 +966,16 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Efficiently converts the `operand` to a [`Reg`] if it is an immediate.
+    /// Efficiently converts the `operand` to a [`Slot`] if it is an immediate.
     ///
     /// # Note
     ///
     /// - Preferrably, this encodes the immediate `operand` into a `copy` instruction
     ///   with the immediate encoded inline.
     /// - If the immediate `operand` cannot be encoded as `copy` with inline immediate
-    ///   a function local constant [`Reg`] will be allocated and returned.
-    /// - Returns the associated [`Reg`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
-    fn immediate_to_reg(&mut self, operand: Operand) -> Result<Reg, Error> {
+    ///   a function local constant [`Slot`] will be allocated and returned.
+    /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
+    fn immediate_to_reg(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_reg(operand.local_index()),
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index()),
@@ -986,7 +986,7 @@ impl FuncTranslator {
                     Op::Copy { value, .. } => {
                         // Case: not possible to craft a `copy` instruction
                         //       with an inline immediate, so we can return
-                        //       the allocated function local constant [`Reg`]
+                        //       the allocated function local constant [`Slot`]
                         //       instead.
                         Ok(value)
                     }
@@ -1038,7 +1038,7 @@ impl FuncTranslator {
     fn push_instr_with_result(
         &mut self,
         result_ty: ValType,
-        make_instr: impl FnOnce(Reg) -> Op,
+        make_instr: impl FnOnce(Slot) -> Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
@@ -1059,7 +1059,7 @@ impl FuncTranslator {
         result_ty: ValType,
         lhs: Operand,
         rhs: Operand,
-        make_instr: impl FnOnce(Reg, Reg, Reg) -> Op,
+        make_instr: impl FnOnce(Slot, Slot, Slot) -> Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         debug_assert_eq!(lhs.ty(), rhs.ty());
@@ -1099,7 +1099,7 @@ impl FuncTranslator {
     /// # Note
     ///
     /// Upon call the `immediates` buffer contains all `br_table` target values.
-    fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Reg) -> Result<(), Error> {
+    fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Slot) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
         self.push_instr(
             Op::branch_table_0(index, table.len() + 1),
@@ -1129,7 +1129,7 @@ impl FuncTranslator {
     fn encode_br_table_n(
         &mut self,
         table: wasmparser::BrTable,
-        index: Reg,
+        index: Slot,
         len_values: u16,
     ) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
@@ -1139,7 +1139,7 @@ impl FuncTranslator {
             Op::branch_table_span(index, table.len() + 1),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Op::register_span(BoundedRegSpan::new(values, len_values)))?;
+        self.push_param(Op::slot_span(BoundedSlotSpan::new(values, len_values)))?;
         // Encode the `br_table` targets:
         let targets = &self.immediates[..];
         for target in targets {
@@ -1240,7 +1240,7 @@ impl FuncTranslator {
     ) -> Result<Instr, Error> {
         self.peek_operands_into_buffer(usize::from(len));
         if let Some(values) = Self::try_form_regspan_of(&self.operands, &self.layout)? {
-            let values = BoundedRegSpan::new(values, len);
+            let values = BoundedSlotSpan::new(values, len);
             return self.instrs.push_instr(
                 Op::return_span(values),
                 consume_fuel_instr,
@@ -1262,20 +1262,20 @@ impl FuncTranslator {
         Ok(return_instr)
     }
 
-    /// Tries to form a [`RegSpan`] from the top-most `n` operands on the [`Stack`].
+    /// Tries to form a [`SlotSpan`] from the top-most `n` operands on the [`Stack`].
     ///
-    /// Returns `None` if forming a [`RegSpan`] was not possible.
-    fn try_form_regspan(&self, len: usize) -> Result<Option<RegSpan>, Error> {
+    /// Returns `None` if forming a [`SlotSpan`] was not possible.
+    fn try_form_regspan(&self, len: usize) -> Result<Option<SlotSpan>, Error> {
         Self::try_form_regspan_of(self.stack.peek_n(len), &self.layout)
     }
 
-    /// Tries to form a [`RegSpan`] from the `values` slice of [`Operand`]s.
+    /// Tries to form a [`SlotSpan`] from the `values` slice of [`Operand`]s.
     ///
-    /// Returns `None` if forming a [`RegSpan`] was not possible.
+    /// Returns `None` if forming a [`SlotSpan`] was not possible.
     fn try_form_regspan_of<T>(
         values: impl IntoIterator<Item = T>,
         layout: &StackLayout,
-    ) -> Result<Option<RegSpan>, Error>
+    ) -> Result<Option<SlotSpan>, Error>
     where
         T: AsRef<Operand>,
     {
@@ -1300,23 +1300,23 @@ impl FuncTranslator {
             }
             head = cur;
         }
-        Ok(Some(RegSpan::new(start)))
+        Ok(Some(SlotSpan::new(start)))
     }
 
-    /// Tries to form a [`RegSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
+    /// Tries to form a [`SlotSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
     ///
-    /// Returns `None` if forming a [`RegSpan`] was not possible.
+    /// Returns `None` if forming a [`SlotSpan`] was not possible.
     fn try_form_regspan_or_move(
         &mut self,
         len: usize,
         consume_fuel_instr: Option<Instr>,
-    ) -> Result<RegSpan, Error> {
+    ) -> Result<SlotSpan, Error> {
         if let Some(span) = self.try_form_regspan(len)? {
             return Ok(span);
         }
         self.move_operands_to_temp(len, consume_fuel_instr)?;
         let Some(span) = self.try_form_regspan(len)? else {
-            unreachable!("the top-most `len` operands are now temporaries thus `RegSpan` forming should succeed")
+            unreachable!("the top-most `len` operands are now temporaries thus `SlotSpan` forming should succeed")
         };
         Ok(span)
     }
@@ -1626,8 +1626,8 @@ impl FuncTranslator {
     fn make_branch_cmp_fallback(
         &mut self,
         cmp: Comparator,
-        lhs: Reg,
-        rhs: Reg,
+        lhs: Slot,
+        rhs: Slot,
         offset: BranchOffset,
     ) -> Result<Op, Error> {
         let params = self
@@ -1723,7 +1723,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Op,
+        make_instr: fn(result: Slot, input: Slot) -> Op,
         consteval: fn(input: T) -> R,
     ) -> Result<(), Error>
     where
@@ -1747,7 +1747,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary_fallible<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Op,
+        make_instr: fn(result: Slot, input: Slot) -> Op,
         consteval: fn(input: T) -> Result<R, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -1814,7 +1814,7 @@ impl FuncTranslator {
             Ok(rhs) => Ok(Input::Immediate(rhs)),
             Err(_) => {
                 let rhs = self.layout.const_to_reg(value)?;
-                Ok(Input::Reg(rhs))
+                Ok(Input::Slot(rhs))
             }
         }
     }
@@ -1830,7 +1830,7 @@ impl FuncTranslator {
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
             Operand::Immediate(operand) => return f(self, operand.val()),
         };
-        Ok(Input::Reg(reg))
+        Ok(Input::Slot(reg))
     }
 
     /// Converts the `provider` to a 16-bit index-type constant value.
@@ -1849,7 +1849,7 @@ impl FuncTranslator {
             operand => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
                 let reg = self.layout.operand_to_reg(operand)?;
-                return Ok(Input::Reg(reg));
+                return Ok(Input::Slot(reg));
             }
         };
         match index_type {
@@ -1865,7 +1865,7 @@ impl FuncTranslator {
             }
         }
         let reg = self.layout.const_to_reg(value)?;
-        Ok(Input::Reg(reg))
+        Ok(Input::Slot(reg))
     }
 
     /// Converts the `provider` to a 32-bit index-type constant value.
@@ -1884,7 +1884,7 @@ impl FuncTranslator {
             operand => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
                 let reg = self.layout.operand_to_reg(operand)?;
-                return Ok(Input::Reg(reg));
+                return Ok(Input::Slot(reg));
             }
         };
         match index_type {
@@ -1899,7 +1899,7 @@ impl FuncTranslator {
             }
         }
         let reg = self.layout.const_to_reg(value)?;
-        Ok(Input::Reg(reg))
+        Ok(Input::Slot(reg))
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
@@ -1950,8 +1950,8 @@ impl FuncTranslator {
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
-        make_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
-        make_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Op,
+        make_rr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_ri: fn(result: Slot, lhs: Slot, rhs: Const16<T>) -> Op,
         consteval: fn(T, T) -> R,
         opt_ri: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1975,7 +1975,7 @@ impl FuncTranslator {
                     <R as Typed>::TY,
                     |result| match rhs16 {
                         Input::Immediate(rhs) => make_ri(result, lhs, rhs),
-                        Input::Reg(rhs) => make_rr(result, lhs, rhs),
+                        Input::Slot(rhs) => make_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -1993,13 +1993,13 @@ impl FuncTranslator {
     /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
     fn translate_divrem<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
         make_instr_imm16_rhs: fn(
-            result: Reg,
-            lhs: Reg,
+            result: Slot,
+            lhs: Slot,
             rhs: Const16<<T as WasmInteger>::NonZero>,
         ) -> Op,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
+        make_instr_imm16_lhs: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
         consteval: fn(T, T) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2022,7 +2022,7 @@ impl FuncTranslator {
                     <T as Typed>::TY,
                     |result| match rhs16 {
                         Input::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
-                        Input::Reg(rhs) => make_instr(result, lhs, rhs),
+                        Input::Slot(rhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2035,7 +2035,7 @@ impl FuncTranslator {
                     <T as Typed>::TY,
                     |result| match lhs16 {
                         Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Input::Reg(lhs) => make_instr(result, lhs, rhs),
+                        Input::Slot(lhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2053,9 +2053,9 @@ impl FuncTranslator {
     /// Translates binary non-commutative Wasm operators to Wasmi bytecode.
     fn translate_binary<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
-        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Op,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_imm16_rhs: fn(result: Slot, lhs: Slot, rhs: Const16<T>) -> Op,
+        make_instr_imm16_lhs: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2075,7 +2075,7 @@ impl FuncTranslator {
                     <R as Typed>::TY,
                     |result| match rhs16 {
                         Input::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
-                        Input::Reg(rhs) => make_instr(result, lhs, rhs),
+                        Input::Slot(rhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2088,7 +2088,7 @@ impl FuncTranslator {
                     <R as Typed>::TY,
                     |result| match lhs16 {
                         Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Input::Reg(lhs) => make_instr(result, lhs, rhs),
+                        Input::Slot(lhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2106,9 +2106,9 @@ impl FuncTranslator {
     /// Translates Wasm `i{32,64}.sub` operators to Wasmi bytecode.
     fn translate_isub<T, R>(
         &mut self,
-        make_sub_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
-        make_add_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Op,
-        make_sub_ir: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
+        make_sub_rr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_add_ri: fn(result: Slot, lhs: Slot, rhs: Const16<T>) -> Op,
+        make_sub_ir: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2127,14 +2127,14 @@ impl FuncTranslator {
                     Ok(rhs) => Input::Immediate(rhs),
                     Err(_) => {
                         let rhs = self.layout.const_to_reg(rhs)?;
-                        Input::Reg(rhs)
+                        Input::Slot(rhs)
                     }
                 };
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| match rhs16 {
                         Input::Immediate(rhs) => make_add_ri(result, lhs, rhs),
-                        Input::Reg(rhs) => make_sub_rr(result, lhs, rhs),
+                        Input::Slot(rhs) => make_sub_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2147,7 +2147,7 @@ impl FuncTranslator {
                     <T as Typed>::TY,
                     |result| match lhs16 {
                         Input::Immediate(lhs) => make_sub_ir(result, lhs, rhs),
-                        Input::Reg(lhs) => make_sub_rr(result, lhs, rhs),
+                        Input::Slot(lhs) => make_sub_rr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2165,9 +2165,13 @@ impl FuncTranslator {
     /// Translates Wasm shift and rotate operators to Wasmi bytecode.
     fn translate_shift<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
-        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: <T as IntoShiftAmount>::Output) -> Op,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_imm16_rhs: fn(
+            result: Slot,
+            lhs: Slot,
+            rhs: <T as IntoShiftAmount>::Output,
+        ) -> Op,
+        make_instr_imm16_lhs: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
@@ -2205,7 +2209,7 @@ impl FuncTranslator {
                     <T as Typed>::TY,
                     |result| match lhs16 {
                         Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Input::Reg(lhs) => make_instr(result, lhs, rhs),
+                        Input::Slot(lhs) => make_instr(result, lhs, rhs),
                     },
                     FuelCostsProvider::base,
                 )
@@ -2223,7 +2227,7 @@ impl FuncTranslator {
     /// Translate a binary float Wasm operation.
     fn translate_fbinary<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2252,8 +2256,8 @@ impl FuncTranslator {
     /// - Applies constant evaluation if both operands are constant values.
     fn translate_fcopysign<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
-        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Op,
+        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_imm: fn(result: Slot, lhs: Slot, rhs: Sign<T>) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
@@ -2365,7 +2369,7 @@ impl FuncTranslator {
                 mem::swap(&mut true_val, &mut false_val);
             }
         };
-        self.push_param(Op::register2_ext(true_val, false_val))?;
+        self.push_param(Op::slot2_ext(true_val, false_val))?;
         Ok(())
     }
 
@@ -2374,7 +2378,7 @@ impl FuncTranslator {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
         let index = self.make_index16(index, table_type.index_ty())?;
         let instr = match index {
-            Input::Reg(index) => Op::call_indirect_params(index, table_index),
+            Input::Slot(index) => Op::call_indirect_params(index, table_index),
             Input::Immediate(index) => Op::call_indirect_params_imm16(index, table_index),
         };
         Ok(instr)
@@ -2486,9 +2490,9 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         loaded_ty: ValType,
-        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Op,
-        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Op,
-        make_instr_at: fn(result: Reg, address: Address32) -> Op,
+        make_instr: fn(result: Slot, offset_lo: Offset64Lo) -> Op,
+        make_instr_offset16: fn(result: Slot, ptr: Slot, offset: Offset16) -> Op,
+        make_instr_at: fn(result: Slot, address: Address32) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2537,7 +2541,7 @@ impl FuncTranslator {
             |result| make_instr(result, offset_lo),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::register_and_offset_hi(ptr, offset_hi))?;
+        self.push_param(Op::slot_and_offset_hi(ptr, offset_hi))?;
         if !memory.is_default() {
             self.push_param(Op::memory_index(memory))?;
         }
@@ -2618,7 +2622,7 @@ impl FuncTranslator {
                         ),
                         None => (
                             T::store(ptr, offset_lo),
-                            Op::register_and_offset_hi(self.layout.const_to_reg(value)?, offset_hi),
+                            Op::slot_and_offset_hi(self.layout.const_to_reg(value)?, offset_hi),
                         ),
                     }
                 }
@@ -2626,7 +2630,7 @@ impl FuncTranslator {
                     let value = self.layout.operand_to_reg(value)?;
                     (
                         T::store(ptr, offset_lo),
-                        Op::register_and_offset_hi(value, offset_hi),
+                        Op::slot_and_offset_hi(value, offset_hi),
                     )
                 }
             }
@@ -2685,7 +2689,7 @@ impl FuncTranslator {
     /// Returns `Some` in case the optimized instructions have been encoded.
     fn encode_istore_wrap_mem0<T: op::StoreWrapOperator>(
         &mut self,
-        ptr: Reg,
+        ptr: Slot,
         offset: u64,
         value: Operand,
     ) -> Result<Option<Instr>, Error>
@@ -2740,9 +2744,9 @@ impl FuncTranslator {
     fn translate_store(
         &mut self,
         memarg: MemArg,
-        store: fn(ptr: Reg, offset_lo: Offset64Lo) -> Op,
-        store_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Op,
-        store_at: fn(value: Reg, address: Address32) -> Op,
+        store: fn(ptr: Slot, offset_lo: Offset64Lo) -> Op,
+        store_offset16: fn(ptr: Slot, offset: Offset16, value: Slot) -> Op,
+        store_at: fn(value: Slot, address: Address32) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2772,7 +2776,7 @@ impl FuncTranslator {
             }
         }
         self.push_instr(store(ptr, offset_lo), FuelCostsProvider::store)?;
-        self.push_param(Op::register_and_offset_hi(value, offset_hi))?;
+        self.push_param(Op::slot_and_offset_hi(value, offset_hi))?;
         if !memory.is_default() {
             self.push_param(Op::memory_index(memory))?;
         }
@@ -2789,7 +2793,7 @@ impl FuncTranslator {
         memory: index::Memory,
         address: Address32,
         value: Operand,
-        make_instr_at: fn(value: Reg, address: Address32) -> Op,
+        make_instr_at: fn(value: Slot, address: Address32) -> Op,
     ) -> Result<(), Error> {
         let value = self.layout.operand_to_reg(value)?;
         self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
@@ -2844,7 +2848,7 @@ impl FuncTranslator {
     /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_binop128(
         &mut self,
-        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Op,
+        make_instr: fn(results: [Slot; 2], lhs_lo: Slot) -> Op,
         const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -2879,14 +2883,14 @@ impl FuncTranslator {
             make_instr([result_lo, result_hi], lhs_lo),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Op::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
+        self.push_param(Op::slot3_ext(lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
 
     /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_mul_wide_sx(
         &mut self,
-        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Op,
+        make_instr: fn(results: FixedSlotSpan<2>, lhs: Slot, rhs: Slot) -> Op,
         const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
         signed: bool,
     ) -> Result<(), Error> {
@@ -2926,14 +2930,14 @@ impl FuncTranslator {
         let result0 = self.stack.push_temp(ValType::I64, None)?;
         let _result1 = self.stack.push_temp(ValType::I64, None)?;
         let result0 = self.layout.temp_to_reg(result0)?;
-        let Ok(results) = <FixedRegSpan<2>>::new(RegSpan::new(result0)) else {
-            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
+        let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         self.push_instr(make_instr(results, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
 
-    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Reg`] and one immediate input.
+    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Slot`] and one immediate input.
     ///
     /// - Returns `Ok(true)` if the optimiation was applied successfully.
     /// - Returns `Ok(false)` if no optimization was applied.

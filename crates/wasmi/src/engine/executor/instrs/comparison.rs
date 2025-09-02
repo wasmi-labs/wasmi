@@ -1,7 +1,7 @@
 use super::{Executor, UntypedValueCmpExt};
 use crate::{
     core::wasm,
-    ir::{Const16, Reg},
+    ir::{Const16, Slot},
 };
 
 #[cfg(doc)]
@@ -43,7 +43,7 @@ macro_rules! impl_comparison_imm16_rhs {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Const16<$ty>) {
                 self.execute_binary_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
@@ -72,7 +72,7 @@ macro_rules! impl_comparison_imm16_lhs {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Const16<$ty>, rhs: Slot) {
                 self.execute_binary_imm16_lhs(result, lhs, rhs, $op)
             }
         )*

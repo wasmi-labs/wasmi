@@ -2,7 +2,7 @@ use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     collections::HeadVec,
     engine::executor::InstructionPtr,
-    ir::RegSpan,
+    ir::SlotSpan,
     Instance,
     TrapCode,
 };
@@ -13,7 +13,7 @@ use crate::{
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
     ir::Op,
-    ir::Reg,
+    ir::Slot,
     Global,
     Memory,
     Table,
@@ -199,7 +199,7 @@ pub struct CallFrame {
     /// Offsets of the [`CallFrame`] into the [`ValueStack`].
     offsets: StackOffsets,
     /// Span of registers were the caller expects them in its [`CallFrame`].
-    results: RegSpan,
+    results: SlotSpan,
     /// Is `true` if this [`CallFrame`] changed the currently used [`Instance`].
     ///
     /// - This flag is an optimization to reduce the amount of accesses on the
@@ -212,7 +212,7 @@ pub struct CallFrame {
 
 impl CallFrame {
     /// Creates a new [`CallFrame`].
-    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: RegSpan) -> Self {
+    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: SlotSpan) -> Self {
         Self {
             instr_ptr,
             offsets,
@@ -254,13 +254,13 @@ impl CallFrame {
         self.offsets.base
     }
 
-    /// Returns the [`RegSpan`] of the [`CallFrame`].
+    /// Returns the [`SlotSpan`] of the [`CallFrame`].
     ///
     /// # Note
     ///
-    /// The registers yielded by the returned [`RegSpan`]
+    /// The registers yielded by the returned [`SlotSpan`]
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
-    pub fn results(&self) -> RegSpan {
+    pub fn results(&self) -> SlotSpan {
         self.results
     }
 }

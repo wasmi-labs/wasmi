@@ -1,5 +1,5 @@
 use super::Executor;
-use crate::{core::wasm, ir::Reg, Error};
+use crate::{core::wasm, ir::Slot, Error};
 
 #[cfg(doc)]
 use crate::ir::Op;
@@ -8,7 +8,7 @@ macro_rules! impl_fallible_conversion_impls {
     ( $( (Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg) -> Result<(), Error> {
+            pub fn $fn_name(&mut self, result: Slot, input: Slot) -> Result<(), Error> {
                 self.try_execute_unary(result, input, $op)
             }
         )*

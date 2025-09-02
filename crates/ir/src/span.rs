@@ -1,45 +1,45 @@
-use crate::{Error, Reg};
+use crate::{Error, Slot};
 
-/// A [`RegSpan`] of contiguous [`Reg`] indices.
+/// A [`SlotSpan`] of contiguous [`Slot`] indices.
 ///
 /// # Note
 ///
-/// - Represents an amount of contiguous [`Reg`] indices.
-/// - For the sake of space efficiency the actual number of [`Reg`]
-///   of the [`RegSpan`] is stored externally and provided in
-///   [`RegSpan::iter`] when there is a need to iterate over
-///   the [`Reg`] of the [`RegSpan`].
+/// - Represents an amount of contiguous [`Slot`] indices.
+/// - For the sake of space efficiency the actual number of [`Slot`]
+///   of the [`SlotSpan`] is stored externally and provided in
+///   [`SlotSpan::iter`] when there is a need to iterate over
+///   the [`Slot`] of the [`SlotSpan`].
 ///
 /// The caller is responsible for providing the correct length.
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct RegSpan(Reg);
+pub struct SlotSpan(Slot);
 
-impl RegSpan {
-    /// Creates a new [`RegSpan`] starting with the given `start` [`Reg`].
-    pub fn new(head: Reg) -> Self {
+impl SlotSpan {
+    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
+    pub fn new(head: Slot) -> Self {
         Self(head)
     }
 
-    /// Returns a [`RegSpanIter`] yielding `len` [`Reg`]s.
-    pub fn iter_sized(self, len: usize) -> RegSpanIter {
-        RegSpanIter::new(self.0, len)
+    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
+    pub fn iter_sized(self, len: usize) -> SlotSpanIter {
+        SlotSpanIter::new(self.0, len)
     }
 
-    /// Returns a [`RegSpanIter`] yielding `len` [`Reg`]s.
-    pub fn iter(self, len: u16) -> RegSpanIter {
-        RegSpanIter::new_u16(self.0, len)
+    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
+    pub fn iter(self, len: u16) -> SlotSpanIter {
+        SlotSpanIter::new_u16(self.0, len)
     }
 
-    /// Returns the head [`Reg`] of the [`RegSpan`].
-    pub fn head(self) -> Reg {
+    /// Returns the head [`Slot`] of the [`SlotSpan`].
+    pub fn head(self) -> Slot {
         self.0
     }
 
-    /// Returns an exclusive reference to the head [`Reg`] of the [`RegSpan`].
-    pub fn head_mut(&mut self) -> &mut Reg {
+    /// Returns an exclusive reference to the head [`Slot`] of the [`SlotSpan`].
+    pub fn head_mut(&mut self) -> &mut Slot {
         &mut self.0
     }
 
@@ -52,21 +52,21 @@ impl RegSpan {
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]`: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
     pub fn has_overlapping_copies(results: Self, values: Self, len: u16) -> bool {
-        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+        SlotSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 }
 
-/// A [`RegSpan`] with a statically known number of [`Reg`].
+/// A [`SlotSpan`] with a statically known number of [`Slot`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct FixedRegSpan<const N: u16> {
-    /// The underlying [`RegSpan`] without the known length.
-    span: RegSpan,
+pub struct FixedSlotSpan<const N: u16> {
+    /// The underlying [`SlotSpan`] without the known length.
+    span: SlotSpan,
 }
 
-impl FixedRegSpan<2> {
+impl FixedSlotSpan<2> {
     /// Returns an array of the results represented by `self`.
-    pub fn to_array(self) -> [Reg; 2] {
+    pub fn to_array(self) -> [Slot; 2] {
         let span = self.span();
         let fst = span.head();
         let snd = fst.next();
@@ -74,50 +74,50 @@ impl FixedRegSpan<2> {
     }
 }
 
-impl<const N: u16> FixedRegSpan<N> {
-    /// Creates a new [`RegSpan`] starting with the given `start` [`Reg`].
-    pub fn new(span: RegSpan) -> Result<Self, Error> {
+impl<const N: u16> FixedSlotSpan<N> {
+    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
+    pub fn new(span: SlotSpan) -> Result<Self, Error> {
         let head = span.head();
         if head >= head.next_n(N) {
-            return Err(Error::RegisterOutOfBounds);
+            return Err(Error::StackSlotOutOfBounds);
         }
         Ok(Self { span })
     }
 
-    /// Returns a [`RegSpanIter`] yielding `N` [`Reg`]s.
-    pub fn iter(&self) -> RegSpanIter {
+    /// Returns a [`SlotSpanIter`] yielding `N` [`Slot`]s.
+    pub fn iter(&self) -> SlotSpanIter {
         self.span.iter(self.len())
     }
 
-    /// Creates a new [`BoundedRegSpan`] from `self`.
-    pub fn bounded(self) -> BoundedRegSpan {
-        BoundedRegSpan {
+    /// Creates a new [`BoundedSlotSpan`] from `self`.
+    pub fn bounded(self) -> BoundedSlotSpan {
+        BoundedSlotSpan {
             span: self.span,
             len: N,
         }
     }
 
-    /// Returns the underlying [`RegSpan`] of `self`.
-    pub fn span(self) -> RegSpan {
+    /// Returns the underlying [`SlotSpan`] of `self`.
+    pub fn span(self) -> SlotSpan {
         self.span
     }
 
-    /// Returns an exclusive reference to the underlying [`RegSpan`] of `self`.
-    pub fn span_mut(&mut self) -> &mut RegSpan {
+    /// Returns an exclusive reference to the underlying [`SlotSpan`] of `self`.
+    pub fn span_mut(&mut self) -> &mut SlotSpan {
         &mut self.span
     }
 
-    /// Returns `true` if the [`Reg`] is contained in `self`.
-    pub fn contains(self, reg: Reg) -> bool {
+    /// Returns `true` if the [`Slot`] is contained in `self`.
+    pub fn contains(self, slot: Slot) -> bool {
         if self.is_empty() {
             return false;
         }
         let min = self.span.head();
         let max = min.next_n(N);
-        min <= reg && reg < max
+        min <= slot && slot < max
     }
 
-    /// Returns the number of [`Reg`]s in `self`.
+    /// Returns the number of [`Slot`]s in `self`.
     pub fn len(self) -> u16 {
         N
     }
@@ -128,56 +128,56 @@ impl<const N: u16> FixedRegSpan<N> {
     }
 }
 
-impl<const N: u16> IntoIterator for &FixedRegSpan<N> {
-    type Item = Reg;
-    type IntoIter = RegSpanIter;
+impl<const N: u16> IntoIterator for &FixedSlotSpan<N> {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<const N: u16> IntoIterator for FixedRegSpan<N> {
-    type Item = Reg;
-    type IntoIter = RegSpanIter;
+impl<const N: u16> IntoIterator for FixedSlotSpan<N> {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-/// A [`RegSpan`] with a known number of [`Reg`].
+/// A [`SlotSpan`] with a known number of [`Slot`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BoundedRegSpan {
-    /// The first [`Reg`] in `self`.
-    span: RegSpan,
-    /// The number of [`Reg`] in `self`.
+pub struct BoundedSlotSpan {
+    /// The first [`Slot`] in `self`.
+    span: SlotSpan,
+    /// The number of [`Slot`] in `self`.
     len: u16,
 }
 
-impl BoundedRegSpan {
-    /// Creates a new [`BoundedRegSpan`] from the given `span` and `len`.
-    pub fn new(span: RegSpan, len: u16) -> Self {
+impl BoundedSlotSpan {
+    /// Creates a new [`BoundedSlotSpan`] from the given `span` and `len`.
+    pub fn new(span: SlotSpan, len: u16) -> Self {
         Self { span, len }
     }
 
-    /// Returns a [`RegSpanIter`] yielding `len` [`Reg`]s.
-    pub fn iter(&self) -> RegSpanIter {
+    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
+    pub fn iter(&self) -> SlotSpanIter {
         self.span.iter(self.len())
     }
 
-    /// Returns `self` as unbounded [`RegSpan`].
-    pub fn span(&self) -> RegSpan {
+    /// Returns `self` as unbounded [`SlotSpan`].
+    pub fn span(&self) -> SlotSpan {
         self.span
     }
 
-    /// Returns a mutable reference to the underlying [`RegSpan`].
-    pub fn span_mut(&mut self) -> &mut RegSpan {
+    /// Returns a mutable reference to the underlying [`SlotSpan`].
+    pub fn span_mut(&mut self) -> &mut SlotSpan {
         &mut self.span
     }
 
-    /// Returns `true` if the [`Reg`] is contained in `self`.
-    pub fn contains(self, reg: Reg) -> bool {
+    /// Returns `true` if the [`Slot`] is contained in `self`.
+    pub fn contains(self, reg: Slot) -> bool {
         if self.is_empty() {
             return false;
         }
@@ -186,7 +186,7 @@ impl BoundedRegSpan {
         min <= reg && reg < max
     }
 
-    /// Returns the number of [`Reg`] in `self`.
+    /// Returns the number of [`Slot`] in `self`.
     pub fn len(&self) -> u16 {
         self.len
     }
@@ -197,36 +197,36 @@ impl BoundedRegSpan {
     }
 }
 
-impl IntoIterator for &BoundedRegSpan {
-    type Item = Reg;
-    type IntoIter = RegSpanIter;
+impl IntoIterator for &BoundedSlotSpan {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl IntoIterator for BoundedRegSpan {
-    type Item = Reg;
-    type IntoIter = RegSpanIter;
+impl IntoIterator for BoundedSlotSpan {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-/// A [`RegSpanIter`] iterator yielding contiguous [`Reg`].
+/// A [`SlotSpanIter`] iterator yielding contiguous [`Slot`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegSpanIter {
-    /// The next [`Reg`] in the [`RegSpanIter`].
-    next: Reg,
-    /// The last [`Reg`] in the [`RegSpanIter`].
-    last: Reg,
+pub struct SlotSpanIter {
+    /// The next [`Slot`] in the [`SlotSpanIter`].
+    next: Slot,
+    /// The last [`Slot`] in the [`SlotSpanIter`].
+    last: Slot,
 }
 
-impl RegSpanIter {
-    /// Creates a [`RegSpanIter`] from then given raw `start` and `end` [`Reg`].
-    pub fn from_raw_parts(start: Reg, end: Reg) -> Self {
+impl SlotSpanIter {
+    /// Creates a [`SlotSpanIter`] from then given raw `start` and `end` [`Slot`].
+    pub fn from_raw_parts(start: Slot, end: Slot) -> Self {
         debug_assert!(i16::from(start) <= i16::from(end));
         Self {
             next: start,
@@ -234,43 +234,43 @@ impl RegSpanIter {
         }
     }
 
-    /// Creates a new [`RegSpanIter`] for the given `start` [`Reg`] and length `len`.
+    /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Reg`] span indices are out of bounds.
-    fn new(start: Reg, len: usize) -> Self {
+    /// If the `start..end` [`Slot`] span indices are out of bounds.
+    fn new(start: Slot, len: usize) -> Self {
         let len = u16::try_from(len)
             .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
         Self::new_u16(start, len)
     }
 
-    /// Creates a new [`RegSpanIter`] for the given `start` [`Reg`] and length `len`.
+    /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Reg`] span indices are out of bounds.
-    fn new_u16(start: Reg, len: u16) -> Self {
+    /// If the `start..end` [`Slot`] span indices are out of bounds.
+    fn new_u16(start: Slot, len: u16) -> Self {
         let next = start;
         let last = start
             .0
             .checked_add_unsigned(len)
-            .map(Reg)
+            .map(Slot)
             .expect("overflowing register index for register span");
         Self::from_raw_parts(next, last)
     }
 
-    /// Creates a [`RegSpan`] from this [`RegSpanIter`].
-    pub fn span(self) -> RegSpan {
-        RegSpan(self.next)
+    /// Creates a [`SlotSpan`] from this [`SlotSpanIter`].
+    pub fn span(self) -> SlotSpan {
+        SlotSpan(self.next)
     }
 
-    /// Returns the remaining number of [`Reg`]s yielded by the [`RegSpanIter`].
+    /// Returns the remaining number of [`Slot`]s yielded by the [`SlotSpanIter`].
     pub fn len_as_u16(&self) -> u16 {
         self.last.0.abs_diff(self.next.0)
     }
 
-    /// Returns `true` if `self` yields no more [`Reg`]s.
+    /// Returns `true` if `self` yields no more [`Slot`]s.
     pub fn is_empty(&self) -> bool {
         self.len_as_u16() == 0
     }
@@ -308,8 +308,8 @@ impl RegSpanIter {
     }
 }
 
-impl Iterator for RegSpanIter {
-    type Item = Reg;
+impl Iterator for SlotSpanIter {
+    type Item = Slot;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
@@ -321,7 +321,7 @@ impl Iterator for RegSpanIter {
     }
 }
 
-impl DoubleEndedIterator for RegSpanIter {
+impl DoubleEndedIterator for SlotSpanIter {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
             return None;
@@ -331,8 +331,8 @@ impl DoubleEndedIterator for RegSpanIter {
     }
 }
 
-impl ExactSizeIterator for RegSpanIter {
+impl ExactSizeIterator for SlotSpanIter {
     fn len(&self) -> usize {
-        usize::from(RegSpanIter::len_as_u16(self))
+        usize::from(SlotSpanIter::len_as_u16(self))
     }
 }

@@ -9,7 +9,7 @@ use crate::{
         ResumableHostTrapError,
     },
     func::{FuncEntity, HostFuncEntity},
-    ir::{index, Op, Reg, RegSpan},
+    ir::{index, Op, Slot, SlotSpan},
     store::{CallHooks, PrunedStore, StoreInner},
     Error,
     Func,
@@ -134,7 +134,7 @@ impl Executor<'_> {
         self.ip.add(1);
         match *self.ip.get() {
             Op::CallIndirectParams { index, table } => {
-                let index: u64 = self.get_register_as(index);
+                let index: u64 = self.get_stack_slot_as(index);
                 (index, table)
             }
             unexpected => {
@@ -181,11 +181,11 @@ impl Executor<'_> {
     #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
-        results: RegSpan,
+        results: SlotSpan,
         func: CompiledFuncRef,
     ) -> Result<CallFrame, Error> {
-        // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
-        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
+        // We have to reinstantiate the `self.sp` [`FrameSlots`] since we just called
+        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameSlots`].
         let caller = self
             .stack
             .calls
@@ -210,18 +210,18 @@ impl Executor<'_> {
     /// last call parameter [`Op`] if any.
     fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
-        if let Op::RegisterList { .. } = self.ip.get() {
+        if let Op::SlotList { .. } = self.ip.get() {
             self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
-            Op::Register { reg } => {
-                self.copy_regs(uninit_params, array::from_ref(reg));
+            Op::Slot { slot } => {
+                self.copy_regs(uninit_params, array::from_ref(slot));
             }
-            Op::Register2 { regs } => {
-                self.copy_regs(uninit_params, regs);
+            Op::Slot2 { slots } => {
+                self.copy_regs(uninit_params, slots);
             }
-            Op::Register3 { regs } => {
-                self.copy_regs(uninit_params, regs);
+            Op::Slot3 { slots } => {
+                self.copy_regs(uninit_params, slots);
             }
             unexpected => {
                 // Safety: Wasmi translation guarantees that register list finalizer exists.
@@ -234,10 +234,10 @@ impl Executor<'_> {
         }
     }
 
-    /// Copies an array of [`Reg`] to the `dst` [`Reg`] span.
-    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Reg; N]) {
+    /// Copies an array of [`Slot`] to the `dst` [`Slot`] span.
+    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Slot; N]) {
         for value in regs {
-            let value = self.get_register(*value);
+            let value = self.get_stack_slot(*value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
@@ -246,14 +246,14 @@ impl Executor<'_> {
         }
     }
 
-    /// Copies a list of [`Op::RegisterList`] to the `dst` [`Reg`] span.
+    /// Copies a list of [`Op::SlotList`] to the `dst` [`Slot`] span.
     /// Copies the parameters from `src` for the called [`CallFrame`].
     ///
     /// This will make the [`InstructionPtr`] point to the [`Op`] following the
-    /// last [`Op::RegisterList`] if any.
+    /// last [`Op::SlotList`] if any.
     #[cold]
     fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
-        while let Op::RegisterList { regs } = self.ip.get() {
+        while let Op::SlotList { regs } = self.ip.get() {
             self.copy_regs(uninit_params, regs);
             self.ip.add(1);
         }
@@ -264,7 +264,7 @@ impl Executor<'_> {
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
-        results: RegSpan,
+        results: SlotSpan,
         func: EngineFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
@@ -328,7 +328,7 @@ impl Executor<'_> {
         self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
-    /// Returns the `results` [`RegSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
+    /// Returns the `results` [`SlotSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
     ///
     /// # Note
     ///
@@ -337,7 +337,7 @@ impl Executor<'_> {
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
     #[inline(always)]
-    fn caller_results(&self) -> RegSpan {
+    fn caller_results(&self) -> SlotSpan {
         self.stack
             .calls
             .peek()
@@ -350,7 +350,7 @@ impl Executor<'_> {
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
-        results: RegSpan,
+        results: SlotSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
@@ -361,7 +361,7 @@ impl Executor<'_> {
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
-        results: RegSpan,
+        results: SlotSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
@@ -399,7 +399,7 @@ impl Executor<'_> {
     pub fn execute_call_imported_0(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: SlotSpan,
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
@@ -411,7 +411,7 @@ impl Executor<'_> {
     pub fn execute_call_imported(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: SlotSpan,
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
@@ -423,7 +423,7 @@ impl Executor<'_> {
     fn execute_call_imported_impl<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
-        results: Option<RegSpan>,
+        results: Option<SlotSpan>,
         func: &Func,
     ) -> Result<ControlFlow, Error> {
         match store.inner().resolve_func(func) {
@@ -460,7 +460,7 @@ impl Executor<'_> {
     fn execute_host_func<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
-        results: Option<RegSpan>,
+        results: Option<SlotSpan>,
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<ControlFlow, Error> {
@@ -468,8 +468,8 @@ impl Executor<'_> {
         let len_results = host_func.len_results();
         let max_inout = usize::from(len_params.max(len_results));
         let instance = *self.stack.calls.instance_expect();
-        // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
-        // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
+        // We have to reinstantiate the `self.sp` [`FrameSlots`] since we just called
+        // [`ValueStack::reserve`] which might invalidate all live [`FrameSlots`].
         let (caller, popped_instance) = match <C as CallContext>::KIND {
             CallKind::Nested => self.stack.calls.peek().copied().map(|frame| (frame, None)),
             CallKind::Tail => self.stack.calls.pop(),
@@ -613,7 +613,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect_0(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: SlotSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
@@ -631,7 +631,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect_0_imm16(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: SlotSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
@@ -649,7 +649,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: SlotSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
@@ -667,7 +667,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect_imm16(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: SlotSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
@@ -685,7 +685,7 @@ impl Executor<'_> {
     fn execute_call_indirect_impl<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
-        results: Option<RegSpan>,
+        results: Option<SlotSpan>,
         func_type: index::FuncType,
         index: u64,
         table: index::Table,

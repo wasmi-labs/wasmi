@@ -2,7 +2,7 @@ use super::{err_stack_overflow, StackOffsets};
 use crate::{
     core::{ReadAs, UntypedVal, WriteAs},
     engine::code_map::CompiledFuncRef,
-    ir::Reg,
+    ir::Slot,
     TrapCode,
 };
 use alloc::vec::Vec;
@@ -110,15 +110,15 @@ impl ValueStack {
         self.values.clear();
     }
 
-    /// Returns the root [`FrameRegisters`] pointing to the first value on the [`ValueStack`].
-    pub fn root_stack_ptr(&mut self) -> FrameRegisters {
-        FrameRegisters::new(self.values.as_mut_ptr())
+    /// Returns the root [`FrameSlots`] pointing to the first value on the [`ValueStack`].
+    pub fn root_stack_ptr(&mut self) -> FrameSlots {
+        FrameSlots::new(self.values.as_mut_ptr())
     }
 
-    /// Returns the [`FrameRegisters`] at the given `offset`.
-    pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> FrameRegisters {
+    /// Returns the [`FrameSlots`] at the given `offset`.
+    pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> FrameSlots {
         let ptr = self.values.as_mut_ptr().add(offset.into().0);
-        FrameRegisters::new(ptr)
+        FrameSlots::new(ptr)
     }
 
     /// Returns the capacity of the [`ValueStack`].
@@ -211,7 +211,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// - All live [`FrameRegisters`] might be invalidated and need to be reinstantiated.
+    /// - All live [`FrameSlots`] might be invalidated and need to be reinstantiated.
     /// - The parameters of the allocated [`EngineFunc`] are set to zero
     ///   and require proper initialization after this call.
     ///
@@ -223,11 +223,11 @@ impl ValueStack {
         func: CompiledFuncRef,
         on_resize: impl FnMut(&mut Self),
     ) -> Result<(FrameParams, StackOffsets), TrapCode> {
-        let len_registers = func.len_registers();
+        let len_stack_slots = func.len_stack_slots();
         let len_consts = func.consts().len();
         let len = self.len();
         let mut spare = self
-            .extend_by(len_registers as usize, on_resize)?
+            .extend_by(len_stack_slots as usize, on_resize)?
             .iter_mut();
         (&mut spare)
             .zip(func.consts())
@@ -264,7 +264,7 @@ impl ValueStack {
     ///
     /// # Safety
     ///
-    /// - This invalidates all [`FrameRegisters`] within the range `from..` and the caller has to
+    /// - This invalidates all [`FrameSlots`] within the range `from..` and the caller has to
     ///   make sure to properly reinstantiate all those pointers after this operation.
     /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
     ///   within the range `from..`.
@@ -281,7 +281,7 @@ impl ValueStack {
     }
 }
 
-/// The offset of the [`FrameRegisters`].
+/// The offset of the [`FrameSlots`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ValueStackOffset(usize);
 
@@ -329,9 +329,9 @@ impl From<ValueStackOffset> for FrameValueStackOffset {
 /// # Note
 ///
 /// This points to the first mutable cell of the allocated [`CallFrame`].
-/// The first mutable cell of a [`CallFrame`] is accessed by [`Register(0)`].
+/// The first mutable cell of a [`CallFrame`] is accessed by [`Slot(0)`].
 ///
-/// [`Register(0)`]: [`Reg`]
+/// [`Slot(0)`]: [`Slot`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BaseValueStackOffset(ValueStackOffset);
 
@@ -354,7 +354,7 @@ pub struct FrameParams {
 }
 
 impl FrameParams {
-    /// Creates a new [`FrameRegisters`].
+    /// Creates a new [`FrameSlots`].
     pub fn new(ptr: &mut [MaybeUninit<UntypedVal>]) -> Self {
         Self {
             range: ptr.as_mut_ptr_range(),
@@ -365,7 +365,7 @@ impl FrameParams {
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
     pub unsafe fn init_next(&mut self, value: UntypedVal) {
         self.range.start.write(MaybeUninit::new(value));
@@ -382,75 +382,75 @@ impl FrameParams {
     }
 }
 
-/// Accessor to the [`Reg`] values of a [`CallFrame`] on the [`CallStack`].
+/// Accessor to the [`Slot`] values of a [`CallFrame`] on the [`CallStack`].
 ///
 /// [`CallStack`]: [`super::CallStack`]
-pub struct FrameRegisters {
+pub struct FrameSlots {
     /// The underlying raw pointer to a [`CallFrame`] on the [`ValueStack`].
     ptr: *mut UntypedVal,
 }
 
-impl Debug for FrameRegisters {
+impl Debug for FrameSlots {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", &self.ptr)
     }
 }
 
-impl FrameRegisters {
-    /// Creates a new [`FrameRegisters`].
+impl FrameSlots {
+    /// Creates a new [`FrameSlots`].
     fn new(ptr: *mut UntypedVal) -> Self {
         Self { ptr }
     }
 
-    /// Returns the [`UntypedVal`] at the given [`Reg`].
+    /// Returns the [`UntypedVal`] at the given [`Slot`].
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get(&self, register: Reg) -> UntypedVal {
-        ptr::read(self.register_offset(register))
+    pub unsafe fn get(&self, slot: Slot) -> UntypedVal {
+        ptr::read(self.register_offset(slot))
     }
 
-    /// Returns the [`UntypedVal`] at the given [`Reg`].
+    /// Returns the [`UntypedVal`] at the given [`Slot`].
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn read_as<T>(&self, register: Reg) -> T
+    pub unsafe fn read_as<T>(&self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
     {
-        UntypedVal::read_as(&*self.register_offset(register))
+        UntypedVal::read_as(&*self.register_offset(slot))
     }
 
     /// Sets the value of the `register` to `value`.`
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn set(&mut self, register: Reg, value: UntypedVal) {
-        ptr::write(self.register_offset(register), value)
+    pub unsafe fn set(&mut self, slot: Slot, value: UntypedVal) {
+        ptr::write(self.register_offset(slot), value)
     }
 
     /// Sets the value of the `register` to `value`.`
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn write_as<T>(&mut self, register: Reg, value: T)
+    pub unsafe fn write_as<T>(&mut self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
-        let val: &mut UntypedVal = &mut *self.register_offset(register);
+        let val: &mut UntypedVal = &mut *self.register_offset(slot);
         val.write_as(value);
     }
 
-    /// Returns the underlying pointer offset by the [`Reg`] index.
-    unsafe fn register_offset(&self, register: Reg) -> *mut UntypedVal {
-        unsafe { self.ptr.offset(isize::from(i16::from(register))) }
+    /// Returns the underlying pointer offset by the [`Slot`] index.
+    unsafe fn register_offset(&self, slot: Slot) -> *mut UntypedVal {
+        unsafe { self.ptr.offset(isize::from(i16::from(slot))) }
     }
 }

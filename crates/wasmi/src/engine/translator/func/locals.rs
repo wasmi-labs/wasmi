@@ -50,7 +50,7 @@ impl LocalsRegistry {
     /// The maximum number of local variables in the fast `tys_first` vector.
     const FIRST_TYS_MAX: usize = 100;
 
-    /// Registers `amount` of locals of type `ty` for `self`.
+    /// Slots `amount` of locals of type `ty` for `self`.
     ///
     /// # Errors
     ///
