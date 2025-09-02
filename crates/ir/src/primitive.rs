@@ -316,7 +316,7 @@ for_each_comparator!(define_comparator);
 ///
 /// This type can be converted from and to a `u64` or [`UntypedVal`] value.
 ///
-/// [`Op::BranchCmpFallback`]: crate::Instruction::BranchCmpFallback
+/// [`Op::BranchCmpFallback`]: crate::Op::BranchCmpFallback
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ComparatorAndOffset {
     /// Encodes the actual binary operator for the conditional branch.
