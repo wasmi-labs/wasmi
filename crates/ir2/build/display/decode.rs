@@ -4,6 +4,7 @@ use crate::build::{
         utils::{DisplayConcat, DisplaySequence, IntoDisplayMaybe as _},
         Indent,
     },
+    ident::{CamelCase, Ident, SnakeCase},
     op::{
         BinaryOp,
         CmpBranchOp,
@@ -18,7 +19,6 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    token::{CamelCase, Ident, SnakeCase},
     Isa,
 };
 use core::fmt::{self, Display};

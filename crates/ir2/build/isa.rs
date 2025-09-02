@@ -1,4 +1,5 @@
 use crate::build::{
+    ident::Ident,
     op::{
         BinaryOp,
         BinaryOpKind,
@@ -22,7 +23,6 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    token::Ident,
     Config,
     Op,
 };

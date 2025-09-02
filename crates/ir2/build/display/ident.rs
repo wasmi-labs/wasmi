@@ -1,5 +1,6 @@
 use crate::build::{
     display::utils::{DisplayConcat, IntoDisplayMaybe as _},
+    ident::{Case, Ident, Sep, SnakeCase},
     op::{
         BinaryOp,
         CmpBranchOp,
@@ -14,7 +15,6 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    token::{Case, Ident, Sep, SnakeCase},
 };
 use core::fmt::{self, Display};
 

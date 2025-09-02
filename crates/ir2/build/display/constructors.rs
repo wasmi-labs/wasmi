@@ -1,5 +1,6 @@
 use crate::build::{
     display::{ident::DisplayIdent, utils::DisplaySequence, Indent},
+    ident::SnakeCase,
     isa::Isa,
     op::{
         BinaryOp,
@@ -15,7 +16,6 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    token::SnakeCase,
 };
 use core::fmt::{self, Display};
 

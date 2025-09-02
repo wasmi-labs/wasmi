@@ -1,8 +1,8 @@
 #[macro_use]
 mod op;
 mod display;
+pub mod ident;
 mod isa;
-pub mod token;
 
 use self::{
     display::{
@@ -14,9 +14,9 @@ use self::{
         DisplayResultMut,
         Indent,
     },
+    ident::{CamelCase, Ident, SnakeCase},
     isa::Isa,
     op::Op,
-    token::{CamelCase, Ident, SnakeCase},
 };
 use core::fmt::{self, Display, Error as FmtError, Write as _};
 use std::{env, fs, io::Error as IoError, path::PathBuf};
