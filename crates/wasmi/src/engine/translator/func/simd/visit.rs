@@ -296,7 +296,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             |result| Op::i8x16_shuffle(result, lhs, rhs),
             FuelCostsProvider::simd,
         )?;
-        self.push_param(Op::register(selector))?;
+        self.push_param(Op::slot(selector))?;
         Ok(())
     }
 

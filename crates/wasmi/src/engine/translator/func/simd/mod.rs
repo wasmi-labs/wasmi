@@ -111,7 +111,7 @@ impl FuncTranslator {
                 }
             })?;
         let param = match value {
-            Input::Slot(value) => Some(Op::register(value)),
+            Input::Slot(value) => Some(Op::slot(value)),
             Input::Immediate(value) => T::replace_lane_imm_param(value),
         };
         self.push_instr_with_result(
@@ -201,7 +201,7 @@ impl FuncTranslator {
             |result| make_instr(result, lhs, rhs),
             FuelCostsProvider::simd,
         )?;
-        self.push_param(Op::register(selector))?;
+        self.push_param(Op::slot(selector))?;
         Ok(())
     }
 
@@ -289,8 +289,8 @@ impl FuncTranslator {
             |result| make_instr(result, offset_lo),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::register_and_offset_hi(ptr, offset_hi))?;
-        self.push_param(Op::register_and_lane(x, lane))?;
+        self.push_param(Op::slot_and_offset_hi(ptr, offset_hi))?;
+        self.push_param(Op::slot_and_lane(x, lane))?;
         if !memory.is_default() {
             self.push_param(Op::memory_index(memory))?;
         }
@@ -313,7 +313,7 @@ impl FuncTranslator {
             |result| make_instr_at(result, address),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::register_and_lane(x, lane))?;
+        self.push_param(Op::slot_and_lane(x, lane))?;
         if !memory.is_default() {
             self.push_param(Op::memory_index(memory))?;
         }
@@ -382,7 +382,7 @@ impl FuncTranslator {
         }
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let instr = make_instr(ptr, offset_lo);
-        let param = Op::register_and_offset_hi(v128, offset_hi);
+        let param = Op::slot_and_offset_hi(v128, offset_hi);
         let param2 = Op::lane_and_memory_index(lane, memory);
         self.push_instr(instr, FuelCostsProvider::store)?;
         self.push_param(param)?;

@@ -147,31 +147,27 @@ impl Op {
     }
 
     /// Creates a new [`Op::Slot2`] instruction parameter.
-    pub fn register2_ext(reg0: impl Into<Slot>, reg1: impl Into<Slot>) -> Self {
-        Self::register2([reg0.into(), reg1.into()])
+    pub fn slot2_ext(reg0: impl Into<Slot>, reg1: impl Into<Slot>) -> Self {
+        Self::slot2([reg0.into(), reg1.into()])
     }
 
     /// Creates a new [`Op::Slot3`] instruction parameter.
-    pub fn register3_ext(
-        reg0: impl Into<Slot>,
-        reg1: impl Into<Slot>,
-        reg2: impl Into<Slot>,
-    ) -> Self {
-        Self::register3([reg0.into(), reg1.into(), reg2.into()])
+    pub fn slot3_ext(reg0: impl Into<Slot>, reg1: impl Into<Slot>, reg2: impl Into<Slot>) -> Self {
+        Self::slot3([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Op::SlotList`] instruction parameter.
-    pub fn register_list_ext(
+    pub fn slot_list_ext(
         reg0: impl Into<Slot>,
         reg1: impl Into<Slot>,
         reg2: impl Into<Slot>,
     ) -> Self {
-        Self::register_list([reg0.into(), reg1.into(), reg2.into()])
+        Self::slot_list([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Op::SlotAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_offset_hi(reg: impl Into<Slot>, offset_hi: Offset64Hi) -> Self {
-        Self::register_and_imm32(reg, offset_hi.0)
+    pub fn slot_and_offset_hi(reg: impl Into<Slot>, offset_hi: Offset64Hi) -> Self {
+        Self::slot_and_imm32(reg, offset_hi.0)
     }
 
     /// Returns `Some` [`Slot`] and [`Offset64Hi`] if encoded properly.
@@ -188,11 +184,11 @@ impl Op {
     }
 
     /// Creates a new [`Op::SlotAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_lane<LaneType>(reg: impl Into<Slot>, lane: LaneType) -> Self
+    pub fn slot_and_lane<LaneType>(reg: impl Into<Slot>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
     {
-        Self::register_and_imm32(reg, u32::from(lane.into()))
+        Self::slot_and_imm32(reg, u32::from(lane.into()))
     }
 
     /// Returns `Some` [`Slot`] and a `lane` index if encoded properly.

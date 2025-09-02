@@ -333,24 +333,24 @@ impl InstrEncoder {
                 [] => return Ok(()),
                 [v0] => {
                     let v0 = operand_to_reg(v0)?;
-                    break Op::register(v0);
+                    break Op::slot(v0);
                 }
                 [v0, v1] => {
                     let v0 = operand_to_reg(v0)?;
                     let v1 = operand_to_reg(v1)?;
-                    break Op::register2_ext(v0, v1);
+                    break Op::slot2_ext(v0, v1);
                 }
                 [v0, v1, v2] => {
                     let v0 = operand_to_reg(v0)?;
                     let v1 = operand_to_reg(v1)?;
                     let v2 = operand_to_reg(v2)?;
-                    break Op::register3_ext(v0, v1, v2);
+                    break Op::slot3_ext(v0, v1, v2);
                 }
                 [v0, v1, v2, rest @ ..] => {
                     let v0 = operand_to_reg(v0)?;
                     let v1 = operand_to_reg(v1)?;
                     let v2 = operand_to_reg(v2)?;
-                    let instr = Op::register_list_ext(v0, v1, v2);
+                    let instr = Op::slot_list_ext(v0, v1, v2);
                     self.push_param(instr);
                     remaining = rest;
                 }

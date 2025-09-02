@@ -1139,7 +1139,7 @@ impl FuncTranslator {
             Op::branch_table_span(index, table.len() + 1),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Op::register_span(BoundedSlotSpan::new(values, len_values)))?;
+        self.push_param(Op::slot_span(BoundedSlotSpan::new(values, len_values)))?;
         // Encode the `br_table` targets:
         let targets = &self.immediates[..];
         for target in targets {
@@ -2369,7 +2369,7 @@ impl FuncTranslator {
                 mem::swap(&mut true_val, &mut false_val);
             }
         };
-        self.push_param(Op::register2_ext(true_val, false_val))?;
+        self.push_param(Op::slot2_ext(true_val, false_val))?;
         Ok(())
     }
 
@@ -2541,7 +2541,7 @@ impl FuncTranslator {
             |result| make_instr(result, offset_lo),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::register_and_offset_hi(ptr, offset_hi))?;
+        self.push_param(Op::slot_and_offset_hi(ptr, offset_hi))?;
         if !memory.is_default() {
             self.push_param(Op::memory_index(memory))?;
         }
@@ -2622,7 +2622,7 @@ impl FuncTranslator {
                         ),
                         None => (
                             T::store(ptr, offset_lo),
-                            Op::register_and_offset_hi(self.layout.const_to_reg(value)?, offset_hi),
+                            Op::slot_and_offset_hi(self.layout.const_to_reg(value)?, offset_hi),
                         ),
                     }
                 }
@@ -2630,7 +2630,7 @@ impl FuncTranslator {
                     let value = self.layout.operand_to_reg(value)?;
                     (
                         T::store(ptr, offset_lo),
-                        Op::register_and_offset_hi(value, offset_hi),
+                        Op::slot_and_offset_hi(value, offset_hi),
                     )
                 }
             }
@@ -2776,7 +2776,7 @@ impl FuncTranslator {
             }
         }
         self.push_instr(store(ptr, offset_lo), FuelCostsProvider::store)?;
-        self.push_param(Op::register_and_offset_hi(value, offset_hi))?;
+        self.push_param(Op::slot_and_offset_hi(value, offset_hi))?;
         if !memory.is_default() {
             self.push_param(Op::memory_index(memory))?;
         }
@@ -2883,7 +2883,7 @@ impl FuncTranslator {
             make_instr([result_lo, result_hi], lhs_lo),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Op::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
+        self.push_param(Op::slot3_ext(lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
 

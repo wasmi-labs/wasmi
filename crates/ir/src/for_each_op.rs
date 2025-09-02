@@ -35,7 +35,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Returns a single value stored in a register.
+                /// Returns a single value stored in a stack slot.
                 #[snake_name(return_reg)]
                 ReturnSlot {
                     /// The returned value.
@@ -45,7 +45,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Returns two values stored in registers.
+                /// Returns two values stored in stack slots.
                 #[snake_name(return_reg2)]
                 ReturnSlot2 {
                     /// The returned values.
@@ -55,7 +55,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Returns three values stored in registers.
+                /// Returns three values stored in stack slots.
                 #[snake_name(return_reg3)]
                 ReturnSlot3 {
                     /// The returned values.
@@ -98,14 +98,14 @@ macro_rules! for_each_op_grouped {
                 /// Returns values as stored in the bounded [`SlotSpan`].
                 #[snake_name(return_span)]
                 ReturnSpan {
-                    /// The [`SlotSpan`] that represents the registers that store the returned values.
+                    /// The [`SlotSpan`] that represents the stack slots that store the returned values.
                     values: BoundedSlotSpan,
                 },
                 /// A Wasm `return` instruction.
                 ///
                 /// # Note
                 ///
-                /// Returns many values accessed by registers.
+                /// Returns many values accessed by stack slots.
                 ///
                 /// # Encoding
                 ///
@@ -145,13 +145,13 @@ macro_rules! for_each_op_grouped {
                     /// # Note
                     ///
                     /// We allocate constant values as function local constant values and use
-                    /// their register to only require a single fallback instruction variant.
+                    /// their stack slot to only require a single fallback instruction variant.
                     rhs: Slot,
-                    /// The register that stores the [`ComparatorAndOffset`] of this instruction.
+                    /// The stack slot that stores the [`ComparatorAndOffset`] of this instruction.
                     ///
                     /// # Note
                     ///
-                    /// The [`ComparatorAndOffset`] is loaded from register as `u64` value and
+                    /// The [`ComparatorAndOffset`] is loaded from stack slot as `u64` value and
                     /// decoded into a [`ComparatorAndOffset`] before access its comparator
                     /// and 32-bit branch offset fields.
                     ///
@@ -778,7 +778,7 @@ macro_rules! for_each_op_grouped {
                 /// Followed `len_target` times by [`Op::Branch`].
                 #[snake_name(branch_table_0)]
                 BranchTable0 {
-                    /// The register holding the index of the instruction.
+                    /// The stack slot holding the index of the instruction.
                     index: Slot,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -787,7 +787,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// All branch table targets must share the same destination registers.
+                /// All branch table targets must share the same destination stack slots.
                 ///
                 /// # Encoding
                 ///
@@ -797,7 +797,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Op::BranchTableTarget`]
                 #[snake_name(branch_table_span)]
                 BranchTableSpan {
-                    /// The register holding the index of the instruction.
+                    /// The stack slot holding the index of the instruction.
                     index: Slot,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -811,7 +811,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(copy)]
                 Copy {
                     @result: Slot,
-                    /// The register holding the value to copy.
+                    /// The stack slot holding the value to copy.
                     value: Slot,
                 },
                 /// Copies two [`Slot`] values to `results`.
@@ -822,7 +822,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(copy2)]
                 Copy2 {
                     @results: FixedSlotSpan<2>,
-                    /// The registers holding the values to copy.
+                    /// The stack slots holding the values to copy.
                     values: [Slot; 2],
                 },
                 /// Copies the 32-bit immediate `value` to `result`.
@@ -867,9 +867,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(copy_span)]
                 CopySpan {
                     @results: SlotSpan,
-                    /// The contiguous registers holding the inputs of this instruction.
+                    /// The contiguous stack slots holding the inputs of this instruction.
                     values: SlotSpan,
-                    /// The amount of copied registers.
+                    /// The amount of copied stack slots.
                     len: u16,
                 },
                 /// Variant of [`Op::CopyMany`] that assumes that `results` and `values` do not overlap.
@@ -884,7 +884,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(copy_many)]
                 CopyMany {
                     @results: SlotSpan,
-                    /// The first two input registers to copy.
+                    /// The first two input stack slots to copy.
                     values: [Slot; 2],
                 },
 
@@ -1624,7 +1624,7 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `global.set` equivalent Wasmi instruction.
                 #[snake_name(global_set)]
                 GlobalSet {
-                    /// The register holding the value to be stored in the global variable.
+                    /// The stack slot holding the value to be stored in the global variable.
                     input: Slot,
                     /// The index identifying the global variable for the `global.set` instruction.
                     global: Global,
@@ -1700,7 +1700,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(load32_offset16)]
                 Load32Offset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1752,7 +1752,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(load64_offset16)]
                 Load64Offset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1800,7 +1800,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load8_s_offset16)]
                 I32Load8sOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1848,7 +1848,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load8_u_offset16)]
                 I32Load8uOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1896,7 +1896,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load16_s_offset16)]
                 I32Load16sOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1944,7 +1944,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load16_u_offset16)]
                 I32Load16uOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1992,7 +1992,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load8_s_offset16)]
                 I64Load8sOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2040,7 +2040,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load8_u_offset16)]
                 I64Load8uOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2088,7 +2088,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load16_s_offset16)]
                 I64Load16sOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2136,7 +2136,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load16_u_offset16)]
                 I64Load16uOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2184,7 +2184,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load32_s_offset16)]
                 I64Load32sOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2232,7 +2232,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load32_u_offset16)]
                 I64Load32uOffset16 {
                     @result: Slot,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The stack slot storing the pointer of the `load` instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2254,7 +2254,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store32)]
                 Store32 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2267,9 +2267,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(store32_offset16)]
                 Store32Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2309,7 +2309,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store64)]
                 Store64 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2322,9 +2322,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(store64_offset16)]
                 Store64Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2364,7 +2364,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store_imm16)]
                 I32StoreImm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2377,9 +2377,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store_offset16_imm16)]
                 I32StoreOffset16Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Const16<i32>,
@@ -2415,7 +2415,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8)]
                 I32Store8 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2436,7 +2436,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8_imm)]
                 I32Store8Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2449,9 +2449,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store8_offset16)]
                 I32Store8Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2464,9 +2464,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store8_offset16_imm)]
                 I32Store8Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i8,
@@ -2520,7 +2520,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16)]
                 I32Store16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2541,7 +2541,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16_imm)]
                 I32Store16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2554,9 +2554,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store16_offset16)]
                 I32Store16Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2569,9 +2569,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store16_offset16_imm)]
                 I32Store16Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i16,
@@ -2629,7 +2629,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store_imm16)]
                 I64StoreImm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2642,9 +2642,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store_offset16_imm16)]
                 I64StoreOffset16Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Const16<i64>,
@@ -2680,7 +2680,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8)]
                 I64Store8 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2701,7 +2701,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8_imm)]
                 I64Store8Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2714,9 +2714,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store8_offset16)]
                 I64Store8Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2729,9 +2729,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store8_offset16_imm)]
                 I64Store8Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i8,
@@ -2785,7 +2785,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16)]
                 I64Store16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2806,7 +2806,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16_imm)]
                 I64Store16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2819,9 +2819,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store16_offset16)]
                 I64Store16Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2834,9 +2834,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store16_offset16_imm)]
                 I64Store16Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i16,
@@ -2890,7 +2890,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32)]
                 I64Store32 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2911,7 +2911,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32_imm16)]
                 I64Store32Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2924,9 +2924,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store32_offset16)]
                 I64Store32Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Slot,
@@ -2939,9 +2939,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store32_offset16_imm16)]
                 I64Store32Offset16Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The stack slot storing the pointer of the `store` instruction.
                     ptr: Slot,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The stack slot storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Const16<i32>,
@@ -2987,16 +2987,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_eq)]
                 I32Eq{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i32.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_eq_imm16)]
                 I32EqImm16{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3006,16 +3006,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_ne)]
                 I32Ne{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i32.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_ne_imm16)]
                 I32NeImm16{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3025,9 +3025,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_lt_s)]
                 I32LtS{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3036,14 +3036,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_lt_s_imm16_rhs)]
                 I32LtSImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3052,9 +3052,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_lt_u)]
                 I32LtU{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3063,14 +3063,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_lt_u_imm16_rhs)]
                 I32LtUImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u32>,
@@ -3080,9 +3080,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_le_s)]
                 I32LeS{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3091,14 +3091,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_le_s_imm16_rhs)]
                 I32LeSImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3107,9 +3107,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_le_u)]
                 I32LeU{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3118,14 +3118,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_le_u_imm16_rhs)]
                 I32LeUImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u32>,
@@ -3135,16 +3135,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_eq)]
                 I64Eq{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i64.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_eq_imm16)]
                 I64EqImm16{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3154,16 +3154,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_ne)]
                 I64Ne{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i64.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_ne_imm16)]
                 I64NeImm16{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3173,9 +3173,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_lt_s)]
                 I64LtS{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3184,14 +3184,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_lt_s_imm16_rhs)]
                 I64LtSImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3201,9 +3201,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_lt_u)]
                 I64LtU{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3212,14 +3212,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_lt_u_imm16_rhs)]
                 I64LtUImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u64>,
@@ -3229,9 +3229,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_le_s)]
                 I64LeS{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3240,14 +3240,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_le_s_imm16_rhs)]
                 I64LeSImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3257,9 +3257,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_le_u)]
                 I64LeU{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3268,14 +3268,14 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
                 /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_le_u_imm16_rhs)]
                 I64LeUImm16Rhs{
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u64>,
@@ -3285,54 +3285,54 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_eq)]
                 F32Eq{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.ne` equivalent Wasmi instruction.
                 #[snake_name(f32_ne)]
                 F32Ne{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.lt` equivalent Wasmi instruction.
                 #[snake_name(f32_lt)]
                 F32Lt{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.le` equivalent Wasmi instruction.
                 #[snake_name(f32_le)]
                 F32Le{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Negated Wasm `f32.lt` equivalent Wasmi instruction.
                 #[snake_name(f32_not_lt)]
                 F32NotLt{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Negated Wasm `f32.le` equivalent Wasmi instruction.
                 #[snake_name(f32_not_le)]
                 F32NotLe{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
 
@@ -3340,54 +3340,54 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64_eq)]
                 F64Eq{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.ne` equivalent Wasmi instruction.
                 #[snake_name(f64_ne)]
                 F64Ne{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.lt` equivalent Wasmi instruction.
                 #[snake_name(f64_lt)]
                 F64Lt{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.le` equivalent Wasmi instruction.
                 #[snake_name(f64_le)]
                 F64Le{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Negated Wasm `f64.lt` equivalent Wasmi instruction.
                 #[snake_name(f64_not_lt)]
                 F64NotLt{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Negated Wasm `f64.le` equivalent Wasmi instruction.
                 #[snake_name(f64_not_le)]
                 F64NotLe{
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
 
@@ -3395,21 +3395,21 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_clz)]
                 I32Clz {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// `i32` count-trailing-zeros (ctz) instruction.
                 #[snake_name(i32_ctz)]
                 I32Ctz {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// `i32` pop-count instruction.
                 #[snake_name(i32_popcnt)]
                 I32Popcnt {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -3417,9 +3417,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_add)]
                 I32Add {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` add (small) immediate instruction: `r0 = r1 + c0`
@@ -3430,7 +3430,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_add_imm16)]
                 I32AddImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3440,9 +3440,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_sub)]
                 I32Sub {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` subtract immediate instruction: `r0 = c0 - r1`
@@ -3456,7 +3456,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3464,9 +3464,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_mul)]
                 I32Mul {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` multiply immediate instruction: `r0 = r1 * c0`
@@ -3477,7 +3477,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_mul_imm16)]
                 I32MulImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3487,9 +3487,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_s)]
                 I32DivS {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` signed-division immediate instruction: `r0 = r1 / c0`
@@ -3501,7 +3501,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_s_imm16_rhs)]
                 I32DivSImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI32>,
@@ -3518,7 +3518,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3526,9 +3526,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_u)]
                 I32DivU {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` unsigned-division immediate instruction: `r0 = r1 / c0`
@@ -3543,7 +3543,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_u_imm16_rhs)]
                 I32DivUImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU32>,
@@ -3560,7 +3560,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3568,9 +3568,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_s)]
                 I32RemS {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -3582,7 +3582,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_s_imm16_rhs)]
                 I32RemSImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI32>,
@@ -3599,7 +3599,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3607,9 +3607,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_u)]
                 I32RemU {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -3621,7 +3621,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_u_imm16_rhs)]
                 I32RemUImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU32>,
@@ -3638,7 +3638,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3646,9 +3646,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_bitand)]
                 I32BitAnd {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
@@ -3659,7 +3659,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_bitand_imm16)]
                 I32BitAndImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3668,9 +3668,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_bitor)]
                 I32BitOr {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
@@ -3681,7 +3681,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_bitor_imm16)]
                 I32BitOrImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3690,9 +3690,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_bitxor)]
                 I32BitXor {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
@@ -3703,7 +3703,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_bitxor_imm16)]
                 I32BitXorImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3713,16 +3713,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_and)]
                 I32And {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I32And`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_and_imm16)]
                 I32AndImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3731,16 +3731,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_or)]
                 I32Or {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I32Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_or_imm16)]
                 I32OrImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3752,16 +3752,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_nand)]
                 I32Nand {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I32Nand`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_nand_imm16)]
                 I32NandImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3772,16 +3772,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_nor)]
                 I32Nor {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I32Nor`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_nor_imm16)]
                 I32NorImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3791,16 +3791,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_shl)]
                 I32Shl {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` operand.
                 #[snake_name(i32_shl_by)]
                 I32ShlBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3811,7 +3811,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3819,16 +3819,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_shr_u)]
                 I32ShrU {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_shr_u_by)]
                 I32ShrUBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3839,7 +3839,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3847,16 +3847,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_shr_s)]
                 I32ShrS {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_shr_s_by)]
                 I32ShrSBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3867,7 +3867,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3875,16 +3875,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rotl)]
                 I32Rotl {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_rotl_by)]
                 I32RotlBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3895,7 +3895,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3903,16 +3903,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rotr)]
                 I32Rotr {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_rotr_by)]
                 I32RotrBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3923,7 +3923,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -3931,21 +3931,21 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_clz)]
                 I64Clz {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// `i64` count-trailing-zeros (ctz) instruction.
                 #[snake_name(i64_ctz)]
                 I64Ctz {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// `i64` pop-count instruction.
                 #[snake_name(i64_popcnt)]
                 I64Popcnt {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -3953,9 +3953,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_add)]
                 I64Add {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
@@ -3966,7 +3966,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_add_imm16)]
                 I64AddImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3976,9 +3976,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_sub)]
                 I64Sub {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` subtract immediate instruction: `r0 = c0 - r1`
@@ -3992,7 +3992,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4000,9 +4000,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_mul)]
                 I64Mul {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` multiply immediate instruction: `r0 = r1 * c0`
@@ -4013,7 +4013,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_mul_imm16)]
                 I64MulImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4023,9 +4023,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_s)]
                 I64DivS {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` signed-division immediate instruction: `r0 = r1 / c0`
@@ -4037,7 +4037,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_s_imm16_rhs)]
                 I64DivSImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI64>,
@@ -4054,7 +4054,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4062,9 +4062,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_u)]
                 I64DivU {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` unsigned-division immediate instruction: `r0 = r1 / c0`
@@ -4079,7 +4079,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_u_imm16_rhs)]
                 I64DivUImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU64>,
@@ -4096,7 +4096,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4104,9 +4104,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_s)]
                 I64RemS {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -4118,7 +4118,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_s_imm16_rhs)]
                 I64RemSImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI64>,
@@ -4135,7 +4135,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4143,9 +4143,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_u)]
                 I64RemU {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -4157,7 +4157,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_u_imm16_rhs)]
                 I64RemUImm16Rhs {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU64>,
@@ -4174,7 +4174,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4182,9 +4182,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_bitand)]
                 I64BitAnd {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
@@ -4195,7 +4195,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_bitand_imm16)]
                 I64BitAndImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4205,9 +4205,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_bitor)]
                 I64BitOr {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
@@ -4218,7 +4218,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_bitor_imm16)]
                 I64BitOrImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4228,9 +4228,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_bitxor)]
                 I64BitXor {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
@@ -4241,7 +4241,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_bitxor_imm16)]
                 I64BitXorImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4251,16 +4251,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_and)]
                 I64And {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I64And`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_and_imm16)]
                 I64AndImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4269,16 +4269,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_or)]
                 I64Or {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I64Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_or_imm16)]
                 I64OrImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4290,16 +4290,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_nand)]
                 I64Nand {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I64Nand`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_nand_imm16)]
                 I64NandImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4310,16 +4310,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_nor)]
                 I64Nor {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Variant of [`Op::I64Nor`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_nor_imm16)]
                 I64NorImm16 {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4329,16 +4329,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_shl)]
                 I64Shl {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shl_by)]
                 I64ShlBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4349,7 +4349,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4357,16 +4357,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_shr_u)]
                 I64ShrU {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shr_u_by)]
                 I64ShrUBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4377,7 +4377,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4385,16 +4385,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_shr_s)]
                 I64ShrS {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shr_s_by)]
                 I64ShrSBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4405,7 +4405,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4413,16 +4413,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rotl)]
                 I64Rotl {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_rotl_by)]
                 I64RotlBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4433,7 +4433,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4441,16 +4441,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rotr)]
                 I64Rotr {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_rotr_by)]
                 I64RotrBy {
                     @result: Slot,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4461,7 +4461,7 @@ macro_rules! for_each_op_grouped {
                     @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The stack slot holding one of the operands.
                     rhs: Slot,
                 },
 
@@ -4469,7 +4469,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_wrap_i64)]
                 I32WrapI64 {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -4544,7 +4544,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_extend8_s)]
                 I32Extend8S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.extend16_s` instruction.
@@ -4555,7 +4555,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_extend16_s)]
                 I32Extend16S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.extend8_s` instruction.
@@ -4566,7 +4566,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_extend8_s)]
                 I64Extend8S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
@@ -4577,7 +4577,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_extend16_s)]
                 I64Extend16S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.extend32_s` instruction.
@@ -4588,7 +4588,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_extend32_s)]
                 I64Extend32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -4596,121 +4596,121 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_abs)]
                 F32Abs {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.neg` equivalent Wasmi instruction.
                 #[snake_name(f32_neg)]
                 F32Neg {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.ceil` equivalent Wasmi instruction.
                 #[snake_name(f32_ceil)]
                 F32Ceil {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.floor` equivalent Wasmi instruction.
                 #[snake_name(f32_floor)]
                 F32Floor {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.trunc` equivalent Wasmi instruction.
                 #[snake_name(f32_trunc)]
                 F32Trunc {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.nearest` equivalent Wasmi instruction.
                 #[snake_name(f32_nearest)]
                 F32Nearest {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.sqrt` equivalent Wasmi instruction.
                 #[snake_name(f32_sqrt)]
                 F32Sqrt {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.add` equivalent Wasmi instruction.
                 #[snake_name(f32_add)]
                 F32Add {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.sub` equivalent Wasmi instruction.
                 #[snake_name(f32_sub)]
                 F32Sub {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.mul` equivalent Wasmi instruction.
                 #[snake_name(f32_mul)]
                 F32Mul {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.div` equivalent Wasmi instruction.
                 #[snake_name(f32_div)]
                 F32Div {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.min` equivalent Wasmi instruction.
                 #[snake_name(f32_min)]
                 F32Min {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.max` equivalent Wasmi instruction.
                 #[snake_name(f32_max)]
                 F32Max {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.copysign` equivalent Wasmi instruction.
                 #[snake_name(f32_copysign)]
                 F32Copysign {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f32.copysign` equivalent Wasmi instruction with NaN canonicalization.
                 #[snake_name(f32_copysign_imm)]
                 F32CopysignImm {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Sign<f32>,
                 },
 
@@ -4718,121 +4718,121 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64_abs)]
                 F64Abs {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.neg` equivalent Wasmi instruction.
                 #[snake_name(f64_neg)]
                 F64Neg {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.ceil` equivalent Wasmi instruction.
                 #[snake_name(f64_ceil)]
                 F64Ceil {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.floor` equivalent Wasmi instruction.
                 #[snake_name(f64_floor)]
                 F64Floor {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.trunc` equivalent Wasmi instruction.
                 #[snake_name(f64_trunc)]
                 F64Trunc {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.nearest` equivalent Wasmi instruction.
                 #[snake_name(f64_nearest)]
                 F64Nearest {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.sqrt` equivalent Wasmi instruction.
                 #[snake_name(f64_sqrt)]
                 F64Sqrt {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.add` equivalent Wasmi instruction.
                 #[snake_name(f64_add)]
                 F64Add {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.sub` equivalent Wasmi instruction.
                 #[snake_name(f64_sub)]
                 F64Sub {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.mul` equivalent Wasmi instruction.
                 #[snake_name(f64_mul)]
                 F64Mul {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.div` equivalent Wasmi instruction.
                 #[snake_name(f64_div)]
                 F64Div {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.min` equivalent Wasmi instruction.
                 #[snake_name(f64_min)]
                 F64Min {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.max` equivalent Wasmi instruction.
                 #[snake_name(f64_max)]
                 F64Max {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.copysign` equivalent Wasmi instruction.
                 #[snake_name(f64_copysign)]
                 F64Copysign {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Slot,
                 },
                 /// Wasm `f64.copysign` equivalent Wasmi instruction with imediate `rhs` value.
                 #[snake_name(f64_copysign_imm)]
                 F64CopysignImm {
                     @result: Slot,
-                    /// The register holding the left-hand side value.
+                    /// The stack slot holding the left-hand side value.
                     lhs: Slot,
-                    /// The register holding the right-hand side value.
+                    /// The stack slot holding the right-hand side value.
                     rhs: Sign<f64>,
                 },
 
@@ -4840,56 +4840,56 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_f32_s)]
                 I32TruncF32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.trunc_f32_u` instruction.
                 #[snake_name(i32_trunc_f32_u)]
                 I32TruncF32U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.trunc_f64_s` instruction.
                 #[snake_name(i32_trunc_f64_s)]
                 I32TruncF64S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.trunc_f64_u` instruction.
                 #[snake_name(i32_trunc_f64_u)]
                 I32TruncF64U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_f32_s` instruction.
                 #[snake_name(i64_trunc_f32_s)]
                 I64TruncF32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_f32_u` instruction.
                 #[snake_name(i64_trunc_f32_u)]
                 I64TruncF32U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_f64_s` instruction.
                 #[snake_name(i64_trunc_f64_s)]
                 I64TruncF64S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_f64_u` instruction.
                 #[snake_name(i64_trunc_f64_u)]
                 I64TruncF64U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -4901,7 +4901,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f32_s)]
                 I32TruncSatF32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.trunc_sat_f32_u` instruction.
@@ -4912,7 +4912,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f32_u)]
                 I32TruncSatF32U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.trunc_sat_f64_s` instruction.
@@ -4923,7 +4923,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f64_s)]
                 I32TruncSatF64S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i32.trunc_sat_f64_u` instruction.
@@ -4934,7 +4934,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f64_u)]
                 I32TruncSatF64U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f32_s` instruction.
@@ -4945,7 +4945,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f32_s)]
                 I64TruncSatF32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f32_u` instruction.
@@ -4956,7 +4956,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f32_u)]
                 I64TruncSatF32U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f64_s` instruction.
@@ -4967,7 +4967,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f64_s)]
                 I64TruncSatF64S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f64_u` instruction.
@@ -4978,7 +4978,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f64_u)]
                 I64TruncSatF64U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -4986,14 +4986,14 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_demote_f64)]
                 F32DemoteF64 {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.promote_f32` instruction.
                 #[snake_name(f64_promote_f32)]
                 F64PromoteF32 {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -5001,56 +5001,56 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_convert_i32_s)]
                 F32ConvertI32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.convert_i32_u` instruction.
                 #[snake_name(f32_convert_i32_u)]
                 F32ConvertI32U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.convert_i64_s` instruction.
                 #[snake_name(f32_convert_i64_s)]
                 F32ConvertI64S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f32.convert_i64_u` instruction.
                 #[snake_name(f32_convert_i64_u)]
                 F32ConvertI64U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.convert_i32_s` instruction.
                 #[snake_name(f64_convert_i32_s)]
                 F64ConvertI32S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.convert_i32_u` instruction.
                 #[snake_name(f64_convert_i32_u)]
                 F64ConvertI32U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.convert_i64_s` instruction.
                 #[snake_name(f64_convert_i64_s)]
                 F64ConvertI64S {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
                 /// Wasm `f64.convert_i64_u` instruction.
                 #[snake_name(f64_convert_i64_u)]
                 F64ConvertI64U {
                     @result: Slot,
-                    /// The register holding the input of the instruction.
+                    /// The stack slot holding the input of the instruction.
                     input: Slot,
                 },
 
@@ -5062,7 +5062,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_get)]
                 TableGet {
                     @result: Slot,
-                    /// The register storing the index of the table element to get.
+                    /// The stack slot storing the index of the table element to get.
                     index: Slot,
                 },
                 /// Variant of [`Op::TableGet`] with constant `index` value.
@@ -5092,9 +5092,9 @@ macro_rules! for_each_op_grouped {
                 /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_set)]
                 TableSet {
-                    /// The register holding the `index` of the instruction.
+                    /// The stack slot holding the `index` of the instruction.
                     index: Slot,
-                    /// The register holding the `value` of the instruction.
+                    /// The stack slot holding the `value` of the instruction.
                     value: Slot,
                 },
                 /// Variant of [`Op::TableSet`] with constant `index` value.
@@ -5104,7 +5104,7 @@ macro_rules! for_each_op_grouped {
                 /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_set_at)]
                 TableSetAt {
-                    /// The register holding the `value` of the instruction.
+                    /// The stack slot holding the `value` of the instruction.
                     value: Slot,
                     /// The constant `index` of the instruction.
                     index: Const32<u64>,
@@ -5358,7 +5358,7 @@ macro_rules! for_each_op_grouped {
                 /// This always follows [`Op::BranchTableSpan`].
                 #[snake_name(branch_table_target)]
                 BranchTableTarget {
-                    /// The registers where the values are going to be copied.
+                    /// The stack slots where the values are going to be copied.
                     results: SlotSpan,
                     /// The branching offset of the branch table target.
                     offset: BranchOffset,
@@ -5372,7 +5372,7 @@ macro_rules! for_each_op_grouped {
                     imm32: AnyConst32,
                 },
                 /// An instruction parameter with a [`Slot`] and a 32-bit immediate value.
-                #[snake_name(register_and_imm32)]
+                #[snake_name(slot_and_imm32)]
                 SlotAndImm32 {
                     /// The [`Slot`] parameter value.
                     reg: Slot,
@@ -5380,7 +5380,7 @@ macro_rules! for_each_op_grouped {
                     imm: AnyConst32,
                 },
                 /// A bounded [`SlotSpan`] instruction parameter.
-                #[snake_name(register_span)]
+                #[snake_name(slot_span)]
                 SlotSpan { span: BoundedSlotSpan },
                 /// A [`Slot`] instruction parameter.
                 ///
@@ -5388,7 +5388,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
-                #[snake_name(register)]
+                #[snake_name(slot)]
                 Slot {
                     reg: Slot
                 },
@@ -5398,7 +5398,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
-                #[snake_name(register2)]
+                #[snake_name(slot2)]
                 Slot2 {
                     regs: [Slot; 2]
                 },
@@ -5408,7 +5408,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
-                #[snake_name(register3)]
+                #[snake_name(slot3)]
                 Slot3 {
                     regs: [Slot; 3]
                 },
@@ -5426,7 +5426,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Op::Slot`]
                 /// - [`Op::Slot2`]
                 /// - [`Op::Slot3`]
-                #[snake_name(register_list)]
+                #[snake_name(slot_list)]
                 SlotList {
                     regs: [Slot; 3]
                 },
@@ -5728,18 +5728,18 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_shuffle)]
                 I8x16Shuffle {
                     @result: Slot,
-                    /// The register holding the `lhs` of the instruction.
+                    /// The stack slot holding the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register holding the `rhs` of the instruction.
+                    /// The stack slot holding the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i8x16.swizzle` instruction.
                 #[snake_name(i8x16_swizzle)]
                 I8x16Swizzle {
                     @result: Slot,
-                    /// The register holding the `input` of the instruction.
+                    /// The stack slot holding the `input` of the instruction.
                     input: Slot,
-                    /// The register holding the `selector` of the instruction.
+                    /// The stack slot holding the `selector` of the instruction.
                     selector: Slot,
                 },
 
@@ -5747,99 +5747,99 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_add)]
                 I8x16Add {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i16x8.add` instruction.
                 #[snake_name(i16x8_add)]
                 I16x8Add {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i32x4.add` instruction.
                 #[snake_name(i32x4_add)]
                 I32x4Add {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i64x2.add` instruction.
                 #[snake_name(i64x2_add)]
                 I64x2Add {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i8x16.sub` instruction.
                 #[snake_name(i8x16_sub)]
                 I8x16Sub {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i16x8.sub` instruction.
                 #[snake_name(i16x8_sub)]
                 I16x8Sub {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i32x4.sub` instruction.
                 #[snake_name(i32x4_sub)]
                 I32x4Sub {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i64x2.sub` instruction.
                 #[snake_name(i64x2_sub)]
                 I64x2Sub {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i16x8.mul` instruction.
                 #[snake_name(i16x8_mul)]
                 I16x8Mul {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i32x4.mul` instruction.
                 #[snake_name(i32x4_mul)]
                 I32x4Mul {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i64x2.mul` instruction.
                 #[snake_name(i64x2_mul)]
                 I64x2Mul {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
 
@@ -5847,18 +5847,18 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_dot_i16x8_s)]
                 I32x4DotI16x8S {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i32x4.relaxed_dot_i8x16_i7x8_s` instruction.
                 #[snake_name(i16x8_relaxed_dot_i8x16_i7x16_s)]
                 I16x8RelaxedDotI8x16I7x16S {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
                 /// Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
@@ -5869,9 +5869,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_relaxed_dot_i8x16_i7x16_add_s)]
                 I32x4RelaxedDotI8x16I7x16AddS {
                     @result: Slot,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The stack slot storing the `lhs` of the instruction.
                     lhs: Slot,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The stack slot storing the `rhs` of the instruction.
                     rhs: Slot,
                 },
 
@@ -5883,9 +5883,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_relaxed_madd)]
                 F32x4RelaxedMadd {
                     @result: Slot,
-                    /// The register storing the `a` of the instruction.
+                    /// The stack slot storing the `a` of the instruction.
                     a: Slot,
-                    /// The register storing the `b` of the instruction.
+                    /// The stack slot storing the `b` of the instruction.
                     b: Slot,
                 },
                 /// Wasm `f32x4.relaxed_nmadd` instruction.
@@ -5896,9 +5896,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_relaxed_nmadd)]
                 F32x4RelaxedNmadd {
                     @result: Slot,
-                    /// The register storing the `a` of the instruction.
+                    /// The stack slot storing the `a` of the instruction.
                     a: Slot,
-                    /// The register storing the `b` of the instruction.
+                    /// The stack slot storing the `b` of the instruction.
                     b: Slot,
                 },
                 /// Wasm `f64x2.relaxed_madd` instruction.
@@ -5909,9 +5909,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64x2_relaxed_madd)]
                 F64x2RelaxedMadd {
                     @result: Slot,
-                    /// The register storing the `a` of the instruction.
+                    /// The stack slot storing the `a` of the instruction.
                     a: Slot,
-                    /// The register storing the `b` of the instruction.
+                    /// The stack slot storing the `b` of the instruction.
                     b: Slot,
                 },
                 /// Wasm `f64x2.relaxed_nmadd` instruction.
@@ -5922,9 +5922,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64x2_relaxed_nmadd)]
                 F64x2RelaxedNmadd {
                     @result: Slot,
-                    /// The register storing the `a` of the instruction.
+                    /// The stack slot storing the `a` of the instruction.
                     a: Slot,
-                    /// The register storing the `b` of the instruction.
+                    /// The stack slot storing the `b` of the instruction.
                     b: Slot,
                 },
 
@@ -7402,7 +7402,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_store)]
                 V128Store {
-                    /// The register storing the `pointer` of the store instruction.
+                    /// The stack slot storing the `pointer` of the store instruction.
                     ptr: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
@@ -7414,11 +7414,11 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store_offset16)]
                 V128StoreOffset16 {
-                    /// The register storing the `pointer` of the store instruction.
+                    /// The stack slot storing the `pointer` of the store instruction.
                     ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
-                    /// The register storing the `value` of the store instruction.
+                    /// The stack slot storing the `value` of the store instruction.
                     value: Slot,
                 },
                 /// Variant of [`Op::V128Store`] with 32-bit immediate address.
