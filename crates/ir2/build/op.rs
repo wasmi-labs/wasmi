@@ -1986,9 +1986,7 @@ impl StoreOp {
     }
 
     pub fn laneidx_field(&self) -> Option<Field> {
-        let Some(ty) = self.kind.laneidx_ty() else {
-            return None;
-        };
+        let ty = self.kind.laneidx_ty()?;
         Some(Field::new(Ident::Lane, ty))
     }
 
