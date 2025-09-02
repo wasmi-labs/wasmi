@@ -111,11 +111,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Op::RegisterList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(return_many)]
                 ReturnMany {
                     /// The first three returned values.
@@ -775,7 +775,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed `len_target` times by [`Instruction::Branch`].
+                /// Followed `len_target` times by [`Op::Branch`].
                 #[snake_name(branch_table_0)]
                 BranchTable0 {
                     /// The register holding the index of the instruction.
@@ -791,10 +791,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// 1. Followed by one of [`Instruction::RegisterSpan`].
+                /// 1. Followed by one of [`Op::RegisterSpan`].
                 /// 2. Followed `len_target` times by
                 ///
-                /// - [`Instruction::BranchTableTarget`]
+                /// - [`Op::BranchTableTarget`]
                 #[snake_name(branch_table_span)]
                 BranchTableSpan {
                     /// The register holding the index of the instruction.
@@ -829,8 +829,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Copy`] for 32-bit encoded immediate values.
-                /// Read [`Instruction::Copy`] for more information about this instruction.
+                /// Variant of [`Op::Copy`] for 32-bit encoded immediate values.
+                /// Read [`Op::Copy`] for more information about this instruction.
                 #[snake_name(copy_imm32)]
                 CopyImm32 {
                     @result: Reg,
@@ -841,9 +841,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Copy`] for 32-bit encodable `i64` immediate values.
+                /// - Variant of [`Op::Copy`] for 32-bit encodable `i64` immediate values.
                 /// - Upon execution the 32-bit encoded `i32` `value` is sign extended to `i64` and copied into `result`.
-                /// - Read [`Instruction::Copy`] for more information about this instruction.
+                /// - Read [`Op::Copy`] for more information about this instruction.
                 #[snake_name(copy_i64imm32)]
                 CopyI64Imm32 {
                     @result: Reg,
@@ -854,16 +854,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Copy`] for 32-bit encodable `f64` immediate values.
+                /// - Variant of [`Op::Copy`] for 32-bit encodable `f64` immediate values.
                 /// - Upon execution the 32-bit encoded `f32` `value` is promoted to `f64` and copied into `result`.
-                /// - Read [`Instruction::Copy`] for more information about this instruction.
+                /// - Read [`Op::Copy`] for more information about this instruction.
                 #[snake_name(copy_f64imm32)]
                 CopyF64Imm32 {
                     @result: Reg,
                     /// The 32-bit encoded `i64` immediate value to copy.
                     value: Const32<f64>,
                 },
-                /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
+                /// Variant of [`Op::CopySpan`] that assumes that `results` and `values` span do not overlap.
                 #[snake_name(copy_span)]
                 CopySpan {
                     @results: RegSpan,
@@ -872,15 +872,15 @@ macro_rules! for_each_op_grouped {
                     /// The amount of copied registers.
                     len: u16,
                 },
-                /// Variant of [`Instruction::CopyMany`] that assumes that `results` and `values` do not overlap.
+                /// Variant of [`Op::CopyMany`] that assumes that `results` and `values` do not overlap.
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Op::RegisterList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(copy_many)]
                 CopyMany {
                     @results: RegSpan,
@@ -908,11 +908,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Op::RegisterList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(return_call_internal)]
                 ReturnCallInternal {
                     /// The called internal function.
@@ -939,11 +939,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Op::RegisterList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(return_call_imported)]
                 ReturnCallImported {
                     /// The called imported function.
@@ -958,7 +958,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
+                /// Must be followed by [`Op::CallIndirectParams`] encoding `table` and `index`.
                 #[snake_name(return_call_indirect_0)]
                 ReturnCallIndirect0 {
                     /// The called internal function.
@@ -972,7 +972,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and `index`.
+                /// Must be followed by [`Op::CallIndirectParamsImm16`] encoding `table` and `index`.
                 #[snake_name(return_call_indirect_0_imm16)]
                 ReturnCallIndirect0Imm16 {
                     /// The called internal function.
@@ -988,12 +988,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. [`Instruction::CallIndirectParams`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 1. [`Op::CallIndirectParams`]: encoding `table` and `index`
+                /// 2. Zero or more [`Op::RegisterList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(return_call_indirect)]
                 ReturnCallIndirect {
                     /// The called internal function.
@@ -1009,12 +1009,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. [`Instruction::CallIndirectParamsImm16`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 1. [`Op::CallIndirectParamsImm16`]: encoding `table` and `index`
+                /// 2. Zero or more [`Op::RegisterList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(return_call_indirect_imm16)]
                 ReturnCallIndirectImm16 {
                     /// The called internal function.
@@ -1042,11 +1042,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Op::RegisterList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(call_internal)]
                 CallInternal {
                     @results: RegSpan,
@@ -1075,11 +1075,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Op::RegisterList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(call_imported)]
                 CallImported {
                     @results: RegSpan,
@@ -1095,7 +1095,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
+                /// Must be followed by [`Op::CallIndirectParams`] encoding `table` and `index`.
                 #[snake_name(call_indirect_0)]
                 CallIndirect0 {
                     @results: RegSpan,
@@ -1110,7 +1110,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and `index`.
+                /// Must be followed by [`Op::CallIndirectParamsImm16`] encoding `table` and `index`.
                 #[snake_name(call_indirect_0_imm16)]
                 CallIndirect0Imm16 {
                     @results: RegSpan,
@@ -1127,12 +1127,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. [`Instruction::CallIndirectParams`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 1. [`Op::CallIndirectParams`]: encoding `table` and `index`
+                /// 2. Zero or more [`Op::RegisterList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(call_indirect)]
                 CallIndirect {
                     @results: RegSpan,
@@ -1149,12 +1149,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. [`Instruction::CallIndirectParamsImm16`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 1. [`Op::CallIndirectParamsImm16`]: encoding `table` and `index`
+                /// 2. Zero or more [`Op::RegisterList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Op::Register`]
+                ///     - [`Op::Register2`]
+                ///     - [`Op::Register3`]
                 #[snake_name(call_indirect_imm16)]
                 CallIndirectImm16 {
                     @results: RegSpan,
@@ -1166,7 +1166,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_and)]
                 SelectI32And {
                     @result: Reg,
@@ -1179,7 +1179,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_and_imm16)]
                 SelectI32AndImm16 {
                     @result: Reg,
@@ -1192,7 +1192,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_or)]
                 SelectI32Or {
                     @result: Reg,
@@ -1205,7 +1205,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_or_imm16)]
                 SelectI32OrImm16 {
                     @result: Reg,
@@ -1218,7 +1218,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_eq)]
                 SelectI32Eq {
                     @result: Reg,
@@ -1231,7 +1231,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_eq_imm16)]
                 SelectI32EqImm16 {
                     @result: Reg,
@@ -1244,7 +1244,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_s)]
                 SelectI32LtS {
                     @result: Reg,
@@ -1257,7 +1257,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_s_imm16_rhs)]
                 SelectI32LtSImm16Rhs {
                     @result: Reg,
@@ -1270,7 +1270,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_u)]
                 SelectI32LtU {
                     @result: Reg,
@@ -1283,7 +1283,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_u_imm16_rhs)]
                 SelectI32LtUImm16Rhs {
                     @result: Reg,
@@ -1296,7 +1296,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_s)]
                 SelectI32LeS {
                     @result: Reg,
@@ -1309,7 +1309,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_s_imm16_rhs)]
                 SelectI32LeSImm16Rhs {
                     @result: Reg,
@@ -1322,7 +1322,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_u)]
                 SelectI32LeU {
                     @result: Reg,
@@ -1335,7 +1335,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_u_imm16_rhs)]
                 SelectI32LeUImm16Rhs {
                     @result: Reg,
@@ -1348,7 +1348,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_and)]
                 SelectI64And {
                     @result: Reg,
@@ -1361,7 +1361,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_and_imm16)]
                 SelectI64AndImm16 {
                     @result: Reg,
@@ -1374,7 +1374,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_or)]
                 SelectI64Or {
                     @result: Reg,
@@ -1387,7 +1387,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_or_imm16)]
                 SelectI64OrImm16 {
                     @result: Reg,
@@ -1400,7 +1400,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_eq)]
                 SelectI64Eq {
                     @result: Reg,
@@ -1413,7 +1413,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_eq_imm16)]
                 SelectI64EqImm16 {
                     @result: Reg,
@@ -1426,7 +1426,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_s)]
                 SelectI64LtS {
                     @result: Reg,
@@ -1439,7 +1439,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_s_imm16_rhs)]
                 SelectI64LtSImm16Rhs {
                     @result: Reg,
@@ -1452,7 +1452,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_u)]
                 SelectI64LtU {
                     @result: Reg,
@@ -1465,7 +1465,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_u_imm16_rhs)]
                 SelectI64LtUImm16Rhs {
                     @result: Reg,
@@ -1478,7 +1478,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_s)]
                 SelectI64LeS {
                     @result: Reg,
@@ -1491,7 +1491,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_s_imm16_rhs)]
                 SelectI64LeSImm16Rhs {
                     @result: Reg,
@@ -1504,7 +1504,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_u)]
                 SelectI64LeU {
                     @result: Reg,
@@ -1517,7 +1517,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_u_imm16_rhs)]
                 SelectI64LeUImm16Rhs {
                     @result: Reg,
@@ -1530,7 +1530,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f32_eq)]
                 SelectF32Eq {
                     @result: Reg,
@@ -1543,7 +1543,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f32_lt)]
                 SelectF32Lt {
                     @result: Reg,
@@ -1556,7 +1556,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f32_le)]
                 SelectF32Le {
                     @result: Reg,
@@ -1570,7 +1570,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_eq)]
                 SelectF64Eq {
                     @result: Reg,
@@ -1583,7 +1583,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_lt)]
                 SelectF64Lt {
                     @result: Reg,
@@ -1596,7 +1596,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_le)]
                 SelectF64Le {
                     @result: Reg,
@@ -1633,7 +1633,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
+                /// Variant of [`Op::GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
                 #[snake_name(global_set_i32imm16)]
                 GlobalSetI32Imm16 {
                     /// The 16-bit encoded `i32` value.
@@ -1645,7 +1645,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
+                /// Variant of [`Op::GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
                 #[snake_name(global_set_i64imm16)]
                 GlobalSetI64Imm16 {
                     /// The 16-bit encoded `i64` value.
@@ -1664,10 +1664,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(load32)]
                 Load32 {
                     @result: Reg,
@@ -1678,11 +1678,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Load32`] with a constant load address.
+                /// Variant of [`Op::Load32`] with a constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(load32_at)]
@@ -1695,7 +1695,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Load32`] with a 16-bit `offset`.
+                /// - Variant of [`Op::Load32`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(load32_offset16)]
                 Load32Offset16 {
@@ -1716,10 +1716,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(load64)]
                 Load64 {
                     @result: Reg,
@@ -1730,11 +1730,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Load32`] with a constant load address.
+                /// Variant of [`Op::Load32`] with a constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(load64_at)]
@@ -1747,7 +1747,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Load64`] with a 16-bit `offset`.
+                /// - Variant of [`Op::Load64`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(load64_offset16)]
                 Load64Offset16 {
@@ -1764,10 +1764,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load8_s)]
                 I32Load8s {
                     @result: Reg,
@@ -1778,11 +1778,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Load8s`] with a 32-bit constant load address.
+                /// Variant of [`Op::I32Load8s`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load8_s_at)]
@@ -1795,7 +1795,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Load8s`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I32Load8s`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load8_s_offset16)]
                 I32Load8sOffset16 {
@@ -1812,10 +1812,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load8_u)]
                 I32Load8u {
                     @result: Reg,
@@ -1826,11 +1826,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Load8u`] with a 32-bit constant load address.
+                /// Variant of [`Op::I32Load8u`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load8_u_at)]
@@ -1843,7 +1843,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Load8u`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I32Load8u`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load8_u_offset16)]
                 I32Load8uOffset16 {
@@ -1860,10 +1860,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load16_s)]
                 I32Load16s {
                     @result: Reg,
@@ -1874,11 +1874,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Load16s`] with a 32-bit constant load address.
+                /// Variant of [`Op::I32Load16s`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load16_s_at)]
@@ -1891,7 +1891,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Load16s`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I32Load16s`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load16_s_offset16)]
                 I32Load16sOffset16 {
@@ -1908,10 +1908,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load16_u)]
                 I32Load16u {
                     @result: Reg,
@@ -1922,11 +1922,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Load16u`] with a 32-bit constant load address.
+                /// Variant of [`Op::I32Load16u`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load16_u_at)]
@@ -1939,7 +1939,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Load16u`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I32Load16u`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load16_u_offset16)]
                 I32Load16uOffset16 {
@@ -1956,10 +1956,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load8_s)]
                 I64Load8s {
                     @result: Reg,
@@ -1970,11 +1970,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Load8s`] with a 32-bit constant load address.
+                /// Variant of [`Op::I64Load8s`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load8_s_at)]
@@ -1987,7 +1987,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Load8s`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Load8s`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load8_s_offset16)]
                 I64Load8sOffset16 {
@@ -2004,10 +2004,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load8_u)]
                 I64Load8u {
                     @result: Reg,
@@ -2018,11 +2018,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Load8u`] with a 32-bit constant load address.
+                /// Variant of [`Op::I64Load8u`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load8_u_at)]
@@ -2035,7 +2035,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Load8u`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Load8u`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load8_u_offset16)]
                 I64Load8uOffset16 {
@@ -2052,10 +2052,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load16_s)]
                 I64Load16s {
                     @result: Reg,
@@ -2066,11 +2066,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Load16s`] with a 32-bit constant load address.
+                /// Variant of [`Op::I64Load16s`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load16_s_at)]
@@ -2083,7 +2083,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Load16s`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Load16s`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load16_s_offset16)]
                 I64Load16sOffset16 {
@@ -2100,10 +2100,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load16_u)]
                 I64Load16u {
                     @result: Reg,
@@ -2114,11 +2114,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Load16u`] with a 32-bit constant load address.
+                /// Variant of [`Op::I64Load16u`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load16_u_at)]
@@ -2131,7 +2131,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Load16u`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Load16u`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load16_u_offset16)]
                 I64Load16uOffset16 {
@@ -2148,10 +2148,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load32_s)]
                 I64Load32s {
                     @result: Reg,
@@ -2162,11 +2162,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Load32s`] with a 32-bit constant load address.
+                /// Variant of [`Op::I64Load32s`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load32_s_at)]
@@ -2179,7 +2179,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Load32s`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Load32s`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load32_s_offset16)]
                 I64Load32sOffset16 {
@@ -2196,10 +2196,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load32_u)]
                 I64Load32u {
                     @result: Reg,
@@ -2210,11 +2210,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Load32u`] with a 32-bit constant load address.
+                /// Variant of [`Op::I64Load32u`] with a 32-bit constant load address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load32_u_at)]
@@ -2227,7 +2227,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Load32u`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Load32u`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load32_u_offset16)]
                 I64Load32uOffset16 {
@@ -2248,10 +2248,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store32)]
                 Store32 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2263,7 +2263,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Store32`] with a 16-bit `offset`.
+                /// - Variant of [`Op::Store32`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(store32_offset16)]
                 Store32Offset16 {
@@ -2278,11 +2278,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Store32`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::Store32`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(store32_at)]
@@ -2303,10 +2303,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store64)]
                 Store64 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2318,7 +2318,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Store64`] with a 16-bit `offset`.
+                /// - Variant of [`Op::Store64`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(store64_offset16)]
                 Store64Offset16 {
@@ -2333,11 +2333,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Store64`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::Store64`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(store64_at)]
@@ -2352,16 +2352,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Store32`] with 16-bit immediate `value`.
+                /// Variant of [`Op::Store32`] with 16-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store_imm16)]
                 I32StoreImm16 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2373,7 +2373,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Store32Offset16`] with 16-bit immediate `value`.
+                /// - Variant of [`Op::Store32Offset16`] with 16-bit immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store_offset16_imm16)]
                 I32StoreOffset16Imm16 {
@@ -2388,11 +2388,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Store32At`] with 16-bit immediate `value`.
+                /// Variant of [`Op::Store32At`] with 16-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_store_at_imm16)]
@@ -2409,10 +2409,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8)]
                 I32Store8 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2424,16 +2424,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Store8`] with immediate `value`.
+                /// Variant of [`Op::I32Store8`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8_imm)]
                 I32Store8Imm {
                     /// The register storing the pointer of the `store` instruction.
@@ -2445,7 +2445,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Store8`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I32Store8`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store8_offset16)]
                 I32Store8Offset16 {
@@ -2460,7 +2460,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Store8Offset16`] with immediate `value`.
+                /// - Variant of [`Op::I32Store8Offset16`] with immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store8_offset16_imm)]
                 I32Store8Offset16Imm {
@@ -2475,11 +2475,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Store8`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::I32Store8`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_store8_at)]
@@ -2493,11 +2493,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Store8At`] with immediate `value`.
+                /// Variant of [`Op::I32Store8At`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_store8_at_imm)]
@@ -2514,10 +2514,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16)]
                 I32Store16 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2529,16 +2529,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Store16`] with immediate `value`.
+                /// Variant of [`Op::I32Store16`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16_imm)]
                 I32Store16Imm {
                     /// The register storing the pointer of the `store` instruction.
@@ -2550,7 +2550,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Store16`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I32Store16`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store16_offset16)]
                 I32Store16Offset16 {
@@ -2565,7 +2565,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I32Store16Offset16`] with immediate `value`.
+                /// - Variant of [`Op::I32Store16Offset16`] with immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store16_offset16_imm)]
                 I32Store16Offset16Imm {
@@ -2580,11 +2580,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Store16`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::I32Store16`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_store16_at)]
@@ -2598,11 +2598,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I32Store16At`] with immediate `value`.
+                /// Variant of [`Op::I32Store16At`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_store16_at_imm)]
@@ -2617,16 +2617,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Store64`] with 16-bit immediate `value`.
+                /// Variant of [`Op::Store64`] with 16-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store_imm16)]
                 I64StoreImm16 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2638,7 +2638,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::Store64Offset16`] with 16-bit immediate `value`.
+                /// - Variant of [`Op::Store64Offset16`] with 16-bit immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store_offset16_imm16)]
                 I64StoreOffset16Imm16 {
@@ -2653,11 +2653,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::Store64At`] with 16-bit immediate `value`.
+                /// Variant of [`Op::Store64At`] with 16-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store_at_imm16)]
@@ -2674,10 +2674,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8)]
                 I64Store8 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2689,16 +2689,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store8`] with immediate `value`.
+                /// Variant of [`Op::I64Store8`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8_imm)]
                 I64Store8Imm {
                     /// The register storing the pointer of the `store` instruction.
@@ -2710,7 +2710,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Store8`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Store8`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store8_offset16)]
                 I64Store8Offset16 {
@@ -2725,7 +2725,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Store8Offset16`] with immediate `value`.
+                /// - Variant of [`Op::I64Store8Offset16`] with immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store8_offset16_imm)]
                 I64Store8Offset16Imm {
@@ -2740,11 +2740,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store8`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::I64Store8`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store8_at)]
@@ -2758,11 +2758,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store8At`] with immediate `value`.
+                /// Variant of [`Op::I64Store8At`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store8_at_imm)]
@@ -2779,10 +2779,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16)]
                 I64Store16 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2794,16 +2794,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store16`] with immediate `value`.
+                /// Variant of [`Op::I64Store16`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16_imm)]
                 I64Store16Imm {
                     /// The register storing the pointer of the `store` instruction.
@@ -2815,7 +2815,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Store16`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Store16`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store16_offset16)]
                 I64Store16Offset16 {
@@ -2830,7 +2830,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Store16Offset16`] with immediate `value`.
+                /// - Variant of [`Op::I64Store16Offset16`] with immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store16_offset16_imm)]
                 I64Store16Offset16Imm {
@@ -2845,11 +2845,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store16`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::I64Store16`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store16_at)]
@@ -2863,11 +2863,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store16At`] with immediate `value`.
+                /// Variant of [`Op::I64Store16At`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store16_at_imm)]
@@ -2884,10 +2884,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32)]
                 I64Store32 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2899,16 +2899,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store32`] with 16-bit immediate `value`.
+                /// Variant of [`Op::I64Store32`] with 16-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
+                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32_imm16)]
                 I64Store32Imm16 {
                     /// The register storing the pointer of the `store` instruction.
@@ -2920,7 +2920,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Store32`] with a 16-bit `offset`.
+                /// - Variant of [`Op::I64Store32`] with a 16-bit `offset`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store32_offset16)]
                 I64Store32Offset16 {
@@ -2935,7 +2935,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Variant of [`Instruction::I64Store32Offset16`] with 16-bit immediate `value`.
+                /// - Variant of [`Op::I64Store32Offset16`] with 16-bit immediate `value`.
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store32_offset16_imm16)]
                 I64Store32Offset16Imm16 {
@@ -2950,11 +2950,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store32`] with an immediate `ptr+offset` address.
+                /// Variant of [`Op::I64Store32`] with an immediate `ptr+offset` address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store32_at)]
@@ -2968,11 +2968,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Variant of [`Instruction::I64Store32At`] with 16-bit immediate `value`.
+                /// Variant of [`Op::I64Store32At`] with 16-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_store32_at_imm16)]
@@ -3426,7 +3426,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I32Add`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I32Add`] for 16-bit constant values.
                 #[snake_name(i32_add_imm16)]
                 I32AddImm16 {
                     @result: Reg,
@@ -3449,7 +3449,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32Sub`] for 16-bit constant values.
                 /// - Required instruction since subtraction is not commutative.
                 #[snake_name(i32_sub_imm16_lhs)]
                 I32SubImm16Lhs {
@@ -3473,7 +3473,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I32Mul`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I32Mul`] for 16-bit constant values.
                 #[snake_name(i32_mul_imm16)]
                 I32MulImm16 {
                     @result: Reg,
@@ -3496,7 +3496,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32DivS`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i32_div_s_imm16_rhs)]
                 I32DivSImm16Rhs {
@@ -3510,7 +3510,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32DivU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since signed-division is not commutative.
                 #[snake_name(i32_div_s_imm16_lhs)]
@@ -3539,7 +3539,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I32DivU`] for 16-bit constant values.
                 #[snake_name(i32_div_u_imm16_rhs)]
                 I32DivUImm16Rhs {
                     @result: Reg,
@@ -3552,7 +3552,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32DivU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since `i32` unsigned-division is not commutative.
                 #[snake_name(i32_div_u_imm16_lhs)]
@@ -3577,7 +3577,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32RemS`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i32_rem_s_imm16_rhs)]
                 I32RemSImm16Rhs {
@@ -3591,7 +3591,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32RemS`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since `i32` signed-remainder is not commutative.
                 #[snake_name(i32_rem_s_imm16_lhs)]
@@ -3616,7 +3616,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32RemU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i32_rem_u_imm16_rhs)]
                 I32RemUImm16Rhs {
@@ -3630,7 +3630,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I32RemU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since unsigned-remainder is not commutative.
                 #[snake_name(i32_rem_u_imm16_lhs)]
@@ -3655,7 +3655,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I32BitAnd`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I32BitAnd`] for 16-bit constant values.
                 #[snake_name(i32_bitand_imm16)]
                 I32BitAndImm16 {
                     @result: Reg,
@@ -3677,7 +3677,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I32BitOr`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I32BitOr`] for 16-bit constant values.
                 #[snake_name(i32_bitor_imm16)]
                 I32BitOrImm16 {
                     @result: Reg,
@@ -3699,7 +3699,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I32BitXor`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I32BitXor`] for 16-bit constant values.
                 #[snake_name(i32_bitxor_imm16)]
                 I32BitXorImm16 {
                     @result: Reg,
@@ -3718,7 +3718,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I32And`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I32And`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_and_imm16)]
                 I32AndImm16 {
                     @result: Reg,
@@ -3736,7 +3736,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I32Or`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I32Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_or_imm16)]
                 I32OrImm16 {
                     @result: Reg,
@@ -3757,7 +3757,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I32Nand`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I32Nand`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_nand_imm16)]
                 I32NandImm16 {
                     @result: Reg,
@@ -3777,7 +3777,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I32Nor`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I32Nor`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_nor_imm16)]
                 I32NorImm16 {
                     @result: Reg,
@@ -3962,7 +3962,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64Add`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I64Add`] for 16-bit constant values.
                 #[snake_name(i64_add_imm16)]
                 I64AddImm16 {
                     @result: Reg,
@@ -3985,7 +3985,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64Sub`] for 16-bit constant values.
                 /// - Required instruction since subtraction is not commutative.
                 #[snake_name(i64_sub_imm16_lhs)]
                 I64SubImm16Lhs {
@@ -4009,7 +4009,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64Mul`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I64Mul`] for 16-bit constant values.
                 #[snake_name(i64_mul_imm16)]
                 I64MulImm16 {
                     @result: Reg,
@@ -4032,7 +4032,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64DivS`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i64_div_s_imm16_rhs)]
                 I64DivSImm16Rhs {
@@ -4048,7 +4048,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since signed-division is not commutative.
-                /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64DivU`] for 16-bit constant values.
                 #[snake_name(i64_div_s_imm16_lhs)]
                 I64DivSImm16Lhs {
                     @result: Reg,
@@ -4075,7 +4075,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I64DivU`] for 16-bit constant values.
                 #[snake_name(i64_div_u_imm16_rhs)]
                 I64DivUImm16Rhs {
                     @result: Reg,
@@ -4088,7 +4088,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64DivU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since unsigned-division is not commutative.
                 #[snake_name(i64_div_u_imm16_lhs)]
@@ -4113,7 +4113,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64RemS`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i64_rem_s_imm16_rhs)]
                 I64RemSImm16Rhs {
@@ -4127,7 +4127,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64RemS`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since signed-remainder is not commutative.
                 #[snake_name(i64_rem_s_imm16_lhs)]
@@ -4152,7 +4152,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64RemU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i64_rem_u_imm16_rhs)]
                 I64RemUImm16Rhs {
@@ -4166,7 +4166,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
+                /// - Optimized variant of [`Op::I64RemU`] for 16-bit constant values.
                 /// - Guarantees that the right-hand side operand is not zero.
                 /// - Required instruction since unsigned-remainder is not commutative.
                 #[snake_name(i64_rem_u_imm16_lhs)]
@@ -4191,7 +4191,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64BitAnd`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I64BitAnd`] for 16-bit constant values.
                 #[snake_name(i64_bitand_imm16)]
                 I64BitAndImm16 {
                     @result: Reg,
@@ -4214,7 +4214,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64BitOr`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I64BitOr`] for 16-bit constant values.
                 #[snake_name(i64_bitor_imm16)]
                 I64BitOrImm16 {
                     @result: Reg,
@@ -4237,7 +4237,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Optimized variant of [`Instruction::I64BitXor`] for 16-bit constant values.
+                /// Optimized variant of [`Op::I64BitXor`] for 16-bit constant values.
                 #[snake_name(i64_bitxor_imm16)]
                 I64BitXorImm16 {
                     @result: Reg,
@@ -4256,7 +4256,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I64And`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I64And`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_and_imm16)]
                 I64AndImm16 {
                     @result: Reg,
@@ -4274,7 +4274,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I64Or`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I64Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_or_imm16)]
                 I64OrImm16 {
                     @result: Reg,
@@ -4295,7 +4295,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I64Nand`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I64Nand`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_nand_imm16)]
                 I64NandImm16 {
                     @result: Reg,
@@ -4315,7 +4315,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the right-hand side value.
                     rhs: Reg,
                 },
-                /// Variant of [`Instruction::I64Nor`] with 16-bit `rhs` immediate.
+                /// Variant of [`Op::I64Nor`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_nor_imm16)]
                 I64NorImm16 {
                     @result: Reg,
@@ -4481,7 +4481,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+                /// Followed by [`Op::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
                 #[snake_name(i64_add128)]
                 I64Add128 {
                     // Note:
@@ -4499,7 +4499,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+                /// Followed by [`Op::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
                 #[snake_name(i64_sub128)]
                 I64Sub128 {
                     // Note:
@@ -5058,18 +5058,18 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
+                /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_get)]
                 TableGet {
                     @result: Reg,
                     /// The register storing the index of the table element to get.
                     index: Reg,
                 },
-                /// Variant of [`Instruction::TableGet`] with constant `index` value.
+                /// Variant of [`Op::TableGet`] with constant `index` value.
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
+                /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_get_imm)]
                 TableGetImm {
                     @result: Reg,
@@ -5089,7 +5089,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
+                /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_set)]
                 TableSet {
                     /// The register holding the `index` of the instruction.
@@ -5097,11 +5097,11 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the `value` of the instruction.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::TableSet`] with constant `index` value.
+                /// Variant of [`Op::TableSet`] with constant `index` value.
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
+                /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_set_at)]
                 TableSetAt {
                     /// The register holding the `value` of the instruction.
@@ -5116,10 +5116,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by
+                /// This [`Op`] must be followed by
                 ///
-                /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
-                /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
+                /// 1. [`Op::TableIndex`]: the `dst` Wasm table instance
+                /// 2. [`Op::TableIndex`]: the `src` Wasm table instance
                 #[snake_name(table_copy)]
                 TableCopy {
                     /// The start index of the `dst` table.
@@ -5136,10 +5136,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by
+                /// This [`Op`] must be followed by
                 ///
-                /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
-                /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
+                /// 1. [`Op::TableIndex`]: the Wasm `table` instance
+                /// 2. [`Op::ElemIndex`]: the Wasm `element` segment instance
                 #[snake_name(table_init)]
                 TableInit {
                     /// The start index of the `dst` table.
@@ -5154,7 +5154,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
+                /// Followed by [`Op::TableIndex`] encoding the Wasm `table` instance.
                 #[snake_name(table_fill)]
                 TableFill {
                     /// The start index of the table to fill.
@@ -5169,7 +5169,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
+                /// Followed by [`Op::TableIndex`] encoding the Wasm `table` instance.
                 #[snake_name(table_grow)]
                 TableGrow {
                     @result: Reg,
@@ -5202,7 +5202,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
+                /// Followed by [`Op::MemoryIndex`] encoding the Wasm `memory` instance.
                 #[snake_name(memory_grow)]
                 MemoryGrow {
                     @result: Reg,
@@ -5216,10 +5216,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by
+                /// This [`Op`] must be followed by
                 ///
-                /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
-                /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
+                /// 1. [`Op::MemoryIndex`]: the `dst` Wasm linear memory instance
+                /// 2. [`Op::MemoryIndex`]: the `src` Wasm linear memory instance
                 #[snake_name(memory_copy)]
                 MemoryCopy {
                     /// The start index of the `dst` memory.
@@ -5236,7 +5236,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
+                /// Followed by [`Op::MemoryIndex`] encoding the Wasm `memory` instance.
                 #[snake_name(memory_fill)]
                 MemoryFill {
                     /// The start index of the memory to fill.
@@ -5246,11 +5246,11 @@ macro_rules! for_each_op_grouped {
                     /// The number of bytes to fill.
                     len: Reg,
                 },
-                /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
+                /// Variant of [`Op::MemoryFill`] with constant fill `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
+                /// Followed by [`Op::MemoryIndex`] encoding the Wasm `memory` instance.
                 #[snake_name(memory_fill_imm)]
                 MemoryFillImm {
                     /// The start index of the memory to fill.
@@ -5267,10 +5267,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This [`Instruction`] must be followed by
+                /// This [`Op`] must be followed by
                 ///
-                /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
-                /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
+                /// 1. [`Op::MemoryIndex`]: the Wasm `memory` instance
+                /// 1. [`Op::DataIndex`]: the `data` segment to initialize the memory
                 #[snake_name(memory_init)]
                 MemoryInit {
                     /// The start index of the `dst` memory.
@@ -5285,7 +5285,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(table_index)]
                 TableIndex {
@@ -5295,7 +5295,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(memory_index)]
                 MemoryIndex {
@@ -5305,7 +5305,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(data_index)]
                 DataIndex {
@@ -5315,7 +5315,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(elem_index)]
                 ElemIndex {
@@ -5325,7 +5325,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(const32)]
                 Const32 {
@@ -5335,7 +5335,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(i64const32)]
                 I64Const32 {
@@ -5345,7 +5345,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(f64const32)]
                 F64Const32 {
@@ -5355,7 +5355,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// This always follows [`Instruction::BranchTableSpan`].
+                /// This always follows [`Op::BranchTableSpan`].
                 #[snake_name(branch_table_target)]
                 BranchTableTarget {
                     /// The registers where the values are going to be copied.
@@ -5386,7 +5386,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register)]
                 Register {
@@ -5396,7 +5396,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register2)]
                 Register2 {
@@ -5406,7 +5406,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register3)]
                 Register3 {
@@ -5416,21 +5416,21 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// This [`Instruction`] only acts as a parameter to another
+                /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 ///
                 /// # Encoding
                 ///
                 /// This must always be followed by one of
                 ///
-                /// - [`Instruction::Register`]
-                /// - [`Instruction::Register2`]
-                /// - [`Instruction::Register3`]
+                /// - [`Op::Register`]
+                /// - [`Op::Register2`]
+                /// - [`Op::Register3`]
                 #[snake_name(register_list)]
                 RegisterList {
                     regs: [Reg; 3]
                 },
-                /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
+                /// Auxiliary [`Op`] to encode table access information for indirect call instructions.
                 #[snake_name(call_indirect_params)]
                 CallIndirectParams {
                     /// The index of the called function in the table.
@@ -5438,7 +5438,7 @@ macro_rules! for_each_op_grouped {
                     /// The table which holds the called function at the index.
                     table: Table,
                 },
-                /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
+                /// Variant of [`Op::CallIndirectParams`] for 16-bit constant `index` parameter.
                 #[snake_name(call_indirect_params_imm16)]
                 CallIndirectParamsImm16 {
                     /// The index of the called function in the table.
@@ -5569,7 +5569,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Op::Register`] encoding `value`.
                 #[snake_name(i8x16_replace_lane)]
                 I8x16ReplaceLane {
                     @result: Reg,
@@ -5578,7 +5578,7 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx16,
                 },
-                /// Variant of [`Instruction::I8x16ReplaceLane`] with imediate `value`.
+                /// Variant of [`Op::I8x16ReplaceLane`] with imediate `value`.
                 #[snake_name(i8x16_replace_lane_imm)]
                 I8x16ReplaceLaneImm {
                     @result: Reg,
@@ -5593,7 +5593,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Op::Register`] encoding `value`.
                 #[snake_name(i16x8_replace_lane)]
                 I16x8ReplaceLane {
                     @result: Reg,
@@ -5602,11 +5602,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx8,
                 },
-                /// Variant of [`Instruction::I16x8ReplaceLane`] with imediate `value`.
+                /// Variant of [`Op::I16x8ReplaceLane`] with imediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Const32`] encoding the immediate `value` of type `i16`.
+                /// Followed by [`Op::Const32`] encoding the immediate `value` of type `i16`.
                 #[snake_name(i16x8_replace_lane_imm)]
                 I16x8ReplaceLaneImm {
                     @result: Reg,
@@ -5619,7 +5619,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Op::Register`] encoding `value`.
                 #[snake_name(i32x4_replace_lane)]
                 I32x4ReplaceLane {
                     @result: Reg,
@@ -5628,11 +5628,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx4,
                 },
-                /// Variant of [`Instruction::I32x4ReplaceLaneImm`] with imediate `value`.
+                /// Variant of [`Op::I32x4ReplaceLaneImm`] with imediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding the immediate `value` of type `i32`.
+                /// Followed by [`Op::Register`] encoding the immediate `value` of type `i32`.
                 #[snake_name(i32x4_replace_lane_imm)]
                 I32x4ReplaceLaneImm {
                     @result: Reg,
@@ -5645,7 +5645,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Op::Register`] encoding `value`.
                 #[snake_name(i64x2_replace_lane)]
                 I64x2ReplaceLane {
                     @result: Reg,
@@ -5654,11 +5654,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx2,
                 },
-                /// Variant of [`Instruction::I64x2ReplaceLane`] with imediate 32-bit `value`.
+                /// Variant of [`Op::I64x2ReplaceLane`] with imediate 32-bit `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::I64Const32`] encoding the 32-bit `value`.
+                /// Followed by [`Op::I64Const32`] encoding the 32-bit `value`.
                 #[snake_name(i64x2_replace_lane_imm32)]
                 I64x2ReplaceLaneImm32 {
                     @result: Reg,
@@ -5671,7 +5671,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Op::Register`] encoding `value`.
                 #[snake_name(f32x4_replace_lane)]
                 F32x4ReplaceLane {
                     @result: Reg,
@@ -5680,11 +5680,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx4,
                 },
-                /// Variant of [`Instruction::F32x4ReplaceLane`] with immediate `value`.
+                /// Variant of [`Op::F32x4ReplaceLane`] with immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Const32`] encoding `value` of type `f32`.
+                /// Followed by [`Op::Const32`] encoding `value` of type `f32`.
                 #[snake_name(f32x4_replace_lane_imm)]
                 F32x4ReplaceLaneImm {
                     @result: Reg,
@@ -5697,7 +5697,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Op::Register`] encoding `value`.
                 #[snake_name(f64x2_replace_lane)]
                 F64x2ReplaceLane {
                     @result: Reg,
@@ -5706,11 +5706,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx2,
                 },
-                /// Variant of [`Instruction::F64x2ReplaceLane`] with 32-bit immediate `value`.
+                /// Variant of [`Op::F64x2ReplaceLane`] with 32-bit immediate `value`.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::F64Const32`] encoding the 32-bit immediate `value`.
+                /// Followed by [`Op::F64Const32`] encoding the 32-bit immediate `value`.
                 #[snake_name(f64x2_replace_lane_imm32)]
                 F64x2ReplaceLaneImm32 {
                     @result: Reg,
@@ -5724,7 +5724,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding the `selector` of type [`V128`].
+                /// Followed by [`Op::Register`] encoding the `selector` of type [`V128`].
                 #[snake_name(i8x16_shuffle)]
                 I8x16Shuffle {
                     @result: Reg,
@@ -5865,7 +5865,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Op::Register`] encoding `c`.
                 #[snake_name(i32x4_relaxed_dot_i8x16_i7x16_add_s)]
                 I32x4RelaxedDotI8x16I7x16AddS {
                     @result: Reg,
@@ -5879,7 +5879,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Op::Register`] encoding `c`.
                 #[snake_name(f32x4_relaxed_madd)]
                 F32x4RelaxedMadd {
                     @result: Reg,
@@ -5892,7 +5892,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Op::Register`] encoding `c`.
                 #[snake_name(f32x4_relaxed_nmadd)]
                 F32x4RelaxedNmadd {
                     @result: Reg,
@@ -5905,7 +5905,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Op::Register`] encoding `c`.
                 #[snake_name(f64x2_relaxed_madd)]
                 F64x2RelaxedMadd {
                     @result: Reg,
@@ -5918,7 +5918,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Op::Register`] encoding `c`.
                 #[snake_name(f64x2_relaxed_nmadd)]
                 F64x2RelaxedNmadd {
                     @result: Reg,
@@ -6344,7 +6344,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I8x16Shl`] with immediate shift amount.
+                /// Variants of [`Op::I8x16Shl`] with immediate shift amount.
                 #[snake_name(i8x16_shl_by)]
                 I8x16ShlBy {
                     @result: Reg,
@@ -6362,7 +6362,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I16x8Shl`] with immediate shift amount.
+                /// Variants of [`Op::I16x8Shl`] with immediate shift amount.
                 #[snake_name(i16x8_shl_by)]
                 I16x8ShlBy {
                     @result: Reg,
@@ -6380,7 +6380,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I32x4Shl`] with immediate shift amount.
+                /// Variants of [`Op::I32x4Shl`] with immediate shift amount.
                 #[snake_name(i32x4_shl_by)]
                 I32x4ShlBy {
                     @result: Reg,
@@ -6398,7 +6398,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I64x2Shl`] with immediate shift amount.
+                /// Variants of [`Op::I64x2Shl`] with immediate shift amount.
                 #[snake_name(i64x2_shl_by)]
                 I64x2ShlBy {
                     @result: Reg,
@@ -6416,7 +6416,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I8x16ShrS`] with immediate shift amount.
+                /// Variants of [`Op::I8x16ShrS`] with immediate shift amount.
                 #[snake_name(i8x16_shr_s_by)]
                 I8x16ShrSBy {
                     @result: Reg,
@@ -6434,7 +6434,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I8x16ShrU`] with immediate shift amount.
+                /// Variants of [`Op::I8x16ShrU`] with immediate shift amount.
                 #[snake_name(i8x16_shr_u_by)]
                 I8x16ShrUBy {
                     @result: Reg,
@@ -6452,7 +6452,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I16x8ShrS`] with immediate shift amount.
+                /// Variants of [`Op::I16x8ShrS`] with immediate shift amount.
                 #[snake_name(i16x8_shr_s_by)]
                 I16x8ShrSBy {
                     @result: Reg,
@@ -6470,7 +6470,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I16x8ShrU`] with immediate shift amount.
+                /// Variants of [`Op::I16x8ShrU`] with immediate shift amount.
                 #[snake_name(i16x8_shr_u_by)]
                 I16x8ShrUBy {
                     @result: Reg,
@@ -6488,7 +6488,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I32x4ShrS`] with immediate shift amount.
+                /// Variants of [`Op::I32x4ShrS`] with immediate shift amount.
                 #[snake_name(i32x4_shr_s_by)]
                 I32x4ShrSBy {
                     @result: Reg,
@@ -6506,7 +6506,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I32x4ShrU`] with immediate shift amount.
+                /// Variants of [`Op::I32x4ShrU`] with immediate shift amount.
                 #[snake_name(i32x4_shr_u_by)]
                 I32x4ShrUBy {
                     @result: Reg,
@@ -6524,7 +6524,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I64x2ShrS`] with immediate shift amount.
+                /// Variants of [`Op::I64x2ShrS`] with immediate shift amount.
                 #[snake_name(i64x2_shr_s_by)]
                 I64x2ShrSBy {
                     @result: Reg,
@@ -6542,7 +6542,7 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
-                /// Variants of [`Instruction::I64x2ShrU`] with immediate shift amount.
+                /// Variants of [`Op::I64x2ShrU`] with immediate shift amount.
                 #[snake_name(i64x2_shr_u_by)]
                 I64x2ShrUBy {
                     @result: Reg,
@@ -6600,7 +6600,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding the `selector`.
+                /// Followed by [`Op::Register`] encoding the `selector`.
                 #[snake_name(v128_bitselect)]
                 V128Bitselect {
                     @result: Reg,
@@ -7396,10 +7396,10 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// - Optional [`Instruction::MemoryIndex`]: encoding memory index used
+                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - Optional [`Op::MemoryIndex`]: encoding memory index used
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_store)]
                 V128Store {
                     /// The register storing the `pointer` of the store instruction.
@@ -7407,7 +7407,7 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Store`] with 16-bit offset.
+                /// Variant of [`Op::V128Store`] with 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7421,11 +7421,11 @@ macro_rules! for_each_op_grouped {
                     /// The register storing the `value` of the store instruction.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::V128Store`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Store`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding `memory`.
                 ///
                 /// Operates on the default Wasm memory instance if missing.
                 #[snake_name(v128_store_at)]
@@ -7442,8 +7442,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
                 #[snake_name(v128_store8_lane)]
@@ -7453,7 +7453,7 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Store8Lane`] with an 8-bit offset.
+                /// Variant of [`Op::V128Store8Lane`] with an 8-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7469,11 +7469,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the stored [`V128`] `value`.
                     lane: ImmLaneIdx16,
                 },
-                /// Variant of [`Instruction::V128Store8Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Store8Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+                /// Followed by an [`Op::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
                 #[snake_name(v128_store8_lane_at)]
                 V128Store8LaneAt {
                     /// The value to be stored.
@@ -7488,8 +7488,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
                 #[snake_name(v128_store16_lane)]
@@ -7499,7 +7499,7 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Store16Lane`] with an 8-bit offset.
+                /// Variant of [`Op::V128Store16Lane`] with an 8-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7515,11 +7515,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the stored [`V128`] `value`.
                     lane: ImmLaneIdx8,
                 },
-                /// Variant of [`Instruction::V128Store16Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Store16Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+                /// Followed by an [`Op::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
                 #[snake_name(v128_store16_lane_at)]
                 V128Store16LaneAt {
                     /// The value to be stored.
@@ -7534,8 +7534,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
                 #[snake_name(v128_store32_lane)]
@@ -7545,7 +7545,7 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Store32Lane`] with an 8-bit offset.
+                /// Variant of [`Op::V128Store32Lane`] with an 8-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7561,11 +7561,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the stored [`V128`] `value`.
                     lane: ImmLaneIdx4,
                 },
-                /// Variant of [`Instruction::V128Store32Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Store32Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+                /// Followed by an [`Op::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
                 #[snake_name(v128_store32_lane_at)]
                 V128Store32LaneAt {
                     /// The value to be stored.
@@ -7580,8 +7580,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
-                /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
                 #[snake_name(v128_store64_lane)]
@@ -7591,7 +7591,7 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Store64Lane`] with an 8-bit offset.
+                /// Variant of [`Op::V128Store64Lane`] with an 8-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7607,11 +7607,11 @@ macro_rules! for_each_op_grouped {
                     /// The lane of the stored [`V128`] `value`.
                     lane: ImmLaneIdx2,
                 },
-                /// Variant of [`Instruction::V128Store64Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Store64Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+                /// Followed by an [`Op::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
                 #[snake_name(v128_store64_lane_at)]
                 V128Store64LaneAt {
                     /// The value to be stored.
@@ -7626,30 +7626,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load)]
                 V128Load {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load_at)]
                 V128LoadAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7669,30 +7669,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_zero)]
                 V128Load32Zero {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load32Zero`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load32Zero`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_zero_at)]
                 V128Load32ZeroAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load32Zero`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load32Zero`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7712,30 +7712,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_zero)]
                 V128Load64Zero {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load64Zero`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load64Zero`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_zero_at)]
                 V128Load64ZeroAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load64Zero`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load64Zero`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7755,30 +7755,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8_splat)]
                 V128Load8Splat {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load8Splat`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load8Splat`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8_splat_at)]
                 V128Load8SplatAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load8Splat`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load8Splat`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7798,30 +7798,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16_splat)]
                 V128Load16Splat {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load16Splat`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load16Splat`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16_splat_at)]
                 V128Load16SplatAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load16Splat`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load16Splat`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7841,30 +7841,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_splat)]
                 V128Load32Splat {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load32Splat`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load32Splat`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_splat_at)]
                 V128Load32SplatAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load32Splat`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load32Splat`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7884,30 +7884,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_splat)]
                 V128Load64Splat {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load64Splat`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load64Splat`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_splat_at)]
                 V128Load64SplatAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load64Splat`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load64Splat`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7927,30 +7927,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_s)]
                 V128Load8x8S {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load8x8S`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load8x8S`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_s_at)]
                 V128Load8x8SAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load8x8S`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load8x8S`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -7970,30 +7970,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_u)]
                 V128Load8x8U {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load8x8U`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load8x8U`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_u_at)]
                 V128Load8x8UAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load8x8U`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load8x8U`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -8013,30 +8013,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_s)]
                 V128Load16x4S {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load16x4S`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load16x4S`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_s_at)]
                 V128Load16x4SAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load16x4S`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load16x4S`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -8056,30 +8056,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_u)]
                 V128Load16x4U {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load16x4U`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load16x4U`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_u_at)]
                 V128Load16x4UAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load16x4U`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load16x4U`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -8099,30 +8099,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_s)]
                 V128Load32x2S {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load32x2S`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load32x2S`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_s_at)]
                 V128Load32x2SAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load32x2S`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load32x2S`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -8142,30 +8142,30 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_u)]
                 V128Load32x2U {
                     @result: Reg,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load32x2U`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load32x2U`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
-                /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+                /// Optionally followed by an [`Op::MemoryIndex`] encoding the `memory_index`.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_u_at)]
                 V128Load32x2UAt {
                     @result: Reg,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
-                /// Variant of [`Instruction::V128Load32x2U`] with a 16-bit offset.
+                /// Variant of [`Op::V128Load32x2U`] with a 16-bit offset.
                 ///
                 /// # Note
                 ///
@@ -8185,13 +8185,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
                 #[snake_name(v128_load8_lane)]
@@ -8200,16 +8200,16 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load8Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load8Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8_lane_at)]
                 V128Load8LaneAt {
                     @result: Reg,
@@ -8223,13 +8223,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
                 #[snake_name(v128_load16_lane)]
@@ -8238,16 +8238,16 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load16Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load16Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16_lane_at)]
                 V128Load16LaneAt {
                     @result: Reg,
@@ -8261,13 +8261,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
                 #[snake_name(v128_load32_lane)]
@@ -8276,16 +8276,16 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load32Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load32Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_lane_at)]
                 V128Load32LaneAt {
                     @result: Reg,
@@ -8299,13 +8299,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
                 #[snake_name(v128_load64_lane)]
@@ -8314,16 +8314,16 @@ macro_rules! for_each_op_grouped {
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
-                /// Variant of [`Instruction::V128Load64Lane`] with 32-bit immediate address.
+                /// Variant of [`Op::V128Load64Lane`] with 32-bit immediate address.
                 ///
                 /// # Encoding
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
-                /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+                /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_lane_at)]
                 V128Load64LaneAt {
                     @result: Reg,

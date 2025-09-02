@@ -5,12 +5,12 @@ use crate::{
 };
 
 #[cfg(doc)]
-use crate::ir::Instruction;
+use crate::ir::Op;
 
 macro_rules! impl_unary_executors {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+    ( $( (Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, input: Reg) {
                 self.execute_unary(result, input, $op)
             }
@@ -19,9 +19,9 @@ macro_rules! impl_unary_executors {
 }
 
 macro_rules! impl_binary_executors {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+    ( $( (Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
                 self.execute_binary(result, lhs, rhs, $op)
             }
@@ -30,9 +30,9 @@ macro_rules! impl_binary_executors {
 }
 
 impl Executor<'_> {
-    /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
+    /// Returns the register `value` and `offset` parameters for a `load` [`Op`].
     pub fn fetch_value_and_offset_hi(&self) -> (Reg, Offset64Hi) {
-        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+        // Safety: Wasmi translation guarantees that `Op::RegisterAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 

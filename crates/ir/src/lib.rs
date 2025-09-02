@@ -41,7 +41,7 @@ pub use self::{
         ShiftAmount,
         Sign,
     },
-    r#enum::Instruction,
+    r#enum::Op,
     span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
     visit_results::VisitResults,
 };

@@ -2,7 +2,7 @@ use super::{ControlFlow, Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::{executor::stack::FrameRegisters, utils::unreachable_unchecked},
-    ir::{AnyConst32, BoundedRegSpan, Const32, Instruction, Reg, RegSpan},
+    ir::{AnyConst32, BoundedRegSpan, Const32, Op, Reg, RegSpan},
     store::StoreInner,
 };
 use core::slice;
@@ -37,7 +37,7 @@ impl Executor<'_> {
         }
     }
 
-    /// Execute an [`Instruction::Return`].
+    /// Execute an [`Op::Return`].
     pub fn execute_return(&mut self, store: &mut StoreInner) -> ControlFlow {
         self.return_impl(store)
     }
@@ -76,7 +76,7 @@ impl Executor<'_> {
         }
     }
 
-    /// Execute a generic return [`Instruction`] returning a single value.
+    /// Execute a generic return [`Op`] returning a single value.
     fn execute_return_value<T>(
         &mut self,
         store: &mut StoreInner,
@@ -93,22 +93,22 @@ impl Executor<'_> {
         self.return_impl(store)
     }
 
-    /// Execute an [`Instruction::ReturnReg`] returning a single [`Reg`] value.
+    /// Execute an [`Op::ReturnReg`] returning a single [`Reg`] value.
     pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ControlFlow {
         self.execute_return_value(store, value, Self::get_register)
     }
 
-    /// Execute an [`Instruction::ReturnReg2`] returning two [`Reg`] values.
+    /// Execute an [`Op::ReturnReg2`] returning two [`Reg`] values.
     pub fn execute_return_reg2(&mut self, store: &mut StoreInner, values: [Reg; 2]) -> ControlFlow {
         self.execute_return_reg_n_impl::<2>(store, values)
     }
 
-    /// Execute an [`Instruction::ReturnReg3`] returning three [`Reg`] values.
+    /// Execute an [`Op::ReturnReg3`] returning three [`Reg`] values.
     pub fn execute_return_reg3(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
         self.execute_return_reg_n_impl::<3>(store, values)
     }
 
-    /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
+    /// Executes an [`Op::ReturnReg2`] or [`Op::ReturnReg3`] generically.
     fn execute_return_reg_n_impl<const N: usize>(
         &mut self,
         store: &mut StoreInner,
@@ -127,7 +127,7 @@ impl Executor<'_> {
         self.return_impl(store)
     }
 
-    /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
+    /// Execute an [`Op::ReturnImm32`] returning a single 32-bit value.
     pub fn execute_return_imm32(
         &mut self,
         store: &mut StoreInner,
@@ -136,7 +136,7 @@ impl Executor<'_> {
         self.execute_return_value(store, value, |_, value| u32::from(value).into())
     }
 
-    /// Execute an [`Instruction::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
+    /// Execute an [`Op::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
     pub fn execute_return_i64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -145,7 +145,7 @@ impl Executor<'_> {
         self.execute_return_value(store, value, |_, value| i64::from(value).into())
     }
 
-    /// Execute an [`Instruction::ReturnF64Imm32`] returning a single 32-bit encoded `f64` value.
+    /// Execute an [`Op::ReturnF64Imm32`] returning a single 32-bit encoded `f64` value.
     pub fn execute_return_f64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -154,7 +154,7 @@ impl Executor<'_> {
         self.execute_return_value(store, value, |_, value| f64::from(value).into())
     }
 
-    /// Execute an [`Instruction::ReturnSpan`] returning many values.
+    /// Execute an [`Op::ReturnSpan`] returning many values.
     pub fn execute_return_span(
         &mut self,
         store: &mut StoreInner,
@@ -173,7 +173,7 @@ impl Executor<'_> {
         self.return_impl(store)
     }
 
-    /// Execute an [`Instruction::ReturnMany`] returning many values.
+    /// Execute an [`Op::ReturnMany`] returning many values.
     pub fn execute_return_many(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
         self.ip.add(1);
         self.copy_many_return_values(self.ip, &values);
@@ -186,7 +186,7 @@ impl Executor<'_> {
     ///
     /// Used by the execution logic for
     ///
-    /// - [`Instruction::ReturnMany`]
+    /// - [`Op::ReturnMany`]
     pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Reg]) {
         let (mut caller_sp, results) = self.return_caller_results();
         let mut result = results.head();
@@ -203,14 +203,14 @@ impl Executor<'_> {
         };
         copy_results(values);
         let mut ip = ip;
-        while let Instruction::RegisterList { regs } = ip.get() {
+        while let Op::RegisterList { regs } = ip.get() {
             copy_results(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register { reg } => slice::from_ref(reg),
-            Instruction::Register2 { regs } => regs,
-            Instruction::Register3 { regs } => regs,
+            Op::Register { reg } => slice::from_ref(reg),
+            Op::Register2 { regs } => regs,
+            Op::Register3 { regs } => regs,
             unexpected => {
                 // Safety: Wasmi translation guarantees that a register-list finalizer exists.
                 unsafe {

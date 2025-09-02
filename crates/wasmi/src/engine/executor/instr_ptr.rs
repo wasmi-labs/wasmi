@@ -1,16 +1,16 @@
-use crate::ir::Instruction;
+use crate::ir::Op;
 
 /// The instruction pointer to the instruction of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionPtr {
     /// The pointer to the instruction.
-    ptr: *const Instruction,
+    ptr: *const Op,
 }
 
 /// It is safe to send an [`InstructionPtr`] to another thread.
 ///
-/// The access to the pointed-to [`Instruction`] is read-only and
-/// [`Instruction`] itself is [`Send`].
+/// The access to the pointed-to [`Op`] is read-only and
+/// [`Op`] itself is [`Send`].
 ///
 /// However, it is not safe to share an [`InstructionPtr`] between threads
 /// due to their [`InstructionPtr::offset`] method which relinks the
@@ -20,7 +20,7 @@ unsafe impl Send for InstructionPtr {}
 impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
     #[inline]
-    pub fn new(ptr: *const Instruction) -> Self {
+    pub fn new(ptr: *const Op) -> Self {
         Self { ptr }
     }
 
@@ -47,7 +47,7 @@ impl InstructionPtr {
         self.ptr = unsafe { self.ptr.add(delta) };
     }
 
-    /// Returns a shared reference to the currently pointed at [`Instruction`].
+    /// Returns a shared reference to the currently pointed at [`Op`].
     ///
     /// # Safety
     ///
@@ -55,7 +55,7 @@ impl InstructionPtr {
     /// guaranteed that the [`InstructionPtr`] is validly pointing inside
     /// the boundaries of its associated compiled Wasm function.
     #[inline(always)]
-    pub fn get(&self) -> &Instruction {
+    pub fn get(&self) -> &Op {
         // SAFETY: Within Wasm bytecode execution we are guaranteed by
         //         Wasm validation and Wasmi codegen to never run out
         //         of valid bounds using this method.

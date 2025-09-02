@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::wasm,
     engine::utils::unreachable_unchecked,
-    ir::{FixedRegSpan, Instruction, Reg},
+    ir::{FixedRegSpan, Op, Reg},
 };
 
 /// Parameters for the `i64.add128` and `i64.sub128` instructions.
@@ -27,16 +27,16 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::Register3 { regs } => Params128 {
+            Op::Register3 { regs } => Params128 {
                 lhs_hi: regs[0],
                 rhs_lo: regs[1],
                 rhs_hi: regs[2],
             },
             unexpected => {
-                // Safety: Wasmi translation guarantees that [`Instruction::MemoryIndex`] exists.
+                // Safety: Wasmi translation guarantees that [`Op::MemoryIndex`] exists.
                 unsafe {
                     unreachable_unchecked!(
-                        "expected `Instruction::Register3` but found: {unexpected:?}"
+                        "expected `Op::Register3` but found: {unexpected:?}"
                     )
                 }
             }
@@ -60,12 +60,12 @@ impl Executor<'_> {
         self.next_instr_at(2)
     }
 
-    /// Executes an [`Instruction::I64Add128`].
+    /// Executes an [`Op::I64Add128`].
     pub fn execute_i64_add128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
         self.execute_i64_binop128(results, lhs_lo, wasm::i64_add128)
     }
 
-    /// Executes an [`Instruction::I64Sub128`].
+    /// Executes an [`Op::I64Sub128`].
     pub fn execute_i64_sub128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
         self.execute_i64_binop128(results, lhs_lo, wasm::i64_sub128)
     }
@@ -87,12 +87,12 @@ impl Executor<'_> {
         self.next_instr()
     }
 
-    /// Executes an [`Instruction::I64MulWideS`].
+    /// Executes an [`Op::I64MulWideS`].
     pub fn execute_i64_mul_wide_s(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
         self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_s)
     }
 
-    /// Executes an [`Instruction::I64MulWideU`].
+    /// Executes an [`Op::I64MulWideU`].
     pub fn execute_i64_mul_wide_u(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
         self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_u)
     }

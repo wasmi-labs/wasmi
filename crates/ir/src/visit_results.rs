@@ -1,17 +1,17 @@
 use crate::{index::*, *};
 
-impl Instruction {
+impl Op {
     /// Visit result [`Reg`]s of `self` via the `visitor`.
     pub fn visit_results<V: VisitResults>(&mut self, visitor: &mut V) {
         ResultsVisitor::host_visitor(self, visitor)
     }
 }
 
-/// Implemented by [`Reg`] visitors to visit result [`Reg`]s of an [`Instruction`] via [`Instruction::visit_results`].
+/// Implemented by [`Reg`] visitors to visit result [`Reg`]s of an [`Op`] via [`Op::visit_results`].
 pub trait VisitResults {
-    /// Visits a [`Reg`] storing the result of an [`Instruction`].
+    /// Visits a [`Reg`] storing the result of an [`Op`].
     fn visit_result_reg(&mut self, reg: &mut Reg);
-    /// Visits a [`RegSpan`] storing the results of an [`Instruction`].
+    /// Visits a [`RegSpan`] storing the results of an [`Op`].
     fn visit_result_regs(&mut self, reg: &mut RegSpan, len: Option<u16>);
 }
 

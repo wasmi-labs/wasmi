@@ -9,7 +9,7 @@ use crate::{
         ResumableHostTrapError,
     },
     func::{FuncEntity, HostFuncEntity},
-    ir::{index, Instruction, Reg, RegSpan},
+    ir::{index, Op, Reg, RegSpan},
     store::{CallHooks, PrunedStore, StoreInner},
     Error,
     Func,
@@ -105,7 +105,7 @@ impl Executor<'_> {
     ///
     /// # Note
     ///
-    /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    /// The `offset` denotes how many [`Op`] words make up the call instruction.
     #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
@@ -119,12 +119,12 @@ impl Executor<'_> {
         caller.update_instr_ptr(self.ip);
     }
 
-    /// Fetches the [`Instruction::CallIndirectParams`] parameter for a call [`Instruction`].
+    /// Fetches the [`Op::CallIndirectParams`] parameter for a call [`Op`].
     ///
     /// # Note
     ///
-    /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
-    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    /// - This advances the [`InstructionPtr`] to the next [`Op`].
+    /// - This is done by encoding an [`Op::TableGet`] instruction
     ///   word following the actual instruction where the [`index::Table`]
     ///   parameter belongs to.
     /// - This is required for some instructions that do not fit into
@@ -133,7 +133,7 @@ impl Executor<'_> {
     fn pull_call_indirect_params(&mut self) -> (u64, index::Table) {
         self.ip.add(1);
         match *self.ip.get() {
-            Instruction::CallIndirectParams { index, table } => {
+            Op::CallIndirectParams { index, table } => {
                 let index: u64 = self.get_register_as(index);
                 (index, table)
             }
@@ -141,19 +141,19 @@ impl Executor<'_> {
                 // Safety: Wasmi translation guarantees that correct instruction parameter follows.
                 unsafe {
                     unreachable_unchecked!(
-                        "expected `Instruction::CallIndirectParams` but found {unexpected:?}"
+                        "expected `Op::CallIndirectParams` but found {unexpected:?}"
                     )
                 }
             }
         }
     }
 
-    /// Fetches the [`Instruction::CallIndirectParamsImm16`] parameter for a call [`Instruction`].
+    /// Fetches the [`Op::CallIndirectParamsImm16`] parameter for a call [`Op`].
     ///
     /// # Note
     ///
-    /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
-    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    /// - This advances the [`InstructionPtr`] to the next [`Op`].
+    /// - This is done by encoding an [`Op::TableGet`] instruction
     ///   word following the actual instruction where the [`index::Table`]
     ///   parameter belongs to.
     /// - This is required for some instructions that do not fit into
@@ -162,7 +162,7 @@ impl Executor<'_> {
     fn pull_call_indirect_params_imm16(&mut self) -> (u64, index::Table) {
         self.ip.add(1);
         match *self.ip.get() {
-            Instruction::CallIndirectParamsImm16 { index, table } => {
+            Op::CallIndirectParamsImm16 { index, table } => {
                 let index: u64 = index.into();
                 (index, table)
             }
@@ -170,7 +170,7 @@ impl Executor<'_> {
                 // Safety: Wasmi translation guarantees that correct instruction parameter follows.
                 unsafe {
                     unreachable_unchecked!(
-                        "expected `Instruction::CallIndirectParamsImm16` but found {unexpected:?}"
+                        "expected `Op::CallIndirectParamsImm16` but found {unexpected:?}"
                     )
                 }
             }
@@ -207,20 +207,20 @@ impl Executor<'_> {
     /// Copies the parameters from caller for the callee [`CallFrame`].
     ///
     /// This will also adjust the instruction pointer to point to the
-    /// last call parameter [`Instruction`] if any.
+    /// last call parameter [`Op`] if any.
     fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
-        if let Instruction::RegisterList { .. } = self.ip.get() {
+        if let Op::RegisterList { .. } = self.ip.get() {
             self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
-            Instruction::Register { reg } => {
+            Op::Register { reg } => {
                 self.copy_regs(uninit_params, array::from_ref(reg));
             }
-            Instruction::Register2 { regs } => {
+            Op::Register2 { regs } => {
                 self.copy_regs(uninit_params, regs);
             }
-            Instruction::Register3 { regs } => {
+            Op::Register3 { regs } => {
                 self.copy_regs(uninit_params, regs);
             }
             unexpected => {
@@ -246,14 +246,14 @@ impl Executor<'_> {
         }
     }
 
-    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Reg`] span.
+    /// Copies a list of [`Op::RegisterList`] to the `dst` [`Reg`] span.
     /// Copies the parameters from `src` for the called [`CallFrame`].
     ///
-    /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
-    /// last [`Instruction::RegisterList`] if any.
+    /// This will make the [`InstructionPtr`] point to the [`Op`] following the
+    /// last [`Op::RegisterList`] if any.
     #[cold]
     fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
-        while let Instruction::RegisterList { regs } = self.ip.get() {
+        while let Op::RegisterList { regs } = self.ip.get() {
             self.copy_regs(uninit_params, regs);
             self.ip.add(1);
         }
@@ -297,7 +297,7 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Executes an [`Instruction::ReturnCallInternal0`].
+    /// Executes an [`Op::ReturnCallInternal0`].
     #[inline(always)]
     pub fn execute_return_call_internal_0(
         &mut self,
@@ -307,7 +307,7 @@ impl Executor<'_> {
         self.execute_return_call_internal_impl::<marker::ReturnCall0>(store, func)
     }
 
-    /// Executes an [`Instruction::ReturnCallInternal`].
+    /// Executes an [`Op::ReturnCallInternal`].
     #[inline(always)]
     pub fn execute_return_call_internal(
         &mut self,
@@ -317,7 +317,7 @@ impl Executor<'_> {
         self.execute_return_call_internal_impl::<marker::ReturnCall>(store, func)
     }
 
-    /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
+    /// Executes an [`Op::ReturnCallInternal`] or [`Op::ReturnCallInternal0`].
     #[inline(always)]
     fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
@@ -345,7 +345,7 @@ impl Executor<'_> {
             .results()
     }
 
-    /// Executes an [`Instruction::CallInternal0`].
+    /// Executes an [`Op::CallInternal0`].
     #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
@@ -356,7 +356,7 @@ impl Executor<'_> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
 
-    /// Executes an [`Instruction::CallInternal`].
+    /// Executes an [`Op::CallInternal`].
     #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
@@ -367,7 +367,7 @@ impl Executor<'_> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }
 
-    /// Executes an [`Instruction::ReturnCallImported0`].
+    /// Executes an [`Op::ReturnCallImported0`].
     pub fn execute_return_call_imported_0(
         &mut self,
         store: &mut PrunedStore,
@@ -376,7 +376,7 @@ impl Executor<'_> {
         self.execute_return_call_imported_impl::<marker::ReturnCall0>(store, func)
     }
 
-    /// Executes an [`Instruction::ReturnCallImported`].
+    /// Executes an [`Op::ReturnCallImported`].
     pub fn execute_return_call_imported(
         &mut self,
         store: &mut PrunedStore,
@@ -385,7 +385,7 @@ impl Executor<'_> {
         self.execute_return_call_imported_impl::<marker::ReturnCall>(store, func)
     }
 
-    /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
+    /// Executes an [`Op::ReturnCallImported`] or [`Op::ReturnCallImported0`].
     fn execute_return_call_imported_impl<C: ReturnCallContext>(
         &mut self,
         store: &mut PrunedStore,
@@ -395,7 +395,7 @@ impl Executor<'_> {
         self.execute_call_imported_impl::<C>(store, None, &func)
     }
 
-    /// Executes an [`Instruction::CallImported0`].
+    /// Executes an [`Op::CallImported0`].
     pub fn execute_call_imported_0(
         &mut self,
         store: &mut PrunedStore,
@@ -407,7 +407,7 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Executes an [`Instruction::CallImported`].
+    /// Executes an [`Op::CallImported`].
     pub fn execute_call_imported(
         &mut self,
         store: &mut PrunedStore,
@@ -569,7 +569,7 @@ impl Executor<'_> {
         )
     }
 
-    /// Executes an [`Instruction::CallIndirect0`].
+    /// Executes an [`Op::CallIndirect0`].
     pub fn execute_return_call_indirect_0(
         &mut self,
         store: &mut PrunedStore,
@@ -579,7 +579,7 @@ impl Executor<'_> {
         self.execute_call_indirect_impl::<marker::ReturnCall0>(store, None, func_type, index, table)
     }
 
-    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    /// Executes an [`Op::CallIndirect0Imm16`].
     pub fn execute_return_call_indirect_0_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -589,7 +589,7 @@ impl Executor<'_> {
         self.execute_call_indirect_impl::<marker::ReturnCall0>(store, None, func_type, index, table)
     }
 
-    /// Executes an [`Instruction::CallIndirect0`].
+    /// Executes an [`Op::CallIndirect0`].
     pub fn execute_return_call_indirect(
         &mut self,
         store: &mut PrunedStore,
@@ -599,7 +599,7 @@ impl Executor<'_> {
         self.execute_call_indirect_impl::<marker::ReturnCall>(store, None, func_type, index, table)
     }
 
-    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    /// Executes an [`Op::CallIndirect0Imm16`].
     pub fn execute_return_call_indirect_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -609,7 +609,7 @@ impl Executor<'_> {
         self.execute_call_indirect_impl::<marker::ReturnCall>(store, None, func_type, index, table)
     }
 
-    /// Executes an [`Instruction::CallIndirect0`].
+    /// Executes an [`Op::CallIndirect0`].
     pub fn execute_call_indirect_0(
         &mut self,
         store: &mut PrunedStore,
@@ -627,7 +627,7 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    /// Executes an [`Op::CallIndirect0Imm16`].
     pub fn execute_call_indirect_0_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -645,7 +645,7 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Executes an [`Instruction::CallIndirect`].
+    /// Executes an [`Op::CallIndirect`].
     pub fn execute_call_indirect(
         &mut self,
         store: &mut PrunedStore,
@@ -663,7 +663,7 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Executes an [`Instruction::CallIndirectImm16`].
+    /// Executes an [`Op::CallIndirectImm16`].
     pub fn execute_call_indirect_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -681,7 +681,7 @@ impl Executor<'_> {
         Ok(())
     }
 
-    /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
+    /// Executes an [`Op::CallIndirect`] and [`Op::CallIndirect0`].
     fn execute_call_indirect_impl<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,

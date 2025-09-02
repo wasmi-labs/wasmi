@@ -1,6 +1,6 @@
 use crate::{
     core::UntypedVal,
-    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Instruction, Reg},
+    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Op, Reg},
     Error,
 };
 
@@ -22,22 +22,22 @@ pub trait AllocConst {
     fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Reg, Error>;
 }
 
-/// Extension trait to return [`Reg`] result of compare [`Instruction`]s.
+/// Extension trait to return [`Reg`] result of compare [`Op`]s.
 pub trait CompareResult {
-    /// Returns the result [`Reg`] of the compare [`Instruction`].
+    /// Returns the result [`Reg`] of the compare [`Op`].
     ///
-    /// Returns `None` if the [`Instruction`] is not a compare instruction.
+    /// Returns `None` if the [`Op`] is not a compare instruction.
     fn compare_result(&self) -> Option<Reg>;
 
-    /// Returns `true` if `self` is a compare [`Instruction`].
+    /// Returns `true` if `self` is a compare [`Op`].
     fn is_compare_instr(&self) -> bool {
         self.compare_result().is_some()
     }
 }
 
-impl CompareResult for Instruction {
+impl CompareResult for Op {
     fn compare_result(&self) -> Option<Reg> {
-        use crate::ir::Instruction as I;
+        use crate::ir::Op as I;
         let result = match *self {
             | I::I32BitAnd { result, .. }
             | I::I32BitAndImm16 { result, .. }
@@ -124,9 +124,9 @@ pub trait ReplaceCmpResult: Sized {
     fn replace_cmp_result(&self, new_result: Reg) -> Option<Self>;
 }
 
-impl ReplaceCmpResult for Instruction {
+impl ReplaceCmpResult for Op {
     fn replace_cmp_result(&self, new_result: Reg) -> Option<Self> {
-        use crate::ir::Instruction as I;
+        use crate::ir::Op as I;
         let mut copy = *self;
         match &mut copy {
             | I::I32BitAnd { result, .. }
@@ -208,13 +208,13 @@ impl ReplaceCmpResult for Instruction {
 }
 
 pub trait NegateCmpInstr: Sized {
-    /// Negates the compare (`cmp`) [`Instruction`].
+    /// Negates the compare (`cmp`) [`Op`].
     fn negate_cmp_instr(&self) -> Option<Self>;
 }
 
-impl NegateCmpInstr for Instruction {
+impl NegateCmpInstr for Op {
     fn negate_cmp_instr(&self) -> Option<Self> {
-        use Instruction as I;
+        use Op as I;
         #[rustfmt::skip]
         let negated = match *self {
             // i32
@@ -302,16 +302,16 @@ impl NegateCmpInstr for Instruction {
 }
 
 pub trait LogicalizeCmpInstr: Sized {
-    /// Logicalizes the compare (`cmp`) [`Instruction`].
+    /// Logicalizes the compare (`cmp`) [`Op`].
     ///
-    /// This mainly turns bitwise [`Instruction`]s into logical ones.
+    /// This mainly turns bitwise [`Op`]s into logical ones.
     /// Logical instructions are simply unchanged.
     fn logicalize_cmp_instr(&self) -> Option<Self>;
 }
 
-impl LogicalizeCmpInstr for Instruction {
+impl LogicalizeCmpInstr for Op {
     fn logicalize_cmp_instr(&self) -> Option<Self> {
-        use Instruction as I;
+        use Op as I;
         #[rustfmt::skip]
         let logicalized = match *self {
             // Bitwise -> Logical: i32
@@ -405,18 +405,15 @@ pub trait TryIntoCmpSelectInstr: Sized {
 /// The outcome of `cmp`+`select` op-code fusion.
 pub enum CmpSelectFusion {
     /// The `cmp`+`select` fusion was applied and may require swapping operands.
-    Applied {
-        fused: Instruction,
-        swap_operands: bool,
-    },
+    Applied { fused: Op, swap_operands: bool },
     /// The `cmp`+`select` fusion was _not_ applied.
     Unapplied,
 }
 
 /// Returns `true` if a `cmp`+`select` fused instruction required to swap its operands.
 #[rustfmt::skip]
-fn cmp_select_swap_operands(instr: &Instruction) -> bool {
-    use Instruction as I;
+fn cmp_select_swap_operands(instr: &Op) -> bool {
+    use Op as I;
     matches!(instr,
         | I::I32Ne { .. }
         | I::I32NeImm16 { .. }
@@ -451,12 +448,12 @@ fn cmp_select_swap_operands(instr: &Instruction) -> bool {
     )
 }
 
-impl TryIntoCmpSelectInstr for Instruction {
+impl TryIntoCmpSelectInstr for Op {
     fn try_into_cmp_select_instr(
         &self,
         get_result: impl FnOnce() -> Result<Reg, Error>,
     ) -> Result<CmpSelectFusion, Error> {
-        use Instruction as I;
+        use Op as I;
         if !self.is_compare_instr() {
             return Ok(CmpSelectFusion::Unapplied);
         }
@@ -559,13 +556,13 @@ pub trait TryIntoCmpBranchInstr: Sized {
     ) -> Result<Option<Self>, Error>;
 }
 
-impl TryIntoCmpBranchInstr for Instruction {
+impl TryIntoCmpBranchInstr for Op {
     fn try_into_cmp_branch_instr(
         &self,
         offset: BranchOffset,
         stack: &mut impl AllocConst,
     ) -> Result<Option<Self>, Error> {
-        use Instruction as I;
+        use Op as I;
         let Ok(offset) = BranchOffset16::try_from(offset) else {
             return self.try_into_cmp_branch_fallback_instr(offset, stack);
         };
@@ -660,16 +657,16 @@ pub trait TryIntoCmpBranchFallbackInstr {
         &self,
         offset: BranchOffset,
         stack: &mut impl AllocConst,
-    ) -> Result<Option<Instruction>, Error>;
+    ) -> Result<Option<Op>, Error>;
 }
 
-impl TryIntoCmpBranchFallbackInstr for Instruction {
+impl TryIntoCmpBranchFallbackInstr for Op {
     fn try_into_cmp_branch_fallback_instr(
         &self,
         offset: BranchOffset,
         stack: &mut impl AllocConst,
-    ) -> Result<Option<Instruction>, Error> {
-        use Instruction as I;
+    ) -> Result<Option<Op>, Error> {
+        use Op as I;
         debug_assert!(BranchOffset16::try_from(offset).is_err());
         let Some(comparator) = try_into_cmp_br_comparator(self) else {
             return Ok(None);
@@ -763,12 +760,12 @@ impl TryIntoCmpBranchFallbackInstr for Instruction {
             _ => return Ok(None),
         };
         let params = stack.alloc_const(ComparatorAndOffset::new(comparator, offset))?;
-        Ok(Some(Instruction::branch_cmp_fallback(lhs, rhs, params)))
+        Ok(Some(Op::branch_cmp_fallback(lhs, rhs, params)))
     }
 }
 
-fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
-    use Instruction as I;
+fn try_into_cmp_br_comparator(instr: &Op) -> Option<Comparator> {
+    use Op as I;
     #[rustfmt::skip]
     let comparator = match *instr {
         // i32
@@ -825,13 +822,13 @@ fn try_into_cmp_br_comparator(instr: &Instruction) -> Option<Comparator> {
     Some(comparator)
 }
 
-/// Extension trait to update the branch offset of an [`Instruction`].
+/// Extension trait to update the branch offset of an [`Op`].
 pub trait UpdateBranchOffset {
-    /// Updates the [`BranchOffset`] for the branch [`Instruction].
+    /// Updates the [`BranchOffset`] for the branch [`Op`].
     ///
     /// # Panics
     ///
-    /// If `self` is not a branch [`Instruction`].
+    /// If `self` is not a branch [`Op`].
     fn update_branch_offset(
         &mut self,
         stack: &mut impl AllocConst,
@@ -839,14 +836,14 @@ pub trait UpdateBranchOffset {
     ) -> Result<(), Error>;
 }
 
-impl UpdateBranchOffset for Instruction {
+impl UpdateBranchOffset for Op {
     #[rustfmt::skip]
     fn update_branch_offset(
         &mut self,
         stack: &mut impl AllocConst,
         new_offset: BranchOffset,
     ) -> Result<(), Error> {
-        use Instruction as I;
+        use Op as I;
         match self {
             | I::Branch { offset }
             | I::BranchTableTarget { offset, .. } => {

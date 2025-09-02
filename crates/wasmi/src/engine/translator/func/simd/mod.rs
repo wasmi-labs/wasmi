@@ -12,11 +12,11 @@ use crate::{
     ir::{
         index::{self, Memory},
         Address32,
-        Instruction,
         IntoShiftAmount,
         Offset64,
         Offset64Lo,
         Offset8,
+        Op,
         Reg,
     },
     Error,
@@ -30,7 +30,7 @@ impl FuncTranslator {
     /// Generically translate any of the Wasm `simd` splat instructions.
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
-        make_instr: fn(result: Reg, value: Reg) -> Instruction,
+        make_instr: fn(result: Reg, value: Reg) -> Op,
         const_eval: fn(Wrapped) -> V128,
     ) -> Result<(), Error>
     where
@@ -57,7 +57,7 @@ impl FuncTranslator {
     fn translate_extract_lane<T: IntoLaneIdx, R>(
         &mut self,
         lane: u8,
-        make_instr: fn(result: Reg, input: Reg, lane: T::LaneIdx) -> Instruction,
+        make_instr: fn(result: Reg, input: Reg, lane: T::LaneIdx) -> Op,
         const_eval: fn(input: V128, lane: T::LaneIdx) -> R,
     ) -> Result<(), Error>
     where
@@ -111,7 +111,7 @@ impl FuncTranslator {
                 }
             })?;
         let param = match value {
-            Input::Reg(value) => Some(Instruction::register(value)),
+            Input::Reg(value) => Some(Op::register(value)),
             Input::Immediate(value) => T::replace_lane_imm_param(value),
         };
         self.push_instr_with_result(
@@ -131,7 +131,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm unary instruction.
     fn translate_simd_unary<T>(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        make_instr: fn(result: Reg, input: Reg) -> Op,
         const_eval: fn(input: V128) -> T,
     ) -> Result<(), Error>
     where
@@ -157,7 +157,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm binary instruction.
     fn translate_simd_binary(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
         const_eval: fn(lhs: V128, rhs: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -181,7 +181,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm ternary instruction.
     fn translate_simd_ternary(
         &mut self,
-        make_instr: fn(result: Reg, a: Reg, b: Reg) -> Instruction,
+        make_instr: fn(result: Reg, a: Reg, b: Reg) -> Op,
         const_eval: fn(lhas: V128, b: V128, c: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -201,19 +201,15 @@ impl FuncTranslator {
             |result| make_instr(result, lhs, rhs),
             FuelCostsProvider::simd,
         )?;
-        self.push_param(Instruction::register(selector))?;
+        self.push_param(Op::register(selector))?;
         Ok(())
     }
 
     /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm: fn(
-            result: Reg,
-            lhs: Reg,
-            rhs: <T as IntoShiftAmount>::Output,
-        ) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: <T as IntoShiftAmount>::Output) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
@@ -255,8 +251,8 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Op,
+        make_instr_at: fn(result: Reg, address: Address32) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -293,10 +289,10 @@ impl FuncTranslator {
             |result| make_instr(result, offset_lo),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Instruction::register_and_offset_hi(ptr, offset_hi))?;
-        self.push_param(Instruction::register_and_lane(x, lane))?;
+        self.push_param(Op::register_and_offset_hi(ptr, offset_hi))?;
+        self.push_param(Op::register_and_lane(x, lane))?;
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -307,7 +303,7 @@ impl FuncTranslator {
         x: Reg,
         lane: LaneType,
         address: Address32,
-        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+        make_instr_at: fn(result: Reg, address: Address32) -> Op,
     ) -> Result<(), Error>
     where
         LaneType: Into<u8>,
@@ -317,9 +313,9 @@ impl FuncTranslator {
             |result| make_instr_at(result, address),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Instruction::register_and_lane(x, lane))?;
+        self.push_param(Op::register_and_lane(x, lane))?;
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -329,14 +325,9 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset8: fn(
-            ptr: Reg,
-            value: Reg,
-            offset: Offset8,
-            lane: T::LaneIdx,
-        ) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Op,
+        make_instr_offset8: fn(ptr: Reg, value: Reg, offset: Offset8, lane: T::LaneIdx) -> Op,
+        make_instr_at: fn(value: Reg, address: Address32) -> Op,
         translate_imm: fn(
             &mut Self,
             memarg: MemArg,
@@ -391,8 +382,8 @@ impl FuncTranslator {
         }
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let instr = make_instr(ptr, offset_lo);
-        let param = Instruction::register_and_offset_hi(v128, offset_hi);
-        let param2 = Instruction::lane_and_memory_index(lane, memory);
+        let param = Op::register_and_offset_hi(v128, offset_hi);
+        let param2 = Op::lane_and_memory_index(lane, memory);
         self.push_instr(instr, FuelCostsProvider::store)?;
         self.push_param(param)?;
         self.push_param(param2)?;
@@ -405,10 +396,10 @@ impl FuncTranslator {
         address: Address32,
         value: Reg,
         lane: T::LaneIdx,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Op,
     ) -> Result<(), Error> {
         self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
-        self.push_param(Instruction::lane_and_memory_index(lane, memory))?;
+        self.push_param(Op::lane_and_memory_index(lane, memory))?;
         Ok(())
     }
 
@@ -419,7 +410,7 @@ impl FuncTranslator {
         offset: u64,
         value: Reg,
         lane: LaneType,
-        make_instr_offset8: fn(Reg, Reg, Offset8, LaneType) -> Instruction,
+        make_instr_offset8: fn(Reg, Reg, Offset8, LaneType) -> Op,
     ) -> Result<Option<Instr>, Error> {
         if !memory.is_default() {
             return Ok(None);

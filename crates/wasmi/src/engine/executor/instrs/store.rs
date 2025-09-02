@@ -22,7 +22,7 @@ use crate::{
 use crate::{core::simd, V128};
 
 #[cfg(doc)]
-use crate::ir::Instruction;
+use crate::ir::Op;
 
 /// The function signature of Wasm store operations.
 type WasmStoreOp<T> =
@@ -32,7 +32,7 @@ type WasmStoreOp<T> =
 type WasmStoreAtOp<T> = fn(memory: &mut [u8], address: usize, value: T) -> Result<(), TrapCode>;
 
 impl Executor<'_> {
-    /// Returns the immediate `value` and `offset_hi` parameters for a `load` [`Instruction`].
+    /// Returns the immediate `value` and `offset_hi` parameters for a `load` [`Op`].
     fn fetch_value_and_offset_imm<T>(&self) -> (T, Offset64Hi)
     where
         T: From<AnyConst16>,
@@ -43,7 +43,7 @@ impl Executor<'_> {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(
-                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                    "expected an `Op::RegisterAndImm32` but found: {instr:?}"
                 )
             },
         }
@@ -235,22 +235,22 @@ macro_rules! impl_execute_istore {
         (
             $ty:ty,
             ($from_ty:ty => $to_ty:ty),
-            (Instruction::$var_store_imm:ident, $fn_store_imm:ident),
-            (Instruction::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
-            (Instruction::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
+            (Op::$var_store_imm:ident, $fn_store_imm:ident),
+            (Op::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
+            (Op::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
             $store_fn:expr,
             $store_at_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_imm), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_imm), "`].")]
             #[allow(clippy::cast_lossless)]
             pub fn $fn_store_imm(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
                 let (value, offset_hi) = self.fetch_value_and_offset_imm::<$to_ty>();
                 self.execute_store_imm::<$ty>(store, ptr, offset_lo, offset_hi, value as $ty, $store_fn)
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16_imm16), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_off16_imm16), "`].")]
             #[allow(clippy::cast_lossless)]
             pub fn $fn_store_off16_imm16(
                 &mut self,
@@ -261,7 +261,7 @@ macro_rules! impl_execute_istore {
                 self.execute_store_offset16_imm16::<$ty>(ptr, offset, <$to_ty>::from(value) as _, $store_fn)
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at_imm16), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_at_imm16), "`].")]
             #[allow(clippy::cast_lossless)]
             pub fn $fn_store_at_imm16(
                 &mut self,
@@ -280,18 +280,18 @@ impl Executor<'_> {
         (
             u32,
             (Const16<i32> => i32),
-            (Instruction::I32StoreImm16, execute_i32_store_imm16),
-            (Instruction::I32StoreOffset16Imm16, execute_i32_store_offset16_imm16),
-            (Instruction::I32StoreAtImm16, execute_i32_store_at_imm16),
+            (Op::I32StoreImm16, execute_i32_store_imm16),
+            (Op::I32StoreOffset16Imm16, execute_i32_store_offset16_imm16),
+            (Op::I32StoreAtImm16, execute_i32_store_at_imm16),
             wasm::store32,
             wasm::store32_at,
         ),
         (
             u64,
             (Const16<i64> => i64),
-            (Instruction::I64StoreImm16, execute_i64_store_imm16),
-            (Instruction::I64StoreOffset16Imm16, execute_i64_store_offset16_imm16),
-            (Instruction::I64StoreAtImm16, execute_i64_store_at_imm16),
+            (Op::I64StoreImm16, execute_i64_store_imm16),
+            (Op::I64StoreOffset16Imm16, execute_i64_store_offset16_imm16),
+            (Op::I64StoreAtImm16, execute_i64_store_at_imm16),
             wasm::store64,
             wasm::store64_at,
         ),
@@ -303,12 +303,12 @@ macro_rules! impl_execute_istore_trunc {
         (
             $ty:ty,
             ($from_ty:ty => $to_ty:ty),
-            (Instruction::$var_store:ident, $fn_store:ident),
-            (Instruction::$var_store_imm:ident, $fn_store_imm:ident),
-            (Instruction::$var_store_off16:ident, $fn_store_off16:ident),
-            (Instruction::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
-            (Instruction::$var_store_at:ident, $fn_store_at:ident),
-            (Instruction::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
+            (Op::$var_store:ident, $fn_store:ident),
+            (Op::$var_store_imm:ident, $fn_store_imm:ident),
+            (Op::$var_store_off16:ident, $fn_store_off16:ident),
+            (Op::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
+            (Op::$var_store_at:ident, $fn_store_at:ident),
+            (Op::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
             $store_fn:expr,
             $store_at_fn:expr $(,)?
         )
@@ -318,20 +318,20 @@ macro_rules! impl_execute_istore_trunc {
                 (
                     $ty,
                     ($from_ty => $to_ty),
-                    (Instruction::$var_store_imm, $fn_store_imm),
-                    (Instruction::$var_store_off16_imm16, $fn_store_off16_imm16),
-                    (Instruction::$var_store_at_imm16, $fn_store_at_imm16),
+                    (Op::$var_store_imm, $fn_store_imm),
+                    (Op::$var_store_off16_imm16, $fn_store_off16_imm16),
+                    (Op::$var_store_at_imm16, $fn_store_at_imm16),
                     $store_fn,
                     $store_at_fn,
                 )
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store), "`].")]
             pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
                 self.execute_store::<$ty>(store, ptr, offset_lo, $store_fn)
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_off16), "`].")]
             pub fn $fn_store_off16(
                 &mut self,
                 ptr: Reg,
@@ -341,7 +341,7 @@ macro_rules! impl_execute_istore_trunc {
                 self.execute_store_offset16::<$ty>(ptr, offset, value, $store_fn)
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_at), "`].")]
             pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: Address32, value: Reg) -> Result<(), Error> {
                 self.execute_store_at::<$ty>(store, address, value, $store_at_fn)
             }
@@ -353,60 +353,60 @@ impl Executor<'_> {
         (
             i32,
             (i8 => i8),
-            (Instruction::I32Store8, execute_i32_store8),
-            (Instruction::I32Store8Imm, execute_i32_store8_imm),
-            (Instruction::I32Store8Offset16, execute_i32_store8_offset16),
-            (Instruction::I32Store8Offset16Imm, execute_i32_store8_offset16_imm),
-            (Instruction::I32Store8At, execute_i32_store8_at),
-            (Instruction::I32Store8AtImm, execute_i32_store8_at_imm),
+            (Op::I32Store8, execute_i32_store8),
+            (Op::I32Store8Imm, execute_i32_store8_imm),
+            (Op::I32Store8Offset16, execute_i32_store8_offset16),
+            (Op::I32Store8Offset16Imm, execute_i32_store8_offset16_imm),
+            (Op::I32Store8At, execute_i32_store8_at),
+            (Op::I32Store8AtImm, execute_i32_store8_at_imm),
             wasm::i32_store8,
             wasm::i32_store8_at,
         ),
         (
             i32,
             (i16 => i16),
-            (Instruction::I32Store16, execute_i32_store16),
-            (Instruction::I32Store16Imm, execute_i32_store16_imm),
-            (Instruction::I32Store16Offset16, execute_i32_store16_offset16),
-            (Instruction::I32Store16Offset16Imm, execute_i32_store16_offset16_imm),
-            (Instruction::I32Store16At, execute_i32_store16_at),
-            (Instruction::I32Store16AtImm, execute_i32_store16_at_imm),
+            (Op::I32Store16, execute_i32_store16),
+            (Op::I32Store16Imm, execute_i32_store16_imm),
+            (Op::I32Store16Offset16, execute_i32_store16_offset16),
+            (Op::I32Store16Offset16Imm, execute_i32_store16_offset16_imm),
+            (Op::I32Store16At, execute_i32_store16_at),
+            (Op::I32Store16AtImm, execute_i32_store16_at_imm),
             wasm::i32_store16,
             wasm::i32_store16_at,
         ),
         (
             i64,
             (i8 => i8),
-            (Instruction::I64Store8, execute_i64_store8),
-            (Instruction::I64Store8Imm, execute_i64_store8_imm),
-            (Instruction::I64Store8Offset16, execute_i64_store8_offset16),
-            (Instruction::I64Store8Offset16Imm, execute_i64_store8_offset16_imm),
-            (Instruction::I64Store8At, execute_i64_store8_at),
-            (Instruction::I64Store8AtImm, execute_i64_store8_at_imm),
+            (Op::I64Store8, execute_i64_store8),
+            (Op::I64Store8Imm, execute_i64_store8_imm),
+            (Op::I64Store8Offset16, execute_i64_store8_offset16),
+            (Op::I64Store8Offset16Imm, execute_i64_store8_offset16_imm),
+            (Op::I64Store8At, execute_i64_store8_at),
+            (Op::I64Store8AtImm, execute_i64_store8_at_imm),
             wasm::i64_store8,
             wasm::i64_store8_at,
         ),
         (
             i64,
             (i16 => i16),
-            (Instruction::I64Store16, execute_i64_store16),
-            (Instruction::I64Store16Imm, execute_i64_store16_imm),
-            (Instruction::I64Store16Offset16, execute_i64_store16_offset16),
-            (Instruction::I64Store16Offset16Imm, execute_i64_store16_offset16_imm),
-            (Instruction::I64Store16At, execute_i64_store16_at),
-            (Instruction::I64Store16AtImm, execute_i64_store16_at_imm),
+            (Op::I64Store16, execute_i64_store16),
+            (Op::I64Store16Imm, execute_i64_store16_imm),
+            (Op::I64Store16Offset16, execute_i64_store16_offset16),
+            (Op::I64Store16Offset16Imm, execute_i64_store16_offset16_imm),
+            (Op::I64Store16At, execute_i64_store16_at),
+            (Op::I64Store16AtImm, execute_i64_store16_at_imm),
             wasm::i64_store16,
             wasm::i64_store16_at,
         ),
         (
             i64,
             (Const16<i32> => i32),
-            (Instruction::I64Store32, execute_i64_store32),
-            (Instruction::I64Store32Imm16, execute_i64_store32_imm16),
-            (Instruction::I64Store32Offset16, execute_i64_store32_offset16),
-            (Instruction::I64Store32Offset16Imm16, execute_i64_store32_offset16_imm16),
-            (Instruction::I64Store32At, execute_i64_store32_at),
-            (Instruction::I64Store32AtImm16, execute_i64_store32_at_imm16),
+            (Op::I64Store32, execute_i64_store32),
+            (Op::I64Store32Imm16, execute_i64_store32_imm16),
+            (Op::I64Store32Offset16, execute_i64_store32_offset16),
+            (Op::I64Store32Offset16Imm16, execute_i64_store32_offset16_imm16),
+            (Op::I64Store32At, execute_i64_store32_at),
+            (Op::I64Store32AtImm16, execute_i64_store32_at_imm16),
             wasm::i64_store32,
             wasm::i64_store32_at,
         ),
@@ -417,20 +417,20 @@ macro_rules! impl_execute_store {
     ( $(
         (
             $ty:ty,
-            (Instruction::$var_store:ident, $fn_store:ident),
-            (Instruction::$var_store_off16:ident, $fn_store_off16:ident),
-            (Instruction::$var_store_at:ident, $fn_store_at:ident),
+            (Op::$var_store:ident, $fn_store:ident),
+            (Op::$var_store_off16:ident, $fn_store_off16:ident),
+            (Op::$var_store_at:ident, $fn_store_at:ident),
             $store_fn:expr,
             $store_at_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store), "`].")]
             pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
                 self.execute_store::<$ty>(store, ptr, offset_lo, $store_fn)
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_off16), "`].")]
             pub fn $fn_store_off16(
                 &mut self,
                 ptr: Reg,
@@ -440,7 +440,7 @@ macro_rules! impl_execute_store {
                 self.execute_store_offset16::<$ty>(ptr, offset, value, $store_fn)
             }
 
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
+            #[doc = concat!("Executes an [`Op::", stringify!($var_store_at), "`].")]
             pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: Address32, value: Reg) -> Result<(), Error> {
                 self.execute_store_at::<$ty>(store, address, value, $store_at_fn)
             }
@@ -453,9 +453,9 @@ impl Executor<'_> {
     impl_execute_store! {
         (
             V128,
-            (Instruction::V128Store, execute_v128_store),
-            (Instruction::V128StoreOffset16, execute_v128_store_offset16),
-            (Instruction::V128StoreAt, execute_v128_store_at),
+            (Op::V128Store, execute_v128_store),
+            (Op::V128StoreOffset16, execute_v128_store_offset16),
+            (Op::V128StoreAt, execute_v128_store_at),
             simd::v128_store,
             simd::v128_store_at,
         ),
@@ -464,17 +464,17 @@ impl Executor<'_> {
     impl_execute_store! {
         (
             u32,
-            (Instruction::Store32, execute_store32),
-            (Instruction::Store32Offset16, execute_store32_offset16),
-            (Instruction::Store32At, execute_store32_at),
+            (Op::Store32, execute_store32),
+            (Op::Store32Offset16, execute_store32_offset16),
+            (Op::Store32At, execute_store32_at),
             wasm::store32,
             wasm::store32_at,
         ),
         (
             u64,
-            (Instruction::Store64, execute_store64),
-            (Instruction::Store64Offset16, execute_store64_offset16),
-            (Instruction::Store64At, execute_store64_at),
+            (Op::Store64, execute_store64),
+            (Op::Store64Offset16, execute_store64_offset16),
+            (Op::Store64At, execute_store64_at),
             wasm::store64,
             wasm::store64_at,
         ),

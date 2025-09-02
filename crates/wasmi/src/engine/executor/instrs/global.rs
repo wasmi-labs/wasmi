@@ -6,10 +6,10 @@ use crate::{
 };
 
 #[cfg(doc)]
-use crate::ir::Instruction;
+use crate::ir::Op;
 
 impl Executor<'_> {
-    /// Executes an [`Instruction::GlobalGet`].
+    /// Executes an [`Op::GlobalGet`].
     pub fn execute_global_get(&mut self, store: &StoreInner, result: Reg, global: index::Global) {
         let value = match u32::from(global) {
             0 => unsafe { self.cache.global.get() },
@@ -23,7 +23,7 @@ impl Executor<'_> {
         self.next_instr()
     }
 
-    /// Executes an [`Instruction::GlobalSet`].
+    /// Executes an [`Op::GlobalSet`].
     pub fn execute_global_set(
         &mut self,
         store: &mut StoreInner,
@@ -34,7 +34,7 @@ impl Executor<'_> {
         self.execute_global_set_impl(store, global, input)
     }
 
-    /// Executes an [`Instruction::GlobalSetI32Imm16`].
+    /// Executes an [`Op::GlobalSetI32Imm16`].
     pub fn execute_global_set_i32imm16(
         &mut self,
         store: &mut StoreInner,
@@ -45,7 +45,7 @@ impl Executor<'_> {
         self.execute_global_set_impl(store, global, input)
     }
 
-    /// Executes an [`Instruction::GlobalSetI64Imm16`].
+    /// Executes an [`Op::GlobalSetI64Imm16`].
     pub fn execute_global_set_i64imm16(
         &mut self,
         store: &mut StoreInner,

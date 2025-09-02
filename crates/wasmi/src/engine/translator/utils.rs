@@ -1,6 +1,6 @@
 use crate::{
     core::{Typed, TypedVal, UntypedVal},
-    ir::{Const16, Instruction, Sign},
+    ir::{Const16, Op, Sign},
     Error,
     ExternRef,
     Func,
@@ -155,33 +155,33 @@ impl_wrap_for! {
     u64 => u32,
 }
 
-/// Extension trait to bump the consumed fuel of [`Instruction::ConsumeFuel`].
+/// Extension trait to bump the consumed fuel of [`Op::ConsumeFuel`].
 pub trait BumpFuelConsumption {
-    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    /// Increases the fuel consumption of the [`Op::ConsumeFuel`] instruction by `delta`.
     ///
     /// # Error
     ///
-    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If `self` is not a [`Op::ConsumeFuel`] instruction.
     /// - If the new fuel consumption overflows the internal `u64` value.
     fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
 }
 
-impl BumpFuelConsumption for Instruction {
+impl BumpFuelConsumption for Op {
     fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
         match self {
             Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
-            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
+            instr => panic!("expected `Op::ConsumeFuel` but found: {instr:?}"),
         }
     }
 }
 
-/// Extension trait to query if an [`Instruction`] is a parameter.
+/// Extension trait to query if an [`Op`] is a parameter.
 pub trait IsInstructionParameter {
-    /// Returns `true` if `self` is a parameter to an [`Instruction`].
+    /// Returns `true` if `self` is a parameter to an [`Op`].
     fn is_instruction_parameter(&self) -> bool;
 }
 
-impl IsInstructionParameter for Instruction {
+impl IsInstructionParameter for Op {
     #[rustfmt::skip]
     fn is_instruction_parameter(&self) -> bool {
         matches!(self,
@@ -206,7 +206,7 @@ impl IsInstructionParameter for Instruction {
     }
 }
 
-/// A reference to an encoded [`Instruction`].
+/// A reference to an encoded [`Op`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
 

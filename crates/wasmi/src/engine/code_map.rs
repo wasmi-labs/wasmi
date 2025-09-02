@@ -11,7 +11,7 @@ use crate::{
     core::{Fuel, FuelCostsProvider, UntypedVal},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     errors::FuelError,
-    ir::{index::InternalFunc, Instruction},
+    ir::{index::InternalFunc, Op},
     module::{FuncIdx, ModuleHeader},
     Config,
     Error,
@@ -784,8 +784,8 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 /// Meta information about a [`EngineFunc`].
 #[derive(Debug)]
 pub struct CompiledFuncEntity {
-    /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
-    instrs: Pin<Box<[Instruction]>>,
+    /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
+    instrs: Pin<Box<[Op]>>,
     /// The constant values local to the [`EngineFunc`].
     consts: Pin<Box<[UntypedVal]>>,
     /// The number of registers used by the [`EngineFunc`] in total.
@@ -806,10 +806,10 @@ impl CompiledFuncEntity {
     /// - If `instrs` contains more than `i32::MAX` instructions.
     pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
-        I: IntoIterator<Item = Instruction>,
+        I: IntoIterator<Item = Op>,
         C: IntoIterator<Item = UntypedVal>,
     {
-        let instrs: Pin<Box<[Instruction]>> = Pin::new(instrs.into_iter().collect());
+        let instrs: Pin<Box<[Op]>> = Pin::new(instrs.into_iter().collect());
         let consts: Pin<Box<[UntypedVal]>> = Pin::new(consts.into_iter().collect());
         assert!(
             !instrs.is_empty(),
@@ -835,8 +835,8 @@ impl CompiledFuncEntity {
 /// A shared reference to the data of a [`EngineFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CompiledFuncRef<'a> {
-    /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
-    instrs: Pin<&'a [Instruction]>,
+    /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
+    instrs: Pin<&'a [Op]>,
     /// The constant values local to the [`EngineFunc`].
     consts: Pin<&'a [UntypedVal]>,
     /// The number of registers used by the [`EngineFunc`] in total.
@@ -855,9 +855,9 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
 }
 
 impl<'a> CompiledFuncRef<'a> {
-    /// Returns the sequence of [`Instruction`] of the [`EngineFunc`].
+    /// Returns the sequence of [`Op`] of the [`EngineFunc`].
     #[inline]
-    pub fn instrs(&self) -> &'a [Instruction] {
+    pub fn instrs(&self) -> &'a [Op] {
         self.instrs.get_ref()
     }
 
