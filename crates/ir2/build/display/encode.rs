@@ -88,79 +88,34 @@ impl Display for DisplayEncode<&'_ Isa> {
     }
 }
 
-impl Display for DisplayEncode<&'_ UnaryOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
+macro_rules! impl_display_encode {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl Display for DisplayEncode<&'_ $ty> {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    let fields = self.value.fields().map(Option::from);
+                    self.display_encode(f, &fields)
+                }
+            }
+        )*
+    };
 }
-
-impl Display for DisplayEncode<&'_ BinaryOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ CmpBranchOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ CmpSelectOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ LoadOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields();
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ StoreOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields();
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ TableGetOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ TableSetOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
+impl_display_encode! {
+    UnaryOp,
+    BinaryOp,
+    CmpBranchOp,
+    CmpSelectOp,
+    LoadOp,
+    StoreOp,
+    TableGetOp,
+    TableSetOp,
+    V128ReplaceLaneOp,
+    V128LoadLaneOp,
 }
 
 impl<const N: usize> Display for DisplayEncode<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fields = self.value.fields.map(Option::from);
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ V128ReplaceLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_encode(f, &fields)
-    }
-}
-
-impl Display for DisplayEncode<&'_ V128LoadLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
         self.display_encode(f, &fields)
     }
 }
