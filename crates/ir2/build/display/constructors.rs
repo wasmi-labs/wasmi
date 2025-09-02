@@ -86,79 +86,34 @@ impl Display for DisplayConstructor<&'_ Isa> {
     }
 }
 
-impl Display for DisplayConstructor<&'_ UnaryOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
+macro_rules! impl_display_constructor {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl Display for DisplayConstructor<&'_ $ty> {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    let fields = self.value.fields().map(Option::from);
+                    self.display_constructor(f, &fields)
+                }
+            }
+        )*
+    };
 }
-
-impl Display for DisplayConstructor<&'_ BinaryOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ CmpBranchOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ CmpSelectOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ LoadOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields();
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ StoreOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields();
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ TableGetOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ TableSetOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
+impl_display_constructor! {
+    UnaryOp,
+    BinaryOp,
+    CmpBranchOp,
+    CmpSelectOp,
+    LoadOp,
+    StoreOp,
+    TableGetOp,
+    TableSetOp,
+    V128ReplaceLaneOp,
+    V128LoadLaneOp,
 }
 
 impl<const N: usize> Display for DisplayConstructor<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fields = self.value.fields.map(Option::from);
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ V128ReplaceLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_constructor(f, &fields)
-    }
-}
-
-impl Display for DisplayConstructor<&'_ V128LoadLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
         self.display_constructor(f, &fields)
     }
 }
