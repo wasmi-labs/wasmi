@@ -49,15 +49,15 @@ impl Visitor {
 
 impl VisitResults for Visitor {
     #[inline]
-    fn visit_result_reg(&mut self, reg: &mut Slot) {
+    fn visit_result_reg(&mut self, slot: &mut Slot) {
         if self.replaced.is_err() {
             return;
         }
-        self.replaced = relink_simple(reg, self.new_result, self.old_result);
+        self.replaced = relink_simple(slot, self.new_result, self.old_result);
     }
 
     #[inline(always)]
-    fn visit_result_regs(&mut self, _reg: &mut SlotSpan, _len: Option<u16>) {}
+    fn visit_result_regs(&mut self, _slots: &mut SlotSpan, _len: Option<u16>) {}
 }
 
 impl RelinkResult for Op {

@@ -43,8 +43,8 @@ impl StackLayout {
     ///
     /// Returns `None` if the [`Slot`] is unknown to the [`Stack`].
     #[must_use]
-    pub fn stack_space(&self, reg: Slot) -> StackSpace {
-        let index = i16::from(reg);
+    pub fn stack_space(&self, slot: Slot) -> StackSpace {
+        let index = i16::from(slot);
         if index.is_negative() {
             return StackSpace::Const;
         }
