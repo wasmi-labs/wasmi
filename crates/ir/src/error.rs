@@ -3,8 +3,8 @@ use core::fmt;
 /// An error that may be occurred when operating with some Wasmi IR primitives.
 #[derive(Debug)]
 pub enum Error {
-    /// Encountered when trying to create a [`Reg`](crate::Reg) from an out of bounds integer.
-    RegisterOutOfBounds,
+    /// Encountered when trying to create a [`Slot`](crate::Slot) from an out of bounds integer.
+    StackSlotOutOfBounds,
     /// Encountered when trying to create a [`BranchOffset`](crate::BranchOffset) from an out of bounds integer.
     BranchOffsetOutOfBounds,
     /// Encountered when trying to create a [`Comparator`](crate::Comparator) from an out of bounds integer.
@@ -16,7 +16,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::RegisterOutOfBounds => write!(f, "register out of bounds"),
+            Self::StackSlotOutOfBounds => write!(f, "stack slot index out of bounds"),
             Self::BranchOffsetOutOfBounds => write!(f, "branch offset out of bounds"),
             Self::ComparatorOutOfBounds => write!(f, "comparator out of bounds"),
             Self::BlockFuelOutOfBounds => write!(f, "block fuel out of bounds"),

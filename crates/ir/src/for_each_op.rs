@@ -37,9 +37,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Returns a single value stored in a register.
                 #[snake_name(return_reg)]
-                ReturnReg {
+                ReturnSlot {
                     /// The returned value.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// A Wasm `return` instruction.
                 ///
@@ -47,9 +47,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Returns two values stored in registers.
                 #[snake_name(return_reg2)]
-                ReturnReg2 {
+                ReturnSlot2 {
                     /// The returned values.
-                    values: [Reg; 2],
+                    values: [Slot; 2],
                 },
                 /// A Wasm `return` instruction.
                 ///
@@ -57,9 +57,9 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Returns three values stored in registers.
                 #[snake_name(return_reg3)]
-                ReturnReg3 {
+                ReturnSlot3 {
                     /// The returned values.
-                    values: [Reg; 3],
+                    values: [Slot; 3],
                 },
                 /// A Wasm `return` instruction.
                 ///
@@ -95,11 +95,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Returns values as stored in the bounded [`RegSpan`].
+                /// Returns values as stored in the bounded [`SlotSpan`].
                 #[snake_name(return_span)]
                 ReturnSpan {
-                    /// The [`RegSpan`] that represents the registers that store the returned values.
-                    values: BoundedRegSpan,
+                    /// The [`SlotSpan`] that represents the registers that store the returned values.
+                    values: BoundedSlotSpan,
                 },
                 /// A Wasm `return` instruction.
                 ///
@@ -111,15 +111,15 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Op::RegisterList`]
+                /// 1. Zero or more [`Op::SlotList`]
                 /// 2. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(return_many)]
                 ReturnMany {
                     /// The first three returned values.
-                    values: [Reg; 3],
+                    values: [Slot; 3],
                 },
 
                 /// A Wasm `br` instruction.
@@ -139,14 +139,14 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_cmp_fallback)]
                 BranchCmpFallback {
                     /// The left-hand side value for the comparison.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side value for the comparison.
                     ///
                     /// # Note
                     ///
                     /// We allocate constant values as function local constant values and use
                     /// their register to only require a single fallback instruction variant.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The register that stores the [`ComparatorAndOffset`] of this instruction.
                     ///
                     /// # Note
@@ -156,16 +156,16 @@ macro_rules! for_each_op_grouped {
                     /// and 32-bit branch offset fields.
                     ///
                     /// [`ComparatorAndOffset`]: crate::ComparatorAndOffset
-                    params: Reg,
+                    params: Slot,
                 },
 
                 /// A fused `i32.and` and branch instruction.
                 #[snake_name(branch_i32_and)]
                 BranchI32And {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -173,7 +173,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_and_imm16)]
                 BranchI32AndImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -183,9 +183,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_or)]
                 BranchI32Or {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -193,7 +193,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_or_imm16)]
                 BranchI32OrImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -203,9 +203,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_nand)]
                 BranchI32Nand {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -213,7 +213,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_nand_imm16)]
                 BranchI32NandImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -223,9 +223,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_nor)]
                 BranchI32Nor {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -233,7 +233,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_nor_imm16)]
                 BranchI32NorImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -244,9 +244,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_eq)]
                 BranchI32Eq {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -254,7 +254,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_eq_imm16)]
                 BranchI32EqImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -264,9 +264,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_ne)]
                 BranchI32Ne {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -274,7 +274,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_ne_imm16)]
                 BranchI32NeImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -285,9 +285,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_lt_s)]
                 BranchI32LtS {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -297,7 +297,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<i32>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -305,7 +305,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_lt_s_imm16_rhs)]
                 BranchI32LtSImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -315,9 +315,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_lt_u)]
                 BranchI32LtU {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -327,7 +327,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<u32>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -335,7 +335,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_lt_u_imm16_rhs)]
                 BranchI32LtUImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u32>,
                     /// The 16-bit encoded branch offset.
@@ -345,9 +345,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_le_s)]
                 BranchI32LeS {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -357,7 +357,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<i32>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -365,7 +365,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_le_s_imm16_rhs)]
                 BranchI32LeSImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                     /// The 16-bit encoded branch offset.
@@ -375,9 +375,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_le_u)]
                 BranchI32LeU {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -387,7 +387,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<u32>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -395,7 +395,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i32_le_u_imm16_rhs)]
                 BranchI32LeUImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u32>,
                     /// The 16-bit encoded branch offset.
@@ -406,9 +406,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_and)]
                 BranchI64And {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -416,7 +416,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_and_imm16)]
                 BranchI64AndImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -426,9 +426,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_or)]
                 BranchI64Or {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -436,7 +436,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_or_imm16)]
                 BranchI64OrImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -446,9 +446,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_nand)]
                 BranchI64Nand {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -456,7 +456,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_nand_imm16)]
                 BranchI64NandImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -466,9 +466,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_nor)]
                 BranchI64Nor {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -476,7 +476,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_nor_imm16)]
                 BranchI64NorImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -487,9 +487,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_eq)]
                 BranchI64Eq {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -497,7 +497,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_eq_imm16)]
                 BranchI64EqImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -507,9 +507,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_ne)]
                 BranchI64Ne {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -517,7 +517,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_ne_imm16)]
                 BranchI64NeImm16 {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -528,9 +528,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_lt_s)]
                 BranchI64LtS {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -540,7 +540,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<i64>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -548,7 +548,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_lt_s_imm16_rhs)]
                 BranchI64LtSImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -558,9 +558,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_lt_u)]
                 BranchI64LtU {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -570,7 +570,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<u64>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -578,7 +578,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_lt_u_imm16_rhs)]
                 BranchI64LtUImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u64>,
                     /// The 16-bit encoded branch offset.
@@ -588,9 +588,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_le_s)]
                 BranchI64LeS {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -600,7 +600,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<i64>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -608,7 +608,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_le_s_imm16_rhs)]
                 BranchI64LeSImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                     /// The 16-bit encoded branch offset.
@@ -618,9 +618,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_le_u)]
                 BranchI64LeU {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -630,7 +630,7 @@ macro_rules! for_each_op_grouped {
                     /// The right-hand side operand to the conditional operator.
                     lhs: Const16<u64>,
                     /// The left-hand side operand to the conditional operator.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -638,7 +638,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_i64_le_u_imm16_rhs)]
                 BranchI64LeUImm16Rhs {
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u64>,
                     /// The 16-bit encoded branch offset.
@@ -649,9 +649,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f32_eq)]
                 BranchF32Eq {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -659,9 +659,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f32_ne)]
                 BranchF32Ne {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -670,9 +670,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f32_lt)]
                 BranchF32Lt {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -680,9 +680,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f32_le)]
                 BranchF32Le {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -691,9 +691,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f32_not_lt)]
                 BranchF32NotLt {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -701,9 +701,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f32_not_le)]
                 BranchF32NotLe {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -712,9 +712,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f64_eq)]
                 BranchF64Eq {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -722,9 +722,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f64_ne)]
                 BranchF64Ne {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -733,9 +733,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f64_lt)]
                 BranchF64Lt {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -743,9 +743,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f64_le)]
                 BranchF64Le {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -754,9 +754,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f64_not_lt)]
                 BranchF64NotLt {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -764,9 +764,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_f64_not_le)]
                 BranchF64NotLe {
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                     /// The 16-bit encoded branch offset.
                     offset: BranchOffset16,
                 },
@@ -779,7 +779,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_table_0)]
                 BranchTable0 {
                     /// The register holding the index of the instruction.
-                    index: Reg,
+                    index: Slot,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
                 },
@@ -791,14 +791,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// 1. Followed by one of [`Op::RegisterSpan`].
+                /// 1. Followed by one of [`Op::SlotSpan`].
                 /// 2. Followed `len_target` times by
                 ///
                 /// - [`Op::BranchTableTarget`]
                 #[snake_name(branch_table_span)]
                 BranchTableSpan {
                     /// The register holding the index of the instruction.
-                    index: Reg,
+                    index: Slot,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
                 },
@@ -810,20 +810,20 @@ macro_rules! for_each_op_grouped {
                 /// This is a Wasmi utility instruction used to translate Wasm control flow.
                 #[snake_name(copy)]
                 Copy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the value to copy.
-                    value: Reg,
+                    value: Slot,
                 },
-                /// Copies two [`Reg`] values to `results`.
+                /// Copies two [`Slot`] values to `results`.
                 ///
                 /// # Note
                 ///
                 /// This is a Wasmi utility instruction used to translate Wasm control flow.
                 #[snake_name(copy2)]
                 Copy2 {
-                    @results: FixedRegSpan<2>,
+                    @results: FixedSlotSpan<2>,
                     /// The registers holding the values to copy.
-                    values: [Reg; 2],
+                    values: [Slot; 2],
                 },
                 /// Copies the 32-bit immediate `value` to `result`.
                 ///
@@ -833,7 +833,7 @@ macro_rules! for_each_op_grouped {
                 /// Read [`Op::Copy`] for more information about this instruction.
                 #[snake_name(copy_imm32)]
                 CopyImm32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 32-bit encoded immediate value to copy.
                     value: AnyConst32,
                 },
@@ -846,7 +846,7 @@ macro_rules! for_each_op_grouped {
                 /// - Read [`Op::Copy`] for more information about this instruction.
                 #[snake_name(copy_i64imm32)]
                 CopyI64Imm32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 32-bit encoded `i64` immediate value to copy.
                     value: Const32<i64>,
                 },
@@ -859,16 +859,16 @@ macro_rules! for_each_op_grouped {
                 /// - Read [`Op::Copy`] for more information about this instruction.
                 #[snake_name(copy_f64imm32)]
                 CopyF64Imm32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 32-bit encoded `i64` immediate value to copy.
                     value: Const32<f64>,
                 },
                 /// Variant of [`Op::CopySpan`] that assumes that `results` and `values` span do not overlap.
                 #[snake_name(copy_span)]
                 CopySpan {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The contiguous registers holding the inputs of this instruction.
-                    values: RegSpan,
+                    values: SlotSpan,
                     /// The amount of copied registers.
                     len: u16,
                 },
@@ -876,16 +876,16 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Op::RegisterList`]
+                /// 1. Zero or more [`Op::SlotList`]
                 /// 2. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(copy_many)]
                 CopyMany {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The first two input registers to copy.
-                    values: [Reg; 2],
+                    values: [Slot; 2],
                 },
 
                 /// Wasm `return_call` equivalent Wasmi instruction.
@@ -908,11 +908,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Op::RegisterList`]
+                /// 1. Zero or more [`Op::SlotList`]
                 /// 2. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(return_call_internal)]
                 ReturnCallInternal {
                     /// The called internal function.
@@ -939,11 +939,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Op::RegisterList`]
+                /// 1. Zero or more [`Op::SlotList`]
                 /// 2. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(return_call_imported)]
                 ReturnCallImported {
                     /// The called imported function.
@@ -989,11 +989,11 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Op::CallIndirectParams`]: encoding `table` and `index`
-                /// 2. Zero or more [`Op::RegisterList`]
+                /// 2. Zero or more [`Op::SlotList`]
                 /// 3. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(return_call_indirect)]
                 ReturnCallIndirect {
                     /// The called internal function.
@@ -1010,11 +1010,11 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Op::CallIndirectParamsImm16`]: encoding `table` and `index`
-                /// 2. Zero or more [`Op::RegisterList`]
+                /// 2. Zero or more [`Op::SlotList`]
                 /// 3. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(return_call_indirect_imm16)]
                 ReturnCallIndirectImm16 {
                     /// The called internal function.
@@ -1028,7 +1028,7 @@ macro_rules! for_each_op_grouped {
                 /// Used for calling internally compiled Wasm functions without parameters.
                 #[snake_name(call_internal_0)]
                 CallInternal0 {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called internal function.
                     func: InternalFunc,
                 },
@@ -1042,14 +1042,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Op::RegisterList`]
+                /// 1. Zero or more [`Op::SlotList`]
                 /// 2. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(call_internal)]
                 CallInternal {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called internal function.
                     func: InternalFunc,
                 },
@@ -1061,7 +1061,7 @@ macro_rules! for_each_op_grouped {
                 /// Used for calling imported Wasm functions without parameters.
                 #[snake_name(call_imported_0)]
                 CallImported0 {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called imported function.
                     func: Func,
                 },
@@ -1075,14 +1075,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Op::RegisterList`]
+                /// 1. Zero or more [`Op::SlotList`]
                 /// 2. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(call_imported)]
                 CallImported {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called imported function.
                     func: Func,
                 },
@@ -1098,7 +1098,7 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by [`Op::CallIndirectParams`] encoding `table` and `index`.
                 #[snake_name(call_indirect_0)]
                 CallIndirect0 {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1113,7 +1113,7 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by [`Op::CallIndirectParamsImm16`] encoding `table` and `index`.
                 #[snake_name(call_indirect_0_imm16)]
                 CallIndirect0Imm16 {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1128,14 +1128,14 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Op::CallIndirectParams`]: encoding `table` and `index`
-                /// 2. Zero or more [`Op::RegisterList`]
+                /// 2. Zero or more [`Op::SlotList`]
                 /// 3. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(call_indirect)]
                 CallIndirect {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1150,14 +1150,14 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Op::CallIndirectParamsImm16`]: encoding `table` and `index`
-                /// 2. Zero or more [`Op::RegisterList`]
+                /// 2. Zero or more [`Op::SlotList`]
                 /// 3. Followed by one of
-                ///     - [`Op::Register`]
-                ///     - [`Op::Register2`]
-                ///     - [`Op::Register3`]
+                ///     - [`Op::Slot`]
+                ///     - [`Op::Slot2`]
+                ///     - [`Op::Slot3`]
                 #[snake_name(call_indirect_imm16)]
                 CallIndirectImm16 {
-                    @results: RegSpan,
+                    @results: SlotSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1166,25 +1166,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_and)]
                 SelectI32And {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.and` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_and_imm16)]
                 SelectI32AndImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                 },
@@ -1192,25 +1192,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_or)]
                 SelectI32Or {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.or` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_or_imm16)]
                 SelectI32OrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                 },
@@ -1218,25 +1218,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_eq)]
                 SelectI32Eq {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.eq` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_eq_imm16)]
                 SelectI32EqImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                 },
@@ -1244,25 +1244,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_s)]
                 SelectI32LtS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.lt_s` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_s_imm16_rhs)]
                 SelectI32LtSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                 },
@@ -1270,25 +1270,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_u)]
                 SelectI32LtU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.lt_u` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_lt_u_imm16_rhs)]
                 SelectI32LtUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u32>,
                 },
@@ -1296,25 +1296,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_s)]
                 SelectI32LeS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.le_s` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_s_imm16_rhs)]
                 SelectI32LeSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i32>,
                 },
@@ -1322,25 +1322,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_u)]
                 SelectI32LeU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i32.le_u` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i32_le_u_imm16_rhs)]
                 SelectI32LeUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u32>,
                 },
@@ -1348,25 +1348,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_and)]
                 SelectI64And {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.and` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_and_imm16)]
                 SelectI64AndImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                 },
@@ -1374,25 +1374,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_or)]
                 SelectI64Or {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.or` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_or_imm16)]
                 SelectI64OrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                 },
@@ -1400,25 +1400,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_eq)]
                 SelectI64Eq {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.eq` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_eq_imm16)]
                 SelectI64EqImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                 },
@@ -1426,25 +1426,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_s)]
                 SelectI64LtS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.lt_s` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_s_imm16_rhs)]
                 SelectI64LtSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                 },
@@ -1452,25 +1452,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_u)]
                 SelectI64LtU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.lt_u` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_lt_u_imm16_rhs)]
                 SelectI64LtUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u64>,
                 },
@@ -1478,25 +1478,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_s)]
                 SelectI64LeS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.le_s` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_s_imm16_rhs)]
                 SelectI64LeSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<i64>,
                 },
@@ -1504,25 +1504,25 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_u)]
                 SelectI64LeU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `i64.le_u` and `select` instruction with 16-bit immediate `rhs` value.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_i64_le_u_imm16_rhs)]
                 SelectI64LeUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the conditional operator.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the conditional operator.
                     rhs: Const16<u64>,
                 },
@@ -1530,86 +1530,86 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f32_eq)]
                 SelectF32Eq {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `f32.lt` and `select` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f32_lt)]
                 SelectF32Lt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `f32.le` and `select` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f32_le)]
                 SelectF32Le {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A fused `f64.eq` and `select` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_eq)]
                 SelectF64Eq {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `f64.lt` and `select` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_lt)]
                 SelectF64Lt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A fused `f64.le` and `select` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register2`] encoding `true_val` and `false_val`.`
+                /// Followed by [`Op::Slot2`] encoding `true_val` and `false_val`.`
                 #[snake_name(select_f64_le)]
                 SelectF64Le {
-                    @result: Reg,
+                    @result: Slot,
                     /// The left-hand side operand to the branch conditional.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The right-hand side operand to the branch conditional.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `ref.func` equivalent Wasmi instruction.
                 #[snake_name(ref_func)]
                 RefFunc {
-                    @result: Reg,
+                    @result: Slot,
                     /// The index of the referenced function.
                     func: Func,
                 },
@@ -1617,7 +1617,7 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `global.get` equivalent Wasmi instruction.
                 #[snake_name(global_get)]
                 GlobalGet {
-                    @result: Reg,
+                    @result: Slot,
                     /// The index identifying the global variable for the `global.get` instruction.
                     global: Global,
                 },
@@ -1625,7 +1625,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(global_set)]
                 GlobalSet {
                     /// The register holding the value to be stored in the global variable.
-                    input: Reg,
+                    input: Slot,
                     /// The index identifying the global variable for the `global.set` instruction.
                     global: Global,
                 },
@@ -1664,13 +1664,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(load32)]
                 Load32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1687,7 +1687,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(load32_at)]
                 Load32At {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1699,9 +1699,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(load32_offset16)]
                 Load32Offset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -1716,13 +1716,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(load64)]
                 Load64 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1739,7 +1739,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(load64_at)]
                 Load64At {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1751,9 +1751,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(load64_offset16)]
                 Load64Offset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -1764,13 +1764,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load8_s)]
                 I32Load8s {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1787,7 +1787,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load8_s_at)]
                 I32Load8sAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1799,9 +1799,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load8_s_offset16)]
                 I32Load8sOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -1812,13 +1812,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load8_u)]
                 I32Load8u {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1835,7 +1835,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load8_u_at)]
                 I32Load8uAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1847,9 +1847,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load8_u_offset16)]
                 I32Load8uOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -1860,13 +1860,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load16_s)]
                 I32Load16s {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1883,7 +1883,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load16_s_at)]
                 I32Load16sAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1895,9 +1895,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load16_s_offset16)]
                 I32Load16sOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -1908,13 +1908,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_load16_u)]
                 I32Load16u {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1931,7 +1931,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i32_load16_u_at)]
                 I32Load16uAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1943,9 +1943,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_load16_u_offset16)]
                 I32Load16uOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -1956,13 +1956,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load8_s)]
                 I64Load8s {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -1979,7 +1979,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load8_s_at)]
                 I64Load8sAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -1991,9 +1991,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load8_s_offset16)]
                 I64Load8sOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -2004,13 +2004,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load8_u)]
                 I64Load8u {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2027,7 +2027,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load8_u_at)]
                 I64Load8uAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -2039,9 +2039,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load8_u_offset16)]
                 I64Load8uOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -2052,13 +2052,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load16_s)]
                 I64Load16s {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2075,7 +2075,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load16_s_at)]
                 I64Load16sAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -2087,9 +2087,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load16_s_offset16)]
                 I64Load16sOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -2100,13 +2100,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load16_u)]
                 I64Load16u {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2123,7 +2123,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load16_u_at)]
                 I64Load16uAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -2135,9 +2135,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load16_u_offset16)]
                 I64Load16uOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -2148,13 +2148,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load32_s)]
                 I64Load32s {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2171,7 +2171,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load32_s_at)]
                 I64Load32sAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -2183,9 +2183,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load32_s_offset16)]
                 I64Load32sOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -2196,13 +2196,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_load32_u)]
                 I64Load32u {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2219,7 +2219,7 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance if missing.
                 #[snake_name(i64_load32_u_at)]
                 I64Load32uAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the `load` instruction.
                     address: Address32,
                 },
@@ -2231,9 +2231,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_load32_u_offset16)]
                 I64Load32uOffset16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the pointer of the `load` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -2248,14 +2248,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store32)]
                 Store32 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2268,11 +2268,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(store32_offset16)]
                 Store32Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Store instruction for 32-bit values.
                 ///
@@ -2288,7 +2288,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(store32_at)]
                 Store32At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2303,14 +2303,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store64)]
                 Store64 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2323,11 +2323,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(store64_offset16)]
                 Store64Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Store instruction for 64-bit values.
                 ///
@@ -2343,7 +2343,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(store64_at)]
                 Store64At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2358,14 +2358,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store_imm16)]
                 I32StoreImm16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2378,7 +2378,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store_offset16_imm16)]
                 I32StoreOffset16Imm16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2409,14 +2409,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8)]
                 I32Store8 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2430,14 +2430,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8_imm)]
                 I32Store8Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2450,11 +2450,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store8_offset16)]
                 I32Store8Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i32.store8` equivalent Wasmi instruction.
                 ///
@@ -2465,7 +2465,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store8_offset16_imm)]
                 I32Store8Offset16Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2485,7 +2485,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store8_at)]
                 I32Store8At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2514,14 +2514,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16)]
                 I32Store16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2535,14 +2535,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16_imm)]
                 I32Store16Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2555,11 +2555,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store16_offset16)]
                 I32Store16Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i32.store16` equivalent Wasmi instruction.
                 ///
@@ -2570,7 +2570,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store16_offset16_imm)]
                 I32Store16Offset16Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2590,7 +2590,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_store16_at)]
                 I32Store16At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2623,14 +2623,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store_imm16)]
                 I64StoreImm16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2643,7 +2643,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store_offset16_imm16)]
                 I64StoreOffset16Imm16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2674,14 +2674,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8)]
                 I64Store8 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2695,14 +2695,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8_imm)]
                 I64Store8Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2715,11 +2715,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store8_offset16)]
                 I64Store8Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i64.store8` equivalent Wasmi instruction.
                 ///
@@ -2730,7 +2730,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store8_offset16_imm)]
                 I64Store8Offset16Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2750,7 +2750,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store8_at)]
                 I64Store8At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2779,14 +2779,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16)]
                 I64Store16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2800,14 +2800,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16_imm)]
                 I64Store16Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2820,11 +2820,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store16_offset16)]
                 I64Store16Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i64.store16` equivalent Wasmi instruction.
                 ///
@@ -2835,7 +2835,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store16_offset16_imm)]
                 I64Store16Offset16Imm {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2855,7 +2855,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store16_at)]
                 I64Store16At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2884,14 +2884,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32)]
                 I64Store32 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2905,14 +2905,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Op::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32_imm16)]
                 I64Store32Imm16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
                 },
@@ -2925,11 +2925,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store32_offset16)]
                 I64Store32Offset16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i64.store32` equivalent Wasmi instruction.
                 ///
@@ -2940,7 +2940,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store32_offset16_imm16)]
                 I64Store32Offset16Imm16 {
                     /// The register storing the pointer of the `store` instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The register storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
@@ -2960,7 +2960,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_store32_at)]
                 I64Store32At {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The constant address to store the value.
                     address: Address32,
                 },
@@ -2986,18 +2986,18 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i32.eq` equivalent Wasmi instruction.
                 #[snake_name(i32_eq)]
                 I32Eq{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_eq_imm16)]
                 I32EqImm16{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3005,18 +3005,18 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i32.ne` equivalent Wasmi instruction.
                 #[snake_name(i32_ne)]
                 I32Ne{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_ne_imm16)]
                 I32NeImm16{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3024,54 +3024,54 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction.
                 #[snake_name(i32_lt_s)]
                 I32LtS{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_lt_s_imm16_lhs)]
                 I32LtSImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_lt_s_imm16_rhs)]
                 I32LtSImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction.
                 #[snake_name(i32_lt_u)]
                 I32LtU{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_lt_u_imm16_lhs)]
                 I32LtUImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_lt_u_imm16_rhs)]
                 I32LtUImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u32>,
                 },
@@ -3079,54 +3079,54 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i32.le_s` equivalent Wasmi instruction.
                 #[snake_name(i32_le_s)]
                 I32LeS{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_le_s_imm16_lhs)]
                 I32LeSImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_le_s_imm16_rhs)]
                 I32LeSImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction.
                 #[snake_name(i32_le_u)]
                 I32LeU{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_le_u_imm16_lhs)]
                 I32LeUImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_le_u_imm16_rhs)]
                 I32LeUImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u32>,
                 },
@@ -3134,18 +3134,18 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i64.eq` equivalent Wasmi instruction.
                 #[snake_name(i64_eq)]
                 I64Eq{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_eq_imm16)]
                 I64EqImm16{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -3153,18 +3153,18 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i64.ne` equivalent Wasmi instruction.
                 #[snake_name(i64_ne)]
                 I64Ne{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_ne_imm16)]
                 I64NeImm16{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -3172,27 +3172,27 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction.
                 #[snake_name(i64_lt_s)]
                 I64LtS{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_lt_s_imm16_lhs)]
                 I64LtSImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_lt_s_imm16_rhs)]
                 I64LtSImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -3200,27 +3200,27 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction.
                 #[snake_name(i64_lt_u)]
                 I64LtU{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_lt_u_imm16_lhs)]
                 I64LtUImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_lt_u_imm16_rhs)]
                 I64LtUImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u64>,
                 },
@@ -3228,27 +3228,27 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i64.le_s` equivalent Wasmi instruction.
                 #[snake_name(i64_le_s)]
                 I64LeS{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_le_s_imm16_lhs)]
                 I64LeSImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_le_s_imm16_rhs)]
                 I64LeSImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -3256,27 +3256,27 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i64.le_u` equivalent Wasmi instruction.
                 #[snake_name(i64_le_u)]
                 I64LeU{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_le_u_imm16_lhs)]
                 I64LeUImm16Lhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_le_u_imm16_rhs)]
                 I64LeUImm16Rhs{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<u64>,
                 },
@@ -3284,143 +3284,143 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `f32.eq` equivalent Wasmi instruction.
                 #[snake_name(f32_eq)]
                 F32Eq{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.ne` equivalent Wasmi instruction.
                 #[snake_name(f32_ne)]
                 F32Ne{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.lt` equivalent Wasmi instruction.
                 #[snake_name(f32_lt)]
                 F32Lt{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.le` equivalent Wasmi instruction.
                 #[snake_name(f32_le)]
                 F32Le{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Negated Wasm `f32.lt` equivalent Wasmi instruction.
                 #[snake_name(f32_not_lt)]
                 F32NotLt{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Negated Wasm `f32.le` equivalent Wasmi instruction.
                 #[snake_name(f32_not_le)]
                 F32NotLe{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// Wasm `f64.eq` equivalent Wasmi instruction.
                 #[snake_name(f64_eq)]
                 F64Eq{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.ne` equivalent Wasmi instruction.
                 #[snake_name(f64_ne)]
                 F64Ne{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.lt` equivalent Wasmi instruction.
                 #[snake_name(f64_lt)]
                 F64Lt{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.le` equivalent Wasmi instruction.
                 #[snake_name(f64_le)]
                 F64Le{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Negated Wasm `f64.lt` equivalent Wasmi instruction.
                 #[snake_name(f64_not_lt)]
                 F64NotLt{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Negated Wasm `f64.le` equivalent Wasmi instruction.
                 #[snake_name(f64_not_le)]
                 F64NotLe{
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i32` count-leading-zeros (clz) instruction.
                 #[snake_name(i32_clz)]
                 I32Clz {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// `i32` count-trailing-zeros (ctz) instruction.
                 #[snake_name(i32_ctz)]
                 I32Ctz {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// `i32` pop-count instruction.
                 #[snake_name(i32_popcnt)]
                 I32Popcnt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// `i32` add instruction: `r0 = r1 + r2`
                 #[snake_name(i32_add)]
                 I32Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` add (small) immediate instruction: `r0 = r1 + c0`
                 ///
@@ -3429,9 +3429,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I32Add`] for 16-bit constant values.
                 #[snake_name(i32_add_imm16)]
                 I32AddImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3439,11 +3439,11 @@ macro_rules! for_each_op_grouped {
                 /// `i32` subtract instruction: `r0 = r1 - r2`
                 #[snake_name(i32_sub)]
                 I32Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` subtract immediate instruction: `r0 = c0 - r1`
                 ///
@@ -3453,21 +3453,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since subtraction is not commutative.
                 #[snake_name(i32_sub_imm16_lhs)]
                 I32SubImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i32` multiply instruction: `r0 = r1 * r2`
                 #[snake_name(i32_mul)]
                 I32Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` multiply immediate instruction: `r0 = r1 * c0`
                 ///
@@ -3476,9 +3476,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I32Mul`] for 16-bit constant values.
                 #[snake_name(i32_mul_imm16)]
                 I32MulImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3486,11 +3486,11 @@ macro_rules! for_each_op_grouped {
                 /// `i32` signed-division instruction: `r0 = r1 / r2`
                 #[snake_name(i32_div_s)]
                 I32DivS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` signed-division immediate instruction: `r0 = r1 / c0`
                 ///
@@ -3500,9 +3500,9 @@ macro_rules! for_each_op_grouped {
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i32_div_s_imm16_rhs)]
                 I32DivSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI32>,
                 },
@@ -3515,21 +3515,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since signed-division is not commutative.
                 #[snake_name(i32_div_s_imm16_lhs)]
                 I32DivSImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i32` unsigned-division instruction: `r0 = r1 / r2`
                 #[snake_name(i32_div_u)]
                 I32DivU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` unsigned-division immediate instruction: `r0 = r1 / c0`
                 ///
@@ -3542,9 +3542,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I32DivU`] for 16-bit constant values.
                 #[snake_name(i32_div_u_imm16_rhs)]
                 I32DivUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU32>,
                 },
@@ -3557,21 +3557,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since `i32` unsigned-division is not commutative.
                 #[snake_name(i32_div_u_imm16_lhs)]
                 I32DivUImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i32` signed-remainder instruction: `r0 = r1 % r2`
                 #[snake_name(i32_rem_s)]
                 I32RemS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
                 ///
@@ -3581,9 +3581,9 @@ macro_rules! for_each_op_grouped {
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i32_rem_s_imm16_rhs)]
                 I32RemSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI32>,
                 },
@@ -3596,21 +3596,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since `i32` signed-remainder is not commutative.
                 #[snake_name(i32_rem_s_imm16_lhs)]
                 I32RemSImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i32` unsigned-remainder instruction: `r0 = r1 % r2`
                 #[snake_name(i32_rem_u)]
                 I32RemU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
                 ///
@@ -3620,9 +3620,9 @@ macro_rules! for_each_op_grouped {
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i32_rem_u_imm16_rhs)]
                 I32RemUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU32>,
                 },
@@ -3635,21 +3635,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since unsigned-remainder is not commutative.
                 #[snake_name(i32_rem_u_imm16_lhs)]
                 I32RemUImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i32` bitwise-and instruction: `r0 = r1 & r2`
                 #[snake_name(i32_bitand)]
                 I32BitAnd {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
                 ///
@@ -3658,20 +3658,20 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I32BitAnd`] for 16-bit constant values.
                 #[snake_name(i32_bitand_imm16)]
                 I32BitAndImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
                 /// `i32` bitwise-or instruction: `r0 = r1 & r2`
                 #[snake_name(i32_bitor)]
                 I32BitOr {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
                 ///
@@ -3680,20 +3680,20 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I32BitOr`] for 16-bit constant values.
                 #[snake_name(i32_bitor_imm16)]
                 I32BitOrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
                 /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
                 #[snake_name(i32_bitxor)]
                 I32BitXor {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
                 ///
@@ -3702,9 +3702,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I32BitXor`] for 16-bit constant values.
                 #[snake_name(i32_bitxor_imm16)]
                 I32BitXorImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3712,36 +3712,36 @@ macro_rules! for_each_op_grouped {
                 /// Logical `i32.and` instruction.
                 #[snake_name(i32_and)]
                 I32And {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I32And`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_and_imm16)]
                 I32AndImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
                 /// Logical `i32.or` instruction.
                 #[snake_name(i32_or)]
                 I32Or {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I32Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_or_imm16)]
                 I32OrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3751,18 +3751,18 @@ macro_rules! for_each_op_grouped {
                 /// This usually is the result of fusing `i32.and` + `i32.eqz`.
                 #[snake_name(i32_nand)]
                 I32Nand {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I32Nand`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_nand_imm16)]
                 I32NandImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3771,18 +3771,18 @@ macro_rules! for_each_op_grouped {
                 /// This usually is the result of fusing `i32.or` + `i32.eqz`.
                 #[snake_name(i32_nor)]
                 I32Nor {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I32Nor`] with 16-bit `rhs` immediate.
                 #[snake_name(i32_nor_imm16)]
                 I32NorImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
                 },
@@ -3790,173 +3790,173 @@ macro_rules! for_each_op_grouped {
                 /// A Wasm `i32.shl` equivalent Wasmi instruction.
                 #[snake_name(i32_shl)]
                 I32Shl {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` operand.
                 #[snake_name(i32_shl_by)]
                 I32ShlBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
                 },
                 /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` operand.
                 #[snake_name(i32_shl_imm16)]
                 I32ShlImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i32.shr_u` equivalent Wasmi instruction.
                 #[snake_name(i32_shr_u)]
                 I32ShrU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_shr_u_by)]
                 I32ShrUBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
                 },
                 /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_shr_u_imm16)]
                 I32ShrUImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i32.shr_s` equivalent Wasmi instruction.
                 #[snake_name(i32_shr_s)]
                 I32ShrS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_shr_s_by)]
                 I32ShrSBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
                 },
                 /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_shr_s_imm16)]
                 I32ShrSImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i32.rotl` equivalent Wasmi instruction.
                 #[snake_name(i32_rotl)]
                 I32Rotl {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_rotl_by)]
                 I32RotlBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
                 },
                 /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_rotl_imm16)]
                 I32RotlImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i32.rotr` equivalent Wasmi instruction.
                 #[snake_name(i32_rotr)]
                 I32Rotr {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_rotr_by)]
                 I32RotrBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
                 },
                 /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i32_rotr_imm16)]
                 I32RotrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i64` count-leading-zeros (clz) instruction.
                 #[snake_name(i64_clz)]
                 I64Clz {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// `i64` count-trailing-zeros (ctz) instruction.
                 #[snake_name(i64_ctz)]
                 I64Ctz {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// `i64` pop-count instruction.
                 #[snake_name(i64_popcnt)]
                 I64Popcnt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// `i64` add instruction: `r0 = r1 + r2`
                 #[snake_name(i64_add)]
                 I64Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
                 ///
@@ -3965,9 +3965,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I64Add`] for 16-bit constant values.
                 #[snake_name(i64_add_imm16)]
                 I64AddImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -3975,11 +3975,11 @@ macro_rules! for_each_op_grouped {
                 /// `i64` subtract instruction: `r0 = r1 - r2`
                 #[snake_name(i64_sub)]
                 I64Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` subtract immediate instruction: `r0 = c0 - r1`
                 ///
@@ -3989,21 +3989,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since subtraction is not commutative.
                 #[snake_name(i64_sub_imm16_lhs)]
                 I64SubImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i64` multiply instruction: `r0 = r1 * r2`
                 #[snake_name(i64_mul)]
                 I64Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` multiply immediate instruction: `r0 = r1 * c0`
                 ///
@@ -4012,9 +4012,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I64Mul`] for 16-bit constant values.
                 #[snake_name(i64_mul_imm16)]
                 I64MulImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4022,11 +4022,11 @@ macro_rules! for_each_op_grouped {
                 /// `i64` signed-division instruction: `r0 = r1 / r2`
                 #[snake_name(i64_div_s)]
                 I64DivS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` signed-division immediate instruction: `r0 = r1 / c0`
                 ///
@@ -4036,9 +4036,9 @@ macro_rules! for_each_op_grouped {
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i64_div_s_imm16_rhs)]
                 I64DivSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI64>,
                 },
@@ -4051,21 +4051,21 @@ macro_rules! for_each_op_grouped {
                 /// - Optimized variant of [`Op::I64DivU`] for 16-bit constant values.
                 #[snake_name(i64_div_s_imm16_lhs)]
                 I64DivSImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i64` unsigned-division instruction: `r0 = r1 / r2`
                 #[snake_name(i64_div_u)]
                 I64DivU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` unsigned-division immediate instruction: `r0 = r1 / c0`
                 ///
@@ -4078,9 +4078,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I64DivU`] for 16-bit constant values.
                 #[snake_name(i64_div_u_imm16_rhs)]
                 I64DivUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU64>,
                 },
@@ -4093,21 +4093,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since unsigned-division is not commutative.
                 #[snake_name(i64_div_u_imm16_lhs)]
                 I64DivUImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i64` signed-remainder instruction: `r0 = r1 % r2`
                 #[snake_name(i64_rem_s)]
                 I64RemS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
                 ///
@@ -4117,9 +4117,9 @@ macro_rules! for_each_op_grouped {
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i64_rem_s_imm16_rhs)]
                 I64RemSImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI64>,
                 },
@@ -4132,21 +4132,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since signed-remainder is not commutative.
                 #[snake_name(i64_rem_s_imm16_lhs)]
                 I64RemSImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i64` unsigned-remainder instruction: `r0 = r1 % r2`
                 #[snake_name(i64_rem_u)]
                 I64RemU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
                 ///
@@ -4156,9 +4156,9 @@ macro_rules! for_each_op_grouped {
                 /// - Guarantees that the right-hand side operand is not zero.
                 #[snake_name(i64_rem_u_imm16_rhs)]
                 I64RemUImm16Rhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU64>,
                 },
@@ -4171,21 +4171,21 @@ macro_rules! for_each_op_grouped {
                 /// - Required instruction since unsigned-remainder is not commutative.
                 #[snake_name(i64_rem_u_imm16_lhs)]
                 I64RemUImm16Lhs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// `i64` bitwise-and instruction: `r0 = r1 & r2`
                 #[snake_name(i64_bitand)]
                 I64BitAnd {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
                 ///
@@ -4194,9 +4194,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I64BitAnd`] for 16-bit constant values.
                 #[snake_name(i64_bitand_imm16)]
                 I64BitAndImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4204,11 +4204,11 @@ macro_rules! for_each_op_grouped {
                 /// `i64` bitwise-or instruction: `r0 = r1 & r2`
                 #[snake_name(i64_bitor)]
                 I64BitOr {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
                 ///
@@ -4217,9 +4217,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I64BitOr`] for 16-bit constant values.
                 #[snake_name(i64_bitor_imm16)]
                 I64BitOrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4227,11 +4227,11 @@ macro_rules! for_each_op_grouped {
                 /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
                 #[snake_name(i64_bitxor)]
                 I64BitXor {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
                 ///
@@ -4240,9 +4240,9 @@ macro_rules! for_each_op_grouped {
                 /// Optimized variant of [`Op::I64BitXor`] for 16-bit constant values.
                 #[snake_name(i64_bitxor_imm16)]
                 I64BitXorImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4250,36 +4250,36 @@ macro_rules! for_each_op_grouped {
                 /// Logical `i64.and` instruction.
                 #[snake_name(i64_and)]
                 I64And {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I64And`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_and_imm16)]
                 I64AndImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
                 /// Logical `i64.or` instruction.
                 #[snake_name(i64_or)]
                 I64Or {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I64Or`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_or_imm16)]
                 I64OrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4289,18 +4289,18 @@ macro_rules! for_each_op_grouped {
                 /// This usually is the result of fusing `i64.and` + `i64.eqz`.
                 #[snake_name(i64_nand)]
                 I64Nand {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I64Nand`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_nand_imm16)]
                 I64NandImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4309,18 +4309,18 @@ macro_rules! for_each_op_grouped {
                 /// This usually is the result of fusing `i64.or` + `i64.eqz`.
                 #[snake_name(i64_nor)]
                 I64Nor {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Variant of [`Op::I64Nor`] with 16-bit `rhs` immediate.
                 #[snake_name(i64_nor_imm16)]
                 I64NorImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
                 },
@@ -4328,149 +4328,149 @@ macro_rules! for_each_op_grouped {
                 /// A Wasm `i64.shl` equivalent Wasmi instruction.
                 #[snake_name(i64_shl)]
                 I64Shl {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shl_by)]
                 I64ShlBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
                 },
                 /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_shl_imm16)]
                 I64ShlImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i64.shr_u` equivalent Wasmi instruction.
                 #[snake_name(i64_shr_u)]
                 I64ShrU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shr_u_by)]
                 I64ShrUBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
                 },
                 /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_shr_u_imm16)]
                 I64ShrUImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i64.shr_s` equivalent Wasmi instruction.
                 #[snake_name(i64_shr_s)]
                 I64ShrS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shr_s_by)]
                 I64ShrSBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
                 },
                 /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_shr_s_imm16)]
                 I64ShrSImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i64.rotl` equivalent Wasmi instruction.
                 #[snake_name(i64_rotl)]
                 I64Rotl {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_rotl_by)]
                 I64RotlBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
                 },
                 /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_rotl_imm16)]
                 I64RotlImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// A Wasm `i64.rotr` equivalent Wasmi instruction.
                 #[snake_name(i64_rotr)]
                 I64Rotr {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_rotr_by)]
                 I64RotrBy {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding one of the operands.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
                 },
                 /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
                 #[snake_name(i64_rotr_imm16)]
                 I64RotrImm16 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
                     /// The register holding one of the operands.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// Wasm `i32.wrap_i64` instruction.
                 #[snake_name(i32_wrap_i64)]
                 I32WrapI64 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// Wasm `i64.add128` instruction.
@@ -4481,15 +4481,15 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+                /// Followed by [`Op::Slot3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
                 #[snake_name(i64_add128)]
                 I64Add128 {
                     // Note:
-                    // - We are not using `FixedRegSpan` to be able to change both results independently.
+                    // - We are not using `FixedSlotSpan` to be able to change both results independently.
                     // - This allows for more `local.set` optimizations.
-                    @results: [Reg; 2],
+                    @results: [Slot; 2],
                     /// The 64 hi-bits of the `lhs` input parameter.
-                    lhs_lo: Reg,
+                    lhs_lo: Slot,
                 },
                 /// Wasm `i64.sub128` instruction.
                 ///
@@ -4499,15 +4499,15 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+                /// Followed by [`Op::Slot3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
                 #[snake_name(i64_sub128)]
                 I64Sub128 {
                     // Note:
-                    // - We are not using `FixedRegSpan` to be able to change both results independently.
+                    // - We are not using `FixedSlotSpan` to be able to change both results independently.
                     // - This allows for more `local.set` optimizations.
-                    @results: [Reg; 2],
+                    @results: [Slot; 2],
                     /// The low 64-bits of the `lhs` input parameter.
-                    lhs_lo: Reg,
+                    lhs_lo: Slot,
                 },
                 /// Wasm `i64.mul_wide_s` instruction.
                 ///
@@ -4516,11 +4516,11 @@ macro_rules! for_each_op_grouped {
                 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
                 #[snake_name(i64_mul_wide_s)]
                 I64MulWideS {
-                    @results: FixedRegSpan<2>,
+                    @results: FixedSlotSpan<2>,
                     /// The `lhs` input value for the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The `rhs` input value for the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64.mul_wide_u` instruction.
                 ///
@@ -4529,11 +4529,11 @@ macro_rules! for_each_op_grouped {
                 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
                 #[snake_name(i64_mul_wide_u)]
                 I64MulWideU {
-                    @results: FixedRegSpan<2>,
+                    @results: FixedSlotSpan<2>,
                     /// The `lhs` input value for the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The `rhs` input value for the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// Wasm `i32.extend8_s` instruction.
@@ -4543,9 +4543,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `sign-extension` proposal.
                 #[snake_name(i32_extend8_s)]
                 I32Extend8S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.extend16_s` instruction.
                 ///
@@ -4554,9 +4554,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `sign-extension` proposal.
                 #[snake_name(i32_extend16_s)]
                 I32Extend16S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.extend8_s` instruction.
                 ///
@@ -4565,9 +4565,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `sign-extension` proposal.
                 #[snake_name(i64_extend8_s)]
                 I64Extend8S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
                 ///
@@ -4576,9 +4576,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `sign-extension` proposal.
                 #[snake_name(i64_extend16_s)]
                 I64Extend16S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.extend32_s` instruction.
                 ///
@@ -4587,129 +4587,129 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `sign-extension` proposal.
                 #[snake_name(i64_extend32_s)]
                 I64Extend32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// Wasm `f32.abs` equivalent Wasmi instruction.
                 #[snake_name(f32_abs)]
                 F32Abs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.neg` equivalent Wasmi instruction.
                 #[snake_name(f32_neg)]
                 F32Neg {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.ceil` equivalent Wasmi instruction.
                 #[snake_name(f32_ceil)]
                 F32Ceil {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.floor` equivalent Wasmi instruction.
                 #[snake_name(f32_floor)]
                 F32Floor {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.trunc` equivalent Wasmi instruction.
                 #[snake_name(f32_trunc)]
                 F32Trunc {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.nearest` equivalent Wasmi instruction.
                 #[snake_name(f32_nearest)]
                 F32Nearest {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.sqrt` equivalent Wasmi instruction.
                 #[snake_name(f32_sqrt)]
                 F32Sqrt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.add` equivalent Wasmi instruction.
                 #[snake_name(f32_add)]
                 F32Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.sub` equivalent Wasmi instruction.
                 #[snake_name(f32_sub)]
                 F32Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.mul` equivalent Wasmi instruction.
                 #[snake_name(f32_mul)]
                 F32Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.div` equivalent Wasmi instruction.
                 #[snake_name(f32_div)]
                 F32Div {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.min` equivalent Wasmi instruction.
                 #[snake_name(f32_min)]
                 F32Min {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.max` equivalent Wasmi instruction.
                 #[snake_name(f32_max)]
                 F32Max {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.copysign` equivalent Wasmi instruction.
                 #[snake_name(f32_copysign)]
                 F32Copysign {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f32.copysign` equivalent Wasmi instruction with NaN canonicalization.
                 #[snake_name(f32_copysign_imm)]
                 F32CopysignImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
                     rhs: Sign<f32>,
                 },
@@ -4717,121 +4717,121 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `f64.abs` equivalent Wasmi instruction.
                 #[snake_name(f64_abs)]
                 F64Abs {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.neg` equivalent Wasmi instruction.
                 #[snake_name(f64_neg)]
                 F64Neg {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.ceil` equivalent Wasmi instruction.
                 #[snake_name(f64_ceil)]
                 F64Ceil {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.floor` equivalent Wasmi instruction.
                 #[snake_name(f64_floor)]
                 F64Floor {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.trunc` equivalent Wasmi instruction.
                 #[snake_name(f64_trunc)]
                 F64Trunc {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.nearest` equivalent Wasmi instruction.
                 #[snake_name(f64_nearest)]
                 F64Nearest {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.sqrt` equivalent Wasmi instruction.
                 #[snake_name(f64_sqrt)]
                 F64Sqrt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.add` equivalent Wasmi instruction.
                 #[snake_name(f64_add)]
                 F64Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.sub` equivalent Wasmi instruction.
                 #[snake_name(f64_sub)]
                 F64Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.mul` equivalent Wasmi instruction.
                 #[snake_name(f64_mul)]
                 F64Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.div` equivalent Wasmi instruction.
                 #[snake_name(f64_div)]
                 F64Div {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.min` equivalent Wasmi instruction.
                 #[snake_name(f64_min)]
                 F64Min {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.max` equivalent Wasmi instruction.
                 #[snake_name(f64_max)]
                 F64Max {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.copysign` equivalent Wasmi instruction.
                 #[snake_name(f64_copysign)]
                 F64Copysign {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `f64.copysign` equivalent Wasmi instruction with imediate `rhs` value.
                 #[snake_name(f64_copysign_imm)]
                 F64CopysignImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the left-hand side value.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the right-hand side value.
                     rhs: Sign<f64>,
                 },
@@ -4839,58 +4839,58 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i32.trunc_f32_s` instruction.
                 #[snake_name(i32_trunc_f32_s)]
                 I32TruncF32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.trunc_f32_u` instruction.
                 #[snake_name(i32_trunc_f32_u)]
                 I32TruncF32U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.trunc_f64_s` instruction.
                 #[snake_name(i32_trunc_f64_s)]
                 I32TruncF64S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.trunc_f64_u` instruction.
                 #[snake_name(i32_trunc_f64_u)]
                 I32TruncF64U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_f32_s` instruction.
                 #[snake_name(i64_trunc_f32_s)]
                 I64TruncF32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_f32_u` instruction.
                 #[snake_name(i64_trunc_f32_u)]
                 I64TruncF32U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_f64_s` instruction.
                 #[snake_name(i64_trunc_f64_s)]
                 I64TruncF64S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_f64_u` instruction.
                 #[snake_name(i64_trunc_f64_u)]
                 I64TruncF64U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// Wasm `i32.trunc_sat_f32_s` instruction.
@@ -4900,9 +4900,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i32_trunc_sat_f32_s)]
                 I32TruncSatF32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.trunc_sat_f32_u` instruction.
                 ///
@@ -4911,9 +4911,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i32_trunc_sat_f32_u)]
                 I32TruncSatF32U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.trunc_sat_f64_s` instruction.
                 ///
@@ -4922,9 +4922,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i32_trunc_sat_f64_s)]
                 I32TruncSatF64S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i32.trunc_sat_f64_u` instruction.
                 ///
@@ -4933,9 +4933,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i32_trunc_sat_f64_u)]
                 I32TruncSatF64U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f32_s` instruction.
                 ///
@@ -4944,9 +4944,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i64_trunc_sat_f32_s)]
                 I64TruncSatF32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f32_u` instruction.
                 ///
@@ -4955,9 +4955,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i64_trunc_sat_f32_u)]
                 I64TruncSatF32U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f64_s` instruction.
                 ///
@@ -4966,9 +4966,9 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i64_trunc_sat_f64_s)]
                 I64TruncSatF64S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `i64.trunc_sat_f64_u` instruction.
                 ///
@@ -4977,81 +4977,81 @@ macro_rules! for_each_op_grouped {
                 /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
                 #[snake_name(i64_trunc_sat_f64_u)]
                 I64TruncSatF64U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// Wasm `f32.demote_f64` instruction.
                 #[snake_name(f32_demote_f64)]
                 F32DemoteF64 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.promote_f32` instruction.
                 #[snake_name(f64_promote_f32)]
                 F64PromoteF32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// Wasm `f32.convert_i32_s` instruction.
                 #[snake_name(f32_convert_i32_s)]
                 F32ConvertI32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.convert_i32_u` instruction.
                 #[snake_name(f32_convert_i32_u)]
                 F32ConvertI32U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.convert_i64_s` instruction.
                 #[snake_name(f32_convert_i64_s)]
                 F32ConvertI64S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f32.convert_i64_u` instruction.
                 #[snake_name(f32_convert_i64_u)]
                 F32ConvertI64U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.convert_i32_s` instruction.
                 #[snake_name(f64_convert_i32_s)]
                 F64ConvertI32S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.convert_i32_u` instruction.
                 #[snake_name(f64_convert_i32_u)]
                 F64ConvertI32U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.convert_i64_s` instruction.
                 #[snake_name(f64_convert_i64_s)]
                 F64ConvertI64S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
                 /// Wasm `f64.convert_i64_u` instruction.
                 #[snake_name(f64_convert_i64_u)]
                 F64ConvertI64U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the input of the instruction.
-                    input: Reg,
+                    input: Slot,
                 },
 
                 /// A Wasm `table.get` instruction: `result = table[index]`
@@ -5061,9 +5061,9 @@ macro_rules! for_each_op_grouped {
                 /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_get)]
                 TableGet {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the index of the table element to get.
-                    index: Reg,
+                    index: Slot,
                 },
                 /// Variant of [`Op::TableGet`] with constant `index` value.
                 ///
@@ -5072,7 +5072,7 @@ macro_rules! for_each_op_grouped {
                 /// This [`Op`] must be followed by an [`Op::TableIndex`].
                 #[snake_name(table_get_imm)]
                 TableGetImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The constant `index` value of the table element to get.
                     index: Const32<u64>,
                 },
@@ -5080,7 +5080,7 @@ macro_rules! for_each_op_grouped {
                 /// A Wasm `table.size` instruction.
                 #[snake_name(table_size)]
                 TableSize {
-                    @result: Reg,
+                    @result: Slot,
                     /// The index identifying the table for the instruction.
                     table: Table,
                 },
@@ -5093,9 +5093,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_set)]
                 TableSet {
                     /// The register holding the `index` of the instruction.
-                    index: Reg,
+                    index: Slot,
                     /// The register holding the `value` of the instruction.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Variant of [`Op::TableSet`] with constant `index` value.
                 ///
@@ -5105,7 +5105,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_set_at)]
                 TableSetAt {
                     /// The register holding the `value` of the instruction.
-                    value: Reg,
+                    value: Slot,
                     /// The constant `index` of the instruction.
                     index: Const32<u64>,
                 },
@@ -5123,11 +5123,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_copy)]
                 TableCopy {
                     /// The start index of the `dst` table.
-                    dst: Reg,
+                    dst: Slot,
                     /// The start index of the `src` table.
-                    src: Reg,
+                    src: Slot,
                     /// The number of copied elements.
-                    len: Reg,
+                    len: Slot,
                 },
 
                 /// Wasm `table.init <table> <elem>` instruction.
@@ -5143,11 +5143,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_init)]
                 TableInit {
                     /// The start index of the `dst` table.
-                    dst: Reg,
+                    dst: Slot,
                     /// The start index of the `src` table.
-                    src: Reg,
+                    src: Slot,
                     /// The number of copied elements.
-                    len: Reg,
+                    len: Slot,
                 },
 
                 /// Wasm `table.fill <table>` instruction: `table[dst..dst+len] = value`
@@ -5158,11 +5158,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_fill)]
                 TableFill {
                     /// The start index of the table to fill.
-                    dst: Reg,
+                    dst: Slot,
                     /// The number of elements to fill.
-                    len: Reg,
+                    len: Slot,
                     /// The value of the filled elements.
-                    value: Reg,
+                    value: Slot,
                 },
 
                 /// Wasm `table.grow <table>` instruction.
@@ -5172,11 +5172,11 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Op::TableIndex`] encoding the Wasm `table` instance.
                 #[snake_name(table_grow)]
                 TableGrow {
-                    @result: Reg,
+                    @result: Slot,
                     /// The number of elements to add to the table.
-                    delta: Reg,
+                    delta: Slot,
                     /// The value that is used to fill up the new cells.
-                    value: Reg,
+                    value: Slot,
                 },
 
                 /// A Wasm `elem.drop` equalivalent Wasmi instruction.
@@ -5193,7 +5193,7 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `memory.size` instruction.
                 #[snake_name(memory_size)]
                 MemorySize {
-                    @result: Reg,
+                    @result: Slot,
                     /// The index identifying the Wasm linear memory for the instruction.
                     memory: Memory,
                 },
@@ -5205,9 +5205,9 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Op::MemoryIndex`] encoding the Wasm `memory` instance.
                 #[snake_name(memory_grow)]
                 MemoryGrow {
-                    @result: Reg,
+                    @result: Slot,
                     /// The number of pages to add to the memory.
-                    delta: Reg,
+                    delta: Slot,
                 },
 
                 /// Wasm `memory.copy` instruction.
@@ -5223,11 +5223,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(memory_copy)]
                 MemoryCopy {
                     /// The start index of the `dst` memory.
-                    dst: Reg,
+                    dst: Slot,
                     /// The start index of the `src` memory.
-                    src: Reg,
+                    src: Slot,
                     /// The number of copied bytes.
-                    len: Reg,
+                    len: Slot,
                 },
 
                 /// Wasm `memory.fill` instruction.
@@ -5240,11 +5240,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(memory_fill)]
                 MemoryFill {
                     /// The start index of the memory to fill.
-                    dst: Reg,
+                    dst: Slot,
                     /// The byte value used to fill the memory.
-                    value: Reg,
+                    value: Slot,
                     /// The number of bytes to fill.
-                    len: Reg,
+                    len: Slot,
                 },
                 /// Variant of [`Op::MemoryFill`] with constant fill `value`.
                 ///
@@ -5254,11 +5254,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(memory_fill_imm)]
                 MemoryFillImm {
                     /// The start index of the memory to fill.
-                    dst: Reg,
+                    dst: Slot,
                     /// The byte value used to fill the memory.
                     value: u8,
                     /// The number of bytes to fill.
-                    len: Reg,
+                    len: Slot,
                 },
 
                 /// Wasm `memory.init <data>` instruction.
@@ -5274,11 +5274,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(memory_init)]
                 MemoryInit {
                     /// The start index of the `dst` memory.
-                    dst: Reg,
+                    dst: Slot,
                     /// The start index of the `src` data segment.
-                    src: Reg,
+                    src: Slot,
                     /// The number of bytes to initialize.
-                    len: Reg,
+                    len: Slot,
                 },
 
                 /// A [`Table`] instruction parameter.
@@ -5359,7 +5359,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_table_target)]
                 BranchTableTarget {
                     /// The registers where the values are going to be copied.
-                    results: RegSpan,
+                    results: SlotSpan,
                     /// The branching offset of the branch table target.
                     offset: BranchOffset,
                 },
@@ -5371,48 +5371,48 @@ macro_rules! for_each_op_grouped {
                     /// The 32-bit immediate value.
                     imm32: AnyConst32,
                 },
-                /// An instruction parameter with a [`Reg`] and a 32-bit immediate value.
+                /// An instruction parameter with a [`Slot`] and a 32-bit immediate value.
                 #[snake_name(register_and_imm32)]
-                RegisterAndImm32 {
-                    /// The [`Reg`] parameter value.
-                    reg: Reg,
+                SlotAndImm32 {
+                    /// The [`Slot`] parameter value.
+                    reg: Slot,
                     /// The 32-bit immediate value.
                     imm: AnyConst32,
                 },
-                /// A bounded [`RegSpan`] instruction parameter.
+                /// A bounded [`SlotSpan`] instruction parameter.
                 #[snake_name(register_span)]
-                RegisterSpan { span: BoundedRegSpan },
-                /// A [`Reg`] instruction parameter.
+                SlotSpan { span: BoundedSlotSpan },
+                /// A [`Slot`] instruction parameter.
                 ///
                 /// # Note
                 ///
                 /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register)]
-                Register {
-                    reg: Reg
+                Slot {
+                    reg: Slot
                 },
-                /// Two [`Reg`] instruction parameters.
+                /// Two [`Slot`] instruction parameters.
                 ///
                 /// # Note
                 ///
                 /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register2)]
-                Register2 {
-                    regs: [Reg; 2]
+                Slot2 {
+                    regs: [Slot; 2]
                 },
-                /// Three [`Reg`] instruction parameters.
+                /// Three [`Slot`] instruction parameters.
                 ///
                 /// # Note
                 ///
                 /// This [`Op`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register3)]
-                Register3 {
-                    regs: [Reg; 3]
+                Slot3 {
+                    regs: [Slot; 3]
                 },
-                /// [`Reg`] slice parameters.
+                /// [`Slot`] slice parameters.
                 ///
                 /// # Note
                 ///
@@ -5423,18 +5423,18 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This must always be followed by one of
                 ///
-                /// - [`Op::Register`]
-                /// - [`Op::Register2`]
-                /// - [`Op::Register3`]
+                /// - [`Op::Slot`]
+                /// - [`Op::Slot2`]
+                /// - [`Op::Slot3`]
                 #[snake_name(register_list)]
-                RegisterList {
-                    regs: [Reg; 3]
+                SlotList {
+                    regs: [Slot; 3]
                 },
                 /// Auxiliary [`Op`] to encode table access information for indirect call instructions.
                 #[snake_name(call_indirect_params)]
                 CallIndirectParams {
                     /// The index of the called function in the table.
-                    index: Reg,
+                    index: Slot,
                     /// The table which holds the called function at the index.
                     table: Table,
                 },
@@ -5452,115 +5452,115 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `i8x16.splat` instruction.
                 #[snake_name(i8x16_splat)]
                 I8x16Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The value to be splatted.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i16x8.splat` instruction.
                 #[snake_name(i16x8_splat)]
                 I16x8Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The value to be splatted.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i32x4.splat` instruction.
                 #[snake_name(i32x4_splat)]
                 I32x4Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The value to be splatted.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `i64x2.splat` instruction.
                 #[snake_name(i64x2_splat)]
                 I64x2Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The value to be splatted.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `f32x4.splat` instruction.
                 #[snake_name(f32x4_splat)]
                 F32x4Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The value to be splatted.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Wasm `f64x2.splat` instruction.
                 #[snake_name(f64x2_splat)]
                 F64x2Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The value to be splatted.
-                    value: Reg,
+                    value: Slot,
                 },
 
                 /// Wasm `i8x16.extract_lane_s` instruction.
                 #[snake_name(i8x16_extract_lane_s)]
                 I8x16ExtractLaneS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx16,
                 },
                 /// Wasm `i8x16.extract_lane_u` instruction.
                 #[snake_name(i8x16_extract_lane_u)]
                 I8x16ExtractLaneU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx16,
                 },
                 /// Wasm `i16x8.extract_lane_s` instruction.
                 #[snake_name(i16x8_extract_lane_s)]
                 I16x8ExtractLaneS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx8,
                 },
                 /// Wasm `i16x8.extract_lane_u` instruction.
                 #[snake_name(i16x8_extract_lane_u)]
                 I16x8ExtractLaneU {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx8,
                 },
                 /// Wasm `i32x4.extract_lane` instruction.
                 #[snake_name(i32x4_extract_lane)]
                 I32x4ExtractLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx4,
                 },
                 /// Wasm `i64x2.extract_lane` instruction.
                 #[snake_name(i64x2_extract_lane)]
                 I64x2ExtractLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx2,
                 },
                 /// Wasm `f32x4.extract_lane` instruction.
                 #[snake_name(f32x4_extract_lane)]
                 F32x4ExtractLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx4,
                 },
                 /// Wasm `f64x2.extract_lane` instruction.
                 #[snake_name(f64x2_extract_lane)]
                 F64x2ExtractLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`].
-                    value: Reg,
+                    value: Slot,
                     /// The lane to extract the value.
                     lane: ImmLaneIdx2,
                 },
@@ -5569,21 +5569,21 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding `value`.
+                /// Followed by [`Op::Slot`] encoding `value`.
                 #[snake_name(i8x16_replace_lane)]
                 I8x16ReplaceLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx16,
                 },
                 /// Variant of [`Op::I8x16ReplaceLane`] with imediate `value`.
                 #[snake_name(i8x16_replace_lane_imm)]
                 I8x16ReplaceLaneImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx16,
                     /// The value replacing the `lane` in `input`.
@@ -5593,12 +5593,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding `value`.
+                /// Followed by [`Op::Slot`] encoding `value`.
                 #[snake_name(i16x8_replace_lane)]
                 I16x8ReplaceLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx8,
                 },
@@ -5609,9 +5609,9 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Op::Const32`] encoding the immediate `value` of type `i16`.
                 #[snake_name(i16x8_replace_lane_imm)]
                 I16x8ReplaceLaneImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx8,
                 },
@@ -5619,12 +5619,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding `value`.
+                /// Followed by [`Op::Slot`] encoding `value`.
                 #[snake_name(i32x4_replace_lane)]
                 I32x4ReplaceLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx4,
                 },
@@ -5632,12 +5632,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding the immediate `value` of type `i32`.
+                /// Followed by [`Op::Slot`] encoding the immediate `value` of type `i32`.
                 #[snake_name(i32x4_replace_lane_imm)]
                 I32x4ReplaceLaneImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx4,
                 },
@@ -5645,12 +5645,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding `value`.
+                /// Followed by [`Op::Slot`] encoding `value`.
                 #[snake_name(i64x2_replace_lane)]
                 I64x2ReplaceLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx2,
                 },
@@ -5661,9 +5661,9 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Op::I64Const32`] encoding the 32-bit `value`.
                 #[snake_name(i64x2_replace_lane_imm32)]
                 I64x2ReplaceLaneImm32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx2,
                 },
@@ -5671,12 +5671,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding `value`.
+                /// Followed by [`Op::Slot`] encoding `value`.
                 #[snake_name(f32x4_replace_lane)]
                 F32x4ReplaceLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx4,
                 },
@@ -5687,9 +5687,9 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Op::Const32`] encoding `value` of type `f32`.
                 #[snake_name(f32x4_replace_lane_imm)]
                 F32x4ReplaceLaneImm {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx4,
                 },
@@ -5697,12 +5697,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding `value`.
+                /// Followed by [`Op::Slot`] encoding `value`.
                 #[snake_name(f64x2_replace_lane)]
                 F64x2ReplaceLane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx2,
                 },
@@ -5713,9 +5713,9 @@ macro_rules! for_each_op_grouped {
                 /// Followed by [`Op::F64Const32`] encoding the 32-bit immediate `value`.
                 #[snake_name(f64x2_replace_lane_imm32)]
                 F64x2ReplaceLaneImm32 {
-                    @result: Reg,
+                    @result: Slot,
                     /// The input [`V128`] that gets a value replaced.
-                    input: Reg,
+                    input: Slot,
                     /// The lane of the replaced value.
                     lane: ImmLaneIdx2,
                 },
@@ -5724,830 +5724,830 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding the `selector` of type [`V128`].
+                /// Followed by [`Op::Slot`] encoding the `selector` of type [`V128`].
                 #[snake_name(i8x16_shuffle)]
                 I8x16Shuffle {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.swizzle` instruction.
                 #[snake_name(i8x16_swizzle)]
                 I8x16Swizzle {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register holding the `input` of the instruction.
-                    input: Reg,
+                    input: Slot,
                     /// The register holding the `selector` of the instruction.
-                    selector: Reg,
+                    selector: Slot,
                 },
 
                 /// Wasm `i8x16.add` instruction.
                 #[snake_name(i8x16_add)]
                 I8x16Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.add` instruction.
                 #[snake_name(i16x8_add)]
                 I16x8Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.add` instruction.
                 #[snake_name(i32x4_add)]
                 I32x4Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.add` instruction.
                 #[snake_name(i64x2_add)]
                 I64x2Add {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.sub` instruction.
                 #[snake_name(i8x16_sub)]
                 I8x16Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.sub` instruction.
                 #[snake_name(i16x8_sub)]
                 I16x8Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.sub` instruction.
                 #[snake_name(i32x4_sub)]
                 I32x4Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.sub` instruction.
                 #[snake_name(i64x2_sub)]
                 I64x2Sub {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.mul` instruction.
                 #[snake_name(i16x8_mul)]
                 I16x8Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.mul` instruction.
                 #[snake_name(i32x4_mul)]
                 I32x4Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.mul` instruction.
                 #[snake_name(i64x2_mul)]
                 I64x2Mul {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// Wasm `i32x4.dot_i16x8_s` instruction.
                 #[snake_name(i32x4_dot_i16x8_s)]
                 I32x4DotI16x8S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.relaxed_dot_i8x16_i7x8_s` instruction.
                 #[snake_name(i16x8_relaxed_dot_i8x16_i7x16_s)]
                 I16x8RelaxedDotI8x16I7x16S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Op::Register`] encoding `c`.
+                /// Followed by an [`Op::Slot`] encoding `c`.
                 #[snake_name(i32x4_relaxed_dot_i8x16_i7x16_add_s)]
                 I32x4RelaxedDotI8x16I7x16AddS {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `lhs` of the instruction.
-                    lhs: Reg,
+                    lhs: Slot,
                     /// The register storing the `rhs` of the instruction.
-                    rhs: Reg,
+                    rhs: Slot,
                 },
 
                 /// Wasm `f32x4.relaxed_madd` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Op::Register`] encoding `c`.
+                /// Followed by an [`Op::Slot`] encoding `c`.
                 #[snake_name(f32x4_relaxed_madd)]
                 F32x4RelaxedMadd {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `a` of the instruction.
-                    a: Reg,
+                    a: Slot,
                     /// The register storing the `b` of the instruction.
-                    b: Reg,
+                    b: Slot,
                 },
                 /// Wasm `f32x4.relaxed_nmadd` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Op::Register`] encoding `c`.
+                /// Followed by an [`Op::Slot`] encoding `c`.
                 #[snake_name(f32x4_relaxed_nmadd)]
                 F32x4RelaxedNmadd {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `a` of the instruction.
-                    a: Reg,
+                    a: Slot,
                     /// The register storing the `b` of the instruction.
-                    b: Reg,
+                    b: Slot,
                 },
                 /// Wasm `f64x2.relaxed_madd` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Op::Register`] encoding `c`.
+                /// Followed by an [`Op::Slot`] encoding `c`.
                 #[snake_name(f64x2_relaxed_madd)]
                 F64x2RelaxedMadd {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `a` of the instruction.
-                    a: Reg,
+                    a: Slot,
                     /// The register storing the `b` of the instruction.
-                    b: Reg,
+                    b: Slot,
                 },
                 /// Wasm `f64x2.relaxed_nmadd` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Op::Register`] encoding `c`.
+                /// Followed by an [`Op::Slot`] encoding `c`.
                 #[snake_name(f64x2_relaxed_nmadd)]
                 F64x2RelaxedNmadd {
-                    @result: Reg,
+                    @result: Slot,
                     /// The register storing the `a` of the instruction.
-                    a: Reg,
+                    a: Slot,
                     /// The register storing the `b` of the instruction.
-                    b: Reg,
+                    b: Slot,
                 },
 
                 /// Wasm `i8x16.neg` instruction.
                 #[snake_name(i8x16_neg)]
                 I8x16Neg {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.neg` instruction.
                 #[snake_name(i16x8_neg)]
                 I16x8Neg {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.neg` instruction.
                 #[snake_name(i32x4_neg)]
                 I32x4Neg {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.neg` instruction.
                 #[snake_name(i64x2_neg)]
                 I64x2Neg {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `i16x8.extmul_low_i8x16_s` instruction.
                 #[snake_name(i16x8_extmul_low_i8x16_s)]
                 I16x8ExtmulLowI8x16S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.extmul_high_i8x16_s` instruction.
                 #[snake_name(i16x8_extmul_high_i8x16_s)]
                 I16x8ExtmulHighI8x16S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.extmul_low_i8x16_u` instruction.
                 #[snake_name(i16x8_extmul_low_i8x16_u)]
                 I16x8ExtmulLowI8x16U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.extmul_high_i8x16_u` instruction.
                 #[snake_name(i16x8_extmul_high_i8x16_u)]
                 I16x8ExtmulHighI8x16U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.extmul_low_i16x8_s` instruction.
                 #[snake_name(i32x4_extmul_low_i16x8_s)]
                 I32x4ExtmulLowI16x8S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.extmul_high_i16x8_s` instruction.
                 #[snake_name(i32x4_extmul_high_i16x8_s)]
                 I32x4ExtmulHighI16x8S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.extmul_low_i16x8_u` instruction.
                 #[snake_name(i32x4_extmul_low_i16x8_u)]
                 I32x4ExtmulLowI16x8U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.extmul_high_i16x8_u` instruction.
                 #[snake_name(i32x4_extmul_high_i16x8_u)]
                 I32x4ExtmulHighI16x8U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.extmul_low_i32x4_s` instruction.
                 #[snake_name(i64x2_extmul_low_i32x4_s)]
                 I64x2ExtmulLowI32x4S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.extmul_high_i32x4_s` instruction.
                 #[snake_name(i64x2_extmul_high_i32x4_s)]
                 I64x2ExtmulHighI32x4S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.extmul_low_i32x4_u` instruction.
                 #[snake_name(i64x2_extmul_low_i32x4_u)]
                 I64x2ExtmulLowI32x4U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.extmul_high_i32x4_u` instruction.
                 #[snake_name(i64x2_extmul_high_i32x4_u)]
                 I64x2ExtmulHighI32x4U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i16x8.extadd_pairwise_i8x16_s` instruction.
                 #[snake_name(i16x8_extadd_pairwise_i8x16_s)]
                 I16x8ExtaddPairwiseI8x16S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.extadd_pairwise_i8x16_u` instruction.
                 #[snake_name(i16x8_extadd_pairwise_i8x16_u)]
                 I16x8ExtaddPairwiseI8x16U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.extadd_pairwise_i16x8_s` instruction.
                 #[snake_name(i32x4_extadd_pairwise_i16x8_s)]
                 I32x4ExtaddPairwiseI16x8S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.extadd_pairwise_i16x8_u` instruction.
                 #[snake_name(i32x4_extadd_pairwise_i16x8_u)]
                 I32x4ExtaddPairwiseI16x8U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `i8x16.add_sat_s` instruction.
                 #[snake_name(i8x16_add_sat_s)]
                 I8x16AddSatS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.add_sat_u` instruction.
                 #[snake_name(i8x16_add_sat_u)]
                 I8x16AddSatU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.add_sat_s` instruction.
                 #[snake_name(i16x8_add_sat_s)]
                 I16x8AddSatS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.add_sat_u` instruction.
                 #[snake_name(i16x8_add_sat_u)]
                 I16x8AddSatU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.sub_sat_s` instruction.
                 #[snake_name(i8x16_sub_sat_s)]
                 I8x16SubSatS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.sub_sat_u` instruction.
                 #[snake_name(i8x16_sub_sat_u)]
                 I8x16SubSatU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.sub_sat_s` instruction.
                 #[snake_name(i16x8_sub_sat_s)]
                 I16x8SubSatS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.sub_sat_u` instruction.
                 #[snake_name(i16x8_sub_sat_u)]
                 I16x8SubSatU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i16x8.q15mulr_sat_s` instruction.
                 #[snake_name(i16x8_q15mulr_sat_s)]
                 I16x8Q15MulrSatS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i8x16.min_s` instruction.
                 #[snake_name(i8x16_min_s)]
                 I8x16MinS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.min_u` instruction.
                 #[snake_name(i8x16_min_u)]
                 I8x16MinU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.min_s` instruction.
                 #[snake_name(i16x8_min_s)]
                 I16x8MinS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.min_u` instruction.
                 #[snake_name(i16x8_min_u)]
                 I16x8MinU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.min_s` instruction.
                 #[snake_name(i32x4_min_s)]
                 I32x4MinS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.min_u` instruction.
                 #[snake_name(i32x4_min_u)]
                 I32x4MinU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.max_s` instruction.
                 #[snake_name(i8x16_max_s)]
                 I8x16MaxS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.max_u` instruction.
                 #[snake_name(i8x16_max_u)]
                 I8x16MaxU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.max_s` instruction.
                 #[snake_name(i16x8_max_s)]
                 I16x8MaxS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.max_u` instruction.
                 #[snake_name(i16x8_max_u)]
                 I16x8MaxU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.max_s` instruction.
                 #[snake_name(i32x4_max_s)]
                 I32x4MaxS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.max_u` instruction.
                 #[snake_name(i32x4_max_u)]
                 I32x4MaxU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i8x16.avgr_u` instruction.
                 #[snake_name(i8x16_avgr_u)]
                 I8x16AvgrU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.avgr_u` instruction.
                 #[snake_name(i16x8_avgr_u)]
                 I16x8AvgrU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i8x16.abs` instruction.
                 #[snake_name(i8x16_abs)]
                 I8x16Abs {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.abs` instruction.
                 #[snake_name(i16x8_abs)]
                 I16x8Abs {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.abs` instruction.
                 #[snake_name(i32x4_abs)]
                 I32x4Abs {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.abs` instruction.
                 #[snake_name(i64x2_abs)]
                 I64x2Abs {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `i8x16.shl` instruction.
                 #[snake_name(i8x16_shl)]
                 I8x16Shl {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I8x16Shl`] with immediate shift amount.
                 #[snake_name(i8x16_shl_by)]
                 I8x16ShlBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i16x8.shl` instruction.
                 #[snake_name(i16x8_shl)]
                 I16x8Shl {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I16x8Shl`] with immediate shift amount.
                 #[snake_name(i16x8_shl_by)]
                 I16x8ShlBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i32x4.shl` instruction.
                 #[snake_name(i32x4_shl)]
                 I32x4Shl {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I32x4Shl`] with immediate shift amount.
                 #[snake_name(i32x4_shl_by)]
                 I32x4ShlBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i64x2.shl` instruction.
                 #[snake_name(i64x2_shl)]
                 I64x2Shl {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I64x2Shl`] with immediate shift amount.
                 #[snake_name(i64x2_shl_by)]
                 I64x2ShlBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i8x16.shr_s` instruction.
                 #[snake_name(i8x16_shr_s)]
                 I8x16ShrS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I8x16ShrS`] with immediate shift amount.
                 #[snake_name(i8x16_shr_s_by)]
                 I8x16ShrSBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i8x16.shr_u` instruction.
                 #[snake_name(i8x16_shr_u)]
                 I8x16ShrU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I8x16ShrU`] with immediate shift amount.
                 #[snake_name(i8x16_shr_u_by)]
                 I8x16ShrUBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i16x8.shr_s` instruction.
                 #[snake_name(i16x8_shr_s)]
                 I16x8ShrS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I16x8ShrS`] with immediate shift amount.
                 #[snake_name(i16x8_shr_s_by)]
                 I16x8ShrSBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i16x8.shr_u` instruction.
                 #[snake_name(i16x8_shr_u)]
                 I16x8ShrU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I16x8ShrU`] with immediate shift amount.
                 #[snake_name(i16x8_shr_u_by)]
                 I16x8ShrUBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i32x4.shr_s` instruction.
                 #[snake_name(i32x4_shr_s)]
                 I32x4ShrS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I32x4ShrS`] with immediate shift amount.
                 #[snake_name(i32x4_shr_s_by)]
                 I32x4ShrSBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i32x4.shr_u` instruction.
                 #[snake_name(i32x4_shr_u)]
                 I32x4ShrU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I32x4ShrU`] with immediate shift amount.
                 #[snake_name(i32x4_shr_u_by)]
                 I32x4ShrUBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i64x2.shr_s` instruction.
                 #[snake_name(i64x2_shr_s)]
                 I64x2ShrS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I64x2ShrS`] with immediate shift amount.
                 #[snake_name(i64x2_shr_s_by)]
                 I64x2ShrSBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i64x2.shr_u` instruction.
                 #[snake_name(i64x2_shr_u)]
                 I64x2ShrU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Variants of [`Op::I64x2ShrU`] with immediate shift amount.
                 #[snake_name(i64x2_shr_u_by)]
                 I64x2ShrUBy {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
                 },
@@ -6555,839 +6555,839 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `v128.and` instruction.
                 #[snake_name(v128_and)]
                 V128And {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `v128.or` instruction.
                 #[snake_name(v128_or)]
                 V128Or {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `v128.xor` instruction.
                 #[snake_name(v128_xor)]
                 V128Xor {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `v128.andnot` instruction.
                 #[snake_name(v128_andnot)]
                 V128Andnot {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `v128.not` instruction.
                 #[snake_name(v128_not)]
                 V128Not {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `v128.bitselect` instruction.
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Op::Register`] encoding the `selector`.
+                /// Followed by [`Op::Slot`] encoding the `selector`.
                 #[snake_name(v128_bitselect)]
                 V128Bitselect {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i8x16.popcnt` instruction.
                 #[snake_name(i8x16_popcnt)]
                 I8x16Popcnt {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `v128.any_true` instruction.
                 #[snake_name(v128_any_true)]
                 V128AnyTrue {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i8x16.all_true` instruction.
                 #[snake_name(i8x16_all_true)]
                 I8x16AllTrue {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.all_true` instruction.
                 #[snake_name(i16x8_all_true)]
                 I16x8AllTrue {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.all_true` instruction.
                 #[snake_name(i32x4_all_true)]
                 I32x4AllTrue {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.all_true` instruction.
                 #[snake_name(i64x2_all_true)]
                 I64x2AllTrue {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i8x16.bitmask` instruction.
                 #[snake_name(i8x16_bitmask)]
                 I8x16Bitmask {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.bitmask` instruction.
                 #[snake_name(i16x8_bitmask)]
                 I16x8Bitmask {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.bitmask` instruction.
                 #[snake_name(i32x4_bitmask)]
                 I32x4Bitmask {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.bitmask` instruction.
                 #[snake_name(i64x2_bitmask)]
                 I64x2Bitmask {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `i8x16.eq` instruction.
                 #[snake_name(i8x16_eq)]
                 I8x16Eq {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.eq` instruction.
                 #[snake_name(i16x8_eq)]
                 I16x8Eq {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.eq` instruction.
                 #[snake_name(i32x4_eq)]
                 I32x4Eq {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.eq` instruction.
                 #[snake_name(i64x2_eq)]
                 I64x2Eq {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.eq` instruction.
                 #[snake_name(f32x4_eq)]
                 F32x4Eq {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.eq` instruction.
                 #[snake_name(f64x2_eq)]
                 F64x2Eq {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.ne` instruction.
                 #[snake_name(i8x16_ne)]
                 I8x16Ne {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.ne` instruction.
                 #[snake_name(i16x8_ne)]
                 I16x8Ne {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.ne` instruction.
                 #[snake_name(i32x4_ne)]
                 I32x4Ne {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.ne` instruction.
                 #[snake_name(i64x2_ne)]
                 I64x2Ne {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.ne` instruction.
                 #[snake_name(f32x4_ne)]
                 F32x4Ne {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.ne` instruction.
                 #[snake_name(f64x2_ne)]
                 F64x2Ne {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.lt_s` instruction.
                 #[snake_name(i8x16_lt_s)]
                 I8x16LtS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.lt_u` instruction.
                 #[snake_name(i8x16_lt_u)]
                 I8x16LtU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.lt_s` instruction.
                 #[snake_name(i16x8_lt_s)]
                 I16x8LtS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.lt_u` instruction.
                 #[snake_name(i16x8_lt_u)]
                 I16x8LtU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.lt_s` instruction.
                 #[snake_name(i32x4_lt_s)]
                 I32x4LtS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.lt_u` instruction.
                 #[snake_name(i32x4_lt_u)]
                 I32x4LtU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.lt_s` instruction.
                 #[snake_name(i64x2_lt_s)]
                 I64x2LtS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.lt` instruction.
                 #[snake_name(f32x4_lt)]
                 F32x4Lt {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.lt` instruction.
                 #[snake_name(f64x2_lt)]
                 F64x2Lt {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.le_s` instruction.
                 #[snake_name(i8x16_le_s)]
                 I8x16LeS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.le_u` instruction.
                 #[snake_name(i8x16_le_u)]
                 I8x16LeU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.le_s` instruction.
                 #[snake_name(i16x8_le_s)]
                 I16x8LeS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.le_u` instruction.
                 #[snake_name(i16x8_le_u)]
                 I16x8LeU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.le_s` instruction.
                 #[snake_name(i32x4_le_s)]
                 I32x4LeS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i32x4.le_u` instruction.
                 #[snake_name(i32x4_le_u)]
                 I32x4LeU {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i64x2.le_s` instruction.
                 #[snake_name(i64x2_le_s)]
                 I64x2LeS {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.le` instruction.
                 #[snake_name(f32x4_le)]
                 F32x4Le {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.le` instruction.
                 #[snake_name(f64x2_le)]
                 F64x2Le {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `f32x4.neg` instruction.
                 #[snake_name(f32x4_neg)]
                 F32x4Neg {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.neg` instruction.
                 #[snake_name(f64x2_neg)]
                 F64x2Neg {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.abs` instruction.
                 #[snake_name(f32x4_abs)]
                 F32x4Abs {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.abs` instruction.
                 #[snake_name(f64x2_abs)]
                 F64x2Abs {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `f32x4.min` instruction.
                 #[snake_name(f32x4_min)]
                 F32x4Min {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.min` instruction.
                 #[snake_name(f64x2_min)]
                 F64x2Min {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.max` instruction.
                 #[snake_name(f32x4_max)]
                 F32x4Max {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.max` instruction.
                 #[snake_name(f64x2_max)]
                 F64x2Max {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.pmin` instruction.
                 #[snake_name(f32x4_pmin)]
                 F32x4Pmin {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.pmin` instruction.
                 #[snake_name(f64x2_pmin)]
                 F64x2Pmin {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.pmax` instruction.
                 #[snake_name(f32x4_pmax)]
                 F32x4Pmax {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.pmax` instruction.
                 #[snake_name(f64x2_pmax)]
                 F64x2Pmax {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.add` instruction.
                 #[snake_name(f32x4_add)]
                 F32x4Add {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.add` instruction.
                 #[snake_name(f64x2_add)]
                 F64x2Add {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.sub` instruction.
                 #[snake_name(f32x4_sub)]
                 F32x4Sub {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.sub` instruction.
                 #[snake_name(f64x2_sub)]
                 F64x2Sub {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.div` instruction.
                 #[snake_name(f32x4_div)]
                 F32x4Div {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.div` instruction.
                 #[snake_name(f64x2_div)]
                 F64x2Div {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f32x4.mul` instruction.
                 #[snake_name(f32x4_mul)]
                 F32x4Mul {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `f64x2.mul` instruction.
                 #[snake_name(f64x2_mul)]
                 F64x2Mul {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Register holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slot holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `f32x4.sqrt` instruction.
                 #[snake_name(f32x4_sqrt)]
                 F32x4Sqrt {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.sqrt` instruction.
                 #[snake_name(f64x2_sqrt)]
                 F64x2Sqrt {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.ceil` instruction.
                 #[snake_name(f32x4_ceil)]
                 F32x4Ceil {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.ceil` instruction.
                 #[snake_name(f64x2_ceil)]
                 F64x2Ceil {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.floor` instruction.
                 #[snake_name(f32x4_floor)]
                 F32x4Floor {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.floor` instruction.
                 #[snake_name(f64x2_floor)]
                 F64x2Floor {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.trunc` instruction.
                 #[snake_name(f32x4_trunc)]
                 F32x4Trunc {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.trunc` instruction.
                 #[snake_name(f64x2_trunc)]
                 F64x2Trunc {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.nearest` instruction.
                 #[snake_name(f32x4_nearest)]
                 F32x4Nearest {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.nearest` instruction.
                 #[snake_name(f64x2_nearest)]
                 F64x2Nearest {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `f32x4.convert_i32x4_s` instruction.
                 #[snake_name(f32x4_convert_i32x4_s)]
                 F32x4ConvertI32x4S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.convert_i32x4_u` instruction.
                 #[snake_name(f32x4_convert_i32x4_u)]
                 F32x4ConvertI32x4U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.convert_low_i32x4_s` instruction.
                 #[snake_name(f64x2_convert_low_i32x4_s)]
                 F64x2ConvertLowI32x4S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.convert_low_i32x4_u` instruction.
                 #[snake_name(f64x2_convert_low_i32x4_u)]
                 F64x2ConvertLowI32x4U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.trunc_sat_f32x4_s` instruction.
                 #[snake_name(i32x4_trunc_sat_f32x4_s)]
                 I32x4TruncSatF32x4S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.trunc_sat_f32x4_u` instruction.
                 #[snake_name(i32x4_trunc_sat_f32x4_u)]
                 I32x4TruncSatF32x4U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.trunc_sat_f64x2_s_zero` instruction.
                 #[snake_name(i32x4_trunc_sat_f64x2_s_zero)]
                 I32x4TruncSatF64x2SZero {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.trunc_sat_f64x2_u_zero` instruction.
                 #[snake_name(i32x4_trunc_sat_f64x2_u_zero)]
                 I32x4TruncSatF64x2UZero {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f32x4.demote_f64x2_zero` instruction.
                 #[snake_name(f32x4_demote_f64x2_zero)]
                 F32x4DemoteF64x2Zero {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `f64x2.promote_low_f32x4` instruction.
                 #[snake_name(f64x2_promote_low_f32x4)]
                 F64x2PromoteLowF32x4 {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `i8x16.narrow_i16x8_s` instruction.
                 #[snake_name(i8x16_narrow_i16x8_s)]
                 I8x16NarrowI16x8S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Regstier holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slotstier holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i8x16.narrow_i16x8_u` instruction.
                 #[snake_name(i8x16_narrow_i16x8_u)]
                 I8x16NarrowI16x8U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Regstier holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slotstier holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.narrow_i32x4_s` instruction.
                 #[snake_name(i16x8_narrow_i32x4_s)]
                 I16x8NarrowI32x4S {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Regstier holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slotstier holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
                 /// Wasm `i16x8.narrow_i32x4_u` instruction.
                 #[snake_name(i16x8_narrow_i32x4_u)]
                 I16x8NarrowI32x4U {
-                    @result: Reg,
-                    /// Register holding the `lhs` of the instruction.
-                    lhs: Reg,
-                    /// Regstier holding the `rhs` of the instruction.
-                    rhs: Reg,
+                    @result: Slot,
+                    /// Slot holding the `lhs` of the instruction.
+                    lhs: Slot,
+                    /// Slotstier holding the `rhs` of the instruction.
+                    rhs: Slot,
                 },
 
                 /// Wasm `i16x8.extend_low_i8x16_s` instruction.
                 #[snake_name(i16x8_extend_low_i8x16_s)]
                 I16x8ExtendLowI8x16S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.extend_high_i8x16_s` instruction.
                 #[snake_name(i16x8_extend_high_i8x16_s)]
                 I16x8ExtendHighI8x16S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.extend_low_i8x16_u` instruction.
                 #[snake_name(i16x8_extend_low_i8x16_u)]
                 I16x8ExtendLowI8x16U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i16x8.extend_high_i8x16_u` instruction.
                 #[snake_name(i16x8_extend_high_i8x16_u)]
                 I16x8ExtendHighI8x16U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.extend_low_i16x8_s` instruction.
                 #[snake_name(i32x4_extend_low_i16x8_s)]
                 I32x4ExtendLowI16x8S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.extend_high_i16x8_s` instruction.
                 #[snake_name(i32x4_extend_high_i16x8_s)]
                 I32x4ExtendHighI16x8S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.extend_low_i16x8_u` instruction.
                 #[snake_name(i32x4_extend_low_i16x8_u)]
                 I32x4ExtendLowI16x8U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i32x4.extend_high_i16x8_u` instruction.
                 #[snake_name(i32x4_extend_high_i16x8_u)]
                 I32x4ExtendHighI16x8U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.extend_low_i32x4_s` instruction.
                 #[snake_name(i64x2_extend_low_i32x4_s)]
                 I64x2ExtendLowI32x4S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.extend_high_i32x4_s` instruction.
                 #[snake_name(i64x2_extend_high_i32x4_s)]
                 I64x2ExtendHighI32x4S {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.extend_low_i32x4_u` instruction.
                 #[snake_name(i64x2_extend_low_i32x4_u)]
                 I64x2ExtendLowI32x4U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
                 /// Wasm `i64x2.extend_high_i32x4_u` instruction.
                 #[snake_name(i64x2_extend_high_i32x4_u)]
                 I64x2ExtendHighI32x4U {
-                    @result: Reg,
-                    /// Register holding the `input` of the instruction.
-                    input: Reg,
+                    @result: Slot,
+                    /// Slot holding the `input` of the instruction.
+                    input: Slot,
                 },
 
                 /// Wasm `v128.store` instruction.
@@ -7396,14 +7396,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// - Optional [`Op::MemoryIndex`]: encoding memory index used
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_store)]
                 V128Store {
                     /// The register storing the `pointer` of the store instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7415,11 +7415,11 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_store_offset16)]
                 V128StoreOffset16 {
                     /// The register storing the `pointer` of the store instruction.
-                    ptr: Reg,
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                     /// The register storing the `value` of the store instruction.
-                    value: Reg,
+                    value: Slot,
                 },
                 /// Variant of [`Op::V128Store`] with 32-bit immediate address.
                 ///
@@ -7431,7 +7431,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_store_at)]
                 V128StoreAt {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The 32-bit constant address to store the value.
                     address: Address32,
                 },
@@ -7442,14 +7442,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
                 #[snake_name(v128_store8_lane)]
                 V128Store8Lane {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7460,10 +7460,10 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store8_lane_offset8)]
                 V128Store8LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
-                    /// Register storing the `value` of the instruction.
-                    value: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
+                    /// Slot storing the `value` of the instruction.
+                    value: Slot,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
                     /// The lane of the stored [`V128`] `value`.
@@ -7477,7 +7477,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_store8_lane_at)]
                 V128Store8LaneAt {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The 32-bit constant address to store the value.
                     address: Address32,
                 },
@@ -7488,14 +7488,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
                 #[snake_name(v128_store16_lane)]
                 V128Store16Lane {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7506,10 +7506,10 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store16_lane_offset8)]
                 V128Store16LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
-                    /// Register storing the `value` of the instruction.
-                    value: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
+                    /// Slot storing the `value` of the instruction.
+                    value: Slot,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
                     /// The lane of the stored [`V128`] `value`.
@@ -7523,7 +7523,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_store16_lane_at)]
                 V128Store16LaneAt {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The 32-bit constant address to store the value.
                     address: Address32,
                 },
@@ -7534,14 +7534,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
                 #[snake_name(v128_store32_lane)]
                 V128Store32Lane {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7552,10 +7552,10 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store32_lane_offset8)]
                 V128Store32LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
-                    /// Register storing the `value` of the instruction.
-                    value: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
+                    /// Slot storing the `value` of the instruction.
+                    value: Slot,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
                     /// The lane of the stored [`V128`] `value`.
@@ -7569,7 +7569,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_store32_lane_at)]
                 V128Store32LaneAt {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The 32-bit constant address to store the value.
                     address: Address32,
                 },
@@ -7580,14 +7580,14 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Op::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Op::SlotAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Op::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
                 #[snake_name(v128_store64_lane)]
                 V128Store64Lane {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7598,10 +7598,10 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store64_lane_offset8)]
                 V128Store64LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
-                    ptr: Reg,
-                    /// Register storing the `value` of the instruction.
-                    value: Reg,
+                    /// Slot storing the `ptr` of the instruction.
+                    ptr: Slot,
+                    /// Slot storing the `value` of the instruction.
+                    value: Slot,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
                     /// The lane of the stored [`V128`] `value`.
@@ -7615,7 +7615,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_store64_lane_at)]
                 V128Store64LaneAt {
                     /// The value to be stored.
-                    value: Reg,
+                    value: Slot,
                     /// The 32-bit constant address to store the value.
                     address: Address32,
                 },
@@ -7626,13 +7626,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load)]
                 V128Load {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7645,7 +7645,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load_at)]
                 V128LoadAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7656,9 +7656,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load_offset16)]
                 V128LoadOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7669,13 +7669,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_zero)]
                 V128Load32Zero {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7688,7 +7688,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_zero_at)]
                 V128Load32ZeroAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7699,9 +7699,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load32_zero_offset16)]
                 V128Load32ZeroOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7712,13 +7712,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_zero)]
                 V128Load64Zero {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7731,7 +7731,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_zero_at)]
                 V128Load64ZeroAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7742,9 +7742,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load64_zero_offset16)]
                 V128Load64ZeroOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7755,13 +7755,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8_splat)]
                 V128Load8Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7774,7 +7774,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8_splat_at)]
                 V128Load8SplatAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7785,9 +7785,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load8_splat_offset16)]
                 V128Load8SplatOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7798,13 +7798,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16_splat)]
                 V128Load16Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7817,7 +7817,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16_splat_at)]
                 V128Load16SplatAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7828,9 +7828,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load16_splat_offset16)]
                 V128Load16SplatOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7841,13 +7841,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_splat)]
                 V128Load32Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7860,7 +7860,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_splat_at)]
                 V128Load32SplatAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7871,9 +7871,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load32_splat_offset16)]
                 V128Load32SplatOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7884,13 +7884,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_splat)]
                 V128Load64Splat {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7903,7 +7903,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_splat_at)]
                 V128Load64SplatAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7914,9 +7914,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load64_splat_offset16)]
                 V128Load64SplatOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7927,13 +7927,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_s)]
                 V128Load8x8S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7946,7 +7946,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_s_at)]
                 V128Load8x8SAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -7957,9 +7957,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load8x8_s_offset16)]
                 V128Load8x8SOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -7970,13 +7970,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_u)]
                 V128Load8x8U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -7989,7 +7989,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8x8_u_at)]
                 V128Load8x8UAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8000,9 +8000,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load8x8_u_offset16)]
                 V128Load8x8UOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -8013,13 +8013,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_s)]
                 V128Load16x4S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8032,7 +8032,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_s_at)]
                 V128Load16x4SAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8043,9 +8043,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load16x4_s_offset16)]
                 V128Load16x4SOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -8056,13 +8056,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_u)]
                 V128Load16x4U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8075,7 +8075,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16x4_u_at)]
                 V128Load16x4UAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8086,9 +8086,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load16x4_u_offset16)]
                 V128Load16x4UOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -8099,13 +8099,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_s)]
                 V128Load32x2S {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8118,7 +8118,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_s_at)]
                 V128Load32x2SAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8129,9 +8129,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load32x2_s_offset16)]
                 V128Load32x2SOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -8142,13 +8142,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_u)]
                 V128Load32x2U {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8161,7 +8161,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32x2_u_at)]
                 V128Load32x2UAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8172,9 +8172,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_load32x2_u_offset16)]
                 V128Load32x2UOffset16 {
-                    @result: Reg,
-                    /// Register holding the `ptr` of the instruction.
-                    ptr: Reg,
+                    @result: Slot,
+                    /// Slot holding the `ptr` of the instruction.
+                    ptr: Slot,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
                 },
@@ -8185,8 +8185,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::SlotAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8196,7 +8196,7 @@ macro_rules! for_each_op_grouped {
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
                 #[snake_name(v128_load8_lane)]
                 V128Load8Lane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8206,13 +8206,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Op::SlotAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load8_lane_at)]
                 V128Load8LaneAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8223,8 +8223,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::SlotAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8234,7 +8234,7 @@ macro_rules! for_each_op_grouped {
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
                 #[snake_name(v128_load16_lane)]
                 V128Load16Lane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8244,13 +8244,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Op::SlotAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load16_lane_at)]
                 V128Load16LaneAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8261,8 +8261,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::SlotAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8272,7 +8272,7 @@ macro_rules! for_each_op_grouped {
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
                 #[snake_name(v128_load32_lane)]
                 V128Load32Lane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8282,13 +8282,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Op::SlotAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load32_lane_at)]
                 V128Load32LaneAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },
@@ -8299,8 +8299,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Op::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Op::SlotAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Op::SlotAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Op::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8310,7 +8310,7 @@ macro_rules! for_each_op_grouped {
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
                 #[snake_name(v128_load64_lane)]
                 V128Load64Lane {
-                    @result: Reg,
+                    @result: Slot,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
                 },
@@ -8320,13 +8320,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Op::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Op::SlotAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Op::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Op::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_load64_lane_at)]
                 V128Load64LaneAt {
-                    @result: Reg,
+                    @result: Slot,
                     /// The `ptr+offset` address of the load instruction.
                     address: Address32,
                 },

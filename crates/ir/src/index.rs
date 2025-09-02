@@ -5,8 +5,8 @@ use crate::Error;
 macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
-            /// A Wasmi register.
-            Reg(pub(crate) i16);
+            /// A Wasmi stack slot.
+            Slot(pub(crate) i16);
             /// A Wasm function index.
             Func(pub(crate) u32);
             /// A Wasm function type index.
@@ -62,18 +62,18 @@ macro_rules! define_index {
 }
 for_each_index!(define_index);
 
-impl TryFrom<u32> for Reg {
+impl TryFrom<u32> for Slot {
     type Error = Error;
 
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
         i16::try_from(local_index)
-            .map_err(|_| Error::RegisterOutOfBounds)
+            .map_err(|_| Error::StackSlotOutOfBounds)
             .map(Self::from)
     }
 }
 
-impl Reg {
-    /// Returns the n-th next [`Reg`] from `self` with contiguous index.
+impl Slot {
+    /// Returns the n-th next [`Slot`] from `self` with contiguous index.
     ///
     /// # Note
     ///
@@ -83,7 +83,7 @@ impl Reg {
         Self(self.0.wrapping_add_unsigned(n))
     }
 
-    /// Returns the n-th previous [`Reg`] from `self` with contiguous index.
+    /// Returns the n-th previous [`Slot`] from `self` with contiguous index.
     ///
     /// # Note
     ///
@@ -93,12 +93,12 @@ impl Reg {
         Self(self.0.wrapping_sub_unsigned(n))
     }
 
-    /// Returns the [`Reg`] with the next contiguous index.
+    /// Returns the [`Slot`] with the next contiguous index.
     pub fn next(self) -> Self {
         self.next_n(1)
     }
 
-    /// Returns the [`Reg`] with the previous contiguous index.
+    /// Returns the [`Slot`] with the previous contiguous index.
     pub fn prev(self) -> Self {
         self.prev_n(1)
     }

@@ -23,7 +23,7 @@ use wasmi_core as core;
 pub use self::{
     error::Error,
     immeditate::{AnyConst16, AnyConst32, Const16, Const32},
-    index::Reg,
+    index::Slot,
     primitive::{
         Address,
         Address32,
@@ -42,6 +42,6 @@ pub use self::{
         Sign,
     },
     r#enum::Op,
-    span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
+    span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
     visit_results::VisitResults,
 };

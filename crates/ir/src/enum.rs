@@ -106,98 +106,106 @@ impl Clone for Op {
 }
 
 impl Op {
-    /// Creates a new [`Op::ReturnReg2`] for the given [`Reg`] indices.
-    pub fn return_reg2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
+    /// Creates a new [`Op::ReturnSlot2`] for the given [`Slot`] indices.
+    pub fn return_reg2_ext(reg0: impl Into<Slot>, reg1: impl Into<Slot>) -> Self {
         Self::return_reg2([reg0.into(), reg1.into()])
     }
 
-    /// Creates a new [`Op::ReturnReg3`] for the given [`Reg`] indices.
+    /// Creates a new [`Op::ReturnSlot3`] for the given [`Slot`] indices.
     pub fn return_reg3_ext(
-        reg0: impl Into<Reg>,
-        reg1: impl Into<Reg>,
-        reg2: impl Into<Reg>,
+        reg0: impl Into<Slot>,
+        reg1: impl Into<Slot>,
+        reg2: impl Into<Slot>,
     ) -> Self {
         Self::return_reg3([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Op::ReturnMany`] for the given [`Reg`] indices.
+    /// Creates a new [`Op::ReturnMany`] for the given [`Slot`] indices.
     pub fn return_many_ext(
-        reg0: impl Into<Reg>,
-        reg1: impl Into<Reg>,
-        reg2: impl Into<Reg>,
+        reg0: impl Into<Slot>,
+        reg1: impl Into<Slot>,
+        reg2: impl Into<Slot>,
     ) -> Self {
         Self::return_many([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Op::Copy2`].
-    pub fn copy2_ext(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
-        let span = FixedRegSpan::new(results).unwrap_or_else(|_| {
-            panic!("encountered invalid `results` `RegSpan` for `Copy2`: {results:?}")
+    pub fn copy2_ext(results: SlotSpan, value0: impl Into<Slot>, value1: impl Into<Slot>) -> Self {
+        let span = FixedSlotSpan::new(results).unwrap_or_else(|_| {
+            panic!("encountered invalid `results` `SlotSpan` for `Copy2`: {results:?}")
         });
         Self::copy2(span, [value0.into(), value1.into()])
     }
 
     /// Creates a new [`Op::CopyMany`].
-    pub fn copy_many_ext(results: RegSpan, head0: impl Into<Reg>, head1: impl Into<Reg>) -> Self {
+    pub fn copy_many_ext(
+        results: SlotSpan,
+        head0: impl Into<Slot>,
+        head1: impl Into<Slot>,
+    ) -> Self {
         Self::copy_many(results, [head0.into(), head1.into()])
     }
 
-    /// Creates a new [`Op::Register2`] instruction parameter.
-    pub fn register2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
+    /// Creates a new [`Op::Slot2`] instruction parameter.
+    pub fn register2_ext(reg0: impl Into<Slot>, reg1: impl Into<Slot>) -> Self {
         Self::register2([reg0.into(), reg1.into()])
     }
 
-    /// Creates a new [`Op::Register3`] instruction parameter.
-    pub fn register3_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
+    /// Creates a new [`Op::Slot3`] instruction parameter.
+    pub fn register3_ext(
+        reg0: impl Into<Slot>,
+        reg1: impl Into<Slot>,
+        reg2: impl Into<Slot>,
+    ) -> Self {
         Self::register3([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Op::RegisterList`] instruction parameter.
+    /// Creates a new [`Op::SlotList`] instruction parameter.
     pub fn register_list_ext(
-        reg0: impl Into<Reg>,
-        reg1: impl Into<Reg>,
-        reg2: impl Into<Reg>,
+        reg0: impl Into<Slot>,
+        reg1: impl Into<Slot>,
+        reg2: impl Into<Slot>,
     ) -> Self {
         Self::register_list([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Op::RegisterAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_offset_hi(reg: impl Into<Reg>, offset_hi: Offset64Hi) -> Self {
+    /// Creates a new [`Op::SlotAndImm32`] from the given `reg` and `offset_hi`.
+    pub fn register_and_offset_hi(reg: impl Into<Slot>, offset_hi: Offset64Hi) -> Self {
         Self::register_and_imm32(reg, offset_hi.0)
     }
 
-    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    /// Returns `Some` [`Slot`] and [`Offset64Hi`] if encoded properly.
     ///
     /// # Errors
     ///
     /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
-    pub fn filter_register_and_offset_hi(self) -> Result<(Reg, Offset64Hi), Self> {
-        if let Op::RegisterAndImm32 { reg, imm } = self {
+    pub fn filter_register_and_offset_hi(self) -> Result<(Slot, Offset64Hi), Self> {
+        if let Op::SlotAndImm32 { reg, imm } = self {
             return Ok((reg, Offset64Hi(u32::from(imm))));
         }
         Err(self)
     }
 
-    /// Creates a new [`Op::RegisterAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_lane<LaneType>(reg: impl Into<Reg>, lane: LaneType) -> Self
+    /// Creates a new [`Op::SlotAndImm32`] from the given `reg` and `offset_hi`.
+    pub fn register_and_lane<LaneType>(reg: impl Into<Slot>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
     {
         Self::register_and_imm32(reg, u32::from(lane.into()))
     }
 
-    /// Returns `Some` [`Reg`] and a `lane` index if encoded properly.
+    /// Returns `Some` [`Slot`] and a `lane` index if encoded properly.
     ///
     /// # Errors
     ///
     /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
-    pub fn filter_register_and_lane<LaneType>(self) -> Result<(Reg, LaneType), Self>
+    pub fn filter_register_and_lane<LaneType>(self) -> Result<(Slot, LaneType), Self>
     where
         LaneType: TryFrom<u8>,
     {
-        if let Op::RegisterAndImm32 { reg, imm } = self {
+        if let Op::SlotAndImm32 { reg, imm } = self {
             let lane_index = u32::from(imm) as u8;
             let Ok(lane) = LaneType::try_from(lane_index) else {
                 panic!("encountered out of bounds lane index: {}", lane_index)
@@ -212,7 +220,7 @@ impl Op {
         Self::imm16_and_imm32(value, offset_hi.0)
     }
 
-    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    /// Returns `Some` [`Slot`] and [`Offset64Hi`] if encoded properly.
     ///
     /// # Errors
     ///
