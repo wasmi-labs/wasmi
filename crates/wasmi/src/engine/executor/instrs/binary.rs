@@ -307,17 +307,17 @@ impl Executor<'_> {
 impl Executor<'_> {
     /// Executes an [`Op::F32CopysignImm`].
     pub fn execute_f32_copysign_imm(&mut self, result: Slot, lhs: Slot, rhs: Sign<f32>) {
-        let lhs = self.get_register_as::<f32>(lhs);
+        let lhs = self.get_stack_slot_as::<f32>(lhs);
         let rhs = f32::from(rhs);
-        self.set_register_as::<f32>(result, wasm::f32_copysign(lhs, rhs));
+        self.set_stack_slot_as::<f32>(result, wasm::f32_copysign(lhs, rhs));
         self.next_instr()
     }
 
     /// Executes an [`Op::F64CopysignImm`].
     pub fn execute_f64_copysign_imm(&mut self, result: Slot, lhs: Slot, rhs: Sign<f64>) {
-        let lhs = self.get_register_as::<f64>(lhs);
+        let lhs = self.get_stack_slot_as::<f64>(lhs);
         let rhs = f64::from(rhs);
-        self.set_register_as::<f64>(result, wasm::f64_copysign(lhs, rhs));
+        self.set_stack_slot_as::<f64>(result, wasm::f64_copysign(lhs, rhs));
         self.next_instr()
     }
 }

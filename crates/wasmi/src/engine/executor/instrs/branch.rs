@@ -31,7 +31,7 @@ impl Executor<'_> {
 
     /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
     fn fetch_branch_table_offset(&self, index: Slot, len_targets: u32) -> usize {
-        let index: u32 = self.get_register_as::<u32>(index);
+        let index: u32 = self.get_stack_slot_as::<u32>(index);
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
@@ -87,8 +87,8 @@ impl Executor<'_> {
     ) where
         UntypedVal: ReadAs<T>,
     {
-        let lhs: T = self.get_register_as(lhs);
-        let rhs: T = self.get_register_as(rhs);
+        let lhs: T = self.get_stack_slot_as(lhs);
+        let rhs: T = self.get_stack_slot_as(rhs);
         if f(lhs, rhs) {
             return self.branch_to(offset.into());
         }
@@ -106,7 +106,7 @@ impl Executor<'_> {
         T: From<Const16<T>>,
         UntypedVal: ReadAs<T>,
     {
-        let lhs: T = self.get_register_as(lhs);
+        let lhs: T = self.get_stack_slot_as(lhs);
         let rhs = T::from(rhs);
         if f(lhs, rhs) {
             return self.branch_to16(offset);
@@ -126,7 +126,7 @@ impl Executor<'_> {
         UntypedVal: ReadAs<T>,
     {
         let lhs = T::from(lhs);
-        let rhs: T = self.get_register_as(rhs);
+        let rhs: T = self.get_stack_slot_as(rhs);
         if f(lhs, rhs) {
             return self.branch_to16(offset);
         }
@@ -277,7 +277,7 @@ impl Executor<'_> {
     /// Executes an [`Op::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Slot, rhs: Slot, params: Slot) {
         use Comparator as C;
-        let params: u64 = self.get_register_as(params);
+        let params: u64 = self.get_stack_slot_as(params);
         let Some(params) = ComparatorAndOffset::from_u64(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };

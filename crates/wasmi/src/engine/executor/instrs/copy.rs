@@ -10,13 +10,13 @@ impl Executor<'_> {
     /// Executes a generic `copy` [`Op`].
     fn execute_copy_impl<T>(&mut self, result: Slot, value: T, f: fn(&mut Self, T) -> UntypedVal) {
         let value = f(self, value);
-        self.set_register(result, value);
+        self.set_stack_slot(result, value);
         self.next_instr()
     }
 
     /// Executes an [`Op::Copy`].
     pub fn execute_copy(&mut self, result: Slot, value: Slot) {
-        self.execute_copy_impl(result, value, |this, value| this.get_register(value))
+        self.execute_copy_impl(result, value, |this, value| this.get_stack_slot(value))
     }
 
     /// Executes an [`Op::Copy2`].
@@ -30,9 +30,9 @@ impl Executor<'_> {
         let result0 = results.span().head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
-        let tmp = self.get_register(values[1]);
-        self.set_register(result0, self.get_register(values[0]));
-        self.set_register(result1, tmp);
+        let tmp = self.get_stack_slot(values[1]);
+        self.set_stack_slot(result0, self.get_stack_slot(values[0]));
+        self.set_stack_slot(result1, tmp);
     }
 
     /// Executes an [`Op::CopyImm32`].
@@ -67,8 +67,8 @@ impl Executor<'_> {
         let results = results.iter(len);
         let values = values.iter(len);
         for (result, value) in results.into_iter().zip(values.into_iter()) {
-            let value = self.get_register(value);
-            self.set_register(result, value);
+            let value = self.get_stack_slot(value);
+            self.set_stack_slot(result, value);
         }
     }
 
@@ -90,8 +90,8 @@ impl Executor<'_> {
         let mut result = results.head();
         let mut copy_values = |values: &[Slot]| {
             for &value in values {
-                let value = self.get_register(value);
-                self.set_register(result, value);
+                let value = self.get_stack_slot(value);
+                self.set_stack_slot(result, value);
                 result = result.next();
             }
         };

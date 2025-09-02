@@ -408,8 +408,8 @@ impl FrameSlots {
     ///
     /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get(&self, register: Slot) -> UntypedVal {
-        ptr::read(self.register_offset(register))
+    pub unsafe fn get(&self, slot: Slot) -> UntypedVal {
+        ptr::read(self.register_offset(slot))
     }
 
     /// Returns the [`UntypedVal`] at the given [`Slot`].
@@ -418,11 +418,11 @@ impl FrameSlots {
     ///
     /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn read_as<T>(&self, register: Slot) -> T
+    pub unsafe fn read_as<T>(&self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
     {
-        UntypedVal::read_as(&*self.register_offset(register))
+        UntypedVal::read_as(&*self.register_offset(slot))
     }
 
     /// Sets the value of the `register` to `value`.`
@@ -431,8 +431,8 @@ impl FrameSlots {
     ///
     /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn set(&mut self, register: Slot, value: UntypedVal) {
-        ptr::write(self.register_offset(register), value)
+    pub unsafe fn set(&mut self, slot: Slot, value: UntypedVal) {
+        ptr::write(self.register_offset(slot), value)
     }
 
     /// Sets the value of the `register` to `value`.`
@@ -441,16 +441,16 @@ impl FrameSlots {
     ///
     /// It is the callers responsibility to provide a [`Slot`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn write_as<T>(&mut self, register: Slot, value: T)
+    pub unsafe fn write_as<T>(&mut self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
-        let val: &mut UntypedVal = &mut *self.register_offset(register);
+        let val: &mut UntypedVal = &mut *self.register_offset(slot);
         val.write_as(value);
     }
 
     /// Returns the underlying pointer offset by the [`Slot`] index.
-    unsafe fn register_offset(&self, register: Slot) -> *mut UntypedVal {
-        unsafe { self.ptr.offset(isize::from(i16::from(register))) }
+    unsafe fn register_offset(&self, slot: Slot) -> *mut UntypedVal {
+        unsafe { self.ptr.offset(isize::from(i16::from(slot))) }
     }
 }

@@ -134,7 +134,7 @@ impl Executor<'_> {
         self.ip.add(1);
         match *self.ip.get() {
             Op::CallIndirectParams { index, table } => {
-                let index: u64 = self.get_register_as(index);
+                let index: u64 = self.get_stack_slot_as(index);
                 (index, table)
             }
             unexpected => {
@@ -237,7 +237,7 @@ impl Executor<'_> {
     /// Copies an array of [`Slot`] to the `dst` [`Slot`] span.
     fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Slot; N]) {
         for value in regs {
-            let value = self.get_register(*value);
+            let value = self.get_stack_slot(*value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different

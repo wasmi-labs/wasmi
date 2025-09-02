@@ -53,7 +53,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_memory_bytes(memory, store);
         let loaded_value = load_extend(memory, address, u64::from(offset))?;
-        self.set_register_as::<T>(result, loaded_value);
+        self.set_stack_slot_as::<T>(result, loaded_value);
         Ok(())
     }
 
@@ -83,7 +83,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_memory_bytes(memory, store);
         let loaded_value = load_extend_at(memory, usize::from(address))?;
-        self.set_register_as::<T>(result, loaded_value);
+        self.set_stack_slot_as::<T>(result, loaded_value);
         Ok(())
     }
 
@@ -112,7 +112,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_default_memory_bytes();
         let loaded_value = load_extend(memory, address, u64::from(offset))?;
-        self.set_register_as::<T>(result, loaded_value);
+        self.set_stack_slot_as::<T>(result, loaded_value);
         Ok(())
     }
 
@@ -129,7 +129,7 @@ impl Executor<'_> {
     {
         let (ptr, offset_hi) = self.fetch_ptr_and_offset_hi();
         let memory = self.fetch_optional_memory(2);
-        let address = self.get_register_as::<u64>(ptr);
+        let address = self.get_stack_slot_as::<u64>(ptr);
         let offset = Offset64::combine(offset_hi, offset_lo);
         self.execute_load_extend::<T>(store, memory, result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
@@ -162,7 +162,7 @@ impl Executor<'_> {
     where
         UntypedVal: WriteAs<T>,
     {
-        let address = self.get_register_as::<u64>(ptr);
+        let address = self.get_stack_slot_as::<u64>(ptr);
         let offset = Offset64::from(offset);
         self.execute_load_extend_mem0::<T>(result, address, offset, load_extend)?;
         self.try_next_instr()

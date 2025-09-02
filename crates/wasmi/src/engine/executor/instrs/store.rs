@@ -135,8 +135,8 @@ impl Executor<'_> {
         let (value, offset_hi) = self.fetch_value_and_offset_hi();
         let memory = self.fetch_optional_memory(2);
         let offset = Offset64::combine(offset_hi, offset_lo);
-        let ptr = self.get_register_as::<u64>(ptr);
-        let value = self.get_register_as::<T>(value);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
+        let value = self.get_stack_slot_as::<T>(value);
         self.execute_store_wrap::<T>(store, memory, ptr, offset, value, store_op)?;
         self.try_next_instr_at(2)
     }
@@ -155,7 +155,7 @@ impl Executor<'_> {
     {
         let memory = self.fetch_optional_memory(2);
         let offset = Offset64::combine(offset_hi, offset_lo);
-        let ptr = self.get_register_as::<u64>(ptr);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
         self.execute_store_wrap::<T>(store, memory, ptr, offset, value, store_op)?;
         self.try_next_instr_at(2)
     }
@@ -170,8 +170,8 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<T>,
     {
-        let ptr = self.get_register_as::<u64>(ptr);
-        let value = self.get_register_as::<T>(value);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
+        let value = self.get_stack_slot_as::<T>(value);
         self.execute_store_wrap_mem0::<T>(ptr, Offset64::from(offset), value, store_op)?;
         self.try_next_instr()
     }
@@ -186,7 +186,7 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<T>,
     {
-        let ptr = self.get_register_as::<u64>(ptr);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
         self.execute_store_wrap_mem0::<T>(ptr, Offset64::from(offset), value, store_op)?;
         self.try_next_instr()
     }
@@ -206,7 +206,7 @@ impl Executor<'_> {
             store,
             memory,
             address,
-            self.get_register_as::<T>(value),
+            self.get_stack_slot_as::<T>(value),
             store_at_op,
         )?;
         self.try_next_instr()

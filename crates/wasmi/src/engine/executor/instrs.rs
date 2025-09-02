@@ -2279,17 +2279,17 @@ impl Executor<'_> {
     }
 
     /// Returns the [`Slot`] value.
-    fn get_register(&self, register: Slot) -> UntypedVal {
+    fn get_stack_slot(&self, slot: Slot) -> UntypedVal {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.get(register) }
+        unsafe { self.sp.get(slot) }
     }
 
-    /// Returns the [`Slot`] value.
-    fn get_register_as<T>(&self, register: Slot) -> T
+    /// Returns the [`Slot`] value as type `T`.
+    fn get_stack_slot_as<T>(&self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
     {
@@ -2298,21 +2298,21 @@ impl Executor<'_> {
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.read_as::<T>(register) }
+        unsafe { self.sp.read_as::<T>(slot) }
     }
 
     /// Sets the [`Slot`] value to `value`.
-    fn set_register(&mut self, register: Slot, value: impl Into<UntypedVal>) {
+    fn set_stack_slot(&mut self, slot: Slot, value: impl Into<UntypedVal>) {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.set(register, value.into()) };
+        unsafe { self.sp.set(slot, value.into()) };
     }
 
-    /// Sets the [`Slot`] value to `value`.
-    fn set_register_as<T>(&mut self, register: Slot, value: T)
+    /// Sets the [`Slot`] value to `value` of type `T`.
+    fn set_stack_slot_as<T>(&mut self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
@@ -2321,7 +2321,7 @@ impl Executor<'_> {
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.write_as::<T>(register, value) };
+        unsafe { self.sp.write_as::<T>(slot, value) };
     }
 
     /// Shifts the instruction pointer to the next instruction.
@@ -2406,8 +2406,8 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
-        let value = self.get_register_as::<P>(input);
-        self.set_register_as::<R>(result, op(value));
+        let value = self.get_stack_slot_as::<P>(input);
+        self.set_stack_slot_as::<R>(result, op(value));
         self.next_instr();
     }
 
@@ -2422,8 +2422,8 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
-        let value = self.get_register_as::<P>(input);
-        self.set_register_as::<R>(result, op(value)?);
+        let value = self.get_stack_slot_as::<P>(input);
+        self.set_stack_slot_as::<R>(result, op(value)?);
         self.try_next_instr()
     }
 
@@ -2438,9 +2438,9 @@ impl Executor<'_> {
     ) where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<Result>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<Result>(result, op(lhs, rhs));
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<Result>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2456,9 +2456,9 @@ impl Executor<'_> {
         Rhs: From<Const16<Rhs>>,
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2475,8 +2475,8 @@ impl Executor<'_> {
         UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
         let lhs = Lhs::from(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2492,9 +2492,9 @@ impl Executor<'_> {
         Rhs: From<ShiftAmount<Rhs>>,
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2510,9 +2510,9 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2529,9 +2529,9 @@ impl Executor<'_> {
         Rhs: From<Const16<Rhs>>,
         UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2547,9 +2547,9 @@ impl Executor<'_> {
         NonZeroT: From<Const16<NonZeroT>>,
         UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as::<Lhs>(lhs);
+        let lhs = self.get_stack_slot_as::<Lhs>(lhs);
         let rhs = <NonZeroT>::from(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs));
         self.next_instr()
     }
 
@@ -2567,8 +2567,8 @@ impl Executor<'_> {
         UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
         let lhs = Lhs::from(lhs);
-        let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        let rhs = self.get_stack_slot_as::<Rhs>(rhs);
+        self.set_stack_slot_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2646,7 +2646,7 @@ impl Executor<'_> {
     fn execute_ref_func(&mut self, result: Slot, func_index: index::Func) {
         let func = self.get_func(func_index);
         let funcref = <Ref<Func>>::from(func);
-        self.set_register(result, funcref);
+        self.set_stack_slot(result, funcref);
         self.next_instr();
     }
 }

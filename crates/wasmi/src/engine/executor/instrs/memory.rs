@@ -60,7 +60,7 @@ impl Executor<'_> {
     fn execute_memory_size_impl(&mut self, store: &StoreInner, result: Slot, memory: Memory) {
         let memory = self.get_memory(memory);
         let size = store.resolve_memory(&memory).size();
-        self.set_register(result, size);
+        self.set_stack_slot(result, size);
     }
 
     /// Executes an [`Op::MemoryGrow`].
@@ -70,7 +70,7 @@ impl Executor<'_> {
         result: Slot,
         delta: Slot,
     ) -> Result<(), Error> {
-        let delta: u64 = self.get_register_as(delta);
+        let delta: u64 = self.get_stack_slot_as(delta);
         let memory = self.fetch_memory_index(1);
         if delta == 0 {
             // Case: growing by 0 pages means there is nothing to do
@@ -103,7 +103,7 @@ impl Executor<'_> {
             }
             Err(error) => panic!("encountered an unexpected error: {error}"),
         };
-        self.set_register(result, return_value);
+        self.set_stack_slot(result, return_value);
         self.try_next_instr_at(2)
     }
 
@@ -115,9 +115,9 @@ impl Executor<'_> {
         src: Slot,
         len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let src: u64 = self.get_stack_slot_as(src);
+        let len: u64 = self.get_stack_slot_as(len);
         let Ok(dst_index) = usize::try_from(dst) else {
             return Err(Error::from(TrapCode::MemoryOutOfBounds));
         };
@@ -187,9 +187,9 @@ impl Executor<'_> {
         value: Slot,
         len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let value: u8 = self.get_stack_slot_as(value);
+        let len: u64 = self.get_stack_slot_as(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
@@ -201,8 +201,8 @@ impl Executor<'_> {
         value: u8,
         len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let len: u64 = self.get_stack_slot_as(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
@@ -242,9 +242,9 @@ impl Executor<'_> {
         src: Slot,
         len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let src: u32 = self.get_stack_slot_as(src);
+        let len: u32 = self.get_stack_slot_as(len);
         let Ok(dst_index) = usize::try_from(dst) else {
             return Err(Error::from(TrapCode::MemoryOutOfBounds));
         };

@@ -19,7 +19,7 @@ impl Executor<'_> {
                 *store.resolve_global(&global).get_untyped()
             }
         };
-        self.set_register(result, value);
+        self.set_stack_slot(result, value);
         self.next_instr()
     }
 
@@ -30,7 +30,7 @@ impl Executor<'_> {
         global: index::Global,
         input: Slot,
     ) {
-        let input = self.get_register(input);
+        let input = self.get_stack_slot(input);
         self.execute_global_set_impl(store, global, input)
     }
 

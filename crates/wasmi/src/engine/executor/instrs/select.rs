@@ -31,13 +31,13 @@ impl Executor<'_> {
         UntypedVal: ReadAs<T>,
     {
         let (true_val, false_val) = self.fetch_register_2();
-        let lhs: T = self.get_register_as(lhs);
-        let rhs: T = self.get_register_as(rhs);
-        let selected = self.get_register(match f(lhs, rhs) {
+        let lhs: T = self.get_stack_slot_as(lhs);
+        let rhs: T = self.get_stack_slot_as(rhs);
+        let selected = self.get_stack_slot(match f(lhs, rhs) {
             true => true_val,
             false => false_val,
         });
-        self.set_register(result, selected);
+        self.set_stack_slot(result, selected);
         self.next_instr_at(2);
     }
 
@@ -54,13 +54,13 @@ impl Executor<'_> {
         T: From<Const16<T>>,
     {
         let (true_val, false_val) = self.fetch_register_2();
-        let lhs: T = self.get_register_as(lhs);
+        let lhs: T = self.get_stack_slot_as(lhs);
         let rhs: T = rhs.into();
-        let selected = self.get_register(match f(lhs, rhs) {
+        let selected = self.get_stack_slot(match f(lhs, rhs) {
             true => true_val,
             false => false_val,
         });
-        self.set_register(result, selected);
+        self.set_stack_slot(result, selected);
         self.next_instr_at(2);
     }
 }

@@ -46,13 +46,13 @@ impl Executor<'_> {
             rhs_lo,
             rhs_hi,
         } = self.fetch_params128();
-        let lhs_lo: i64 = self.get_register_as(lhs_lo);
-        let lhs_hi: i64 = self.get_register_as(lhs_hi);
-        let rhs_lo: i64 = self.get_register_as(rhs_lo);
-        let rhs_hi: i64 = self.get_register_as(rhs_hi);
+        let lhs_lo: i64 = self.get_stack_slot_as(lhs_lo);
+        let lhs_hi: i64 = self.get_stack_slot_as(lhs_hi);
+        let rhs_lo: i64 = self.get_stack_slot_as(rhs_lo);
+        let rhs_hi: i64 = self.get_stack_slot_as(rhs_hi);
         let (result_lo, result_hi) = binop(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
-        self.set_register(results[0], result_lo);
-        self.set_register(results[1], result_hi);
+        self.set_stack_slot(results[0], result_lo);
+        self.set_stack_slot(results[1], result_hi);
         self.next_instr_at(2)
     }
 
@@ -74,12 +74,12 @@ impl Executor<'_> {
         rhs: Slot,
         mul_wide: I64MulWideFn,
     ) {
-        let lhs: i64 = self.get_register_as(lhs);
-        let rhs: i64 = self.get_register_as(rhs);
+        let lhs: i64 = self.get_stack_slot_as(lhs);
+        let rhs: i64 = self.get_stack_slot_as(rhs);
         let (result_lo, result_hi) = mul_wide(lhs, rhs);
         let results = results.to_array();
-        self.set_register(results[0], result_lo);
-        self.set_register(results[1], result_hi);
+        self.set_stack_slot(results[0], result_lo);
+        self.set_stack_slot(results[1], result_hi);
         self.next_instr()
     }
 

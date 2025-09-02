@@ -52,7 +52,7 @@ impl Executor<'_> {
         result: Slot,
         index: Slot,
     ) -> Result<(), Error> {
-        let index: u64 = self.get_register_as(index);
+        let index: u64 = self.get_stack_slot_as(index);
         self.execute_table_get_impl(store, result, index)
     }
 
@@ -80,7 +80,7 @@ impl Executor<'_> {
             .resolve_table(&table)
             .get_untyped(index)
             .ok_or(TrapCode::TableOutOfBounds)?;
-        self.set_register(result, value);
+        self.set_stack_slot(result, value);
         self.try_next_instr_at(2)
     }
 
@@ -94,7 +94,7 @@ impl Executor<'_> {
     fn execute_table_size_impl(&mut self, store: &StoreInner, result: Slot, table_index: Table) {
         let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
-        self.set_register(result, size);
+        self.set_stack_slot(result, size);
     }
 
     /// Executes an [`Op::TableSet`].
@@ -104,7 +104,7 @@ impl Executor<'_> {
         index: Slot,
         value: Slot,
     ) -> Result<(), Error> {
-        let index: u64 = self.get_register_as(index);
+        let index: u64 = self.get_stack_slot_as(index);
         self.execute_table_set_impl(store, index, value)
     }
 
@@ -128,7 +128,7 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.get_table(table_index);
-        let value = self.get_register(value);
+        let value = self.get_stack_slot(value);
         store
             .resolve_table_mut(&table)
             .set_untyped(index, value)
@@ -144,9 +144,9 @@ impl Executor<'_> {
         src: Slot,
         len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let src: u64 = self.get_stack_slot_as(src);
+        let len: u64 = self.get_stack_slot_as(len);
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
         if dst_table_index == src_table_index {
@@ -174,9 +174,9 @@ impl Executor<'_> {
         src: Slot,
         len: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let src: u32 = self.get_stack_slot_as(src);
+        let len: u32 = self.get_stack_slot_as(len);
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
         let (table, element, fuel) = store.resolve_table_init_params(
@@ -195,10 +195,10 @@ impl Executor<'_> {
         len: Slot,
         value: Slot,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_stack_slot_as(dst);
+        let len: u64 = self.get_stack_slot_as(len);
         let table_index = self.fetch_table_index(1);
-        let value = self.get_register(value);
+        let value = self.get_stack_slot(value);
         let table = self.get_table(table_index);
         let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
         table.fill_untyped(dst, value, len, Some(fuel))?;
@@ -213,7 +213,7 @@ impl Executor<'_> {
         delta: Slot,
         value: Slot,
     ) -> Result<(), Error> {
-        let delta: u64 = self.get_register_as(delta);
+        let delta: u64 = self.get_stack_slot_as(delta);
         let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
@@ -221,7 +221,7 @@ impl Executor<'_> {
             return self.try_next_instr_at(2);
         }
         let table = self.get_table(table_index);
-        let value = self.get_register(value);
+        let value = self.get_stack_slot(value);
         let return_value = match store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory) => {
@@ -239,7 +239,7 @@ impl Executor<'_> {
             }
             Err(error) => panic!("encountered unexpected error: {error}"),
         };
-        self.set_register(result, return_value);
+        self.set_stack_slot(result, return_value);
         self.try_next_instr_at(2)
     }
 

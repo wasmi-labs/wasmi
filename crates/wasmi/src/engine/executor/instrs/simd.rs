@@ -111,10 +111,10 @@ impl Executor<'_> {
     /// Executes an [`Op::I8x16Shuffle`] instruction.
     pub fn execute_i8x16_shuffle(&mut self, result: Slot, lhs: Slot, rhs: Slot) {
         let selector = self.fetch_register();
-        let lhs = self.get_register_as::<V128>(lhs);
-        let rhs = self.get_register_as::<V128>(rhs);
+        let lhs = self.get_stack_slot_as::<V128>(lhs);
+        let rhs = self.get_stack_slot_as::<V128>(rhs);
         let selector = self
-            .get_register_as::<V128>(selector)
+            .get_stack_slot_as::<V128>(selector)
             .as_u128()
             .to_ne_bytes()
             .map(|lane| {
@@ -126,7 +126,7 @@ impl Executor<'_> {
                     }
                 }
             });
-        self.set_register_as::<V128>(result, simd::i8x16_shuffle(lhs, rhs, selector));
+        self.set_stack_slot_as::<V128>(result, simd::i8x16_shuffle(lhs, rhs, selector));
         self.next_instr_at(2);
     }
 }
@@ -137,10 +137,10 @@ macro_rules! impl_ternary_simd_executors {
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Slot, a: Slot, b: Slot) {
                 let c = self.fetch_register();
-                let a = self.get_register_as::<V128>(a);
-                let b = self.get_register_as::<V128>(b);
-                let c = self.get_register_as::<V128>(c);
-                self.set_register_as::<V128>(result, $op(a, b, c));
+                let a = self.get_stack_slot_as::<V128>(a);
+                let b = self.get_stack_slot_as::<V128>(b);
+                let c = self.get_stack_slot_as::<V128>(c);
+                self.set_stack_slot_as::<V128>(result, $op(a, b, c));
                 self.next_instr_at(2);
             }
         )*
@@ -172,9 +172,9 @@ macro_rules! impl_replace_lane_ops {
             #[doc = concat!("Executes an [`Op::", stringify!($instr_name), "`].")]
             pub fn $exec_name(&mut self, result: Slot, input: Slot, lane: <$ty as IntoLaneIdx>::LaneIdx) {
                 let value = self.fetch_register();
-                let input = self.get_register_as::<V128>(input);
-                let value = self.get_register_as::<$ty>(value);
-                self.set_register_as::<V128>(result, $execute(input, lane, value));
+                let input = self.get_stack_slot_as::<V128>(input);
+                let value = self.get_stack_slot_as::<$ty>(value);
+                self.set_stack_slot_as::<V128>(result, $execute(input, lane, value));
                 self.next_instr_at(2);
             }
         )*
@@ -252,8 +252,8 @@ impl Executor<'_> {
         delta: usize,
         eval: fn(V128, LaneType, T) -> V128,
     ) {
-        let input = self.get_register_as::<V128>(input);
-        self.set_register_as::<V128>(result, eval(input, lane, value));
+        let input = self.get_stack_slot_as::<V128>(input);
+        self.set_stack_slot_as::<V128>(result, eval(input, lane, value));
         self.next_instr_at(delta);
     }
 
@@ -477,8 +477,8 @@ impl Executor<'_> {
     ) where
         UntypedVal: WriteAs<T>,
     {
-        let input = self.get_register_as::<V128>(input);
-        self.set_register_as::<T>(result, op(input, lane));
+        let input = self.get_stack_slot_as::<V128>(input);
+        self.set_stack_slot_as::<T>(result, op(input, lane));
         self.next_instr();
     }
 }
@@ -518,9 +518,9 @@ impl Executor<'_> {
         rhs: ShiftAmount<u32>,
         op: fn(V128, u32) -> V128,
     ) {
-        let lhs = self.get_register_as::<V128>(lhs);
+        let lhs = self.get_stack_slot_as::<V128>(lhs);
         let rhs = rhs.into();
-        self.set_register_as::<V128>(result, op(lhs, rhs));
+        self.set_stack_slot_as::<V128>(result, op(lhs, rhs));
         self.next_instr();
     }
 }
@@ -632,11 +632,11 @@ impl Executor<'_> {
         let (v128, lane) = self.fetch_value_and_lane::<LaneType>(2);
         let memory = self.fetch_optional_memory(3);
         let offset = Offset64::combine(offset_hi, offset_lo);
-        let ptr = self.get_register_as::<u64>(ptr);
-        let v128 = self.get_register_as::<V128>(v128);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
+        let v128 = self.get_stack_slot_as::<V128>(v128);
         let memory = self.fetch_memory_bytes(memory, store);
         let loaded = load(memory, ptr, u64::from(offset), v128, lane)?;
-        self.set_register_as::<V128>(result, loaded);
+        self.set_stack_slot_as::<V128>(result, loaded);
         self.try_next_instr_at(3)
     }
 
@@ -659,10 +659,10 @@ impl Executor<'_> {
     {
         let (v128, lane) = self.fetch_value_and_lane::<LaneType>(1);
         let memory = self.fetch_optional_memory(2);
-        let v128 = self.get_register_as::<V128>(v128);
+        let v128 = self.get_stack_slot_as::<V128>(v128);
         let memory = self.fetch_memory_bytes(memory, store);
         let loaded = load_at(memory, usize::from(address), v128, lane)?;
-        self.set_register_as::<V128>(result, loaded);
+        self.set_stack_slot_as::<V128>(result, loaded);
         self.try_next_instr_at(2)
     }
 
@@ -751,8 +751,8 @@ impl Executor<'_> {
         let (value, offset_hi) = self.fetch_value_and_offset_hi();
         let (lane, memory) = self.fetch_lane_and_memory(2);
         let offset = Offset64::combine(offset_hi, offset_lo);
-        let ptr = self.get_register_as::<u64>(ptr);
-        let v128 = self.get_register_as::<V128>(value);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
+        let v128 = self.get_stack_slot_as::<V128>(value);
         let memory = self.fetch_memory_bytes_mut(memory, store);
         eval(memory, ptr, u64::from(offset), v128, lane)?;
         self.try_next_instr_at(3)
@@ -773,9 +773,9 @@ impl Executor<'_> {
         lane: T::LaneIdx,
         eval: V128StoreLane<T::LaneIdx>,
     ) -> Result<(), Error> {
-        let ptr = self.get_register_as::<u64>(ptr);
+        let ptr = self.get_stack_slot_as::<u64>(ptr);
         let offset = u64::from(Offset64::from(offset));
-        let v128 = self.get_register_as::<V128>(value);
+        let v128 = self.get_stack_slot_as::<V128>(value);
         let memory = self.fetch_default_memory_bytes_mut();
         eval(memory, ptr, offset, v128, lane)?;
         self.try_next_instr()
@@ -799,7 +799,7 @@ impl Executor<'_> {
         T::LaneIdx: TryFrom<u8> + Into<u8>,
     {
         let (lane, memory) = self.fetch_lane_and_memory::<T::LaneIdx>(1);
-        let v128 = self.get_register_as::<V128>(value);
+        let v128 = self.get_stack_slot_as::<V128>(value);
         let memory = self.fetch_memory_bytes_mut(memory, store);
         eval(memory, usize::from(address), v128, lane)?;
         self.try_next_instr_at(2)

@@ -95,7 +95,7 @@ impl Executor<'_> {
 
     /// Execute an [`Op::ReturnSlot`] returning a single [`Slot`] value.
     pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Slot) -> ControlFlow {
-        self.execute_return_value(store, value, Self::get_register)
+        self.execute_return_value(store, value, Self::get_stack_slot)
     }
 
     /// Execute an [`Op::ReturnSlot2`] returning two [`Slot`] values.
@@ -125,7 +125,7 @@ impl Executor<'_> {
         let (mut caller_sp, results) = self.return_caller_results();
         debug_assert!(u16::try_from(N).is_ok());
         for (result, value) in results.iter(N as u16).zip(values) {
-            let value = self.get_register(value);
+            let value = self.get_stack_slot(value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
@@ -175,7 +175,7 @@ impl Executor<'_> {
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            let value = self.get_register(value);
+            let value = self.get_stack_slot(value);
             unsafe { caller_sp.set(result, value) }
         }
         self.return_impl(store)
@@ -204,7 +204,7 @@ impl Executor<'_> {
         let mut result = results.head();
         let mut copy_results = |values: &[Slot]| {
             for value in values {
-                let value = self.get_register(*value);
+                let value = self.get_stack_slot(*value);
                 // Safety: The `callee.results()` always refer to a span of valid
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
