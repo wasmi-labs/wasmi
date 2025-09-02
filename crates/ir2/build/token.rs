@@ -137,6 +137,7 @@ define_ident!(
     Store16: store16,
     Store32: store32,
     Store64: store64,
+    Store128: store128,
     Load8: load8,
     Load16: load16,
     Load32: load32,
@@ -295,4 +296,8 @@ define_ident!(
     PromoteLow: promote_low,
     TruncSatZero: trunc_sat_zero,
     ConvertLow: convert_low,
+    Store8Lane: store8_lane,
+    Store16Lane: store16_lane,
+    Store32Lane: store32_lane,
+    Store64Lane: store64_lane,
 );

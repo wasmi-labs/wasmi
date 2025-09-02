@@ -1098,10 +1098,28 @@ fn add_simd_load_ops(isa: &mut Isa) {
     }
 }
 
-fn add_simd_store_ops(_isa: &mut Isa) {
-    // v128.store memarg: (i32 v128) -> ()
-    // v128.store8_lane memarg laneidx: (i32 v128) -> ()
-    // v128.store16_lane memarg laneidx: (i32 v128) -> ()
-    // v128.store32_lane memarg laneidx: (i32 v128) -> ()
-    // v128.store64_lane memarg laneidx: (i32 v128) -> ()
+fn add_simd_store_ops(isa: &mut Isa) {
+    let kinds = [
+        StoreOpKind::Store128,
+        StoreOpKind::V128Store8Lane,
+        StoreOpKind::V128Store16Lane,
+        StoreOpKind::V128Store32Lane,
+        StoreOpKind::V128Store64Lane,
+    ];
+    for kind in kinds {
+        isa.push_op(StoreOp::new(
+            kind,
+            OperandKind::Stack,
+            OperandKind::Stack,
+            false,
+            false,
+        ));
+        isa.push_op(StoreOp::new(
+            kind,
+            OperandKind::Stack,
+            OperandKind::Stack,
+            true,
+            true,
+        ));
+    }
 }

@@ -199,6 +199,50 @@ impl<T: Decode> Decode for StoreOpMem0Offset16_S<T> {
 }
 
 #[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
+pub struct StoreLaneOp_S<T, LaneIdx> {
+    pub ptr: Stack,
+    pub offset: u64,
+    pub value: T,
+    pub memory: Memory,
+    pub lane: LaneIdx,
+}
+
+#[cfg(feature = "simd")]
+impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOp_S<T, LaneIdx> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self {
+            ptr: Decode::decode(decoder),
+            offset: Decode::decode(decoder),
+            value: Decode::decode(decoder),
+            memory: Decode::decode(decoder),
+            lane: Decode::decode(decoder),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
+pub struct StoreLaneOpMem0Offset16_S<T, LaneIdx> {
+    pub ptr: Stack,
+    pub offset: Offset16,
+    pub value: T,
+    pub lane: LaneIdx,
+}
+
+#[cfg(feature = "simd")]
+impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOpMem0Offset16_S<T, LaneIdx> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self {
+            ptr: Decode::decode(decoder),
+            offset: Decode::decode(decoder),
+            value: Decode::decode(decoder),
+            lane: Decode::decode(decoder),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct TableGet<T> {
     pub result: Stack,
     pub index: T,

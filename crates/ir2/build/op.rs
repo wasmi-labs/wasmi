@@ -1529,6 +1529,8 @@ pub enum FieldTy {
     ImmLaneIdx8,
     ImmLaneIdx4,
     ImmLaneIdx2,
+    Bytes16,
+    V128,
 }
 
 impl Display for FieldTy {
@@ -1569,6 +1571,8 @@ impl Display for FieldTy {
             Self::ImmLaneIdx8 => "ImmLaneIdx<8>",
             Self::ImmLaneIdx4 => "ImmLaneIdx<4>",
             Self::ImmLaneIdx2 => "ImmLaneIdx<2>",
+            Self::Bytes16 => "[u8; 16]",
+            Self::V128 => "V128",
         };
         write!(f, "{s}")
     }
@@ -1962,12 +1966,20 @@ impl StoreOp {
         Some(Field::new(Ident::Memory, FieldTy::Memory))
     }
 
-    pub fn fields(&self) -> [Option<Field>; 4] {
+    pub fn laneidx_field(&self) -> Option<Field> {
+        let Some(ty) = self.kind.laneidx_ty() else {
+            return None;
+        };
+        Some(Field::new(Ident::Lane, ty))
+    }
+
+    pub fn fields(&self) -> [Option<Field>; 5] {
         [
             Some(self.ptr_field()),
             self.offset_field(),
             Some(self.value_field()),
             self.memory_field(),
+            self.laneidx_field(),
         ]
     }
 }
@@ -1984,6 +1996,12 @@ pub enum StoreOpKind {
     I64Store8,
     I64Store16,
     I64Store32,
+    // v128
+    Store128,
+    V128Store8Lane,
+    V128Store16Lane,
+    V128Store32Lane,
+    V128Store64Lane,
 }
 
 impl StoreOpKind {
@@ -1996,6 +2014,11 @@ impl StoreOpKind {
             Self::I64Store8 => Ident::Store8,
             Self::I64Store16 => Ident::Store16,
             Self::I64Store32 => Ident::Store32,
+            Self::Store128 => Ident::Store128,
+            Self::V128Store8Lane => Ident::Store8Lane,
+            Self::V128Store16Lane => Ident::Store16Lane,
+            Self::V128Store32Lane => Ident::Store32Lane,
+            Self::V128Store64Lane => Ident::Store64Lane,
         }
     }
 
@@ -2008,6 +2031,11 @@ impl StoreOpKind {
             Self::I64Store8 => Some(Ident::I64),
             Self::I64Store16 => Some(Ident::I64),
             Self::I64Store32 => Some(Ident::I64),
+            Self::Store128 => None,
+            Self::V128Store8Lane => Some(Ident::V128),
+            Self::V128Store16Lane => Some(Ident::V128),
+            Self::V128Store32Lane => Some(Ident::V128),
+            Self::V128Store64Lane => Some(Ident::V128),
         }
     }
 
@@ -2022,8 +2050,24 @@ impl StoreOpKind {
                 Self::I64Store8 => FieldTy::I8,
                 Self::I64Store16 => FieldTy::I16,
                 Self::I64Store32 => FieldTy::I32,
+                Self::Store128 => FieldTy::Bytes16,
+                Self::V128Store8Lane => FieldTy::V128,
+                Self::V128Store16Lane => FieldTy::V128,
+                Self::V128Store32Lane => FieldTy::V128,
+                Self::V128Store64Lane => FieldTy::V128,
             },
         }
+    }
+
+    fn laneidx_ty(&self) -> Option<FieldTy> {
+        let ty = match self {
+            Self::V128Store8Lane => FieldTy::ImmLaneIdx16,
+            Self::V128Store16Lane => FieldTy::ImmLaneIdx8,
+            Self::V128Store32Lane => FieldTy::ImmLaneIdx4,
+            Self::V128Store64Lane => FieldTy::ImmLaneIdx2,
+            _ => return None,
+        };
+        Some(ty)
     }
 }
 

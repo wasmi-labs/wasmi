@@ -18,7 +18,7 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    token::{CamelCase, SnakeCase},
+    token::{CamelCase, Ident, SnakeCase},
     Isa,
 };
 use core::fmt::{self, Display};
@@ -112,14 +112,23 @@ impl Display for DisplayDecode<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let lane_ident = op
+            .laneidx_field()
+            .map(|_| CamelCase(Ident::Lane))
+            .display_maybe();
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();
         let ptr_suffix = CamelCase(op.ptr);
         let value_ty = op.value_field().ty;
+        let laneidx_ty = op
+            .laneidx_field()
+            .map(|field| (", ", field.ty))
+            .map(DisplayConcat)
+            .display_maybe();
         writeln!(
             f,
-            "pub type {camel_ident} = StoreOp{mem0_offset16}_{ptr_suffix}<{value_ty}>;"
+            "pub type {camel_ident} = Store{lane_ident}Op{mem0_offset16}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
         )
     }
 }
