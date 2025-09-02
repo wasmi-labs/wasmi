@@ -88,79 +88,34 @@ impl Display for DisplayOp<&'_ Isa> {
     }
 }
 
-impl Display for DisplayOp<&'_ UnaryOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
+macro_rules! impl_display_variant {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl Display for DisplayOp<&'_ $ty> {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    let fields = self.value.fields().map(Option::from);
+                    self.display_variant(f, &fields)
+                }
+            }
+        )*
+    };
 }
-
-impl Display for DisplayOp<&'_ BinaryOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ CmpBranchOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ CmpSelectOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ LoadOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields();
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ StoreOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
+impl_display_variant! {
+    UnaryOp,
+    BinaryOp,
+    CmpBranchOp,
+    CmpSelectOp,
+    LoadOp,
+    StoreOp,
+    TableGetOp,
+    TableSetOp,
+    V128ReplaceLaneOp,
+    V128LoadLaneOp,
 }
 
 impl<const N: usize> Display for DisplayOp<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fields = self.value.fields.map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ TableGetOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ TableSetOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ V128ReplaceLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
-        self.display_variant(f, &fields)
-    }
-}
-
-impl Display for DisplayOp<&'_ V128LoadLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let fields = self.value.fields().map(Option::from);
         self.display_variant(f, &fields)
     }
 }
