@@ -190,9 +190,9 @@ impl BranchOffset {
     }
 }
 
-/// The accumulated fuel to execute a block via [`Instruction::ConsumeFuel`].
+/// The accumulated fuel to execute a block via [`Op::ConsumeFuel`].
 ///
-/// [`Instruction::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
+/// [`Op::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct BlockFuel(u32);
@@ -310,13 +310,13 @@ macro_rules! define_comparator {
 }
 for_each_comparator!(define_comparator);
 
-/// Special parameter for [`Instruction::BranchCmpFallback`].
+/// Special parameter for [`Op::BranchCmpFallback`].
 ///
 /// # Note
 ///
 /// This type can be converted from and to a `u64` or [`UntypedVal`] value.
 ///
-/// [`Instruction::BranchCmpFallback`]: crate::Instruction::BranchCmpFallback
+/// [`Op::BranchCmpFallback`]: crate::Op::BranchCmpFallback
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ComparatorAndOffset {
     /// Encodes the actual binary operator for the conditional branch.

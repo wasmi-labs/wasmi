@@ -2,15 +2,7 @@ use super::{Executor, UntypedValueCmpExt, UntypedValueExt};
 use crate::{
     core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{
-        BranchOffset,
-        BranchOffset16,
-        Comparator,
-        ComparatorAndOffset,
-        Const16,
-        Instruction,
-        Reg,
-    },
+    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Const16, Op, Reg},
 };
 use core::cmp;
 
@@ -55,13 +47,11 @@ impl Executor<'_> {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let values = match *self.ip.get() {
-            Instruction::RegisterSpan { span } => span,
+            Op::RegisterSpan { span } => span,
             unexpected => {
-                // Safety: Wasmi translation guarantees that `Instruction::RegisterSpan` follows.
+                // Safety: Wasmi translation guarantees that `Op::RegisterSpan` follows.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Instruction::RegisterSpan` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::RegisterSpan` but found: {unexpected:?}")
                 }
             }
         };
@@ -71,14 +61,16 @@ impl Executor<'_> {
         match *self.ip.get() {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            Instruction::BranchTableTarget { results, offset } => {
+            Op::BranchTableTarget { results, offset } => {
                 self.execute_copy_span_impl(results, values, len);
                 self.execute_branch(offset)
             }
             unexpected => {
-                // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
+                // Safety: Wasmi translator guarantees that one of the above `Op` variants exists.
                 unsafe {
-                    unreachable_unchecked!("expected target for `Instruction::BranchTableSpan` but found: {unexpected:?}")
+                    unreachable_unchecked!(
+                        "expected target for `Op::BranchTableSpan` but found: {unexpected:?}"
+                    )
                 }
             }
         }
@@ -171,10 +163,10 @@ where
 }
 
 macro_rules! impl_execute_branch_binop {
-    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+    ( $( ($ty:ty, Op::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
             $(
-                #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
+                #[doc = concat!("Executes an [`Op::", stringify!($op_name), "`].")]
                 #[inline(always)]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Reg, offset: BranchOffset16) {
                     self.execute_branch_binop::<$ty>(lhs, rhs, offset, $op)
@@ -184,48 +176,48 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
-    (i32, Instruction::BranchI32And, execute_branch_i32_and, UntypedValueExt::and),
-    (i32, Instruction::BranchI32Or, execute_branch_i32_or, UntypedValueExt::or),
-    (i32, Instruction::BranchI32Nand, execute_branch_i32_nand, UntypedValueExt::nand),
-    (i32, Instruction::BranchI32Nor, execute_branch_i32_nor, UntypedValueExt::nor),
-    (i32, Instruction::BranchI32Eq, execute_branch_i32_eq, cmp_eq),
-    (i32, Instruction::BranchI32Ne, execute_branch_i32_ne, cmp_ne),
-    (i32, Instruction::BranchI32LtS, execute_branch_i32_lt_s, cmp_lt),
-    (u32, Instruction::BranchI32LtU, execute_branch_i32_lt_u, cmp_lt),
-    (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
-    (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
+    (i32, Op::BranchI32And, execute_branch_i32_and, UntypedValueExt::and),
+    (i32, Op::BranchI32Or, execute_branch_i32_or, UntypedValueExt::or),
+    (i32, Op::BranchI32Nand, execute_branch_i32_nand, UntypedValueExt::nand),
+    (i32, Op::BranchI32Nor, execute_branch_i32_nor, UntypedValueExt::nor),
+    (i32, Op::BranchI32Eq, execute_branch_i32_eq, cmp_eq),
+    (i32, Op::BranchI32Ne, execute_branch_i32_ne, cmp_ne),
+    (i32, Op::BranchI32LtS, execute_branch_i32_lt_s, cmp_lt),
+    (u32, Op::BranchI32LtU, execute_branch_i32_lt_u, cmp_lt),
+    (i32, Op::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
+    (u32, Op::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
 
-    (i64, Instruction::BranchI64And, execute_branch_i64_and, UntypedValueExt::and),
-    (i64, Instruction::BranchI64Or, execute_branch_i64_or, UntypedValueExt::or),
-    (i64, Instruction::BranchI64Nand, execute_branch_i64_nand, UntypedValueExt::nand),
-    (i64, Instruction::BranchI64Nor, execute_branch_i64_nor, UntypedValueExt::nor),
-    (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
-    (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
-    (i64, Instruction::BranchI64LtS, execute_branch_i64_lt_s, cmp_lt),
-    (u64, Instruction::BranchI64LtU, execute_branch_i64_lt_u, cmp_lt),
-    (i64, Instruction::BranchI64LeS, execute_branch_i64_le_s, cmp_le),
-    (u64, Instruction::BranchI64LeU, execute_branch_i64_le_u, cmp_le),
+    (i64, Op::BranchI64And, execute_branch_i64_and, UntypedValueExt::and),
+    (i64, Op::BranchI64Or, execute_branch_i64_or, UntypedValueExt::or),
+    (i64, Op::BranchI64Nand, execute_branch_i64_nand, UntypedValueExt::nand),
+    (i64, Op::BranchI64Nor, execute_branch_i64_nor, UntypedValueExt::nor),
+    (i64, Op::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
+    (i64, Op::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
+    (i64, Op::BranchI64LtS, execute_branch_i64_lt_s, cmp_lt),
+    (u64, Op::BranchI64LtU, execute_branch_i64_lt_u, cmp_lt),
+    (i64, Op::BranchI64LeS, execute_branch_i64_le_s, cmp_le),
+    (u64, Op::BranchI64LeU, execute_branch_i64_le_u, cmp_le),
 
-    (f32, Instruction::BranchF32Eq, execute_branch_f32_eq, cmp_eq),
-    (f32, Instruction::BranchF32Ne, execute_branch_f32_ne, cmp_ne),
-    (f32, Instruction::BranchF32Lt, execute_branch_f32_lt, cmp_lt),
-    (f32, Instruction::BranchF32Le, execute_branch_f32_le, cmp_le),
-    (f32, Instruction::BranchF32NotLt, execute_branch_f32_not_lt, UntypedValueCmpExt::not_lt),
-    (f32, Instruction::BranchF32NotLe, execute_branch_f32_not_le, UntypedValueCmpExt::not_le),
+    (f32, Op::BranchF32Eq, execute_branch_f32_eq, cmp_eq),
+    (f32, Op::BranchF32Ne, execute_branch_f32_ne, cmp_ne),
+    (f32, Op::BranchF32Lt, execute_branch_f32_lt, cmp_lt),
+    (f32, Op::BranchF32Le, execute_branch_f32_le, cmp_le),
+    (f32, Op::BranchF32NotLt, execute_branch_f32_not_lt, UntypedValueCmpExt::not_lt),
+    (f32, Op::BranchF32NotLe, execute_branch_f32_not_le, UntypedValueCmpExt::not_le),
 
-    (f64, Instruction::BranchF64Eq, execute_branch_f64_eq, cmp_eq),
-    (f64, Instruction::BranchF64Ne, execute_branch_f64_ne, cmp_ne),
-    (f64, Instruction::BranchF64Lt, execute_branch_f64_lt, cmp_lt),
-    (f64, Instruction::BranchF64Le, execute_branch_f64_le, cmp_le),
-    (f64, Instruction::BranchF64NotLt, execute_branch_f64_not_lt, UntypedValueCmpExt::not_lt),
-    (f64, Instruction::BranchF64NotLe, execute_branch_f64_not_le, UntypedValueCmpExt::not_le),
+    (f64, Op::BranchF64Eq, execute_branch_f64_eq, cmp_eq),
+    (f64, Op::BranchF64Ne, execute_branch_f64_ne, cmp_ne),
+    (f64, Op::BranchF64Lt, execute_branch_f64_lt, cmp_lt),
+    (f64, Op::BranchF64Le, execute_branch_f64_le, cmp_le),
+    (f64, Op::BranchF64NotLt, execute_branch_f64_not_lt, UntypedValueCmpExt::not_lt),
+    (f64, Op::BranchF64NotLe, execute_branch_f64_not_le, UntypedValueCmpExt::not_le),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_rhs {
-    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+    ( $( ($ty:ty, Op::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
             $(
-                #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
+                #[doc = concat!("Executes an [`Op::", stringify!($op_name), "`].")]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Const16<$ty>, offset: BranchOffset16) {
                     self.execute_branch_binop_imm16_rhs::<$ty>(lhs, rhs, offset, $op)
                 }
@@ -234,34 +226,34 @@ macro_rules! impl_execute_branch_binop_imm16_rhs {
     }
 }
 impl_execute_branch_binop_imm16_rhs! {
-    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, UntypedValueExt::and),
-    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, UntypedValueExt::or),
-    (i32, Instruction::BranchI32NandImm16, execute_branch_i32_nand_imm16, UntypedValueExt::nand),
-    (i32, Instruction::BranchI32NorImm16, execute_branch_i32_nor_imm16, UntypedValueExt::nor),
-    (i32, Instruction::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
-    (i32, Instruction::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
-    (i32, Instruction::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),
-    (u32, Instruction::BranchI32LtUImm16Rhs, execute_branch_i32_lt_u_imm16_rhs, cmp_lt),
-    (i32, Instruction::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
-    (u32, Instruction::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
+    (i32, Op::BranchI32AndImm16, execute_branch_i32_and_imm16, UntypedValueExt::and),
+    (i32, Op::BranchI32OrImm16, execute_branch_i32_or_imm16, UntypedValueExt::or),
+    (i32, Op::BranchI32NandImm16, execute_branch_i32_nand_imm16, UntypedValueExt::nand),
+    (i32, Op::BranchI32NorImm16, execute_branch_i32_nor_imm16, UntypedValueExt::nor),
+    (i32, Op::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
+    (i32, Op::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
+    (i32, Op::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),
+    (u32, Op::BranchI32LtUImm16Rhs, execute_branch_i32_lt_u_imm16_rhs, cmp_lt),
+    (i32, Op::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
+    (u32, Op::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
 
-    (i64, Instruction::BranchI64AndImm16, execute_branch_i64_and_imm16, UntypedValueExt::and),
-    (i64, Instruction::BranchI64OrImm16, execute_branch_i64_or_imm16, UntypedValueExt::or),
-    (i64, Instruction::BranchI64NandImm16, execute_branch_i64_nand_imm16, UntypedValueExt::nand),
-    (i64, Instruction::BranchI64NorImm16, execute_branch_i64_nor_imm16, UntypedValueExt::nor),
-    (i64, Instruction::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
-    (i64, Instruction::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
-    (i64, Instruction::BranchI64LtSImm16Rhs, execute_branch_i64_lt_s_imm16_rhs, cmp_lt),
-    (u64, Instruction::BranchI64LtUImm16Rhs, execute_branch_i64_lt_u_imm16_rhs, cmp_lt),
-    (i64, Instruction::BranchI64LeSImm16Rhs, execute_branch_i64_le_s_imm16_rhs, cmp_le),
-    (u64, Instruction::BranchI64LeUImm16Rhs, execute_branch_i64_le_u_imm16_rhs, cmp_le),
+    (i64, Op::BranchI64AndImm16, execute_branch_i64_and_imm16, UntypedValueExt::and),
+    (i64, Op::BranchI64OrImm16, execute_branch_i64_or_imm16, UntypedValueExt::or),
+    (i64, Op::BranchI64NandImm16, execute_branch_i64_nand_imm16, UntypedValueExt::nand),
+    (i64, Op::BranchI64NorImm16, execute_branch_i64_nor_imm16, UntypedValueExt::nor),
+    (i64, Op::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
+    (i64, Op::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
+    (i64, Op::BranchI64LtSImm16Rhs, execute_branch_i64_lt_s_imm16_rhs, cmp_lt),
+    (u64, Op::BranchI64LtUImm16Rhs, execute_branch_i64_lt_u_imm16_rhs, cmp_lt),
+    (i64, Op::BranchI64LeSImm16Rhs, execute_branch_i64_le_s_imm16_rhs, cmp_le),
+    (u64, Op::BranchI64LeUImm16Rhs, execute_branch_i64_le_u_imm16_rhs, cmp_le),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_lhs {
-    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+    ( $( ($ty:ty, Op::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
             $(
-                #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
+                #[doc = concat!("Executes an [`Op::", stringify!($op_name), "`].")]
                 pub fn $fn_name(&mut self, lhs: Const16<$ty>, rhs: Reg, offset: BranchOffset16) {
                     self.execute_branch_binop_imm16_lhs::<$ty>(lhs, rhs, offset, $op)
                 }
@@ -270,19 +262,19 @@ macro_rules! impl_execute_branch_binop_imm16_lhs {
     }
 }
 impl_execute_branch_binop_imm16_lhs! {
-    (i32, Instruction::BranchI32LtSImm16Lhs, execute_branch_i32_lt_s_imm16_lhs, cmp_lt),
-    (u32, Instruction::BranchI32LtUImm16Lhs, execute_branch_i32_lt_u_imm16_lhs, cmp_lt),
-    (i32, Instruction::BranchI32LeSImm16Lhs, execute_branch_i32_le_s_imm16_lhs, cmp_le),
-    (u32, Instruction::BranchI32LeUImm16Lhs, execute_branch_i32_le_u_imm16_lhs, cmp_le),
+    (i32, Op::BranchI32LtSImm16Lhs, execute_branch_i32_lt_s_imm16_lhs, cmp_lt),
+    (u32, Op::BranchI32LtUImm16Lhs, execute_branch_i32_lt_u_imm16_lhs, cmp_lt),
+    (i32, Op::BranchI32LeSImm16Lhs, execute_branch_i32_le_s_imm16_lhs, cmp_le),
+    (u32, Op::BranchI32LeUImm16Lhs, execute_branch_i32_le_u_imm16_lhs, cmp_le),
 
-    (i64, Instruction::BranchI64LtSImm16Lhs, execute_branch_i64_lt_s_imm16_lhs, cmp_lt),
-    (u64, Instruction::BranchI64LtUImm16Lhs, execute_branch_i64_lt_u_imm16_lhs, cmp_lt),
-    (i64, Instruction::BranchI64LeSImm16Lhs, execute_branch_i64_le_s_imm16_lhs, cmp_le),
-    (u64, Instruction::BranchI64LeUImm16Lhs, execute_branch_i64_le_u_imm16_lhs, cmp_le),
+    (i64, Op::BranchI64LtSImm16Lhs, execute_branch_i64_lt_s_imm16_lhs, cmp_lt),
+    (u64, Op::BranchI64LtUImm16Lhs, execute_branch_i64_lt_u_imm16_lhs, cmp_lt),
+    (i64, Op::BranchI64LeSImm16Lhs, execute_branch_i64_le_s_imm16_lhs, cmp_le),
+    (u64, Op::BranchI64LeUImm16Lhs, execute_branch_i64_le_u_imm16_lhs, cmp_le),
 }
 
 impl Executor<'_> {
-    /// Executes an [`Instruction::BranchCmpFallback`].
+    /// Executes an [`Op::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
         use Comparator as C;
         let params: u64 = self.get_register_as(params);

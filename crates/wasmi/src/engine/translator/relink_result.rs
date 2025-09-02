@@ -1,13 +1,13 @@
 use crate::{
     engine::EngineFunc,
-    ir::{index, Instruction, Reg, RegSpan, VisitResults},
+    ir::{index, Op, Reg, RegSpan, VisitResults},
     module::ModuleHeader,
     Engine,
     Error,
     FuncType,
 };
 
-/// Extension trait for [`Instruction`] to conditionally relink result [`Reg`]s.
+/// Extension trait for [`Op`] to conditionally relink result [`Reg`]s.
 pub trait RelinkResult {
     /// Relinks the result [`Reg`] of `self` to `new_result` if its current `result` [`Reg`] equals `old_result`.
     ///
@@ -24,7 +24,7 @@ pub trait RelinkResult {
     ) -> Result<bool, Error>;
 }
 
-/// Visitor to implement [`RelinkResult`] for [`Instruction`].
+/// Visitor to implement [`RelinkResult`] for [`Op`].
 struct Visitor {
     /// The new [`Reg`] that replaces the `old_result` [`Reg`].
     new_result: Reg,
@@ -60,7 +60,7 @@ impl VisitResults for Visitor {
     fn visit_result_regs(&mut self, _reg: &mut RegSpan, _len: Option<u16>) {}
 }
 
-impl RelinkResult for Instruction {
+impl RelinkResult for Op {
     fn relink_result(
         &mut self,
         module: &ModuleHeader,

@@ -28,22 +28,22 @@ macro_rules! define_enum {
         /// A Wasmi instruction.
         ///
         /// Wasmi instructions are composed of so-called instruction words.
-        /// This type represents all such words and for simplicity we call the type [`Instruction`], still.
+        /// This type represents all such words and for simplicity we call the type [`Op`], still.
         ///
         /// Most instructions are composed of a single instruction word. An example of
-        /// this is [`Instruction::I32Add`]. However, some instructions, like the `select` instructions
+        /// this is [`Op::I32Add`]. However, some instructions, like the `select` instructions
         /// are composed of two or more instruction words.
         ///
         /// The Wasmi bytecode translation makes sure that instructions always appear in valid sequences.
         /// The Wasmi executor relies on the guarantees that the Wasmi translator provides.
         ///
-        /// The documentation of each [`Instruction`] describes its encoding in the
+        /// The documentation of each [`Op`] describes its encoding in the
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
         #[derive(Debug)]
         #[non_exhaustive]
         #[repr(u16)]
-        pub enum Instruction {
+        pub enum Op {
             $(
                 $( #[doc = $doc] )*
                 $name
@@ -62,9 +62,9 @@ macro_rules! define_enum {
             ),*
         }
 
-        impl Instruction {
+        impl Op {
             $(
-                #[doc = concat!("Creates a new [`Instruction::", stringify!($name), "`].")]
+                #[doc = concat!("Creates a new [`Op::", stringify!($name), "`].")]
                 pub fn $snake_name(
                     $(
                         $( $result_name: impl Into<$result_ty>, )?
@@ -81,11 +81,11 @@ macro_rules! define_enum {
             )*
         }
 
-        impl<'a> $crate::visit_results::ResultsVisitor for &'a mut Instruction {
+        impl<'a> $crate::visit_results::ResultsVisitor for &'a mut Op {
             fn host_visitor<V: VisitResults>(self, visitor: &mut V) {
                 match self {
                     $(
-                        Instruction::$name { $( $( $result_name, )? .. )? } => {
+                        Op::$name { $( $( $result_name, )? .. )? } => {
                             $(
                                 $( $result_name.host_visitor(visitor); )?
                             )?
@@ -98,20 +98,20 @@ macro_rules! define_enum {
 }
 for_each_op::for_each_op!(define_enum);
 
-impl Copy for Instruction {}
-impl Clone for Instruction {
+impl Copy for Op {}
+impl Clone for Op {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl Instruction {
-    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
+impl Op {
+    /// Creates a new [`Op::ReturnReg2`] for the given [`Reg`] indices.
     pub fn return_reg2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
         Self::return_reg2([reg0.into(), reg1.into()])
     }
 
-    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Reg`] indices.
+    /// Creates a new [`Op::ReturnReg3`] for the given [`Reg`] indices.
     pub fn return_reg3_ext(
         reg0: impl Into<Reg>,
         reg1: impl Into<Reg>,
@@ -120,7 +120,7 @@ impl Instruction {
         Self::return_reg3([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::ReturnMany`] for the given [`Reg`] indices.
+    /// Creates a new [`Op::ReturnMany`] for the given [`Reg`] indices.
     pub fn return_many_ext(
         reg0: impl Into<Reg>,
         reg1: impl Into<Reg>,
@@ -129,7 +129,7 @@ impl Instruction {
         Self::return_many([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::Copy2`].
+    /// Creates a new [`Op::Copy2`].
     pub fn copy2_ext(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
         let span = FixedRegSpan::new(results).unwrap_or_else(|_| {
             panic!("encountered invalid `results` `RegSpan` for `Copy2`: {results:?}")
@@ -137,22 +137,22 @@ impl Instruction {
         Self::copy2(span, [value0.into(), value1.into()])
     }
 
-    /// Creates a new [`Instruction::CopyMany`].
+    /// Creates a new [`Op::CopyMany`].
     pub fn copy_many_ext(results: RegSpan, head0: impl Into<Reg>, head1: impl Into<Reg>) -> Self {
         Self::copy_many(results, [head0.into(), head1.into()])
     }
 
-    /// Creates a new [`Instruction::Register2`] instruction parameter.
+    /// Creates a new [`Op::Register2`] instruction parameter.
     pub fn register2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
         Self::register2([reg0.into(), reg1.into()])
     }
 
-    /// Creates a new [`Instruction::Register3`] instruction parameter.
+    /// Creates a new [`Op::Register3`] instruction parameter.
     pub fn register3_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
         Self::register3([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::RegisterList`] instruction parameter.
+    /// Creates a new [`Op::RegisterList`] instruction parameter.
     pub fn register_list_ext(
         reg0: impl Into<Reg>,
         reg1: impl Into<Reg>,
@@ -161,7 +161,7 @@ impl Instruction {
         Self::register_list([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    /// Creates a new [`Op::RegisterAndImm32`] from the given `reg` and `offset_hi`.
     pub fn register_and_offset_hi(reg: impl Into<Reg>, offset_hi: Offset64Hi) -> Self {
         Self::register_and_imm32(reg, offset_hi.0)
     }
@@ -170,16 +170,16 @@ impl Instruction {
     ///
     /// # Errors
     ///
-    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
     pub fn filter_register_and_offset_hi(self) -> Result<(Reg, Offset64Hi), Self> {
-        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+        if let Op::RegisterAndImm32 { reg, imm } = self {
             return Ok((reg, Offset64Hi(u32::from(imm))));
         }
         Err(self)
     }
 
-    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    /// Creates a new [`Op::RegisterAndImm32`] from the given `reg` and `offset_hi`.
     pub fn register_and_lane<LaneType>(reg: impl Into<Reg>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
@@ -191,13 +191,13 @@ impl Instruction {
     ///
     /// # Errors
     ///
-    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
     pub fn filter_register_and_lane<LaneType>(self) -> Result<(Reg, LaneType), Self>
     where
         LaneType: TryFrom<u8>,
     {
-        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+        if let Op::RegisterAndImm32 { reg, imm } = self {
             let lane_index = u32::from(imm) as u8;
             let Ok(lane) = LaneType::try_from(lane_index) else {
                 panic!("encountered out of bounds lane index: {}", lane_index)
@@ -207,7 +207,7 @@ impl Instruction {
         Err(self)
     }
 
-    /// Creates a new [`Instruction::Imm16AndImm32`] from the given `value` and `offset_hi`.
+    /// Creates a new [`Op::Imm16AndImm32`] from the given `value` and `offset_hi`.
     pub fn imm16_and_offset_hi(value: impl Into<AnyConst16>, offset_hi: Offset64Hi) -> Self {
         Self::imm16_and_imm32(value, offset_hi.0)
     }
@@ -216,19 +216,19 @@ impl Instruction {
     ///
     /// # Errors
     ///
-    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
     pub fn filter_imm16_and_offset_hi<T>(self) -> Result<(T, Offset64Hi), Self>
     where
         T: From<AnyConst16>,
     {
-        if let Instruction::Imm16AndImm32 { imm16, imm32 } = self {
+        if let Op::Imm16AndImm32 { imm16, imm32 } = self {
             return Ok((T::from(imm16), Offset64Hi(u32::from(imm32))));
         }
         Err(self)
     }
 
-    /// Creates a new [`Instruction::Imm16AndImm32`] from the given `lane` and `memory` index.
+    /// Creates a new [`Op::Imm16AndImm32`] from the given `lane` and `memory` index.
     pub fn lane_and_memory_index(value: impl Into<u8>, memory: Memory) -> Self {
         Self::imm16_and_imm32(u16::from(value.into()), u32::from(memory))
     }
@@ -237,13 +237,13 @@ impl Instruction {
     ///
     /// # Errors
     ///
-    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
     pub fn filter_lane_and_memory<LaneType>(self) -> Result<(LaneType, index::Memory), Self>
     where
         LaneType: TryFrom<u8>,
     {
-        if let Instruction::Imm16AndImm32 { imm16, imm32 } = self {
+        if let Op::Imm16AndImm32 { imm16, imm32 } = self {
             let Ok(lane) = LaneType::try_from(i16::from(imm16) as u16 as u8) else {
                 return Err(self);
             };
@@ -263,6 +263,6 @@ fn size_of() {
     //
     // Until that bug is fixed we need to order the `enum` variant
     // fields in a precise order to end up with the correct `enum` size.
-    assert_eq!(::core::mem::size_of::<Instruction>(), 8);
-    assert_eq!(::core::mem::align_of::<Instruction>(), 4);
+    assert_eq!(::core::mem::size_of::<Op>(), 8);
+    assert_eq!(::core::mem::align_of::<Op>(), 4);
 }

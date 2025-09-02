@@ -9,7 +9,7 @@ use crate::{
 use alloc::vec::{Drain, Vec};
 
 #[cfg(doc)]
-use crate::ir::Instruction;
+use crate::ir::Op;
 
 /// The height of the operand stack upon entering a [`ControlFrame`].
 #[derive(Debug, Copy, Clone)]
@@ -35,14 +35,14 @@ impl From<usize> for StackHeight {
 pub struct ControlStack {
     /// The stack of control frames.
     frames: Vec<ControlFrame>,
-    /// The current top-most [`Instruction::ConsumeFuel`] on the stack.
+    /// The current top-most [`Op::ConsumeFuel`] on the stack.
     ///
     /// # Note
     ///
     /// This is meant as cache and optimization to quickly query the top-most
     /// fuel consumption instruction since this information is accessed commonly.
     ///
-    /// [`Instruction`]: crate::ir::Instruction
+    /// [`Op`]: crate::ir::Op
     consume_fuel_instr: Option<Instr>,
     /// Special operand stack to memorize operands for `else` control frames.
     else_operands: ElseOperands,
@@ -97,7 +97,7 @@ impl Reset for ControlStack {
 }
 
 impl ControlStack {
-    /// Returns the current [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// Returns the current [`Op::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// Returns `None` otherwise.
     #[inline]
@@ -415,7 +415,7 @@ pub trait ControlFrameBase {
     /// Returns the number of operands required for branching to `self`.
     fn len_branch_params(&self, engine: &Engine) -> u16;
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of `self`.
+    /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
     ///
     /// Returns `None` if fuel metering is disabled.
     fn consume_fuel_instr(&self) -> Option<Instr>;
@@ -518,7 +518,7 @@ pub struct BlockControlFrame {
     height: StackHeight,
     /// This is `true` if there is at least one branch to this [`BlockControlFrame`].
     is_branched_to: bool,
-    /// The [`BlockControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// The [`BlockControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// # Note
     ///
@@ -567,7 +567,7 @@ pub struct LoopControlFrame {
     height: StackHeight,
     /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
     is_branched_to: bool,
-    /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// The [`LoopControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// # Note
     ///
@@ -616,7 +616,7 @@ pub struct IfControlFrame {
     height: StackHeight,
     /// This is `true` if there is at least one branch to this [`IfControlFrame`].
     is_branched_to: bool,
-    /// The [`IfControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// The [`IfControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// # Note
     ///
@@ -711,7 +711,7 @@ pub struct ElseControlFrame {
     height: StackHeight,
     /// This is `true` if there is at least one branch to this [`ElseControlFrame`].
     is_branched_to: bool,
-    /// The [`LoopControlFrame`]'s [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// The [`LoopControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// # Note
     ///

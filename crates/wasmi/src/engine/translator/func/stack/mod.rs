@@ -42,7 +42,7 @@ use crate::{
 use alloc::vec::Vec;
 
 #[cfg(doc)]
-use crate::ir::Instruction;
+use crate::ir::Op;
 
 /// The Wasm value stack during translation from Wasm to Wasmi bytecode.
 #[derive(Debug)]
@@ -517,7 +517,7 @@ impl Stack {
         self.operands.operand_to_temp(depth)
     }
 
-    /// Returns the current [`Instruction::ConsumeFuel`] if fuel metering is enabled.
+    /// Returns the current [`Op::ConsumeFuel`] if fuel metering is enabled.
     ///
     /// Returns `None` otherwise.
     #[inline]

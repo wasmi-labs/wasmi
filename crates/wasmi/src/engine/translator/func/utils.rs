@@ -17,14 +17,12 @@ macro_rules! bail_unreachable {
     }};
 }
 
-/// Used to swap operands of binary [`Instruction`] constructor.
+/// Used to swap operands of binary [`Op`] constructor.
 ///
-/// [`Instruction`]: crate::ir::Instruction
+/// [`Op`]: crate::ir::Op
 macro_rules! swap_ops {
     ($make_instr:path) => {{
-        |result: $crate::ir::Reg, lhs, rhs| -> $crate::ir::Instruction {
-            $make_instr(result, rhs, lhs)
-        }
+        |result: $crate::ir::Reg, lhs, rhs| -> $crate::ir::Op { $make_instr(result, rhs, lhs) }
     }};
 }
 

@@ -64,11 +64,11 @@ use crate::{
         Const16,
         Const32,
         FixedRegSpan,
-        Instruction,
         IntoShiftAmount,
         Offset16,
         Offset64,
         Offset64Lo,
+        Op,
         Reg,
         RegSpan,
         Sign,
@@ -497,8 +497,8 @@ impl FuncTranslator {
     ///
     /// - Returns `None` if merging was not applicable.
     /// - Returns `Some(last_instr)` if merging was successful.
-    fn try_merge_copies(&mut self, copy_instr: Instruction) -> Result<Option<Instr>, Error> {
-        let Instruction::Copy { result, value } = copy_instr else {
+    fn try_merge_copies(&mut self, copy_instr: Op) -> Result<Option<Instr>, Error> {
+        let Op::Copy { result, value } = copy_instr else {
             // Case: `copy_instr` is not fusable.
             return Ok(None);
         };
@@ -508,11 +508,9 @@ impl FuncTranslator {
         };
         let last_copy = *self.instrs.get(last_instr);
         let fused_copy = match last_copy {
-            Instruction::Copy { .. } => Self::try_merge_copy_instr(last_copy, result, value),
-            Instruction::Copy2 { .. } => Self::try_merge_copy2_instr(last_copy, result, value),
-            Instruction::CopySpan { .. } => {
-                Self::try_merge_copy_span_instr(last_copy, result, value)
-            }
+            Op::Copy { .. } => Self::try_merge_copy_instr(last_copy, result, value),
+            Op::Copy2 { .. } => Self::try_merge_copy2_instr(last_copy, result, value),
+            Op::CopySpan { .. } => Self::try_merge_copy_span_instr(last_copy, result, value),
             _ => return Ok(None),
         };
         if let Some(fused_copy) = fused_copy {
@@ -523,15 +521,11 @@ impl FuncTranslator {
         Ok(None)
     }
 
-    /// Tries to merge two [`Instruction::Copy`] instructions and returns the result.
+    /// Tries to merge two [`Op::Copy`] instructions and returns the result.
     ///
     /// Returns `None` if merging was not possible.
-    fn try_merge_copy_instr(
-        last_copy: Instruction,
-        result: Reg,
-        value: Reg,
-    ) -> Option<Instruction> {
-        let Instruction::Copy {
+    fn try_merge_copy_instr(last_copy: Op, result: Reg, value: Reg) -> Option<Op> {
+        let Op::Copy {
             result: last_result,
             value: last_value,
         } = last_copy
@@ -546,32 +540,20 @@ impl FuncTranslator {
         }
         if result == last_result.next() {
             // Case: we can append `copy_instrs`.
-            return Some(Instruction::copy2_ext(
-                RegSpan::new(last_result),
-                last_value,
-                value,
-            ));
+            return Some(Op::copy2_ext(RegSpan::new(last_result), last_value, value));
         }
         if result == last_result.prev() {
             // Case: we can prepend `copy_instr`.
-            return Some(Instruction::copy2_ext(
-                RegSpan::new(result),
-                value,
-                last_value,
-            ));
+            return Some(Op::copy2_ext(RegSpan::new(result), value, last_value));
         }
         None
     }
 
-    /// Tries to merge an [`Instruction::Copy2`] and an [`Instruction::Copy`] and returns the result.
+    /// Tries to merge an [`Op::Copy2`] and an [`Op::Copy`] and returns the result.
     ///
     /// Returns `None` if merging was not possible.
-    fn try_merge_copy2_instr(
-        last_copy: Instruction,
-        result: Reg,
-        value: Reg,
-    ) -> Option<Instruction> {
-        let Instruction::Copy2 { results, values } = last_copy else {
+    fn try_merge_copy2_instr(last_copy: Op, result: Reg, value: Reg) -> Option<Op> {
+        let Op::Copy2 { results, values } = last_copy else {
             // Case: `last_copy` does not refer to a mergable copy instruction.
             return None;
         };
@@ -592,7 +574,7 @@ impl FuncTranslator {
             let values = RegSpan::new(last_value0);
             let len = 3_u16;
             debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-            return Some(Instruction::copy_span(results, values, len));
+            return Some(Op::copy_span(results, values, len));
         }
         if result == last_result0.prev() && value == last_value0.prev() {
             // Case: we can prepend `copy_instr`.
@@ -604,20 +586,16 @@ impl FuncTranslator {
             let values = RegSpan::new(value);
             let len = 3_u16;
             debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
-            return Some(Instruction::copy_span(results, values, len));
+            return Some(Op::copy_span(results, values, len));
         }
         None
     }
 
-    /// Tries to merge an [`Instruction::CopySpan`] and an [`Instruction::Copy`] and returns the result.
+    /// Tries to merge an [`Op::CopySpan`] and an [`Op::Copy`] and returns the result.
     ///
     /// Returns `None` if merging was not possible.
-    fn try_merge_copy_span_instr(
-        last_copy: Instruction,
-        result: Reg,
-        value: Reg,
-    ) -> Option<Instruction> {
-        let Instruction::CopySpan {
+    fn try_merge_copy_span_instr(last_copy: Op, result: Reg, value: Reg) -> Option<Op> {
+        let Op::CopySpan {
             results,
             values,
             len,
@@ -636,7 +614,7 @@ impl FuncTranslator {
                 // Case: cannot merge since resulting `copy_span` has overlapping copies.
                 return None;
             }
-            return Some(Instruction::copy_span(results, values, new_len));
+            return Some(Op::copy_span(results, values, new_len));
         }
         if result == last_result0.prev() && value == last_value0.prev() {
             // Case: we can prepend `copy_instr`.
@@ -645,7 +623,7 @@ impl FuncTranslator {
                 // Case: cannot merge since resulting `copy_span` has overlapping copies.
                 return None;
             }
-            return Some(Instruction::copy_span(
+            return Some(Op::copy_span(
                 RegSpan::new(result),
                 RegSpan::new(value),
                 new_len,
@@ -661,7 +639,7 @@ impl FuncTranslator {
         result: Reg,
         value: Operand,
         layout: &mut StackLayout,
-    ) -> Result<Option<Instruction>, Error> {
+    ) -> Result<Option<Op>, Error> {
         let instr = match value {
             Operand::Temp(value) => {
                 let value = layout.temp_to_reg(value.operand_index())?;
@@ -669,7 +647,7 @@ impl FuncTranslator {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Instruction::copy(result, value)
+                Op::copy(result, value)
             }
             Operand::Local(value) => {
                 let value = layout.local_to_reg(value.local_index())?;
@@ -677,7 +655,7 @@ impl FuncTranslator {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Instruction::copy(result, value)
+                Op::copy(result, value)
             }
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val(), layout)?,
         };
@@ -689,33 +667,33 @@ impl FuncTranslator {
         result: Reg,
         value: TypedVal,
         layout: &mut StackLayout,
-    ) -> Result<Instruction, Error> {
+    ) -> Result<Op, Error> {
         let instr = match value.ty() {
-            ValType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+            ValType::I32 => Op::copy_imm32(result, i32::from(value)),
             ValType::I64 => {
                 let value = i64::from(value);
                 match <Const32<i64>>::try_from(value) {
-                    Ok(value) => Instruction::copy_i64imm32(result, value),
+                    Ok(value) => Op::copy_i64imm32(result, value),
                     Err(_) => {
                         let value = layout.const_to_reg(value)?;
-                        Instruction::copy(result, value)
+                        Op::copy(result, value)
                     }
                 }
             }
-            ValType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+            ValType::F32 => Op::copy_imm32(result, f32::from(value)),
             ValType::F64 => {
                 let value = f64::from(value);
                 match <Const32<f64>>::try_from(value) {
-                    Ok(value) => Instruction::copy_f64imm32(result, value),
+                    Ok(value) => Op::copy_f64imm32(result, value),
                     Err(_) => {
                         let value = layout.const_to_reg(value)?;
-                        Instruction::copy(result, value)
+                        Op::copy(result, value)
                     }
                 }
             }
             ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
                 let value = layout.const_to_reg(value)?;
-                Instruction::copy(result, value)
+                Op::copy(result, value)
             }
         };
         Ok(instr)
@@ -742,7 +720,7 @@ impl FuncTranslator {
             return Ok(());
         }
         self.instrs.push_instr(
-            Instruction::copy2_ext(results, val0, val1),
+            Op::copy2_ext(results, val0, val1),
             consume_fuel_instr,
             FuelCostsProvider::base,
         )?;
@@ -767,7 +745,7 @@ impl FuncTranslator {
         }
         debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
         self.instrs.push_instr(
-            Instruction::copy_span(results, values, len),
+            Op::copy_span(results, values, len),
             consume_fuel_instr,
             |costs| costs.fuel_for_copying_values(u64::from(len)),
         )?;
@@ -813,7 +791,7 @@ impl FuncTranslator {
                 let val0 = self.layout.operand_to_reg(*val0)?;
                 let val1 = self.layout.operand_to_reg(*val1)?;
                 self.instrs.push_instr(
-                    Instruction::copy_many_ext(results, val0, val1),
+                    Op::copy_many_ext(results, val0, val1),
                     consume_fuel_instr,
                     |costs| costs.fuel_for_copying_values(u64::from(len)),
                 )?;
@@ -1005,7 +983,7 @@ impl FuncTranslator {
                 let value = operand.val();
                 let result = self.layout.temp_to_reg(operand.operand_index())?;
                 match Self::make_copy_imm_instr(result, value, &mut self.layout)? {
-                    Instruction::Copy { value, .. } => {
+                    Op::Copy { value, .. } => {
                         // Case: not possible to craft a `copy` instruction
                         //       with an inline immediate, so we can return
                         //       the allocated function local constant [`Reg`]
@@ -1048,7 +1026,7 @@ impl FuncTranslator {
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
     fn push_instr(
         &mut self,
-        instr: Instruction,
+        instr: Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<Instr, Error> {
         let consume_fuel = self.stack.consume_fuel_instr();
@@ -1060,7 +1038,7 @@ impl FuncTranslator {
     fn push_instr_with_result(
         &mut self,
         result_ty: ValType,
-        make_instr: impl FnOnce(Reg) -> Instruction,
+        make_instr: impl FnOnce(Reg) -> Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
@@ -1081,7 +1059,7 @@ impl FuncTranslator {
         result_ty: ValType,
         lhs: Operand,
         rhs: Operand,
-        make_instr: impl FnOnce(Reg, Reg, Reg) -> Instruction,
+        make_instr: impl FnOnce(Reg, Reg, Reg) -> Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         debug_assert_eq!(lhs.ty(), rhs.ty());
@@ -1091,7 +1069,7 @@ impl FuncTranslator {
     }
 
     /// Pushes an instruction parameter `param` to the list of instructions.
-    fn push_param(&mut self, param: Instruction) -> Result<(), Error> {
+    fn push_param(&mut self, param: Op) -> Result<(), Error> {
         self.instrs.push_param(param);
         Ok(())
     }
@@ -1124,7 +1102,7 @@ impl FuncTranslator {
     fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Reg) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
         self.push_instr(
-            Instruction::branch_table_0(index, table.len() + 1),
+            Op::branch_table_0(index, table.len() + 1),
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
@@ -1137,7 +1115,7 @@ impl FuncTranslator {
             let offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())?;
-            self.instrs.push_param(Instruction::branch(offset));
+            self.instrs.push_param(Op::branch(offset));
             frame.branch_to();
         }
         Ok(())
@@ -1158,12 +1136,10 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
         self.push_instr(
-            Instruction::branch_table_span(index, table.len() + 1),
+            Op::branch_table_span(index, table.len() + 1),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Instruction::register_span(BoundedRegSpan::new(
-            values, len_values,
-        )))?;
+        self.push_param(Op::register_span(BoundedRegSpan::new(values, len_values)))?;
         // Encode the `br_table` targets:
         let targets = &self.immediates[..];
         for target in targets {
@@ -1179,7 +1155,7 @@ impl FuncTranslator {
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())?;
             self.instrs
-                .push_param(Instruction::branch_table_target(results, offset));
+                .push_param(Op::branch_table_target(results, offset));
             frame.branch_to();
         }
         Ok(())
@@ -1189,38 +1165,38 @@ impl FuncTranslator {
     fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
-            0 => Instruction::Return,
+            0 => Op::Return,
             1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_reg(operand.local_index())?;
-                    Instruction::return_reg(value)
+                    Op::return_reg(value)
                 }
                 Operand::Temp(operand) => {
                     let value = self.layout.temp_to_reg(operand.operand_index())?;
-                    Instruction::return_reg(value)
+                    Op::return_reg(value)
                 }
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
-                        ValType::I32 => Instruction::return_imm32(i32::from(val)),
+                        ValType::I32 => Op::return_imm32(i32::from(val)),
                         ValType::I64 => match <Const32<i64>>::try_from(i64::from(val)) {
-                            Ok(value) => Instruction::return_i64imm32(value),
+                            Ok(value) => Op::return_i64imm32(value),
                             Err(_) => {
                                 let value = self.layout.const_to_reg(val)?;
-                                Instruction::return_reg(value)
+                                Op::return_reg(value)
                             }
                         },
-                        ValType::F32 => Instruction::return_imm32(f32::from(val)),
+                        ValType::F32 => Op::return_imm32(f32::from(val)),
                         ValType::F64 => match <Const32<f64>>::try_from(f64::from(val)) {
-                            Ok(value) => Instruction::return_f64imm32(value),
+                            Ok(value) => Op::return_f64imm32(value),
                             Err(_) => {
                                 let value = self.layout.const_to_reg(val)?;
-                                Instruction::return_reg(value)
+                                Op::return_reg(value)
                             }
                         },
                         ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
                             let value = self.layout.const_to_reg(val)?;
-                            Instruction::return_reg(value)
+                            Op::return_reg(value)
                         }
                     }
                 }
@@ -1229,14 +1205,14 @@ impl FuncTranslator {
                 let (v0, v1) = self.stack.peek2();
                 let v0 = self.layout.operand_to_reg(v0)?;
                 let v1 = self.layout.operand_to_reg(v1)?;
-                Instruction::return_reg2_ext(v0, v1)
+                Op::return_reg2_ext(v0, v1)
             }
             3 => {
                 let (v0, v1, v2) = self.stack.peek3();
                 let v0 = self.layout.operand_to_reg(v0)?;
                 let v1 = self.layout.operand_to_reg(v1)?;
                 let v2 = self.layout.operand_to_reg(v2)?;
-                Instruction::return_reg3_ext(v0, v1, v2)
+                Op::return_reg3_ext(v0, v1, v2)
             }
             _ => return self.encode_return_many(len_results, consume_fuel),
         };
@@ -1252,7 +1228,7 @@ impl FuncTranslator {
         self.operands.extend(self.stack.peek_n(len));
     }
 
-    /// Encodes an [`Instruction::ReturnMany`] for `len` values.
+    /// Encodes an [`Op::ReturnMany`] for `len` values.
     ///
     /// # Panics
     ///
@@ -1266,7 +1242,7 @@ impl FuncTranslator {
         if let Some(values) = Self::try_form_regspan_of(&self.operands, &self.layout)? {
             let values = BoundedRegSpan::new(values, len);
             return self.instrs.push_instr(
-                Instruction::return_span(values),
+                Op::return_span(values),
                 consume_fuel_instr,
                 FuelCostsProvider::base,
             );
@@ -1278,7 +1254,7 @@ impl FuncTranslator {
         let v1 = self.layout.operand_to_reg(*v1)?;
         let v2 = self.layout.operand_to_reg(*v2)?;
         let return_instr = self.instrs.push_instr(
-            Instruction::return_many_ext(v0, v1, v2),
+            Op::return_many_ext(v0, v1, v2),
             consume_fuel_instr,
             FuelCostsProvider::base,
         )?;
@@ -1402,7 +1378,7 @@ impl FuncTranslator {
                 .try_resolve_label(frame.label(), self.instrs.next_instr())
                 .unwrap();
             self.instrs.push_instr(
-                Instruction::branch(end_offset),
+                Op::branch(end_offset),
                 consume_fuel_instr,
                 FuelCostsProvider::base,
             )?;
@@ -1525,7 +1501,7 @@ impl FuncTranslator {
             let result = self.layout.temp_to_reg(preserved)?;
             let value = self.layout.local_to_reg(local_idx)?;
             self.instrs.push_instr(
-                Instruction::copy(result, value),
+                Op::copy(result, value),
                 consume_fuel_instr,
                 FuelCostsProvider::base,
             )?;
@@ -1583,7 +1559,7 @@ impl FuncTranslator {
     fn encode_br(&mut self, label: LabelRef) -> Result<Instr, Error> {
         let instr = self.instrs.next_instr();
         let offset = self.labels.try_resolve_label(label, instr)?;
-        let br_instr = self.push_instr(Instruction::branch(offset), FuelCostsProvider::base)?;
+        let br_instr = self.push_instr(Op::branch(offset), FuelCostsProvider::base)?;
         Ok(br_instr)
     }
 
@@ -1630,8 +1606,8 @@ impl FuncTranslator {
         let offset = self.labels.try_resolve_label(label, instr)?;
         let instr = match BranchOffset16::try_from(offset) {
             Ok(offset) => match branch_eqz {
-                true => Instruction::branch_i32_eq_imm16(condition, 0, offset),
-                false => Instruction::branch_i32_ne_imm16(condition, 0, offset),
+                true => Op::branch_i32_eq_imm16(condition, 0, offset),
+                false => Op::branch_i32_ne_imm16(condition, 0, offset),
             },
             Err(_) => {
                 let zero = self.layout.const_to_reg(0_i32)?;
@@ -1646,21 +1622,21 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Create an [`Instruction::BranchCmpFallback`].
+    /// Create an [`Op::BranchCmpFallback`].
     fn make_branch_cmp_fallback(
         &mut self,
         cmp: Comparator,
         lhs: Reg,
         rhs: Reg,
         offset: BranchOffset,
-    ) -> Result<Instruction, Error> {
+    ) -> Result<Op, Error> {
         let params = self
             .layout
             .const_to_reg(ComparatorAndOffset::new(cmp, offset))?;
-        Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
+        Ok(Op::branch_cmp_fallback(lhs, rhs, params))
     }
 
-    /// Try to fuse a cmp+branch [`Instruction`] with optional negation.
+    /// Try to fuse a cmp+branch [`Op`] with optional negation.
     fn try_fuse_branch_cmp(
         &mut self,
         condition: Operand,
@@ -1698,7 +1674,7 @@ impl FuncTranslator {
         Ok(true)
     }
 
-    /// Try to return a fused cmp+branch [`Instruction`] from the given parameters.
+    /// Try to return a fused cmp+branch [`Op`] from the given parameters.
     ///
     ///
     /// # Note
@@ -1712,7 +1688,7 @@ impl FuncTranslator {
         condition: TempOperand,
         label: LabelRef,
         negate: bool,
-    ) -> Result<Option<Instruction>, Error> {
+    ) -> Result<Option<Op>, Error> {
         let cmp_instr = *self.instrs.get(instr);
         let Some(result) = cmp_instr.compare_result() else {
             // Note: cannot fuse non-cmp instructions or cmp-instructions without result.
@@ -1747,7 +1723,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        make_instr: fn(result: Reg, input: Reg) -> Op,
         consteval: fn(input: T) -> R,
     ) -> Result<(), Error>
     where
@@ -1771,7 +1747,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary_fallible<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        make_instr: fn(result: Reg, input: Reg) -> Op,
         consteval: fn(input: T) -> Result<R, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -1974,8 +1950,8 @@ impl FuncTranslator {
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
-        make_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Op,
         consteval: fn(T, T) -> R,
         opt_ri: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -2017,13 +1993,13 @@ impl FuncTranslator {
     /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
     fn translate_divrem<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
         make_instr_imm16_rhs: fn(
             result: Reg,
             lhs: Reg,
             rhs: Const16<<T as WasmInteger>::NonZero>,
-        ) -> Instruction,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        ) -> Op,
+        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
         consteval: fn(T, T) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2077,9 +2053,9 @@ impl FuncTranslator {
     /// Translates binary non-commutative Wasm operators to Wasmi bytecode.
     fn translate_binary<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Op,
+        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2130,9 +2106,9 @@ impl FuncTranslator {
     /// Translates Wasm `i{32,64}.sub` operators to Wasmi bytecode.
     fn translate_isub<T, R>(
         &mut self,
-        make_sub_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_add_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-        make_sub_ir: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_sub_rr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_add_ri: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Op,
+        make_sub_ir: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2189,13 +2165,9 @@ impl FuncTranslator {
     /// Translates Wasm shift and rotate operators to Wasmi bytecode.
     fn translate_shift<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16_rhs: fn(
-            result: Reg,
-            lhs: Reg,
-            rhs: <T as IntoShiftAmount>::Output,
-        ) -> Instruction,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: <T as IntoShiftAmount>::Output) -> Op,
+        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
@@ -2251,7 +2223,7 @@ impl FuncTranslator {
     /// Translate a binary float Wasm operation.
     fn translate_fbinary<T, R>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2280,8 +2252,8 @@ impl FuncTranslator {
     /// - Applies constant evaluation if both operands are constant values.
     fn translate_fcopysign<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Op,
+        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
@@ -2320,7 +2292,7 @@ impl FuncTranslator {
 
     /// Translates a generic trap instruction.
     fn translate_trap(&mut self, trap: TrapCode) -> Result<(), Error> {
-        self.push_instr(Instruction::trap(trap), FuelCostsProvider::base)?;
+        self.push_instr(Op::trap(trap), FuelCostsProvider::base)?;
         self.reachable = false;
         Ok(())
     }
@@ -2363,7 +2335,7 @@ impl FuncTranslator {
                     let selected = self.layout.temp_to_reg(selected.operand_index())?;
                     self.push_instr_with_result(
                         ty,
-                        |result| Instruction::copy(result, selected),
+                        |result| Op::copy(result, selected),
                         FuelCostsProvider::base,
                     )?;
                     return Ok(());
@@ -2387,27 +2359,23 @@ impl FuncTranslator {
             None => {
                 self.push_instr_with_result(
                     ty,
-                    |result| Instruction::select_i32_eq_imm16(result, condition, 0_i16),
+                    |result| Op::select_i32_eq_imm16(result, condition, 0_i16),
                     FuelCostsProvider::base,
                 )?;
                 mem::swap(&mut true_val, &mut false_val);
             }
         };
-        self.push_param(Instruction::register2_ext(true_val, false_val))?;
+        self.push_param(Op::register2_ext(true_val, false_val))?;
         Ok(())
     }
 
-    /// Create either [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`] depending on the inputs.
-    fn call_indirect_params(
-        &mut self,
-        index: Operand,
-        table_index: u32,
-    ) -> Result<Instruction, Error> {
+    /// Create either [`Op::CallIndirectParams`] or [`Op::CallIndirectParamsImm16`] depending on the inputs.
+    fn call_indirect_params(&mut self, index: Operand, table_index: u32) -> Result<Op, Error> {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
         let index = self.make_index16(index, table_type.index_ty())?;
         let instr = match index {
-            Input::Reg(index) => Instruction::call_indirect_params(index, table_index),
-            Input::Immediate(index) => Instruction::call_indirect_params_imm16(index, table_index),
+            Input::Reg(index) => Op::call_indirect_params(index, table_index),
+            Input::Immediate(index) => Op::call_indirect_params_imm16(index, table_index),
         };
         Ok(instr)
     }
@@ -2447,7 +2415,7 @@ impl FuncTranslator {
         &mut self,
         lhs: Operand,
         rhs: T,
-        try_fuse: fn(cmp: &Instruction) -> Option<Instruction>,
+        try_fuse: fn(cmp: &Op) -> Option<Op>,
     ) -> Result<bool, Error> {
         if !rhs.is_zero() {
             // Case: cannot fuse with non-zero `rhs`
@@ -2518,9 +2486,9 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         loaded_ty: ValType,
-        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
-        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Op,
+        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Op,
+        make_instr_at: fn(result: Reg, address: Address32) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2538,7 +2506,7 @@ impl FuncTranslator {
                         FuelCostsProvider::load,
                     )?;
                     if !memory.is_default() {
-                        self.push_param(Instruction::memory_index(memory))?;
+                        self.push_param(Op::memory_index(memory))?;
                     }
                     return Ok(());
                 }
@@ -2569,9 +2537,9 @@ impl FuncTranslator {
             |result| make_instr(result, offset_lo),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Instruction::register_and_offset_hi(ptr, offset_hi))?;
+        self.push_param(Op::register_and_offset_hi(ptr, offset_hi))?;
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2646,14 +2614,11 @@ impl FuncTranslator {
                     match T::Param::try_from(T::Value::from(value).wrap()).ok() {
                         Some(value) => (
                             T::store_imm(ptr, offset_lo),
-                            Instruction::imm16_and_offset_hi(value, offset_hi),
+                            Op::imm16_and_offset_hi(value, offset_hi),
                         ),
                         None => (
                             T::store(ptr, offset_lo),
-                            Instruction::register_and_offset_hi(
-                                self.layout.const_to_reg(value)?,
-                                offset_hi,
-                            ),
+                            Op::register_and_offset_hi(self.layout.const_to_reg(value)?, offset_hi),
                         ),
                     }
                 }
@@ -2661,7 +2626,7 @@ impl FuncTranslator {
                     let value = self.layout.operand_to_reg(value)?;
                     (
                         T::store(ptr, offset_lo),
-                        Instruction::register_and_offset_hi(value, offset_hi),
+                        Op::register_and_offset_hi(value, offset_hi),
                     )
                 }
             }
@@ -2669,7 +2634,7 @@ impl FuncTranslator {
         self.push_instr(instr, FuelCostsProvider::store)?;
         self.push_param(param)?;
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2706,7 +2671,7 @@ impl FuncTranslator {
             }
         }
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2775,9 +2740,9 @@ impl FuncTranslator {
     fn translate_store(
         &mut self,
         memarg: MemArg,
-        store: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        store_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
-        store_at: fn(value: Reg, address: Address32) -> Instruction,
+        store: fn(ptr: Reg, offset_lo: Offset64Lo) -> Op,
+        store_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Op,
+        store_at: fn(value: Reg, address: Address32) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2807,9 +2772,9 @@ impl FuncTranslator {
             }
         }
         self.push_instr(store(ptr, offset_lo), FuelCostsProvider::store)?;
-        self.push_param(Instruction::register_and_offset_hi(value, offset_hi))?;
+        self.push_param(Op::register_and_offset_hi(value, offset_hi))?;
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2824,12 +2789,12 @@ impl FuncTranslator {
         memory: index::Memory,
         address: Address32,
         value: Operand,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Op,
     ) -> Result<(), Error> {
         let value = self.layout.operand_to_reg(value)?;
         self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
         if !memory.is_default() {
-            self.push_param(Instruction::memory_index(memory))?;
+            self.push_param(Op::memory_index(memory))?;
         }
         Ok(())
     }
@@ -2879,7 +2844,7 @@ impl FuncTranslator {
     /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_binop128(
         &mut self,
-        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Instruction,
+        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Op,
         const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -2914,14 +2879,14 @@ impl FuncTranslator {
             make_instr([result_lo, result_hi], lhs_lo),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
+        self.push_param(Op::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
 
     /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_mul_wide_sx(
         &mut self,
-        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Op,
         const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
         signed: bool,
     ) -> Result<(), Error> {

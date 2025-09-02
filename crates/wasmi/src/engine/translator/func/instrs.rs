@@ -12,7 +12,7 @@ use crate::{
         relink_result::RelinkResult,
         utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
     },
-    ir::{BranchOffset, Instruction, Reg},
+    ir::{BranchOffset, Op, Reg},
     module::ModuleHeader,
     Engine,
     Error,
@@ -20,16 +20,16 @@ use crate::{
 };
 use alloc::vec::{self, Vec};
 
-/// Creates and encodes the list of [`Instruction`]s for a function.
+/// Creates and encodes the list of [`Op`]s for a function.
 #[derive(Debug, Default)]
 pub struct InstrEncoder {
     /// The list of constructed instructions and their parameters.
-    instrs: Vec<Instruction>,
+    instrs: Vec<Op>,
     /// The fuel costs of instructions.
     ///
     /// This is `Some` if fuel metering is enabled, otherwise `None`.
     fuel_costs: Option<FuelCostsProvider>,
-    /// The last pushed non-parameter [`Instruction`].
+    /// The last pushed non-parameter [`Op`].
     last_instr: Option<Instr>,
 }
 
@@ -47,7 +47,7 @@ impl ReusableAllocations for InstrEncoder {
 #[derive(Debug, Default)]
 pub struct InstrEncoderAllocations {
     /// The list of constructed instructions and their parameters.
-    instrs: Vec<Instruction>,
+    instrs: Vec<Op>,
 }
 
 impl Reset for InstrEncoderAllocations {
@@ -77,11 +77,11 @@ impl InstrEncoder {
         Instr::from_usize(self.instrs.len())
     }
 
-    /// Pushes an [`Instruction::ConsumeFuel`] instruction to `self`.
+    /// Pushes an [`Op::ConsumeFuel`] instruction to `self`.
     ///
     /// # Note
     ///
-    /// The pushes [`Instruction::ConsumeFuel`] is initialized with base fuel costs.
+    /// The pushes [`Op::ConsumeFuel`] is initialized with base fuel costs.
     pub fn push_consume_fuel_instr(&mut self) -> Result<Option<Instr>, Error> {
         let Some(fuel_costs) = &self.fuel_costs else {
             return Ok(None);
@@ -90,16 +90,16 @@ impl InstrEncoder {
         let Ok(base_costs) = u32::try_from(base_costs) else {
             panic!("out of  bounds base fuel costs: {base_costs}");
         };
-        let instr = self.push_instr_impl(Instruction::consume_fuel(base_costs))?;
+        let instr = self.push_instr_impl(Op::consume_fuel(base_costs))?;
         Ok(Some(instr))
     }
 
-    /// Pushes a non-parameter [`Instruction`] to the [`InstrEncoder`].
+    /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
     ///
-    /// Returns an [`Instr`] that refers to the pushed [`Instruction`].
+    /// Returns an [`Instr`] that refers to the pushed [`Op`].
     pub fn push_instr(
         &mut self,
-        instruction: Instruction,
+        instruction: Op,
         consume_fuel: Option<Instr>,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<Instr, Error> {
@@ -107,8 +107,8 @@ impl InstrEncoder {
         self.push_instr_impl(instruction)
     }
 
-    /// Pushes a non-parameter [`Instruction`] to the [`InstrEncoder`].
-    fn push_instr_impl(&mut self, instruction: Instruction) -> Result<Instr, Error> {
+    /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
+    fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
         debug_assert!(
             !instruction.is_instruction_parameter(),
             "parameter: {instruction:?}"
@@ -126,12 +126,8 @@ impl InstrEncoder {
     ///
     /// # Panics (Debug)
     ///
-    /// If `instr` or `new_instr` are [`Instruction`] parameters.
-    pub fn try_replace_instr(
-        &mut self,
-        instr: Instr,
-        new_instr: Instruction,
-    ) -> Result<bool, Error> {
+    /// If `instr` or `new_instr` are [`Op`] parameters.
+    pub fn try_replace_instr(&mut self, instr: Instr, new_instr: Op) -> Result<bool, Error> {
         debug_assert!(
             !new_instr.is_instruction_parameter(),
             "parameter: {new_instr:?}"
@@ -230,28 +226,28 @@ impl InstrEncoder {
         Ok(Some(swap_operands))
     }
 
-    /// Pushes an [`Instruction`] parameter to the [`InstrEncoder`].
+    /// Pushes an [`Op`] parameter to the [`InstrEncoder`].
     ///
-    /// The parameter is associated to the last pushed [`Instruction`].
-    pub fn push_param(&mut self, instruction: Instruction) {
+    /// The parameter is associated to the last pushed [`Op`].
+    pub fn push_param(&mut self, instruction: Op) {
         self.instrs.push(instruction);
     }
 
-    /// Returns a shared reference to the [`Instruction`] associated to [`Instr`].
+    /// Returns a shared reference to the [`Op`] associated to [`Instr`].
     ///
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    pub fn get(&self, instr: Instr) -> &Instruction {
+    pub fn get(&self, instr: Instr) -> &Op {
         &self.instrs[instr.into_usize()]
     }
 
-    /// Returns an exclusive reference to the [`Instruction`] associated to [`Instr`].
+    /// Returns an exclusive reference to the [`Op`] associated to [`Instr`].
     ///
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
+    fn get_mut(&mut self, instr: Instr) -> &mut Op {
         &mut self.instrs[instr.into_usize()]
     }
 
@@ -284,7 +280,7 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
+    /// Bumps consumed fuel for [`Op::ConsumeFuel`] of `instr` by `delta`.
     ///
     /// # Errors
     ///
@@ -316,14 +312,14 @@ impl InstrEncoder {
     ///
     /// This is used for the following n-ary instructions:
     ///
-    /// - [`Instruction::ReturnMany`]
-    /// - [`Instruction::CopyMany`]
-    /// - [`Instruction::CallInternal`]
-    /// - [`Instruction::CallImported`]
-    /// - [`Instruction::CallIndirect`]
-    /// - [`Instruction::ReturnCallInternal`]
-    /// - [`Instruction::ReturnCallImported`]
-    /// - [`Instruction::ReturnCallIndirect`]
+    /// - [`Op::ReturnMany`]
+    /// - [`Op::CopyMany`]
+    /// - [`Op::CallInternal`]
+    /// - [`Op::CallImported`]
+    /// - [`Op::CallIndirect`]
+    /// - [`Op::ReturnCallInternal`]
+    /// - [`Op::ReturnCallImported`]
+    /// - [`Op::ReturnCallIndirect`]
     pub fn encode_register_list(
         &mut self,
         operands: &[Operand],
@@ -337,24 +333,24 @@ impl InstrEncoder {
                 [] => return Ok(()),
                 [v0] => {
                     let v0 = operand_to_reg(v0)?;
-                    break Instruction::register(v0);
+                    break Op::register(v0);
                 }
                 [v0, v1] => {
                     let v0 = operand_to_reg(v0)?;
                     let v1 = operand_to_reg(v1)?;
-                    break Instruction::register2_ext(v0, v1);
+                    break Op::register2_ext(v0, v1);
                 }
                 [v0, v1, v2] => {
                     let v0 = operand_to_reg(v0)?;
                     let v1 = operand_to_reg(v1)?;
                     let v2 = operand_to_reg(v2)?;
-                    break Instruction::register3_ext(v0, v1, v2);
+                    break Op::register3_ext(v0, v1, v2);
                 }
                 [v0, v1, v2, rest @ ..] => {
                     let v0 = operand_to_reg(v0)?;
                     let v1 = operand_to_reg(v1)?;
                     let v2 = operand_to_reg(v2)?;
-                    let instr = Instruction::register_list_ext(v0, v1, v2);
+                    let instr = Op::register_list_ext(v0, v1, v2);
                     self.push_param(instr);
                     remaining = rest;
                 }
@@ -364,7 +360,7 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Returns an iterator yielding all [`Instruction`]s of the [`InstrEncoder`].
+    /// Returns an iterator yielding all [`Op`]s of the [`InstrEncoder`].
     ///
     /// # Note
     ///
@@ -381,15 +377,15 @@ impl InstrEncoder {
     }
 }
 
-/// Iterator yielding all [`Instruction`]s of the [`InstrEncoder`].
+/// Iterator yielding all [`Op`]s of the [`InstrEncoder`].
 #[derive(Debug)]
 pub struct InstrEncoderIter<'a> {
     /// The underlying iterator.
-    iter: vec::Drain<'a, Instruction>,
+    iter: vec::Drain<'a, Op>,
 }
 
 impl<'a> Iterator for InstrEncoderIter<'a> {
-    type Item = Instruction;
+    type Item = Op;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()

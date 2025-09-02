@@ -4,7 +4,7 @@ use crate::{
     errors::MemoryError,
     ir::{
         index::{Data, Memory},
-        Instruction,
+        Op,
         Reg,
     },
     store::{PrunedStore, StoreInner},
@@ -13,61 +13,57 @@ use crate::{
 };
 
 impl Executor<'_> {
-    /// Returns the [`Instruction::MemoryIndex`] parameter for an [`Instruction`].
+    /// Returns the [`Op::MemoryIndex`] parameter for an [`Op`].
     fn fetch_memory_index(&self, offset: usize) -> Memory {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::MemoryIndex { index } => index,
+            Op::MemoryIndex { index } => index,
             unexpected => {
-                // Safety: Wasmi translation guarantees that [`Instruction::MemoryIndex`] exists.
+                // Safety: Wasmi translation guarantees that [`Op::MemoryIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Instruction::MemoryIndex` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::MemoryIndex` but found: {unexpected:?}")
                 }
             }
         }
     }
 
-    /// Returns the [`Instruction::DataIndex`] parameter for an [`Instruction`].
+    /// Returns the [`Op::DataIndex`] parameter for an [`Op`].
     fn fetch_data_segment_index(&self, offset: usize) -> Data {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::DataIndex { index } => index,
+            Op::DataIndex { index } => index,
             unexpected => {
-                // Safety: Wasmi translation guarantees that [`Instruction::DataIndex`] exists.
+                // Safety: Wasmi translation guarantees that [`Op::DataIndex`] exists.
                 unsafe {
-                    unreachable_unchecked!(
-                        "expected `Instruction::DataIndex` but found: {unexpected:?}"
-                    )
+                    unreachable_unchecked!("expected `Op::DataIndex` but found: {unexpected:?}")
                 }
             }
         }
     }
 
-    /// Executes an [`Instruction::DataDrop`].
+    /// Executes an [`Op::DataDrop`].
     pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: Data) {
         let segment = self.get_data_segment(segment_index);
         store.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
 
-    /// Executes an [`Instruction::MemorySize`].
+    /// Executes an [`Op::MemorySize`].
     pub fn execute_memory_size(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
         self.execute_memory_size_impl(store, result, memory);
         self.next_instr()
     }
 
-    /// Underlying implementation of [`Instruction::MemorySize`].
+    /// Underlying implementation of [`Op::MemorySize`].
     fn execute_memory_size_impl(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
         let memory = self.get_memory(memory);
         let size = store.resolve_memory(&memory).size();
         self.set_register(result, size);
     }
 
-    /// Executes an [`Instruction::MemoryGrow`].
+    /// Executes an [`Op::MemoryGrow`].
     pub fn execute_memory_grow(
         &mut self,
         store: &mut PrunedStore,
@@ -111,7 +107,7 @@ impl Executor<'_> {
         self.try_next_instr_at(2)
     }
 
-    /// Executes an [`Instruction::MemoryCopy`].
+    /// Executes an [`Op::MemoryCopy`].
     pub fn execute_memory_copy(
         &mut self,
         store: &mut StoreInner,
@@ -183,7 +179,7 @@ impl Executor<'_> {
         self.try_next_instr_at(3)
     }
 
-    /// Executes an [`Instruction::MemoryFill`].
+    /// Executes an [`Op::MemoryFill`].
     pub fn execute_memory_fill(
         &mut self,
         store: &mut StoreInner,
@@ -197,7 +193,7 @@ impl Executor<'_> {
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
-    /// Executes an [`Instruction::MemoryFillImm`].
+    /// Executes an [`Op::MemoryFillImm`].
     pub fn execute_memory_fill_imm(
         &mut self,
         store: &mut StoreInner,
@@ -238,7 +234,7 @@ impl Executor<'_> {
         self.try_next_instr_at(2)
     }
 
-    /// Executes an [`Instruction::MemoryInit`].
+    /// Executes an [`Op::MemoryInit`].
     pub fn execute_memory_init(
         &mut self,
         store: &mut StoreInner,

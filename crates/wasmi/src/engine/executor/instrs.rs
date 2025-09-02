@@ -9,7 +9,7 @@ use crate::{
         DedupFuncType,
         EngineFunc,
     },
-    ir::{index, BlockFuel, Const16, Instruction, Offset64Hi, Reg, ShiftAmount},
+    ir::{index, BlockFuel, Const16, Offset64Hi, Op, Reg, ShiftAmount},
     memory::DataSegment,
     store::{PrunedStore, StoreInner},
     table::ElementSegment,
@@ -131,7 +131,7 @@ impl<'engine> Executor<'engine> {
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
     fn execute(&mut self, store: &mut PrunedStore) -> Result<(), Error> {
-        use Instruction as Instr;
+        use Op as Instr;
         loop {
             match *self.ip.get() {
                 Instr::Trap { trap_code } => self.execute_trap(trap_code)?,
@@ -2338,7 +2338,7 @@ impl Executor<'_> {
     /// # Note
     ///
     /// This is used by Wasmi instructions that have a fixed
-    /// encoding size of two instruction words such as [`Instruction::Branch`].
+    /// encoding size of two instruction words such as [`Op::Branch`].
     #[inline(always)]
     fn next_instr_at(&mut self, skip: usize) {
         self.ip.add(skip)
@@ -2400,7 +2400,7 @@ impl Executor<'_> {
         *ip = frame.instr_ptr();
     }
 
-    /// Executes a generic unary [`Instruction`].
+    /// Executes a generic unary [`Op`].
     #[inline(always)]
     fn execute_unary<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
     where
@@ -2411,7 +2411,7 @@ impl Executor<'_> {
         self.next_instr();
     }
 
-    /// Executes a fallible generic unary [`Instruction`].
+    /// Executes a fallible generic unary [`Op`].
     #[inline(always)]
     fn try_execute_unary<P, R>(
         &mut self,
@@ -2427,7 +2427,7 @@ impl Executor<'_> {
         self.try_next_instr()
     }
 
-    /// Executes a generic binary [`Instruction`].
+    /// Executes a generic binary [`Op`].
     #[inline(always)]
     fn execute_binary<Lhs, Rhs, Result>(
         &mut self,
@@ -2444,7 +2444,7 @@ impl Executor<'_> {
         self.next_instr();
     }
 
-    /// Executes a generic binary [`Instruction`].
+    /// Executes a generic binary [`Op`].
     #[inline(always)]
     fn execute_binary_imm16_rhs<Lhs, Rhs, T>(
         &mut self,
@@ -2462,7 +2462,7 @@ impl Executor<'_> {
         self.next_instr();
     }
 
-    /// Executes a generic binary [`Instruction`] with reversed operands.
+    /// Executes a generic binary [`Op`] with reversed operands.
     #[inline(always)]
     fn execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
@@ -2480,7 +2480,7 @@ impl Executor<'_> {
         self.next_instr();
     }
 
-    /// Executes a generic shift or rotate [`Instruction`].
+    /// Executes a generic shift or rotate [`Op`].
     #[inline(always)]
     fn execute_shift_by<Lhs, Rhs, T>(
         &mut self,
@@ -2498,7 +2498,7 @@ impl Executor<'_> {
         self.next_instr();
     }
 
-    /// Executes a fallible generic binary [`Instruction`].
+    /// Executes a fallible generic binary [`Op`].
     #[inline(always)]
     fn try_execute_binary<Lhs, Rhs, T>(
         &mut self,
@@ -2516,7 +2516,7 @@ impl Executor<'_> {
         self.try_next_instr()
     }
 
-    /// Executes a fallible generic binary [`Instruction`].
+    /// Executes a fallible generic binary [`Op`].
     #[inline(always)]
     fn try_execute_divrem_imm16_rhs<Lhs, Rhs, T>(
         &mut self,
@@ -2535,7 +2535,7 @@ impl Executor<'_> {
         self.try_next_instr()
     }
 
-    /// Executes a fallible generic binary [`Instruction`].
+    /// Executes a fallible generic binary [`Op`].
     #[inline(always)]
     fn execute_divrem_imm16_rhs<Lhs, NonZeroT, T>(
         &mut self,
@@ -2553,7 +2553,7 @@ impl Executor<'_> {
         self.next_instr()
     }
 
-    /// Executes a fallible generic binary [`Instruction`] with reversed operands.
+    /// Executes a fallible generic binary [`Op`] with reversed operands.
     #[inline(always)]
     fn try_execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
@@ -2572,18 +2572,18 @@ impl Executor<'_> {
         self.try_next_instr()
     }
 
-    /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
+    /// Returns the optional `memory` parameter for a `load_at` [`Op`].
     ///
     /// # Note
     ///
     /// - Returns the default [`index::Memory`] if the parameter is missing.
-    /// - Bumps `self.ip` if a [`Instruction::MemoryIndex`] parameter was found.
+    /// - Bumps `self.ip` if a [`Op::MemoryIndex`] parameter was found.
     #[inline(always)]
     fn fetch_optional_memory(&mut self, delta: usize) -> index::Memory {
         let mut addr: InstructionPtr = self.ip;
         addr.add(delta);
         match *addr.get() {
-            Instruction::MemoryIndex { index } => {
+            Op::MemoryIndex { index } => {
                 hint::cold();
                 self.ip.add(1);
                 index
@@ -2592,28 +2592,26 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
+    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Op`].
     unsafe fn fetch_reg_and_offset_hi(&self) -> (Reg, Offset64Hi) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match addr.get().filter_register_and_offset_hi() {
             Ok(value) => value,
             Err(instr) => unsafe {
-                unreachable_unchecked!(
-                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
-                )
+                unreachable_unchecked!("expected an `Op::RegisterAndImm32` but found: {instr:?}")
             },
         }
     }
 }
 
 impl Executor<'_> {
-    /// Used for all [`Instruction`] words that are not meant for execution.
+    /// Used for all [`Op`] words that are not meant for execution.
     ///
     /// # Note
     ///
-    /// This includes [`Instruction`] variants such as [`Instruction::TableIndex`]
-    /// that primarily carry parameters for actually executable [`Instruction`].
+    /// This includes [`Op`] variants such as [`Op::TableIndex`]
+    /// that primarily carry parameters for actually executable [`Op`].
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {
         // Safety: Wasmi translation guarantees that branches are never taken to instruction parameters directly.
         unsafe {
@@ -2629,14 +2627,14 @@ impl Executor<'_> {
         Err(Error::from(trap_code))
     }
 
-    /// Executes an [`Instruction::ConsumeFuel`].
+    /// Executes an [`Op::ConsumeFuel`].
     fn execute_consume_fuel(
         &mut self,
         store: &mut StoreInner,
         block_fuel: BlockFuel,
     ) -> Result<(), Error> {
         // We do not have to check if fuel metering is enabled since
-        // [`Instruction::ConsumeFuel`] are only generated if fuel metering
+        // [`Op::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.
         store
             .fuel_mut()
@@ -2644,7 +2642,7 @@ impl Executor<'_> {
         self.try_next_instr()
     }
 
-    /// Executes an [`Instruction::RefFunc`].
+    /// Executes an [`Op::RefFunc`].
     fn execute_ref_func(&mut self, result: Reg, func_index: index::Func) {
         let func = self.get_func(func_index);
         let funcref = <Ref<Func>>::from(func);

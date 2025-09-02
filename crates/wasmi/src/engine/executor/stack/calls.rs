@@ -12,7 +12,7 @@ use alloc::vec::Vec;
 use crate::{
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
-    ir::Instruction,
+    ir::Op,
     ir::Reg,
     Global,
     Memory,
@@ -194,7 +194,7 @@ impl StackOffsets {
 /// A single frame of a called [`EngineFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CallFrame {
-    /// The pointer to the [`Instruction`] that is executed next.
+    /// The pointer to the [`Op`] that is executed next.
     instr_ptr: InstructionPtr,
     /// Offsets of the [`CallFrame`] into the [`ValueStack`].
     offsets: StackOffsets,
