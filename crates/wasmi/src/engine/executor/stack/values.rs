@@ -223,11 +223,11 @@ impl ValueStack {
         func: CompiledFuncRef,
         on_resize: impl FnMut(&mut Self),
     ) -> Result<(FrameParams, StackOffsets), TrapCode> {
-        let len_registers = func.len_registers();
+        let len_stack_slots = func.len_stack_slots();
         let len_consts = func.consts().len();
         let len = self.len();
         let mut spare = self
-            .extend_by(len_registers as usize, on_resize)?
+            .extend_by(len_stack_slots as usize, on_resize)?
             .iter_mut();
         (&mut spare)
             .zip(func.consts())

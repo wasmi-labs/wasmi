@@ -788,13 +788,13 @@ pub struct CompiledFuncEntity {
     instrs: Pin<Box<[Op]>>,
     /// The constant values local to the [`EngineFunc`].
     consts: Pin<Box<[UntypedVal]>>,
-    /// The number of registers used by the [`EngineFunc`] in total.
+    /// The number of stack slots used by the [`EngineFunc`] in total.
     ///
     /// # Note
     ///
-    /// This includes registers to store the function local constant values,
-    /// function parameters, function locals and dynamically used registers.
-    len_registers: u16,
+    /// This includes stack slots to store the function local constant values,
+    /// function parameters, function locals and dynamically used stack slots.
+    len_stack_slots: u16,
 }
 
 impl CompiledFuncEntity {
@@ -804,7 +804,7 @@ impl CompiledFuncEntity {
     ///
     /// - If `instrs` is empty.
     /// - If `instrs` contains more than `i32::MAX` instructions.
-    pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
+    pub fn new<I, C>(len_stack_slots: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Op>,
         C: IntoIterator<Item = UntypedVal>,
@@ -827,7 +827,7 @@ impl CompiledFuncEntity {
         Self {
             instrs,
             consts,
-            len_registers,
+            len_stack_slots,
         }
     }
 }
@@ -839,8 +839,8 @@ pub struct CompiledFuncRef<'a> {
     instrs: Pin<&'a [Op]>,
     /// The constant values local to the [`EngineFunc`].
     consts: Pin<&'a [UntypedVal]>,
-    /// The number of registers used by the [`EngineFunc`] in total.
-    len_registers: u16,
+    /// The number of stack slots used by the [`EngineFunc`] in total.
+    len_stack_slots: u16,
 }
 
 impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
@@ -849,7 +849,7 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
         Self {
             instrs: func.instrs.as_ref(),
             consts: func.consts.as_ref(),
-            len_registers: func.len_registers,
+            len_stack_slots: func.len_stack_slots,
         }
     }
 }
@@ -861,10 +861,10 @@ impl<'a> CompiledFuncRef<'a> {
         self.instrs.get_ref()
     }
 
-    /// Returns the number of registers used by the [`EngineFunc`].
+    /// Returns the number of stack slots used by the [`EngineFunc`].
     #[inline]
-    pub fn len_registers(&self) -> u16 {
-        self.len_registers
+    pub fn len_stack_slots(&self) -> u16 {
+        self.len_stack_slots
     }
 
     /// Returns the function local constant values of the [`EngineFunc`].
