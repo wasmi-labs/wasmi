@@ -220,14 +220,14 @@ impl Executor<'_> {
             ip.add(1);
         }
         let values = match ip.get() {
-            Op::Slot { reg } => slice::from_ref(reg),
-            Op::Slot2 { regs } => regs,
-            Op::Slot3 { regs } => regs,
+            Op::Slot { slot } => slice::from_ref(slot),
+            Op::Slot2 { slots } => slots,
+            Op::Slot3 { slots } => slots,
             unexpected => {
-                // Safety: Wasmi translation guarantees that a register-list finalizer exists.
+                // Safety: Wasmi translation guarantees that a slot-list finalizer exists.
                 unsafe {
                     unreachable_unchecked!(
-                        "unexpected register-list finalizer but found: {unexpected:?}"
+                        "unexpected slot-list finalizer but found: {unexpected:?}"
                     )
                 }
             }

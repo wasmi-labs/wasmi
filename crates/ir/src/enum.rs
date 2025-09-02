@@ -166,8 +166,8 @@ impl Op {
     }
 
     /// Creates a new [`Op::SlotAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn slot_and_offset_hi(reg: impl Into<Slot>, offset_hi: Offset64Hi) -> Self {
-        Self::slot_and_imm32(reg, offset_hi.0)
+    pub fn slot_and_offset_hi(slot: impl Into<Slot>, offset_hi: Offset64Hi) -> Self {
+        Self::slot_and_imm32(slot, offset_hi.0)
     }
 
     /// Returns `Some` [`Slot`] and [`Offset64Hi`] if encoded properly.
@@ -177,18 +177,18 @@ impl Op {
     /// Returns back `self` if it was an incorrect [`Op`].
     /// This allows for a better error message to inform the user.
     pub fn filter_register_and_offset_hi(self) -> Result<(Slot, Offset64Hi), Self> {
-        if let Op::SlotAndImm32 { reg, imm } = self {
-            return Ok((reg, Offset64Hi(u32::from(imm))));
+        if let Op::SlotAndImm32 { slot, imm } = self {
+            return Ok((slot, Offset64Hi(u32::from(imm))));
         }
         Err(self)
     }
 
     /// Creates a new [`Op::SlotAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn slot_and_lane<LaneType>(reg: impl Into<Slot>, lane: LaneType) -> Self
+    pub fn slot_and_lane<LaneType>(slot: impl Into<Slot>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
     {
-        Self::slot_and_imm32(reg, u32::from(lane.into()))
+        Self::slot_and_imm32(slot, u32::from(lane.into()))
     }
 
     /// Returns `Some` [`Slot`] and a `lane` index if encoded properly.
@@ -201,12 +201,12 @@ impl Op {
     where
         LaneType: TryFrom<u8>,
     {
-        if let Op::SlotAndImm32 { reg, imm } = self {
+        if let Op::SlotAndImm32 { slot, imm } = self {
             let lane_index = u32::from(imm) as u8;
             let Ok(lane) = LaneType::try_from(lane_index) else {
                 panic!("encountered out of bounds lane index: {}", lane_index)
             };
-            return Ok((reg, lane));
+            return Ok((slot, lane));
         }
         Err(self)
     }

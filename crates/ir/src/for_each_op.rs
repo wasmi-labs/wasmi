@@ -5375,7 +5375,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(slot_and_imm32)]
                 SlotAndImm32 {
                     /// The [`Slot`] parameter value.
-                    reg: Slot,
+                    slot: Slot,
                     /// The 32-bit immediate value.
                     imm: AnyConst32,
                 },
@@ -5390,7 +5390,7 @@ macro_rules! for_each_op_grouped {
                 /// one and will never be executed itself directly.
                 #[snake_name(slot)]
                 Slot {
-                    reg: Slot
+                    slot: Slot
                 },
                 /// Two [`Slot`] instruction parameters.
                 ///
@@ -5400,7 +5400,7 @@ macro_rules! for_each_op_grouped {
                 /// one and will never be executed itself directly.
                 #[snake_name(slot2)]
                 Slot2 {
-                    regs: [Slot; 2]
+                    slots: [Slot; 2]
                 },
                 /// Three [`Slot`] instruction parameters.
                 ///
@@ -5410,7 +5410,7 @@ macro_rules! for_each_op_grouped {
                 /// one and will never be executed itself directly.
                 #[snake_name(slot3)]
                 Slot3 {
-                    regs: [Slot; 3]
+                    slots: [Slot; 3]
                 },
                 /// [`Slot`] slice parameters.
                 ///

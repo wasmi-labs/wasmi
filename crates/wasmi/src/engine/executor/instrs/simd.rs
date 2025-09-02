@@ -30,7 +30,7 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Op::Slot { reg } => reg,
+            Op::Slot { slot } => slot,
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::Slot`] exists.
                 unsafe { unreachable_unchecked!("expected `Op::Slot` but found {unexpected:?}") }

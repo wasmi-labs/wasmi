@@ -108,13 +108,13 @@ impl<const N: u16> FixedSlotSpan<N> {
     }
 
     /// Returns `true` if the [`Slot`] is contained in `self`.
-    pub fn contains(self, reg: Slot) -> bool {
+    pub fn contains(self, slot: Slot) -> bool {
         if self.is_empty() {
             return false;
         }
         let min = self.span.head();
         let max = min.next_n(N);
-        min <= reg && reg < max
+        min <= slot && slot < max
     }
 
     /// Returns the number of [`Slot`]s in `self`.

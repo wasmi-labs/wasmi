@@ -27,10 +27,10 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Op::Slot3 { regs } => Params128 {
-                lhs_hi: regs[0],
-                rhs_lo: regs[1],
-                rhs_hi: regs[2],
+            Op::Slot3 { slots } => Params128 {
+                lhs_hi: slots[0],
+                rhs_lo: slots[1],
+                rhs_hi: slots[2],
             },
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Op::MemoryIndex`] exists.

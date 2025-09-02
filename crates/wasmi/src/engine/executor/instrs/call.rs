@@ -214,14 +214,14 @@ impl Executor<'_> {
             self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
-            Op::Slot { reg } => {
-                self.copy_regs(uninit_params, array::from_ref(reg));
+            Op::Slot { slot } => {
+                self.copy_regs(uninit_params, array::from_ref(slot));
             }
-            Op::Slot2 { regs } => {
-                self.copy_regs(uninit_params, regs);
+            Op::Slot2 { slots } => {
+                self.copy_regs(uninit_params, slots);
             }
-            Op::Slot3 { regs } => {
-                self.copy_regs(uninit_params, regs);
+            Op::Slot3 { slots } => {
+                self.copy_regs(uninit_params, slots);
             }
             unexpected => {
                 // Safety: Wasmi translation guarantees that register list finalizer exists.
