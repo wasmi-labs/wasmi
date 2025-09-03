@@ -133,10 +133,10 @@ fn add_binary_ops(isa: &mut Isa) {
     let ops = [
         // comparisons: i32
         BinaryOpKind::Cmp(CmpOpKind::I32Eq),
-        BinaryOpKind::Cmp(CmpOpKind::I32NotEq),
         BinaryOpKind::Cmp(CmpOpKind::I32And),
-        BinaryOpKind::Cmp(CmpOpKind::I32NotAnd),
         BinaryOpKind::Cmp(CmpOpKind::I32Or),
+        BinaryOpKind::Cmp(CmpOpKind::I32NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::I32NotAnd),
         BinaryOpKind::Cmp(CmpOpKind::I32NotOr),
         BinaryOpKind::Cmp(CmpOpKind::S32Lt),
         BinaryOpKind::Cmp(CmpOpKind::S32Le),
@@ -144,10 +144,10 @@ fn add_binary_ops(isa: &mut Isa) {
         BinaryOpKind::Cmp(CmpOpKind::U32Le),
         // comparisons: i64
         BinaryOpKind::Cmp(CmpOpKind::I64Eq),
-        BinaryOpKind::Cmp(CmpOpKind::I64NotEq),
         BinaryOpKind::Cmp(CmpOpKind::I64And),
-        BinaryOpKind::Cmp(CmpOpKind::I64NotAnd),
         BinaryOpKind::Cmp(CmpOpKind::I64Or),
+        BinaryOpKind::Cmp(CmpOpKind::I64NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::I64NotAnd),
         BinaryOpKind::Cmp(CmpOpKind::I64NotOr),
         BinaryOpKind::Cmp(CmpOpKind::S64Lt),
         BinaryOpKind::Cmp(CmpOpKind::S64Le),
@@ -155,14 +155,18 @@ fn add_binary_ops(isa: &mut Isa) {
         BinaryOpKind::Cmp(CmpOpKind::U64Le),
         // comparisons: f32
         BinaryOpKind::Cmp(CmpOpKind::F32Eq),
-        BinaryOpKind::Cmp(CmpOpKind::F32NotEq),
         BinaryOpKind::Cmp(CmpOpKind::F32Lt),
         BinaryOpKind::Cmp(CmpOpKind::F32Le),
+        BinaryOpKind::Cmp(CmpOpKind::F32NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::F32NotLt),
+        BinaryOpKind::Cmp(CmpOpKind::F32NotLe),
         // comparisons: f64
         BinaryOpKind::Cmp(CmpOpKind::F64Eq),
-        BinaryOpKind::Cmp(CmpOpKind::F64NotEq),
         BinaryOpKind::Cmp(CmpOpKind::F64Lt),
         BinaryOpKind::Cmp(CmpOpKind::F64Le),
+        BinaryOpKind::Cmp(CmpOpKind::F64NotEq),
+        BinaryOpKind::Cmp(CmpOpKind::F64NotLt),
+        BinaryOpKind::Cmp(CmpOpKind::F64NotLe),
         // i32
         BinaryOpKind::I32Add,
         BinaryOpKind::I32Sub,
