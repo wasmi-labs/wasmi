@@ -35,6 +35,7 @@ use crate::{
     BranchOffset,
     FixedSlotSpan,
     Offset16,
+    OpCode,
     Sign,
     Slot,
     SlotSpan,
@@ -123,6 +124,9 @@ impl_decode_using! {
     TrapCode as u8 = |code: u8| -> TrapCode {
         TrapCode::try_from(code).unwrap_unchecked()
     },
+    OpCode as u16 = |code: u16| -> OpCode {
+        OpCode::try_from(code).unwrap_unchecked()
+    }
 }
 
 impl<const N: usize, T: Decode> Decode for [T; N] {
