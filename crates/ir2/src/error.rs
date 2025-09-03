@@ -3,7 +3,7 @@ use core::fmt;
 /// An error that may be occurred when operating with some Wasmi IR primitives.
 #[derive(Debug)]
 pub enum Error {
-    /// Encountered when trying to create a [`Stack`](crate::Stack) from an out of bounds integer.
+    /// Encountered when trying to create a [`Slot`](crate::Slot) from an out of bounds integer.
     StackSlotOutOfBounds,
     /// Encountered when trying to create a [`BranchOffset`](crate::BranchOffset) from an out of bounds integer.
     BranchOffsetOutOfBounds,

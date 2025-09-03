@@ -7,12 +7,12 @@ use crate::{
     Decode,
     Decoder,
     Offset16,
-    Stack,
+    Slot,
 };
 
 #[derive(Copy, Clone)]
 pub struct UnaryOp<V> {
-    pub result: Stack,
+    pub result: Slot,
     pub value: V,
 }
 
@@ -27,7 +27,7 @@ impl<V: Decode> Decode for UnaryOp<V> {
 
 #[derive(Copy, Clone)]
 pub struct BinaryOp<Lhs, Rhs> {
-    pub result: Stack,
+    pub result: Slot,
     pub lhs: Lhs,
     pub rhs: Rhs,
 }
@@ -69,11 +69,11 @@ where
 
 #[derive(Copy, Clone)]
 pub struct CmpSelectOp<Lhs, Rhs> {
-    pub result: Stack,
+    pub result: Slot,
     pub lhs: Lhs,
     pub rhs: Rhs,
-    pub val_true: Stack,
-    pub val_false: Stack,
+    pub val_true: Slot,
+    pub val_false: Slot,
 }
 
 impl<Lhs, Rhs> Decode for CmpSelectOp<Lhs, Rhs>
@@ -94,8 +94,8 @@ where
 
 #[derive(Copy, Clone)]
 pub struct LoadOp_Ss {
-    pub result: Stack,
-    pub ptr: Stack,
+    pub result: Slot,
+    pub ptr: Slot,
     pub offset: u64,
     pub memory: Memory,
 }
@@ -113,7 +113,7 @@ impl Decode for LoadOp_Ss {
 
 #[derive(Copy, Clone)]
 pub struct LoadOp_Si {
-    pub result: Stack,
+    pub result: Slot,
     pub address: Address,
     pub memory: Memory,
 }
@@ -130,8 +130,8 @@ impl Decode for LoadOp_Si {
 
 #[derive(Copy, Clone)]
 pub struct LoadOpMem0Offset16_Ss {
-    pub result: Stack,
-    pub ptr: Stack,
+    pub result: Slot,
+    pub ptr: Slot,
     pub offset: Offset16,
 }
 
@@ -147,7 +147,7 @@ impl Decode for LoadOpMem0Offset16_Ss {
 
 #[derive(Copy, Clone)]
 pub struct StoreOp_S<T> {
-    pub ptr: Stack,
+    pub ptr: Slot,
     pub offset: u64,
     pub value: T,
     pub memory: Memory,
@@ -183,7 +183,7 @@ impl<T: Decode> Decode for StoreOp_I<T> {
 
 #[derive(Copy, Clone)]
 pub struct StoreOpMem0Offset16_S<T> {
-    pub ptr: Stack,
+    pub ptr: Slot,
     pub offset: Offset16,
     pub value: T,
 }
@@ -201,7 +201,7 @@ impl<T: Decode> Decode for StoreOpMem0Offset16_S<T> {
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
 pub struct StoreLaneOp_S<T, LaneIdx> {
-    pub ptr: Stack,
+    pub ptr: Slot,
     pub offset: u64,
     pub value: T,
     pub memory: Memory,
@@ -224,7 +224,7 @@ impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOp_S<T, LaneIdx> {
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
 pub struct StoreLaneOpMem0Offset16_S<T, LaneIdx> {
-    pub ptr: Stack,
+    pub ptr: Slot,
     pub offset: Offset16,
     pub value: T,
     pub lane: LaneIdx,
@@ -244,7 +244,7 @@ impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOpMem0Offset16_S<T, LaneIdx
 
 #[derive(Copy, Clone)]
 pub struct TableGet<T> {
-    pub result: Stack,
+    pub result: Slot,
     pub index: T,
     pub table: Table,
 }
@@ -279,8 +279,8 @@ impl<I: Decode, V: Decode> Decode for TableSet<I, V> {
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
 pub struct V128ReplaceLaneOp<V, const N: u8> {
-    pub result: Stack,
-    pub v128: Stack,
+    pub result: Slot,
+    pub v128: Slot,
     pub value: V,
     pub lane: ImmLaneIdx<N>,
 }
@@ -300,11 +300,11 @@ impl<V: Decode, const N: u8> Decode for V128ReplaceLaneOp<V, N> {
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
 pub struct V128LoadLaneOp_Ss<LaneIdx> {
-    pub result: Stack,
-    pub ptr: Stack,
+    pub result: Slot,
+    pub ptr: Slot,
     pub offset: u64,
     pub memory: Memory,
-    pub v128: Stack,
+    pub v128: Slot,
     pub lane: LaneIdx,
 }
 
@@ -325,10 +325,10 @@ impl<LaneIdx: Decode> Decode for V128LoadLaneOp_Ss<LaneIdx> {
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
 pub struct V128LoadLaneOpMem0Offset16_Ss<LaneIdx> {
-    pub result: Stack,
-    pub ptr: Stack,
+    pub result: Slot,
+    pub ptr: Slot,
     pub offset: Offset16,
-    pub v128: Stack,
+    pub v128: Slot,
     pub lane: LaneIdx,
 }
 

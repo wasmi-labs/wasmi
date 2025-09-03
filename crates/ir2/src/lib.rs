@@ -19,8 +19,8 @@ pub use self::{
     decode::{Decode, Decoder},
     encode::{Encode, Encoder},
     error::Error,
-    index::Stack,
+    index::Slot,
     op::{Op, OpCode},
     primitive::{Address, BlockFuel, BranchOffset, Offset16, Sign},
-    span::{BoundedStackSpan, FixedStackSpan, StackSpan, StackSpanIter},
+    span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
 };

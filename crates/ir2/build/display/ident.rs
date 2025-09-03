@@ -60,7 +60,7 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
             .map(|i| (sep, case.wrap(i)))
             .map(DisplayConcat)
             .display_maybe();
-        let result_suffix = case.wrap(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
         let value_suffix = SnakeCase(op.value);
         write!(
             f,
@@ -76,7 +76,7 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
         let kind = self.value.kind;
         let ident = case.wrap(kind.ident());
         let ident_prefix = case.wrap(kind.ident_prefix());
-        let result_suffix = case.wrap(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
         let lhs_suffix = SnakeCase(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
@@ -110,7 +110,7 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
         let select = case.wrap(Ident::Select);
         let ident = case.wrap(cmp.ident());
         let input_ident = case.wrap(cmp.ident_prefix());
-        let result_suffix = case.wrap(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
         let lhs_suffix = SnakeCase(self.value.lhs);
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
@@ -125,7 +125,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let case = self.case;
         let kind = self.value.kind;
         let ident = case.wrap(kind.ident());
-        let result_suffix = case.wrap(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
         let ptr_suffix = SnakeCase(self.value.ptr);
         let sep = case.wrap(Sep);
         let ident_prefix = self
@@ -203,7 +203,7 @@ impl Display for DisplayIdent<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let ident = case.wrap(Ident::TableGet);
-        let result_suffix = case.wrap(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
         let index_suffix = SnakeCase(self.value.index);
         write!(f, "{ident}_{result_suffix}{index_suffix}")
     }
@@ -227,8 +227,8 @@ impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
         let v128 = case.wrap(Ident::V128);
         let ident = case.wrap(Ident::ReplaceLane);
         let width = op.width;
-        let result_suffix = case.wrap(OperandKind::Stack);
-        let v128_suffix = SnakeCase(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
+        let v128_suffix = SnakeCase(OperandKind::Slot);
         let value_suffix = SnakeCase(op.value);
         write!(
             f,
@@ -245,9 +245,9 @@ impl Display for DisplayIdent<&'_ V128LoadLaneOp> {
         let v128 = case.wrap(Ident::V128);
         let ident = case.wrap(Ident::LoadLane);
         let width = u8::from(op.width);
-        let result_suffix = case.wrap(OperandKind::Stack);
+        let result_suffix = case.wrap(OperandKind::Slot);
         let ptr_suffix = SnakeCase(op.ptr);
-        let v128_suffix = SnakeCase(OperandKind::Stack);
+        let v128_suffix = SnakeCase(OperandKind::Slot);
         let mem0_ident = self
             .value
             .mem0

@@ -5,15 +5,15 @@ use crate::{
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
     Address,
     BlockFuel,
-    BoundedStackSpan,
+    BoundedSlotSpan,
     BranchOffset,
-    FixedStackSpan,
+    FixedSlotSpan,
     Offset16,
     Op,
     OpCode,
     Sign,
-    Stack,
-    StackSpan,
+    Slot,
+    SlotSpan,
 };
 use core::num::NonZero;
 
@@ -79,7 +79,7 @@ impl Encode for BranchOffset {
     }
 }
 
-impl Encode for BoundedStackSpan {
+impl Encode for BoundedSlotSpan {
     fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
     where
         E: Encoder,
@@ -131,7 +131,7 @@ impl_encode_using! {
     Sign<f32> as bool = Sign::is_positive,
     Sign<f64> as bool = Sign::is_positive,
 
-    Stack as u16 = Into::into,
+    Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
     InternalFunc as u32 = Into::into,
@@ -141,8 +141,8 @@ impl_encode_using! {
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
 
-    StackSpan as Stack = StackSpan::head,
-    FixedStackSpan<2> as StackSpan = <FixedStackSpan<2>>::span,
+    SlotSpan as Slot = SlotSpan::head,
+    FixedSlotSpan<2> as SlotSpan = <FixedSlotSpan<2>>::span,
 
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,

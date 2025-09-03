@@ -6,7 +6,7 @@ macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
             /// A Wasmi stack slot.
-            Stack(pub(crate) u16);
+            Slot(pub(crate) u16);
             /// A Wasm function index.
             Func(pub(crate) u32);
             /// A Wasm function type index.
@@ -62,7 +62,7 @@ macro_rules! define_index {
 }
 for_each_index!(define_index);
 
-impl TryFrom<u32> for Stack {
+impl TryFrom<u32> for Slot {
     type Error = Error;
 
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
@@ -72,8 +72,8 @@ impl TryFrom<u32> for Stack {
     }
 }
 
-impl Stack {
-    /// Returns the n-th next [`Stack`] from `self` with contiguous index.
+impl Slot {
+    /// Returns the n-th next [`Slot`] from `self` with contiguous index.
     ///
     /// # Note
     ///
@@ -83,7 +83,7 @@ impl Stack {
         Self(self.0.wrapping_add(n))
     }
 
-    /// Returns the n-th previous [`Stack`] from `self` with contiguous index.
+    /// Returns the n-th previous [`Slot`] from `self` with contiguous index.
     ///
     /// # Note
     ///
@@ -93,12 +93,12 @@ impl Stack {
         Self(self.0.wrapping_sub(n))
     }
 
-    /// Returns the [`Stack`] with the next contiguous index.
+    /// Returns the [`Slot`] with the next contiguous index.
     pub fn next(self) -> Self {
         self.next_n(1)
     }
 
-    /// Returns the [`Stack`] with the previous contiguous index.
+    /// Returns the [`Slot`] with the previous contiguous index.
     pub fn prev(self) -> Self {
         self.prev_n(1)
     }

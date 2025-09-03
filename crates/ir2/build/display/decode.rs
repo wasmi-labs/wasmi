@@ -9,6 +9,7 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         CmpSelectOp,
+        FieldTy,
         GenericOp,
         LoadOp,
         OperandKind,
@@ -58,7 +59,8 @@ impl Display for DisplayDecode<&'_ Isa> {
 impl Display for DisplayDecode<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let camel_ident = DisplayIdent::camel(self.value);
-        writeln!(f, "pub type {camel_ident} = UnaryOp<Stack>;")
+        let slot_ty = FieldTy::Slot;
+        writeln!(f, "pub type {camel_ident} = UnaryOp<{slot_ty}>;")
     }
 }
 
@@ -99,7 +101,7 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();
-        let result_suffix = CamelCase(OperandKind::Stack);
+        let result_suffix = CamelCase(OperandKind::Slot);
         let ptr_suffix = SnakeCase(op.ptr);
         writeln!(
             f,
@@ -215,7 +217,7 @@ impl Display for DisplayDecode<&'_ V128LoadLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
-        let result_suffix = CamelCase(OperandKind::Stack);
+        let result_suffix = CamelCase(OperandKind::Slot);
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();

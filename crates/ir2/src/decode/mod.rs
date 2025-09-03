@@ -31,13 +31,13 @@ use crate::{
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
     Address,
     BlockFuel,
-    BoundedStackSpan,
+    BoundedSlotSpan,
     BranchOffset,
-    FixedStackSpan,
+    FixedSlotSpan,
     Offset16,
     Sign,
-    Stack,
-    StackSpan,
+    Slot,
+    SlotSpan,
 };
 use core::{mem, num::NonZero};
 
@@ -59,9 +59,9 @@ pub trait Decode {
     unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self;
 }
 
-impl Decode for BoundedStackSpan {
+impl Decode for BoundedSlotSpan {
     unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        let span = <StackSpan>::decode(decoder);
+        let span = <SlotSpan>::decode(decoder);
         let len = u16::decode(decoder);
         Self::new(span, len)
     }
@@ -104,7 +104,7 @@ impl_decode_using! {
     Sign<f32> as bool = Sign::new,
     Sign<f64> as bool = Sign::new,
 
-    Stack as u16 = Into::into,
+    Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
     InternalFunc as u32 = Into::into,
@@ -114,8 +114,8 @@ impl_decode_using! {
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
 
-    StackSpan as Stack = StackSpan::new,
-    FixedStackSpan<2> as StackSpan = |span| unsafe { <FixedStackSpan<2>>::new_unchecked(span) },
+    SlotSpan as Slot = SlotSpan::new,
+    FixedSlotSpan<2> as SlotSpan = |span| unsafe { <FixedSlotSpan<2>>::new_unchecked(span) },
 
     NonZero<u32> as u32 = |value| unsafe { NonZero::new_unchecked(value) },
     NonZero<u64> as u64 = |value| unsafe { NonZero::new_unchecked(value) },

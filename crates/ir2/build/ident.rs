@@ -203,7 +203,7 @@ define_ident!(
     Return: r#return,
     Return32: return32,
     Return64: return64,
-    ReturnStack: return_stack,
+    ReturnSlot: return_slot,
     ReturnSpan: return_span,
     Values: values,
     Value: value,

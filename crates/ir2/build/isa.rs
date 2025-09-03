@@ -125,7 +125,7 @@ fn add_unary_ops(isa: &mut Isa) {
         UnaryOpKind::U64TruncSatF64,
     ];
     for op in ops {
-        isa.push_op(UnaryOp::new(op, OperandKind::Stack));
+        isa.push_op(UnaryOp::new(op, OperandKind::Slot));
     }
 }
 
@@ -213,18 +213,10 @@ fn add_binary_ops(isa: &mut Isa) {
         BinaryOpKind::F64Copysign,
     ];
     for op in ops {
-        isa.push_op(BinaryOp::new(op, OperandKind::Stack, OperandKind::Stack));
-        isa.push_op(BinaryOp::new(
-            op,
-            OperandKind::Stack,
-            OperandKind::Immediate,
-        ));
+        isa.push_op(BinaryOp::new(op, OperandKind::Slot, OperandKind::Slot));
+        isa.push_op(BinaryOp::new(op, OperandKind::Slot, OperandKind::Immediate));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
-            isa.push_op(BinaryOp::new(
-                op,
-                OperandKind::Immediate,
-                OperandKind::Stack,
-            ));
+            isa.push_op(BinaryOp::new(op, OperandKind::Immediate, OperandKind::Slot));
         }
     }
 }
@@ -269,17 +261,17 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
         CmpOpKind::F64NotLe,
     ];
     for op in ops {
-        isa.push_op(CmpBranchOp::new(op, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(CmpBranchOp::new(op, OperandKind::Slot, OperandKind::Slot));
         isa.push_op(CmpBranchOp::new(
             op,
-            OperandKind::Stack,
+            OperandKind::Slot,
             OperandKind::Immediate,
         ));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(CmpBranchOp::new(
                 op,
                 OperandKind::Immediate,
-                OperandKind::Stack,
+                OperandKind::Slot,
             ));
         }
     }
@@ -313,17 +305,17 @@ fn add_cmp_select_ops(isa: &mut Isa) {
         CmpOpKind::F64Le,
     ];
     for op in ops {
-        isa.push_op(CmpSelectOp::new(op, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(CmpSelectOp::new(op, OperandKind::Slot, OperandKind::Slot));
         isa.push_op(CmpSelectOp::new(
             op,
-            OperandKind::Stack,
+            OperandKind::Slot,
             OperandKind::Immediate,
         ));
         if matches!(op.commutativity(), Commutativity::NonCommutative) {
             isa.push_op(CmpSelectOp::new(
                 op,
                 OperandKind::Immediate,
-                OperandKind::Stack,
+                OperandKind::Slot,
             ));
         }
     }
@@ -348,9 +340,9 @@ fn add_load_ops(isa: &mut Isa) {
         LoadOpKind::U64Load32,
     ];
     for op in ops {
-        isa.push_op(LoadOp::new(op, OperandKind::Stack, false, false));
+        isa.push_op(LoadOp::new(op, OperandKind::Slot, false, false));
         isa.push_op(LoadOp::new(op, OperandKind::Immediate, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Stack, true, true));
+        isa.push_op(LoadOp::new(op, OperandKind::Slot, true, true));
     }
 }
 
@@ -370,14 +362,14 @@ fn add_store_ops(isa: &mut Isa) {
     for op in ops {
         isa.push_op(StoreOp::new(
             op,
-            OperandKind::Stack,
-            OperandKind::Stack,
+            OperandKind::Slot,
+            OperandKind::Slot,
             false,
             false,
         ));
         isa.push_op(StoreOp::new(
             op,
-            OperandKind::Stack,
+            OperandKind::Slot,
             OperandKind::Immediate,
             false,
             false,
@@ -385,20 +377,20 @@ fn add_store_ops(isa: &mut Isa) {
         isa.push_op(StoreOp::new(
             op,
             OperandKind::Immediate,
-            OperandKind::Stack,
+            OperandKind::Slot,
             false,
             false,
         ));
         isa.push_op(StoreOp::new(
             op,
-            OperandKind::Stack,
-            OperandKind::Stack,
+            OperandKind::Slot,
+            OperandKind::Slot,
             true,
             true,
         ));
         isa.push_op(StoreOp::new(
             op,
-            OperandKind::Stack,
+            OperandKind::Slot,
             OperandKind::Immediate,
             true,
             true,
@@ -418,8 +410,8 @@ fn add_control_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(Ident::Return, [])),
         Op::from(GenericOp::new(
-            Ident::ReturnStack,
-            [Field::new(Ident::Value, FieldTy::Stack)],
+            Ident::ReturnSlot,
+            [Field::new(Ident::Value, FieldTy::Slot)],
         )),
         Op::from(GenericOp::new(
             Ident::Return32,
@@ -435,21 +427,21 @@ fn add_control_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(
             Ident::Branch,
-            [Field::new(Ident::Values, FieldTy::StackSpan)],
+            [Field::new(Ident::Values, FieldTy::SlotSpan)],
         )),
         Op::from(GenericOp::new(
             Ident::BranchTable,
             [
-                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::LenTargets, FieldTy::U16),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::BranchTableSpan,
             [
-                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::LenTargets, FieldTy::U16),
-                Field::new(Ident::Values, FieldTy::StackSpan),
+                Field::new(Ident::Values, FieldTy::SlotSpan),
                 Field::new(Ident::LenValues, FieldTy::U16),
             ],
         )),
@@ -462,29 +454,29 @@ fn add_copy_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::Copy,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::Copy32,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::U32),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::Copy64,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::U64),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CopySpan,
             [
-                Field::new(Ident::Results, FieldTy::StackSpan),
-                Field::new(Ident::Values, FieldTy::StackSpan),
+                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Values, FieldTy::SlotSpan),
                 Field::new(Ident::Len, FieldTy::U16),
             ],
         )),
@@ -497,29 +489,29 @@ fn add_call_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::RefFunc,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Func, FieldTy::Func),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallInternal,
             [
-                Field::new(Ident::Results, FieldTy::StackSpan),
+                Field::new(Ident::Results, FieldTy::SlotSpan),
                 Field::new(Ident::Func, FieldTy::InternalFunc),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallImported,
             [
-                Field::new(Ident::Results, FieldTy::StackSpan),
+                Field::new(Ident::Results, FieldTy::SlotSpan),
                 Field::new(Ident::Func, FieldTy::Func),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallIndirect,
             [
-                Field::new(Ident::Results, FieldTy::StackSpan),
-                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),
             ],
@@ -535,7 +527,7 @@ fn add_call_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::ReturnCallIndirect,
             [
-                Field::new(Ident::Index, FieldTy::Stack),
+                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),
             ],
@@ -549,7 +541,7 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::GlobalGet,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Global, FieldTy::Global),
             ],
         )),
@@ -557,7 +549,7 @@ fn add_global_ops(isa: &mut Isa) {
             Ident::GlobalSet,
             [
                 Field::new(Ident::Global, FieldTy::Global),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Value, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
@@ -580,11 +572,11 @@ fn add_global_ops(isa: &mut Isa) {
 
 fn add_table_ops(isa: &mut Isa) {
     let ops = [
-        Op::TableGet(TableGetOp::new(OperandKind::Stack)),
+        Op::TableGet(TableGetOp::new(OperandKind::Slot)),
         Op::TableGet(TableGetOp::new(OperandKind::Immediate)),
-        Op::TableSet(TableSetOp::new(OperandKind::Stack, OperandKind::Stack)),
-        Op::TableSet(TableSetOp::new(OperandKind::Stack, OperandKind::Immediate)),
-        Op::TableSet(TableSetOp::new(OperandKind::Immediate, OperandKind::Stack)),
+        Op::TableSet(TableSetOp::new(OperandKind::Slot, OperandKind::Slot)),
+        Op::TableSet(TableSetOp::new(OperandKind::Slot, OperandKind::Immediate)),
+        Op::TableSet(TableSetOp::new(OperandKind::Immediate, OperandKind::Slot)),
         Op::TableSet(TableSetOp::new(
             OperandKind::Immediate,
             OperandKind::Immediate,
@@ -592,16 +584,16 @@ fn add_table_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::TableSize,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Table, FieldTy::Table),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::TableGrow,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Delta, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Delta, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Table, FieldTy::Table),
             ],
         )),
@@ -610,18 +602,18 @@ fn add_table_ops(isa: &mut Isa) {
             [
                 Field::new(Ident::DstTable, FieldTy::Table),
                 Field::new(Ident::SrcTable, FieldTy::Table),
-                Field::new(Ident::Dst, FieldTy::Stack),
-                Field::new(Ident::Src, FieldTy::Stack),
-                Field::new(Ident::Len, FieldTy::Stack),
+                Field::new(Ident::Dst, FieldTy::Slot),
+                Field::new(Ident::Src, FieldTy::Slot),
+                Field::new(Ident::Len, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::TableFill,
             [
                 Field::new(Ident::Table, FieldTy::Table),
-                Field::new(Ident::Dst, FieldTy::Stack),
-                Field::new(Ident::Len, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Dst, FieldTy::Slot),
+                Field::new(Ident::Len, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
@@ -629,9 +621,9 @@ fn add_table_ops(isa: &mut Isa) {
             [
                 Field::new(Ident::Table, FieldTy::Table),
                 Field::new(Ident::Elem, FieldTy::Elem),
-                Field::new(Ident::Dst, FieldTy::Stack),
-                Field::new(Ident::Src, FieldTy::Stack),
-                Field::new(Ident::Len, FieldTy::Stack),
+                Field::new(Ident::Dst, FieldTy::Slot),
+                Field::new(Ident::Src, FieldTy::Slot),
+                Field::new(Ident::Len, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
@@ -651,15 +643,15 @@ fn add_memory_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::MemorySize,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Memory, FieldTy::Memory),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::MemoryGrow,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Delta, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Delta, FieldTy::Slot),
                 Field::new(Ident::Memory, FieldTy::Memory),
             ],
         )),
@@ -668,18 +660,18 @@ fn add_memory_ops(isa: &mut Isa) {
             [
                 Field::new(Ident::DstMemory, FieldTy::Memory),
                 Field::new(Ident::SrcMemory, FieldTy::Memory),
-                Field::new(Ident::Dst, FieldTy::Stack),
-                Field::new(Ident::Src, FieldTy::Stack),
-                Field::new(Ident::Len, FieldTy::Stack),
+                Field::new(Ident::Dst, FieldTy::Slot),
+                Field::new(Ident::Src, FieldTy::Slot),
+                Field::new(Ident::Len, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::MemoryFill,
             [
                 Field::new(Ident::Memory, FieldTy::Memory),
-                Field::new(Ident::Dst, FieldTy::Stack),
-                Field::new(Ident::Len, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Dst, FieldTy::Slot),
+                Field::new(Ident::Len, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
@@ -687,9 +679,9 @@ fn add_memory_ops(isa: &mut Isa) {
             [
                 Field::new(Ident::Memory, FieldTy::Memory),
                 Field::new(Ident::Data, FieldTy::Data),
-                Field::new(Ident::Dst, FieldTy::Stack),
-                Field::new(Ident::Src, FieldTy::Stack),
-                Field::new(Ident::Len, FieldTy::Stack),
+                Field::new(Ident::Dst, FieldTy::Slot),
+                Field::new(Ident::Src, FieldTy::Slot),
+                Field::new(Ident::Len, FieldTy::Slot),
             ],
         )),
     ];
@@ -701,37 +693,37 @@ fn add_wide_arithmetic_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::I64Add128,
             [
-                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
-                Field::new(Ident::LhsLo, FieldTy::Stack),
-                Field::new(Ident::LhsHi, FieldTy::Stack),
-                Field::new(Ident::RhsLo, FieldTy::Stack),
-                Field::new(Ident::RhsHi, FieldTy::Stack),
+                Field::new(Ident::Results, FieldTy::FixedSlotSpan2),
+                Field::new(Ident::LhsLo, FieldTy::Slot),
+                Field::new(Ident::LhsHi, FieldTy::Slot),
+                Field::new(Ident::RhsLo, FieldTy::Slot),
+                Field::new(Ident::RhsHi, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::I64Sub128,
             [
-                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
-                Field::new(Ident::LhsLo, FieldTy::Stack),
-                Field::new(Ident::LhsHi, FieldTy::Stack),
-                Field::new(Ident::RhsLo, FieldTy::Stack),
-                Field::new(Ident::RhsHi, FieldTy::Stack),
+                Field::new(Ident::Results, FieldTy::FixedSlotSpan2),
+                Field::new(Ident::LhsLo, FieldTy::Slot),
+                Field::new(Ident::LhsHi, FieldTy::Slot),
+                Field::new(Ident::RhsLo, FieldTy::Slot),
+                Field::new(Ident::RhsHi, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::S64MulWide,
             [
-                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
-                Field::new(Ident::Lhs, FieldTy::Stack),
-                Field::new(Ident::Rhs, FieldTy::Stack),
+                Field::new(Ident::Results, FieldTy::FixedSlotSpan2),
+                Field::new(Ident::Lhs, FieldTy::Slot),
+                Field::new(Ident::Rhs, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::U64MulWide,
             [
-                Field::new(Ident::Results, FieldTy::FixedStackSpan2),
-                Field::new(Ident::Lhs, FieldTy::Stack),
-                Field::new(Ident::Rhs, FieldTy::Stack),
+                Field::new(Ident::Results, FieldTy::FixedSlotSpan2),
+                Field::new(Ident::Lhs, FieldTy::Slot),
+                Field::new(Ident::Rhs, FieldTy::Slot),
             ],
         )),
     ];
@@ -745,7 +737,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     isa.push_op(GenericOp::new(
         Ident::Copy128,
         [
-            Field::new(Ident::Result, FieldTy::Stack),
+            Field::new(Ident::Result, FieldTy::Slot),
             Field::new(Ident::ValueLo, FieldTy::U64),
             Field::new(Ident::ValueHi, FieldTy::U64),
         ],
@@ -753,9 +745,9 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     isa.push_op(GenericOp::new(
         Ident::I8x16Shuffle,
         [
-            Field::new(Ident::Result, FieldTy::Stack),
-            Field::new(Ident::Lhs, FieldTy::Stack),
-            Field::new(Ident::Rhs, FieldTy::Stack),
+            Field::new(Ident::Result, FieldTy::Slot),
+            Field::new(Ident::Lhs, FieldTy::Slot),
+            Field::new(Ident::Rhs, FieldTy::Slot),
             Field::new(Ident::Selector, FieldTy::Array16ImmLaneIdx32),
         ],
     ));
@@ -773,7 +765,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
 fn add_simd_splat_ops(isa: &mut Isa) {
     let kinds = [UnaryOpKind::V128Splat32, UnaryOpKind::V128Splat64];
     for kind in kinds {
-        isa.push_op(UnaryOp::new(kind, OperandKind::Stack));
+        isa.push_op(UnaryOp::new(kind, OperandKind::Slot));
         isa.push_op(UnaryOp::new(kind, OperandKind::Immediate));
     }
 }
@@ -783,48 +775,48 @@ fn add_simd_extract_lane_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::S8x16ExtractLane,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx16),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::U8x16ExtractLane,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx16),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::S16x8ExtractLane,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx8),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::U16x8ExtractLane,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx8),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::U32x4ExtractLane,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx4),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::U64x2ExtractLane,
             [
-                Field::new(Ident::Result, FieldTy::Stack),
-                Field::new(Ident::Value, FieldTy::Stack),
+                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Lane, FieldTy::ImmLaneIdx2),
             ],
         )),
@@ -840,7 +832,7 @@ fn add_simd_replace_lane_ops(isa: &mut Isa) {
         LaneWidth::W64,
     ];
     for width in widths {
-        isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Stack));
+        isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Slot));
         isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Immediate));
     }
 }
@@ -963,7 +955,7 @@ fn add_simd_binary_ops(isa: &mut Isa) {
         BinaryOpKind::F64x2Pmax,
     ];
     for kind in kinds {
-        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(BinaryOp::new(kind, OperandKind::Slot, OperandKind::Slot));
     }
 }
 
@@ -983,10 +975,10 @@ fn add_simd_shift_ops(isa: &mut Isa) {
         BinaryOpKind::U64x2Shr,
     ];
     for kind in kinds {
-        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(BinaryOp::new(kind, OperandKind::Slot, OperandKind::Slot));
         isa.push_op(BinaryOp::new(
             kind,
-            OperandKind::Stack,
+            OperandKind::Slot,
             OperandKind::Immediate,
         ));
     }
@@ -1063,7 +1055,7 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         UnaryOpKind::F64x2ConvertLowU32x4,
     ];
     for kind in kinds {
-        isa.push_op(UnaryOp::new(kind, OperandKind::Stack));
+        isa.push_op(UnaryOp::new(kind, OperandKind::Slot));
     }
 }
 
@@ -1084,8 +1076,8 @@ fn add_simd_load_ops(isa: &mut Isa) {
         LoadOpKind::V128Load64Zero,
     ];
     for op in ops {
-        isa.push_op(LoadOp::new(op, OperandKind::Stack, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Stack, true, true));
+        isa.push_op(LoadOp::new(op, OperandKind::Slot, false, false));
+        isa.push_op(LoadOp::new(op, OperandKind::Slot, true, true));
     }
     let widths = [
         LaneWidth::W8,
@@ -1094,8 +1086,8 @@ fn add_simd_load_ops(isa: &mut Isa) {
         LaneWidth::W64,
     ];
     for width in widths {
-        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Stack, false, false));
-        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Stack, true, true));
+        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Slot, false, false));
+        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Slot, true, true));
     }
 }
 
@@ -1110,15 +1102,15 @@ fn add_simd_store_ops(isa: &mut Isa) {
     for kind in kinds {
         isa.push_op(StoreOp::new(
             kind,
-            OperandKind::Stack,
-            OperandKind::Stack,
+            OperandKind::Slot,
+            OperandKind::Slot,
             false,
             false,
         ));
         isa.push_op(StoreOp::new(
             kind,
-            OperandKind::Stack,
-            OperandKind::Stack,
+            OperandKind::Slot,
+            OperandKind::Slot,
             true,
             true,
         ));
@@ -1135,6 +1127,6 @@ fn add_relaxed_simd_ops(isa: &mut Isa) {
         BinaryOpKind::F64x2RelaxedNmadd,
     ];
     for kind in kinds {
-        isa.push_op(BinaryOp::new(kind, OperandKind::Stack, OperandKind::Stack));
+        isa.push_op(BinaryOp::new(kind, OperandKind::Slot, OperandKind::Slot));
     }
 }

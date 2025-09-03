@@ -70,8 +70,8 @@ impl Display for Field {
 /// The kind of an operand of an [`Op`].
 #[derive(Copy, Clone)]
 pub enum OperandKind {
-    /// The operand is a [`Stack`] index.
-    Stack,
+    /// The operand is a [`Slot`] index.
+    Slot,
     /// The operand is an immediate value.
     Immediate,
 }
@@ -79,7 +79,7 @@ pub enum OperandKind {
 impl Display for CamelCase<OperandKind> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            OperandKind::Stack => "S",
+            OperandKind::Slot => "S",
             OperandKind::Immediate => "I",
         };
         write!(f, "{s}")
@@ -89,7 +89,7 @@ impl Display for CamelCase<OperandKind> {
 impl Display for SnakeCase<OperandKind> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            OperandKind::Stack => "s",
+            OperandKind::Slot => "s",
             OperandKind::Immediate => "i",
         };
         write!(f, "{s}")
@@ -126,12 +126,12 @@ impl UnaryOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn value_field(&self) -> Field {
         let ty = match self.value {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => {
                 let value_ty = self.kind.value_ty();
                 match value_ty.to_field_ty() {
@@ -636,7 +636,7 @@ impl BinaryOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn lhs_field(&self) -> Field {
@@ -1166,7 +1166,7 @@ impl BinaryOpKind {
 
     fn lhs_field(&self, input: OperandKind) -> FieldTy {
         match input {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self {
                 | Self::Cmp(cmp) => cmp.input_field(input),
                 | Self::I32Add
@@ -1220,7 +1220,7 @@ impl BinaryOpKind {
 
     fn rhs_field(&self, input: OperandKind) -> FieldTy {
         match input {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self {
                 | Self::Cmp(cmp) => cmp.input_field(input),
                 | Self::I32Add
@@ -1340,7 +1340,7 @@ impl CmpSelectOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn lhs_field(&self) -> Field {
@@ -1352,11 +1352,11 @@ impl CmpSelectOp {
     }
 
     pub fn val_true_field(&self) -> Field {
-        Field::new(Ident::ValTrue, FieldTy::Stack)
+        Field::new(Ident::ValTrue, FieldTy::Slot)
     }
 
     pub fn val_false_field(&self) -> Field {
-        Field::new(Ident::ValFalse, FieldTy::Stack)
+        Field::new(Ident::ValFalse, FieldTy::Slot)
     }
 
     pub fn fields(&self) -> [Field; 5] {
@@ -1513,9 +1513,9 @@ impl Display for CamelCase<Ty> {
 
 #[derive(Copy, Clone)]
 pub enum FieldTy {
-    Stack,
-    StackSpan,
-    FixedStackSpan2,
+    Slot,
+    SlotSpan,
+    FixedSlotSpan2,
     U8,
     U16,
     U32,
@@ -1555,9 +1555,9 @@ pub enum FieldTy {
 impl Display for FieldTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Self::Stack => "Stack",
-            Self::StackSpan => "StackSpan",
-            Self::FixedStackSpan2 => "FixedStackSpan<2>",
+            Self::Slot => "Slot",
+            Self::SlotSpan => "SlotSpan",
+            Self::FixedSlotSpan2 => "FixedSlotSpan<2>",
             Self::U8 => "u8",
             Self::U16 => "u16",
             Self::U32 => "u32",
@@ -1661,7 +1661,7 @@ impl CmpOpKind {
 
     fn input_field(&self, input: OperandKind) -> FieldTy {
         match input {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self {
                 | Self::I32Eq
                 | Self::I32NotEq
@@ -1791,12 +1791,12 @@ impl LoadOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
@@ -1804,7 +1804,7 @@ impl LoadOp {
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Stack => match self.offset16 {
+            OperandKind::Slot => match self.offset16 {
                 true => FieldTy::Offset16,
                 false => FieldTy::U64,
             },
@@ -1956,7 +1956,7 @@ impl StoreOp {
 
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
@@ -1964,7 +1964,7 @@ impl StoreOp {
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Stack => match self.offset16 {
+            OperandKind::Slot => match self.offset16 {
                 true => FieldTy::Offset16,
                 false => FieldTy::U64,
             },
@@ -2058,7 +2058,7 @@ impl StoreOpKind {
 
     fn value_ty(&self, input: OperandKind) -> FieldTy {
         match input {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self {
                 Self::Store32 => FieldTy::U32,
                 Self::Store64 => FieldTy::U64,
@@ -2100,12 +2100,12 @@ impl TableGetOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn index_field(&self) -> Field {
         let index_ty = match self.index {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::U32,
         };
         Field::new(Ident::Index, index_ty)
@@ -2135,7 +2135,7 @@ impl TableSetOp {
 
     pub fn index_field(&self) -> Field {
         let index_ty = match self.index {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::U32,
         };
         Field::new(Ident::Index, index_ty)
@@ -2143,7 +2143,7 @@ impl TableSetOp {
 
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::U64,
         };
         Field::new(Ident::Value, value_ty)
@@ -2219,16 +2219,16 @@ impl V128ReplaceLaneOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn v128_field(&self) -> Field {
-        Field::new(Ident::V128, FieldTy::Stack)
+        Field::new(Ident::V128, FieldTy::Slot)
     }
 
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self.width {
                 LaneWidth::W8 => FieldTy::U8,
                 LaneWidth::W16 => FieldTy::U16,
@@ -2282,12 +2282,12 @@ impl V128LoadLaneOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Stack)
+        Field::new(Ident::Result, FieldTy::Slot)
     }
 
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
-            OperandKind::Stack => FieldTy::Stack,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
@@ -2295,7 +2295,7 @@ impl V128LoadLaneOp {
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Stack => match self.offset16 {
+            OperandKind::Slot => match self.offset16 {
                 true => FieldTy::Offset16,
                 false => FieldTy::U64,
             },
@@ -2305,7 +2305,7 @@ impl V128LoadLaneOp {
     }
 
     pub fn v128_field(&self) -> Field {
-        Field::new(Ident::V128, FieldTy::Stack)
+        Field::new(Ident::V128, FieldTy::Slot)
     }
 
     pub fn memory_field(&self) -> Option<Field> {

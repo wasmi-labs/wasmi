@@ -60,7 +60,7 @@ impl Display for DisplayResultMut<&'_ Isa> {
             f,
             "\
             {indent}impl Op {{\n\
-            {indent}    pub fn result_mut(&mut self) -> Option<&mut Stack> {{\n\
+            {indent}    pub fn result_mut(&mut self) -> Option<&mut Slot> {{\n\
             {indent}        let res = match self {{\n\
                                 {variants}\
             {indent}            _ => return None,\n\

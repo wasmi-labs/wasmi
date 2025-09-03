@@ -1,45 +1,45 @@
-use crate::{Error, Stack};
+use crate::{Error, Slot};
 
-/// A [`StackSpan`] of contiguous [`Stack`] indices.
+/// A [`SlotSpan`] of contiguous [`Slot`] indices.
 ///
 /// # Note
 ///
-/// - Represents an amount of contiguous [`Stack`] indices.
-/// - For the sake of space efficiency the actual number of [`Stack`]
-///   of the [`StackSpan`] is stored externally and provided in
-///   [`StackSpan::iter`] when there is a need to iterate over
-///   the [`Stack`] of the [`StackSpan`].
+/// - Represents an amount of contiguous [`Slot`] indices.
+/// - For the sake of space efficiency the actual number of [`Slot`]
+///   of the [`SlotSpan`] is stored externally and provided in
+///   [`SlotSpan::iter`] when there is a need to iterate over
+///   the [`Slot`] of the [`SlotSpan`].
 ///
 /// The caller is responsible for providing the correct length.
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct StackSpan(Stack);
+pub struct SlotSpan(Slot);
 
-impl StackSpan {
-    /// Creates a new [`StackSpan`] starting with the given `start` [`Stack`].
-    pub fn new(head: Stack) -> Self {
+impl SlotSpan {
+    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
+    pub fn new(head: Slot) -> Self {
         Self(head)
     }
 
-    /// Returns a [`StackSpanIter`] yielding `len` [`Stack`]s.
-    pub fn iter_sized(self, len: usize) -> StackSpanIter {
-        StackSpanIter::new(self.0, len)
+    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
+    pub fn iter_sized(self, len: usize) -> SlotSpanIter {
+        SlotSpanIter::new(self.0, len)
     }
 
-    /// Returns a [`StackSpanIter`] yielding `len` [`Stack`]s.
-    pub fn iter(self, len: u16) -> StackSpanIter {
-        StackSpanIter::new_u16(self.0, len)
+    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
+    pub fn iter(self, len: u16) -> SlotSpanIter {
+        SlotSpanIter::new_u16(self.0, len)
     }
 
-    /// Returns the head [`Stack`] of the [`StackSpan`].
-    pub fn head(self) -> Stack {
+    /// Returns the head [`Slot`] of the [`SlotSpan`].
+    pub fn head(self) -> Slot {
         self.0
     }
 
-    /// Returns an exclusive reference to the head [`Stack`] of the [`StackSpan`].
-    pub fn head_mut(&mut self) -> &mut Stack {
+    /// Returns an exclusive reference to the head [`Slot`] of the [`SlotSpan`].
+    pub fn head_mut(&mut self) -> &mut Slot {
         &mut self.0
     }
 
@@ -52,21 +52,21 @@ impl StackSpan {
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]`: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
     pub fn has_overlapping_copies(results: Self, values: Self, len: u16) -> bool {
-        StackSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+        SlotSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 }
 
-/// A [`StackSpan`] with a statically known number of [`Stack`].
+/// A [`SlotSpan`] with a statically known number of [`Slot`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct FixedStackSpan<const N: u16> {
-    /// The underlying [`StackSpan`] without the known length.
-    span: StackSpan,
+pub struct FixedSlotSpan<const N: u16> {
+    /// The underlying [`SlotSpan`] without the known length.
+    span: SlotSpan,
 }
 
-impl FixedStackSpan<2> {
+impl FixedSlotSpan<2> {
     /// Returns an array of the results represented by `self`.
-    pub fn to_array(self) -> [Stack; 2] {
+    pub fn to_array(self) -> [Slot; 2] {
         let span = self.span();
         let fst = span.head();
         let snd = fst.next();
@@ -74,9 +74,9 @@ impl FixedStackSpan<2> {
     }
 }
 
-impl<const N: u16> FixedStackSpan<N> {
-    /// Creates a new [`StackSpan`] starting with the given `start` [`Stack`].
-    pub fn new(span: StackSpan) -> Result<Self, Error> {
+impl<const N: u16> FixedSlotSpan<N> {
+    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
+    pub fn new(span: SlotSpan) -> Result<Self, Error> {
         let head = span.head();
         if head >= head.next_n(N) {
             return Err(Error::StackSlotOutOfBounds);
@@ -84,40 +84,40 @@ impl<const N: u16> FixedStackSpan<N> {
         Ok(Self { span })
     }
 
-    /// Creates a new [`StackSpan`] starting with the given `start` [`Stack`].
+    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
     ///
     /// # Safety
     ///
     /// The caller is responsible for making sure that `span` is valid for a length of `N`.
-    pub unsafe fn new_unchecked(span: StackSpan) -> Self {
+    pub unsafe fn new_unchecked(span: SlotSpan) -> Self {
         Self { span }
     }
 
-    /// Returns a [`StackSpanIter`] yielding `N` [`Stack`]s.
-    pub fn iter(&self) -> StackSpanIter {
+    /// Returns a [`SlotSpanIter`] yielding `N` [`Slot`]s.
+    pub fn iter(&self) -> SlotSpanIter {
         self.span.iter(self.len())
     }
 
-    /// Creates a new [`BoundedStackSpan`] from `self`.
-    pub fn bounded(self) -> BoundedStackSpan {
-        BoundedStackSpan {
+    /// Creates a new [`BoundedSlotSpan`] from `self`.
+    pub fn bounded(self) -> BoundedSlotSpan {
+        BoundedSlotSpan {
             span: self.span,
             len: N,
         }
     }
 
-    /// Returns the underlying [`StackSpan`] of `self`.
-    pub fn span(self) -> StackSpan {
+    /// Returns the underlying [`SlotSpan`] of `self`.
+    pub fn span(self) -> SlotSpan {
         self.span
     }
 
-    /// Returns an exclusive reference to the underlying [`StackSpan`] of `self`.
-    pub fn span_mut(&mut self) -> &mut StackSpan {
+    /// Returns an exclusive reference to the underlying [`SlotSpan`] of `self`.
+    pub fn span_mut(&mut self) -> &mut SlotSpan {
         &mut self.span
     }
 
-    /// Returns `true` if the [`Stack`] is contained in `self`.
-    pub fn contains(self, reg: Stack) -> bool {
+    /// Returns `true` if the [`Slot`] is contained in `self`.
+    pub fn contains(self, reg: Slot) -> bool {
         if self.is_empty() {
             return false;
         }
@@ -126,7 +126,7 @@ impl<const N: u16> FixedStackSpan<N> {
         min <= reg && reg < max
     }
 
-    /// Returns the number of [`Stack`]s in `self`.
+    /// Returns the number of [`Slot`]s in `self`.
     pub fn len(self) -> u16 {
         N
     }
@@ -137,56 +137,56 @@ impl<const N: u16> FixedStackSpan<N> {
     }
 }
 
-impl<const N: u16> IntoIterator for &FixedStackSpan<N> {
-    type Item = Stack;
-    type IntoIter = StackSpanIter;
+impl<const N: u16> IntoIterator for &FixedSlotSpan<N> {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<const N: u16> IntoIterator for FixedStackSpan<N> {
-    type Item = Stack;
-    type IntoIter = StackSpanIter;
+impl<const N: u16> IntoIterator for FixedSlotSpan<N> {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-/// A [`StackSpan`] with a known number of [`Stack`].
+/// A [`SlotSpan`] with a known number of [`Slot`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BoundedStackSpan {
-    /// The first [`Stack`] in `self`.
-    span: StackSpan,
-    /// The number of [`Stack`] in `self`.
+pub struct BoundedSlotSpan {
+    /// The first [`Slot`] in `self`.
+    span: SlotSpan,
+    /// The number of [`Slot`] in `self`.
     len: u16,
 }
 
-impl BoundedStackSpan {
-    /// Creates a new [`BoundedStackSpan`] from the given `span` and `len`.
-    pub fn new(span: StackSpan, len: u16) -> Self {
+impl BoundedSlotSpan {
+    /// Creates a new [`BoundedSlotSpan`] from the given `span` and `len`.
+    pub fn new(span: SlotSpan, len: u16) -> Self {
         Self { span, len }
     }
 
-    /// Returns a [`StackSpanIter`] yielding `len` [`Stack`]s.
-    pub fn iter(&self) -> StackSpanIter {
+    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
+    pub fn iter(&self) -> SlotSpanIter {
         self.span.iter(self.len())
     }
 
-    /// Returns `self` as unbounded [`StackSpan`].
-    pub fn span(&self) -> StackSpan {
+    /// Returns `self` as unbounded [`SlotSpan`].
+    pub fn span(&self) -> SlotSpan {
         self.span
     }
 
-    /// Returns a mutable reference to the underlying [`StackSpan`].
-    pub fn span_mut(&mut self) -> &mut StackSpan {
+    /// Returns a mutable reference to the underlying [`SlotSpan`].
+    pub fn span_mut(&mut self) -> &mut SlotSpan {
         &mut self.span
     }
 
-    /// Returns `true` if the [`Stack`] is contained in `self`.
-    pub fn contains(self, reg: Stack) -> bool {
+    /// Returns `true` if the [`Slot`] is contained in `self`.
+    pub fn contains(self, reg: Slot) -> bool {
         if self.is_empty() {
             return false;
         }
@@ -195,7 +195,7 @@ impl BoundedStackSpan {
         min <= reg && reg < max
     }
 
-    /// Returns the number of [`Stack`] in `self`.
+    /// Returns the number of [`Slot`] in `self`.
     pub fn len(&self) -> u16 {
         self.len
     }
@@ -206,36 +206,36 @@ impl BoundedStackSpan {
     }
 }
 
-impl IntoIterator for &BoundedStackSpan {
-    type Item = Stack;
-    type IntoIter = StackSpanIter;
+impl IntoIterator for &BoundedSlotSpan {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl IntoIterator for BoundedStackSpan {
-    type Item = Stack;
-    type IntoIter = StackSpanIter;
+impl IntoIterator for BoundedSlotSpan {
+    type Item = Slot;
+    type IntoIter = SlotSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-/// A [`StackSpanIter`] iterator yielding contiguous [`Stack`].
+/// A [`SlotSpanIter`] iterator yielding contiguous [`Slot`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct StackSpanIter {
-    /// The next [`Stack`] in the [`StackSpanIter`].
-    next: Stack,
-    /// The last [`Stack`] in the [`StackSpanIter`].
-    last: Stack,
+pub struct SlotSpanIter {
+    /// The next [`Slot`] in the [`SlotSpanIter`].
+    next: Slot,
+    /// The last [`Slot`] in the [`SlotSpanIter`].
+    last: Slot,
 }
 
-impl StackSpanIter {
-    /// Creates a [`StackSpanIter`] from then given raw `start` and `end` [`Stack`].
-    pub fn from_raw_parts(start: Stack, end: Stack) -> Self {
+impl SlotSpanIter {
+    /// Creates a [`SlotSpanIter`] from then given raw `start` and `end` [`Slot`].
+    pub fn from_raw_parts(start: Slot, end: Slot) -> Self {
         debug_assert!(u16::from(start) <= u16::from(end));
         Self {
             next: start,
@@ -243,43 +243,43 @@ impl StackSpanIter {
         }
     }
 
-    /// Creates a new [`StackSpanIter`] for the given `start` [`Stack`] and length `len`.
+    /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Stack`] span indices are out of bounds.
-    fn new(start: Stack, len: usize) -> Self {
+    /// If the `start..end` [`Slot`] span indices are out of bounds.
+    fn new(start: Slot, len: usize) -> Self {
         let len = u16::try_from(len)
             .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
         Self::new_u16(start, len)
     }
 
-    /// Creates a new [`StackSpanIter`] for the given `start` [`Stack`] and length `len`.
+    /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Stack`] span indices are out of bounds.
-    fn new_u16(start: Stack, len: u16) -> Self {
+    /// If the `start..end` [`Slot`] span indices are out of bounds.
+    fn new_u16(start: Slot, len: u16) -> Self {
         let next = start;
         let last = start
             .0
             .checked_add(len)
-            .map(Stack)
+            .map(Slot)
             .expect("overflowing register index for register span");
         Self::from_raw_parts(next, last)
     }
 
-    /// Creates a [`StackSpan`] from this [`StackSpanIter`].
-    pub fn span(self) -> StackSpan {
-        StackSpan(self.next)
+    /// Creates a [`SlotSpan`] from this [`SlotSpanIter`].
+    pub fn span(self) -> SlotSpan {
+        SlotSpan(self.next)
     }
 
-    /// Returns the remaining number of [`Stack`]s yielded by the [`StackSpanIter`].
+    /// Returns the remaining number of [`Slot`]s yielded by the [`SlotSpanIter`].
     pub fn len_as_u16(&self) -> u16 {
         self.last.0.abs_diff(self.next.0)
     }
 
-    /// Returns `true` if `self` yields no more [`Stack`]s.
+    /// Returns `true` if `self` yields no more [`Slot`]s.
     pub fn is_empty(&self) -> bool {
         self.len_as_u16() == 0
     }
@@ -317,8 +317,8 @@ impl StackSpanIter {
     }
 }
 
-impl Iterator for StackSpanIter {
-    type Item = Stack;
+impl Iterator for SlotSpanIter {
+    type Item = Slot;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
@@ -330,7 +330,7 @@ impl Iterator for StackSpanIter {
     }
 }
 
-impl DoubleEndedIterator for StackSpanIter {
+impl DoubleEndedIterator for SlotSpanIter {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
             return None;
@@ -340,8 +340,8 @@ impl DoubleEndedIterator for StackSpanIter {
     }
 }
 
-impl ExactSizeIterator for StackSpanIter {
+impl ExactSizeIterator for SlotSpanIter {
     fn len(&self) -> usize {
-        usize::from(StackSpanIter::len_as_u16(self))
+        usize::from(SlotSpanIter::len_as_u16(self))
     }
 }

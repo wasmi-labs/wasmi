@@ -6,11 +6,11 @@ use crate::{
     Address,
     BlockFuel,
     BranchOffset,
-    FixedStackSpan,
+    FixedSlotSpan,
     Offset16,
     Sign,
-    Stack,
-    StackSpan,
+    Slot,
+    SlotSpan,
 };
 use core::num::NonZero;
 
