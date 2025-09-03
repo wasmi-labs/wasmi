@@ -50,12 +50,14 @@ impl Display for DisplayOpCode<&'_ Isa> {
             f,
             "\
             {indent}#[allow(non_camel_case_types)]\n\
+            {indent}/// The operator code (op-code) of a Wasmi bytecode [`Op`](crate::Op).
             {indent}#[repr(u16)]\n\
             {indent}pub enum OpCode {{\n\
                         {variants}\n\
             {indent}}}\n\
             \n\
             {indent}impl Op {{\n\
+            {indent}    /// Returns the [`OpCode`] associated to `self`.
             {indent}    pub fn code(&self) -> OpCode {{\n\
             {indent}        match self {{\n\
                                 {match_arms_code}\n\
