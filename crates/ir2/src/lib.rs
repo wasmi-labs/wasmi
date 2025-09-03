@@ -9,6 +9,7 @@ mod encode;
 mod error;
 pub mod index;
 mod op;
+mod opcode;
 mod primitive;
 mod span;
 
@@ -20,7 +21,8 @@ pub use self::{
     encode::{Encode, Encoder},
     error::Error,
     index::Slot,
-    op::{InvalidOpCode, Op, OpCode},
+    op::Op,
+    opcode::{InvalidOpCode, OpCode},
     primitive::{Address, BlockFuel, BranchOffset, Offset16, Sign},
     span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
 };
