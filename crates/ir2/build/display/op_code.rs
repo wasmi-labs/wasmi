@@ -50,7 +50,7 @@ impl Display for DisplayOpCode<&'_ Isa> {
             f,
             "\
             {indent}#[allow(non_camel_case_types)]\n\
-            {indent}/// The operator code (op-code) of a Wasmi bytecode [`Op`](crate::Op).
+            {indent}/// The operator code (op-code) of a Wasmi bytecode [`Op`].\n\
             {indent}#[repr(u16)]\n\
             {indent}pub enum OpCode {{\n\
                         {variants}\n\
