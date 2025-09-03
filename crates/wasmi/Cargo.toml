@@ -22,6 +22,7 @@ exclude = [
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
+wasmi_ir2 = { workspace = true }
 wasmparser = { workspace = true, features = ["validate", "features"] }
 wat = { workspace = true, optional = true }
 spin = { version = "0.9", default-features = false, features = [
