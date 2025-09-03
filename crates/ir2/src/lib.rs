@@ -20,7 +20,7 @@ pub use self::{
     encode::{Encode, Encoder},
     error::Error,
     index::Slot,
-    op::{Op, OpCode},
+    op::{InvalidOpCode, Op, OpCode},
     primitive::{Address, BlockFuel, BranchOffset, Offset16, Sign},
     span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
 };
