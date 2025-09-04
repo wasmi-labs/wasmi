@@ -116,10 +116,6 @@ impl_decode_using! {
     Offset16 as u16 = Into::into,
     BranchOffset as i32 = Into::into,
     BlockFuel as u64 = Into::into,
-    Address as u64 = |address| unsafe { Address::try_from(address).unwrap_unchecked() },
-    Sign<f32> as bool = Sign::new,
-    Sign<f64> as bool = Sign::new,
-
     Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
@@ -130,11 +126,12 @@ impl_decode_using! {
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
 
+    Address as u64 = |address| unsafe { Address::try_from(address).unwrap_unchecked() },
+    Sign<f32> as bool = Sign::new,
+    Sign<f64> as bool = Sign::new,
     SlotSpan as Slot = SlotSpan::new,
-
     NonZero<u32> as u32 = |value| unsafe { NonZero::new_unchecked(value) },
     NonZero<u64> as u64 = |value| unsafe { NonZero::new_unchecked(value) },
-
     TrapCode as u8 = |code: u8| -> TrapCode {
         TrapCode::try_from(code).unwrap_unchecked()
     },

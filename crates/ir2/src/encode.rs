@@ -136,9 +136,6 @@ impl_encode_using! {
     Offset16 as u16 = Into::into,
     BlockFuel as u64 = Into::into,
     Address as u64 = Into::into,
-    Sign<f32> as bool = Sign::is_positive,
-    Sign<f64> as bool = Sign::is_positive,
-
     Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
@@ -149,11 +146,11 @@ impl_encode_using! {
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
 
+    Sign<f32> as bool = Sign::is_positive,
+    Sign<f64> as bool = Sign::is_positive,
     SlotSpan as Slot = SlotSpan::head,
-
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
-
     TrapCode as u8 = |code: TrapCode| -> u8 { code as _ },
 }
 
