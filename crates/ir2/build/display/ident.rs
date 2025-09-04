@@ -107,6 +107,7 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let cmp = self.value.cmp;
+        let sep = case.wrap(Sep);
         let select = case.wrap(Ident::Select);
         let ident = case.wrap(cmp.ident());
         let input_ident = case.wrap(cmp.ident_prefix());
@@ -115,7 +116,7 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
         let rhs_suffix = SnakeCase(self.value.rhs);
         write!(
             f,
-            "{select}{input_ident}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
+            "{select}{sep}{input_ident}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
         )
     }
 }
