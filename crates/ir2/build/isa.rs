@@ -1,6 +1,7 @@
 use crate::build::{
     ident::Ident,
     op::{
+        Ty,
         BinaryOp,
         BinaryOpKind,
         CmpBranchOp,
@@ -315,7 +316,15 @@ fn add_cmp_select_ops(isa: &mut Isa) {
             OperandKind::Slot,
             OperandKind::Immediate,
         ));
-        if matches!(op.commutativity(), Commutativity::NonCommutative) {
+        let is_float_op = matches!(op.ident_prefix(), Ty::F32 | Ty::F64);
+        let is_non_commutative = matches!(op.commutativity(), Commutativity::NonCommutative);
+        if is_non_commutative && is_float_op {
+            // Integer ops with `lhs` immediate can be replaced with integer ops with `rhs` immediate
+            // by also swapping `val_true` and `val_false` operands and comparison operator.
+            // For example, the following `select` expressions are the same:
+            // - `if 5 <  x then 10 else 20`
+            // - `if x <= 5 then 20 else 10`
+            // Float ops cannot simplified the same due to NaN value behavior.
             isa.push_op(CmpSelectOp::new(
                 op,
                 OperandKind::Immediate,
@@ -431,7 +440,7 @@ fn add_control_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(
             Ident::Branch,
-            [Field::new(Ident::Values, FieldTy::SlotSpan)],
+            [Field::new(Ident::Offset, FieldTy::BranchOffset)],
         )),
         Op::from(GenericOp::new(
             Ident::BranchTable,
