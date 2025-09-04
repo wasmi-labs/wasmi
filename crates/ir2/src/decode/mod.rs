@@ -68,6 +68,12 @@ impl Decode for BoundedSlotSpan {
     }
 }
 
+impl<const N: u16> Decode for FixedSlotSpan<N> {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self::new_unchecked(SlotSpan::decode(decoder))
+    }
+}
+
 macro_rules! impl_decode_for_primitive {
     ( $($ty:ty),* $(,)? ) => {
         $(
@@ -116,7 +122,6 @@ impl_decode_using! {
     Elem as u32 = Into::into,
 
     SlotSpan as Slot = SlotSpan::new,
-    FixedSlotSpan<2> as SlotSpan = |span| unsafe { <FixedSlotSpan<2>>::new_unchecked(span) },
 
     NonZero<u32> as u32 = |value| unsafe { NonZero::new_unchecked(value) },
     NonZero<u64> as u64 = |value| unsafe { NonZero::new_unchecked(value) },

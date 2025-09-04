@@ -85,6 +85,12 @@ impl Encode for BoundedSlotSpan {
     }
 }
 
+impl<const N: u16> Encode for FixedSlotSpan<N> {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        self.span().encode(encoder)
+    }
+}
+
 macro_rules! impl_encode_for_primitive {
     ( $($ty:ty),* $(,)? ) => {
         $(
@@ -137,7 +143,6 @@ impl_encode_using! {
     Elem as u32 = Into::into,
 
     SlotSpan as Slot = SlotSpan::head,
-    FixedSlotSpan<2> as SlotSpan = <FixedSlotSpan<2>>::span,
 
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
