@@ -436,7 +436,7 @@ fn add_control_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(
             Ident::ReturnSpan,
-            [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
+            [Field::new(Ident::Values, FieldTy::SlotSpan)],
         )),
         Op::from(GenericOp::new(
             Ident::Branch,
