@@ -117,7 +117,7 @@ define_ident!(
     AndNot: and_not,
     Or: or,
     Xor: xor,
-    NotEq: ne,
+    NotEq: not_eq,
     NotAnd: not_and,
     NotOr: not_or,
     Lt: lt,
