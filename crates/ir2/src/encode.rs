@@ -80,13 +80,8 @@ impl Encode for BranchOffset {
 }
 
 impl Encode for BoundedSlotSpan {
-    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
-    where
-        E: Encoder,
-    {
-        let pos = self.span().encode(encoder)?;
-        self.len().encode(encoder)?;
-        Ok(pos)
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        (self.span(), self.len()).encode(encoder)
     }
 }
 
