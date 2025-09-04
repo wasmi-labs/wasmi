@@ -102,10 +102,7 @@ macro_rules! impl_encode_for_primitive {
     ( $($ty:ty),* $(,)? ) => {
         $(
             impl Encode for $ty {
-                fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
-                where
-                    E: Encoder,
-                {
+                fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
                     encoder.write_bytes(&self.to_ne_bytes())
                 }
             }
@@ -120,10 +117,7 @@ macro_rules! impl_encode_using {
     ( $($ty:ty as $prim:ty = $e:expr),* $(,)? ) => {
         $(
             impl Encode for $ty {
-                fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
-                where
-                    E: Encoder,
-                {
+                fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
                     let conv = |value: &Self| -> $prim { $e(*value) };
                     conv(self).encode(encoder)
                 }
