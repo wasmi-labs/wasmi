@@ -62,7 +62,7 @@ pub trait Decode {
 
 impl Decode for BoundedSlotSpan {
     unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        let span = <SlotSpan>::decode(decoder);
+        let span = SlotSpan::decode(decoder);
         let len = u16::decode(decoder);
         Self::new(span, len)
     }
