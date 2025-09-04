@@ -1,7 +1,6 @@
 use crate::build::{
     ident::Ident,
     op::{
-        Ty,
         BinaryOp,
         BinaryOpKind,
         CmpBranchOp,
@@ -19,6 +18,7 @@ use crate::build::{
         StoreOpKind,
         TableGetOp,
         TableSetOp,
+        Ty,
         UnaryOp,
         UnaryOpKind,
         V128LoadLaneOp,
