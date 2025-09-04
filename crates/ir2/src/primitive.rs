@@ -1,5 +1,21 @@
-use crate::Error;
+use crate::{Error, SlotSpan};
 use core::marker::PhantomData;
+
+/// An [`Op::BranchTableSpan`](crate::Op::BranchTableSpan) branching target.
+#[derive(Debug, Copy, Clone)]
+pub struct BranchTableTarget {
+    /// The result stack slots of the branch target.
+    pub results: SlotSpan,
+    /// The offset to branch to for the target.
+    pub offset: BranchOffset,
+}
+
+impl BranchTableTarget {
+    /// Creates a new [`BranchTableTarget`] for `results` and `offset`.
+    pub fn new(results: SlotSpan, offset: BranchOffset) -> Self {
+        Self { results, offset }
+    }
+}
 
 /// Error that may occur upon converting values to [`Address`] and [`Offset16`].
 #[derive(Debug, Copy, Clone)]

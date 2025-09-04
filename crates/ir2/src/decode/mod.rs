@@ -33,6 +33,7 @@ use crate::{
     BlockFuel,
     BoundedSlotSpan,
     BranchOffset,
+    BranchTableTarget,
     FixedSlotSpan,
     Offset16,
     OpCode,
@@ -71,6 +72,14 @@ impl Decode for BoundedSlotSpan {
 impl<const N: u16> Decode for FixedSlotSpan<N> {
     unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
         Self::new_unchecked(SlotSpan::decode(decoder))
+    }
+}
+
+impl Decode for BranchTableTarget {
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        let results = SlotSpan::decode(decoder);
+        let offset = BranchOffset::decode(decoder);
+        Self::new(results, offset)
     }
 }
 

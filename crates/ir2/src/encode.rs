@@ -7,6 +7,7 @@ use crate::{
     BlockFuel,
     BoundedSlotSpan,
     BranchOffset,
+    BranchTableTarget,
     FixedSlotSpan,
     Offset16,
     Op,
@@ -88,6 +89,12 @@ impl Encode for BoundedSlotSpan {
 impl<const N: u16> Encode for FixedSlotSpan<N> {
     fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
         self.span().encode(encoder)
+    }
+}
+
+impl Encode for BranchTableTarget {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        (self.results, self.offset).encode(encoder)
     }
 }
 
