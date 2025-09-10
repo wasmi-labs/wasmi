@@ -381,28 +381,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let func_type = self.resolve_type(type_index);
         let index = self.stack.pop();
-        let indirect_params = self.call_indirect_params(index, table_index)?;
+        let consume_fuel = self.stack.consume_fuel_instr();
+        let table = index::Table::from(table_index);
+        let func_type = self.resolve_type(type_index);
+        let index = self.copy_if_immediate(index)?;
         let len_params = usize::from(func_type.len_params());
-        let results = self.call_regspan(len_params)?;
-        let instr = match (len_params, indirect_params) {
-            (0, Op::CallIndirectParams { .. }) => Op::call_indirect_0(results, type_index),
-            (0, Op::CallIndirectParamsImm16 { .. }) => {
-                Op::call_indirect_0_imm16(results, type_index)
-            }
-            (_, Op::CallIndirectParams { .. }) => Op::call_indirect(results, type_index),
-            (_, Op::CallIndirectParamsImm16 { .. }) => Op::call_indirect_imm16(results, type_index),
-            _ => unreachable!(),
-        };
-        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
-        self.push_param(indirect_params)?;
-        self.stack.pop_n(len_params, &mut self.operands);
-        self.instrs
-            .encode_register_list(&self.operands, &mut self.layout)?;
-        if let Some(span) = self.push_results(call_instr, func_type.results())? {
-            debug_assert_eq!(span, results);
-        }
+        let results = self.move_operands_to_temp(len_params, consume_fuel)?;
+        let call_instr = self.push_instr(
+            Op::call_indirect(results, type_index, index, table),
+            FuelCostsProvider::call,
+        )?;
         Ok(())
     }
 
