@@ -293,10 +293,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             .const_to_reg(V128::from(u128::from_ne_bytes(lanes)))?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| Op::i8x16_shuffle(result, lhs, rhs),
+            |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
             FuelCostsProvider::simd,
         )?;
-        self.push_param(Op::slot(selector))?;
         Ok(())
     }
 
