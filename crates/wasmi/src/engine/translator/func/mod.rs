@@ -378,12 +378,14 @@ impl FuncTranslator {
         &mut self,
         len: usize,
         consume_fuel: Option<Instr>,
-    ) -> Result<(), Error> {
+    ) -> Result<SlotSpan, Error> {
         for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
-        Ok(())
+        let first_idx = self.stack.peek(len).index();
+        let first = self.layout.temp_to_reg(first_idx)?;
+        Ok(SlotSpan::new(first))
     }
 
     /// Convert all branch params up to `depth` to [`Operand::Temp`].
