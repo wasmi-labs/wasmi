@@ -169,7 +169,7 @@ pub trait BumpFuelConsumption {
 impl BumpFuelConsumption for Op {
     fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
         match self {
-            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
+            Self::ConsumeFuel { fuel } => fuel.bump_by(delta).map_err(Error::from),
             instr => panic!("expected `Op::ConsumeFuel` but found: {instr:?}"),
         }
     }
