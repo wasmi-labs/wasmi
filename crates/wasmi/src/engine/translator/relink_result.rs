@@ -47,19 +47,6 @@ impl Visitor {
     }
 }
 
-impl VisitResults for Visitor {
-    #[inline]
-    fn visit_result_reg(&mut self, slot: &mut Slot) {
-        if self.replaced.is_err() {
-            return;
-        }
-        self.replaced = relink_simple(slot, self.new_result, self.old_result);
-    }
-
-    #[inline(always)]
-    fn visit_result_regs(&mut self, _slots: &mut SlotSpan, _len: Option<u16>) {}
-}
-
 impl RelinkResult for Op {
     fn relink_result(
         &mut self,
@@ -67,34 +54,9 @@ impl RelinkResult for Op {
         new_result: Slot,
         old_result: Slot,
     ) -> Result<bool, Error> {
-        // Note: for call instructions we have to infer with special handling if they return
-        //       a single value which allows us to relink the single result register.
-        match self {
-            Self::CallInternal0 { results, func } | Self::CallInternal { results, func } => {
-                relink_call_internal(
-                    results,
-                    EngineFunc::from(*func),
-                    module,
-                    new_result,
-                    old_result,
-                )
-            }
-            Self::CallImported0 { results, func } | Self::CallImported { results, func } => {
-                relink_call_imported(results, *func, module, new_result, old_result)
-            }
-            Self::CallIndirect0 { results, func_type }
-            | Self::CallIndirect0Imm16 { results, func_type }
-            | Self::CallIndirect { results, func_type }
-            | Self::CallIndirectImm16 { results, func_type } => {
-                relink_call_indirect(results, *func_type, module, new_result, old_result)
-            }
-            instr => {
-                // Fallback: only relink results of instructions with statically known single results.
-                let mut visitor = Visitor::new(new_result, old_result);
-                instr.visit_results(&mut visitor);
-                visitor.replaced
-            }
-        }
+        let mut visitor = Visitor::new(new_result, old_result);
+        self.visit_results(&mut visitor);
+        visitor.replaced
     }
 }
 
