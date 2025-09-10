@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    ir::{index, Const16, Slot},
+    ir::{index, Slot},
     store::StoreInner,
 };
 
