@@ -1,7 +1,7 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
     core::wasm,
-    ir::{Const16, ShiftAmount, Sign, Slot},
+    ir::{Sign, Slot},
     Error,
     TrapCode,
 };

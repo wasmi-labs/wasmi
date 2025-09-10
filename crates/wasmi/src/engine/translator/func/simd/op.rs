@@ -1,7 +1,7 @@
 use super::IntoLaneIdx;
 use crate::{
     core::{simd, Typed},
-    ir::{Const32, Op, Slot},
+    ir::{Op, Slot},
     V128,
 };
 
