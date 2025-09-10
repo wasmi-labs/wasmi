@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{wasm, UntypedVal, WriteAs},
-    ir::{index::Memory, Address32, Offset16, Offset64, Offset64Hi, Offset64Lo, Slot},
+    ir::{index::Memory, Offset16, Slot},
     store::StoreInner,
     Error,
     TrapCode,

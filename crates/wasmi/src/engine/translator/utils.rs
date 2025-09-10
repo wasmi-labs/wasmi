@@ -1,6 +1,6 @@
 use crate::{
     core::{Typed, TypedVal, UntypedVal},
-    ir::{Const16, Op, Sign},
+    ir::{Op, Sign},
     Error,
     ExternRef,
     Func,

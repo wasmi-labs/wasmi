@@ -2,7 +2,7 @@ use super::{Executor, UntypedValueCmpExt, UntypedValueExt};
 use crate::{
     core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Const16, Op, Slot},
+    ir::{BranchOffset, Op, Slot},
 };
 use core::cmp;
 

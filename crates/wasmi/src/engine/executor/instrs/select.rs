@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr, UntypedValueExt};
 use crate::{
     core::{wasm, ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{Const16, Op, Slot},
+    ir::{Op, Slot},
 };
 
 impl Executor<'_> {

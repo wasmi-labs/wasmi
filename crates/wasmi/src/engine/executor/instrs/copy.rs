@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::utils::unreachable_unchecked,
-    ir::{AnyConst32, Const32, FixedSlotSpan, Op, Slot, SlotSpan},
+    ir::{FixedSlotSpan, Op, Slot, SlotSpan},
 };
 use core::slice;
 
