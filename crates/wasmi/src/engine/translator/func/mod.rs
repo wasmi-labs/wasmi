@@ -954,7 +954,7 @@ impl FuncTranslator {
     /// # Note
     ///
     /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
-    fn immediate_to_reg(&mut self, operand: Operand) -> Result<Slot, Error> {
+    fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_reg(operand.local_index()),
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index()),
@@ -2140,8 +2140,8 @@ impl FuncTranslator {
             return Ok(());
         }
         let condition = self.layout.operand_to_reg(condition)?;
-        let mut true_val = self.immediate_to_reg(true_val)?;
-        let mut false_val = self.immediate_to_reg(false_val)?;
+        let mut true_val = self.copy_if_immediate(true_val)?;
+        let mut false_val = self.copy_if_immediate(false_val)?;
         match self
             .instrs
             .try_fuse_select(ty, condition, &self.layout, &mut self.stack)?

@@ -749,7 +749,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         }
         // Case: fallback to generic `memory.grow` instruction
-        let delta = self.immediate_to_reg(delta)?;
+        let delta = self.copy_if_immediate(delta)?;
         self.push_instr_with_result(
             index_ty.ty(),
             |result| Op::memory_grow(result, delta, memory),
@@ -1838,9 +1838,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let memory = index::Memory::from(mem);
         let data = index::Data::from(data_index);
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
         self.push_instr(
             Op::memory_init(memory, data, dst, src, len),
             FuelCostsProvider::instance,
@@ -1861,9 +1861,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let dst_memory = index::Memory::from(dst_mem);
         let src_memory = index::Memory::from(src_mem);
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
         self.push_instr(
             Op::memory_copy(dst_memory, src_memory, dst, src, len),
             FuelCostsProvider::instance,
@@ -1876,12 +1876,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
         let memory = index::Memory::from(mem);
-        let dst = self.immediate_to_reg(dst)?;
+        let dst = self.copy_if_immediate(dst)?;
         let value = self.make_input(value, |_, value| {
             let byte = u32::from(value) as u8;
             Ok(Input::Immediate(byte))
         })?;
-        let len = self.immediate_to_reg(len)?;
+        let len = self.copy_if_immediate(len)?;
         let instr: Op = match value {
             Input::Slot(value) => Op::memory_fill(memory, dst, value, len),
             Input::Immediate(value) => Op::memory_fill_imm(memory, dst, value, len),
@@ -1896,9 +1896,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let table = index::Table::from(table);
         let elem = index::Elem::from(elem_index);
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
         self.push_instr(
             Op::table_init(table, elem, dst, src, len),
             FuelCostsProvider::instance,
@@ -1919,9 +1919,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, src, len) = self.stack.pop3();
         let dst_table = index::Table::from(dst_table);
         let src_table = index::Table::from(src_table);
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
         self.push_instr(
             Op::table_copy(dst_table, src_table, dst, src, len),
             FuelCostsProvider::instance,
@@ -1995,9 +1995,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
         let table = index::Table::from(table);
-        let dst = self.immediate_to_reg(dst)?;
-        let value = self.immediate_to_reg(value)?;
-        let len = self.immediate_to_reg(len)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let value = self.copy_if_immediate(value)?;
+        let len = self.copy_if_immediate(len)?;
         self.push_instr(
             Op::table_fill(table, dst, len, value),
             FuelCostsProvider::instance,
@@ -2069,8 +2069,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return Ok(());
             }
         }
-        let value = self.immediate_to_reg(value)?;
-        let delta = self.immediate_to_reg(delta)?;
+        let value = self.copy_if_immediate(value)?;
+        let delta = self.copy_if_immediate(delta)?;
         self.push_instr_with_result(
             index_ty.ty(),
             |result| Op::table_grow(result, delta, value, table),
