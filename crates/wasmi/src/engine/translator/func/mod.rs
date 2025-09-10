@@ -658,32 +658,22 @@ impl FuncTranslator {
         layout: &mut StackLayout,
     ) -> Result<Op, Error> {
         let instr = match value.ty() {
-            ValType::I32 => Op::copy_imm32(result, i32::from(value)),
-            ValType::I64 => {
-                let value = i64::from(value);
-                match <Const32<i64>>::try_from(value) {
-                    Ok(value) => Op::copy_i64imm32(result, value),
-                    Err(_) => {
-                        let value = layout.const_to_reg(value)?;
-                        Op::copy(result, value)
-                    }
-                }
+            ValType::I32 => Op::copy32(result, i32::from(value)),
+            ValType::I64 => Op::copy64(result, i64::from(value)),
+            ValType::F32 => Op::copy32(result, f32::from(value).to_bits()),
+            ValType::F64 => Op::copy64(result, f64::from(value).to_bits()),
+            ValType::ExternRef | ValType::FuncRef => {
+                Op::copy64(result, u64::from(UntypedVal::from(value)))
             }
-            ValType::F32 => Op::copy_imm32(result, f32::from(value)),
-            ValType::F64 => {
-                let value = f64::from(value);
-                match <Const32<f64>>::try_from(value) {
-                    Ok(value) => Op::copy_f64imm32(result, value),
-                    Err(_) => {
-                        let value = layout.const_to_reg(value)?;
-                        Op::copy(result, value)
-                    }
-                }
+            #[cfg(feature = "simd")]
+            ValType::V128 => {
+                let value = V128::from(value).as_u128();
+                let value_lo = (value & 0xFFFF_FFFF_FFFF_FFFF) as u64;
+                let value_hi = (value >> 64) as u64;
+                Op::copy128(result, value_lo, value_hi)
             }
-            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                let value = layout.const_to_reg(value)?;
-                Op::copy(result, value)
-            }
+            #[cfg(not(feature = "simd"))]
+            ValType::V128 => panic!("unexpected `v128` operand: {value}"),
         };
         Ok(instr)
     }
@@ -949,10 +939,10 @@ impl FuncTranslator {
         &mut self,
         operand: Operand,
         consume_fuel: Option<Instr>,
-    ) -> Result<(), Error> {
+    ) -> Result<Slot, Error> {
         let result = self.layout.temp_to_reg(operand.index())?;
         self.encode_copy(result, operand, consume_fuel)?;
-        Ok(())
+        Ok(result)
     }
 
     /// Efficiently converts the `operand` to a [`Slot`] if it is an immediate.
@@ -1125,10 +1115,9 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
         self.push_instr(
-            Op::branch_table_span(index, table.len() + 1),
+            Op::branch_table_span(index, table.len() + 1, values, len_values),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Op::slot_span(BoundedSlotSpan::new(values, len_values)))?;
         // Encode the `br_table` targets:
         let targets = &self.immediates[..];
         for target in targets {
@@ -1158,52 +1147,36 @@ impl FuncTranslator {
             1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_reg(operand.local_index())?;
-                    Op::return_reg(value)
+                    Op::return_slot(value)
                 }
                 Operand::Temp(operand) => {
                     let value = self.layout.temp_to_reg(operand.operand_index())?;
-                    Op::return_reg(value)
+                    Op::return_slot(value)
                 }
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
-                        ValType::I32 => Op::return_imm32(i32::from(val)),
-                        ValType::I64 => match <Const32<i64>>::try_from(i64::from(val)) {
-                            Ok(value) => Op::return_i64imm32(value),
-                            Err(_) => {
-                                let value = self.layout.const_to_reg(val)?;
-                                Op::return_reg(value)
-                            }
-                        },
-                        ValType::F32 => Op::return_imm32(f32::from(val)),
-                        ValType::F64 => match <Const32<f64>>::try_from(f64::from(val)) {
-                            Ok(value) => Op::return_f64imm32(value),
-                            Err(_) => {
-                                let value = self.layout.const_to_reg(val)?;
-                                Op::return_reg(value)
-                            }
-                        },
-                        ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                            let value = self.layout.const_to_reg(val)?;
-                            Op::return_reg(value)
+                        ValType::I32 => Op::return32(i32::from(val)),
+                        ValType::I64 => Op::return64(i64::from(val)),
+                        ValType::F32 => Op::return32(f32::from(val).to_bits()),
+                        ValType::F64 => Op::return64(f64::from(val).to_bits()),
+                        ValType::FuncRef | ValType::ExternRef => {
+                            Op::return64(u64::from(UntypedVal::from(val)))
+                        }
+                        ValType::V128 => {
+                            let value = self.stack.peek(0);
+                            let temp_slot = self.copy_operand_to_temp(operand, consume_fuel)?;
+                            Op::return_slot(temp_slot)
                         }
                     }
                 }
             },
-            2 => {
-                let (v0, v1) = self.stack.peek2();
-                let v0 = self.layout.operand_to_reg(v0)?;
-                let v1 = self.layout.operand_to_reg(v1)?;
-                Op::return_reg2_ext(v0, v1)
+            _ => {
+                self.move_operands_to_temp(usize::from(len_results), consume_fuel)?;
+                let result0 = self.stack.peek(usize::from(len_results));
+                let slot0 = self.layout.temp_to_reg(result0.index())?;
+                Op::return_span(SlotSpan::new(slot0))
             }
-            3 => {
-                let (v0, v1, v2) = self.stack.peek3();
-                let v0 = self.layout.operand_to_reg(v0)?;
-                let v1 = self.layout.operand_to_reg(v1)?;
-                let v2 = self.layout.operand_to_reg(v2)?;
-                Op::return_reg3_ext(v0, v1, v2)
-            }
-            _ => return self.encode_return_many(len_results, consume_fuel),
         };
         let instr = self
             .instrs
@@ -1593,36 +1566,12 @@ impl FuncTranslator {
         };
         let instr = self.instrs.next_instr();
         let offset = self.labels.try_resolve_label(label, instr)?;
-        let instr = match BranchOffset16::try_from(offset) {
-            Ok(offset) => match branch_eqz {
-                true => Op::branch_i32_eq_imm16(condition, 0, offset),
-                false => Op::branch_i32_ne_imm16(condition, 0, offset),
-            },
-            Err(_) => {
-                let zero = self.layout.const_to_reg(0_i32)?;
-                let comparator = match branch_eqz {
-                    true => Comparator::I32Eq,
-                    false => Comparator::I32Ne,
-                };
-                self.make_branch_cmp_fallback(comparator, condition, zero, offset)?
-            }
+        let instr = match branch_eqz {
+            true => Op::branch_i32_eq_imm16(condition, 0, offset),
+            false => Op::branch_i32_ne_imm16(condition, 0, offset),
         };
         self.push_instr(instr, FuelCostsProvider::base)?;
         Ok(())
-    }
-
-    /// Create an [`Op::BranchCmpFallback`].
-    fn make_branch_cmp_fallback(
-        &mut self,
-        cmp: Comparator,
-        lhs: Slot,
-        rhs: Slot,
-        offset: BranchOffset,
-    ) -> Result<Op, Error> {
-        let params = self
-            .layout
-            .const_to_reg(ComparatorAndOffset::new(cmp, offset))?;
-        Ok(Op::branch_cmp_fallback(lhs, rhs, params))
     }
 
     /// Try to fuse a cmp+branch [`Op`] with optional negation.
@@ -1704,7 +1653,7 @@ impl FuncTranslator {
         };
         let offset = self.labels.try_resolve_label(label, instr)?;
         let fused = cmp_instr
-            .try_into_cmp_branch_instr(offset, &mut self.layout)?
+            .try_into_cmp_branch_instr(offset)?
             .expect("cmp+branch fusion must succeed");
         Ok(Some(fused))
     }
@@ -1794,20 +1743,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Creates a new 16-bit encoded [`Input16`] from the given `value`.
-    pub fn make_imm16<T>(&mut self, value: T) -> Result<Input16<T>, Error>
-    where
-        T: Into<UntypedVal> + Copy + TryInto<Const16<T>>,
-    {
-        match value.try_into() {
-            Ok(rhs) => Ok(Input::Immediate(rhs)),
-            Err(_) => {
-                let rhs = self.layout.const_to_reg(value)?;
-                Ok(Input::Slot(rhs))
-            }
-        }
-    }
-
     /// Create a new generic [`Input`] from the given `operand`.
     fn make_input<R>(
         &mut self,
@@ -1822,73 +1757,34 @@ impl FuncTranslator {
         Ok(Input::Slot(reg))
     }
 
-    /// Converts the `provider` to a 16-bit index-type constant value.
+    /// Converts the `provider` to a 64-bit index-type constant value.
     ///
     /// # Note
     ///
-    /// - Turns immediates that cannot be 16-bit encoded into function local constants.
-    /// - The behavior is different whether `memory64` is enabled or disabled.
-    pub(super) fn make_index16(
+    /// This expects `operand` to be either `u32` or `u64` if `memory64` is enabled or disabled respectively.
+    pub(super) fn make_index64(
         &mut self,
         operand: Operand,
         index_type: IndexType,
-    ) -> Result<Input16<u64>, Error> {
+    ) -> Result<Input<u64>, Error> {
         let value = match operand {
             Operand::Immediate(value) => value.val(),
-            operand => {
+            Operand::Local(value) => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = self.layout.operand_to_reg(operand)?;
+                let reg = self.layout.local_to_reg(value.local_index())?;
+                return Ok(Input::Slot(reg));
+            }
+            Operand::Temp(value) => {
+                debug_assert_eq!(operand.ty(), index_type.ty());
+                let reg = self.layout.temp_to_reg(value.operand_index())?;
                 return Ok(Input::Slot(reg));
             }
         };
-        match index_type {
-            IndexType::I64 => {
-                if let Ok(value) = Const16::try_from(u64::from(value)) {
-                    return Ok(Input::Immediate(value));
-                }
-            }
-            IndexType::I32 => {
-                if let Ok(value) = Const16::try_from(u32::from(value)) {
-                    return Ok(Input::Immediate(<Const16<u64>>::cast(value)));
-                }
-            }
-        }
-        let reg = self.layout.const_to_reg(value)?;
-        Ok(Input::Slot(reg))
-    }
-
-    /// Converts the `provider` to a 32-bit index-type constant value.
-    ///
-    /// # Note
-    ///
-    /// - Turns immediates that cannot be 32-bit encoded into function local constants.
-    /// - The behavior is different whether `memory64` is enabled or disabled.
-    pub(super) fn make_index32(
-        &mut self,
-        operand: Operand,
-        index_type: IndexType,
-    ) -> Result<Input32<u64>, Error> {
-        let value = match operand {
-            Operand::Immediate(value) => value.val(),
-            operand => {
-                debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = self.layout.operand_to_reg(operand)?;
-                return Ok(Input::Slot(reg));
-            }
+        let value = match index_type {
+            IndexType::I32 => u64::from(u32::from(value)),
+            IndexType::I64 => u64::from(value),
         };
-        match index_type {
-            IndexType::I64 => {
-                if let Ok(value) = Const32::try_from(u64::from(value)) {
-                    return Ok(Input::Immediate(value));
-                }
-            }
-            IndexType::I32 => {
-                let value32 = Const32::from(u32::from(value));
-                return Ok(Input::Immediate(<Const32<u64>>::cast(value32)));
-            }
-        }
-        let reg = self.layout.const_to_reg(value)?;
-        Ok(Input::Slot(reg))
+        Ok(Input::Immediate(value))
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
@@ -1939,13 +1835,13 @@ impl FuncTranslator {
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T, R>(
         &mut self,
-        make_rr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_ri: fn(result: Slot, lhs: Slot, rhs: Const16<T>) -> Op,
+        make_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_ssi: fn(result: Slot, lhs: Slot, rhs: T) -> Op,
         consteval: fn(T, T) -> R,
-        opt_ri: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
+        opt_si: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: WasmInteger + TryInto<Const16<T>>,
+        T: WasmInteger,
         R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
@@ -1955,17 +1851,13 @@ impl FuncTranslator {
             }
             (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
                 let rhs = imm.val().into();
-                if opt_ri(self, val, rhs)? {
+                if opt_si(self, val, rhs)? {
                     return Ok(());
                 }
                 let lhs = self.layout.operand_to_reg(val)?;
-                let rhs16 = self.make_imm16(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
-                    |result| match rhs16 {
-                        Input::Immediate(rhs) => make_ri(result, lhs, rhs),
-                        Input::Slot(rhs) => make_rr(result, lhs, rhs),
-                    },
+                    |result| make_ssi(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -1973,7 +1865,7 @@ impl FuncTranslator {
                 <R as Typed>::TY,
                 lhs,
                 rhs,
-                make_rr,
+                make_sss,
                 FuelCostsProvider::base,
             ),
         }
@@ -1982,13 +1874,9 @@ impl FuncTranslator {
     /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
     fn translate_divrem<T>(
         &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_imm16_rhs: fn(
-            result: Slot,
-            lhs: Slot,
-            rhs: Const16<<T as WasmInteger>::NonZero>,
-        ) -> Op,
-        make_instr_imm16_lhs: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
+        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as WasmInteger>::NonZero) -> Op,
+        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
         consteval: fn(T, T) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2006,26 +1894,18 @@ impl FuncTranslator {
                     // Optimization: division by zero always traps
                     return self.translate_trap(TrapCode::IntegerDivisionByZero);
                 };
-                let rhs16 = self.make_imm16(non_zero_rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| match rhs16 {
-                        Input::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
-                        Input::Slot(rhs) => make_instr(result, lhs, rhs),
-                    },
+                    |result| make_instr_ssi(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
-                let lhs16 = self.make_imm16(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| match lhs16 {
-                        Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Input::Slot(lhs) => make_instr(result, lhs, rhs),
-                    },
+                    |result| make_instr_sis(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -2033,7 +1913,7 @@ impl FuncTranslator {
                 <T as Typed>::TY,
                 lhs,
                 rhs,
-                make_instr,
+                make_instr_sss,
                 FuelCostsProvider::base,
             ),
         }
@@ -2042,9 +1922,9 @@ impl FuncTranslator {
     /// Translates binary non-commutative Wasm operators to Wasmi bytecode.
     fn translate_binary<T, R>(
         &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_imm16_rhs: fn(result: Slot, lhs: Slot, rhs: Const16<T>) -> Op,
-        make_instr_imm16_lhs: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
+        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: T) -> Op,
+        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
@@ -2059,13 +1939,9 @@ impl FuncTranslator {
             (lhs, Operand::Immediate(rhs)) => {
                 let lhs = self.layout.operand_to_reg(lhs)?;
                 let rhs = T::from(rhs.val());
-                let rhs16 = self.make_imm16(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
-                    |result| match rhs16 {
-                        Input::Immediate(rhs) => make_instr_imm16_rhs(result, lhs, rhs),
-                        Input::Slot(rhs) => make_instr(result, lhs, rhs),
-                    },
+                    |result| make_instr_ssi(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -2075,10 +1951,7 @@ impl FuncTranslator {
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
-                    |result| match lhs16 {
-                        Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Input::Slot(lhs) => make_instr(result, lhs, rhs),
-                    },
+                    |result| make_instr_sis(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -2086,66 +1959,7 @@ impl FuncTranslator {
                 <R as Typed>::TY,
                 lhs,
                 rhs,
-                make_instr,
-                FuelCostsProvider::base,
-            ),
-        }
-    }
-
-    /// Translates Wasm `i{32,64}.sub` operators to Wasmi bytecode.
-    fn translate_isub<T, R>(
-        &mut self,
-        make_sub_rr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_add_ri: fn(result: Slot, lhs: Slot, rhs: Const16<T>) -> Op,
-        make_sub_ir: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
-        consteval: fn(T, T) -> R,
-    ) -> Result<(), Error>
-    where
-        T: WasmInteger,
-        R: Into<TypedVal> + Typed,
-    {
-        bail_unreachable!(self);
-        match self.stack.pop2() {
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
-            }
-            (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
-                let rhs = T::from(rhs.val());
-                let rhs16 = match rhs.wrapping_neg().try_into() {
-                    Ok(rhs) => Input::Immediate(rhs),
-                    Err(_) => {
-                        let rhs = self.layout.const_to_reg(rhs)?;
-                        Input::Slot(rhs)
-                    }
-                };
-                self.push_instr_with_result(
-                    <T as Typed>::TY,
-                    |result| match rhs16 {
-                        Input::Immediate(rhs) => make_add_ri(result, lhs, rhs),
-                        Input::Slot(rhs) => make_sub_rr(result, lhs, rhs),
-                    },
-                    FuelCostsProvider::base,
-                )
-            }
-            (Operand::Immediate(lhs), rhs) => {
-                let lhs = T::from(lhs.val());
-                let lhs16 = self.make_imm16(lhs)?;
-                let rhs = self.layout.operand_to_reg(rhs)?;
-                self.push_instr_with_result(
-                    <T as Typed>::TY,
-                    |result| match lhs16 {
-                        Input::Immediate(lhs) => make_sub_ir(result, lhs, rhs),
-                        Input::Slot(lhs) => make_sub_rr(result, lhs, rhs),
-                    },
-                    FuelCostsProvider::base,
-                )
-            }
-            (lhs, rhs) => self.push_binary_instr_with_result(
-                <R as Typed>::TY,
-                lhs,
-                rhs,
-                make_sub_rr,
+                make_instr_sss,
                 FuelCostsProvider::base,
             ),
         }
@@ -2154,18 +1968,13 @@ impl FuncTranslator {
     /// Translates Wasm shift and rotate operators to Wasmi bytecode.
     fn translate_shift<T>(
         &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_imm16_rhs: fn(
-            result: Slot,
-            lhs: Slot,
-            rhs: <T as IntoShiftAmount>::Output,
-        ) -> Op,
-        make_instr_imm16_lhs: fn(result: Slot, lhs: Const16<T>, rhs: Slot) -> Op,
+        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Value) -> Op,
+        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
-        T: WasmInteger + IntoShiftAmount<Input: From<TypedVal>>,
-        Const16<T>: From<i16>,
+        T: WasmInteger + IntoShiftAmount,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -2173,7 +1982,7 @@ impl FuncTranslator {
                 self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
             }
             (lhs, Operand::Immediate(rhs)) => {
-                let Some(rhs) = T::into_shift_amount(rhs.val().into()) else {
+                let Some(rhs) = T::into_shift_amount(T::from(rhs.val())) else {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
                     self.stack.push_operand(lhs)?;
                     return Ok(());
@@ -2181,7 +1990,7 @@ impl FuncTranslator {
                 let lhs = self.layout.operand_to_reg(lhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| make_instr_imm16_rhs(result, lhs, rhs),
+                    |result| make_instr_ssi(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -2192,14 +2001,10 @@ impl FuncTranslator {
                     self.stack.push_immediate(lhs)?;
                     return Ok(());
                 }
-                let lhs16 = self.make_imm16(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| match lhs16 {
-                        Input::Immediate(lhs) => make_instr_imm16_lhs(result, lhs, rhs),
-                        Input::Slot(lhs) => make_instr(result, lhs, rhs),
-                    },
+                    |result| make_instr_sis(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -2207,7 +2012,7 @@ impl FuncTranslator {
                 <T as Typed>::TY,
                 lhs,
                 rhs,
-                make_instr,
+                make_instr_sss,
                 FuelCostsProvider::base,
             ),
         }
@@ -2245,8 +2050,9 @@ impl FuncTranslator {
     /// - Applies constant evaluation if both operands are constant values.
     fn translate_fcopysign<T>(
         &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_imm: fn(result: Slot, lhs: Slot, rhs: Sign<T>) -> Op,
+        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: Sign<T>) -> Op,
+        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
@@ -2262,7 +2068,16 @@ impl FuncTranslator {
                 let sign = T::from(rhs.val()).sign();
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| make_instr_imm(result, lhs, sign),
+                    |result| make_instr_ssi(result, lhs, sign),
+                    FuelCostsProvider::base,
+                )
+            }
+            (Operand::Immediate(lhs), rhs) => {
+                let lhs = T::from(rhs.val());
+                let rhs = self.layout.operand_to_reg(rhs)?;
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| make_instr_sis(result, lhs, rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -2276,7 +2091,7 @@ impl FuncTranslator {
                     <T as Typed>::TY,
                     lhs,
                     rhs,
-                    make_instr,
+                    make_instr_sss,
                     FuelCostsProvider::base,
                 )
             }
@@ -2360,17 +2175,6 @@ impl FuncTranslator {
         };
         self.push_param(Op::slot2_ext(true_val, false_val))?;
         Ok(())
-    }
-
-    /// Create either [`Op::CallIndirectParams`] or [`Op::CallIndirectParamsImm16`] depending on the inputs.
-    fn call_indirect_params(&mut self, index: Operand, table_index: u32) -> Result<Op, Error> {
-        let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
-        let index = self.make_index16(index, table_type.index_ty())?;
-        let instr = match index {
-            Input::Slot(index) => Op::call_indirect_params(index, table_index),
-            Input::Immediate(index) => Op::call_indirect_params_imm16(index, table_index),
-        };
-        Ok(instr)
     }
 
     /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
@@ -2479,61 +2283,53 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         loaded_ty: ValType,
-        make_instr: fn(result: Slot, offset_lo: Offset64Lo) -> Op,
-        make_instr_offset16: fn(result: Slot, ptr: Slot, offset: Offset16) -> Op,
-        make_instr_at: fn(result: Slot, address: Address32) -> Op,
+        make_instr_ss: fn(result: Slot, ptr: Slot, offset: u64, memory: index::Memory) -> Op,
+        make_instr_si: impl Into<
+            Option<fn(result: Slot, address: Address, memory: index::Memory) -> Op>,
+        >,
+        make_instr_mem0_offset16_ss: fn(result: Slot, ptr: Slot, offset: Offset16) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
         let ptr = self.stack.pop();
-        let (ptr, offset) = match ptr {
+        let ptr = match ptr {
             Operand::Immediate(ptr) => {
                 let ptr = ptr.val();
                 let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
-                if let Ok(address) = Address32::try_from(address) {
-                    self.push_instr_with_result(
-                        loaded_ty,
-                        |result| make_instr_at(result, address),
-                        FuelCostsProvider::load,
-                    )?;
-                    if !memory.is_default() {
-                        self.push_param(Op::memory_index(memory))?;
+                match make_instr_si.into() {
+                    Some(make_instr_si) => {
+                        self.push_instr_with_result(
+                            loaded_ty,
+                            |result| make_instr_si(result, address, memory),
+                            FuelCostsProvider::load,
+                        )?;
+                        return Ok(());
                     }
-                    return Ok(());
+                    None => {
+                        let consume_fuel = self.stack.consume_fuel_instr();
+                        self.copy_operand_to_temp(ptr, consume_fuel)?
+                    }
                 }
-                // Case: we cannot use specialized encoding and thus have to fall back
-                //       to the general case where `ptr` is zero and `offset` stores the
-                //       `ptr+offset` address value.
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
             }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
+            ptr => self.layout.operand_to_reg(ptr)?,
         };
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_instr_with_result(
                     loaded_ty,
-                    |result| make_instr_offset16(result, ptr, offset),
+                    |result| make_instr_mem0_offset16_ss(result, ptr, offset),
                     FuelCostsProvider::load,
                 )?;
                 return Ok(());
             }
         }
-        let (offset_hi, offset_lo) = Offset64::split(offset);
         self.push_instr_with_result(
             loaded_ty,
-            |result| make_instr(result, offset_lo),
+            |result| make_instr_ss(result, ptr, offset, memory),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::slot_and_offset_hi(ptr, offset_hi))?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
         Ok(())
     }
 
@@ -2549,247 +2345,14 @@ impl FuncTranslator {
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
-    fn translate_istore_wrap<T: op::StoreWrapOperator>(
-        &mut self,
-        memarg: MemArg,
-    ) -> Result<(), Error>
+    fn translate_store<T: op::StoreOperator>(&mut self, memarg: MemArg) -> Result<(), Error>
     where
-        T::Value: Copy + Wrap<T::Wrapped> + From<TypedVal>,
-        T::Param: TryFrom<T::Wrapped> + Into<AnyConst16>,
+        T::Value: Copy + From<TypedVal>,
+        T::Immediate: Copy,
     {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
-        self.encode_istore_wrap::<T>(memarg, ptr, value)
-    }
-
-    /// Encodes Wasm integer `store` and `storeN` instructions as Wasmi bytecode.
-    fn encode_istore_wrap<T: op::StoreWrapOperator>(
-        &mut self,
-        memarg: MemArg,
-        ptr: Operand,
-        value: Operand,
-    ) -> Result<(), Error>
-    where
-        T::Value: Copy + Wrap<T::Wrapped> + From<TypedVal>,
-        T::Param: TryFrom<T::Wrapped> + Into<AnyConst16>,
-    {
-        let (memory, offset) = Self::decode_memarg(memarg);
-        let (ptr, offset) = match ptr {
-            Operand::Immediate(ptr) => {
-                let ptr = ptr.val();
-                let Some(address) = self.effective_address(memory, ptr, offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                if let Ok(address) = Address32::try_from(address) {
-                    return self.encode_istore_wrap_at::<T>(memory, address, value);
-                }
-                // Case: we cannot use specialized encoding and thus have to fall back
-                //       to the general case where `ptr` is zero and `offset` stores the
-                //       `ptr+offset` address value.
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
-            }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
-        };
-        if memory.is_default() {
-            if let Some(_instr) = self.encode_istore_wrap_mem0::<T>(ptr, offset, value)? {
-                return Ok(());
-            }
-        }
-        let (offset_hi, offset_lo) = Offset64::split(offset);
-        let (instr, param) = {
-            match value {
-                Operand::Immediate(value) => {
-                    let value = value.val();
-                    match T::Param::try_from(T::Value::from(value).wrap()).ok() {
-                        Some(value) => (
-                            T::store_imm(ptr, offset_lo),
-                            Op::imm16_and_offset_hi(value, offset_hi),
-                        ),
-                        None => (
-                            T::store(ptr, offset_lo),
-                            Op::slot_and_offset_hi(self.layout.const_to_reg(value)?, offset_hi),
-                        ),
-                    }
-                }
-                value => {
-                    let value = self.layout.operand_to_reg(value)?;
-                    (
-                        T::store(ptr, offset_lo),
-                        Op::slot_and_offset_hi(value, offset_hi),
-                    )
-                }
-            }
-        };
-        self.push_instr(instr, FuelCostsProvider::store)?;
-        self.push_param(param)?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
-        Ok(())
-    }
-
-    /// Encodes a Wasm integer `store` and `storeN` instructions as Wasmi bytecode.
-    ///
-    /// # Note
-    ///
-    /// This is used in cases where the `ptr` is a known constant value.
-    fn encode_istore_wrap_at<T: op::StoreWrapOperator>(
-        &mut self,
-        memory: index::Memory,
-        address: Address32,
-        value: Operand,
-    ) -> Result<(), Error>
-    where
-        T::Value: Copy + From<TypedVal> + Wrap<T::Wrapped>,
-        T::Param: TryFrom<T::Wrapped>,
-    {
-        match value {
-            Operand::Immediate(value) => {
-                let value = value.val();
-                let wrapped = T::Value::from(value).wrap();
-                if let Ok(value) = T::Param::try_from(wrapped) {
-                    self.push_instr(T::store_at_imm(value, address), FuelCostsProvider::store)?;
-                } else {
-                    let value = self.layout.const_to_reg(value)?;
-                    self.push_instr(T::store_at(value, address), FuelCostsProvider::store)?;
-                }
-            }
-            value => {
-                let value = self.layout.operand_to_reg(value)?;
-                self.push_instr(T::store_at(value, address), FuelCostsProvider::store)?;
-            }
-        }
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
-        Ok(())
-    }
-
-    /// Encodes a Wasm integer `store` and `storeN` instructions as Wasmi bytecode.
-    ///
-    /// # Note
-    ///
-    /// This optimizes for cases where the Wasm linear memory that is operated on is known
-    /// to be the default memory.
-    /// Returns `Some` in case the optimized instructions have been encoded.
-    fn encode_istore_wrap_mem0<T: op::StoreWrapOperator>(
-        &mut self,
-        ptr: Slot,
-        offset: u64,
-        value: Operand,
-    ) -> Result<Option<Instr>, Error>
-    where
-        T::Value: Copy + From<TypedVal> + Wrap<T::Wrapped>,
-        T::Param: TryFrom<T::Wrapped>,
-    {
-        let Ok(offset16) = Offset16::try_from(offset) else {
-            return Ok(None);
-        };
-        let instr = match value {
-            Operand::Immediate(value) => {
-                let value = value.val();
-                let wrapped = T::Value::from(value).wrap();
-                match T::Param::try_from(wrapped) {
-                    Ok(value) => self.push_instr(
-                        T::store_offset16_imm(ptr, offset16, value),
-                        FuelCostsProvider::store,
-                    )?,
-                    Err(_) => {
-                        let value = self.layout.const_to_reg(value)?;
-                        self.push_instr(
-                            T::store_offset16(ptr, offset16, value),
-                            FuelCostsProvider::store,
-                        )?
-                    }
-                }
-            }
-            value => {
-                let value = self.layout.operand_to_reg(value)?;
-                self.push_instr(
-                    T::store_offset16(ptr, offset16, value),
-                    FuelCostsProvider::store,
-                )?
-            }
-        };
-        Ok(Some(instr))
-    }
-
-    /// Translates a general Wasm `store` instruction to Wasmi bytecode.
-    ///
-    /// # Note
-    ///
-    /// This chooses the most efficient encoding for the given `store` instruction.
-    /// If `ptr+offset` is a constant value the pointer address is pre-calculated.
-    ///
-    /// # Usage
-    ///
-    /// Used for translating the following Wasm operators to Wasmi bytecode:
-    ///
-    /// - `{f32, f64, v128}.store`
-    fn translate_store(
-        &mut self,
-        memarg: MemArg,
-        store: fn(ptr: Slot, offset_lo: Offset64Lo) -> Op,
-        store_offset16: fn(ptr: Slot, offset: Offset16, value: Slot) -> Op,
-        store_at: fn(value: Slot, address: Address32) -> Op,
-    ) -> Result<(), Error> {
-        bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg);
-        let (ptr, value) = self.stack.pop2();
-        let (ptr, offset) = match ptr {
-            Operand::Immediate(ptr) => {
-                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                if let Ok(address) = Address32::try_from(address) {
-                    return self.encode_fstore_at(memory, address, value, store_at);
-                }
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
-            }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
-        };
-        let (offset_hi, offset_lo) = Offset64::split(offset);
-        let value = self.layout.operand_to_reg(value)?;
-        if memory.is_default() {
-            if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_instr(store_offset16(ptr, offset, value), FuelCostsProvider::store)?;
-                return Ok(());
-            }
-        }
-        self.push_instr(store(ptr, offset_lo), FuelCostsProvider::store)?;
-        self.push_param(Op::slot_and_offset_hi(value, offset_hi))?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
-        Ok(())
-    }
-
-    /// Encodes a Wasm `store` instruction with immediate address as Wasmi bytecode.
-    ///
-    /// # Note
-    ///
-    /// This is used in cases where the `ptr` is a known constant value.
-    fn encode_fstore_at(
-        &mut self,
-        memory: index::Memory,
-        address: Address32,
-        value: Operand,
-        make_instr_at: fn(value: Slot, address: Address32) -> Op,
-    ) -> Result<(), Error> {
-        let value = self.layout.operand_to_reg(value)?;
-        self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
-        Ok(())
+        todo!()
     }
 
     /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
