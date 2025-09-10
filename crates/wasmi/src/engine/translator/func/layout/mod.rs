@@ -125,12 +125,6 @@ impl StackLayout {
     }
 }
 
-impl AllocConst for StackLayout {
-    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Slot, Error> {
-        self.const_to_reg(value)
-    }
-}
-
 /// The [`StackSpace`] of a [`Slot`].
 #[derive(Debug, Copy, Clone)]
 pub enum StackSpace {
