@@ -46,17 +46,10 @@ impl_typed_for! {
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy
-    + Eq
-    + Typed
-    + From<TypedVal>
-    + Into<TypedVal>
-    + From<UntypedVal>
-    + Into<UntypedVal>
-    + TryInto<Const16<Self>>
+    Copy + Eq + Typed + From<TypedVal> + Into<TypedVal> + From<UntypedVal> + Into<UntypedVal>
 {
     /// The non-zero type of the [`WasmInteger`].
-    type NonZero: Copy + Into<Self> + TryInto<Const16<Self::NonZero>> + Into<UntypedVal>;
+    type NonZero: Copy + Into<Self> + Into<UntypedVal>;
 
     /// Returns `self` as [`Self::NonZero`] if possible.
     ///
