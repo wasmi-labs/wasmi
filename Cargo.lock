@@ -1723,7 +1723,6 @@ dependencies = [
  "spin",
  "wasmi_collections 0.51.0",
  "wasmi_core 0.51.0",
- "wasmi_ir 0.51.0",
  "wasmi_ir2",
  "wasmparser 0.228.0",
  "wat",
