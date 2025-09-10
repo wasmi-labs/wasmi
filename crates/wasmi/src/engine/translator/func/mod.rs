@@ -652,17 +652,13 @@ impl FuncTranslator {
                 }
                 Op::copy(result, value)
             }
-            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val(), layout)?,
+            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
         };
         Ok(Some(instr))
     }
 
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
-    fn make_copy_imm_instr(
-        result: Slot,
-        value: TypedVal,
-        layout: &mut StackLayout,
-    ) -> Result<Op, Error> {
+    fn make_copy_imm_instr(result: Slot, value: TypedVal) -> Result<Op, Error> {
         let instr = match value.ty() {
             ValType::I32 => Op::copy32(result, i32::from(value)),
             ValType::I64 => Op::copy64(result, i64::from(value)),
@@ -951,14 +947,10 @@ impl FuncTranslator {
         Ok(result)
     }
 
-    /// Efficiently converts the `operand` to a [`Slot`] if it is an immediate.
+    /// Copies the `operand` if it is an immediate and returns the [`Slot`].
     ///
     /// # Note
     ///
-    /// - Preferrably, this encodes the immediate `operand` into a `copy` instruction
-    ///   with the immediate encoded inline.
-    /// - If the immediate `operand` cannot be encoded as `copy` with inline immediate
-    ///   a function local constant [`Slot`] will be allocated and returned.
     /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
     fn immediate_to_reg(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
@@ -967,24 +959,11 @@ impl FuncTranslator {
             Operand::Immediate(operand) => {
                 let value = operand.val();
                 let result = self.layout.temp_to_reg(operand.operand_index())?;
-                match Self::make_copy_imm_instr(result, value, &mut self.layout)? {
-                    Op::Copy { value, .. } => {
-                        // Case: not possible to craft a `copy` instruction
-                        //       with an inline immediate, so we can return
-                        //       the allocated function local constant [`Slot`]
-                        //       instead.
-                        Ok(value)
-                    }
-                    copy_instr => {
-                        let consume_fuel = self.stack.consume_fuel_instr();
-                        self.instrs.push_instr(
-                            copy_instr,
-                            consume_fuel,
-                            FuelCostsProvider::base,
-                        )?;
-                        Ok(result)
-                    }
-                }
+                let copy_instr = Self::make_copy_imm_instr(result, value)?;
+                let consume_fuel = self.stack.consume_fuel_instr();
+                self.instrs
+                    .push_instr(copy_instr, consume_fuel, FuelCostsProvider::base)?;
+                Ok(result)
             }
         }
     }
