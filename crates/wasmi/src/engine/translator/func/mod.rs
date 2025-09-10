@@ -943,7 +943,9 @@ impl FuncTranslator {
         Ok(result)
     }
 
-    /// Copies the `operand` if it is an immediate and returns the [`Slot`].
+    /// Copies the `operand` to its temporary [`Slot`] if it is an immediate.
+    ///
+    /// Returns the temporary [`Slot`] of the `operand`.
     ///
     /// # Note
     ///
