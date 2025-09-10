@@ -68,7 +68,7 @@ macro_rules! impl_binary_imm16 {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: $ty) {
                 self.execute_binary_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
@@ -102,7 +102,7 @@ macro_rules! impl_shift_by {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: ShiftAmount<$ty>) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: u8) {
                 self.execute_shift_by(result, lhs, rhs, $op)
             }
         )*
@@ -128,7 +128,7 @@ macro_rules! impl_binary_imm16_lhs {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Slot, lhs: Const16<$ty>, rhs: Slot) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: $ty, rhs: Slot) {
                 self.execute_binary_imm16_lhs(result, lhs, rhs, $op)
             }
         )*
@@ -244,7 +244,7 @@ macro_rules! impl_divrem_s_imm16_rhs {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Const16<$ty>) -> Result<(), Error> {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: $ty) -> Result<(), Error> {
                 self.try_execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
@@ -264,7 +264,7 @@ macro_rules! impl_divrem_u_imm16_rhs {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Slot, lhs: Slot, rhs: $ty) {
                 self.execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
@@ -284,7 +284,7 @@ macro_rules! impl_fallible_binary_imm16_lhs {
     ( $( ($ty:ty, Op::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Op::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Slot, lhs: Const16<$ty>, rhs: Slot) -> Result<(), Error> {
+            pub fn $fn_name(&mut self, result: Slot, lhs: $ty, rhs: Slot) -> Result<(), Error> {
                 self.try_execute_binary_imm16_lhs(result, lhs, rhs, $op).map_err(Error::from)
             }
         )*
