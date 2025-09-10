@@ -142,11 +142,7 @@ use wasmi_collections as collections;
 
 /// Definitions from the `wasmi_ir` crate.
 #[doc(inline)]
-use wasmi_ir as ir;
-
-/// Definitions from the `wasmi_ir2` crate.
-#[doc(inline)]
-use wasmi_ir2 as ir2;
+use wasmi_ir2 as ir;
 
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
