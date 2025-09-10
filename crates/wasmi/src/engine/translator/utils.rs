@@ -261,6 +261,34 @@ pub trait ToBits {
     fn to_bits(self) -> Self::Out;
 }
 
+impl ToBits for u8 {
+    type Out = u8;
+    fn to_bits(self) -> Self::Out {
+        self
+    }
+}
+
+impl ToBits for i8 {
+    type Out = u8;
+    fn to_bits(self) -> Self::Out {
+        u8::from_ne_bytes(self.to_ne_bytes())
+    }
+}
+
+impl ToBits for u16 {
+    type Out = u16;
+    fn to_bits(self) -> Self::Out {
+        self
+    }
+}
+
+impl ToBits for i16 {
+    type Out = u16;
+    fn to_bits(self) -> Self::Out {
+        u16::from_ne_bytes(self.to_ne_bytes())
+    }
+}
+
 impl ToBits for u32 {
     type Out = u32;
     fn to_bits(self) -> Self::Out {
