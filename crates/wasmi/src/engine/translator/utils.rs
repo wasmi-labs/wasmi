@@ -258,3 +258,54 @@ impl Instr {
         self.0.abs_diff(other.0)
     }
 }
+
+/// Types that can be converted into bits.
+pub trait ToBits {
+    /// The output bits type of [`ToBits`].
+    type Out: Copy;
+
+    /// Converts `self` into a 32-bit `u32` value.
+    fn to_bits(self) -> Self::Out;
+}
+
+impl ToBits for u32 {
+    type Out = u32;
+    fn to_bits(self) -> Self::Out {
+        self
+    }
+}
+
+impl ToBits for i32 {
+    type Out = u32;
+    fn to_bits(self) -> Self::Out {
+        u32::from_ne_bytes(self.to_ne_bytes())
+    }
+}
+
+impl ToBits for f32 {
+    type Out = u32;
+    fn to_bits(self) -> Self::Out {
+        self.to_bits()
+    }
+}
+
+impl ToBits for u64 {
+    type Out = u64;
+    fn to_bits(self) -> Self::Out {
+        self
+    }
+}
+
+impl ToBits for i64 {
+    type Out = u64;
+    fn to_bits(self) -> Self::Out {
+        u64::from_ne_bytes(self.to_ne_bytes())
+    }
+}
+
+impl ToBits for f64 {
+    type Out = u64;
+    fn to_bits(self) -> Self::Out {
+        self.to_bits()
+    }
+}
