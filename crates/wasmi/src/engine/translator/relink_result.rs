@@ -1,6 +1,6 @@
 use crate::{
     engine::EngineFunc,
-    ir::{index, Op, Slot, SlotSpan, VisitResults},
+    ir::{index, Op, Slot, SlotSpan},
     module::ModuleHeader,
     Engine,
     Error,

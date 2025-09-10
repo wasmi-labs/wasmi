@@ -1,4 +1,4 @@
-use crate::ir::{Const16, Const32, Slot};
+use crate::ir::Slot;
 
 /// Bail out early in case the current code is unreachable.
 ///

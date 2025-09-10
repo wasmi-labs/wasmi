@@ -14,7 +14,7 @@ use crate::{
         WriteAs,
     },
     engine::{executor::InstructionPtr, utils::unreachable_unchecked},
-    ir::{index, Address32, AnyConst32, Offset64, Offset64Lo, Offset8, Op, ShiftAmount, Slot},
+    ir::{index, Op, Slot},
     store::StoreInner,
     Error,
     TrapCode,

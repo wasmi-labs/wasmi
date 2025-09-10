@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    ir::{index::Memory, Offset64Hi, Slot},
+    ir::{index::Memory, Slot},
     store::StoreInner,
 };
 

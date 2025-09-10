@@ -1,4 +1,7 @@
-use crate::ir::{Address32, Offset16, Offset64Lo, Op, Slot};
+use crate::{
+    engine::translator::utils::{ToBits, Wrap},
+    ir::{index::Memory, Address, Offset16, Op, Slot},
+};
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
 pub trait StoreWrapOperator {

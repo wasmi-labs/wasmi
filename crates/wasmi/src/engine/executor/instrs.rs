@@ -9,7 +9,7 @@ use crate::{
         DedupFuncType,
         EngineFunc,
     },
-    ir::{index, BlockFuel, Const16, Offset64Hi, Op, ShiftAmount, Slot},
+    ir::{index, BlockFuel, Op, Slot},
     memory::DataSegment,
     store::{PrunedStore, StoreInner},
     table::ElementSegment,
