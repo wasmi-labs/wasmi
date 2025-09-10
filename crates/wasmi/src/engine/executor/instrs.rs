@@ -135,8 +135,8 @@ impl<'engine> Executor<'engine> {
         loop {
             match *self.ip.get() {
                 Instr::Trap { trap_code } => self.execute_trap(trap_code)?,
-                Instr::ConsumeFuel { block_fuel } => {
-                    self.execute_consume_fuel(store.inner_mut(), block_fuel)?
+                Instr::ConsumeFuel { fuel } => {
+                    self.execute_consume_fuel(store.inner_mut(), fuel)?
                 }
                 Instr::Return => {
                     forward_return!(self.execute_return(store.inner_mut()))
