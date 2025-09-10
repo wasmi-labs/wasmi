@@ -34,9 +34,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load,
-            Op::v128_load_offset16,
-            Op::v128_load_at,
+            Op::v128_load_ss,
+            None,
+            Op::v128_load_mem0_offset16_ss,
         )
     }
 
@@ -44,9 +44,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load8x8_s,
-            Op::v128_load8x8_s_offset16,
-            Op::v128_load8x8_s_at,
+            Op::s16x8_load8x8_ss,
+            None,
+            Op::s16x8_load8x8_mem0_offset16_ss,
         )
     }
 
@@ -54,9 +54,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load8x8_u,
-            Op::v128_load8x8_u_offset16,
-            Op::v128_load8x8_u_at,
+            Op::u16x8_load8x8_ss,
+            None,
+            Op::u16x8_load8x8_mem0_offset16_ss,
         )
     }
 
@@ -64,9 +64,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load16x4_s,
-            Op::v128_load16x4_s_offset16,
-            Op::v128_load16x4_s_at,
+            Op::s32x4_load16x4_ss,
+            None,
+            Op::s32x4_load16x4_mem0_offset16_ss,
         )
     }
 
@@ -74,9 +74,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load16x4_u,
-            Op::v128_load16x4_u_offset16,
-            Op::v128_load16x4_u_at,
+            Op::u32x4_load16x4_ss,
+            None,
+            Op::u32x4_load16x4_mem0_offset16_ss,
         )
     }
 
@@ -84,9 +84,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load32x2_s,
-            Op::v128_load32x2_s_offset16,
-            Op::v128_load32x2_s_at,
+            Op::s64x2_load32x2_ss,
+            None,
+            Op::s64x2_load32x2_mem0_offset16_ss,
         )
     }
 
@@ -94,9 +94,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load32x2_u,
-            Op::v128_load32x2_u_offset16,
-            Op::v128_load32x2_u_at,
+            Op::u64x2_load32x2_ss,
+            None,
+            Op::u64x2_load32x2_mem0_offset16_ss,
         )
     }
 
@@ -104,9 +104,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load8_splat,
-            Op::v128_load8_splat_offset16,
-            Op::v128_load8_splat_at,
+            Op::v128_load8_splat_ss,
+            None,
+            Op::v128_load8_splat_mem0_offset16_ss,
         )
     }
 
@@ -114,9 +114,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load16_splat,
-            Op::v128_load16_splat_offset16,
-            Op::v128_load16_splat_at,
+            Op::v128_load16_splat_ss,
+            None,
+            Op::v128_load16_splat_mem0_offset16_ss,
         )
     }
 
@@ -124,9 +124,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load32_splat,
-            Op::v128_load32_splat_offset16,
-            Op::v128_load32_splat_at,
+            Op::v128_load32_splat_ss,
+            None,
+            Op::v128_load32_splat_mem0_offset16_ss,
         )
     }
 
@@ -134,9 +134,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load64_splat,
-            Op::v128_load64_splat_offset16,
-            Op::v128_load64_splat_at,
+            Op::v128_load64_splat_ss,
+            None,
+            Op::v128_load64_splat_mem0_offset16_ss,
         )
     }
 
@@ -144,9 +144,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load32_zero,
-            Op::v128_load32_zero_offset16,
-            Op::v128_load32_zero_at,
+            Op::v128_load32_zero_ss,
+            None,
+            Op::v128_load32_zero_mem0_offset16_ss,
         )
     }
 
@@ -154,9 +154,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load(
             memarg,
             ValType::V128,
-            Op::v128_load64_zero,
-            Op::v128_load64_zero_offset16,
-            Op::v128_load64_zero_at,
+            Op::v128_load64_zero_ss,
+            None,
+            Op::v128_load64_zero_mem0_offset16_ss,
         )
     }
 
