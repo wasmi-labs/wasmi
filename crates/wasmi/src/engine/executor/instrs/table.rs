@@ -5,7 +5,6 @@ use crate::{
     errors::TableError,
     ir::{
         index::{Elem, Table},
-        Const32,
         Op,
         Slot,
     },
