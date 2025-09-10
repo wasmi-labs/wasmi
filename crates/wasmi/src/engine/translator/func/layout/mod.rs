@@ -2,12 +2,7 @@ mod consts;
 
 use self::consts::{ConstRegistry, ConstRegistryIter};
 use super::{LocalIdx, Operand, OperandIdx, Reset};
-use crate::{
-    core::UntypedVal,
-    engine::{translator::comparator::AllocConst, TranslationError},
-    ir::Slot,
-    Error,
-};
+use crate::{core::UntypedVal, engine::TranslationError, ir::Slot, Error};
 
 #[cfg(doc)]
 use super::Stack;

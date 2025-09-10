@@ -1,6 +1,5 @@
 use crate::{
-    core::UntypedVal,
-    ir::{BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Op, Slot},
+    ir::{BranchOffset, Op, Slot},
     Error,
 };
 
