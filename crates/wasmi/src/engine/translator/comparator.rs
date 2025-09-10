@@ -3,24 +3,6 @@ use crate::{
     Error,
 };
 
-/// Types able to allocate function local constant values.
-///
-/// # Note
-///
-/// This allows to cheaply convert immediate values to [`Slot`]s.
-///
-/// # Errors
-///
-/// If the function local constant allocation from immediate value to [`Slot`] failed.
-pub trait AllocConst {
-    /// Allocates a new function local constant value and returns its [`Slot`].
-    ///
-    /// # Note
-    ///
-    /// Constant values allocated this way are deduplicated and return shared [`Slot`].
-    fn alloc_const<T: Into<UntypedVal>>(&mut self, value: T) -> Result<Slot, Error>;
-}
-
 /// Extension trait to return [`Slot`] result of compare [`Op`]s.
 pub trait CompareResult {
     /// Returns the result [`Slot`] of the compare [`Op`].
