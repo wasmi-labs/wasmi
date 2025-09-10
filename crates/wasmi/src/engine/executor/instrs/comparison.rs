@@ -1,8 +1,5 @@
 use super::{Executor, UntypedValueCmpExt};
-use crate::{
-    core::wasm,
-    ir::{Const16, Slot},
-};
+use crate::{core::wasm, ir::Slot};
 
 #[cfg(doc)]
 use crate::ir::Op;

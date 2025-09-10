@@ -2,17 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::{wasm, ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{
-        index::Memory,
-        Address32,
-        AnyConst16,
-        Const16,
-        Offset16,
-        Offset64,
-        Offset64Hi,
-        Offset64Lo,
-        Slot,
-    },
+    ir::{index::Memory, Offset16, Slot},
     store::StoreInner,
     Error,
     TrapCode,

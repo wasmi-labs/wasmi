@@ -11,11 +11,6 @@ use crate::{
     },
     ir::{
         index::{self, Memory},
-        Address32,
-        IntoShiftAmount,
-        Offset64,
-        Offset64Lo,
-        Offset8,
         Op,
         Slot,
     },
