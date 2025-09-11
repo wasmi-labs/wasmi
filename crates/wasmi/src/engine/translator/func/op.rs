@@ -21,16 +21,16 @@ pub trait StoreOperator {
     fn store_ss(ptr: Slot, offset: u64, value: Slot, memory: Memory) -> Op;
     fn store_si(ptr: Slot, offset: u64, value: Self::Immediate, memory: Memory) -> Op;
     fn store_is(address: Address, value: Slot, memory: Memory) -> Op;
-    fn store_ii(address: Address, value: Self::Value, memory: Memory) -> Op;
+    fn store_ii(address: Address, value: Self::Immediate, memory: Memory) -> Op;
     fn store_mem0_offset16_ss(ptr: Slot, offset: Offset16, value: Slot) -> Op;
-    fn store_mem0_offset16_si(ptr: Slot, offset: Offset16, value: Self::Value) -> Op;
+    fn store_mem0_offset16_si(ptr: Slot, offset: Offset16, value: Self::Immediate) -> Op;
 }
 
 macro_rules! impl_store_wrap {
     ( $(
         impl StoreOperator for $name:ident {
             type Value = $value_ty:ty;
-            type Immediate = $wrapped_ty:ty;
+            type Immediate = $immediate_ty:ty;
 
             fn into_immediate = $apply:expr;
 
@@ -46,7 +46,7 @@ macro_rules! impl_store_wrap {
             pub enum $name {}
             impl StoreOperator for $name {
                 type Value = $value_ty;
-                type Immediate = $wrapped_ty;
+                type Immediate = $immediate_ty;
 
                 fn into_immediate(value: Self::Value) -> Self::Immediate {
                     $apply(value)
@@ -64,7 +64,7 @@ macro_rules! impl_store_wrap {
                     $store_is(address, value, memory)
                 }
 
-                fn store_ii(address: Address, value: Self::Value, memory: Memory) -> Op {
+                fn store_ii(address: Address, value: Self::Immediate, memory: Memory) -> Op {
                     $store_ii(address, value, memory)
                 }
 
@@ -72,7 +72,7 @@ macro_rules! impl_store_wrap {
                     $store_mem0_offset16_ss(ptr, offset, value)
                 }
 
-                fn store_mem0_offset16_si(ptr: Slot, offset: Offset16, value: Self::Value) -> Op {
+                fn store_mem0_offset16_si(ptr: Slot, offset: Offset16, value: Self::Immediate) -> Op {
                     $store_mem0_offset16_si(ptr, offset, value)
                 }
             }
@@ -95,7 +95,7 @@ impl_store_wrap! {
 
     impl StoreOperator for I64Store {
         type Value = i64;
-        type Immediate = i64;
+        type Immediate = u64;
 
         fn into_immediate = <i64 as ToBits>::to_bits;
         fn store_ss = Op::store64_ss;
