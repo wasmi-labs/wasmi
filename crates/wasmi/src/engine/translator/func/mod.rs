@@ -1631,6 +1631,35 @@ impl FuncTranslator {
         Ok(Some(fused))
     }
 
+    /// Generically translates a `call` or `return_call` Wasm operator.
+    fn translate_call(
+        &mut self,
+        function_index: u32,
+        call_internal: fn(params: BoundedSlotSpan, func: index::InternalFunc) -> Op,
+        call_imported: fn(params: BoundedSlotSpan, func: index::Func) -> Op,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let consume_fuel = self.stack.consume_fuel_instr();
+        let func_idx = FuncIdx::from(function_index);
+        let len_params = self.resolve_func_type(func_idx).len_params();
+        let params = self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
+        let params = BoundedSlotSpan::new(params, len_params);
+        let instr = match self.module.get_engine_func(func_idx) {
+            Some(engine_func) => {
+                // Case: We are calling an internal function and can optimize
+                //       this case by using the special instruction for it.
+                call_internal(params, index::InternalFunc::from(engine_func))
+            }
+            None => {
+                // Case: We are calling an imported function and must use the
+                //       general calling operator for it.
+                call_imported(params, index::Func::from(function_index))
+            }
+        };
+        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
+        Ok(())
+    }
+
     /// Generically translates a `call_indirect` or `return_call_indirect` Wasm operator.
     fn translate_call_indirect(
         &mut self,
