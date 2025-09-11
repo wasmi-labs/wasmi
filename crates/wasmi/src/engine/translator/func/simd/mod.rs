@@ -11,6 +11,8 @@ use crate::{
     },
     ir::{
         index::{self, Memory},
+        Address,
+        Offset16,
         Op,
         Slot,
     },
@@ -247,49 +249,45 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(result: Slot, offset_lo: Offset64Lo) -> Op,
-        make_instr_at: fn(result: Slot, address: Address32) -> Op,
+        load_lane: fn(
+            result: Slot,
+            ptr: Slot,
+            offset: u64,
+            memory: index::Memory,
+            v128: Slot,
+            lane: T::LaneIdx,
+        ) -> Op,
+        load_lane_mem0_offset16: fn(
+            result: Slot,
+            address: Address,
+            memory: index::Memory,
+            v128: Slot,
+            lane: T::LaneIdx,
+        ) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane: {lane}");
         };
-        let (ptr, x) = self.stack.pop2();
-        let x = self.layout.operand_to_reg(x)?;
-        let (ptr, offset) = match ptr {
-            Operand::Immediate(ptr) => {
-                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_load_lane_at::<T, _>(
-                        memory,
-                        x,
-                        lane,
-                        address,
-                        make_instr_at,
-                    );
-                }
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
+        let (ptr, v128) = self.stack.pop2();
+        let ptr = self.copy_if_immediate(ptr)?;
+        let v128 = self.copy_if_immediate(v128)?;
+        if memory.is_default() {
+            if let Ok(offset) = Offset16::try_from(offset) {
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
+                    FuelCostsProvider::load,
+                )?;
+                return Ok(());
             }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
-        };
-        let (offset_hi, offset_lo) = Offset64::split(offset);
+        }
         self.push_instr_with_result(
             <T as Typed>::TY,
-            |result| make_instr(result, offset_lo),
+            |result| load_lane(result, ptr, offset, memory, v128, lane),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::slot_and_offset_hi(ptr, offset_hi))?;
-        self.push_param(Op::slot_and_lane(x, lane))?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
         Ok(())
     }
 
