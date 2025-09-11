@@ -105,8 +105,8 @@ impl_replace_lane! {
 
         fn const_eval = simd::i16x8_replace_lane;
         fn into_immediate = <i16 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::i16x8_replace_lane;
-        fn replace_lane_ssi = Op::i16x8_replace_lane_imm;
+        fn replace_lane_sss = Op::v128_replace_lane16x8_sss;
+        fn replace_lane_ssi = Op::v128_replace_lane16x8_ssi;
     }
 
     impl SimdReplaceLane for I32x4ReplaceLane {
@@ -115,8 +115,8 @@ impl_replace_lane! {
 
         fn const_eval = simd::i32x4_replace_lane;
         fn into_immediate = <i32 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::i32x4_replace_lane;
-        fn replace_lane_ssi = Op::i32x4_replace_lane_imm;
+        fn replace_lane_sss = Op::v128_replace_lane32x4_sss;
+        fn replace_lane_ssi = Op::v128_replace_lane32x4_ssi;
     }
 
     impl SimdReplaceLane for I64x2ReplaceLane {
@@ -125,8 +125,8 @@ impl_replace_lane! {
 
         fn const_eval = simd::i64x2_replace_lane;
         fn into_immediate = <i64 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::i64x2_replace_lane;
-        fn replace_lane_ssi = Op::i64x2_replace_lane_imm32;
+        fn replace_lane_sss = Op::v128_replace_lane64x2_sss;
+        fn replace_lane_ssi = Op::v128_replace_lane64x2_ssi;
     }
 
     impl SimdReplaceLane for F32x4ReplaceLane {
@@ -135,8 +135,8 @@ impl_replace_lane! {
 
         fn const_eval = simd::f32x4_replace_lane;
         fn into_immediate = <f32 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::f32x4_replace_lane;
-        fn replace_lane_ssi = Op::f32x4_replace_lane_imm;
+        fn replace_lane_sss = Op::v128_replace_lane32x4_sss;
+        fn replace_lane_ssi = Op::v128_replace_lane32x4_ssi;
     }
 
     impl SimdReplaceLane for F64x2ReplaceLane {
@@ -145,7 +145,7 @@ impl_replace_lane! {
 
         fn const_eval = simd::f64x2_replace_lane;
         fn into_immediate = <f64 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::f64x2_replace_lane;
-        fn replace_lane_ssi = Op::f64x2_replace_lane_imm32;
+        fn replace_lane_sss = Op::v128_replace_lane64x2_sss;
+        fn replace_lane_ssi = Op::v128_replace_lane64x2_ssi;
     }
 }
