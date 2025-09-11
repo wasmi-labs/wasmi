@@ -373,41 +373,12 @@ fn add_store_ops(isa: &mut Isa) {
         StoreOpKind::I64Store32,
     ];
     for op in ops {
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            false,
-            false,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-            false,
-            false,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Immediate,
-            OperandKind::Slot,
-            false,
-            false,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            true,
-            true,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-            true,
-            true,
-        ));
+        for value in [OperandKind::Slot, OperandKind::Immediate] {
+            for ptr in [OperandKind::Slot, OperandKind::Immediate] {
+                isa.push_op(StoreOp::new(op, ptr, value, false, false));
+            }
+            isa.push_op(StoreOp::new(op, OperandKind::Slot, value, true, true));
+        }
     }
 }
 
@@ -509,21 +480,21 @@ fn add_call_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::CallInternal,
             [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Func, FieldTy::InternalFunc),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallImported,
             [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Func, FieldTy::Func),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallIndirect,
             [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),
@@ -531,15 +502,22 @@ fn add_call_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(
             Ident::ReturnCallInternal,
-            [Field::new(Ident::Func, FieldTy::InternalFunc)],
+            [
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
+                Field::new(Ident::Func, FieldTy::InternalFunc),
+            ],
         )),
         Op::from(GenericOp::new(
             Ident::ReturnCallImported,
-            [Field::new(Ident::Func, FieldTy::Func)],
+            [
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
+                Field::new(Ident::Func, FieldTy::Func),
+            ],
         )),
         Op::from(GenericOp::new(
             Ident::ReturnCallIndirect,
             [
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),
@@ -724,7 +702,7 @@ fn add_wide_arithmetic_ops(isa: &mut Isa) {
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::S64MulWide,
+            Ident::I64MulWide,
             [
                 Field::new(Ident::Results, FieldTy::FixedSlotSpan2),
                 Field::new(Ident::Lhs, FieldTy::Slot),
@@ -776,7 +754,12 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
-    let kinds = [UnaryOpKind::V128Splat32, UnaryOpKind::V128Splat64];
+    let kinds = [
+        UnaryOpKind::V128Splat8,
+        UnaryOpKind::V128Splat16,
+        UnaryOpKind::V128Splat32,
+        UnaryOpKind::V128Splat64,
+    ];
     for kind in kinds {
         isa.push_op(UnaryOp::new(kind, OperandKind::Slot));
         isa.push_op(UnaryOp::new(kind, OperandKind::Immediate));

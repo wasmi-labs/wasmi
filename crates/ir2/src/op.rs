@@ -5,6 +5,7 @@ use crate::{
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
     Address,
     BlockFuel,
+    BoundedSlotSpan,
     BranchOffset,
     FixedSlotSpan,
     Offset16,

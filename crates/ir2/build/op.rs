@@ -214,6 +214,8 @@ pub enum UnaryOpKind {
     F64ConvertU64,
 
     // SIMD: Generic Unary Ops
+    V128Splat8,
+    V128Splat16,
     V128Splat32,
     V128Splat64,
     V128Not,
@@ -287,6 +289,8 @@ pub enum UnaryOpKind {
 impl UnaryOpKind {
     pub fn is_conversion(&self) -> bool {
         self.value_ty() != self.result_ty()
+            && self.value_ty().is_wasm()
+            && self.result_ty().is_wasm()
     }
 
     pub fn value_ty(&self) -> Ty {
@@ -328,6 +332,8 @@ impl UnaryOpKind {
             | Self::F64ConvertU64 => Ty::U64,
 
             // SIMD: Generic Unary Ops
+            | Self::V128Splat8 => Ty::B8,
+            | Self::V128Splat16 => Ty::B16,
             | Self::V128Splat32 => Ty::B32,
             | Self::V128Splat64 => Ty::B64,
             | Self::V128Not | Self::V128AnyTrue => Ty::V128,
@@ -435,7 +441,12 @@ impl UnaryOpKind {
             | Self::F64ConvertU64 => Ty::F64,
 
             // SIMD: Generic Unary Ops
-            | Self::V128Splat32 | Self::V128Splat64 | Self::V128Not | Self::V128AnyTrue => Ty::V128,
+            | Self::V128Splat8
+            | Self::V128Splat16
+            | Self::V128Splat32
+            | Self::V128Splat64
+            | Self::V128Not
+            | Self::V128AnyTrue => Ty::V128,
             // SIMD: `i8x16` Unary Ops
             | Self::I8x16Abs
             | Self::I8x16Neg
@@ -551,8 +562,10 @@ impl UnaryOpKind {
             Self::F64ConvertU64 => Ident::Convert,
 
             // SIMD: Generic Unary Ops
-            Self::V128Splat32 => Ident::Splat,
-            Self::V128Splat64 => Ident::Splat,
+            Self::V128Splat8 => Ident::Splat8,
+            Self::V128Splat16 => Ident::Splat16,
+            Self::V128Splat32 => Ident::Splat32,
+            Self::V128Splat64 => Ident::Splat64,
             Self::V128Not => Ident::Not,
             Self::V128AnyTrue => Ident::AnyTrue,
             // SIMD: `i8x16` Unary Ops
@@ -1384,6 +1397,10 @@ pub enum Ty {
     U32,
     /// A unsigned 64-bit integer type.
     U64,
+    /// A generic 8-bits value.
+    B8,
+    /// A generic 16-bits value.
+    B16,
     /// A generic 32-bits value.
     B32,
     /// A generic 64-bits value.
@@ -1425,8 +1442,14 @@ pub enum Ty {
 }
 
 impl Ty {
+    pub fn is_wasm(&self) -> bool {
+        !matches!(self, Self::B8 | Self::B16 | Self::B32 | Self::B64)
+    }
+
     pub fn to_field_ty(self) -> Option<FieldTy> {
         let ty = match self {
+            | Ty::B8 => FieldTy::U8,
+            | Ty::B16 => FieldTy::U16,
             | Ty::S32 | Ty::I32 => FieldTy::I32,
             | Ty::S64 | Ty::I64 => FieldTy::I64,
             | Ty::B32 | Ty::U32 => FieldTy::U32,
@@ -1448,6 +1471,8 @@ impl Display for Ty {
             Ty::S64 => "i64",
             Ty::U32 => "u32",
             Ty::U64 => "u64",
+            Ty::B8 => "8",
+            Ty::B16 => "16",
             Ty::B32 => "32",
             Ty::B64 => "64",
             Ty::F32 => "f32",
@@ -1487,6 +1512,8 @@ impl Display for CamelCase<Ty> {
             Ty::S64 => "I64",
             Ty::U32 => "U32",
             Ty::U64 => "U64",
+            Ty::B8 => "8",
+            Ty::B16 => "16",
             Ty::B32 => "32",
             Ty::B64 => "64",
             Ty::F32 => "F32",
@@ -1515,6 +1542,7 @@ impl Display for CamelCase<Ty> {
 pub enum FieldTy {
     Slot,
     SlotSpan,
+    BoundedSlotSpan,
     FixedSlotSpan2,
     U8,
     U16,
@@ -1557,6 +1585,7 @@ impl Display for FieldTy {
         let s = match self {
             Self::Slot => "Slot",
             Self::SlotSpan => "SlotSpan",
+            Self::BoundedSlotSpan => "BoundedSlotSpan",
             Self::FixedSlotSpan2 => "FixedSlotSpan<2>",
             Self::U8 => "u8",
             Self::U16 => "u16",

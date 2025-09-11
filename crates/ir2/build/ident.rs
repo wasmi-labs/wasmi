@@ -125,9 +125,9 @@ define_ident!(
     NotLt: not_lt,
     NotLe: not_le,
 
-    BitAnd: bit_and,
-    BitOr: bit_or,
-    BitXor: bit_xor,
+    BitAnd: bitand,
+    BitOr: bitor,
+    BitXor: bitxor,
 
     Branch: branch,
     BranchTable: branch_table,
@@ -209,6 +209,7 @@ define_ident!(
     Value: value,
     Result: result,
     Results: results,
+    Params: params,
     Len: len,
     LenTargets: len_targets,
     LenValues: len_values,
@@ -244,7 +245,7 @@ define_ident!(
 
     I64Add128: i64_add128,
     I64Sub128: i64_sub128,
-    S64MulWide: s64_mul_wide,
+    I64MulWide: i64_mul_wide,
     U64MulWide: u64_mul_wide,
 
     Lhs: lhs,
@@ -264,7 +265,10 @@ define_ident!(
 
     V128: v128,
     Lane: lane,
-    Splat: splat,
+    Splat8: splat8,
+    Splat16: splat16,
+    Splat32: splat32,
+    Splat64: splat64,
     S8x16ExtractLane: s8x16_extract_lane,
     U8x16ExtractLane: u8x16_extract_lane,
     S16x8ExtractLane: s16x8_extract_lane,
