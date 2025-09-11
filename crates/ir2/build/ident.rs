@@ -264,7 +264,6 @@ define_ident!(
 
     V128: v128,
     Lane: lane,
-    Splat: splat,
     Splat8: splat8,
     Splat16: splat16,
     Splat32: splat32,
