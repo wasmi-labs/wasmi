@@ -373,41 +373,12 @@ fn add_store_ops(isa: &mut Isa) {
         StoreOpKind::I64Store32,
     ];
     for op in ops {
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            false,
-            false,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-            false,
-            false,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Immediate,
-            OperandKind::Slot,
-            false,
-            false,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            true,
-            true,
-        ));
-        isa.push_op(StoreOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-            true,
-            true,
-        ));
+        for value in [OperandKind::Slot, OperandKind::Immediate] {
+            for ptr in [OperandKind::Slot, OperandKind::Immediate] {
+                isa.push_op(StoreOp::new(op, ptr, value, false, false));
+            }
+            isa.push_op(StoreOp::new(op, OperandKind::Slot, value, true, true));
+        }
     }
 }
 
