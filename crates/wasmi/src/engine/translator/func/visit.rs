@@ -380,19 +380,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let index = self.stack.pop();
-        let consume_fuel = self.stack.consume_fuel_instr();
-        let table = index::Table::from(table_index);
-        let func_type = self.resolve_type(type_index);
-        let index = self.copy_if_immediate(index)?;
-        let len_params = usize::from(func_type.len_params());
-        let results = self.move_operands_to_temp(len_params, consume_fuel)?;
-        let call_instr = self.push_instr(
-            Op::call_indirect(results, type_index, index, table),
-            FuelCostsProvider::call,
-        )?;
-        Ok(())
+        self.translate_call_indirect(type_index, table_index, Op::call_indirect)
     }
 
     #[inline(never)]
@@ -2109,24 +2097,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_type = self.resolve_type(type_index);
-        let table = index::Table::from(table_index);
-        let index_ty = self
-            .module
-            .get_type_of_table(TableIdx::from(table_index))
-            .index_ty();
-        let index = self.stack.pop();
-        let len_params = usize::from(func_type.len_params());
-        let consume_fuel = self.stack.consume_fuel_instr();
-        self.move_operands_to_temp(len_params, consume_fuel)?;
-        let index = self.make_index32(index, index_ty)?;
-        let instr = match index {
-            Input::Slot(index) => Op::return_call_indirect(index, type_index, table),
-            Input::Immediate(index) => Op::return_call_indirect_imm16(index, type_index, table),
-            _ => unreachable!(),
-        };
-        self.push_instr(instr, FuelCostsProvider::call)?;
+        self.translate_call_indirect(type_index, table_index, Op::return_call_indirect)?;
         self.reachable = false;
         Ok(())
     }
