@@ -2143,7 +2143,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_mul_wide_s(&mut self) -> Self::Output {
-        self.translate_i64_mul_wide_sx(Op::s64_mul_wide, wasm::i64_mul_wide_s, true)
+        self.translate_i64_mul_wide_sx(Op::i64_mul_wide, wasm::i64_mul_wide_s, true)
     }
 
     #[inline(never)]
