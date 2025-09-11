@@ -206,12 +206,12 @@ impl FuncTranslator {
     /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_imm: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Output) -> Op,
+        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Value) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: IntoShiftAmount<Input: From<TypedVal>>,
+        T: IntoShiftAmount + From<TypedVal>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
@@ -227,10 +227,10 @@ impl FuncTranslator {
                 self.stack.push_operand(lhs)?;
                 return Ok(());
             };
-            let lhs = self.layout.operand_to_reg(lhs)?;
+            let lhs = self.copy_if_immediate(lhs)?;
             self.push_instr_with_result(
                 ValType::V128,
-                |result| make_instr_imm(result, lhs, rhs),
+                |result| make_instr_ssi(result, lhs, rhs),
                 FuelCostsProvider::simd,
             )?;
             return Ok(());
@@ -239,7 +239,7 @@ impl FuncTranslator {
         let rhs = self.layout.operand_to_reg(rhs)?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| make_instr(result, lhs, rhs),
+            |result| make_instr_sss(result, lhs, rhs),
             FuelCostsProvider::simd,
         )?;
         Ok(())
