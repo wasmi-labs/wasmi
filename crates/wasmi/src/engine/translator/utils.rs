@@ -168,37 +168,6 @@ impl BumpFuelConsumption for Op {
     }
 }
 
-/// Extension trait to query if an [`Op`] is a parameter.
-pub trait IsInstructionParameter {
-    /// Returns `true` if `self` is a parameter to an [`Op`].
-    fn is_instruction_parameter(&self) -> bool;
-}
-
-impl IsInstructionParameter for Op {
-    #[rustfmt::skip]
-    fn is_instruction_parameter(&self) -> bool {
-        matches!(self,
-            | Self::TableIndex { .. }
-            | Self::MemoryIndex { .. }
-            | Self::DataIndex { .. }
-            | Self::ElemIndex { .. }
-            | Self::Const32 { .. }
-            | Self::I64Const32 { .. }
-            | Self::F64Const32 { .. }
-            | Self::BranchTableTarget { .. }
-            | Self::Imm16AndImm32 { .. }
-            | Self::SlotAndImm32 { .. }
-            | Self::SlotSpan { .. }
-            | Self::Slot { .. }
-            | Self::Slot2 { .. }
-            | Self::Slot3 { .. }
-            | Self::SlotList { .. }
-            | Self::CallIndirectParams { .. }
-            | Self::CallIndirectParamsImm16 { .. }
-        )
-    }
-}
-
 /// A reference to an encoded [`Op`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
