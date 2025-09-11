@@ -125,9 +125,9 @@ define_ident!(
     NotLt: not_lt,
     NotLe: not_le,
 
-    BitAnd: bit_and,
-    BitOr: bit_or,
-    BitXor: bit_xor,
+    BitAnd: bitand,
+    BitOr: bitor,
+    BitXor: bitxor,
 
     Branch: branch,
     BranchTable: branch_table,
