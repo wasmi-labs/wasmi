@@ -89,7 +89,7 @@ impl Display for DisplayOpCode<&'_ Isa> {
             {indent}        let ident: &'static str = match self {{\n\
                                 {match_arms_debug},\n\
             {indent}        }};\n\
-            {indent}        write!(f, \"OpCode::{{ident}}\")\n\
+            {indent}        ::core::fmt::Formatter::write_str(f, ident)\n\
             {indent}    }}\n\
             {indent}}}\n\
         "
