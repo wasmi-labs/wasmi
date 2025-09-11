@@ -209,6 +209,7 @@ define_ident!(
     Value: value,
     Result: result,
     Results: results,
+    Params: params,
     Len: len,
     LenTargets: len_targets,
     LenValues: len_values,

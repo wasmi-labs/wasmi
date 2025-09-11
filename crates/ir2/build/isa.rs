@@ -509,21 +509,21 @@ fn add_call_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::CallInternal,
             [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Func, FieldTy::InternalFunc),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallImported,
             [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Func, FieldTy::Func),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::CallIndirect,
             [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),
@@ -531,15 +531,22 @@ fn add_call_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(
             Ident::ReturnCallInternal,
-            [Field::new(Ident::Func, FieldTy::InternalFunc)],
+            [
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
+                Field::new(Ident::Func, FieldTy::InternalFunc),
+            ],
         )),
         Op::from(GenericOp::new(
             Ident::ReturnCallImported,
-            [Field::new(Ident::Func, FieldTy::Func)],
+            [
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
+                Field::new(Ident::Func, FieldTy::Func),
+            ],
         )),
         Op::from(GenericOp::new(
             Ident::ReturnCallIndirect,
             [
+                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::FuncType, FieldTy::FuncType),
                 Field::new(Ident::Table, FieldTy::Table),

@@ -7,6 +7,7 @@ use crate::{
     BlockFuel,
     BranchOffset,
     FixedSlotSpan,
+    BoundedSlotSpan,
     Offset16,
     Sign,
     Slot,

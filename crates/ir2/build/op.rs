@@ -1542,6 +1542,7 @@ impl Display for CamelCase<Ty> {
 pub enum FieldTy {
     Slot,
     SlotSpan,
+    BoundedSlotSpan,
     FixedSlotSpan2,
     U8,
     U16,
@@ -1584,6 +1585,7 @@ impl Display for FieldTy {
         let s = match self {
             Self::Slot => "Slot",
             Self::SlotSpan => "SlotSpan",
+            Self::BoundedSlotSpan => "BoundedSlotSpan",
             Self::FixedSlotSpan2 => "FixedSlotSpan<2>",
             Self::U8 => "u8",
             Self::U16 => "u16",
