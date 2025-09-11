@@ -310,6 +310,34 @@ impl ToBits for f32 {
     }
 }
 
+pub trait IntoShiftAmount {
+    /// The type denoting the shift amount.
+    ///
+    /// This is an unsigned integer ranging from `1..N` where `N` is the number of bits in `Self`.
+    type Value: Copy;
+
+    /// Returns `self` wrapped into a proper shift amount for `Self`.
+    ///
+    /// Returns `None` if the resulting shift amount is 0, a.k.a. a no-op.
+    fn into_shift_amount(self) -> Option<Self::Value>;
+}
+
+macro_rules! impl_into_shift_amount {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl IntoShiftAmount for $ty {
+                type Value = u8;
+
+                fn into_shift_amount(self) -> Option<Self::Value> {
+                    let len_bits = (::core::mem::size_of::<Self>() * 8) as Self;
+                    self.checked_rem_euclid(len_bits)
+                }
+            }
+        )*
+    };
+}
+impl_into_shift_amount!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+
 impl ToBits for u64 {
     type Out = u64;
     fn to_bits(self) -> Self::Out {
