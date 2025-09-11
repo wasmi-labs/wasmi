@@ -310,6 +310,27 @@ impl ToBits for f32 {
     }
 }
 
+impl ToBits for u64 {
+    type Out = u64;
+    fn to_bits(self) -> Self::Out {
+        self
+    }
+}
+
+impl ToBits for i64 {
+    type Out = u64;
+    fn to_bits(self) -> Self::Out {
+        u64::from_ne_bytes(self.to_ne_bytes())
+    }
+}
+
+impl ToBits for f64 {
+    type Out = u64;
+    fn to_bits(self) -> Self::Out {
+        self.to_bits()
+    }
+}
+
 pub trait IntoShiftAmount {
     /// The type denoting the shift amount.
     ///
@@ -337,24 +358,3 @@ macro_rules! impl_into_shift_amount {
     };
 }
 impl_into_shift_amount!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-impl ToBits for u64 {
-    type Out = u64;
-    fn to_bits(self) -> Self::Out {
-        self
-    }
-}
-
-impl ToBits for i64 {
-    type Out = u64;
-    fn to_bits(self) -> Self::Out {
-        u64::from_ne_bytes(self.to_ne_bytes())
-    }
-}
-
-impl ToBits for f64 {
-    type Out = u64;
-    fn to_bits(self) -> Self::Out {
-        self.to_bits()
-    }
-}
