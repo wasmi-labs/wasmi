@@ -11,7 +11,7 @@ use crate::{
         },
         BlockType,
     },
-    ir::{self, index, Op},
+    ir::{self, index, BoundedSlotSpan, Op},
     module::{self, FuncIdx, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
@@ -345,37 +345,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_idx = FuncIdx::from(function_index);
-        let func_type = self.resolve_func_type(func_idx);
-        let len_params = usize::from(func_type.len_params());
-        let results = self.call_regspan(len_params)?;
-        let instr = match self.module.get_engine_func(func_idx) {
-            Some(engine_func) => {
-                // Case: We are calling an internal function and can optimize
-                //       this case by using the special instruction for it.
-                match len_params {
-                    0 => Op::call_internal_0(results, engine_func),
-                    _ => Op::call_internal(results, engine_func),
-                }
-            }
-            None => {
-                // Case: We are calling an imported function and must use the
-                //       general calling operator for it.
-                match len_params {
-                    0 => Op::call_imported_0(results, function_index),
-                    _ => Op::call_imported(results, function_index),
-                }
-            }
-        };
-        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
-        self.stack.pop_n(len_params, &mut self.operands);
-        self.instrs
-            .encode_register_list(&self.operands, &mut self.layout)?;
-        if let Some(span) = self.push_results(call_instr, func_type.results())? {
-            debug_assert_eq!(span, results);
-        }
-        Ok(())
+        self.translate_call(function_index, Op::call_internal, Op::call_imported)
     }
 
     #[inline(never)]
@@ -2072,25 +2042,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_idx = FuncIdx::from(function_index);
-        let func_type = self.resolve_func_type(func_idx);
-        let len_params = usize::from(func_type.len_params());
-        let consume_fuel = self.stack.consume_fuel_instr();
-        self.move_operands_to_temp(len_params, consume_fuel)?;
-        let instr = match self.module.get_engine_func(func_idx) {
-            Some(engine_func) => {
-                // Case: We are calling an internal function and can optimize
-                //       this case by using the special instruction for it.
-                Op::return_call_internal(engine_func)
-            }
-            None => {
-                // Case: We are calling an imported function and must use the
-                //       general calling operator for it.
-                Op::return_call_imported(function_index)
-            }
-        };
-        self.push_instr(instr, FuelCostsProvider::call)?;
+        self.translate_call(
+            function_index,
+            Op::return_call_internal,
+            Op::return_call_imported,
+        )?;
         self.reachable = false;
         Ok(())
     }
