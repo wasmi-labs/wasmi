@@ -244,7 +244,7 @@ define_ident!(
 
     I64Add128: i64_add128,
     I64Sub128: i64_sub128,
-    S64MulWide: s64_mul_wide,
+    I64MulWide: i64_mul_wide,
     U64MulWide: u64_mul_wide,
 
     Lhs: lhs,

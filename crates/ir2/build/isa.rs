@@ -724,7 +724,7 @@ fn add_wide_arithmetic_ops(isa: &mut Isa) {
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::S64MulWide,
+            Ident::I64MulWide,
             [
                 Field::new(Ident::Results, FieldTy::FixedSlotSpan2),
                 Field::new(Ident::Lhs, FieldTy::Slot),
