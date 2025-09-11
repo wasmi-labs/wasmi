@@ -30,7 +30,7 @@ use self::{
         StackAllocations,
         TempOperand,
     },
-    utils::{Input, IntoShiftAmount, Reset, ReusableAllocations},
+    utils::{Input, Reset, ReusableAllocations},
 };
 use crate::{
     core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
@@ -43,7 +43,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
-            utils::{Instr, WasmFloat, WasmInteger},
+            utils::{Instr, IntoShiftAmount, WasmFloat, WasmInteger},
             WasmTranslator,
         },
         BlockType,
