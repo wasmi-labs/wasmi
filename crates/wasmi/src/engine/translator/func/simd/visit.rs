@@ -665,15 +665,15 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_shl(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u8>(Op::i8x16_shl, Op::i8x16_shl_by, simd::i8x16_shl)
+        self.translate_simd_shift::<u8>(Op::i8x16_shl_sss, Op::i8x16_shl_ssi, simd::i8x16_shl)
     }
 
     fn visit_i8x16_shr_s(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u8>(Op::i8x16_shr_s, Op::i8x16_shr_s_by, simd::i8x16_shr_s)
+        self.translate_simd_shift::<u8>(Op::s8x16_shr_sss, Op::s8x16_shr_ssi, simd::i8x16_shr_s)
     }
 
     fn visit_i8x16_shr_u(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u8>(Op::i8x16_shr_u, Op::i8x16_shr_u_by, simd::i8x16_shr_u)
+        self.translate_simd_shift::<u8>(Op::u8x16_shr_sss, Op::u8x16_shr_ssi, simd::i8x16_shr_u)
     }
 
     fn visit_i8x16_add(&mut self) -> Self::Output {
@@ -785,15 +785,15 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_shl(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u16>(Op::i16x8_shl, Op::i16x8_shl_by, simd::i16x8_shl)
+        self.translate_simd_shift::<u16>(Op::i16x8_shl_sss, Op::i16x8_shl_ssi, simd::i16x8_shl)
     }
 
     fn visit_i16x8_shr_s(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u16>(Op::i16x8_shr_s, Op::i16x8_shr_s_by, simd::i16x8_shr_s)
+        self.translate_simd_shift::<u16>(Op::s16x8_shr_sss, Op::s16x8_shr_ssi, simd::i16x8_shr_s)
     }
 
     fn visit_i16x8_shr_u(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u16>(Op::i16x8_shr_u, Op::i16x8_shr_u_by, simd::i16x8_shr_u)
+        self.translate_simd_shift::<u16>(Op::u16x8_shr_sss, Op::u16x8_shr_ssi, simd::i16x8_shr_u)
     }
 
     fn visit_i16x8_add(&mut self) -> Self::Output {
@@ -919,15 +919,15 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_shl(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u32>(Op::i32x4_shl, Op::i32x4_shl_by, simd::i32x4_shl)
+        self.translate_simd_shift::<u32>(Op::i32x4_shl_sss, Op::i32x4_shl_ssi, simd::i32x4_shl)
     }
 
     fn visit_i32x4_shr_s(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u32>(Op::i32x4_shr_s, Op::i32x4_shr_s_by, simd::i32x4_shr_s)
+        self.translate_simd_shift::<u32>(Op::s32x4_shr_sss, Op::s32x4_shr_ssi, simd::i32x4_shr_s)
     }
 
     fn visit_i32x4_shr_u(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u32>(Op::i32x4_shr_u, Op::i32x4_shr_u_by, simd::i32x4_shr_u)
+        self.translate_simd_shift::<u32>(Op::u32x4_shr_sss, Op::u32x4_shr_ssi, simd::i32x4_shr_u)
     }
 
     fn visit_i32x4_add(&mut self) -> Self::Output {
@@ -1023,15 +1023,15 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_shl(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u64>(Op::i64x2_shl, Op::i64x2_shl_by, simd::i64x2_shl)
+        self.translate_simd_shift::<u64>(Op::i64x2_shl_sss, Op::i64x2_shl_ssi, simd::i64x2_shl)
     }
 
     fn visit_i64x2_shr_s(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u64>(Op::i64x2_shr_s, Op::i64x2_shr_s_by, simd::i64x2_shr_s)
+        self.translate_simd_shift::<u64>(Op::s64x2_shr_sss, Op::s64x2_shr_ssi, simd::i64x2_shr_s)
     }
 
     fn visit_i64x2_shr_u(&mut self) -> Self::Output {
-        self.translate_simd_shift::<u64>(Op::i64x2_shr_u, Op::i64x2_shr_u_by, simd::i64x2_shr_u)
+        self.translate_simd_shift::<u64>(Op::u64x2_shr_sss, Op::u64x2_shr_ssi, simd::i64x2_shr_u)
     }
 
     fn visit_i64x2_add(&mut self) -> Self::Output {
