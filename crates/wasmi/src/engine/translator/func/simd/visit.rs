@@ -161,12 +161,13 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_store(
-            memarg,
-            Op::v128_store,
-            Op::v128_store_offset16,
-            Op::v128_store_at,
-        )
+        // self.translate_store(
+        //     memarg,
+        //     Op::v128_store,
+        //     Op::v128_store_offset16,
+        //     Op::v128_store_at,
+        // )
+        todo!()
     }
 
     fn visit_v128_load8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
