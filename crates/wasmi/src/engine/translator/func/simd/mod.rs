@@ -7,7 +7,7 @@ use crate::{
     core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
     engine::translator::{
         func::{utils::Input, Operand},
-        utils::{Instr, ToBits, Wrap},
+        utils::{Instr, IntoShiftAmount, ToBits, Wrap},
     },
     ir::{
         index::{self, Memory},
