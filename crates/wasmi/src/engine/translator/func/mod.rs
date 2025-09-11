@@ -1631,6 +1631,34 @@ impl FuncTranslator {
         Ok(Some(fused))
     }
 
+    /// Generically translates a `call_indirect` or `return_call_indirect` Wasm operator.
+    fn translate_call_indirect(
+        &mut self,
+        type_index: u32,
+        table_index: u32,
+        make_instr: fn(
+            params: BoundedSlotSpan,
+            index: Slot,
+            func_type: FuncType,
+            table: index::Table,
+        ) -> Op,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let index = self.stack.pop();
+        let consume_fuel = self.stack.consume_fuel_instr();
+        let table = index::Table::from(table_index);
+        let func_type = self.resolve_type(type_index);
+        let index = self.copy_if_immediate(index)?;
+        let len_params = func_type.len_params();
+        let params = self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
+        let params = BoundedSlotSpan::new(params, len_params);
+        self.push_instr(
+            make_instr(params, index, index::FuncType::from(type_index), table),
+            FuelCostsProvider::call,
+        )?;
+        Ok(())
+    }
+
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary<T, R>(
         &mut self,
