@@ -291,29 +291,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_v128_load_lane_at<T: Typed, LaneType>(
-        &mut self,
-        memory: Memory,
-        x: Slot,
-        lane: LaneType,
-        address: Address32,
-        make_instr_at: fn(result: Slot, address: Address32) -> Op,
-    ) -> Result<(), Error>
-    where
-        LaneType: Into<u8>,
-    {
-        self.push_instr_with_result(
-            <T as Typed>::TY,
-            |result| make_instr_at(result, address),
-            FuelCostsProvider::load,
-        )?;
-        self.push_param(Op::slot_and_lane(x, lane))?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
-        Ok(())
-    }
-
     #[allow(clippy::type_complexity)]
     fn translate_v128_store_lane<T: IntoLaneIdx>(
         &mut self,
