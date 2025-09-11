@@ -174,8 +174,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_load_lane::<i8>(
             memarg,
             lane,
-            Op::v128_load8_lane,
-            Op::v128_load8_lane_at,
+            Op::v128_load_lane8_sss,
+            Op::v128_load_lane8_mem0_offset16_sss,
         )
     }
 
@@ -183,8 +183,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_load_lane::<i16>(
             memarg,
             lane,
-            Op::v128_load16_lane,
-            Op::v128_load16_lane_at,
+            Op::v128_load_lane16_sss,
+            Op::v128_load_lane16_mem0_offset16_sss,
         )
     }
 
@@ -192,8 +192,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_load_lane::<i32>(
             memarg,
             lane,
-            Op::v128_load32_lane,
-            Op::v128_load32_lane_at,
+            Op::v128_load_lane32_sss,
+            Op::v128_load_lane32_mem0_offset16_sss,
         )
     }
 
@@ -201,8 +201,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_load_lane::<i64>(
             memarg,
             lane,
-            Op::v128_load64_lane,
-            Op::v128_load64_lane_at,
+            Op::v128_load_lane64_sss,
+            Op::v128_load_lane64_mem0_offset16_sss,
         )
     }
 
