@@ -42,6 +42,9 @@ pub trait Encoder {
 
     /// Registers an encoded [`BranchOffset`] to the encoder.
     ///
+    /// This is required in order to update the branch offsets of
+    /// branch operators once all forward branch offsets are known.
+    ///
     /// # Errors
     ///
     /// If the encoder cannot register the `branch_offset`.
@@ -50,6 +53,16 @@ pub trait Encoder {
         pos: Self::Pos,
         branch_offset: BranchOffset,
     ) -> Result<(), Self::Error>;
+
+    /// Registers an encoded [`BlockFuel`] to the encoder.
+    ///
+    /// This is required in order to update the consumed fuel of
+    /// [`Op::ConsumeFuel`] operators during translation.
+    ///
+    /// # Errors
+    ///
+    /// If the encoder cannot register the `block_fuel`.
+    fn block_fuel(&mut self, pos: Self::Pos, block_fuel: BlockFuel) -> Result<(), Self::Error>;
 }
 
 /// Types that can be encoded by types that implement [`Encoder`].
@@ -76,6 +89,17 @@ impl Encode for BranchOffset {
     {
         let pos = self.to_i32().encode(encoder)?;
         encoder.branch_offset(pos, *self)?;
+        Ok(pos)
+    }
+}
+
+impl Encode for BlockFuel {
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        let pos = u64::from(*self).encode(encoder)?;
+        encoder.block_fuel(pos, *self)?;
         Ok(pos)
     }
 }
@@ -128,7 +152,6 @@ macro_rules! impl_encode_using {
 impl_encode_using! {
     bool as u8 = Into::into,
     Offset16 as u16 = Into::into,
-    BlockFuel as u64 = Into::into,
     Address as u64 = Into::into,
     Slot as u16 = Into::into,
     Func as u32 = Into::into,
