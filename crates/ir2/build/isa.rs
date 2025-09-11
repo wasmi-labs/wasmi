@@ -776,7 +776,12 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
-    let kinds = [UnaryOpKind::V128Splat32, UnaryOpKind::V128Splat64];
+    let kinds = [
+        UnaryOpKind::V128Splat8,
+        UnaryOpKind::V128Splat16,
+        UnaryOpKind::V128Splat32,
+        UnaryOpKind::V128Splat64,
+    ];
     for kind in kinds {
         isa.push_op(UnaryOp::new(kind, OperandKind::Slot));
         isa.push_op(UnaryOp::new(kind, OperandKind::Immediate));
