@@ -1137,8 +1137,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_and(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_bit_and_sss,
-            Op::i32_bit_and_ssi,
+            Op::i32_bitand_sss,
+            Op::i32_bitand_ssi,
             wasm::i32_bitand,
             FuncTranslator::no_opt_ri,
         )
@@ -1147,8 +1147,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_or(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_bit_or_sss,
-            Op::i32_bit_or_ssi,
+            Op::i32_bitor_sss,
+            Op::i32_bitor_ssi,
             wasm::i32_bitor,
             FuncTranslator::no_opt_ri,
         )
@@ -1157,8 +1157,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_xor(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_bit_xor_sss,
-            Op::i32_bit_xor_ssi,
+            Op::i32_bitxor_sss,
+            Op::i32_bitxor_ssi,
             wasm::i32_bitxor,
             FuncTranslator::no_opt_ri,
         )
@@ -1302,8 +1302,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_and(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_bit_and_sss,
-            Op::i64_bit_and_ssi,
+            Op::i64_bitand_sss,
+            Op::i64_bitand_ssi,
             wasm::i64_bitand,
             FuncTranslator::no_opt_ri,
         )
@@ -1312,8 +1312,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_or(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_bit_or_sss,
-            Op::i64_bit_or_ssi,
+            Op::i64_bitor_sss,
+            Op::i64_bitor_ssi,
             wasm::i64_bitor,
             FuncTranslator::no_opt_ri,
         )
@@ -1322,8 +1322,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_xor(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_bit_xor_sss,
-            Op::i64_bit_xor_ssi,
+            Op::i64_bitxor_sss,
+            Op::i64_bitxor_ssi,
             wasm::i64_bitxor,
             FuncTranslator::no_opt_ri,
         )
