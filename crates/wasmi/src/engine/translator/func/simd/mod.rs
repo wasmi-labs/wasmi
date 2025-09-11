@@ -7,7 +7,7 @@ use crate::{
     core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
     engine::translator::{
         func::{utils::Input, Operand},
-        utils::{Instr, Wrap},
+        utils::{Instr, ToBits, Wrap},
     },
     ir::{
         index::{self, Memory},
@@ -25,24 +25,25 @@ impl FuncTranslator {
     /// Generically translate any of the Wasm `simd` splat instructions.
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
-        make_instr: fn(result: Slot, value: Slot) -> Op,
-        const_eval: fn(Wrapped) -> V128,
+        make_instr_ss: fn(result: Slot, value: Slot) -> Op,
+        make_instr_si: fn(result: Slot, value: <Wrapped as ToBits>::Out) -> Op,
     ) -> Result<(), Error>
     where
         T: From<TypedVal> + Wrap<Wrapped>,
+        Wrapped: ToBits,
     {
         bail_unreachable!(self);
         let value = self.stack.pop();
-        if let Operand::Immediate(value) = value {
-            let value = T::from(value.val()).wrap();
-            let result = const_eval(value);
-            self.stack.push_immediate(result)?;
-            return Ok(());
-        };
-        let value = self.layout.operand_to_reg(value)?;
+        let value: Input<TypedVal> = self.make_input(value, |_this, value| Ok(value))?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| make_instr(result, value),
+            |result| match value {
+                Input::Slot(value) => make_instr_si(result, value),
+                Input::Immediate(value) => {
+                    let value = T::from(value).wrap().to_bits();
+                    make_instr_si(result, value)
+                }
+            },
             FuelCostsProvider::simd,
         )?;
         Ok(())
