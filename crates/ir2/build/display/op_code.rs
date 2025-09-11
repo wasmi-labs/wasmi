@@ -46,6 +46,14 @@ impl Display for DisplayOpCode<&'_ Isa> {
                 .map(DisplayTryFromU16)
                 .map(|op| DisplayOpCode::new(op, indent.inc_by(3))),
         );
+        let match_arms_debug = DisplaySequence::new(
+            ",\n",
+            self.value
+                .ops
+                .iter()
+                .map(DisplayDebug)
+                .map(|op| DisplayOpCode::new(op, indent.inc_by(3))),
+        );
         write!(
             f,
             "\
@@ -75,6 +83,15 @@ impl Display for DisplayOpCode<&'_ Isa> {
             {indent}        Ok(op_code)\n\
             {indent}    }}\n\
             {indent}}}\n\
+            \n\
+            {indent}impl ::core::fmt::Debug for OpCode {{\n\
+            {indent}    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{\n\
+            {indent}        let ident: &'static str = match self {{\n\
+                                {match_arms_debug},\n\
+            {indent}        }};\n\
+            {indent}        write!(f, \"OpCode::{{ident}}\")\n\
+            {indent}    }}\n\
+            {indent}}}\n\
         "
         )
     }
@@ -94,5 +111,14 @@ impl Display for DisplayOpCode<DisplayTryFromU16<&'_ Op>> {
         let indent = self.indent;
         let ident = DisplayIdent::camel(self.value.0);
         write!(f, "{indent}x if x == Self::{ident} as _ => Self::{ident}")
+    }
+}
+
+pub struct DisplayDebug<T>(T);
+impl Display for DisplayOpCode<DisplayDebug<&'_ Op>> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let ident = DisplayIdent::camel(self.value.0);
+        write!(f, "{indent}Self::{ident} => \"{ident}\"")
     }
 }
