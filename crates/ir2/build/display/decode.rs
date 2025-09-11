@@ -52,7 +52,7 @@ impl Display for DisplayDecode<&'_ Isa> {
                 .iter()
                 .map(|op| DisplayDecode::new(op, indent)),
         );
-        write!(f, "{impls}")
+        impls.fmt(f)
     }
 }
 

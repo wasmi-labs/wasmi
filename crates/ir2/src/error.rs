@@ -13,11 +13,12 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::StackSlotOutOfBounds => write!(f, "stack slot out of bounds"),
-            Self::BranchOffsetOutOfBounds => write!(f, "branch offset out of bounds"),
-            Self::BlockFuelOutOfBounds => write!(f, "block fuel out of bounds"),
-        }
+        let s = match self {
+            Self::StackSlotOutOfBounds => "stack slot out of bounds",
+            Self::BranchOffsetOutOfBounds => "branch offset out of bounds",
+            Self::BlockFuelOutOfBounds => "block fuel out of bounds",
+        };
+        f.write_str(s)
     }
 }
 
