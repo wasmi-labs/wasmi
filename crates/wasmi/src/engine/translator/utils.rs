@@ -7,7 +7,7 @@ use crate::{
     Ref,
     ValType,
 };
-use core::num::NonZero;
+use core::{convert::identity, num::NonZero};
 
 impl Typed for ExternRef {
     const TY: ValType = ValType::ExternRef;
@@ -230,74 +230,31 @@ pub trait ToBits {
     fn to_bits(self) -> Self::Out;
 }
 
-impl ToBits for u8 {
-    type Out = u8;
-    fn to_bits(self) -> Self::Out {
-        self
-    }
+macro_rules! impl_to_bits {
+    ( $($ty:ty as $bits_ty:ty = $expr:expr),* $(,)? ) => {
+        $(
+            impl ToBits for $ty {
+                type Out = $bits_ty;
+                fn to_bits(self) -> Self::Out {
+                    $expr(self)
+                }
+            }
+        )*
+    };
 }
+impl_to_bits! {
+    u8 as u8 = identity,
+    u16 as u16 = identity,
+    u32 as u32 = identity,
+    u64 as u64 = identity,
 
-impl ToBits for i8 {
-    type Out = u8;
-    fn to_bits(self) -> Self::Out {
-        u8::from_ne_bytes(self.to_ne_bytes())
-    }
-}
+    f32 as u32 = f32::to_bits,
+    f64 as u64 = f64::to_bits,
 
-impl ToBits for u16 {
-    type Out = u16;
-    fn to_bits(self) -> Self::Out {
-        self
-    }
-}
-
-impl ToBits for i16 {
-    type Out = u16;
-    fn to_bits(self) -> Self::Out {
-        u16::from_ne_bytes(self.to_ne_bytes())
-    }
-}
-
-impl ToBits for u32 {
-    type Out = u32;
-    fn to_bits(self) -> Self::Out {
-        self
-    }
-}
-
-impl ToBits for i32 {
-    type Out = u32;
-    fn to_bits(self) -> Self::Out {
-        u32::from_ne_bytes(self.to_ne_bytes())
-    }
-}
-
-impl ToBits for f32 {
-    type Out = u32;
-    fn to_bits(self) -> Self::Out {
-        self.to_bits()
-    }
-}
-
-impl ToBits for u64 {
-    type Out = u64;
-    fn to_bits(self) -> Self::Out {
-        self
-    }
-}
-
-impl ToBits for i64 {
-    type Out = u64;
-    fn to_bits(self) -> Self::Out {
-        u64::from_ne_bytes(self.to_ne_bytes())
-    }
-}
-
-impl ToBits for f64 {
-    type Out = u64;
-    fn to_bits(self) -> Self::Out {
-        self.to_bits()
-    }
+    i8 as u8 = |v: i8| u8::from_ne_bytes(v.to_ne_bytes()),
+    i16 as u16 = |v: i16| u16::from_ne_bytes(v.to_ne_bytes()),
+    i32 as u32 = |v: i32| u32::from_ne_bytes(v.to_ne_bytes()),
+    i64 as u64 = |v: i64| u64::from_ne_bytes(v.to_ne_bytes()),
 }
 
 pub trait IntoShiftAmount {
