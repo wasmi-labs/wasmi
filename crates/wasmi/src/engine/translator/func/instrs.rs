@@ -185,40 +185,40 @@ impl InstrEncoder {
         select_condition: Slot,
         layout: &StackLayout,
         stack: &mut Stack,
-    ) -> Result<Option<bool>, Error> {
+        true_val: Slot,
+        false_val: Slot,
+    ) -> Result<bool, Error> {
         let Some(last_instr) = self.last_instr else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return Ok(None);
+            return Ok(false);
         };
         let last_instruction = self.get(last_instr);
         let Some(last_result) = last_instruction.compare_result() else {
             // All negatable instructions have a single result register.
-            return Ok(None);
+            return Ok(false);
         };
         if matches!(layout.stack_space(last_result), StackSpace::Local) {
             // The instruction stores its result into a local variable which
             // is an observable side effect which we are not allowed to mutate.
-            return Ok(None);
+            return Ok(false);
         }
         if last_result != select_condition {
             // The result of the last instruction and the select's `condition`
             // are not equal thus indicating that we cannot fuse the instructions.
-            return Ok(None);
+            return Ok(false);
         }
-        let CmpSelectFusion::Applied {
-            fused,
-            swap_operands,
-        } = last_instruction.try_into_cmp_select_instr(|| {
-            let select_result = stack.push_temp(ty, Some(last_instr))?;
-            let select_result = layout.temp_to_reg(select_result)?;
-            Ok(select_result)
-        })?
+        let CmpSelectFusion::Applied(fused) =
+            last_instruction.try_into_cmp_select_instr(true_val, false_val, || {
+                let select_result = stack.push_temp(ty, Some(last_instr))?;
+                let select_result = layout.temp_to_reg(select_result)?;
+                Ok(select_result)
+            })?
         else {
-            return Ok(None);
+            return Ok(false);
         };
         let last_instr = self.get_mut(last_instr);
         *last_instr = fused;
-        Ok(Some(swap_operands))
+        Ok(true)
     }
 
     /// Pushes an [`Op`] parameter to the [`InstrEncoder`].

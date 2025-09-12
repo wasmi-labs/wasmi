@@ -2156,54 +2156,50 @@ impl FuncTranslator {
             self.stack.push_operand(true_val)?;
             return Ok(());
         }
-        if let Operand::Immediate(condition) = condition {
-            // Optimization: since condition is a constant value we can const-fold the `select`
-            //               instruction and simply push the selected value back to the provider stack.
-            let condition = i32::from(condition.val()) != 0;
-            let selected = match condition {
-                true => true_val,
-                false => false_val,
-            };
-            if let Operand::Temp(selected) = selected {
-                // Case: the selected operand is a temporary which needs to be copied
-                //       if it was the `false_val` since it changed its index. This is
-                //       not the case for the `true_val` since `true_val` is the first
-                //       value popped from the stack.
-                if !condition {
-                    let selected = self.layout.temp_to_reg(selected.operand_index())?;
-                    self.push_instr_with_result(
-                        ty,
-                        |result| Op::copy(result, selected),
-                        FuelCostsProvider::base,
-                    )?;
-                    return Ok(());
+        let condition = match condition {
+            Operand::Immediate(condition) => {
+                let condition = i32::from(condition.val()) != 0;
+                let selected = match condition {
+                    true => true_val,
+                    false => false_val,
+                };
+                if let Operand::Temp(selected) = selected {
+                    // Case: the selected operand is a temporary which needs to be copied
+                    //       if it was the `false_val` since it changed its index. This is
+                    //       not the case for the `true_val` since `true_val` is the first
+                    //       value popped from the stack.
+                    if !condition {
+                        let selected = self.layout.temp_to_reg(selected.operand_index())?;
+                        self.push_instr_with_result(
+                            ty,
+                            |result| Op::copy(result, selected),
+                            FuelCostsProvider::base,
+                        )?;
+                        return Ok(());
+                    }
                 }
+                self.stack.push_operand(selected)?;
+                return Ok(());
             }
-            self.stack.push_operand(selected)?;
-            return Ok(());
-        }
-        let condition = self.layout.operand_to_reg(condition)?;
-        let mut true_val = self.copy_if_immediate(true_val)?;
-        let mut false_val = self.copy_if_immediate(false_val)?;
-        match self
-            .instrs
-            .try_fuse_select(ty, condition, &self.layout, &mut self.stack)?
-        {
-            Some(swap_operands) => {
-                if swap_operands {
-                    mem::swap(&mut true_val, &mut false_val);
-                }
-            }
-            None => {
-                self.push_instr_with_result(
-                    ty,
-                    |result| Op::select_i32_eq_imm16(result, condition, 0_i16),
-                    FuelCostsProvider::base,
-                )?;
-                mem::swap(&mut true_val, &mut false_val);
-            }
+            Operand::Local(condition) => self.layout.local_to_reg(condition.local_index())?,
+            Operand::Temp(condition) => self.layout.temp_to_reg(condition.operand_index())?,
         };
-        self.push_param(Op::slot2_ext(true_val, false_val))?;
+        let true_val = self.copy_if_immediate(true_val)?;
+        let false_val = self.copy_if_immediate(false_val)?;
+        if !self.instrs.try_fuse_select(
+            ty,
+            condition,
+            &self.layout,
+            &mut self.stack,
+            true_val,
+            false_val,
+        )? {
+            self.push_instr_with_result(
+                ty,
+                |result| Op::select_i32_eq_ssi(result, condition, 0_i32, false_val, true_val),
+                FuelCostsProvider::base,
+            )?;
+        };
         Ok(())
     }
 
