@@ -1933,7 +1933,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         self.push_instr_with_result(
             ValType::FuncRef,
-            |result| Op::ref_func(result, function_index),
+            |result| Op::ref_func(result, index::Func::from(function_index)),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1962,7 +1962,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index = self.stack.pop();
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
-        let index = self.make_index32(index, index_ty)?;
+        let index = self.make_index(index, index_ty)?;
         self.push_instr_with_result(
             item_ty,
             |result| match index {
