@@ -352,9 +352,9 @@ impl LogicalizeCmpInstr for Op {
 pub trait TryIntoCmpSelectInstr: Sized {
     fn try_into_cmp_select_instr(
         &self,
-        get_result: impl FnOnce() -> Result<Slot, Error>,
         val_true: Slot,
         val_false: Slot,
+        get_result: impl FnOnce() -> Result<Slot, Error>,
     ) -> Result<CmpSelectFusion, Error>;
 }
 
@@ -369,9 +369,9 @@ pub enum CmpSelectFusion {
 impl TryIntoCmpSelectInstr for Op {
     fn try_into_cmp_select_instr(
         &self,
-        get_result: impl FnOnce() -> Result<Slot, Error>,
         val_true: Slot,
         val_false: Slot,
+        get_result: impl FnOnce() -> Result<Slot, Error>,
     ) -> Result<CmpSelectFusion, Error> {
         if !self.is_compare_instr() {
             return Ok(CmpSelectFusion::Unapplied);
