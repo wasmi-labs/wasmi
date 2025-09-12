@@ -79,8 +79,9 @@ impl Display for DisplayOp<&'_ Isa> {
         write!(
             f,
             "\
-            {indent}/// A Wasmi bytecode operator or instruction.
+            {indent}/// A Wasmi bytecode operator or instruction.\n\
             {indent}#[allow(non_camel_case_types)]\n\
+            {indent}#[derive(Debug)]\n\
             {indent}pub enum Op {{\n\
                         {variants}\n\
             {indent}}}\n\
