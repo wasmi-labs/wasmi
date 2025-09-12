@@ -1824,16 +1824,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (dst, value, len) = self.stack.pop3();
         let memory = index::Memory::from(mem);
         let dst = self.copy_if_immediate(dst)?;
-        let value = self.make_input(value, |_, value| {
-            let byte = u32::from(value) as u8;
-            Ok(Input::Immediate(byte))
-        })?;
         let len = self.copy_if_immediate(len)?;
-        let instr: Op = match value {
-            Input::Slot(value) => Op::memory_fill(memory, dst, value, len),
-            Input::Immediate(value) => Op::memory_fill_imm(memory, dst, value, len),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        let value = self.copy_if_immediate(value)?;
+        self.push_instr(
+            Op::memory_fill(memory, dst, value, len),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
