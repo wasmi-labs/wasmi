@@ -10,7 +10,7 @@ use crate::{
         },
         func::{Operand, Stack, StackLayout, StackSpace},
         relink_result::RelinkResult,
-        utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
+        utils::{BumpFuelConsumption as _, Instr},
     },
     ir::{BranchOffset, Op, Slot},
     module::ModuleHeader,
@@ -109,10 +109,6 @@ impl InstrEncoder {
 
     /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
     fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
-        debug_assert!(
-            !instruction.is_instruction_parameter(),
-            "parameter: {instruction:?}"
-        );
         let instr = self.next_instr();
         self.instrs.push(instruction);
         self.last_instr = Some(instr);
