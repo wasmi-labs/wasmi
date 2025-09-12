@@ -1493,7 +1493,7 @@ impl FuncTranslator {
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
         };
         self.instrs
-            .try_replace_result(result, old_result, &self.layout, &self.module)
+            .try_replace_result(result, old_result, &self.layout)
     }
 
     /// Encodes an unconditional Wasm `branch` instruction.
