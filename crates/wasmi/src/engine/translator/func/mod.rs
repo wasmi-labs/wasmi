@@ -1546,8 +1546,8 @@ impl FuncTranslator {
         let instr = self.instrs.next_instr();
         let offset = self.labels.try_resolve_label(label, instr)?;
         let instr = match branch_eqz {
-            true => Op::branch_i32_eq_imm16(condition, 0, offset),
-            false => Op::branch_i32_ne_imm16(condition, 0, offset),
+            true => Op::branch_i32_eq_si(condition, 0, offset),
+            false => Op::branch_i32_not_eq_si(condition, 0, offset),
         };
         self.push_instr(instr, FuelCostsProvider::base)?;
         Ok(())
