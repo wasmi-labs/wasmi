@@ -43,7 +43,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
-            utils::{Instr, IntoShiftAmount, WasmFloat, WasmInteger},
+            utils::{Instr, IntoShiftAmount, WasmFloat, WasmInteger, ToBits},
             WasmTranslator,
         },
         BlockType,
@@ -652,8 +652,8 @@ impl FuncTranslator {
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
     fn make_copy_imm_instr(result: Slot, value: TypedVal) -> Result<Op, Error> {
         let instr = match value.ty() {
-            ValType::I32 => Op::copy32(result, i32::from(value)),
-            ValType::I64 => Op::copy64(result, i64::from(value)),
+            ValType::I32 => Op::copy32(result, i32::from(value).to_bits()),
+            ValType::I64 => Op::copy64(result, i64::from(value).to_bits()),
             ValType::F32 => Op::copy32(result, f32::from(value).to_bits()),
             ValType::F64 => Op::copy64(result, f64::from(value).to_bits()),
             ValType::ExternRef | ValType::FuncRef => {
@@ -1135,8 +1135,8 @@ impl FuncTranslator {
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
-                        ValType::I32 => Op::return32(i32::from(val)),
-                        ValType::I64 => Op::return64(i64::from(val)),
+                        ValType::I32 => Op::return32(i32::from(val).to_bits()),
+                        ValType::I64 => Op::return64(i64::from(val).to_bits()),
                         ValType::F32 => Op::return32(f32::from(val).to_bits()),
                         ValType::F64 => Op::return64(f64::from(val).to_bits()),
                         ValType::FuncRef | ValType::ExternRef => {
