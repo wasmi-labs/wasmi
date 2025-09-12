@@ -158,7 +158,6 @@ impl InstrEncoder {
         new_result: Slot,
         old_result: Slot,
         layout: &StackLayout,
-        module: &ModuleHeader,
     ) -> Result<bool, Error> {
         if !matches!(layout.stack_space(new_result), StackSpace::Local) {
             // Case: cannot replace result if `new_result` isn't a local.
@@ -170,7 +169,7 @@ impl InstrEncoder {
         };
         if !self
             .get_mut(last_instr)
-            .relink_result(module, new_result, old_result)?
+            .relink_result(new_result, old_result)?
         {
             // Case: it was impossible to relink the result of `last_instr.
             return Ok(false);
