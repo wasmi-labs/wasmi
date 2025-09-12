@@ -1797,7 +1797,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(Op::data_drop(data_index), FuelCostsProvider::instance)?;
+        self.push_instr(
+            Op::data_drop(index::Data::from(data_index)),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1851,7 +1854,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(Op::elem_drop(elem_index), FuelCostsProvider::instance)?;
+        self.push_instr(
+            Op::elem_drop(index::Elem::from(elem_index)),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
