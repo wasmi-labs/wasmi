@@ -417,14 +417,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let global = ir::index::Global::from(global_index);
+        let global = index::Global::from(global_index);
         let input = self.stack.pop();
         let value = match input {
             Operand::Immediate(input) => input.val(),
             input => {
                 // Case: `global.set` with simple register input.
                 let input = self.layout.operand_to_reg(input)?;
-                self.push_instr(Op::global_set(input, global), FuelCostsProvider::instance)?;
+                self.push_instr(Op::global_set(global, input), FuelCostsProvider::instance)?;
                 return Ok(());
             }
         };
