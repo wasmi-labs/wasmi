@@ -82,7 +82,7 @@ impl Display for CamelCase<OperandKind> {
             OperandKind::Slot => "S",
             OperandKind::Immediate => "I",
         };
-        write!(f, "{s}")
+        f.write_str(s)
     }
 }
 
@@ -92,7 +92,7 @@ impl Display for SnakeCase<OperandKind> {
             OperandKind::Slot => "s",
             OperandKind::Immediate => "i",
         };
-        write!(f, "{s}")
+        f.write_str(s)
     }
 }
 
@@ -1486,20 +1486,20 @@ impl Display for Ty {
             Ty::U16x8 => "u16x8",
             Ty::U32x4 => "u32x4",
             Ty::U64x2 => "u64x2",
-            Ty::S8x16 => "s8x16",
-            Ty::S16x8 => "s16x8",
-            Ty::S32x4 => "s32x4",
-            Ty::S64x2 => "s64x2",
+            Ty::S8x16 => "i8x16",
+            Ty::S16x8 => "i16x8",
+            Ty::S32x4 => "i32x4",
+            Ty::S64x2 => "i64x2",
             Ty::F32x4 => "f32x4",
             Ty::F64x2 => "f64x2",
         };
-        write!(f, "{s}")
+        f.write_str(s)
     }
 }
 
 impl Display for SnakeCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -1534,7 +1534,7 @@ impl Display for CamelCase<Ty> {
             Ty::F32x4 => "F32x4",
             Ty::F64x2 => "F64x2",
         };
-        write!(f, "{s}")
+        f.write_str(s)
     }
 }
 
@@ -1622,7 +1622,7 @@ impl Display for FieldTy {
             Self::Bytes16 => "[u8; 16]",
             Self::V128 => "V128",
         };
-        write!(f, "{s}")
+        f.write_str(s)
     }
 }
 

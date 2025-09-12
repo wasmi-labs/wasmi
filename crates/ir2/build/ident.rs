@@ -1,4 +1,5 @@
 use core::fmt::{self, Display};
+use std::fmt::Write;
 
 #[derive(Copy, Clone)]
 pub enum Case {
@@ -30,8 +31,8 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Camel(value) => write!(f, "{}", CamelCase(value.clone())),
-            Self::Snake(value) => write!(f, "{}", SnakeCase(value.clone())),
+            Self::Camel(value) => CamelCase(value.clone()).fmt(f),
+            Self::Snake(value) => SnakeCase(value.clone()).fmt(f),
         }
     }
 }
@@ -54,7 +55,7 @@ impl Display for CamelCase<Sep> {
 
 impl Display for SnakeCase<Sep> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "_")
+        f.write_char('_')
     }
 }
 
@@ -76,7 +77,7 @@ macro_rules! define_ident {
                         Ident::$camel_ident => stringify!($camel_ident),
                     )*
                 };
-                write!(f, "{frag}")
+                f.write_str(frag)
             }
         }
 
@@ -87,7 +88,7 @@ macro_rules! define_ident {
                         Ident::$camel_ident => stringify!($snake_ident),
                     )*
                 };
-                write!(f, "{frag}")
+                f.write_str(frag)
             }
         }
     };

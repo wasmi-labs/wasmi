@@ -195,8 +195,7 @@ impl Display for DisplayIdent<&'_ StoreOp> {
 
 impl<const N: usize> Display for DisplayIdent<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ident = self.case.wrap(self.value.ident);
-        write!(f, "{ident}")
+        self.case.wrap(self.value.ident).fmt(f)
     }
 }
 

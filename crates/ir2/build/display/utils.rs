@@ -16,7 +16,7 @@ impl Indent {
 impl Display for Indent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for _ in 0..self.0 {
-            write!(f, "    ")?;
+            f.write_str("    ")?;
         }
         Ok(())
     }
@@ -68,7 +68,7 @@ where
         let Some(first) = iter.next() else {
             return Ok(());
         };
-        write!(f, "{first}")?;
+        first.fmt(f)?;
         let sep = &self.sep;
         for item in iter {
             write!(f, "{sep}{item}")?;
