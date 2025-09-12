@@ -320,7 +320,8 @@ macro_rules! impl_into_shift_amount {
 
                 fn into_shift_amount(self) -> Option<Self::Value> {
                     let len_bits = (::core::mem::size_of::<Self>() * 8) as Self;
-                    self.checked_rem_euclid(len_bits)
+                    let shamt = self.checked_rem_euclid(len_bits)?;
+                    Some(shamt as _)
                 }
             }
         )*
