@@ -60,7 +60,6 @@ use crate::{
     V128,
 };
 use alloc::vec::Vec;
-use core::mem;
 use wasmparser::{MemArg, WasmFeatures};
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
@@ -1626,7 +1625,7 @@ impl FuncTranslator {
         };
         let offset = self.labels.try_resolve_label(label, instr)?;
         let fused = cmp_instr
-            .try_into_cmp_branch_instr(offset)?
+            .try_into_cmp_branch_instr(offset)
             .expect("cmp+branch fusion must succeed");
         Ok(Some(fused))
     }
@@ -1656,7 +1655,7 @@ impl FuncTranslator {
                 call_imported(params, index::Func::from(function_index))
             }
         };
-        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
+        self.push_instr(instr, FuelCostsProvider::call)?;
         Ok(())
     }
 
@@ -1668,7 +1667,7 @@ impl FuncTranslator {
         make_instr: fn(
             params: BoundedSlotSpan,
             index: Slot,
-            func_type: FuncType,
+            func_type: index::FuncType,
             table: index::Table,
         ) -> Op,
     ) -> Result<(), Error> {
@@ -1871,7 +1870,7 @@ impl FuncTranslator {
         opt_si: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: WasmInteger,
+        T: From<TypedVal> + Copy,
         R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
@@ -1926,7 +1925,7 @@ impl FuncTranslator {
                 };
                 self.push_instr_with_result(
                     <T as Typed>::TY,
-                    |result| make_instr_ssi(result, lhs, rhs),
+                    |result| make_instr_ssi(result, lhs, non_zero_rhs),
                     FuelCostsProvider::base,
                 )
             }
@@ -1958,7 +1957,7 @@ impl FuncTranslator {
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
-        T: WasmInteger,
+        T: From<TypedVal> + Copy,
         R: Into<TypedVal> + Typed,
     {
         bail_unreachable!(self);
@@ -1977,7 +1976,6 @@ impl FuncTranslator {
             }
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
-                let lhs16 = self.make_imm16(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
@@ -2103,7 +2101,7 @@ impl FuncTranslator {
                 )
             }
             (Operand::Immediate(lhs), rhs) => {
-                let lhs = T::from(rhs.val());
+                let lhs = T::from(lhs.val());
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
@@ -2320,8 +2318,7 @@ impl FuncTranslator {
         let ptr = self.stack.pop();
         let ptr = match ptr {
             Operand::Immediate(ptr) => {
-                let ptr = ptr.val();
-                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 match make_instr_si.into() {
@@ -2335,7 +2332,7 @@ impl FuncTranslator {
                     }
                     None => {
                         let consume_fuel = self.stack.consume_fuel_instr();
-                        self.copy_operand_to_temp(ptr, consume_fuel)?
+                        self.copy_operand_to_temp(ptr.into(), consume_fuel)?
                     }
                 }
             }
@@ -2395,7 +2392,7 @@ impl FuncTranslator {
     fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<Address> {
         let memory_type = *self
             .module
-            .get_type_of_memory(MemoryIdx::from(u32::from(mem)));
+            .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));
         let ptr = match memory_type.is_64() {
             true => u64::from(ptr),
             false => u64::from(u32::from(ptr)),
