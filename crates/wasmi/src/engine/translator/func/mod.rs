@@ -43,7 +43,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
-            utils::{Instr, IntoShiftAmount, WasmFloat, WasmInteger, ToBits},
+            utils::{Instr, IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
             WasmTranslator,
         },
         BlockType,
@@ -1814,6 +1814,27 @@ impl FuncTranslator {
             IndexType::I64 => u64::from(value),
         };
         Ok(Input::Immediate(value))
+    }
+
+    /// Copies `operand` to a temporary stack slot if it is an immediate that cannot be encoded using 32-bits.
+    ///
+    /// - Returns [`Input::Slot`] if `operand` is a local or a temporary operand.
+    /// - Returns [`Input::Immediate`] if `operand` is an immediate that can be encoded as 32-bit value.
+    /// - Returns [`Input::Slot`] otherwise and encodes a copy storing the immediate into its temporary stack slot.
+    fn make_index32_or_copy(
+        &mut self,
+        operand: Operand,
+        index_ty: IndexType,
+    ) -> Result<Input<u32>, Error> {
+        let index64 = match self.make_index64(operand, index_ty)? {
+            Input::Slot(index) => return Ok(Input::Slot(index)),
+            Input::Immediate(index) => index,
+        };
+        let index32 = match u32::try_from(index64) {
+            Ok(index) => return Ok(Input::Immediate(index)),
+            Err(_) => self.copy_if_immediate(operand)?,
+        };
+        Ok(Input::Slot(index32))
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
