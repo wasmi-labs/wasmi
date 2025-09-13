@@ -293,8 +293,7 @@ impl FuncTranslator {
     /// If this is used before all branching labels have been pinned.
     fn update_branch_offsets(&mut self) -> Result<(), Error> {
         for (user, offset) in self.labels.resolved_users() {
-            self.instrs
-                .update_branch_offset(user, offset?)?;
+            self.instrs.update_branch_offset(user, offset?)?;
         }
         Ok(())
     }
@@ -445,11 +444,6 @@ impl FuncTranslator {
                 self.encode_copy(result, value, consume_fuel_instr)?;
                 Ok(())
             }
-            2 => {
-                let (val0, val1) = self.stack.peek2();
-                self.encode_copy2(results, val0, val1, consume_fuel_instr)?;
-                Ok(())
-            }
             _ => self.encode_copy_many(results, len_values, consume_fuel_instr),
         }
     }
@@ -469,153 +463,10 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        if let Some(fused_copy) = self.try_merge_copies(copy_instr)? {
-            // Case: successfully merged the copy instruction with its succeeding one.
-            return Ok(Some(fused_copy));
-        }
         let instr =
             self.instrs
                 .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         Ok(Some(instr))
-    }
-
-    /// Tries to merge `copy_instr` with the succeeding copy instruction if one exists.
-    ///
-    /// - Returns `None` if merging was not applicable.
-    /// - Returns `Some(last_instr)` if merging was successful.
-    fn try_merge_copies(&mut self, copy_instr: Op) -> Result<Option<Instr>, Error> {
-        let Op::Copy { result, value } = copy_instr else {
-            // Case: `copy_instr` is not fusable.
-            return Ok(None);
-        };
-        let Some(last_instr) = self.instrs.last_instr() else {
-            // Case: no `last_instr` to fuse with.
-            return Ok(None);
-        };
-        let last_copy = *self.instrs.get(last_instr);
-        let fused_copy = match last_copy {
-            Op::Copy { .. } => Self::try_merge_copy_instr(last_copy, result, value),
-            Op::Copy2 { .. } => Self::try_merge_copy2_instr(last_copy, result, value),
-            Op::CopySpan { .. } => Self::try_merge_copy_span_instr(last_copy, result, value),
-            _ => return Ok(None),
-        };
-        if let Some(fused_copy) = fused_copy {
-            let success = self.instrs.try_replace_instr(last_instr, fused_copy)?;
-            debug_assert!(success);
-            return Ok(Some(last_instr));
-        }
-        Ok(None)
-    }
-
-    /// Tries to merge two [`Op::Copy`] instructions and returns the result.
-    ///
-    /// Returns `None` if merging was not possible.
-    fn try_merge_copy_instr(last_copy: Op, result: Slot, value: Slot) -> Option<Op> {
-        let Op::Copy {
-            result: last_result,
-            value: last_value,
-        } = last_copy
-        else {
-            // Case: `last_copy` does not refer to a mergable copy instruction.
-            return None;
-        };
-        // Try to fuse to a `copy2` instruction.
-        if value == last_result {
-            // Case: cannot merge since the succeeding copy overwrites the result of `copy_instr`
-            return None;
-        }
-        if result == last_result.next() {
-            // Case: we can append `copy_instrs`.
-            return Some(Op::copy2_ext(SlotSpan::new(last_result), last_value, value));
-        }
-        if result == last_result.prev() {
-            // Case: we can prepend `copy_instr`.
-            return Some(Op::copy2_ext(SlotSpan::new(result), value, last_value));
-        }
-        None
-    }
-
-    /// Tries to merge an [`Op::Copy2`] and an [`Op::Copy`] and returns the result.
-    ///
-    /// Returns `None` if merging was not possible.
-    fn try_merge_copy2_instr(last_copy: Op, result: Slot, value: Slot) -> Option<Op> {
-        let Op::Copy2 { results, values } = last_copy else {
-            // Case: `last_copy` does not refer to a mergable copy instruction.
-            return None;
-        };
-        // Try to fuse to a `copy_span` instruction.
-        let [last_result0, last_result1] = results.to_array();
-        let [last_value0, last_value1] = values;
-        if last_value0.next() != last_value1 {
-            // Case: last `copy2` instruction itself is not convertible to a `copy_span`.
-            return None;
-        }
-        if result == last_result1.next() && value == last_value1.next() {
-            // Case: we can append `copy_instr`.
-            if value == last_result0 || value == last_result1 {
-                // Case: cannot merge since `value` is overwritten by `last_copy`.
-                return None;
-            }
-            let results = SlotSpan::new(last_result0);
-            let values = SlotSpan::new(last_value0);
-            let len = 3_u16;
-            debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
-            return Some(Op::copy_span(results, values, len));
-        }
-        if result == last_result0.prev() && value == last_value0.prev() {
-            // Case: we can prepend `copy_instr`.
-            if result == last_value0 || result == last_value1 {
-                // Case: cannot merge since `result` overwrites results of `last_copy`.
-                return None;
-            }
-            let results = SlotSpan::new(result);
-            let values = SlotSpan::new(value);
-            let len = 3_u16;
-            debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
-            return Some(Op::copy_span(results, values, len));
-        }
-        None
-    }
-
-    /// Tries to merge an [`Op::CopySpan`] and an [`Op::Copy`] and returns the result.
-    ///
-    /// Returns `None` if merging was not possible.
-    fn try_merge_copy_span_instr(last_copy: Op, result: Slot, value: Slot) -> Option<Op> {
-        let Op::CopySpan {
-            results,
-            values,
-            len,
-        } = last_copy
-        else {
-            // Case: `last_copy` does not refer to a mergable copy instruction.
-            return None;
-        };
-        let last_result0 = results.head();
-        let last_value0 = values.head();
-        // Try to fuse to a larger `copy_span` instruction.
-        if result == last_result0.next_n(len) && value == last_value0.next_n(len) {
-            // Case: we can append `copy_instr`.
-            let new_len = len + 1;
-            if SlotSpan::has_overlapping_copies(results, values, new_len) {
-                // Case: cannot merge since resulting `copy_span` has overlapping copies.
-                return None;
-            }
-            return Some(Op::copy_span(results, values, new_len));
-        }
-        if result == last_result0.prev() && value == last_value0.prev() {
-            // Case: we can prepend `copy_instr`.
-            let new_len = len + 1;
-            if SlotSpan::has_overlapping_copies(results, values, new_len) {
-                // Case: cannot merge since resulting `copy_span` has overlapping copies.
-                return None;
-            }
-            return Some(Op::copy_span(
-                SlotSpan::new(result),
-                SlotSpan::new(value),
-                new_len,
-            ));
-        }
-        None
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
@@ -671,34 +522,6 @@ impl FuncTranslator {
         Ok(instr)
     }
 
-    /// Encode a copy instruction that copies 2 values.
-    ///
-    /// # Note
-    ///
-    /// This won't encode a copy if the resulting copy instruction is a no-op.
-    fn encode_copy2(
-        &mut self,
-        results: SlotSpan,
-        val0: Operand,
-        val1: Operand,
-        consume_fuel_instr: Option<Instr>,
-    ) -> Result<(), Error> {
-        let val0 = self.layout.operand_to_reg(val0)?;
-        let val1 = self.layout.operand_to_reg(val1)?;
-        let result0 = results.head();
-        let result1 = result0.next();
-        if result0 == val0 && result1 == val1 {
-            // Case: no-op copy instruction
-            return Ok(());
-        }
-        self.instrs.push_instr(
-            Op::copy2_ext(results, val0, val1),
-            consume_fuel_instr,
-            FuelCostsProvider::base,
-        )?;
-        Ok(())
-    }
-
     /// Encode a copy instruction that copies a contiguous span of values.
     ///
     /// # Note
@@ -747,30 +570,22 @@ impl FuncTranslator {
             &self.layout
         )?);
         match values {
-            [] => Ok(()),
+            [] => return Ok(()),
             [val0] => {
                 let result = results.head();
                 let value = *val0;
                 self.encode_copy(result, value, consume_fuel_instr)?;
-                Ok(())
+                return Ok(());
             }
-            [val0, val1] => self.encode_copy2(results, *val0, *val1, consume_fuel_instr),
-            [val0, val1, rest @ ..] => {
-                debug_assert!(!rest.is_empty());
+            values => {
+                debug_assert!(!values.is_empty());
                 if let Some(values) = Self::try_form_regspan_of(values, &self.layout)? {
                     return self.encode_copy_span(results, values, len, consume_fuel_instr);
                 }
-                let val0 = self.layout.operand_to_reg(*val0)?;
-                let val1 = self.layout.operand_to_reg(*val1)?;
-                self.instrs.push_instr(
-                    Op::copy_many_ext(results, val0, val1),
-                    consume_fuel_instr,
-                    |costs| costs.fuel_for_copying_values(u64::from(len)),
-                )?;
-                self.instrs.encode_register_list(rest, &mut self.layout)?;
-                Ok(())
             }
         }
+        let values = self.move_operands_to_temp(usize::from(len), consume_fuel_instr)?;
+        self.encode_copy_span(results, values, len, consume_fuel_instr)
     }
 
     /// Tries to strip noop copies from the start of the `copy_many`.
@@ -1059,7 +874,7 @@ impl FuncTranslator {
     fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Slot) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
         self.push_instr(
-            Op::branch_table_0(index, table.len() + 1),
+            Op::branch_table(index, table.len() + 1),
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
@@ -1110,8 +925,8 @@ impl FuncTranslator {
             let offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())?;
-            self.instrs
-                .push_param(Op::branch_table_target(results, offset));
+            // self.instrs
+            //     .push_param(Op::branch_table_target(results, offset)); // TODO: encode branch table targets properly
             frame.branch_to();
         }
         Ok(())
@@ -1121,7 +936,7 @@ impl FuncTranslator {
     fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
-            0 => Op::Return,
+            0 => Op::Return {},
             1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_reg(operand.local_index())?;
@@ -1143,7 +958,7 @@ impl FuncTranslator {
                         }
                         ValType::V128 => {
                             let value = self.stack.peek(0);
-                            let temp_slot = self.copy_operand_to_temp(operand, consume_fuel)?;
+                            let temp_slot = self.copy_operand_to_temp(value, consume_fuel)?;
                             Op::return_slot(temp_slot)
                         }
                     }
@@ -1153,7 +968,7 @@ impl FuncTranslator {
                 self.move_operands_to_temp(usize::from(len_results), consume_fuel)?;
                 let result0 = self.stack.peek(usize::from(len_results));
                 let slot0 = self.layout.temp_to_reg(result0.index())?;
-                Op::return_span(SlotSpan::new(slot0))
+                Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot0), len_results))
             }
         };
         let instr = self
@@ -1168,37 +983,19 @@ impl FuncTranslator {
         self.operands.extend(self.stack.peek_n(len));
     }
 
-    /// Encodes an [`Op::ReturnMany`] for `len` values.
-    ///
-    /// # Panics
-    ///
-    /// If `len` is not greater than or equal to 4.
+    /// Encodes an [`Op::ReturnSpan`] for `len` values.
     fn encode_return_many(
         &mut self,
         len: u16,
         consume_fuel_instr: Option<Instr>,
     ) -> Result<Instr, Error> {
-        self.peek_operands_into_buffer(usize::from(len));
-        if let Some(values) = Self::try_form_regspan_of(&self.operands, &self.layout)? {
-            let values = BoundedSlotSpan::new(values, len);
-            return self.instrs.push_instr(
-                Op::return_span(values),
-                consume_fuel_instr,
-                FuelCostsProvider::base,
-            );
-        }
-        let [v0, v1, v2, rest @ ..] = &self.operands[..] else {
-            unreachable!("encode_return_many (pre-condition): len >= 4")
-        };
-        let v0 = self.layout.operand_to_reg(*v0)?;
-        let v1 = self.layout.operand_to_reg(*v1)?;
-        let v2 = self.layout.operand_to_reg(*v2)?;
+        let values = self.move_operands_to_temp(usize::from(len), consume_fuel_instr)?;
+        let values = BoundedSlotSpan::new(values, len);
         let return_instr = self.instrs.push_instr(
-            Op::return_many_ext(v0, v1, v2),
+            Op::return_span(values),
             consume_fuel_instr,
             FuelCostsProvider::base,
         )?;
-        self.instrs.encode_register_list(rest, &mut self.layout)?;
         Ok(return_instr)
     }
 
@@ -2450,7 +2247,13 @@ impl FuncTranslator {
     /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_binop128(
         &mut self,
-        make_instr: fn(results: [Slot; 2], lhs_lo: Slot) -> Op,
+        make_instr: fn(
+            results: FixedSlotSpan<2>,
+            lhs_lo: Slot,
+            lhs_hi: Slot,
+            rhs_lo: Slot,
+            rhs_hi: Slot,
+        ) -> Op,
         const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -2473,19 +2276,21 @@ impl FuncTranslator {
             self.stack.push_immediate(result_hi)?;
             return Ok(());
         }
-        let rhs_lo = self.layout.operand_to_reg(rhs_lo)?;
-        let rhs_hi = self.layout.operand_to_reg(rhs_hi)?;
-        let lhs_lo = self.layout.operand_to_reg(lhs_lo)?;
-        let lhs_hi = self.layout.operand_to_reg(lhs_hi)?;
+        let rhs_lo = self.copy_if_immediate(rhs_lo)?;
+        let rhs_hi = self.copy_if_immediate(rhs_hi)?;
+        let lhs_lo = self.copy_if_immediate(lhs_lo)?;
+        let lhs_hi = self.copy_if_immediate(lhs_hi)?;
         let result_lo = self.stack.push_temp(ValType::I64, None)?;
         let result_hi = self.stack.push_temp(ValType::I64, None)?;
         let result_lo = self.layout.temp_to_reg(result_lo)?;
         let result_hi = self.layout.temp_to_reg(result_hi)?;
+        let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
+        };
         self.push_instr(
-            make_instr([result_lo, result_hi], lhs_lo),
+            make_instr(results, lhs_lo, lhs_hi, rhs_lo, rhs_hi),
             FuelCostsProvider::base,
         )?;
-        self.push_param(Op::slot3_ext(lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
 
