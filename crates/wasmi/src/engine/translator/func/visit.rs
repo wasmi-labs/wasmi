@@ -1186,7 +1186,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_shr_u(&mut self) -> Self::Output {
-        self.translate_shift::<i32>(
+        self.translate_shift::<u32>(
             Op::u32_shr_sss,
             Op::u32_shr_ssi,
             Op::u32_shr_sis,
