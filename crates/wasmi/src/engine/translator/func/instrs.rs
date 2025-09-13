@@ -8,7 +8,7 @@ use crate::{
             TryIntoCmpSelectInstr as _,
             UpdateBranchOffset as _,
         },
-        func::{Operand, Stack, StackLayout, StackSpace},
+        func::{Stack, StackLayout, StackSpace},
         relink_result::RelinkResult,
         utils::{BumpFuelConsumption as _, Instr},
     },
@@ -288,60 +288,6 @@ impl InstrEncoder {
         let fuel_consumed = f(fuel_costs);
         self.get_mut(consume_fuel)
             .bump_fuel_consumption(fuel_consumed)?;
-        Ok(())
-    }
-
-    /// Encode the top-most `len` operands on the stack as register list.
-    ///
-    /// # Note
-    ///
-    /// This is used for the following n-ary instructions:
-    ///
-    /// - [`Op::ReturnMany`]
-    /// - [`Op::CopyMany`]
-    /// - [`Op::CallInternal`]
-    /// - [`Op::CallImported`]
-    /// - [`Op::CallIndirect`]
-    /// - [`Op::ReturnCallInternal`]
-    /// - [`Op::ReturnCallImported`]
-    /// - [`Op::ReturnCallIndirect`]
-    pub fn encode_register_list(
-        &mut self,
-        operands: &[Operand],
-        layout: &mut StackLayout,
-    ) -> Result<(), Error> {
-        let mut remaining = operands;
-        let mut operand_to_reg =
-            |operand: &Operand| -> Result<Slot, Error> { layout.operand_to_reg(*operand) };
-        let instr = loop {
-            match remaining {
-                [] => return Ok(()),
-                [v0] => {
-                    let v0 = operand_to_reg(v0)?;
-                    break Op::slot(v0);
-                }
-                [v0, v1] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    break Op::slot2_ext(v0, v1);
-                }
-                [v0, v1, v2] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    let v2 = operand_to_reg(v2)?;
-                    break Op::slot3_ext(v0, v1, v2);
-                }
-                [v0, v1, v2, rest @ ..] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    let v2 = operand_to_reg(v2)?;
-                    let instr = Op::slot_list_ext(v0, v1, v2);
-                    self.push_param(instr);
-                    remaining = rest;
-                }
-            };
-        };
-        self.push_param(instr);
         Ok(())
     }
 
