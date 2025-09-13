@@ -13,7 +13,6 @@ use crate::{
         utils::{BumpFuelConsumption as _, Instr},
     },
     ir::{BranchOffset, Op, Slot},
-    module::ModuleHeader,
     Engine,
     Error,
     ValType,
@@ -87,10 +86,7 @@ impl InstrEncoder {
             return Ok(None);
         };
         let base_costs = fuel_costs.base();
-        let Ok(base_costs) = u32::try_from(base_costs) else {
-            panic!("out of  bounds base fuel costs: {base_costs}");
-        };
-        let instr = self.push_instr_impl(Op::consume_fuel(base_costs))?;
+        let instr = self.push_instr_impl(Op::consume_fuel(base_costs.into()))?;
         Ok(Some(instr))
     }
 
@@ -124,15 +120,10 @@ impl InstrEncoder {
     ///
     /// If `instr` or `new_instr` are [`Op`] parameters.
     pub fn try_replace_instr(&mut self, instr: Instr, new_instr: Op) -> Result<bool, Error> {
-        debug_assert!(
-            !new_instr.is_instruction_parameter(),
-            "parameter: {new_instr:?}"
-        );
         let Some(last_instr) = self.last_instr else {
             return Ok(false);
         };
         let replace = self.get_mut(instr);
-        debug_assert!(!replace.is_instruction_parameter(), "parameter: {instr:?}");
         if instr != last_instr {
             return Ok(false);
         }
@@ -269,9 +260,8 @@ impl InstrEncoder {
         &mut self,
         instr: Instr,
         offset: BranchOffset,
-        layout: &mut StackLayout,
     ) -> Result<(), Error> {
-        self.get_mut(instr).update_branch_offset(layout, offset)?;
+        self.get_mut(instr).update_branch_offset(offset)?;
         Ok(())
     }
 
