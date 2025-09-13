@@ -288,7 +288,7 @@ impl FuncTranslator {
     fn update_branch_offsets(&mut self) -> Result<(), Error> {
         for (user, offset) in self.labels.resolved_users() {
             self.instrs
-                .update_branch_offset(user, offset?, &mut self.layout)?;
+                .update_branch_offset(user, offset?)?;
         }
         Ok(())
     }
