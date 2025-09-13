@@ -166,6 +166,8 @@ impl_encode_using! {
     Sign<f32> as bool = Sign::is_positive,
     Sign<f64> as bool = Sign::is_positive,
     SlotSpan as Slot = SlotSpan::head,
+    NonZero<i32> as i32 = NonZero::get,
+    NonZero<i64> as i64 = NonZero::get,
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
     TrapCode as u8 = |code: TrapCode| -> u8 { code as _ },

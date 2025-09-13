@@ -1186,32 +1186,28 @@ impl BinaryOpKind {
                 | Self::I32Sub
                 | Self::I32Mul
                 | Self::S32Div
-                | Self::U32Div
                 | Self::S32Rem
-                | Self::U32Rem
                 | Self::I32BitAnd
                 | Self::I32BitOr
                 | Self::I32BitXor
                 | Self::I32Shl
                 | Self::S32Shr
-                | Self::U32Shr
                 | Self::I32Rotl
                 | Self::I32Rotr => FieldTy::I32,
+                | Self::U32Div | Self::U32Rem | Self::U32Shr => FieldTy::U32,
                 | Self::I64Add
                 | Self::I64Sub
                 | Self::I64Mul
                 | Self::S64Div
-                | Self::U64Div
                 | Self::S64Rem
-                | Self::U64Rem
                 | Self::I64BitAnd
                 | Self::I64BitOr
                 | Self::I64BitXor
                 | Self::I64Shl
                 | Self::S64Shr
-                | Self::U64Shr
                 | Self::I64Rotl
                 | Self::I64Rotr => FieldTy::I64,
+                | Self::U64Div | Self::U64Rem | Self::U64Shr => FieldTy::U64,
                 | Self::F32Add
                 | Self::F32Sub
                 | Self::F32Mul
@@ -1245,7 +1241,8 @@ impl BinaryOpKind {
                 | Self::I32Shl | Self::S32Shr | Self::U32Shr | Self::I32Rotl | Self::I32Rotr => {
                     FieldTy::U8
                 }
-                | Self::S32Div | Self::U32Div | Self::S32Rem | Self::U32Rem => FieldTy::NonZeroU32,
+                | Self::S32Div | Self::S32Rem => FieldTy::NonZeroI32,
+                | Self::U32Div | Self::U32Rem => FieldTy::NonZeroU32,
                 | Self::I64Add
                 | Self::I64Sub
                 | Self::I64Mul
@@ -1255,7 +1252,8 @@ impl BinaryOpKind {
                 | Self::I64Shl | Self::S64Shr | Self::U64Shr | Self::I64Rotl | Self::I64Rotr => {
                     FieldTy::U8
                 }
-                | Self::S64Div | Self::U64Div | Self::S64Rem | Self::U64Rem => FieldTy::NonZeroU64,
+                | Self::S64Div | Self::S64Rem => FieldTy::NonZeroI64,
+                | Self::U64Div | Self::U64Rem => FieldTy::NonZeroU64,
                 | Self::F32Add
                 | Self::F32Sub
                 | Self::F32Mul
@@ -1554,6 +1552,8 @@ pub enum FieldTy {
     I64,
     F32,
     F64,
+    NonZeroI32,
+    NonZeroI64,
     NonZeroU32,
     NonZeroU64,
     SignF32,
@@ -1597,6 +1597,8 @@ impl Display for FieldTy {
             Self::I64 => "i64",
             Self::F32 => "f32",
             Self::F64 => "f64",
+            Self::NonZeroI32 => "NonZero<i32>",
+            Self::NonZeroI64 => "NonZero<i64>",
             Self::NonZeroU32 => "NonZero<u32>",
             Self::NonZeroU64 => "NonZero<u64>",
             Self::SignF32 => "Sign<f32>",
