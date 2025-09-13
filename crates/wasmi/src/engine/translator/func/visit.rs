@@ -1962,7 +1962,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index = self.stack.pop();
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
-        let index = self.make_index(index, index_ty)?;
+        let index = self.make_index32_or_copy(index, index_ty)?;
         self.push_instr_with_result(
             item_ty,
             |result| match index {
@@ -1981,11 +1981,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
         let (index, value) = self.stack.pop2();
-        let index = self.make_index32(index, index_ty)?;
-        let value = self.layout.operand_to_reg(value)?;
-        let instr = match index {
-            Input::Slot(index) => Op::table_set_ss(index, value, table),
-            Input::Immediate(index) => Op::table_set_si(value, index, table),
+        let index = self.make_index32_or_copy(index, index_ty)?;
+        let value =
+            self.make_input(value, |_this, value| Ok(Input::Immediate(u64::from(value))))?;
+        let instr = match (index, value) {
+            (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(index, value, table),
+            (Input::Slot(index), Input::Immediate(value)) => Op::table_set_si(index, value, table),
+            (Input::Immediate(index), Input::Slot(value)) => Op::table_set_is(index, value, table),
+            (Input::Immediate(index), Input::Immediate(value)) => {
+                Op::table_set_ii(index, value, table)
+            }
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
         Ok(())
