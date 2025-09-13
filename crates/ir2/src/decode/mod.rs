@@ -130,6 +130,8 @@ impl_decode_using! {
     Sign<f32> as bool = Sign::new,
     Sign<f64> as bool = Sign::new,
     SlotSpan as Slot = SlotSpan::new,
+    NonZero<i32> as i32 = |value| unsafe { NonZero::new_unchecked(value) },
+    NonZero<i64> as i64 = |value| unsafe { NonZero::new_unchecked(value) },
     NonZero<u32> as u32 = |value| unsafe { NonZero::new_unchecked(value) },
     NonZero<u64> as u64 = |value| unsafe { NonZero::new_unchecked(value) },
     TrapCode as u8 = |code: u8| -> TrapCode {
