@@ -2123,7 +2123,7 @@ impl FuncTranslator {
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
     fn translate_load<T: op::LoadOperator>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg);
+        let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
         let ptr = match ptr {
             Operand::Local(ptr) => self.layout.local_to_reg(ptr.local_index())?,
@@ -2185,6 +2185,7 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
+        let (memory, offset) = Self::decode_memarg(memarg)?;
         todo!()
     }
 
@@ -2193,9 +2194,9 @@ impl FuncTranslator {
     /// # Panics
     ///
     /// If the [`MemArg`] offset is not 32-bit.
-    fn decode_memarg(memarg: MemArg) -> (index::Memory, u64) {
-        let memory = index::Memory::from(memarg.memory);
-        (memory, memarg.offset)
+    fn decode_memarg(memarg: MemArg) -> Result<(index::Memory, u64), Error> {
+        let memory = index::Memory::try_from(memarg.memory)?;
+        Ok((memory, memarg.offset))
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
@@ -2273,6 +2274,7 @@ impl FuncTranslator {
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
+        debug_assert_eq!(results.to_array(), [result_lo, result_hi]);
         self.push_instr(
             make_instr(results, lhs_lo, lhs_hi, rhs_lo, rhs_hi),
             FuelCostsProvider::base,
