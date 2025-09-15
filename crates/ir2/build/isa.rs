@@ -860,8 +860,6 @@ fn add_simd_binary_ops(isa: &mut Isa) {
         BinaryOpKind::U16x8Le,
         BinaryOpKind::U32x4Lt,
         BinaryOpKind::U32x4Le,
-        BinaryOpKind::U64x2Lt,
-        BinaryOpKind::U64x2Le,
         // Float Comparisons
         BinaryOpKind::F32x4Eq,
         BinaryOpKind::F32x4NotEq,
