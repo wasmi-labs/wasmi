@@ -164,7 +164,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm ternary instruction.
     fn translate_simd_ternary(
         &mut self,
-        make_instr: fn(result: Slot, a: Slot, b: Slot) -> Op,
+        make_instr: fn(result: Slot, a: Slot, b: Slot, c: Slot) -> Op,
         const_eval: fn(lhas: V128, b: V128, c: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -176,15 +176,14 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_reg(a)?;
-        let rhs = self.layout.operand_to_reg(b)?;
-        let selector = self.layout.operand_to_reg(c)?;
+        let lhs = self.copy_if_immediate(a)?;
+        let rhs = self.copy_if_immediate(b)?;
+        let selector = self.copy_if_immediate(c)?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| make_instr(result, lhs, rhs),
+            |result| make_instr(result, lhs, rhs, selector),
             FuelCostsProvider::simd,
         )?;
-        self.push_param(Op::slot(selector))?;
         Ok(())
     }
 
