@@ -97,31 +97,17 @@ impl FuncTranslator {
             return Ok(());
         }
         let input = self.layout.operand_to_reg(input)?;
-        let value =
-            self.make_input::<T::Immediate>(value, |this, value| {
-                match T::value_to_imm(T::Item::from(value)) {
-                    Some(imm) => Ok(Input::Immediate(imm)),
-                    None => {
-                        let imm = this.layout.const_to_reg(value)?;
-                        Ok(Input::Slot(imm))
-                    }
-                }
-            })?;
-        let param = match value {
-            Input::Slot(value) => Some(Op::slot(value)),
-            Input::Immediate(value) => T::replace_lane_imm_param(value),
-        };
+        let value = self.make_input::<T::Immediate>(value, |_this, value| {
+            Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
+        })?;
         self.push_instr_with_result(
             <T::Item as Typed>::TY,
             |result| match value {
-                Input::Slot(_) => T::replace_lane(result, input, lane),
-                Input::Immediate(value) => T::replace_lane_imm(result, input, lane, value),
+                Input::Slot(value) => T::replace_lane_sss(result, input, lane, value),
+                Input::Immediate(value) => T::replace_lane_ssi(result, input, lane, value),
             },
             FuelCostsProvider::simd,
         )?;
-        if let Some(param) = param {
-            self.push_param(param)?;
-        }
         Ok(())
     }
 
