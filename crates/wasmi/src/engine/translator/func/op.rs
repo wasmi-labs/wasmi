@@ -1,6 +1,7 @@
 use crate::{
     engine::translator::utils::{ToBits, Wrap},
     ir::{index::Memory, Address, Offset16, Op, Slot},
+    ValType,
 };
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
@@ -195,5 +196,163 @@ impl_store_wrap! {
         fn store_ii = Op::i64_store32_ii;
         fn store_mem0_offset16_ss = Op::i64_store32_mem0_offset16_ss;
         fn store_mem0_offset16_si = Op::i64_store32_mem0_offset16_si;
+    }
+}
+
+/// Trait implemented by all Wasm operators that can be translated as load extend instructions.
+pub trait LoadOperator {
+    /// The type of the loaded value.
+    const LOADED_TY: ValType;
+
+    fn load_ss(result: Slot, ptr: Slot, offset: u64, memory: Memory) -> Op;
+    fn load_si(_address: Address, _memory: Memory) -> Option<impl FnOnce(Slot) -> Op> {
+        <Option<fn(Slot) -> Op>>::None
+    }
+    fn load_mem0_offset16_ss(result: Slot, ptr: Slot, offset: Offset16) -> Op;
+}
+
+macro_rules! impl_load_extend {
+    ( $(
+        impl LoadOperator for $name:ident {
+            const LOADED_TY: ValType = $loaded_ty:expr;
+
+            fn load_ss = $store_ss:expr;
+            $( fn load_si = $store_si:expr; )?
+            fn load_mem0_offset16_ss = $store_mem0_offset16_ss:expr;
+        }
+    )* ) => {
+        $(
+            pub enum $name {}
+            impl LoadOperator for $name {
+                const LOADED_TY: ValType = $loaded_ty;
+
+                fn load_ss(result: Slot, ptr: Slot, offset: u64, memory: Memory) -> Op {
+                    $store_ss(result, ptr, offset, memory)
+                }
+
+                $(
+                    fn load_si(address: Address, memory: Memory) -> Option<impl FnOnce(Slot) -> Op> {
+                        Some(move |result| $store_si(result, address, memory))
+                    }
+                )?
+
+                fn load_mem0_offset16_ss(result: Slot, ptr: Slot, offset: Offset16) -> Op {
+                    $store_mem0_offset16_ss(result, ptr, offset)
+                }
+            }
+        )*
+    };
+}
+impl_load_extend! {
+    impl LoadOperator for I32Load {
+        const LOADED_TY: ValType = ValType::I32;
+
+        fn load_ss = Op::load32_ss;
+        fn load_si = Op::load32_si;
+        fn load_mem0_offset16_ss = Op::load32_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for I32Load8 {
+        const LOADED_TY: ValType = ValType::I32;
+
+        fn load_ss = Op::i32_load8_ss;
+        fn load_si = Op::i32_load8_si;
+        fn load_mem0_offset16_ss = Op::i32_load8_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for U32Load8 {
+        const LOADED_TY: ValType = ValType::I32;
+
+        fn load_ss = Op::u32_load8_ss;
+        fn load_si = Op::u32_load8_si;
+        fn load_mem0_offset16_ss = Op::u32_load8_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for I32Load16 {
+        const LOADED_TY: ValType = ValType::I32;
+
+        fn load_ss = Op::i32_load16_ss;
+        fn load_si = Op::i32_load16_si;
+        fn load_mem0_offset16_ss = Op::i32_load16_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for U32Load16 {
+        const LOADED_TY: ValType = ValType::I32;
+
+        fn load_ss = Op::u32_load16_ss;
+        fn load_si = Op::u32_load16_si;
+        fn load_mem0_offset16_ss = Op::u32_load16_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for I64Load {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::load64_ss;
+        fn load_si = Op::load64_si;
+        fn load_mem0_offset16_ss = Op::load64_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for I64Load8 {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::i64_load8_ss;
+        fn load_si = Op::i64_load8_si;
+        fn load_mem0_offset16_ss = Op::i64_load8_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for U64Load8 {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::u64_load8_ss;
+        fn load_si = Op::u64_load8_si;
+        fn load_mem0_offset16_ss = Op::u64_load8_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for I64Load16 {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::i64_load16_ss;
+        fn load_si = Op::i64_load16_si;
+        fn load_mem0_offset16_ss = Op::i64_load16_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for U64Load16 {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::u64_load16_ss;
+        fn load_si = Op::u64_load16_si;
+        fn load_mem0_offset16_ss = Op::u64_load16_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for I64Load32 {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::i64_load32_ss;
+        fn load_si = Op::i64_load32_si;
+        fn load_mem0_offset16_ss = Op::i64_load32_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for U64Load32 {
+        const LOADED_TY: ValType = ValType::I64;
+
+        fn load_ss = Op::u64_load32_ss;
+        fn load_si = Op::u64_load32_si;
+        fn load_mem0_offset16_ss = Op::u64_load32_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for F32Load {
+        const LOADED_TY: ValType = ValType::F32;
+
+        fn load_ss = Op::load32_ss;
+        fn load_si = Op::load32_si;
+        fn load_mem0_offset16_ss = Op::load32_mem0_offset16_ss;
+    }
+
+    impl LoadOperator for F64Load {
+        const LOADED_TY: ValType = ValType::F64;
+
+        fn load_ss = Op::load64_ss;
+        fn load_si = Op::load64_si;
+        fn load_mem0_offset16_ss = Op::load64_mem0_offset16_ss;
     }
 }
