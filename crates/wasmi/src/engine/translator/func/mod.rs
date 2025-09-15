@@ -2304,21 +2304,21 @@ impl FuncTranslator {
                 self.stack.push_immediate(result_hi)?;
                 return Ok(());
             }
-            (lhs, Operand::Immediate(rhs)) => {
-                let rhs = rhs.val();
-                if self.try_opt_i64_mul_wide_sx(lhs, rhs, signed)? {
+            (lhs, Operand::Immediate(rhs_imm)) => {
+                let rhs_val = rhs_imm.val();
+                if self.try_opt_i64_mul_wide_sx(lhs, rhs_val, signed)? {
                     return Ok(());
                 }
                 let lhs = self.layout.operand_to_reg(lhs)?;
-                let rhs = self.layout.const_to_reg(rhs)?;
+                let rhs = self.copy_if_immediate(rhs)?;
                 (lhs, rhs)
             }
-            (Operand::Immediate(lhs), rhs) => {
-                let lhs = lhs.val();
-                if self.try_opt_i64_mul_wide_sx(rhs, lhs, signed)? {
+            (Operand::Immediate(lhs_imm), rhs) => {
+                let lhs_val = lhs_imm.val();
+                if self.try_opt_i64_mul_wide_sx(rhs, lhs_val, signed)? {
                     return Ok(());
                 }
-                let lhs = self.layout.const_to_reg(lhs)?;
+                let lhs = self.copy_if_immediate(lhs)?;
                 let rhs = self.layout.operand_to_reg(rhs)?;
                 (lhs, rhs)
             }
