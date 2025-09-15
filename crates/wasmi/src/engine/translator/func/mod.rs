@@ -169,11 +169,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         self.update_branch_offsets()?;
-        finalize(CompiledFuncEntity::new(
-            frame_size,
-            self.instrs.drain(),
-            self.layout.consts(),
-        ));
+        finalize(CompiledFuncEntity::new(frame_size, self.instrs.drain()));
         Ok(self.into_allocations())
     }
 }
@@ -272,11 +268,7 @@ impl FuncTranslator {
     ///
     /// Returns `None` if the frame size is out of bounds.
     fn frame_size(&self) -> Option<u16> {
-        let frame_size = self
-            .stack
-            .max_height()
-            .checked_add(self.locals.len())?
-            .checked_add(self.layout.consts().len())?;
+        let frame_size = self.stack.max_height().checked_add(self.locals.len())?;
         u16::try_from(frame_size).ok()
     }
 

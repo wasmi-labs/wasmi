@@ -8,7 +8,7 @@
 use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
     collections::arena::{Arena, ArenaIndex},
-    core::{Fuel, FuelCostsProvider, UntypedVal},
+    core::{Fuel, FuelCostsProvider},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     errors::FuelError,
     ir::{index::InternalFunc, Op},
@@ -786,8 +786,6 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 pub struct CompiledFuncEntity {
     /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
     instrs: Pin<Box<[Op]>>,
-    /// The constant values local to the [`EngineFunc`].
-    consts: Pin<Box<[UntypedVal]>>,
     /// The number of stack slots used by the [`EngineFunc`] in total.
     ///
     /// # Note
@@ -804,13 +802,11 @@ impl CompiledFuncEntity {
     ///
     /// - If `instrs` is empty.
     /// - If `instrs` contains more than `i32::MAX` instructions.
-    pub fn new<I, C>(len_stack_slots: u16, instrs: I, consts: C) -> Self
+    pub fn new<I>(len_stack_slots: u16, instrs: I) -> Self
     where
         I: IntoIterator<Item = Op>,
-        C: IntoIterator<Item = UntypedVal>,
     {
         let instrs: Pin<Box<[Op]>> = Pin::new(instrs.into_iter().collect());
-        let consts: Pin<Box<[UntypedVal]>> = Pin::new(consts.into_iter().collect());
         assert!(
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
@@ -826,7 +822,6 @@ impl CompiledFuncEntity {
         );
         Self {
             instrs,
-            consts,
             len_stack_slots,
         }
     }
@@ -837,8 +832,6 @@ impl CompiledFuncEntity {
 pub struct CompiledFuncRef<'a> {
     /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
     instrs: Pin<&'a [Op]>,
-    /// The constant values local to the [`EngineFunc`].
-    consts: Pin<&'a [UntypedVal]>,
     /// The number of stack slots used by the [`EngineFunc`] in total.
     len_stack_slots: u16,
 }
@@ -848,7 +841,6 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
     fn from(func: &'a CompiledFuncEntity) -> Self {
         Self {
             instrs: func.instrs.as_ref(),
-            consts: func.consts.as_ref(),
             len_stack_slots: func.len_stack_slots,
         }
     }
@@ -865,11 +857,5 @@ impl<'a> CompiledFuncRef<'a> {
     #[inline]
     pub fn len_stack_slots(&self) -> u16 {
         self.len_stack_slots
-    }
-
-    /// Returns the function local constant values of the [`EngineFunc`].
-    #[inline]
-    pub fn consts(&self) -> &'a [UntypedVal] {
-        self.consts.get_ref()
     }
 }
