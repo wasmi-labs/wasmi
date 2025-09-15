@@ -36,15 +36,14 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let value = self.stack.pop();
-        let value: Input<TypedVal> = self.make_input(value, |_this, value| Ok(value))?;
+        let value = self.make_input(value, |_this, value| {
+            Ok(Input::Immediate(T::from(value).wrap().to_bits()))
+        })?;
         self.push_instr_with_result(
             ValType::V128,
             |result| match value {
-                Input::Slot(value) => make_instr_si(result, value),
-                Input::Immediate(value) => {
-                    let value = T::from(value).wrap().to_bits();
-                    make_instr_si(result, value)
-                }
+                Input::Slot(value) => make_instr_ss(result, value),
+                Input::Immediate(value) => make_instr_si(result, value),
             },
             FuelCostsProvider::simd,
         )?;
