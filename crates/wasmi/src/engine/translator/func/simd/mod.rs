@@ -243,8 +243,8 @@ impl FuncTranslator {
         ) -> Op,
         load_lane_mem0_offset16: fn(
             result: Slot,
-            address: Address,
-            memory: index::Memory,
+            ptr: Slot,
+            offset: Offset16,
             v128: Slot,
             lane: T::LaneIdx,
         ) -> Op,
