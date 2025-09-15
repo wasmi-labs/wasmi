@@ -2121,29 +2121,22 @@ impl FuncTranslator {
     /// - `{i32, i64, f32, f64}.load`
     /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
-    fn translate_load(
-        &mut self,
-        memarg: MemArg,
-        loaded_ty: ValType,
-        make_instr_ss: fn(result: Slot, ptr: Slot, offset: u64, memory: index::Memory) -> Op,
-        make_instr_si: impl Into<
-            Option<fn(result: Slot, address: Address, memory: index::Memory) -> Op>,
-        >,
-        make_instr_mem0_offset16_ss: fn(result: Slot, ptr: Slot, offset: Offset16) -> Op,
-    ) -> Result<(), Error> {
+    fn translate_load<T: op::LoadOperator>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
         let ptr = self.stack.pop();
         let ptr = match ptr {
+            Operand::Local(ptr) => self.layout.local_to_reg(ptr.local_index())?,
+            Operand::Temp(ptr) => self.layout.temp_to_reg(ptr.operand_index())?,
             Operand::Immediate(ptr) => {
                 let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
-                match make_instr_si.into() {
-                    Some(make_instr_si) => {
+                match T::load_si(address, memory) {
+                    Some(load_si) => {
                         self.push_instr_with_result(
-                            loaded_ty,
-                            |result| make_instr_si(result, address, memory),
+                            T::LOADED_TY,
+                            load_si,
                             FuelCostsProvider::load,
                         )?;
                         return Ok(());
@@ -2154,21 +2147,20 @@ impl FuncTranslator {
                     }
                 }
             }
-            ptr => self.layout.operand_to_reg(ptr)?,
         };
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_instr_with_result(
-                    loaded_ty,
-                    |result| make_instr_mem0_offset16_ss(result, ptr, offset),
+                    T::LOADED_TY,
+                    |result| T::load_mem0_offset16_ss(result, ptr, offset),
                     FuelCostsProvider::load,
                 )?;
                 return Ok(());
             }
         }
         self.push_instr_with_result(
-            loaded_ty,
-            |result| make_instr_ss(result, ptr, offset, memory),
+            T::LOADED_TY,
+            |result| T::load_ss(result, ptr, offset, memory),
             FuelCostsProvider::load,
         )?;
         Ok(())
