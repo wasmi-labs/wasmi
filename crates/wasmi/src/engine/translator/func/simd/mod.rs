@@ -280,9 +280,13 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(ptr: Slot, offset_lo: Offset64Lo) -> Op,
-        make_instr_offset8: fn(ptr: Slot, value: Slot, offset: Offset8, lane: T::LaneIdx) -> Op,
-        make_instr_at: fn(value: Slot, address: Address32) -> Op,
+        make_instr: fn(ptr: Slot, offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        make_instr_mem0_offset16: fn(
+            ptr: Slot,
+            offset: Offset16,
+            value: Slot,
+            lane: T::LaneIdx,
+        ) -> Op,
         translate_imm: fn(
             &mut Self,
             memarg: MemArg,
@@ -302,46 +306,24 @@ impl FuncTranslator {
                 //       lane value and translate as a more efficient non-SIMD operation.
                 return translate_imm(self, memarg, ptr, lane, V128::from(v128.val()));
             }
-            v128 => self.layout.operand_to_reg(v128)?,
+            Operand::Local(v128) => self.layout.local_to_reg(v128.local_index())?,
+            Operand::Temp(v128) => self.layout.temp_to_reg(v128.operand_index())?,
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
-        let (ptr, offset) = match ptr {
-            Operand::Immediate(ptr) => {
-                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_store_lane_at::<T>(
-                        memory,
-                        address,
-                        v128,
-                        lane,
-                        make_instr_at,
-                    );
-                }
-                // Case: we cannot use specialized encoding and thus have to fall back
-                //       to the general case where `ptr` is zero and `offset` stores the
-                //       `ptr+offset` address value.
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
+        let ptr = self.copy_if_immediate(ptr)?;
+        if memory.is_default() {
+            if let Ok(offset16) = Offset16::try_from(offset) {
+                self.push_instr(
+                    make_instr_mem0_offset16(ptr, offset16, v128, lane),
+                    FuelCostsProvider::store,
+                )?;
+                return Ok(());
             }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
-        };
-        if let Ok(Some(_)) =
-            self.translate_v128_store_lane_mem0(memory, ptr, offset, v128, lane, make_instr_offset8)
-        {
-            return Ok(());
         }
-        let (offset_hi, offset_lo) = Offset64::split(offset);
-        let instr = make_instr(ptr, offset_lo);
-        let param = Op::slot_and_offset_hi(v128, offset_hi);
-        let param2 = Op::lane_and_memory_index(lane, memory);
-        self.push_instr(instr, FuelCostsProvider::store)?;
-        self.push_param(param)?;
-        self.push_param(param2)?;
+        self.push_instr(
+            make_instr(ptr, offset, v128, memory, lane),
+            FuelCostsProvider::store,
+        )?;
         Ok(())
     }
 
