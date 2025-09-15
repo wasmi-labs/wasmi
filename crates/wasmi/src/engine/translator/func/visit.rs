@@ -572,7 +572,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .get_type_of_memory(MemoryIdx::from(mem))
             .index_ty()
             .ty();
-        let memory = index::Memory::from(mem);
+        let memory = index::Memory::try_from(mem)?;
         self.push_instr_with_result(
             index_ty,
             |result| Op::memory_size(result, memory),
@@ -588,7 +588,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .module
             .get_type_of_memory(MemoryIdx::from(mem))
             .index_ty();
-        let memory = index::Memory::from(mem);
+        let memory = index::Memory::try_from(mem)?;
         let delta = self.stack.pop();
         if let Operand::Immediate(delta) = delta {
             let delta = delta.val();
@@ -1698,7 +1698,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let memory = index::Memory::from(mem);
+        let memory = index::Memory::try_from(mem)?;
         let data = index::Data::from(data_index);
         let dst = self.copy_if_immediate(dst)?;
         let src = self.copy_if_immediate(src)?;
@@ -1724,8 +1724,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst_memory = index::Memory::from(dst_mem);
-        let src_memory = index::Memory::from(src_mem);
+        let dst_memory = index::Memory::try_from(dst_mem)?;
+        let src_memory = index::Memory::try_from(src_mem)?;
         let dst = self.copy_if_immediate(dst)?;
         let src = self.copy_if_immediate(src)?;
         let len = self.copy_if_immediate(len)?;
@@ -1740,7 +1740,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
-        let memory = index::Memory::from(mem);
+        let memory = index::Memory::try_from(mem)?;
         let dst = self.copy_if_immediate(dst)?;
         let len = self.copy_if_immediate(len)?;
         let value = self.copy_if_immediate(value)?;
