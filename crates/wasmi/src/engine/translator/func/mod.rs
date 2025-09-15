@@ -2185,6 +2185,19 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
+        self.encode_store::<T>(memarg, ptr, value)
+    }
+
+    fn encode_store<T: op::StoreOperator>(
+        &mut self,
+        memarg: MemArg,
+        ptr: Operand,
+        value: Operand,
+    ) -> Result<(), Error>
+    where
+        T::Value: Copy + From<TypedVal>,
+        T::Immediate: Copy,
+    {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         todo!()
     }
