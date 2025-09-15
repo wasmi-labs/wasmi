@@ -7,17 +7,15 @@ use crate::{
     core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
     engine::translator::{
         func::{utils::Input, Operand},
-        utils::{Instr, IntoShiftAmount, ToBits, Wrap},
+        utils::{IntoShiftAmount, ToBits, Wrap},
     },
     ir::{
         index::{self, Memory},
-        Address,
         Offset16,
         Op,
         Slot,
     },
     Error,
-    TrapCode,
     ValType,
     V128,
 };
@@ -325,40 +323,5 @@ impl FuncTranslator {
             FuelCostsProvider::store,
         )?;
         Ok(())
-    }
-
-    fn translate_v128_store_lane_at<T: IntoLaneIdx>(
-        &mut self,
-        memory: index::Memory,
-        address: Address32,
-        value: Slot,
-        lane: T::LaneIdx,
-        make_instr_at: fn(value: Slot, address: Address32) -> Op,
-    ) -> Result<(), Error> {
-        self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
-        self.push_param(Op::lane_and_memory_index(lane, memory))?;
-        Ok(())
-    }
-
-    fn translate_v128_store_lane_mem0<LaneType>(
-        &mut self,
-        memory: Memory,
-        ptr: Slot,
-        offset: u64,
-        value: Slot,
-        lane: LaneType,
-        make_instr_offset8: fn(Slot, Slot, Offset8, LaneType) -> Op,
-    ) -> Result<Option<Instr>, Error> {
-        if !memory.is_default() {
-            return Ok(None);
-        }
-        let Ok(offset8) = Offset8::try_from(offset) else {
-            return Ok(None);
-        };
-        let instr = self.push_instr(
-            make_instr_offset8(ptr, value, offset8, lane),
-            FuelCostsProvider::store,
-        )?;
-        Ok(Some(instr))
     }
 }
