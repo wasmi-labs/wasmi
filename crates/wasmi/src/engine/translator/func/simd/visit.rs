@@ -1,7 +1,7 @@
 use super::FuncTranslator;
 use crate::{
     core::{
-        simd::{self, ImmLaneIdx32},
+        simd::{self, ImmLaneIdx},
         FuelCostsProvider,
         TypedVal,
     },
@@ -275,8 +275,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i8x16_shuffle(&mut self, lanes: [u8; 16]) -> Self::Output {
         bail_unreachable!(self);
-        let selector: [ImmLaneIdx32; 16] = array::from_fn(|i| {
-            let Ok(lane) = ImmLaneIdx32::try_from(lanes[i]) else {
+        let selector: [ImmLaneIdx<32>; 16] = array::from_fn(|i| {
+            let Ok(lane) = <ImmLaneIdx<32>>::try_from(lanes[i]) else {
                 panic!("encountered out of bounds lane at index {i}: {}", lanes[i])
             };
             lane
@@ -289,9 +289,6 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         }
         let lhs = self.layout.operand_to_reg(lhs)?;
         let rhs = self.layout.operand_to_reg(rhs)?;
-        let selector = self
-            .layout
-            .const_to_reg(V128::from(u128::from_ne_bytes(lanes)))?;
         self.push_instr_with_result(
             ValType::V128,
             |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
