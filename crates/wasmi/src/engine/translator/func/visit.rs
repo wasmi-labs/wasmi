@@ -1267,7 +1267,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_shr_u(&mut self) -> Self::Output {
-        self.translate_shift::<i64>(
+        self.translate_shift::<u64>(
             Op::u64_shr_sss,
             Op::u64_shr_ssi,
             Op::u64_shr_sis,
