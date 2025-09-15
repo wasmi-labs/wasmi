@@ -266,7 +266,7 @@ impl FuncTranslator {
         ) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg);
+        let (memory, offset) = Self::decode_memarg(memarg)?;
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane: {lane}");
         };
@@ -320,7 +320,7 @@ impl FuncTranslator {
             }
             v128 => self.layout.operand_to_reg(v128)?,
         };
-        let (memory, offset) = Self::decode_memarg(memarg);
+        let (memory, offset) = Self::decode_memarg(memarg)?;
         let (ptr, offset) = match ptr {
             Operand::Immediate(ptr) => {
                 let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
