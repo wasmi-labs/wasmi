@@ -72,7 +72,7 @@ macro_rules! impl_replace_lane {
                     lane: <Self::Item as IntoLaneIdx>::LaneIdx,
                     value: Slot,
                 ) -> Op {
-                    $replace_lane_sss(result, input, lane, value)
+                    $replace_lane_sss(result, input, value, lane)
                 }
 
                 fn replace_lane_ssi(
@@ -81,7 +81,7 @@ macro_rules! impl_replace_lane {
                     lane: <Self::Item as IntoLaneIdx>::LaneIdx,
                     value: Self::Immediate,
                 ) -> Op {
-                    $replace_lane_ssi(result, input, lane, value)
+                    $replace_lane_ssi(result, input, value, lane)
                 }
             }
         )*
