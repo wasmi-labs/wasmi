@@ -1258,19 +1258,19 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_relaxed_madd(&mut self) -> Self::Output {
-        self.translate_simd_ternary(Op::f32x4_relaxed_madd, simd::f32x4_relaxed_madd)
+        self.translate_simd_ternary(Op::f32x4_relaxed_madd_sss, simd::f32x4_relaxed_madd)
     }
 
     fn visit_f32x4_relaxed_nmadd(&mut self) -> Self::Output {
-        self.translate_simd_ternary(Op::f32x4_relaxed_nmadd, simd::f32x4_relaxed_nmadd)
+        self.translate_simd_ternary(Op::f32x4_relaxed_nmadd_sss, simd::f32x4_relaxed_nmadd)
     }
 
     fn visit_f64x2_relaxed_madd(&mut self) -> Self::Output {
-        self.translate_simd_ternary(Op::f64x2_relaxed_madd, simd::f64x2_relaxed_madd)
+        self.translate_simd_ternary(Op::f64x2_relaxed_madd_sss, simd::f64x2_relaxed_madd)
     }
 
     fn visit_f64x2_relaxed_nmadd(&mut self) -> Self::Output {
-        self.translate_simd_ternary(Op::f64x2_relaxed_nmadd, simd::f64x2_relaxed_nmadd)
+        self.translate_simd_ternary(Op::f64x2_relaxed_nmadd_sss, simd::f64x2_relaxed_nmadd)
     }
 
     fn visit_i8x16_relaxed_laneselect(&mut self) -> Self::Output {
@@ -1311,14 +1311,14 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i16x8_relaxed_dot_i8x16_i7x16_s(&mut self) -> Self::Output {
         self.translate_simd_binary(
-            Op::i16x8_relaxed_dot_i8x16_i7x16_s,
+            Op::i16x8_relaxed_dot_i8x16_i7x16_sss,
             simd::i16x8_relaxed_dot_i8x16_i7x16_s,
         )
     }
 
     fn visit_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self) -> Self::Output {
         self.translate_simd_ternary(
-            Op::i32x4_relaxed_dot_i8x16_i7x16_add_s,
+            Op::i32x4_relaxed_dot_i8x16_i7x16_add_sss,
             simd::i32x4_relaxed_dot_i8x16_i7x16_add_s,
         )
     }
