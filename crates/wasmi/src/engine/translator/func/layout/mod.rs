@@ -1,8 +1,5 @@
-mod consts;
-
-use self::consts::{ConstRegistry, ConstRegistryIter};
 use super::{LocalIdx, Operand, OperandIdx, Reset};
-use crate::{core::UntypedVal, engine::TranslationError, ir::Slot, Error};
+use crate::{engine::TranslationError, ir::Slot, Error};
 
 #[cfg(doc)]
 use super::Stack;
@@ -12,14 +9,11 @@ use super::Stack;
 pub struct StackLayout {
     /// The number of locals registered to the function.
     len_locals: usize,
-    /// All function local constants.
-    consts: ConstRegistry,
 }
 
 impl Reset for StackLayout {
     fn reset(&mut self) {
         self.len_locals = 0;
-        self.consts.reset();
     }
 }
 
@@ -39,11 +33,7 @@ impl StackLayout {
     /// Returns `None` if the [`Slot`] is unknown to the [`Stack`].
     #[must_use]
     pub fn stack_space(&self, slot: Slot) -> StackSpace {
-        let index = i16::from(slot);
-        if index.is_negative() {
-            return StackSpace::Const;
-        }
-        let index = index as u16;
+        let index = u16::from(slot);
         if usize::from(index) < self.len_locals {
             return StackSpace::Local;
         }
@@ -58,7 +48,6 @@ impl StackLayout {
     ///
     /// - [`StackLayout::local_to_reg`]
     /// - [`StackLayout::temp_to_reg`]
-    /// - [`StackLayout::const_to_reg`]
     ///
     /// # Errors
     ///
@@ -67,7 +56,7 @@ impl StackLayout {
         match operand {
             Operand::Local(operand) => self.local_to_reg(operand.local_index()),
             Operand::Temp(operand) => self.temp_to_reg(operand.operand_index()),
-            Operand::Immediate(operand) => self.const_to_reg(operand.val()),
+            Operand::Immediate(_) => panic!("function local constants have been removed"), // TODO: remove
         }
     }
 
@@ -82,7 +71,7 @@ impl StackLayout {
             (u32::from(index) as usize) < self.len_locals,
             "out of bounds local operand index: {index:?}"
         );
-        let Ok(index) = i16::try_from(u32::from(index)) else {
+        let Ok(index) = u16::try_from(u32::from(index)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         Ok(Slot::from(index))
@@ -99,29 +88,10 @@ impl StackLayout {
         let Some(index) = index.checked_add(self.len_locals) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
-        let Ok(index) = i16::try_from(index) else {
+        let Ok(index) = u16::try_from(index) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         Ok(Slot::from(index))
-    }
-
-    /// Allocates a function local constant `value`.
-    ///
-    /// # Errors
-    ///
-    /// If too many function local constants have been allocated already.
-    #[inline]
-    pub fn const_to_reg(&mut self, value: impl Into<UntypedVal>) -> Result<Slot, Error> {
-        self.consts.alloc(value.into())
-    }
-
-    /// Returns an iterator yielding all function local constants.
-    ///
-    /// # Note
-    ///
-    /// The function local constant are yielded in reverse order of allocation.
-    pub fn consts(&self) -> ConstRegistryIter<'_> {
-        self.consts.iter()
     }
 }
 
@@ -130,8 +100,6 @@ impl StackLayout {
 pub enum StackSpace {
     /// Stack slot referring to a local variable.
     Local,
-    /// Stack slot referring to a function local constant value.
-    Const,
     /// Stack slot referring to a temporary stack operand.
     Temp,
 }
