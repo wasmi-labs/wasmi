@@ -62,6 +62,16 @@ macro_rules! define_index {
 }
 for_each_index!(define_index);
 
+impl TryFrom<u32> for Memory {
+    type Error = Error;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        u16::try_from(index)
+            .map_err(|_| Error::MemoryIndexOutOfBounds)
+            .map(Self::from)
+    }
+}
+
 impl TryFrom<u32> for Slot {
     type Error = Error;
 

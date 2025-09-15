@@ -9,6 +9,10 @@ pub enum Error {
     BranchOffsetOutOfBounds,
     /// Encountered when trying to create a [`BlockFuel`](crate::BlockFuel) from an out of bounds integer.
     BlockFuelOutOfBounds,
+    /// Encountered when trying to create a [`Memory`] from an out of bounds integer.
+    ///
+    /// [`Memory`]: crate::index::Memory
+    MemoryIndexOutOfBounds,
 }
 
 impl fmt::Display for Error {
@@ -17,6 +21,7 @@ impl fmt::Display for Error {
             Self::StackSlotOutOfBounds => "stack slot out of bounds",
             Self::BranchOffsetOutOfBounds => "branch offset out of bounds",
             Self::BlockFuelOutOfBounds => "block fuel out of bounds",
+            Self::MemoryIndexOutOfBounds => "memory index out of bounds",
         };
         f.write_str(s)
     }
