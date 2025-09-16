@@ -11,6 +11,7 @@ use crate::build::{
         StoreOp,
         TableGetOp,
         TableSetOp,
+        TernaryOp,
         UnaryOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
@@ -82,6 +83,25 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
         write!(
             f,
             "{ident_prefix}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ TernaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let kind = op.kind;
+        let ident = case.wrap(kind.ident());
+        let ident_prefix = case.wrap(kind.ident_prefix());
+        let result_suffix = case.wrap(OperandKind::Slot);
+        let a_suffix = SnakeCase(OperandKind::Slot);
+        let b_suffix = SnakeCase(OperandKind::Slot);
+        let c_suffix = SnakeCase(OperandKind::Slot);
+        write!(
+            f,
+            "{ident_prefix}{sep}{ident}_{result_suffix}{a_suffix}{b_suffix}{c_suffix}"
         )
     }
 }

@@ -18,6 +18,8 @@ use crate::build::{
         StoreOpKind,
         TableGetOp,
         TableSetOp,
+        TernaryOp,
+        TernaryOpKind,
         Ty,
         UnaryOp,
         UnaryOpKind,
@@ -889,6 +891,7 @@ fn add_simd_binary_ops(isa: &mut Isa) {
         BinaryOpKind::U8x16Max,
         BinaryOpKind::U8x16Avgr,
         // i16x8 Ops
+        BinaryOpKind::S16x8RelaxedDotI8x16I7x16,
         BinaryOpKind::S16x8Q15MulrSat,
         BinaryOpKind::S16x8NarrowI32x4,
         BinaryOpKind::U16x8NarrowI32x4,
@@ -1113,14 +1116,14 @@ fn add_simd_store_ops(isa: &mut Isa) {
 
 fn add_relaxed_simd_ops(isa: &mut Isa) {
     let kinds = [
-        BinaryOpKind::S16x8RelaxedDotI8x16I7x16,
-        BinaryOpKind::S32x4RelaxedDotI8x16I7x16Add,
-        BinaryOpKind::F32x4RelaxedMadd,
-        BinaryOpKind::F32x4RelaxedNmadd,
-        BinaryOpKind::F64x2RelaxedMadd,
-        BinaryOpKind::F64x2RelaxedNmadd,
+        TernaryOpKind::I32x4RelaxedDotI8x16I7x16Add,
+        TernaryOpKind::F32x4RelaxedMadd,
+        TernaryOpKind::F32x4RelaxedNmadd,
+        TernaryOpKind::F64x2RelaxedMadd,
+        TernaryOpKind::F64x2RelaxedNmadd,
+        TernaryOpKind::V128Bitselect,
     ];
     for kind in kinds {
-        isa.push_op(BinaryOp::new(kind, OperandKind::Slot, OperandKind::Slot));
+        isa.push_op(TernaryOp::new(kind));
     }
 }

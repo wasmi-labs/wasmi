@@ -10,6 +10,7 @@ use crate::build::{
         StoreOp,
         TableGetOp,
         TableSetOp,
+        TernaryOp,
         UnaryOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
@@ -80,6 +81,12 @@ impl Display for DisplayResultMut<&'_ UnaryOp> {
 }
 
 impl Display for DisplayResultMut<&'_ BinaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.display_match_arm(f)
+    }
+}
+
+impl Display for DisplayResultMut<&'_ TernaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display_match_arm(f)
     }

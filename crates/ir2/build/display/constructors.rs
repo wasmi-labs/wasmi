@@ -12,6 +12,7 @@ use crate::build::{
         StoreOp,
         TableGetOp,
         TableSetOp,
+        TernaryOp,
         UnaryOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
@@ -101,6 +102,7 @@ macro_rules! impl_display_constructor {
 impl_display_constructor! {
     UnaryOp,
     BinaryOp,
+    TernaryOp,
     CmpBranchOp,
     CmpSelectOp,
     LoadOp,

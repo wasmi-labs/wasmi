@@ -14,6 +14,7 @@ use self::op::{
     StoreOp_S,
     TableGet,
     TableSet,
+    TernaryOp,
     UnaryOp,
 };
 #[cfg(feature = "simd")]
