@@ -16,6 +16,7 @@ use crate::build::{
         StoreOp,
         TableGetOp,
         TableSetOp,
+        TernaryOp,
         UnaryOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
@@ -71,6 +72,17 @@ impl Display for DisplayDecode<&'_ BinaryOp> {
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = BinaryOp<{lhs}, {rhs}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ TernaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let a = op.a_field().ty;
+        let b = op.b_field().ty;
+        let c = op.c_field().ty;
+        writeln!(f, "pub type {camel_ident} = TernaryOp<{a}, {b}, {c}>;")
     }
 }
 

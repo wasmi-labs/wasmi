@@ -47,6 +47,32 @@ where
 }
 
 #[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
+pub struct TernaryOp<A, B, C> {
+    pub result: Slot,
+    pub a: A,
+    pub b: B,
+    pub c: C,
+}
+
+#[cfg(feature = "simd")]
+impl<A, B, C> Decode for TernaryOp<A, B, C>
+where
+    A: Decode,
+    B: Decode,
+    C: Decode,
+{
+    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
+        Self {
+            result: Decode::decode(decoder),
+            a: Decode::decode(decoder),
+            b: Decode::decode(decoder),
+            c: Decode::decode(decoder),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct CmpBranchOp<Lhs, Rhs> {
     pub lhs: Lhs,
     pub rhs: Rhs,

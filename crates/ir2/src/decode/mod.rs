@@ -20,6 +20,7 @@ use self::op::{
 use self::op::{
     StoreLaneOpMem0Offset16_S,
     StoreLaneOp_S,
+    TernaryOp,
     V128LoadLaneOpMem0Offset16_Ss,
     V128LoadLaneOp_Ss,
     V128ReplaceLaneOp,

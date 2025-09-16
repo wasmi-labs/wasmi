@@ -306,8 +306,13 @@ define_ident!(
     Store32Lane: store32_lane,
     Store64Lane: store64_lane,
 
+    Bitselect: bitselect,
     RelaxedDotI8x16I7x16: relaxed_dot_i8x16_i7x16,
     RelaxedDotI8x16I7x16Add: relaxed_dot_i8x16_i7x16_add,
     RelaxedMadd: relaxed_madd,
     RelaxedNmadd: relaxed_nmadd,
+
+    A: a,
+    B: b,
+    C: c,
 );

@@ -11,6 +11,7 @@ use crate::build::{
         StoreOp,
         TableGetOp,
         TableSetOp,
+        TernaryOp,
         UnaryOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
@@ -53,10 +54,9 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
         let kind = op.kind;
         let ident = case.wrap(kind.ident());
         let sep = case.wrap(Sep);
-        let ident_prefix = DisplayConcat((case.wrap(kind.result_ty()), sep));
+        let ident_prefix = DisplayConcat((case.wrap(kind.ident_prefix()), sep));
         let ident_suffix = kind
-            .is_conversion()
-            .then_some(kind.value_ty())
+            .ident_suffix()
             .map(|i| (sep, case.wrap(i)))
             .map(DisplayConcat)
             .display_maybe();
@@ -82,6 +82,25 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
         write!(
             f,
             "{ident_prefix}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ TernaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let kind = op.kind;
+        let ident = case.wrap(kind.ident());
+        let ident_prefix = case.wrap(kind.ident_prefix());
+        let result_suffix = case.wrap(OperandKind::Slot);
+        let a_suffix = SnakeCase(OperandKind::Slot);
+        let b_suffix = SnakeCase(OperandKind::Slot);
+        let c_suffix = SnakeCase(OperandKind::Slot);
+        write!(
+            f,
+            "{ident_prefix}{sep}{ident}_{result_suffix}{a_suffix}{b_suffix}{c_suffix}"
         )
     }
 }
