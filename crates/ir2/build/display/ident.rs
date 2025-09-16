@@ -54,10 +54,9 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
         let kind = op.kind;
         let ident = case.wrap(kind.ident());
         let sep = case.wrap(Sep);
-        let ident_prefix = DisplayConcat((case.wrap(kind.result_ty()), sep));
+        let ident_prefix = DisplayConcat((case.wrap(kind.ident_prefix()), sep));
         let ident_suffix = kind
-            .is_conversion()
-            .then_some(kind.value_ty())
+            .ident_suffix()
             .map(|i| (sep, case.wrap(i)))
             .map(DisplayConcat)
             .display_maybe();
