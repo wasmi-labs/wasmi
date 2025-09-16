@@ -30,7 +30,7 @@ use self::{
         StackAllocations,
         TempOperand,
     },
-    utils::{Input, Reset, ReusableAllocations},
+    utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
 };
 use crate::{
     core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
@@ -911,11 +911,11 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
+            let Some(_results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
             else {
                 panic!("must have frame results since `br_table` requires to copy values");
             };
-            let offset = self
+            let _offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_instr())?;
             // self.instrs
@@ -2097,7 +2097,7 @@ impl FuncTranslator {
         // Need to replace `cmp` instruction result register since it might
         // have been misaligned if `lhs` originally referred to the zero operand.
         let new_result = self.layout.temp_to_reg(result_idx)?;
-        let Some(negated) = negated.replace_cmp_result(new_result) else {
+        let Some(negated) = negated.update_result_slot(new_result) else {
             unreachable!("`negated` has been asserted as `cmp` instruction");
         };
         if !self.instrs.try_replace_instr(last_instr, negated)? {
@@ -2190,14 +2190,14 @@ impl FuncTranslator {
     fn encode_store<T: op::StoreOperator>(
         &mut self,
         memarg: MemArg,
-        ptr: Operand,
-        value: Operand,
+        _ptr: Operand,
+        _value: Operand,
     ) -> Result<(), Error>
     where
         T::Value: Copy + From<TypedVal>,
         T::Immediate: Copy,
     {
-        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let (_memory, _offset) = Self::decode_memarg(memarg)?;
         todo!()
     }
 
