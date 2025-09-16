@@ -1,4 +1,4 @@
-use crate::ir::Slot;
+use crate::ir::{Op, Slot};
 
 /// Bail out early in case the current code is unreachable.
 ///
@@ -55,4 +55,26 @@ pub enum Input<T> {
     Slot(Slot),
     /// A 16-bit encoded immediate value operand.
     Immediate(T),
+}
+
+/// Extension trait to update the result [`Slot`] of an [`Op`].
+pub trait UpdateResultSlot: Sized {
+    /// Updates the result [`Slot`] of `self` if possible.
+    ///
+    /// # Note
+    ///
+    /// - Returns `Some` resulting `Self` if the update was successful.
+    /// - Returns `None` if the result update could not be applied.
+    fn update_result_slot(&self, new_result: Slot) -> Option<Self>;
+}
+
+impl UpdateResultSlot for Op {
+    fn update_result_slot(&self, new_result: Slot) -> Option<Self> {
+        let mut op = *self;
+        let Some(result_mut) = op.result_mut() else {
+            return None;
+        };
+        *result_mut = new_result;
+        Some(op)
+    }
 }
