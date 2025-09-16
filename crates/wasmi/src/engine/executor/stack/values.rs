@@ -224,19 +224,11 @@ impl ValueStack {
         on_resize: impl FnMut(&mut Self),
     ) -> Result<(FrameParams, StackOffsets), TrapCode> {
         let len_stack_slots = func.len_stack_slots();
-        let len_consts = func.consts().len();
         let len = self.len();
-        let mut spare = self
-            .extend_by(len_stack_slots as usize, on_resize)?
-            .iter_mut();
-        (&mut spare)
-            .zip(func.consts())
-            .for_each(|(uninit, const_value)| {
-                uninit.write(*const_value);
-            });
-        let params = FrameParams::new(spare.into_slice());
+        let spare = self.extend_by(len_stack_slots as usize, on_resize)?;
+        let params = FrameParams::new(spare);
         let frame = ValueStackOffset(len);
-        let base = ValueStackOffset(len + len_consts);
+        let base = ValueStackOffset(len);
         Ok((
             params,
             StackOffsets {
@@ -451,6 +443,6 @@ impl FrameSlots {
 
     /// Returns the underlying pointer offset by the [`Slot`] index.
     unsafe fn register_offset(&self, slot: Slot) -> *mut UntypedVal {
-        unsafe { self.ptr.offset(isize::from(i16::from(slot))) }
+        unsafe { self.ptr.add(usize::from(u16::from(slot))) }
     }
 }
