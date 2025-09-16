@@ -47,6 +47,7 @@ where
 }
 
 #[derive(Copy, Clone)]
+#[cfg(feature = "simd")]
 pub struct TernaryOp<A, B, C> {
     pub result: Slot,
     pub a: A,
@@ -54,6 +55,7 @@ pub struct TernaryOp<A, B, C> {
     pub c: C,
 }
 
+#[cfg(feature = "simd")]
 impl<A, B, C> Decode for TernaryOp<A, B, C>
 where
     A: Decode,
