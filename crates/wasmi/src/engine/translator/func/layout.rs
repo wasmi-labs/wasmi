@@ -103,7 +103,7 @@ impl StackLayout {
     /// # Errors
     ///
     /// If the forwarded method returned an error.
-    pub fn operand_to_reg(&mut self, operand: Operand) -> Result<Slot, Error> {
+    pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.local_to_reg(operand.local_index()),
             Operand::Temp(operand) => self.temp_to_reg(operand.operand_index()),
