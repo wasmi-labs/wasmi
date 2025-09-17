@@ -3,7 +3,7 @@ mod values;
 
 pub use self::{
     calls::{CallFrame, CallStack, StackOffsets},
-    values::{BaseValueStackOffset, FrameParams, FrameSlots, FrameValueStackOffset, ValueStack},
+    values::{BaseValueStackOffset, FrameSlots, FrameValueStackOffset, ValueStack},
 };
 use crate::{engine::StackConfig, Instance, TrapCode};
 
