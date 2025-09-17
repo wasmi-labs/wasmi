@@ -203,15 +203,6 @@ impl OpPos {
             }
         }
     }
-
-    /// Returns the absolute distance between `self` and `other`.
-    ///
-    /// - Returns `0` if `self == other`.
-    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
-    /// - etc..
-    pub fn distance(self, other: Self) -> u32 {
-        self.0.abs_diff(other.0)
-    }
 }
 
 /// Types that can be converted into bits.
