@@ -15,12 +15,54 @@ use crate::{
         },
         TranslationError,
     },
-    ir::{BranchOffset, Op, Slot},
+    ir::{self, BranchOffset, Encode as _, Op, Slot},
     Engine,
     Error,
     ValType,
 };
 use alloc::vec::{self, Vec};
+
+#[derive(Debug, Default)]
+#[expect(unused)]
+pub struct EncodedOps {
+    buffer: Vec<u8>,
+}
+
+impl ir::Encoder for EncodedOps {
+    type Pos = OpPos;
+    type Error = TranslationError;
+
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<Self::Pos, Self::Error> {
+        let pos = self.buffer.len();
+        self.buffer.extend(bytes);
+        Ok(OpPos::from(pos))
+    }
+
+    fn encode_op_code(&mut self, code: ir::OpCode) -> Result<Self::Pos, Self::Error> {
+        // Note: this implements encoding for indirect threading.
+        //
+        // For direct threading we need to know ahead of time about the
+        // function pointers of all operator execution handlers which
+        // are defined in the Wasmi executor and available to the translator.
+        u16::from(code).encode(self)
+    }
+
+    fn branch_offset(
+        &mut self,
+        _pos: Self::Pos,
+        _branch_offset: BranchOffset,
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
+
+    fn block_fuel(
+        &mut self,
+        _pos: Self::Pos,
+        _block_fuel: ir::BlockFuel,
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
+}
 
 /// Creates and encodes the buffer of encoded [`Op`]s for a function.
 #[derive(Debug, Default)]
