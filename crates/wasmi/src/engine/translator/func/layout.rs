@@ -103,6 +103,12 @@ impl StackLayout {
     /// # Errors
     ///
     /// If the forwarded method returned an error.
+    ///
+    /// # Panics
+    ///
+    /// If `operand` is an [`ImmediateOperand`].
+    ///
+    /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.local_to_slot(operand.local_index()),
