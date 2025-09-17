@@ -113,7 +113,9 @@ impl StackLayout {
         match operand {
             Operand::Local(operand) => self.local_to_slot(operand.local_index()),
             Operand::Temp(operand) => self.temp_to_slot(operand.operand_index()),
-            Operand::Immediate(_) => panic!("function local constants have been removed"), // TODO: remove
+            Operand::Immediate(operand) => {
+                panic!("cannot convert `ImmediateOperand` to stack `Slot` but got: {operand:?}")
+            }
         }
     }
 
