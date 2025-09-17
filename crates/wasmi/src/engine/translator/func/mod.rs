@@ -23,6 +23,7 @@ use self::{
         IfControlFrame,
         IfReachability,
         ImmediateOperand,
+        LocalOperand,
         LoopControlFrame,
         Operand,
         OperandIdx,
@@ -2111,18 +2112,122 @@ impl FuncTranslator {
         self.encode_store::<T>(memarg, ptr, value)
     }
 
+    /// Encodes a Wasm store operator to Wasmi bytecode.
     fn encode_store<T: op::StoreOperator>(
         &mut self,
         memarg: MemArg,
-        _ptr: Operand,
-        _value: Operand,
+        ptr: Operand,
+        value: Operand,
     ) -> Result<(), Error>
     where
         T::Value: Copy + From<TypedVal>,
         T::Immediate: Copy,
     {
-        let (_memory, _offset) = Self::decode_memarg(memarg)?;
-        todo!()
+        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let ptr = match ptr {
+            Operand::Local(ptr) => self.layout.local_to_reg(ptr)?,
+            Operand::Temp(ptr) => self.layout.temp_to_reg(ptr)?,
+            Operand::Immediate(ptr) => {
+                return self.encode_store_ix::<T>(ptr, offset, memory, value)
+            }
+        };
+        if self.encode_store_mem0_offset16::<T>(ptr, offset, memory, value)? {
+            return Ok(());
+        }
+        let store_op = match value {
+            Operand::Local(value) => {
+                let value = self.layout.local_to_reg(value)?;
+                T::store_ss(ptr, offset, value, memory)
+            }
+            Operand::Temp(value) => {
+                let value = self.layout.temp_to_reg(value)?;
+                T::store_ss(ptr, offset, value, memory)
+            }
+            Operand::Immediate(value) => {
+                let value = <T::Value>::from(value.val());
+                let immediate = <T as op::StoreOperator>::into_immediate(value);
+                T::store_si(ptr, offset, immediate, memory)
+            }
+        };
+        self.push_instr(store_op, FuelCostsProvider::store)?;
+        Ok(())
+    }
+
+    /// Encodes a Wasm store operator with immediate `ptr` to Wasmi bytecode.
+    fn encode_store_ix<T: op::StoreOperator>(
+        &mut self,
+        ptr: ImmediateOperand,
+        offset: u64,
+        memory: index::Memory,
+        value: Operand,
+    ) -> Result<(), Error>
+    where
+        T::Value: Copy + From<TypedVal>,
+        T::Immediate: Copy,
+    {
+        let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        let store_op = match value {
+            Operand::Local(value) => {
+                let value = self.layout.local_to_reg(value)?;
+                T::store_is(address, value, memory)
+            }
+            Operand::Temp(value) => {
+                let value = self.layout.temp_to_reg(value)?;
+                T::store_is(address, value, memory)
+            }
+            Operand::Immediate(value) => {
+                let value = <T::Value>::from(value.val());
+                let immediate = <T as op::StoreOperator>::into_immediate(value);
+                T::store_ii(address, immediate, memory)
+            }
+        };
+        self.push_instr(store_op, FuelCostsProvider::store)?;
+        return Ok(());
+    }
+
+    /// Encodes a Wasm store operator with `(mem 0)` and 16-bit encodable `offset` to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// - Returns `Ok(true)` if encoding was successfull.
+    /// - Returns `Ok(false)` if encoding was unsuccessful.
+    /// - Returns `Err(_)` if an error occurred.
+    fn encode_store_mem0_offset16<T: op::StoreOperator>(
+        &mut self,
+        ptr: Slot,
+        offset: u64,
+        memory: index::Memory,
+        value: Operand,
+    ) -> Result<bool, Error>
+    where
+        T::Value: Copy + From<TypedVal>,
+        T::Immediate: Copy,
+    {
+        if !memory.is_default() {
+            return Ok(false);
+        }
+        let Ok(offset16) = Offset16::try_from(offset) else {
+            return Ok(false);
+        };
+        let store_op = match value {
+            Operand::Local(value) => {
+                let value = self.layout.local_to_reg(value)?;
+                T::store_mem0_offset16_ss(ptr, offset16, value)
+            }
+            Operand::Temp(value) => {
+                let value = self.layout.temp_to_reg(value)?;
+                T::store_mem0_offset16_ss(ptr, offset16, value)
+            }
+            Operand::Immediate(value) => {
+                let value = <T::Value>::from(value.val());
+                let immediate = <T as op::StoreOperator>::into_immediate(value);
+                T::store_mem0_offset16_si(ptr, offset16, immediate)
+            }
+        };
+        self.push_instr(store_op, FuelCostsProvider::store)?;
+        Ok(true)
     }
 
     /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
