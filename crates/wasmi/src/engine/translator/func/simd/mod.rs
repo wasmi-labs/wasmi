@@ -304,7 +304,7 @@ impl FuncTranslator {
                 //       lane value and translate as a more efficient non-SIMD operation.
                 return translate_imm(self, memarg, ptr, lane, V128::from(v128.val()));
             }
-            Operand::Local(v128) => self.layout.local_to_reg(v128.local_index())?,
+            Operand::Local(v128) => self.layout.local_to_slot(v128.local_index())?,
             Operand::Temp(v128) => self.layout.temp_to_reg(v128.operand_index())?,
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
