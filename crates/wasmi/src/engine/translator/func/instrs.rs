@@ -201,7 +201,7 @@ impl InstrEncoder {
         let CmpSelectFusion::Applied(fused) =
             last_instruction.try_into_cmp_select_instr(true_val, false_val, || {
                 let select_result = stack.push_temp(ty, Some(last_instr))?;
-                let select_result = layout.temp_to_reg(select_result)?;
+                let select_result = layout.temp_to_slot(select_result)?;
                 Ok(select_result)
             })?
         else {
