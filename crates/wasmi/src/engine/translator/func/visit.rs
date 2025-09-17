@@ -1312,7 +1312,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_f32_floor(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32x4_floor_ss, wasm::f32_floor)
+        self.translate_unary(Op::f32_floor_ss, wasm::f32_floor)
     }
 
     #[inline(never)]
