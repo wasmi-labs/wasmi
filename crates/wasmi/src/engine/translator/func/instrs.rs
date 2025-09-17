@@ -79,7 +79,7 @@ impl OpEncoder {
     /// Returns the next [`OpPos`].
     #[must_use]
     pub fn next_instr(&self) -> OpPos {
-        OpPos::from_usize(self.ops.len())
+        OpPos::from(self.ops.len())
     }
 
     /// Pushes an [`Op::ConsumeFuel`] instruction to `self`.
@@ -230,8 +230,8 @@ impl OpEncoder {
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    pub fn get(&self, instr: OpPos) -> &Op {
-        &self.ops[instr.into_usize()]
+    pub fn get(&self, pos: OpPos) -> &Op {
+        &self.ops[usize::from(pos)]
     }
 
     /// Returns an exclusive reference to the [`Op`] associated to [`OpPos`].
@@ -239,8 +239,8 @@ impl OpEncoder {
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    fn get_mut(&mut self, instr: OpPos) -> &mut Op {
-        &mut self.ops[instr.into_usize()]
+    fn get_mut(&mut self, pos: OpPos) -> &mut Op {
+        &mut self.ops[usize::from(pos)]
     }
 
     /// Resets the [`OpPos`] last created via [`OpEncoder::push_instr`].
