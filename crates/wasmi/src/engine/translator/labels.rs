@@ -1,4 +1,8 @@
-use crate::{engine::{translator::utils::OpPos, TranslationError}, ir::BranchOffset, Error};
+use crate::{
+    engine::{translator::utils::OpPos, TranslationError},
+    ir::BranchOffset,
+    Error,
+};
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},
@@ -146,7 +150,7 @@ impl LabelRegistry {
             i32::try_from(offset).ok()
         }
         let Some(offset) = trace_offset32(src, dst) else {
-            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds))
+            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
         };
         Ok(BranchOffset::from(offset))
     }
@@ -164,9 +168,7 @@ impl LabelRegistry {
         user: OpPos,
     ) -> Result<BranchOffset, Error> {
         let offset = match *self.get_label(label) {
-            Label::Pinned(target) => {
-                Self::trace_branch_offset(user, target)?
-            }
+            Label::Pinned(target) => Self::trace_branch_offset(user, target)?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
                 BranchOffset::uninit()

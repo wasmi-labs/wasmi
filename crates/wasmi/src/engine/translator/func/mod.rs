@@ -33,6 +33,8 @@ use self::{
     },
     utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
 };
+#[cfg(feature = "simd")]
+use crate::V128;
 use crate::{
     core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
     engine::{
@@ -44,7 +46,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
-            utils::{OpPos, IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
+            utils::{IntoShiftAmount, OpPos, ToBits, WasmFloat, WasmInteger},
             WasmTranslator,
         },
         BlockType,
@@ -59,8 +61,6 @@ use crate::{
     TrapCode,
     ValType,
 };
-#[cfg(feature = "simd")]
-use crate::V128;
 use alloc::vec::Vec;
 use wasmparser::{MemArg, WasmFeatures};
 

@@ -1,16 +1,19 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::translator::{
-        comparator::{
-            CmpSelectFusion,
-            CompareResult as _,
-            TryIntoCmpSelectInstr as _,
-            UpdateBranchOffset as _,
+    engine::{
+        translator::{
+            comparator::{
+                CmpSelectFusion,
+                CompareResult as _,
+                TryIntoCmpSelectInstr as _,
+                UpdateBranchOffset as _,
+            },
+            func::{Stack, StackLayout, StackSpace},
+            relink_result::RelinkResult,
+            utils::{BumpFuelConsumption as _, OpPos},
         },
-        func::{Stack, StackLayout, StackSpace},
-        relink_result::RelinkResult,
-        utils::{BumpFuelConsumption as _, OpPos},
+        TranslationError,
     },
     ir::{BranchOffset, Op, Slot},
     Engine,
@@ -23,9 +26,9 @@ use alloc::vec::{self, Vec};
 #[derive(Debug, Default)]
 pub struct OpEncoder {
     /// The last pushed [`Op`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// - This allows the last [`Op`] to be peeked and manipulated.
     /// - For example, this is useful to perform op-code fusion or adjusting the result slot.
     last: Option<OpPos>,
@@ -41,9 +44,7 @@ impl ReusableAllocations for OpEncoder {
     type Allocations = OpEncoderAllocations;
 
     fn into_allocations(self) -> Self::Allocations {
-        Self::Allocations {
-            instrs: self.ops,
-        }
+        Self::Allocations { instrs: self.ops }
     }
 }
 
