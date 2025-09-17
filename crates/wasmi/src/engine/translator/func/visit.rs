@@ -317,7 +317,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(default_target) = usize::try_from(default_target) else {
             panic!("out of bounds `default_target` does not fit into `usize`: {default_target}");
         };
-        let index = self.layout.operand_to_reg(index)?;
+        let index = self.layout.operand_to_slot(index)?;
         let len_branch_params = self
             .stack
             .peek_control(default_target)
@@ -423,7 +423,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Operand::Immediate(input) => input.val(),
             input => {
                 // Case: `global.set` with simple register input.
-                let input = self.layout.operand_to_reg(input)?;
+                let input = self.layout.operand_to_slot(input)?;
                 self.push_instr(Op::global_set(global, input), FuelCostsProvider::instance)?;
                 return Ok(());
             }
