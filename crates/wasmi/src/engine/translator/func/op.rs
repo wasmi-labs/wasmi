@@ -1,4 +1,5 @@
 use crate::{
+    core::Typed,
     engine::translator::utils::{ToBits, Wrap},
     ir::{index::Memory, Address, Offset16, Op, Slot},
     ValType,
@@ -7,7 +8,7 @@ use crate::{
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
 pub trait StoreOperator {
     /// The type of the value to the stored.
-    type Value;
+    type Value: Typed;
     /// The type of immediate values.
     type Immediate;
 
