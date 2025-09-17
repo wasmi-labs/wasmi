@@ -1,5 +1,5 @@
 use super::{LocalIdx, OperandIdx, StackOperand};
-use crate::{core::TypedVal, engine::translator::utils::Instr, ValType};
+use crate::{core::TypedVal, engine::translator::utils::OpPos, ValType};
 
 #[cfg(doc)]
 use super::Stack;
@@ -47,7 +47,7 @@ impl Operand {
     }
 
     /// Creates a temporary [`Operand`].
-    pub(super) fn temp(operand_index: OperandIdx, ty: ValType, instr: Option<Instr>) -> Self {
+    pub(super) fn temp(operand_index: OperandIdx, ty: ValType, instr: Option<OpPos>) -> Self {
         Self::Temp(TempOperand {
             operand_index,
             ty,
@@ -126,7 +126,7 @@ pub struct TempOperand {
     /// The type of the temporary.
     ty: ValType,
     /// The instruction which created this [`TempOperand`] as its result if any.
-    instr: Option<Instr>,
+    instr: Option<OpPos>,
 }
 
 impl From<TempOperand> for Operand {
@@ -146,8 +146,8 @@ impl TempOperand {
         self.ty
     }
 
-    /// Returns the instruction which created this [`TempOperand`] as its result if any.
-    pub fn instr(&self) -> Option<Instr> {
+    /// Returns the instruction whcih created this [`TempOperand`] as its result if any.
+    pub fn instr(&self) -> Option<OpPos> {
         self.instr
     }
 }

@@ -10,7 +10,7 @@ use crate::{
         },
         func::{Stack, StackLayout, StackSpace},
         relink_result::RelinkResult,
-        utils::{BumpFuelConsumption as _, Instr},
+        utils::{BumpFuelConsumption as _, OpPos},
     },
     ir::{BranchOffset, Op, Slot},
     Engine,
@@ -28,7 +28,7 @@ pub struct OpEncoder {
     /// 
     /// - This allows the last [`Op`] to be peeked and manipulated.
     /// - For example, this is useful to perform op-code fusion or adjusting the result slot.
-    last: Option<Instr>,
+    last: Option<OpPos>,
     /// The fuel costs of instructions.
     ///
     /// This is `Some` if fuel metering is enabled, otherwise `None`.
@@ -75,10 +75,10 @@ impl OpEncoder {
         }
     }
 
-    /// Returns the next [`Instr`].
+    /// Returns the next [`OpPos`].
     #[must_use]
-    pub fn next_instr(&self) -> Instr {
-        Instr::from_usize(self.ops.len())
+    pub fn next_instr(&self) -> OpPos {
+        OpPos::from_usize(self.ops.len())
     }
 
     /// Pushes an [`Op::ConsumeFuel`] instruction to `self`.
@@ -86,7 +86,7 @@ impl OpEncoder {
     /// # Note
     ///
     /// The pushes [`Op::ConsumeFuel`] is initialized with base fuel costs.
-    pub fn push_consume_fuel_instr(&mut self) -> Result<Option<Instr>, Error> {
+    pub fn push_consume_fuel_instr(&mut self) -> Result<Option<OpPos>, Error> {
         let Some(fuel_costs) = &self.fuel_costs else {
             return Ok(None);
         };
@@ -97,19 +97,19 @@ impl OpEncoder {
 
     /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
     ///
-    /// Returns an [`Instr`] that refers to the pushed [`Op`].
+    /// Returns an [`OpPos`] that refers to the pushed [`Op`].
     pub fn push_instr(
         &mut self,
         instruction: Op,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<Instr, Error> {
+    ) -> Result<OpPos, Error> {
         self.bump_fuel_consumption(consume_fuel, f)?;
         self.push_instr_impl(instruction)
     }
 
     /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
-    fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
+    fn push_instr_impl(&mut self, instruction: Op) -> Result<OpPos, Error> {
         let instr = self.next_instr();
         self.ops.push(instruction);
         self.last = Some(instr);
@@ -124,7 +124,7 @@ impl OpEncoder {
     /// # Panics (Debug)
     ///
     /// If `instr` or `new_instr` are [`Op`] parameters.
-    pub fn try_replace_instr(&mut self, instr: Instr, new_instr: Op) -> Result<bool, Error> {
+    pub fn try_replace_instr(&mut self, instr: OpPos, new_instr: Op) -> Result<bool, Error> {
         let Some(last_instr) = self.last else {
             return Ok(false);
         };
@@ -224,25 +224,25 @@ impl OpEncoder {
         self.ops.push(instruction);
     }
 
-    /// Returns a shared reference to the [`Op`] associated to [`Instr`].
+    /// Returns a shared reference to the [`Op`] associated to [`OpPos`].
     ///
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    pub fn get(&self, instr: Instr) -> &Op {
+    pub fn get(&self, instr: OpPos) -> &Op {
         &self.ops[instr.into_usize()]
     }
 
-    /// Returns an exclusive reference to the [`Op`] associated to [`Instr`].
+    /// Returns an exclusive reference to the [`Op`] associated to [`OpPos`].
     ///
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    fn get_mut(&mut self, instr: Instr) -> &mut Op {
+    fn get_mut(&mut self, instr: OpPos) -> &mut Op {
         &mut self.ops[instr.into_usize()]
     }
 
-    /// Resets the [`Instr`] last created via [`OpEncoder::push_instr`].
+    /// Resets the [`OpPos`] last created via [`OpEncoder::push_instr`].
     ///
     /// # Note
     ///
@@ -263,7 +263,7 @@ impl OpEncoder {
     /// If the branch offset could not be updated for `instr`.
     pub fn update_branch_offset(
         &mut self,
-        instr: Instr,
+        instr: OpPos,
         offset: BranchOffset,
     ) -> Result<(), Error> {
         self.get_mut(instr).update_branch_offset(offset)?;
@@ -277,7 +277,7 @@ impl OpEncoder {
     /// If consumed fuel is out of bounds after this operation.
     pub fn bump_fuel_consumption(
         &mut self,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let (fuel_costs, consume_fuel) = match (&self.fuel_costs, consume_fuel) {
@@ -308,7 +308,7 @@ impl OpEncoder {
     }
 
     /// Returns the last instruction of the [`OpEncoder`] if any.
-    pub fn last_instr(&self) -> Option<Instr> {
+    pub fn last_instr(&self) -> Option<OpPos> {
         self.last
     }
 }

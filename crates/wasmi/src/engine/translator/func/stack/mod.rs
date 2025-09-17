@@ -33,7 +33,7 @@ use crate::{
         translator::{
             func::{stack::operands::PeekedOperands, LocalIdx},
             labels::LabelRef,
-            utils::Instr,
+            utils::OpPos,
         },
         BlockType,
     },
@@ -160,7 +160,7 @@ impl Stack {
         &mut self,
         ty: BlockType,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
@@ -172,7 +172,7 @@ impl Stack {
     ///
     /// # Note
     ///
-    /// This inherits the `consume_fuel` [`Instr`] from the parent [`ControlFrame`].
+    /// This inherits the `consume_fuel` [`OpPos`] from the parent [`ControlFrame`].
     ///
     /// # Errors
     ///
@@ -201,7 +201,7 @@ impl Stack {
         &mut self,
         ty: BlockType,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
@@ -230,7 +230,7 @@ impl Stack {
         ty: BlockType,
         label: LabelRef,
         reachability: IfReachability,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
@@ -262,7 +262,7 @@ impl Stack {
         &mut self,
         if_frame: IfControlFrame,
         is_end_of_then_reachable: bool,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         self.push_else_operands(&if_frame)?;
@@ -361,7 +361,7 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
+    pub fn push_temp(&mut self, ty: ValType, instr: Option<OpPos>) -> Result<OperandIdx, Error> {
         self.operands.push_temp(ty, instr)
     }
 
@@ -523,7 +523,7 @@ impl Stack {
     ///
     /// Returns `None` otherwise.
     #[inline]
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+    pub fn consume_fuel_instr(&self) -> Option<OpPos> {
         self.controls.consume_fuel_instr()
     }
 }
