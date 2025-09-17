@@ -296,8 +296,8 @@ impl OpEncoder {
     /// # Note
     ///
     /// The [`OpEncoder`] will be empty after this operation.
-    pub fn drain(&mut self) -> InstrEncoderIter<'_> {
-        InstrEncoderIter {
+    pub fn drain(&mut self) -> OpEncoderIter<'_> {
+        OpEncoderIter {
             iter: self.instrs.drain(..),
         }
     }
@@ -310,12 +310,12 @@ impl OpEncoder {
 
 /// Iterator yielding all [`Op`]s of the [`OpEncoder`].
 #[derive(Debug)]
-pub struct InstrEncoderIter<'a> {
+pub struct OpEncoderIter<'a> {
     /// The underlying iterator.
     iter: vec::Drain<'a, Op>,
 }
 
-impl<'a> Iterator for InstrEncoderIter<'a> {
+impl<'a> Iterator for OpEncoderIter<'a> {
     type Item = Op;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -327,7 +327,7 @@ impl<'a> Iterator for InstrEncoderIter<'a> {
     }
 }
 
-impl ExactSizeIterator for InstrEncoderIter<'_> {
+impl ExactSizeIterator for OpEncoderIter<'_> {
     fn len(&self) -> usize {
         self.iter.len()
     }
