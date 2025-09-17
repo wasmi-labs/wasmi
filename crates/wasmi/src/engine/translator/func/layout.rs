@@ -22,12 +22,14 @@ pub trait IntoLocalIdx {
 }
 
 impl IntoLocalIdx for LocalIdx {
+    #[inline]
     fn into_local_idx(self) -> LocalIdx {
         self
     }
 }
 
 impl IntoLocalIdx for LocalOperand {
+    #[inline]
     fn into_local_idx(self) -> LocalIdx {
         self.local_index()
     }
@@ -44,12 +46,14 @@ pub trait IntoOperandIdx {
 }
 
 impl IntoOperandIdx for OperandIdx {
+    #[inline]
     fn into_operand_idx(self) -> OperandIdx {
         self
     }
 }
 
 impl IntoOperandIdx for TempOperand {
+    #[inline]
     fn into_operand_idx(self) -> OperandIdx {
         self.operand_index()
     }
