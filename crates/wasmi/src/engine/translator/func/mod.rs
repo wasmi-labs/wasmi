@@ -320,36 +320,6 @@ impl FuncTranslator {
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
-    /// Returns the [`SlotSpan`] of a call instruction before manipulating the operand stack.
-    fn call_regspan(&self, len_params: usize) -> Result<SlotSpan, Error> {
-        let height = self.stack.height();
-        let Some(start) = height.checked_sub(len_params) else {
-            panic!("operand stack underflow while evaluating call `SlotSpan`");
-        };
-        let start = self.layout.temp_to_reg(OperandIdx::from(start))?;
-        Ok(SlotSpan::new(start))
-    }
-
-    /// Push `results` as [`TempOperand`] onto the [`Stack`] tagged to `instr`.
-    ///
-    /// Returns the [`SlotSpan`] identifying the pushed operands if any.
-    fn push_results(
-        &mut self,
-        instr: Instr,
-        results: &[ValType],
-    ) -> Result<Option<SlotSpan>, Error> {
-        let (first, rest) = match results.split_first() {
-            Some((first, rest)) => (first, rest),
-            None => return Ok(None),
-        };
-        let first = self.stack.push_temp(*first, Some(instr))?;
-        for result in rest {
-            self.stack.push_temp(*result, Some(instr))?;
-        }
-        let start = self.layout.temp_to_reg(first)?;
-        Ok(Some(SlotSpan::new(start)))
-    }
-
     /// Returns the [`Engine`] for which the function is compiled.
     fn engine(&self) -> &Engine {
         &self.engine
@@ -833,12 +803,6 @@ impl FuncTranslator {
         self.push_instr_with_result(result_ty, |result| make_instr(result, lhs, rhs), fuel_costs)
     }
 
-    /// Pushes an instruction parameter `param` to the list of instructions.
-    fn push_param(&mut self, param: Op) -> Result<(), Error> {
-        self.instrs.push_param(param);
-        Ok(())
-    }
-
     /// Populate the `buffer` with the `table` targets including the `table` default target.
     ///
     /// Returns a shared slice to the `buffer` after it has been filled.
@@ -974,22 +938,6 @@ impl FuncTranslator {
     fn peek_operands_into_buffer(&mut self, len: usize) {
         self.operands.clear();
         self.operands.extend(self.stack.peek_n(len));
-    }
-
-    /// Encodes an [`Op::ReturnSpan`] for `len` values.
-    fn encode_return_many(
-        &mut self,
-        len: u16,
-        consume_fuel_instr: Option<Instr>,
-    ) -> Result<Instr, Error> {
-        let values = self.move_operands_to_temp(usize::from(len), consume_fuel_instr)?;
-        let values = BoundedSlotSpan::new(values, len);
-        let return_instr = self.instrs.push_instr(
-            Op::return_span(values),
-            consume_fuel_instr,
-            FuelCostsProvider::base,
-        )?;
-        Ok(return_instr)
     }
 
     /// Tries to form a [`SlotSpan`] from the top-most `n` operands on the [`Stack`].
@@ -1861,30 +1809,6 @@ impl FuncTranslator {
                 FuelCostsProvider::base,
             ),
         }
-    }
-
-    /// Translate a binary float Wasm operation.
-    fn translate_fbinary<T, R>(
-        &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        consteval: fn(T, T) -> R,
-    ) -> Result<(), Error>
-    where
-        T: WasmFloat,
-        R: Into<TypedVal> + Typed,
-    {
-        bail_unreachable!(self);
-        let (lhs, rhs) = self.stack.pop2();
-        if let (Operand::Immediate(lhs), Operand::Immediate(rhs)) = (lhs, rhs) {
-            return self.translate_binary_consteval::<T, R>(lhs, rhs, consteval);
-        }
-        self.push_binary_instr_with_result(
-            <R as Typed>::TY,
-            lhs,
-            rhs,
-            make_instr,
-            FuelCostsProvider::base,
-        )
     }
 
     /// Translate Wasmi `{f32,f64}.copysign` instructions.
