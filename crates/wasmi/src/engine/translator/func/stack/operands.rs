@@ -1,5 +1,5 @@
 use super::{LocalIdx, LocalsHead, Operand, Reset};
-use crate::{core::TypedVal, engine::translator::utils::Instr, Error, ValType};
+use crate::{core::TypedVal, engine::translator::utils::OpPos, Error, ValType};
 use alloc::vec::Vec;
 use core::{num::NonZero, slice};
 
@@ -48,7 +48,7 @@ pub enum StackOperand {
         /// The type of the temporary value.
         ty: ValType,
         /// The instruction which has this [`StackOperand`] as result if any.
-        instr: Option<Instr>,
+        instr: Option<OpPos>,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
@@ -183,7 +183,7 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
+    pub fn push_temp(&mut self, ty: ValType, instr: Option<OpPos>) -> Result<OperandIdx, Error> {
         let idx = self.next_index();
         self.operands.push(StackOperand::Temp { ty, instr });
         self.update_max_stack_height();
