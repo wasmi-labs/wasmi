@@ -10,7 +10,7 @@ mod stack;
 mod visit;
 
 use self::{
-    instrs::{InstrEncoder, InstrEncoderAllocations},
+    instrs::{OpEncoder, InstrEncoderAllocations},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
     stack::{
@@ -97,7 +97,7 @@ pub struct FuncTranslator {
     /// Slots and pins labels and tracks their users.
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
-    instrs: InstrEncoder,
+    instrs: OpEncoder,
     /// Temporary buffer for operands.
     operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
@@ -214,7 +214,7 @@ impl FuncTranslator {
             immediates,
         } = alloc.into_reset();
         let stack = Stack::new(&engine, stack);
-        let instrs = InstrEncoder::new(&engine, instrs);
+        let instrs = OpEncoder::new(&engine, instrs);
         let mut translator = Self {
             func,
             engine,
