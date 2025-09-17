@@ -163,22 +163,22 @@ impl BumpFuelConsumption for Op {
 
 /// A reference to an encoded [`Op`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(u32);
+pub struct OpPos(u32);
 
-impl From<u32> for Instr {
+impl From<u32> for OpPos {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl From<Instr> for u32 {
-    fn from(instr: Instr) -> Self {
+impl From<OpPos> for u32 {
+    fn from(instr: OpPos) -> Self {
         instr.0
     }
 }
 
-impl Instr {
-    /// Creates an [`Instr`] from the given `usize` value.
+impl OpPos {
+    /// Creates an [`OpPos`] from the given `usize` value.
     ///
     /// # Note
     ///
@@ -186,10 +186,10 @@ impl Instr {
     ///
     /// # Panics
     ///
-    /// If the `value` exceeds limitations for [`Instr`].
+    /// If the `value` exceeds limitations for [`OpPos`].
     pub fn from_usize(value: usize) -> Self {
         let Ok(index) = u32::try_from(value) else {
-            panic!("out of bounds index {value} for `Instr`")
+            panic!("out of bounds index {value} for `OpPos`")
         };
         Self(index)
     }
@@ -199,7 +199,7 @@ impl Instr {
         match usize::try_from(self.0) {
             Ok(index) => index,
             Err(error) => {
-                panic!("out of bound index {} for `Instr`: {error}", self.0)
+                panic!("out of bound index {} for `OpPos`: {error}", self.0)
             }
         }
     }
