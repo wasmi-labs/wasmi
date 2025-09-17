@@ -106,35 +106,31 @@ impl From<i32> for BranchOffset {
     }
 }
 
+impl From<BranchOffset> for i32 {
+    fn from(offset: BranchOffset) -> Self {
+        offset.0
+    }
+}
+
 impl BranchOffset {
-    /// Creates an uninitialized [`BranchOffset`].
-    pub fn uninit() -> Self {
-        Self(0)
+    /// Returns `true` if [`Self`] is an offset for a backward branch.
+    pub fn is_backwards(&self) -> bool {
+        self.0.is_negative()
     }
 
-    /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
-    ///
-    /// # Errors
-    ///
-    /// If the resulting [`BranchOffset`] is out of bounds.
-    pub fn from_src_to_dst(src: u32, dst: u32) -> Result<Self, Error> {
-        let src = i64::from(src);
-        let dst = i64::from(dst);
-        let Some(offset) = dst.checked_sub(src) else {
-            // Note: This never needs to be called on backwards branches since they are immediated resolved.
-            unreachable!(
-                "offset for forward branches must have `src` be smaller than or equal to `dst`"
-            );
-        };
-        let Ok(offset) = i32::try_from(offset) else {
-            return Err(Error::BranchOffsetOutOfBounds);
-        };
-        Ok(Self(offset))
+    /// Returns `true` if [`Self`] is an offset for a forward branch.
+    pub fn is_forwards(&self) -> bool {
+        self.0.is_positive()
     }
 
     /// Returns `true` if the [`BranchOffset`] has been initialized.
     pub fn is_init(self) -> bool {
-        self.to_i32() != 0
+        self.0 != 0
+    }
+
+    /// Creates an uninitialized [`BranchOffset`].
+    pub fn uninit() -> Self {
+        Self(0)
     }
 
     /// Initializes the [`BranchOffset`] with a proper value.
@@ -147,11 +143,6 @@ impl BranchOffset {
         assert!(valid_offset.is_init());
         assert!(!self.is_init());
         *self = valid_offset;
-    }
-
-    /// Returns the `i32` representation of the [`BranchOffset`].
-    pub fn to_i32(self) -> i32 {
-        self.0
     }
 }
 
