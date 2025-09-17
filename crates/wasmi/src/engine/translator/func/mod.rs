@@ -44,7 +44,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
             },
             labels::{LabelRef, LabelRegistry},
-            utils::{Instr, IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
+            utils::{OpPos, IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
             WasmTranslator,
         },
         BlockType,
@@ -329,7 +329,7 @@ impl FuncTranslator {
     fn move_operands_to_temp(
         &mut self,
         len: usize,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) -> Result<SlotSpan, Error> {
         for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
@@ -349,7 +349,7 @@ impl FuncTranslator {
     fn copy_branch_params(
         &mut self,
         target: &impl ControlFrameBase,
-        consume_fuel_instr: Option<Instr>,
+        consume_fuel_instr: Option<OpPos>,
     ) -> Result<(), Error> {
         let len_branch_params = target.len_branch_params(&self.engine);
         let Some(branch_results) = self.frame_results(target)? else {
@@ -392,7 +392,7 @@ impl FuncTranslator {
         &mut self,
         results: SlotSpan,
         len_values: u16,
-        consume_fuel_instr: Option<Instr>,
+        consume_fuel_instr: Option<OpPos>,
     ) -> Result<(), Error> {
         match len_values {
             0 => Ok(()),
@@ -415,8 +415,8 @@ impl FuncTranslator {
         &mut self,
         result: Slot,
         value: Operand,
-        consume_fuel_instr: Option<Instr>,
-    ) -> Result<Option<Instr>, Error> {
+        consume_fuel_instr: Option<OpPos>,
+    ) -> Result<Option<OpPos>, Error> {
         let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)? else {
             // Case: no-op copy instruction
             return Ok(None);
@@ -490,7 +490,7 @@ impl FuncTranslator {
         results: SlotSpan,
         values: SlotSpan,
         len: u16,
-        consume_fuel_instr: Option<Instr>,
+        consume_fuel_instr: Option<OpPos>,
     ) -> Result<(), Error> {
         if results == values {
             // Case: results and values are equal and therefore the copy is a no-op
@@ -516,7 +516,7 @@ impl FuncTranslator {
         &mut self,
         results: SlotSpan,
         len: u16,
-        consume_fuel_instr: Option<Instr>,
+        consume_fuel_instr: Option<OpPos>,
     ) -> Result<(), Error> {
         self.peek_operands_into_buffer(usize::from(len));
         let values = &self.operands[..];
@@ -689,7 +689,7 @@ impl FuncTranslator {
         !can_avoid_copies
     }
 
-    /// Pins the `label` to the next [`Instr`].
+    /// Pins the `label` to the next [`OpPos`].
     fn pin_label(&mut self, label: LabelRef) {
         self.labels
             .pin_label(label, self.instrs.next_instr())
@@ -704,7 +704,7 @@ impl FuncTranslator {
     fn copy_operand_to_temp(
         &mut self,
         operand: Operand,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) -> Result<Slot, Error> {
         let result = self.layout.temp_to_slot(operand.index())?;
         self.encode_copy(result, operand, consume_fuel)?;
@@ -758,7 +758,7 @@ impl FuncTranslator {
         &mut self,
         instr: Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<Instr, Error> {
+    ) -> Result<OpPos, Error> {
         let consume_fuel = self.stack.consume_fuel_instr();
         let instr = self.instrs.push_instr(instr, consume_fuel, fuel_costs)?;
         Ok(instr)
@@ -885,7 +885,7 @@ impl FuncTranslator {
     }
 
     /// Encodes a generic return instruction.
-    fn encode_return(&mut self, consume_fuel: Option<Instr>) -> Result<Instr, Error> {
+    fn encode_return(&mut self, consume_fuel: Option<OpPos>) -> Result<OpPos, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
             0 => Op::Return {},
@@ -982,7 +982,7 @@ impl FuncTranslator {
     fn try_form_regspan_or_move(
         &mut self,
         len: usize,
-        consume_fuel_instr: Option<Instr>,
+        consume_fuel_instr: Option<OpPos>,
     ) -> Result<SlotSpan, Error> {
         if let Some(span) = self.try_form_regspan(len)? {
             return Ok(span);
@@ -1099,7 +1099,7 @@ impl FuncTranslator {
             _ => true,
         };
         if end_of_else_reachable {
-            let consume_fuel_instr: Option<Instr> = frame.consume_fuel_instr();
+            let consume_fuel_instr: Option<OpPos> = frame.consume_fuel_instr();
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
@@ -1229,7 +1229,7 @@ impl FuncTranslator {
     }
 
     /// Encodes an unconditional Wasm `branch` instruction.
-    fn encode_br(&mut self, label: LabelRef) -> Result<Instr, Error> {
+    fn encode_br(&mut self, label: LabelRef) -> Result<OpPos, Error> {
         let instr = self.instrs.next_instr();
         let offset = self.labels.try_resolve_label(label, instr)?;
         let br_instr = self.push_instr(Op::branch(offset), FuelCostsProvider::base)?;
@@ -1333,7 +1333,7 @@ impl FuncTranslator {
     /// - Returns `Ok(None)`, otherwise.
     fn try_make_fused_branch_cmp_instr(
         &mut self,
-        instr: Instr,
+        instr: OpPos,
         condition: TempOperand,
         label: LabelRef,
         negate: bool,
