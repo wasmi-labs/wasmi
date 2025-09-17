@@ -35,6 +35,13 @@ impl IntoLocalIdx for LocalOperand {
     }
 }
 
+impl IntoLocalIdx for &'_ LocalOperand {
+    #[inline]
+    fn into_local_idx(self) -> LocalIdx {
+        self.local_index()
+    }
+}
+
 /// Allows conversion from `Self` to [`OperandIdx`].
 ///
 /// # Note
@@ -53,6 +60,13 @@ impl IntoOperandIdx for OperandIdx {
 }
 
 impl IntoOperandIdx for TempOperand {
+    #[inline]
+    fn into_operand_idx(self) -> OperandIdx {
+        self.operand_index()
+    }
+}
+
+impl IntoOperandIdx for &'_ TempOperand {
     #[inline]
     fn into_operand_idx(self) -> OperandIdx {
         self.operand_index()
