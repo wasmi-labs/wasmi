@@ -58,8 +58,9 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    V128,
 };
+#[cfg(feature = "simd")]
+use crate::V128;
 use alloc::vec::Vec;
 use wasmparser::{MemArg, WasmFeatures};
 
@@ -474,7 +475,7 @@ impl FuncTranslator {
                 Op::copy128(result, value_lo, value_hi)
             }
             #[cfg(not(feature = "simd"))]
-            ValType::V128 => panic!("unexpected `v128` operand: {value}"),
+            ValType::V128 => panic!("unexpected `v128` operand: {value:?}"),
         };
         Ok(instr)
     }
