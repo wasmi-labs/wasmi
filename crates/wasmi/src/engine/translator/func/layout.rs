@@ -37,7 +37,7 @@ impl IntoLocalIdx for LocalOperand {
 ///
 /// # Note
 ///
-/// This allows to use [`StackLayout::temp_to_reg`] with [`LocalIdx`] and [`TempOperand`].
+/// This allows to use [`StackLayout::temp_to_slot`] with [`LocalIdx`] and [`TempOperand`].
 pub trait IntoOperandIdx {
     /// Converts `self` into [`OperandIdx`].
     fn into_operand_idx(self) -> OperandIdx;
@@ -98,7 +98,7 @@ impl StackLayout {
     /// Forwards to one of
     ///
     /// - [`StackLayout::local_to_slot`]
-    /// - [`StackLayout::temp_to_reg`]
+    /// - [`StackLayout::temp_to_slot`]
     ///
     /// # Errors
     ///
@@ -106,7 +106,7 @@ impl StackLayout {
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.local_to_slot(operand.local_index()),
-            Operand::Temp(operand) => self.temp_to_reg(operand.operand_index()),
+            Operand::Temp(operand) => self.temp_to_slot(operand.operand_index()),
             Operand::Immediate(_) => panic!("function local constants have been removed"), // TODO: remove
         }
     }
@@ -135,7 +135,7 @@ impl StackLayout {
     ///
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
-    pub fn temp_to_reg(&self, item: impl IntoOperandIdx) -> Result<Slot, Error> {
+    pub fn temp_to_slot(&self, item: impl IntoOperandIdx) -> Result<Slot, Error> {
         let index = item.into_operand_idx();
         let index = usize::from(index);
         let Some(index) = index.checked_add(self.len_locals) else {
