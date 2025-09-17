@@ -19,9 +19,9 @@ use crate::{
 };
 use alloc::vec::{self, Vec};
 
-/// Creates and encodes the list of [`Op`]s for a function.
+/// Creates and encodes the buffer of encoded [`Op`]s for a function.
 #[derive(Debug, Default)]
-pub struct InstrEncoder {
+pub struct OpEncoder {
     /// The list of constructed instructions and their parameters.
     instrs: Vec<Op>,
     /// The fuel costs of instructions.
@@ -32,7 +32,7 @@ pub struct InstrEncoder {
     last_instr: Option<Instr>,
 }
 
-impl ReusableAllocations for InstrEncoder {
+impl ReusableAllocations for OpEncoder {
     type Allocations = InstrEncoderAllocations;
 
     fn into_allocations(self) -> Self::Allocations {
@@ -42,7 +42,7 @@ impl ReusableAllocations for InstrEncoder {
     }
 }
 
-/// The reusable heap allocations of the [`InstrEncoder`].
+/// The reusable heap allocations of the [`OpEncoder`].
 #[derive(Debug, Default)]
 pub struct InstrEncoderAllocations {
     /// The list of constructed instructions and their parameters.
@@ -55,8 +55,8 @@ impl Reset for InstrEncoderAllocations {
     }
 }
 
-impl InstrEncoder {
-    /// Creates a new [`InstrEncoder`].
+impl OpEncoder {
+    /// Creates a new [`OpEncoder`].
     pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
         let config = engine.config();
         let fuel_costs = config
@@ -90,7 +90,7 @@ impl InstrEncoder {
         Ok(Some(instr))
     }
 
-    /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
+    /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
     ///
     /// Returns an [`Instr`] that refers to the pushed [`Op`].
     pub fn push_instr(
@@ -103,7 +103,7 @@ impl InstrEncoder {
         self.push_instr_impl(instruction)
     }
 
-    /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
+    /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
     fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
         let instr = self.next_instr();
         self.instrs.push(instruction);
@@ -212,7 +212,7 @@ impl InstrEncoder {
         Ok(true)
     }
 
-    /// Pushes an [`Op`] parameter to the [`InstrEncoder`].
+    /// Pushes an [`Op`] parameter to the [`OpEncoder`].
     ///
     /// The parameter is associated to the last pushed [`Op`].
     pub fn push_param(&mut self, instruction: Op) {
@@ -237,7 +237,7 @@ impl InstrEncoder {
         &mut self.instrs[instr.into_usize()]
     }
 
-    /// Resets the [`Instr`] last created via [`InstrEncoder::push_instr`].
+    /// Resets the [`Instr`] last created via [`OpEncoder::push_instr`].
     ///
     /// # Note
     ///
@@ -291,24 +291,24 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Returns an iterator yielding all [`Op`]s of the [`InstrEncoder`].
+    /// Returns an iterator yielding all [`Op`]s of the [`OpEncoder`].
     ///
     /// # Note
     ///
-    /// The [`InstrEncoder`] will be empty after this operation.
+    /// The [`OpEncoder`] will be empty after this operation.
     pub fn drain(&mut self) -> InstrEncoderIter<'_> {
         InstrEncoderIter {
             iter: self.instrs.drain(..),
         }
     }
 
-    /// Returns the last instruction of the [`InstrEncoder`] if any.
+    /// Returns the last instruction of the [`OpEncoder`] if any.
     pub fn last_instr(&self) -> Option<Instr> {
         self.last_instr
     }
 }
 
-/// Iterator yielding all [`Op`]s of the [`InstrEncoder`].
+/// Iterator yielding all [`Op`]s of the [`OpEncoder`].
 #[derive(Debug)]
 pub struct InstrEncoderIter<'a> {
     /// The underlying iterator.
