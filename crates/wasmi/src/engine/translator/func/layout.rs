@@ -1,8 +1,59 @@
 use super::{LocalIdx, Operand, OperandIdx, Reset};
-use crate::{engine::TranslationError, ir::Slot, Error};
+use crate::{
+    engine::{
+        translator::func::{LocalOperand, TempOperand},
+        TranslationError,
+    },
+    ir::Slot,
+    Error,
+};
 
 #[cfg(doc)]
 use super::Stack;
+
+/// Allows conversion from `Self` to [`LocalIdx`].
+///
+/// # Note
+///
+/// This allows to use [`StackLayout::local_to_reg`] with [`LocalIdx`] and [`LocalOperand`].
+pub trait IntoLocalIdx {
+    /// Converts `self` into [`LocalIdx`].
+    fn into_local_idx(self) -> LocalIdx;
+}
+
+impl IntoLocalIdx for LocalIdx {
+    fn into_local_idx(self) -> LocalIdx {
+        self
+    }
+}
+
+impl IntoLocalIdx for LocalOperand {
+    fn into_local_idx(self) -> LocalIdx {
+        self.local_index()
+    }
+}
+
+/// Allows conversion from `Self` to [`OperandIdx`].
+///
+/// # Note
+///
+/// This allows to use [`StackLayout::temp_to_reg`] with [`LocalIdx`] and [`TempOperand`].
+pub trait IntoOperandIdx {
+    /// Converts `self` into [`OperandIdx`].
+    fn into_operand_idx(self) -> OperandIdx;
+}
+
+impl IntoOperandIdx for OperandIdx {
+    fn into_operand_idx(self) -> OperandIdx {
+        self
+    }
+}
+
+impl IntoOperandIdx for TempOperand {
+    fn into_operand_idx(self) -> OperandIdx {
+        self.operand_index()
+    }
+}
 
 /// The layout of the [`Stack`].
 #[derive(Debug, Default)]
@@ -66,7 +117,8 @@ impl StackLayout {
     ///
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
-    pub fn local_to_reg(&self, index: LocalIdx) -> Result<Slot, Error> {
+    pub fn local_to_reg(&self, item: impl IntoLocalIdx) -> Result<Slot, Error> {
+        let index = item.into_local_idx();
         debug_assert!(
             (u32::from(index) as usize) < self.len_locals,
             "out of bounds local operand index: {index:?}"
@@ -83,7 +135,8 @@ impl StackLayout {
     ///
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
-    pub fn temp_to_reg(&self, index: OperandIdx) -> Result<Slot, Error> {
+    pub fn temp_to_reg(&self, item: impl IntoOperandIdx) -> Result<Slot, Error> {
+        let index = item.into_operand_idx();
         let index = usize::from(index);
         let Some(index) = index.checked_add(self.len_locals) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
