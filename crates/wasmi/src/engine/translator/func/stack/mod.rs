@@ -23,7 +23,7 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    operand::{ImmediateOperand, Operand, TempOperand},
+    operand::{ImmediateOperand, LocalOperand, Operand, TempOperand},
     operands::{OperandIdx, PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
