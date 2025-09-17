@@ -799,8 +799,8 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         debug_assert_eq!(lhs.ty(), rhs.ty());
-        let lhs = self.layout.operand_to_reg(lhs)?;
-        let rhs = self.layout.operand_to_reg(rhs)?;
+        let lhs = self.layout.operand_to_slot(lhs)?;
+        let rhs = self.layout.operand_to_slot(rhs)?;
         self.push_instr_with_result(result_ty, |result| make_instr(result, lhs, rhs), fuel_costs)
     }
 
@@ -1448,7 +1448,7 @@ impl FuncTranslator {
             self.stack.push_immediate(consteval(input.val().into()))?;
             return Ok(());
         }
-        let input = self.layout.operand_to_reg(input)?;
+        let input = self.layout.operand_to_slot(input)?;
         self.push_instr_with_result(
             <R as Typed>::TY,
             |result| make_instr(result, input),
@@ -1480,7 +1480,7 @@ impl FuncTranslator {
             }
             return Ok(());
         }
-        let input = self.layout.operand_to_reg(input)?;
+        let input = self.layout.operand_to_slot(input)?;
         self.push_instr_with_result(
             <R as Typed>::TY,
             |result| make_instr(result, input),
@@ -1649,7 +1649,7 @@ impl FuncTranslator {
                 if opt_si(self, val, rhs)? {
                     return Ok(());
                 }
-                let lhs = self.layout.operand_to_reg(val)?;
+                let lhs = self.layout.operand_to_slot(val)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| make_ssi(result, lhs, rhs),
@@ -1683,7 +1683,7 @@ impl FuncTranslator {
                 self.translate_binary_consteval_fallible::<T, T>(lhs, rhs, consteval)
             }
             (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
+                let lhs = self.layout.operand_to_slot(lhs)?;
                 let rhs = T::from(rhs.val());
                 let Some(non_zero_rhs) = <T as WasmInteger>::non_zero(rhs) else {
                     // Optimization: division by zero always traps
@@ -1697,7 +1697,7 @@ impl FuncTranslator {
             }
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
-                let rhs = self.layout.operand_to_reg(rhs)?;
+                let rhs = self.layout.operand_to_slot(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| make_instr_sis(result, lhs, rhs),
@@ -1732,7 +1732,7 @@ impl FuncTranslator {
                 self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
             }
             (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
+                let lhs = self.layout.operand_to_slot(lhs)?;
                 let rhs = T::from(rhs.val());
                 self.push_instr_with_result(
                     <R as Typed>::TY,
@@ -1742,7 +1742,7 @@ impl FuncTranslator {
             }
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
-                let rhs = self.layout.operand_to_reg(rhs)?;
+                let rhs = self.layout.operand_to_slot(rhs)?;
                 self.push_instr_with_result(
                     <R as Typed>::TY,
                     |result| make_instr_sis(result, lhs, rhs),
@@ -1781,7 +1781,7 @@ impl FuncTranslator {
                     self.stack.push_operand(lhs)?;
                     return Ok(());
                 };
-                let lhs = self.layout.operand_to_reg(lhs)?;
+                let lhs = self.layout.operand_to_slot(lhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| make_instr_ssi(result, lhs, rhs),
@@ -1795,7 +1795,7 @@ impl FuncTranslator {
                     self.stack.push_immediate(lhs)?;
                     return Ok(());
                 }
-                let rhs = self.layout.operand_to_reg(rhs)?;
+                let rhs = self.layout.operand_to_slot(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| make_instr_sis(result, lhs, rhs),
@@ -1834,7 +1834,7 @@ impl FuncTranslator {
                 self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
             }
             (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
+                let lhs = self.layout.operand_to_slot(lhs)?;
                 let sign = T::from(rhs.val()).sign();
                 self.push_instr_with_result(
                     <T as Typed>::TY,
@@ -1844,7 +1844,7 @@ impl FuncTranslator {
             }
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
-                let rhs = self.layout.operand_to_reg(rhs)?;
+                let rhs = self.layout.operand_to_slot(rhs)?;
                 self.push_instr_with_result(
                     <T as Typed>::TY,
                     |result| make_instr_sis(result, lhs, rhs),
@@ -2344,7 +2344,7 @@ impl FuncTranslator {
                 if self.try_opt_i64_mul_wide_sx(lhs, rhs_val, signed)? {
                     return Ok(());
                 }
-                let lhs = self.layout.operand_to_reg(lhs)?;
+                let lhs = self.layout.operand_to_slot(lhs)?;
                 let rhs = self.copy_if_immediate(rhs)?;
                 (lhs, rhs)
             }
@@ -2354,12 +2354,12 @@ impl FuncTranslator {
                     return Ok(());
                 }
                 let lhs = self.copy_if_immediate(lhs)?;
-                let rhs = self.layout.operand_to_reg(rhs)?;
+                let rhs = self.layout.operand_to_slot(rhs)?;
                 (lhs, rhs)
             }
             (lhs, rhs) => {
-                let lhs = self.layout.operand_to_reg(lhs)?;
-                let rhs = self.layout.operand_to_reg(rhs)?;
+                let lhs = self.layout.operand_to_slot(lhs)?;
+                let rhs = self.layout.operand_to_slot(rhs)?;
                 (lhs, rhs)
             }
         };
