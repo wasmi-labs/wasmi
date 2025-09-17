@@ -33,7 +33,7 @@ pub struct OpEncoder {
 }
 
 impl ReusableAllocations for OpEncoder {
-    type Allocations = InstrEncoderAllocations;
+    type Allocations = OpEncoderAllocations;
 
     fn into_allocations(self) -> Self::Allocations {
         Self::Allocations {
@@ -44,12 +44,12 @@ impl ReusableAllocations for OpEncoder {
 
 /// The reusable heap allocations of the [`OpEncoder`].
 #[derive(Debug, Default)]
-pub struct InstrEncoderAllocations {
+pub struct OpEncoderAllocations {
     /// The list of constructed instructions and their parameters.
     instrs: Vec<Op>,
 }
 
-impl Reset for InstrEncoderAllocations {
+impl Reset for OpEncoderAllocations {
     fn reset(&mut self) {
         self.instrs.clear();
     }
@@ -57,7 +57,7 @@ impl Reset for InstrEncoderAllocations {
 
 impl OpEncoder {
     /// Creates a new [`OpEncoder`].
-    pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
+    pub fn new(engine: &Engine, alloc: OpEncoderAllocations) -> Self {
         let config = engine.config();
         let fuel_costs = config
             .get_consume_fuel()
