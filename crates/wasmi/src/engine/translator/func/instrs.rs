@@ -28,8 +28,11 @@ pub struct OpEncoder {
     ///
     /// This is `Some` if fuel metering is enabled, otherwise `None`.
     fuel_costs: Option<FuelCostsProvider>,
-    /// The last pushed non-parameter [`Op`].
-    last_instr: Option<Instr>,
+    /// The last pushed [`Op`].
+    /// 
+    /// This is special in that it allows being peeked and manipulated.
+    /// This is useful to perform op-code fusion or adjusting the result slot.
+    last: Option<Instr>,
 }
 
 impl ReusableAllocations for OpEncoder {
@@ -66,7 +69,7 @@ impl OpEncoder {
         Self {
             instrs: alloc.instrs,
             fuel_costs,
-            last_instr: None,
+            last: None,
         }
     }
 
@@ -107,7 +110,7 @@ impl OpEncoder {
     fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
         let instr = self.next_instr();
         self.instrs.push(instruction);
-        self.last_instr = Some(instr);
+        self.last = Some(instr);
         Ok(instr)
     }
 
@@ -120,7 +123,7 @@ impl OpEncoder {
     ///
     /// If `instr` or `new_instr` are [`Op`] parameters.
     pub fn try_replace_instr(&mut self, instr: Instr, new_instr: Op) -> Result<bool, Error> {
-        let Some(last_instr) = self.last_instr else {
+        let Some(last_instr) = self.last else {
             return Ok(false);
         };
         let replace = self.get_mut(instr);
@@ -150,7 +153,7 @@ impl OpEncoder {
             // Case: cannot replace result if `new_result` isn't a local.
             return Ok(false);
         }
-        let Some(last_instr) = self.last_instr else {
+        let Some(last_instr) = self.last else {
             // Case: cannot replace result without last instruction.
             return Ok(false);
         };
@@ -179,7 +182,7 @@ impl OpEncoder {
         true_val: Slot,
         false_val: Slot,
     ) -> Result<bool, Error> {
-        let Some(last_instr) = self.last_instr else {
+        let Some(last_instr) = self.last else {
             // If there is no last instruction there is no comparison instruction to negate.
             return Ok(false);
         };
@@ -248,7 +251,7 @@ impl OpEncoder {
     /// needs to be reset to `None` to signal that no such optimization is
     /// valid across control flow boundaries.
     pub fn reset_last_instr(&mut self) {
-        self.last_instr = None;
+        self.last = None;
     }
 
     /// Updates the branch offset of `instr` to `offset`.
@@ -304,7 +307,7 @@ impl OpEncoder {
 
     /// Returns the last instruction of the [`OpEncoder`] if any.
     pub fn last_instr(&self) -> Option<Instr> {
-        self.last_instr
+        self.last
     }
 }
 
