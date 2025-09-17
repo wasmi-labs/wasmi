@@ -22,17 +22,17 @@ use alloc::vec::{self, Vec};
 /// Creates and encodes the buffer of encoded [`Op`]s for a function.
 #[derive(Debug, Default)]
 pub struct OpEncoder {
-    /// The list of constructed instructions and their parameters.
-    instrs: Vec<Op>,
-    /// The fuel costs of instructions.
-    ///
-    /// This is `Some` if fuel metering is enabled, otherwise `None`.
-    fuel_costs: Option<FuelCostsProvider>,
     /// The last pushed [`Op`].
     /// 
     /// This is special in that it allows being peeked and manipulated.
     /// This is useful to perform op-code fusion or adjusting the result slot.
     last: Option<Instr>,
+    /// The fuel costs of instructions.
+    ///
+    /// This is `Some` if fuel metering is enabled, otherwise `None`.
+    fuel_costs: Option<FuelCostsProvider>,
+    /// The list of constructed instructions and their parameters.
+    instrs: Vec<Op>,
 }
 
 impl ReusableAllocations for OpEncoder {
