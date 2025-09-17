@@ -1,4 +1,4 @@
-use crate::{engine::translator::utils::OpPos, ir::BranchOffset, Error};
+use crate::{engine::{translator::utils::OpPos, TranslationError}, ir::BranchOffset, Error};
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},
@@ -133,6 +133,24 @@ impl LabelRegistry {
         }
     }
 
+    /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
+    ///
+    /// # Errors
+    ///
+    /// If the resulting [`BranchOffset`] is out of bounds.
+    pub fn trace_branch_offset(src: OpPos, dst: OpPos) -> Result<BranchOffset, Error> {
+        fn trace_offset32(src: OpPos, dst: OpPos) -> Option<i32> {
+            let src = isize::try_from(usize::from(src)).ok()?;
+            let dst = isize::try_from(usize::from(dst)).ok()?;
+            let offset = dst.checked_sub(src)?;
+            i32::try_from(offset).ok()
+        }
+        let Some(offset) = trace_offset32(src, dst) else {
+            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds))
+        };
+        Ok(BranchOffset::from(offset))
+    }
+
     /// Tries to resolve the `label`.
     ///
     /// Returns the proper `BranchOffset` in case the `label` has already been
@@ -147,7 +165,7 @@ impl LabelRegistry {
     ) -> Result<BranchOffset, Error> {
         let offset = match *self.get_label(label) {
             Label::Pinned(target) => {
-                BranchOffset::from_src_to_dst(u32::from(user), u32::from(target))?
+                Self::trace_branch_offset(user, target)?
             }
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
@@ -205,8 +223,7 @@ impl Iterator for ResolvedUserIter<'_> {
             .registry
             .resolve_label(next.label)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
-        let offset =
-            BranchOffset::from_src_to_dst(u32::from(src), u32::from(dst)).map_err(Into::into);
+        let offset = LabelRegistry::trace_branch_offset(src, dst);
         Some((src, offset))
     }
 }
