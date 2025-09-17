@@ -10,7 +10,7 @@ mod stack;
 mod visit;
 
 use self::{
-    instrs::{OpEncoder, InstrEncoderAllocations},
+    instrs::{OpEncoder, OpEncoderAllocations},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
     stack::{
@@ -117,7 +117,7 @@ pub struct FuncTranslatorAllocations {
     /// Slots and pins labels and tracks their users.
     labels: LabelRegistry,
     /// Constructs and encodes function instructions.
-    instrs: InstrEncoderAllocations,
+    instrs: OpEncoderAllocations,
     /// Temporary buffer for operands.
     operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
