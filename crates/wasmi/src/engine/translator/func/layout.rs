@@ -111,8 +111,8 @@ impl StackLayout {
     /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
-            Operand::Local(operand) => self.local_to_slot(operand.local_index()),
-            Operand::Temp(operand) => self.temp_to_slot(operand.operand_index()),
+            Operand::Local(operand) => self.local_to_slot(operand),
+            Operand::Temp(operand) => self.temp_to_slot(operand),
             Operand::Immediate(operand) => {
                 panic!("cannot convert `ImmediateOperand` to stack `Slot` but got: {operand:?}")
             }
