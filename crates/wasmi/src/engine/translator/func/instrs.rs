@@ -34,7 +34,7 @@ pub struct OpEncoder {
     /// This is `Some` if fuel metering is enabled, otherwise `None`.
     fuel_costs: Option<FuelCostsProvider>,
     /// The list of constructed instructions and their parameters.
-    instrs: Vec<Op>,
+    ops: Vec<Op>,
 }
 
 impl ReusableAllocations for OpEncoder {
@@ -42,7 +42,7 @@ impl ReusableAllocations for OpEncoder {
 
     fn into_allocations(self) -> Self::Allocations {
         Self::Allocations {
-            instrs: self.instrs,
+            instrs: self.ops,
         }
     }
 }
@@ -69,7 +69,7 @@ impl OpEncoder {
             .then(|| config.fuel_costs())
             .cloned();
         Self {
-            instrs: alloc.instrs,
+            ops: alloc.instrs,
             fuel_costs,
             last: None,
         }
@@ -78,7 +78,7 @@ impl OpEncoder {
     /// Returns the next [`Instr`].
     #[must_use]
     pub fn next_instr(&self) -> Instr {
-        Instr::from_usize(self.instrs.len())
+        Instr::from_usize(self.ops.len())
     }
 
     /// Pushes an [`Op::ConsumeFuel`] instruction to `self`.
@@ -111,7 +111,7 @@ impl OpEncoder {
     /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
     fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
         let instr = self.next_instr();
-        self.instrs.push(instruction);
+        self.ops.push(instruction);
         self.last = Some(instr);
         Ok(instr)
     }
@@ -221,7 +221,7 @@ impl OpEncoder {
     ///
     /// The parameter is associated to the last pushed [`Op`].
     pub fn push_param(&mut self, instruction: Op) {
-        self.instrs.push(instruction);
+        self.ops.push(instruction);
     }
 
     /// Returns a shared reference to the [`Op`] associated to [`Instr`].
@@ -230,7 +230,7 @@ impl OpEncoder {
     ///
     /// If `instr` is out of bounds for `self`.
     pub fn get(&self, instr: Instr) -> &Op {
-        &self.instrs[instr.into_usize()]
+        &self.ops[instr.into_usize()]
     }
 
     /// Returns an exclusive reference to the [`Op`] associated to [`Instr`].
@@ -239,7 +239,7 @@ impl OpEncoder {
     ///
     /// If `instr` is out of bounds for `self`.
     fn get_mut(&mut self, instr: Instr) -> &mut Op {
-        &mut self.instrs[instr.into_usize()]
+        &mut self.ops[instr.into_usize()]
     }
 
     /// Resets the [`Instr`] last created via [`OpEncoder::push_instr`].
@@ -303,7 +303,7 @@ impl OpEncoder {
     /// The [`OpEncoder`] will be empty after this operation.
     pub fn drain(&mut self) -> OpEncoderIter<'_> {
         OpEncoderIter {
-            iter: self.instrs.drain(..),
+            iter: self.ops.drain(..),
         }
     }
 
