@@ -71,6 +71,7 @@ impl fmt::Display for ResumableHostTrapError {
 impl ResumableHostTrapError {
     /// Creates a new [`ResumableHostTrapError`].
     #[cold]
+    #[expect(unused)]
     pub(crate) fn new(host_error: Error, host_func: Func, caller_results: SlotSpan) -> Self {
         Self {
             host_error,
