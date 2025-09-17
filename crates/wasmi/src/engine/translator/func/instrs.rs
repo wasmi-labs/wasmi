@@ -24,8 +24,10 @@ use alloc::vec::{self, Vec};
 pub struct OpEncoder {
     /// The last pushed [`Op`].
     /// 
-    /// This is special in that it allows being peeked and manipulated.
-    /// This is useful to perform op-code fusion or adjusting the result slot.
+    /// # Note
+    /// 
+    /// - This allows the last [`Op`] to be peeked and manipulated.
+    /// - For example, this is useful to perform op-code fusion or adjusting the result slot.
     last: Option<Instr>,
     /// The fuel costs of instructions.
     ///
