@@ -15,7 +15,7 @@ use super::Stack;
 ///
 /// # Note
 ///
-/// This allows to use [`StackLayout::local_to_reg`] with [`LocalIdx`] and [`LocalOperand`].
+/// This allows to use [`StackLayout::local_to_slot`] with [`LocalIdx`] and [`LocalOperand`].
 pub trait IntoLocalIdx {
     /// Converts `self` into [`LocalIdx`].
     fn into_local_idx(self) -> LocalIdx;
@@ -97,7 +97,7 @@ impl StackLayout {
     ///
     /// Forwards to one of
     ///
-    /// - [`StackLayout::local_to_reg`]
+    /// - [`StackLayout::local_to_slot`]
     /// - [`StackLayout::temp_to_reg`]
     ///
     /// # Errors
@@ -105,7 +105,7 @@ impl StackLayout {
     /// If the forwarded method returned an error.
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
-            Operand::Local(operand) => self.local_to_reg(operand.local_index()),
+            Operand::Local(operand) => self.local_to_slot(operand.local_index()),
             Operand::Temp(operand) => self.temp_to_reg(operand.operand_index()),
             Operand::Immediate(_) => panic!("function local constants have been removed"), // TODO: remove
         }
@@ -117,7 +117,7 @@ impl StackLayout {
     ///
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
-    pub fn local_to_reg(&self, item: impl IntoLocalIdx) -> Result<Slot, Error> {
+    pub fn local_to_slot(&self, item: impl IntoLocalIdx) -> Result<Slot, Error> {
         let index = item.into_local_idx();
         debug_assert!(
             (u32::from(index) as usize) < self.len_locals,
