@@ -1,3 +1,5 @@
+#![expect(unused)]
+
 mod control;
 mod locals;
 mod operand;
