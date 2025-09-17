@@ -444,7 +444,7 @@ impl FuncTranslator {
                 Op::copy(result, value)
             }
             Operand::Local(value) => {
-                let value = layout.local_to_reg(value.local_index())?;
+                let value = layout.local_to_slot(value.local_index())?;
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
@@ -557,7 +557,7 @@ impl FuncTranslator {
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
             let value = match value {
-                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Local(value) => layout.local_to_slot(value.local_index())?,
                 Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
                 Operand::Immediate(_) => {
                     // Immediate values will never yield no-op copies.
@@ -589,7 +589,7 @@ impl FuncTranslator {
         let mut values = values;
         while let Some((value, rest)) = values.split_last() {
             let value = match value {
-                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Local(value) => layout.local_to_slot(value.local_index())?,
                 Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
                 Operand::Immediate(_) => {
                     // Immediate values will never yield no-op copies.
@@ -632,7 +632,7 @@ impl FuncTranslator {
             // Note: We only have to check the register case since constant value
             //       copies can never overlap.
             let value = match value {
-                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Local(value) => layout.local_to_slot(value.local_index())?,
                 Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
                 Operand::Immediate(_) => {
                     // Immediates are allocated as function local constants
@@ -719,7 +719,7 @@ impl FuncTranslator {
     /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
     fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
-            Operand::Local(operand) => self.layout.local_to_reg(operand.local_index()),
+            Operand::Local(operand) => self.layout.local_to_slot(operand.local_index()),
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index()),
             Operand::Immediate(operand) => {
                 let value = operand.val();
@@ -890,7 +890,7 @@ impl FuncTranslator {
             0 => Op::Return {},
             1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
-                    let value = self.layout.local_to_reg(operand.local_index())?;
+                    let value = self.layout.local_to_slot(operand.local_index())?;
                     Op::return_slot(value)
                 }
                 Operand::Temp(operand) => {
@@ -956,7 +956,7 @@ impl FuncTranslator {
             return Ok(None);
         };
         let mut head = match head.as_ref() {
-            Operand::Local(start) => layout.local_to_reg(start.local_index())?,
+            Operand::Local(start) => layout.local_to_slot(start.local_index())?,
             Operand::Temp(start) => layout.temp_to_reg(start.operand_index())?,
             Operand::Immediate(_) => return Ok(None),
         };
@@ -964,7 +964,7 @@ impl FuncTranslator {
         for value in values {
             let cur = match value.as_ref() {
                 Operand::Immediate(_) => return Ok(None),
-                Operand::Local(value) => layout.local_to_reg(value.local_index())?,
+                Operand::Local(value) => layout.local_to_slot(value.local_index())?,
                 Operand::Temp(value) => layout.temp_to_reg(value.operand_index())?,
             };
             if head != cur.prev() {
@@ -1171,7 +1171,7 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = self.layout.temp_to_reg(preserved)?;
-            let value = self.layout.local_to_reg(local_idx)?;
+            let value = self.layout.local_to_slot(local_idx)?;
             self.instrs.push_instr(
                 Op::copy(result, value),
                 consume_fuel_instr,
@@ -1194,7 +1194,7 @@ impl FuncTranslator {
             return Ok(());
         }
         // At this point we need to encode a copy instruction.
-        let result = self.layout.local_to_reg(local_idx)?;
+        let result = self.layout.local_to_slot(local_idx)?;
         let outcome = self.encode_copy(result, input, consume_fuel_instr)?;
         debug_assert!(
             outcome.is_some(),
@@ -1211,7 +1211,7 @@ impl FuncTranslator {
         new_result: LocalIdx,
         old_result: Operand,
     ) -> Result<bool, Error> {
-        let result = self.layout.local_to_reg(new_result)?;
+        let result = self.layout.local_to_slot(new_result)?;
         let old_result = match old_result {
             Operand::Immediate(_) => {
                 // Case: cannot replace immediate value result.
@@ -1256,7 +1256,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let condition = match condition {
-            Operand::Local(condition) => self.layout.local_to_reg(condition.local_index())?,
+            Operand::Local(condition) => self.layout.local_to_slot(condition.local_index())?,
             Operand::Temp(condition) => self.layout.temp_to_reg(condition.operand_index())?,
             Operand::Immediate(condition) => {
                 let condition = i32::from(condition.val());
@@ -1517,7 +1517,7 @@ impl FuncTranslator {
         f: impl FnOnce(&mut Self, TypedVal) -> Result<Input<R>, Error>,
     ) -> Result<Input<R>, Error> {
         let reg = match operand {
-            Operand::Local(operand) => self.layout.local_to_reg(operand.local_index())?,
+            Operand::Local(operand) => self.layout.local_to_slot(operand.local_index())?,
             Operand::Temp(operand) => self.layout.temp_to_reg(operand.operand_index())?,
             Operand::Immediate(operand) => return f(self, operand.val()),
         };
@@ -1538,7 +1538,7 @@ impl FuncTranslator {
             Operand::Immediate(value) => value.val(),
             Operand::Local(value) => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = self.layout.local_to_reg(value.local_index())?;
+                let reg = self.layout.local_to_slot(value.local_index())?;
                 return Ok(Input::Slot(reg));
             }
             Operand::Temp(value) => {
@@ -1914,7 +1914,7 @@ impl FuncTranslator {
                 self.stack.push_operand(selected)?;
                 return Ok(());
             }
-            Operand::Local(condition) => self.layout.local_to_reg(condition.local_index())?,
+            Operand::Local(condition) => self.layout.local_to_slot(condition.local_index())?,
             Operand::Temp(condition) => self.layout.temp_to_reg(condition.operand_index())?,
         };
         let true_val = self.copy_if_immediate(true_val)?;
@@ -2043,7 +2043,7 @@ impl FuncTranslator {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
         let ptr = match ptr {
-            Operand::Local(ptr) => self.layout.local_to_reg(ptr.local_index())?,
+            Operand::Local(ptr) => self.layout.local_to_slot(ptr.local_index())?,
             Operand::Temp(ptr) => self.layout.temp_to_reg(ptr.operand_index())?,
             Operand::Immediate(ptr) => {
                 let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
@@ -2118,7 +2118,7 @@ impl FuncTranslator {
     {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = match ptr {
-            Operand::Local(ptr) => self.layout.local_to_reg(ptr)?,
+            Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
             Operand::Temp(ptr) => self.layout.temp_to_reg(ptr)?,
             Operand::Immediate(ptr) => {
                 return self.encode_store_ix::<T>(ptr, offset, memory, value)
@@ -2129,7 +2129,7 @@ impl FuncTranslator {
         }
         let store_op = match value {
             Operand::Local(value) => {
-                let value = self.layout.local_to_reg(value)?;
+                let value = self.layout.local_to_slot(value)?;
                 T::store_ss(ptr, offset, value, memory)
             }
             Operand::Temp(value) => {
@@ -2163,7 +2163,7 @@ impl FuncTranslator {
         };
         let store_op = match value {
             Operand::Local(value) => {
-                let value = self.layout.local_to_reg(value)?;
+                let value = self.layout.local_to_slot(value)?;
                 T::store_is(address, value, memory)
             }
             Operand::Temp(value) => {
@@ -2206,7 +2206,7 @@ impl FuncTranslator {
         };
         let store_op = match value {
             Operand::Local(value) => {
-                let value = self.layout.local_to_reg(value)?;
+                let value = self.layout.local_to_slot(value)?;
                 T::store_mem0_offset16_ss(ptr, offset16, value)
             }
             Operand::Temp(value) => {
