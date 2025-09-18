@@ -191,7 +191,7 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
                 .iter()
                 .map(|field| field.ident)
                 .map(SnakeCase)
-                .map(|ident| (indent.inc_by(3), ident, ": Decode::decode(decoder)"))
+                .map(|ident| (indent.inc_by(3), ident, ": Decode::decode(decoder)?"))
                 .map(DisplayConcat),
         );
         write!(
@@ -201,10 +201,10 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
                         {fields}\n\
             {indent}}}\n\
             {indent}impl Decode for {camel_ident} {{\n\
-            {indent}    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {{\n\
-            {indent}        Self {{\n\
+            {indent}    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {{\n\
+            {indent}        Ok(Self {{\n\
                                 {constructors}\n\
-            {indent}        }}\n\
+            {indent}        }})\n\
             {indent}    }}\n\
             {indent}}}\n\
             "

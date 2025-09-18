@@ -1,6 +1,7 @@
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
+    decode::DecodeError,
     index::{Memory, Table},
     Address,
     BranchOffset,
@@ -17,11 +18,11 @@ pub struct UnaryOp<V> {
 }
 
 impl<V: Decode> Decode for UnaryOp<V> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -37,12 +38,12 @@ where
     Lhs: Decode,
     Rhs: Decode,
 {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            lhs: Decode::decode(decoder),
-            rhs: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            lhs: Decode::decode(decoder)?,
+            rhs: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -62,13 +63,13 @@ where
     B: Decode,
     C: Decode,
 {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            a: Decode::decode(decoder),
-            b: Decode::decode(decoder),
-            c: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            a: Decode::decode(decoder)?,
+            b: Decode::decode(decoder)?,
+            c: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -84,12 +85,12 @@ where
     Lhs: Decode,
     Rhs: Decode,
 {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            lhs: Decode::decode(decoder),
-            rhs: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            lhs: Decode::decode(decoder)?,
+            rhs: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -107,14 +108,14 @@ where
     Lhs: Decode,
     Rhs: Decode,
 {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            lhs: Decode::decode(decoder),
-            rhs: Decode::decode(decoder),
-            val_true: Decode::decode(decoder),
-            val_false: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            lhs: Decode::decode(decoder)?,
+            rhs: Decode::decode(decoder)?,
+            val_true: Decode::decode(decoder)?,
+            val_false: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -127,13 +128,13 @@ pub struct LoadOp_Ss {
 }
 
 impl Decode for LoadOp_Ss {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            memory: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            memory: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -145,12 +146,12 @@ pub struct LoadOp_Si {
 }
 
 impl Decode for LoadOp_Si {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            address: Decode::decode(decoder),
-            memory: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            address: Decode::decode(decoder)?,
+            memory: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -162,12 +163,12 @@ pub struct LoadOpMem0Offset16_Ss {
 }
 
 impl Decode for LoadOpMem0Offset16_Ss {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -180,13 +181,13 @@ pub struct StoreOp_S<T> {
 }
 
 impl<T: Decode> Decode for StoreOp_S<T> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-            memory: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+            memory: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -198,12 +199,12 @@ pub struct StoreOp_I<T> {
 }
 
 impl<T: Decode> Decode for StoreOp_I<T> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            address: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-            memory: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            address: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+            memory: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -215,12 +216,12 @@ pub struct StoreOpMem0Offset16_S<T> {
 }
 
 impl<T: Decode> Decode for StoreOpMem0Offset16_S<T> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -236,14 +237,14 @@ pub struct StoreLaneOp_S<T, LaneIdx> {
 
 #[cfg(feature = "simd")]
 impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOp_S<T, LaneIdx> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-            memory: Decode::decode(decoder),
-            lane: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+            memory: Decode::decode(decoder)?,
+            lane: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -258,13 +259,13 @@ pub struct StoreLaneOpMem0Offset16_S<T, LaneIdx> {
 
 #[cfg(feature = "simd")]
 impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOpMem0Offset16_S<T, LaneIdx> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-            lane: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+            lane: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -276,12 +277,12 @@ pub struct TableGet<T> {
 }
 
 impl<T: Decode> Decode for TableGet<T> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            index: Decode::decode(decoder),
-            table: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            index: Decode::decode(decoder)?,
+            table: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -293,12 +294,12 @@ pub struct TableSet<I, V> {
 }
 
 impl<I: Decode, V: Decode> Decode for TableSet<I, V> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            table: Decode::decode(decoder),
-            index: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            table: Decode::decode(decoder)?,
+            index: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -313,13 +314,13 @@ pub struct V128ReplaceLaneOp<V, const N: u8> {
 
 #[cfg(feature = "simd")]
 impl<V: Decode, const N: u8> Decode for V128ReplaceLaneOp<V, N> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            v128: Decode::decode(decoder),
-            value: Decode::decode(decoder),
-            lane: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            v128: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+            lane: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -336,15 +337,15 @@ pub struct V128LoadLaneOp_Ss<LaneIdx> {
 
 #[cfg(feature = "simd")]
 impl<LaneIdx: Decode> Decode for V128LoadLaneOp_Ss<LaneIdx> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            memory: Decode::decode(decoder),
-            v128: Decode::decode(decoder),
-            lane: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            memory: Decode::decode(decoder)?,
+            v128: Decode::decode(decoder)?,
+            lane: Decode::decode(decoder)?,
+        })
     }
 }
 
@@ -360,13 +361,13 @@ pub struct V128LoadLaneOpMem0Offset16_Ss<LaneIdx> {
 
 #[cfg(feature = "simd")]
 impl<LaneIdx: Decode> Decode for V128LoadLaneOpMem0Offset16_Ss<LaneIdx> {
-    unsafe fn decode<D: Decoder>(decoder: &mut D) -> Self {
-        Self {
-            result: Decode::decode(decoder),
-            ptr: Decode::decode(decoder),
-            offset: Decode::decode(decoder),
-            v128: Decode::decode(decoder),
-            lane: Decode::decode(decoder),
-        }
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            ptr: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+            v128: Decode::decode(decoder)?,
+            lane: Decode::decode(decoder)?,
+        })
     }
 }
