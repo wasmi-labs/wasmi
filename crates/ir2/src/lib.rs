@@ -17,7 +17,7 @@ use wasmi_core as core;
 
 #[doc(inline)]
 pub use self::{
-    decode::{Decode, Decoder},
+    decode::{Decode, DecodeError, Decoder},
     encode::{Encode, Encoder},
     error::Error,
     index::Slot,
