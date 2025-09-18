@@ -129,6 +129,7 @@ impl ModuleHeader {
     }
 
     /// Returns the [`FuncIdx`] for the given [`EngineFunc`].
+    #[expect(unused)]
     pub fn get_func_index(&self, func: EngineFunc) -> Option<FuncIdx> {
         let position = self.inner.engine_funcs.position(func)?;
         let len_imports = self.inner.imports.len_funcs as u32;
