@@ -1,5 +1,7 @@
 #![allow(non_camel_case_types)]
 
+//! Definitions and utilities to decode encoded byte streams.
+
 mod op;
 
 use self::op::{
