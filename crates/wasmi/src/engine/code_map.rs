@@ -139,7 +139,6 @@ impl EngineFuncSpan {
     /// Returns the `u32` index of the [`EngineFunc`] in `self` if any.
     ///
     /// Returns `None` if `func` is not contained in `self`.
-    #[expect(unused)]
     pub fn position(&self, func: EngineFunc) -> Option<u32> {
         debug_assert!(self.start <= self.end);
         if func < self.start || func >= self.end {
