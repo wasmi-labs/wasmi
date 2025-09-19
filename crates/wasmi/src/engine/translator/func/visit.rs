@@ -11,8 +11,8 @@ use crate::{
         },
         BlockType,
     },
-    ir::{self, Const16, Op},
-    module::{self, FuncIdx, MemoryIdx, TableIdx, WasmiValueType},
+    ir::{self, index, Op},
+    module::{self, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
     Func,
@@ -316,7 +316,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(default_target) = usize::try_from(default_target) else {
             panic!("out of bounds `default_target` does not fit into `usize`: {default_target}");
         };
-        let index = self.layout.operand_to_reg(index)?;
+        let index = self.layout.operand_to_slot(index)?;
         let len_branch_params = self
             .stack
             .peek_control(default_target)
@@ -344,65 +344,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_idx = FuncIdx::from(function_index);
-        let func_type = self.resolve_func_type(func_idx);
-        let len_params = usize::from(func_type.len_params());
-        let results = self.call_regspan(len_params)?;
-        let instr = match self.module.get_engine_func(func_idx) {
-            Some(engine_func) => {
-                // Case: We are calling an internal function and can optimize
-                //       this case by using the special instruction for it.
-                match len_params {
-                    0 => Op::call_internal_0(results, engine_func),
-                    _ => Op::call_internal(results, engine_func),
-                }
-            }
-            None => {
-                // Case: We are calling an imported function and must use the
-                //       general calling operator for it.
-                match len_params {
-                    0 => Op::call_imported_0(results, function_index),
-                    _ => Op::call_imported(results, function_index),
-                }
-            }
-        };
-        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
-        self.stack.pop_n(len_params, &mut self.operands);
-        self.instrs
-            .encode_register_list(&self.operands, &mut self.layout)?;
-        if let Some(span) = self.push_results(call_instr, func_type.results())? {
-            debug_assert_eq!(span, results);
-        }
-        Ok(())
+        self.translate_call(function_index, Op::call_internal, Op::call_imported)
     }
 
     #[inline(never)]
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_type = self.resolve_type(type_index);
-        let index = self.stack.pop();
-        let indirect_params = self.call_indirect_params(index, table_index)?;
-        let len_params = usize::from(func_type.len_params());
-        let results = self.call_regspan(len_params)?;
-        let instr = match (len_params, indirect_params) {
-            (0, Op::CallIndirectParams { .. }) => Op::call_indirect_0(results, type_index),
-            (0, Op::CallIndirectParamsImm16 { .. }) => {
-                Op::call_indirect_0_imm16(results, type_index)
-            }
-            (_, Op::CallIndirectParams { .. }) => Op::call_indirect(results, type_index),
-            (_, Op::CallIndirectParamsImm16 { .. }) => Op::call_indirect_imm16(results, type_index),
-            _ => unreachable!(),
-        };
-        let call_instr = self.push_instr(instr, FuelCostsProvider::call)?;
-        self.push_param(indirect_params)?;
-        self.stack.pop_n(len_params, &mut self.operands);
-        self.instrs
-            .encode_register_list(&self.operands, &mut self.layout)?;
-        if let Some(span) = self.push_results(call_instr, func_type.results())? {
-            debug_assert_eq!(span, results);
-        }
-        Ok(())
+        self.translate_call_indirect(type_index, table_index, Op::call_indirect)
     }
 
     #[inline(never)]
@@ -469,13 +416,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let global = ir::index::Global::from(global_index);
-        let input = match self.stack.pop() {
+        let global = index::Global::from(global_index);
+        let input = self.stack.pop();
+        let value = match input {
             Operand::Immediate(input) => input.val(),
             input => {
                 // Case: `global.set` with simple register input.
-                let input = self.layout.operand_to_reg(input)?;
-                self.push_instr(Op::global_set(input, global), FuelCostsProvider::instance)?;
+                let input = self.layout.operand_to_slot(input)?;
+                self.push_instr(Op::global_set(global, input), FuelCostsProvider::instance)?;
                 return Ok(());
             }
         };
@@ -483,233 +431,137 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
-        debug_assert_eq!(global_type.content(), input.ty());
-        match global_type.content() {
-            ValType::I32 => {
-                if let Ok(value) = Const16::try_from(i32::from(input)) {
-                    // Case: `global.set` with 16-bit encoded `i32` value.
-                    self.push_instr(
-                        Op::global_set_i32imm16(value, global),
-                        FuelCostsProvider::instance,
-                    )?;
-                    return Ok(());
-                }
+        debug_assert_eq!(global_type.content(), value.ty());
+        let global_set_instr = match global_type.content() {
+            ValType::I32 => Op::global_set32(global, u32::from(value)),
+            ValType::I64 => Op::global_set64(global, u64::from(value)),
+            ValType::F32 => Op::global_set32(global, f32::from(value).to_bits()),
+            ValType::F64 => Op::global_set64(global, f64::from(value).to_bits()),
+            ValType::FuncRef | ValType::ExternRef => Op::global_set64(global, u64::from(value)),
+            ValType::V128 => {
+                let consume_fuel = self.stack.consume_fuel_instr();
+                let temp = self.copy_operand_to_temp(input, consume_fuel)?;
+                Op::global_set(global, temp)
             }
-            ValType::I64 => {
-                if let Ok(value) = Const16::try_from(i64::from(input)) {
-                    // Case: `global.set` with 16-bit encoded `i64` value.
-                    self.push_instr(
-                        Op::global_set_i64imm16(value, global),
-                        FuelCostsProvider::instance,
-                    )?;
-                    return Ok(());
-                }
-            }
-            _ => {}
         };
         // Note: at this point we have to allocate a function local constant.
-        let cref = self.layout.const_to_reg(input)?;
-        self.push_instr(Op::global_set(cref, global), FuelCostsProvider::instance)?;
+        self.push_instr(global_set_instr, FuelCostsProvider::instance)?;
         Ok(())
     }
 
     #[inline(never)]
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I32,
-            Op::load32,
-            Op::load32_offset16,
-            Op::load32_at,
-        )
+        self.translate_load::<op::I32Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::load64,
-            Op::load64_offset16,
-            Op::load64_at,
-        )
+        self.translate_load::<op::I64Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_f32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::F32,
-            Op::load32,
-            Op::load32_offset16,
-            Op::load32_at,
-        )
+        self.translate_load::<op::F32Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_f64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::F64,
-            Op::load64,
-            Op::load64_offset16,
-            Op::load64_at,
-        )
+        self.translate_load::<op::F64Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I32,
-            Op::i32_load8_s,
-            Op::i32_load8_s_offset16,
-            Op::i32_load8_s_at,
-        )
+        self.translate_load::<op::I32Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I32,
-            Op::i32_load8_u,
-            Op::i32_load8_u_offset16,
-            Op::i32_load8_u_at,
-        )
+        self.translate_load::<op::U32Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I32,
-            Op::i32_load16_s,
-            Op::i32_load16_s_offset16,
-            Op::i32_load16_s_at,
-        )
+        self.translate_load::<op::I32Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I32,
-            Op::i32_load16_u,
-            Op::i32_load16_u_offset16,
-            Op::i32_load16_u_at,
-        )
+        self.translate_load::<op::U32Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::i64_load8_s,
-            Op::i64_load8_s_offset16,
-            Op::i64_load8_s_at,
-        )
+        self.translate_load::<op::I64Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::i64_load8_u,
-            Op::i64_load8_u_offset16,
-            Op::i64_load8_u_at,
-        )
+        self.translate_load::<op::U64Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::i64_load16_s,
-            Op::i64_load16_s_offset16,
-            Op::i64_load16_s_at,
-        )
+        self.translate_load::<op::I64Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::i64_load16_u,
-            Op::i64_load16_u_offset16,
-            Op::i64_load16_u_at,
-        )
+        self.translate_load::<op::U64Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load32_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::i64_load32_s,
-            Op::i64_load32_s_offset16,
-            Op::i64_load32_s_at,
-        )
+        self.translate_load::<op::I64Load32>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load32_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_load(
-            memarg,
-            ValType::I64,
-            Op::i64_load32_u,
-            Op::i64_load32_u_offset16,
-            Op::i64_load32_u_at,
-        )
+        self.translate_load::<op::U64Load32>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I32Store>(memarg)
+        self.translate_store::<op::I32Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I64Store>(memarg)
+        self.translate_store::<op::I64Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_store(memarg, Op::store32, Op::store32_offset16, Op::store32_at)
+        self.translate_store::<op::F32Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_store(memarg, Op::store64, Op::store64_offset16, Op::store64_at)
+        self.translate_store::<op::F64Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I32Store8>(memarg)
+        self.translate_store::<op::I32Store8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I32Store16>(memarg)
+        self.translate_store::<op::I32Store16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I64Store8>(memarg)
+        self.translate_store::<op::I64Store8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I64Store16>(memarg)
+        self.translate_store::<op::I64Store16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore_wrap::<op::I64Store32>(memarg)
+        self.translate_store::<op::I64Store32>(memarg)
     }
 
     #[inline(never)]
@@ -720,9 +572,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .get_type_of_memory(MemoryIdx::from(mem))
             .index_ty()
             .ty();
+        let memory = index::Memory::try_from(mem)?;
         self.push_instr_with_result(
             index_ty,
-            |result| Op::memory_size(result, mem),
+            |result| Op::memory_size(result, memory),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -735,6 +588,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .module
             .get_type_of_memory(MemoryIdx::from(mem))
             .index_ty();
+        let memory = index::Memory::try_from(mem)?;
         let delta = self.stack.pop();
         if let Operand::Immediate(delta) = delta {
             let delta = delta.val();
@@ -750,20 +604,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // as `memory.size` instruction instead.
                 self.push_instr_with_result(
                     index_ty.ty(),
-                    |result| Op::memory_size(result, mem),
+                    |result| Op::memory_size(result, memory),
                     FuelCostsProvider::instance,
                 )?;
                 return Ok(());
             }
         }
         // Case: fallback to generic `memory.grow` instruction
-        let delta = self.immediate_to_reg(delta)?;
+        let delta = self.copy_if_immediate(delta)?;
         self.push_instr_with_result(
             index_ty.ty(),
-            |result| Op::memory_grow(result, delta),
+            |result| Op::memory_grow(result, delta, memory),
             FuelCostsProvider::instance,
         )?;
-        self.push_param(Op::memory_index(mem))?;
         Ok(())
     }
 
@@ -807,8 +660,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_eq(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, bool>(
-            Op::i32_eq,
-            Op::i32_eq_imm16,
+            Op::i32_eq_sss,
+            Op::i32_eq_ssi,
             wasm::i32_eq,
             FuncTranslator::fuse_eqz,
         )
@@ -817,8 +670,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_ne(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, bool>(
-            Op::i32_ne,
-            Op::i32_ne_imm16,
+            Op::i32_not_eq_sss,
+            Op::i32_not_eq_ssi,
             wasm::i32_ne,
             FuncTranslator::fuse_nez,
         )
@@ -827,9 +680,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_lt_s(&mut self) -> Self::Output {
         self.translate_binary::<i32, bool>(
-            Op::i32_lt_s,
-            Op::i32_lt_s_imm16_rhs,
-            Op::i32_lt_s_imm16_lhs,
+            Op::i32_lt_sss,
+            Op::i32_lt_ssi,
+            Op::i32_lt_sis,
             wasm::i32_lt_s,
         )
     }
@@ -837,9 +690,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_lt_u(&mut self) -> Self::Output {
         self.translate_binary::<u32, bool>(
-            Op::i32_lt_u,
-            Op::i32_lt_u_imm16_rhs,
-            Op::i32_lt_u_imm16_lhs,
+            Op::u32_lt_sss,
+            Op::u32_lt_ssi,
+            Op::u32_lt_sis,
             wasm::i32_lt_u,
         )
     }
@@ -847,9 +700,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_gt_s(&mut self) -> Self::Output {
         self.translate_binary::<i32, bool>(
-            swap_ops!(Op::i32_lt_s),
-            swap_ops!(Op::i32_lt_s_imm16_lhs),
-            swap_ops!(Op::i32_lt_s_imm16_rhs),
+            swap_ops!(Op::i32_lt_sss),
+            swap_ops!(Op::i32_lt_sis),
+            swap_ops!(Op::i32_lt_ssi),
             wasm::i32_gt_s,
         )
     }
@@ -857,9 +710,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_gt_u(&mut self) -> Self::Output {
         self.translate_binary::<u32, bool>(
-            swap_ops!(Op::i32_lt_u),
-            swap_ops!(Op::i32_lt_u_imm16_lhs),
-            swap_ops!(Op::i32_lt_u_imm16_rhs),
+            swap_ops!(Op::u32_lt_sss),
+            swap_ops!(Op::u32_lt_sis),
+            swap_ops!(Op::u32_lt_ssi),
             wasm::i32_gt_u,
         )
     }
@@ -867,9 +720,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_le_s(&mut self) -> Self::Output {
         self.translate_binary::<i32, bool>(
-            Op::i32_le_s,
-            Op::i32_le_s_imm16_rhs,
-            Op::i32_le_s_imm16_lhs,
+            Op::i32_le_sss,
+            Op::i32_le_ssi,
+            Op::i32_le_sis,
             wasm::i32_le_s,
         )
     }
@@ -877,9 +730,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_le_u(&mut self) -> Self::Output {
         self.translate_binary::<u32, bool>(
-            Op::i32_le_u,
-            Op::i32_le_u_imm16_rhs,
-            Op::i32_le_u_imm16_lhs,
+            Op::u32_le_sss,
+            Op::u32_le_ssi,
+            Op::u32_le_sis,
             wasm::i32_le_u,
         )
     }
@@ -887,9 +740,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_ge_s(&mut self) -> Self::Output {
         self.translate_binary::<i32, bool>(
-            swap_ops!(Op::i32_le_s),
-            swap_ops!(Op::i32_le_s_imm16_lhs),
-            swap_ops!(Op::i32_le_s_imm16_rhs),
+            swap_ops!(Op::i32_le_sss),
+            swap_ops!(Op::i32_le_sis),
+            swap_ops!(Op::i32_le_ssi),
             wasm::i32_ge_s,
         )
     }
@@ -897,9 +750,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_ge_u(&mut self) -> Self::Output {
         self.translate_binary::<u32, bool>(
-            swap_ops!(Op::i32_le_u),
-            swap_ops!(Op::i32_le_u_imm16_lhs),
-            swap_ops!(Op::i32_le_u_imm16_rhs),
+            swap_ops!(Op::u32_le_sss),
+            swap_ops!(Op::u32_le_sis),
+            swap_ops!(Op::u32_le_ssi),
             wasm::i32_ge_u,
         )
     }
@@ -914,8 +767,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_eq(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, bool>(
-            Op::i64_eq,
-            Op::i64_eq_imm16,
+            Op::i64_eq_sss,
+            Op::i64_eq_ssi,
             wasm::i64_eq,
             FuncTranslator::fuse_eqz,
         )
@@ -924,8 +777,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_ne(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, bool>(
-            Op::i64_ne,
-            Op::i64_ne_imm16,
+            Op::i64_not_eq_sss,
+            Op::i64_not_eq_ssi,
             wasm::i64_ne,
             FuncTranslator::fuse_nez,
         )
@@ -934,9 +787,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_lt_s(&mut self) -> Self::Output {
         self.translate_binary::<i64, bool>(
-            Op::i64_lt_s,
-            Op::i64_lt_s_imm16_rhs,
-            Op::i64_lt_s_imm16_lhs,
+            Op::i64_lt_sss,
+            Op::i64_lt_ssi,
+            Op::i64_lt_sis,
             wasm::i64_lt_s,
         )
     }
@@ -944,9 +797,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_lt_u(&mut self) -> Self::Output {
         self.translate_binary::<u64, bool>(
-            Op::i64_lt_u,
-            Op::i64_lt_u_imm16_rhs,
-            Op::i64_lt_u_imm16_lhs,
+            Op::u64_lt_sss,
+            Op::u64_lt_ssi,
+            Op::u64_lt_sis,
             wasm::i64_lt_u,
         )
     }
@@ -954,9 +807,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_gt_s(&mut self) -> Self::Output {
         self.translate_binary::<i64, bool>(
-            swap_ops!(Op::i64_lt_s),
-            swap_ops!(Op::i64_lt_s_imm16_lhs),
-            swap_ops!(Op::i64_lt_s_imm16_rhs),
+            swap_ops!(Op::i64_lt_sss),
+            swap_ops!(Op::i64_lt_sis),
+            swap_ops!(Op::i64_lt_ssi),
             wasm::i64_gt_s,
         )
     }
@@ -964,9 +817,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_gt_u(&mut self) -> Self::Output {
         self.translate_binary::<u64, bool>(
-            swap_ops!(Op::i64_lt_u),
-            swap_ops!(Op::i64_lt_u_imm16_lhs),
-            swap_ops!(Op::i64_lt_u_imm16_rhs),
+            swap_ops!(Op::u64_lt_sss),
+            swap_ops!(Op::u64_lt_sis),
+            swap_ops!(Op::u64_lt_ssi),
             wasm::i64_gt_u,
         )
     }
@@ -974,9 +827,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_le_s(&mut self) -> Self::Output {
         self.translate_binary::<i64, bool>(
-            Op::i64_le_s,
-            Op::i64_le_s_imm16_rhs,
-            Op::i64_le_s_imm16_lhs,
+            Op::i64_le_sss,
+            Op::i64_le_ssi,
+            Op::i64_le_sis,
             wasm::i64_le_s,
         )
     }
@@ -984,9 +837,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_le_u(&mut self) -> Self::Output {
         self.translate_binary::<u64, bool>(
-            Op::i64_le_u,
-            Op::i64_le_u_imm16_rhs,
-            Op::i64_le_u_imm16_lhs,
+            Op::u64_le_sss,
+            Op::u64_le_ssi,
+            Op::u64_le_sis,
             wasm::i64_le_u,
         )
     }
@@ -994,9 +847,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_ge_s(&mut self) -> Self::Output {
         self.translate_binary::<i64, bool>(
-            swap_ops!(Op::i64_le_s),
-            swap_ops!(Op::i64_le_s_imm16_lhs),
-            swap_ops!(Op::i64_le_s_imm16_rhs),
+            swap_ops!(Op::i64_le_sss),
+            swap_ops!(Op::i64_le_sis),
+            swap_ops!(Op::i64_le_ssi),
             wasm::i64_ge_s,
         )
     }
@@ -1004,93 +857,133 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_ge_u(&mut self) -> Self::Output {
         self.translate_binary::<u64, bool>(
-            swap_ops!(Op::i64_le_u),
-            swap_ops!(Op::i64_le_u_imm16_lhs),
-            swap_ops!(Op::i64_le_u_imm16_rhs),
+            swap_ops!(Op::u64_le_sss),
+            swap_ops!(Op::u64_le_sis),
+            swap_ops!(Op::u64_le_ssi),
             wasm::i64_ge_u,
         )
     }
 
     #[inline(never)]
     fn visit_f32_eq(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_eq, wasm::f32_eq)
+        self.translate_binary_commutative(
+            Op::f32_eq_sss,
+            Op::f32_eq_ssi,
+            wasm::f32_eq,
+            Self::no_opt_ri,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_ne(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_ne, wasm::f32_ne)
+        self.translate_binary_commutative(
+            Op::f32_not_eq_sss,
+            Op::f32_not_eq_ssi,
+            wasm::f32_ne,
+            Self::no_opt_ri,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_lt(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_lt, wasm::f32_lt)
+        self.translate_binary(Op::f32_lt_sss, Op::f32_lt_ssi, Op::f32_lt_sis, wasm::f32_lt)
     }
 
     #[inline(never)]
     fn visit_f32_gt(&mut self) -> Self::Output {
-        self.translate_fbinary(swap_ops!(Op::f32_lt), wasm::f32_gt)
+        self.translate_binary(
+            swap_ops!(Op::f32_lt_sss),
+            swap_ops!(Op::f32_lt_sis),
+            swap_ops!(Op::f32_lt_ssi),
+            wasm::f32_gt,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_le(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_le, wasm::f32_le)
+        self.translate_binary(Op::f32_le_sss, Op::f32_le_ssi, Op::f32_le_sis, wasm::f32_le)
     }
 
     #[inline(never)]
     fn visit_f32_ge(&mut self) -> Self::Output {
-        self.translate_fbinary(swap_ops!(Op::f32_le), wasm::f32_ge)
+        self.translate_binary(
+            swap_ops!(Op::f32_le_sss),
+            swap_ops!(Op::f32_le_sis),
+            swap_ops!(Op::f32_le_ssi),
+            wasm::f32_ge,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_eq(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_eq, wasm::f64_eq)
+        self.translate_binary_commutative(
+            Op::f64_eq_sss,
+            Op::f64_eq_ssi,
+            wasm::f64_eq,
+            Self::no_opt_ri,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_ne(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_ne, wasm::f64_ne)
+        self.translate_binary_commutative(
+            Op::f64_not_eq_sss,
+            Op::f64_not_eq_ssi,
+            wasm::f64_ne,
+            Self::no_opt_ri,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_lt(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_lt, wasm::f64_lt)
+        self.translate_binary(Op::f64_lt_sss, Op::f64_lt_ssi, Op::f64_lt_sis, wasm::f64_lt)
     }
 
     #[inline(never)]
     fn visit_f64_gt(&mut self) -> Self::Output {
-        self.translate_fbinary(swap_ops!(Op::f64_lt), wasm::f64_gt)
+        self.translate_binary(
+            swap_ops!(Op::f64_lt_sss),
+            swap_ops!(Op::f64_lt_sis),
+            swap_ops!(Op::f64_lt_ssi),
+            wasm::f64_gt,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_le(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_le, wasm::f64_le)
+        self.translate_binary(Op::f64_le_sss, Op::f64_le_ssi, Op::f64_le_sis, wasm::f64_le)
     }
 
     #[inline(never)]
     fn visit_f64_ge(&mut self) -> Self::Output {
-        self.translate_fbinary(swap_ops!(Op::f64_le), wasm::f64_ge)
+        self.translate_binary(
+            swap_ops!(Op::f64_le_sss),
+            swap_ops!(Op::f64_le_sis),
+            swap_ops!(Op::f64_le_ssi),
+            wasm::f64_ge,
+        )
     }
 
     #[inline(never)]
     fn visit_i32_clz(&mut self) -> Self::Output {
-        self.translate_unary::<i32, i32>(Op::i32_clz, wasm::i32_clz)
+        self.translate_unary::<i32, i32>(Op::i32_clz_ss, wasm::i32_clz)
     }
 
     #[inline(never)]
     fn visit_i32_ctz(&mut self) -> Self::Output {
-        self.translate_unary::<i32, i32>(Op::i32_ctz, wasm::i32_ctz)
+        self.translate_unary::<i32, i32>(Op::i32_ctz_ss, wasm::i32_ctz)
     }
 
     #[inline(never)]
     fn visit_i32_popcnt(&mut self) -> Self::Output {
-        self.translate_unary::<i32, i32>(Op::i32_popcnt, wasm::i32_popcnt)
+        self.translate_unary::<i32, i32>(Op::i32_popcnt_ss, wasm::i32_popcnt)
     }
 
     #[inline(never)]
     fn visit_i32_add(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_add,
-            Op::i32_add_imm16,
+            Op::i32_add_sss,
+            Op::i32_add_ssi,
             wasm::i32_add,
             FuncTranslator::no_opt_ri,
         )
@@ -1098,10 +991,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_sub(&mut self) -> Self::Output {
-        self.translate_isub(
-            Op::i32_sub,
-            Op::i32_add_imm16,
-            Op::i32_sub_imm16_lhs,
+        self.translate_binary(
+            Op::i32_sub_sss,
+            Op::i32_sub_ssi,
+            Op::i32_sub_sis,
             wasm::i32_sub,
         )
     }
@@ -1109,8 +1002,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_mul(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_mul,
-            Op::i32_mul_imm16,
+            Op::i32_mul_sss,
+            Op::i32_mul_ssi,
             wasm::i32_mul,
             FuncTranslator::no_opt_ri,
         )
@@ -1119,9 +1012,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_div_s(&mut self) -> Self::Output {
         self.translate_divrem::<i32>(
-            Op::i32_div_s,
-            Op::i32_div_s_imm16_rhs,
-            Op::i32_div_s_imm16_lhs,
+            Op::i32_div_sss,
+            Op::i32_div_ssi,
+            Op::i32_div_sis,
             wasm::i32_div_s,
         )
     }
@@ -1129,9 +1022,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_div_u(&mut self) -> Self::Output {
         self.translate_divrem::<u32>(
-            Op::i32_div_u,
-            Op::i32_div_u_imm16_rhs,
-            Op::i32_div_u_imm16_lhs,
+            Op::u32_div_sss,
+            Op::u32_div_ssi,
+            Op::u32_div_sis,
             wasm::i32_div_u,
         )
     }
@@ -1139,9 +1032,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_rem_s(&mut self) -> Self::Output {
         self.translate_divrem::<i32>(
-            Op::i32_rem_s,
-            Op::i32_rem_s_imm16_rhs,
-            Op::i32_rem_s_imm16_lhs,
+            Op::i32_rem_sss,
+            Op::i32_rem_ssi,
+            Op::i32_rem_sis,
             wasm::i32_rem_s,
         )
     }
@@ -1149,9 +1042,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_rem_u(&mut self) -> Self::Output {
         self.translate_divrem::<u32>(
-            Op::i32_rem_u,
-            Op::i32_rem_u_imm16_rhs,
-            Op::i32_rem_u_imm16_lhs,
+            Op::u32_rem_sss,
+            Op::u32_rem_ssi,
+            Op::u32_rem_sis,
             wasm::i32_rem_u,
         )
     }
@@ -1159,8 +1052,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_and(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_bitand,
-            Op::i32_bitand_imm16,
+            Op::i32_bitand_sss,
+            Op::i32_bitand_ssi,
             wasm::i32_bitand,
             FuncTranslator::no_opt_ri,
         )
@@ -1169,8 +1062,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_or(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_bitor,
-            Op::i32_bitor_imm16,
+            Op::i32_bitor_sss,
+            Op::i32_bitor_ssi,
             wasm::i32_bitor,
             FuncTranslator::no_opt_ri,
         )
@@ -1179,8 +1072,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_xor(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i32, i32>(
-            Op::i32_bitxor,
-            Op::i32_bitxor_imm16,
+            Op::i32_bitxor_sss,
+            Op::i32_bitxor_ssi,
             wasm::i32_bitxor,
             FuncTranslator::no_opt_ri,
         )
@@ -1189,9 +1082,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_shl(&mut self) -> Self::Output {
         self.translate_shift::<i32>(
-            Op::i32_shl,
-            Op::i32_shl_by,
-            Op::i32_shl_imm16,
+            Op::i32_shl_sss,
+            Op::i32_shl_ssi,
+            Op::i32_shl_sis,
             wasm::i32_shl,
         )
     }
@@ -1199,19 +1092,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_shr_s(&mut self) -> Self::Output {
         self.translate_shift::<i32>(
-            Op::i32_shr_s,
-            Op::i32_shr_s_by,
-            Op::i32_shr_s_imm16,
+            Op::i32_shr_sss,
+            Op::i32_shr_ssi,
+            Op::i32_shr_sis,
             wasm::i32_shr_s,
         )
     }
 
     #[inline(never)]
     fn visit_i32_shr_u(&mut self) -> Self::Output {
-        self.translate_shift::<i32>(
-            Op::i32_shr_u,
-            Op::i32_shr_u_by,
-            Op::i32_shr_u_imm16,
+        self.translate_shift::<u32>(
+            Op::u32_shr_sss,
+            Op::u32_shr_ssi,
+            Op::u32_shr_sis,
             wasm::i32_shr_u,
         )
     }
@@ -1219,9 +1112,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_rotl(&mut self) -> Self::Output {
         self.translate_shift::<i32>(
-            Op::i32_rotl,
-            Op::i32_rotl_by,
-            Op::i32_rotl_imm16,
+            Op::i32_rotl_sss,
+            Op::i32_rotl_ssi,
+            Op::i32_rotl_sis,
             wasm::i32_rotl,
         )
     }
@@ -1229,33 +1122,33 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i32_rotr(&mut self) -> Self::Output {
         self.translate_shift::<i32>(
-            Op::i32_rotr,
-            Op::i32_rotr_by,
-            Op::i32_rotr_imm16,
+            Op::i32_rotr_sss,
+            Op::i32_rotr_ssi,
+            Op::i32_rotr_sis,
             wasm::i32_rotr,
         )
     }
 
     #[inline(never)]
     fn visit_i64_clz(&mut self) -> Self::Output {
-        self.translate_unary::<i64, i64>(Op::i64_clz, wasm::i64_clz)
+        self.translate_unary::<i64, i64>(Op::i64_clz_ss, wasm::i64_clz)
     }
 
     #[inline(never)]
     fn visit_i64_ctz(&mut self) -> Self::Output {
-        self.translate_unary::<i64, i64>(Op::i64_ctz, wasm::i64_ctz)
+        self.translate_unary::<i64, i64>(Op::i64_ctz_ss, wasm::i64_ctz)
     }
 
     #[inline(never)]
     fn visit_i64_popcnt(&mut self) -> Self::Output {
-        self.translate_unary::<i64, i64>(Op::i64_popcnt, wasm::i64_popcnt)
+        self.translate_unary::<i64, i64>(Op::i64_popcnt_ss, wasm::i64_popcnt)
     }
 
     #[inline(never)]
     fn visit_i64_add(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_add,
-            Op::i64_add_imm16,
+            Op::i64_add_sss,
+            Op::i64_add_ssi,
             wasm::i64_add,
             FuncTranslator::no_opt_ri,
         )
@@ -1263,10 +1156,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_sub(&mut self) -> Self::Output {
-        self.translate_isub(
-            Op::i64_sub,
-            Op::i64_add_imm16,
-            Op::i64_sub_imm16_lhs,
+        self.translate_binary(
+            Op::i64_sub_sss,
+            Op::i64_sub_ssi,
+            Op::i64_sub_sis,
             wasm::i64_sub,
         )
     }
@@ -1274,8 +1167,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_mul(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_mul,
-            Op::i64_mul_imm16,
+            Op::i64_mul_sss,
+            Op::i64_mul_ssi,
             wasm::i64_mul,
             FuncTranslator::no_opt_ri,
         )
@@ -1284,9 +1177,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_div_s(&mut self) -> Self::Output {
         self.translate_divrem::<i64>(
-            Op::i64_div_s,
-            Op::i64_div_s_imm16_rhs,
-            Op::i64_div_s_imm16_lhs,
+            Op::i64_div_sss,
+            Op::i64_div_ssi,
+            Op::i64_div_sis,
             wasm::i64_div_s,
         )
     }
@@ -1294,9 +1187,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_div_u(&mut self) -> Self::Output {
         self.translate_divrem::<u64>(
-            Op::i64_div_u,
-            Op::i64_div_u_imm16_rhs,
-            Op::i64_div_u_imm16_lhs,
+            Op::u64_div_sss,
+            Op::u64_div_ssi,
+            Op::u64_div_sis,
             wasm::i64_div_u,
         )
     }
@@ -1304,9 +1197,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_rem_s(&mut self) -> Self::Output {
         self.translate_divrem::<i64>(
-            Op::i64_rem_s,
-            Op::i64_rem_s_imm16_rhs,
-            Op::i64_rem_s_imm16_lhs,
+            Op::i64_rem_sss,
+            Op::i64_rem_ssi,
+            Op::i64_rem_sis,
             wasm::i64_rem_s,
         )
     }
@@ -1314,9 +1207,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_rem_u(&mut self) -> Self::Output {
         self.translate_divrem::<u64>(
-            Op::i64_rem_u,
-            Op::i64_rem_u_imm16_rhs,
-            Op::i64_rem_u_imm16_lhs,
+            Op::u64_rem_sss,
+            Op::u64_rem_ssi,
+            Op::u64_rem_sis,
             wasm::i64_rem_u,
         )
     }
@@ -1324,8 +1217,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_and(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_bitand,
-            Op::i64_bitand_imm16,
+            Op::i64_bitand_sss,
+            Op::i64_bitand_ssi,
             wasm::i64_bitand,
             FuncTranslator::no_opt_ri,
         )
@@ -1334,8 +1227,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_or(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_bitor,
-            Op::i64_bitor_imm16,
+            Op::i64_bitor_sss,
+            Op::i64_bitor_ssi,
             wasm::i64_bitor,
             FuncTranslator::no_opt_ri,
         )
@@ -1344,8 +1237,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_xor(&mut self) -> Self::Output {
         self.translate_binary_commutative::<i64, i64>(
-            Op::i64_bitxor,
-            Op::i64_bitxor_imm16,
+            Op::i64_bitxor_sss,
+            Op::i64_bitxor_ssi,
             wasm::i64_bitxor,
             FuncTranslator::no_opt_ri,
         )
@@ -1354,9 +1247,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_shl(&mut self) -> Self::Output {
         self.translate_shift::<i64>(
-            Op::i64_shl,
-            Op::i64_shl_by,
-            Op::i64_shl_imm16,
+            Op::i64_shl_sss,
+            Op::i64_shl_ssi,
+            Op::i64_shl_sis,
             wasm::i64_shl,
         )
     }
@@ -1364,19 +1257,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_shr_s(&mut self) -> Self::Output {
         self.translate_shift::<i64>(
-            Op::i64_shr_s,
-            Op::i64_shr_s_by,
-            Op::i64_shr_s_imm16,
+            Op::i64_shr_sss,
+            Op::i64_shr_ssi,
+            Op::i64_shr_sis,
             wasm::i64_shr_s,
         )
     }
 
     #[inline(never)]
     fn visit_i64_shr_u(&mut self) -> Self::Output {
-        self.translate_shift::<i64>(
-            Op::i64_shr_u,
-            Op::i64_shr_u_by,
-            Op::i64_shr_u_imm16,
+        self.translate_shift::<u64>(
+            Op::u64_shr_sss,
+            Op::u64_shr_ssi,
+            Op::u64_shr_sis,
             wasm::i64_shr_u,
         )
     }
@@ -1384,9 +1277,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_rotl(&mut self) -> Self::Output {
         self.translate_shift::<i64>(
-            Op::i64_rotl,
-            Op::i64_rotl_by,
-            Op::i64_rotl_imm16,
+            Op::i64_rotl_sss,
+            Op::i64_rotl_ssi,
+            Op::i64_rotl_sis,
             wasm::i64_rotl,
         )
     }
@@ -1394,181 +1287,251 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_i64_rotr(&mut self) -> Self::Output {
         self.translate_shift::<i64>(
-            Op::i64_rotr,
-            Op::i64_rotr_by,
-            Op::i64_rotr_imm16,
+            Op::i64_rotr_sss,
+            Op::i64_rotr_ssi,
+            Op::i64_rotr_sis,
             wasm::i64_rotr,
         )
     }
 
     #[inline(never)]
     fn visit_f32_abs(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_abs, wasm::f32_abs)
+        self.translate_unary(Op::f32_abs_ss, wasm::f32_abs)
     }
 
     #[inline(never)]
     fn visit_f32_neg(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_neg, wasm::f32_neg)
+        self.translate_unary(Op::f32_neg_ss, wasm::f32_neg)
     }
 
     #[inline(never)]
     fn visit_f32_ceil(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_ceil, wasm::f32_ceil)
+        self.translate_unary(Op::f32_ceil_ss, wasm::f32_ceil)
     }
 
     #[inline(never)]
     fn visit_f32_floor(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_floor, wasm::f32_floor)
+        self.translate_unary(Op::f32_floor_ss, wasm::f32_floor)
     }
 
     #[inline(never)]
     fn visit_f32_trunc(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_trunc, wasm::f32_trunc)
+        self.translate_unary(Op::f32_trunc_ss, wasm::f32_trunc)
     }
 
     #[inline(never)]
     fn visit_f32_nearest(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_nearest, wasm::f32_nearest)
+        self.translate_unary(Op::f32_nearest_ss, wasm::f32_nearest)
     }
 
     #[inline(never)]
     fn visit_f32_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_sqrt, wasm::f32_sqrt)
+        self.translate_unary(Op::f32_sqrt_ss, wasm::f32_sqrt)
     }
 
     #[inline(never)]
     fn visit_f32_add(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_add, wasm::f32_add)
+        self.translate_binary(
+            Op::f32_add_sss,
+            Op::f32_add_ssi,
+            Op::f32_add_sis,
+            wasm::f32_add,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_sub(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_sub, wasm::f32_sub)
+        self.translate_binary(
+            Op::f32_sub_sss,
+            Op::f32_sub_ssi,
+            Op::f32_sub_sis,
+            wasm::f32_sub,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_mul(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_mul, wasm::f32_mul)
+        self.translate_binary(
+            Op::f32_mul_sss,
+            Op::f32_mul_ssi,
+            Op::f32_mul_sis,
+            wasm::f32_mul,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_div(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_div, wasm::f32_div)
+        self.translate_binary(
+            Op::f32_div_sss,
+            Op::f32_div_ssi,
+            Op::f32_div_sis,
+            wasm::f32_div,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_min(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_min, wasm::f32_min)
+        self.translate_binary(
+            Op::f32_min_sss,
+            Op::f32_min_ssi,
+            Op::f32_min_sis,
+            wasm::f32_min,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_max(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f32_max, wasm::f32_max)
+        self.translate_binary(
+            Op::f32_max_sss,
+            Op::f32_max_ssi,
+            Op::f32_max_sis,
+            wasm::f32_max,
+        )
     }
 
     #[inline(never)]
     fn visit_f32_copysign(&mut self) -> Self::Output {
-        self.translate_fcopysign::<f32>(Op::f32_copysign, Op::f32_copysign_imm, wasm::f32_copysign)
+        self.translate_fcopysign::<f32>(
+            Op::f32_copysign_sss,
+            Op::f32_copysign_ssi,
+            Op::f32_copysign_sis,
+            wasm::f32_copysign,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_abs(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_abs, wasm::f64_abs)
+        self.translate_unary(Op::f64_abs_ss, wasm::f64_abs)
     }
 
     #[inline(never)]
     fn visit_f64_neg(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_neg, wasm::f64_neg)
+        self.translate_unary(Op::f64_neg_ss, wasm::f64_neg)
     }
 
     #[inline(never)]
     fn visit_f64_ceil(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_ceil, wasm::f64_ceil)
+        self.translate_unary(Op::f64_ceil_ss, wasm::f64_ceil)
     }
 
     #[inline(never)]
     fn visit_f64_floor(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_floor, wasm::f64_floor)
+        self.translate_unary(Op::f64_floor_ss, wasm::f64_floor)
     }
 
     #[inline(never)]
     fn visit_f64_trunc(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_trunc, wasm::f64_trunc)
+        self.translate_unary(Op::f64_trunc_ss, wasm::f64_trunc)
     }
 
     #[inline(never)]
     fn visit_f64_nearest(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_nearest, wasm::f64_nearest)
+        self.translate_unary(Op::f64_nearest_ss, wasm::f64_nearest)
     }
 
     #[inline(never)]
     fn visit_f64_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_sqrt, wasm::f64_sqrt)
+        self.translate_unary(Op::f64_sqrt_ss, wasm::f64_sqrt)
     }
 
     #[inline(never)]
     fn visit_f64_add(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_add, wasm::f64_add)
+        self.translate_binary(
+            Op::f64_add_sss,
+            Op::f64_add_ssi,
+            Op::f64_add_sis,
+            wasm::f64_add,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_sub(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_sub, wasm::f64_sub)
+        self.translate_binary(
+            Op::f64_sub_sss,
+            Op::f64_sub_ssi,
+            Op::f64_sub_sis,
+            wasm::f64_sub,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_mul(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_mul, wasm::f64_mul)
+        self.translate_binary(
+            Op::f64_mul_sss,
+            Op::f64_mul_ssi,
+            Op::f64_mul_sis,
+            wasm::f64_mul,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_div(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_div, wasm::f64_div)
+        self.translate_binary(
+            Op::f64_div_sss,
+            Op::f64_div_ssi,
+            Op::f64_div_sis,
+            wasm::f64_div,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_min(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_min, wasm::f64_min)
+        self.translate_binary(
+            Op::f64_min_sss,
+            Op::f64_min_ssi,
+            Op::f64_min_sis,
+            wasm::f64_min,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_max(&mut self) -> Self::Output {
-        self.translate_fbinary(Op::f64_max, wasm::f64_max)
+        self.translate_binary(
+            Op::f64_max_sss,
+            Op::f64_max_ssi,
+            Op::f64_max_sis,
+            wasm::f64_max,
+        )
     }
 
     #[inline(never)]
     fn visit_f64_copysign(&mut self) -> Self::Output {
-        self.translate_fcopysign::<f64>(Op::f64_copysign, Op::f64_copysign_imm, wasm::f64_copysign)
+        self.translate_fcopysign::<f64>(
+            Op::f64_copysign_sss,
+            Op::f64_copysign_ssi,
+            Op::f64_copysign_sis,
+            wasm::f64_copysign,
+        )
     }
 
     #[inline(never)]
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_wrap_i64, wasm::i32_wrap_i64)
+        self.translate_unary(Op::i32_wrap_i64_ss, wasm::i32_wrap_i64)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i32_trunc_f32_s, wasm::i32_trunc_f32_s)
+        self.translate_unary_fallible(Op::i32_trunc_f32_ss, wasm::i32_trunc_f32_s)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f32_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i32_trunc_f32_u, wasm::i32_trunc_f32_u)
+        self.translate_unary_fallible(Op::u32_trunc_f32_ss, wasm::i32_trunc_f32_u)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f64_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i32_trunc_f64_s, wasm::i32_trunc_f64_s)
+        self.translate_unary_fallible(Op::i32_trunc_f64_ss, wasm::i32_trunc_f64_s)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f64_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i32_trunc_f64_u, wasm::i32_trunc_f64_u)
+        self.translate_unary_fallible(Op::u32_trunc_f64_ss, wasm::i32_trunc_f64_u)
     }
 
     #[inline(never)]
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
-        self.translate_unary::<i32, i64>(Op::i64_extend32_s, wasm::i64_extend_i32_s)
+        self.translate_unary::<i32, i64>(Op::i64_sext32_ss, wasm::i64_extend_i32_s)
     }
 
     #[inline(never)]
@@ -1578,72 +1541,72 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i64_trunc_f32_s, wasm::i64_trunc_f32_s)
+        self.translate_unary_fallible(Op::i64_trunc_f32_ss, wasm::i64_trunc_f32_s)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_f32_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i64_trunc_f32_u, wasm::i64_trunc_f32_u)
+        self.translate_unary_fallible(Op::u64_trunc_f32_ss, wasm::i64_trunc_f32_u)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_f64_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i64_trunc_f64_s, wasm::i64_trunc_f64_s)
+        self.translate_unary_fallible(Op::i64_trunc_f64_ss, wasm::i64_trunc_f64_s)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_f64_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Op::i64_trunc_f64_u, wasm::i64_trunc_f64_u)
+        self.translate_unary_fallible(Op::u64_trunc_f64_ss, wasm::i64_trunc_f64_u)
     }
 
     #[inline(never)]
     fn visit_f32_convert_i32_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_convert_i32_s, wasm::f32_convert_i32_s)
+        self.translate_unary(Op::f32_convert_i32_ss, wasm::f32_convert_i32_s)
     }
 
     #[inline(never)]
     fn visit_f32_convert_i32_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_convert_i32_u, wasm::f32_convert_i32_u)
+        self.translate_unary(Op::f32_convert_u32_ss, wasm::f32_convert_i32_u)
     }
 
     #[inline(never)]
     fn visit_f32_convert_i64_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_convert_i64_s, wasm::f32_convert_i64_s)
+        self.translate_unary(Op::f32_convert_i64_ss, wasm::f32_convert_i64_s)
     }
 
     #[inline(never)]
     fn visit_f32_convert_i64_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_convert_i64_u, wasm::f32_convert_i64_u)
+        self.translate_unary(Op::f32_convert_u64_ss, wasm::f32_convert_i64_u)
     }
 
     #[inline(never)]
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
-        self.translate_unary(Op::f32_demote_f64, wasm::f32_demote_f64)
+        self.translate_unary(Op::f32_demote_f64_ss, wasm::f32_demote_f64)
     }
 
     #[inline(never)]
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_convert_i32_s, wasm::f64_convert_i32_s)
+        self.translate_unary(Op::f64_convert_i32_ss, wasm::f64_convert_i32_s)
     }
 
     #[inline(never)]
     fn visit_f64_convert_i32_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_convert_i32_u, wasm::f64_convert_i32_u)
+        self.translate_unary(Op::f64_convert_u32_ss, wasm::f64_convert_i32_u)
     }
 
     #[inline(never)]
     fn visit_f64_convert_i64_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_convert_i64_s, wasm::f64_convert_i64_s)
+        self.translate_unary(Op::f64_convert_i64_ss, wasm::f64_convert_i64_s)
     }
 
     #[inline(never)]
     fn visit_f64_convert_i64_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_convert_i64_u, wasm::f64_convert_i64_u)
+        self.translate_unary(Op::f64_convert_u64_ss, wasm::f64_convert_i64_u)
     }
 
     #[inline(never)]
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
-        self.translate_unary(Op::f64_promote_f32, wasm::f64_promote_f32)
+        self.translate_unary(Op::f64_promote_f32_ss, wasm::f64_promote_f32)
     }
 
     #[inline(never)]
@@ -1668,86 +1631,92 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_extend8_s, wasm::i32_extend8_s)
+        self.translate_unary(Op::i32_sext8_ss, wasm::i32_extend8_s)
     }
 
     #[inline(never)]
     fn visit_i32_extend16_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_extend16_s, wasm::i32_extend16_s)
+        self.translate_unary(Op::i32_sext16_ss, wasm::i32_extend16_s)
     }
 
     #[inline(never)]
     fn visit_i64_extend8_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_extend8_s, wasm::i64_extend8_s)
+        self.translate_unary(Op::i64_sext8_ss, wasm::i64_extend8_s)
     }
 
     #[inline(never)]
     fn visit_i64_extend16_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_extend16_s, wasm::i64_extend16_s)
+        self.translate_unary(Op::i64_sext16_ss, wasm::i64_extend16_s)
     }
 
     #[inline(never)]
     fn visit_i64_extend32_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_extend32_s, wasm::i64_extend32_s)
+        self.translate_unary(Op::i64_sext32_ss, wasm::i64_extend32_s)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_trunc_sat_f32_s, wasm::i32_trunc_sat_f32_s)
+        self.translate_unary(Op::i32_trunc_sat_f32_ss, wasm::i32_trunc_sat_f32_s)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f32_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_trunc_sat_f32_u, wasm::i32_trunc_sat_f32_u)
+        self.translate_unary(Op::u32_trunc_sat_f32_ss, wasm::i32_trunc_sat_f32_u)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f64_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_trunc_sat_f64_s, wasm::i32_trunc_sat_f64_s)
+        self.translate_unary(Op::i32_trunc_sat_f64_ss, wasm::i32_trunc_sat_f64_s)
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f64_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::i32_trunc_sat_f64_u, wasm::i32_trunc_sat_f64_u)
+        self.translate_unary(Op::u32_trunc_sat_f64_ss, wasm::i32_trunc_sat_f64_u)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f32_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_trunc_sat_f32_s, wasm::i64_trunc_sat_f32_s)
+        self.translate_unary(Op::i64_trunc_sat_f32_ss, wasm::i64_trunc_sat_f32_s)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f32_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_trunc_sat_f32_u, wasm::i64_trunc_sat_f32_u)
+        self.translate_unary(Op::u64_trunc_sat_f32_ss, wasm::i64_trunc_sat_f32_u)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f64_s(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_trunc_sat_f64_s, wasm::i64_trunc_sat_f64_s)
+        self.translate_unary(Op::i64_trunc_sat_f64_ss, wasm::i64_trunc_sat_f64_s)
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f64_u(&mut self) -> Self::Output {
-        self.translate_unary(Op::i64_trunc_sat_f64_u, wasm::i64_trunc_sat_f64_u)
+        self.translate_unary(Op::u64_trunc_sat_f64_ss, wasm::i64_trunc_sat_f64_u)
     }
 
     #[inline(never)]
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
-        self.push_instr(Op::memory_init(dst, src, len), FuelCostsProvider::instance)?;
-        self.push_param(Op::memory_index(mem))?;
-        self.push_param(Op::data_index(data_index))?;
+        let memory = index::Memory::try_from(mem)?;
+        let data = index::Data::from(data_index);
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
+        self.push_instr(
+            Op::memory_init(memory, data, dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
     #[inline(never)]
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(Op::data_drop(data_index), FuelCostsProvider::instance)?;
+        self.push_instr(
+            Op::data_drop(index::Data::from(data_index)),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1755,12 +1724,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
-        self.push_instr(Op::memory_copy(dst, src, len), FuelCostsProvider::instance)?;
-        self.push_param(Op::memory_index(dst_mem))?;
-        self.push_param(Op::memory_index(src_mem))?;
+        let dst_memory = index::Memory::try_from(dst_mem)?;
+        let src_memory = index::Memory::try_from(src_mem)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
+        self.push_instr(
+            Op::memory_copy(dst_memory, src_memory, dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1768,18 +1740,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
-        let dst = self.immediate_to_reg(dst)?;
-        let value = self.make_input(value, |_, value| {
-            let byte = u32::from(value) as u8;
-            Ok(Input::Immediate(byte))
-        })?;
-        let len = self.immediate_to_reg(len)?;
-        let instr: Op = match value {
-            Input::Slot(value) => Op::memory_fill(dst, value, len),
-            Input::Immediate(value) => Op::memory_fill_imm(dst, value, len),
-        };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
-        self.push_param(Op::memory_index(mem))?;
+        let memory = index::Memory::try_from(mem)?;
+        let dst = self.copy_if_immediate(dst)?;
+        let len = self.copy_if_immediate(len)?;
+        let value = self.copy_if_immediate(value)?;
+        self.push_instr(
+            Op::memory_fill(memory, dst, value, len),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1787,19 +1755,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
-        self.push_instr(Op::table_init(dst, src, len), FuelCostsProvider::instance)?;
-        self.push_param(Op::table_index(table))?;
-        self.push_param(Op::elem_index(elem_index))?;
+        let table = index::Table::from(table);
+        let elem = index::Elem::from(elem_index);
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
+        self.push_instr(
+            Op::table_init(table, elem, dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
     #[inline(never)]
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(Op::elem_drop(elem_index), FuelCostsProvider::instance)?;
+        self.push_instr(
+            Op::elem_drop(index::Elem::from(elem_index)),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1807,12 +1781,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst = self.immediate_to_reg(dst)?;
-        let src = self.immediate_to_reg(src)?;
-        let len = self.immediate_to_reg(len)?;
-        self.push_instr(Op::table_copy(dst, src, len), FuelCostsProvider::instance)?;
-        self.push_param(Op::table_index(dst_table))?;
-        self.push_param(Op::table_index(src_table))?;
+        let dst_table = index::Table::from(dst_table);
+        let src_table = index::Table::from(src_table);
+        let dst = self.copy_if_immediate(dst)?;
+        let src = self.copy_if_immediate(src)?;
+        let len = self.copy_if_immediate(len)?;
+        self.push_instr(
+            Op::table_copy(dst_table, src_table, dst, src, len),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1871,7 +1848,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         self.push_instr_with_result(
             ValType::FuncRef,
-            |result| Op::ref_func(result, function_index),
+            |result| Op::ref_func(result, index::Func::from(function_index)),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1881,11 +1858,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_fill(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
-        let dst = self.immediate_to_reg(dst)?;
-        let value = self.immediate_to_reg(value)?;
-        let len = self.immediate_to_reg(len)?;
-        self.push_instr(Op::table_fill(dst, len, value), FuelCostsProvider::instance)?;
-        self.push_param(Op::table_index(table))?;
+        let table = index::Table::from(table);
+        let dst = self.copy_if_immediate(dst)?;
+        let value = self.copy_if_immediate(value)?;
+        let len = self.copy_if_immediate(len)?;
+        self.push_instr(
+            Op::table_fill(table, dst, len, value),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1893,19 +1873,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_get(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let table = index::Table::from(table);
         let index = self.stack.pop();
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
-        let index = self.make_index32(index, index_ty)?;
+        let index = self.make_index32_or_copy(index, index_ty)?;
         self.push_instr_with_result(
             item_ty,
             |result| match index {
-                Input::Slot(index) => Op::table_get(result, index),
-                Input::Immediate(index) => Op::table_get_imm(result, index),
+                Input::Slot(index) => Op::table_get_ss(result, index, table),
+                Input::Immediate(index) => Op::table_get_si(result, index, table),
             },
             FuelCostsProvider::instance,
         )?;
-        self.push_param(Op::table_index(table))?;
         Ok(())
     }
 
@@ -1913,16 +1893,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_set(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
         let (index, value) = self.stack.pop2();
-        let index = self.make_index32(index, index_ty)?;
-        let value = self.layout.operand_to_reg(value)?;
-        let instr = match index {
-            Input::Slot(index) => Op::table_set(index, value),
-            Input::Immediate(index) => Op::table_set_at(value, index),
+        let index = self.make_index32_or_copy(index, index_ty)?;
+        let value =
+            self.make_input(value, |_this, value| Ok(Input::Immediate(u64::from(value))))?;
+        let instr = match (index, value) {
+            (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(index, value, table),
+            (Input::Slot(index), Input::Immediate(value)) => Op::table_set_si(index, value, table),
+            (Input::Immediate(index), Input::Slot(value)) => Op::table_set_is(index, value, table),
+            (Input::Immediate(index), Input::Immediate(value)) => {
+                Op::table_set_ii(index, value, table)
+            }
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
-        self.push_param(Op::table_index(table))?;
         Ok(())
     }
 
@@ -1930,6 +1915,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_grow(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
         let (value, delta) = self.stack.pop2();
         if let Operand::Immediate(delta) = delta {
@@ -1952,14 +1938,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return Ok(());
             }
         }
-        let value = self.immediate_to_reg(value)?;
-        let delta = self.immediate_to_reg(delta)?;
+        let value = self.copy_if_immediate(value)?;
+        let delta = self.copy_if_immediate(delta)?;
         self.push_instr_with_result(
             index_ty.ty(),
-            |result| Op::table_grow(result, delta, value),
+            |result| Op::table_grow(result, delta, value, table),
             FuelCostsProvider::instance,
         )?;
-        self.push_param(Op::table_index(table))?;
         Ok(())
     }
 
@@ -1967,6 +1952,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_size(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
         self.push_instr_with_result(
             index_ty.ty(),
@@ -1978,55 +1964,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_idx = FuncIdx::from(function_index);
-        let func_type = self.resolve_func_type(func_idx);
-        let len_params = usize::from(func_type.len_params());
-        let instr = match self.module.get_engine_func(func_idx) {
-            Some(engine_func) => {
-                // Case: We are calling an internal function and can optimize
-                //       this case by using the special instruction for it.
-                match len_params {
-                    0 => Op::return_call_internal_0(engine_func),
-                    _ => Op::return_call_internal(engine_func),
-                }
-            }
-            None => {
-                // Case: We are calling an imported function and must use the
-                //       general calling operator for it.
-                match len_params {
-                    0 => Op::return_call_imported_0(function_index),
-                    _ => Op::return_call_imported(function_index),
-                }
-            }
-        };
-        self.push_instr(instr, FuelCostsProvider::call)?;
-        self.stack.pop_n(len_params, &mut self.operands);
-        self.instrs
-            .encode_register_list(&self.operands, &mut self.layout)?;
+        self.translate_call(
+            function_index,
+            Op::return_call_internal,
+            Op::return_call_imported,
+        )?;
         self.reachable = false;
         Ok(())
     }
 
     #[inline(never)]
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
-        bail_unreachable!(self);
-        let func_type = self.resolve_type(type_index);
-        let index = self.stack.pop();
-        let indirect_params = self.call_indirect_params(index, table_index)?;
-        let len_params = usize::from(func_type.len_params());
-        let instr = match (len_params, indirect_params) {
-            (0, Op::CallIndirectParams { .. }) => Op::return_call_indirect_0(type_index),
-            (0, Op::CallIndirectParamsImm16 { .. }) => Op::return_call_indirect_0_imm16(type_index),
-            (_, Op::CallIndirectParams { .. }) => Op::return_call_indirect(type_index),
-            (_, Op::CallIndirectParamsImm16 { .. }) => Op::return_call_indirect_imm16(type_index),
-            _ => unreachable!(),
-        };
-        self.push_instr(instr, FuelCostsProvider::call)?;
-        self.push_param(indirect_params)?;
-        self.stack.pop_n(len_params, &mut self.operands);
-        self.instrs
-            .encode_register_list(&self.operands, &mut self.layout)?;
+        self.translate_call_indirect(type_index, table_index, Op::return_call_indirect)?;
         self.reachable = false;
         Ok(())
     }
@@ -2043,11 +1992,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_mul_wide_s(&mut self) -> Self::Output {
-        self.translate_i64_mul_wide_sx(Op::i64_mul_wide_s, wasm::i64_mul_wide_s, true)
+        self.translate_i64_mul_wide_sx(Op::i64_mul_wide, wasm::i64_mul_wide_s, true)
     }
 
     #[inline(never)]
     fn visit_i64_mul_wide_u(&mut self) -> Self::Output {
-        self.translate_i64_mul_wide_sx(Op::i64_mul_wide_u, wasm::i64_mul_wide_u, false)
+        self.translate_i64_mul_wide_sx(Op::u64_mul_wide, wasm::i64_mul_wide_u, false)
     }
 }

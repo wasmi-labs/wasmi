@@ -1,4 +1,8 @@
-use crate::{engine::translator::utils::Instr, ir::BranchOffset, Error};
+use crate::{
+    engine::{translator::utils::OpPos, TranslationError},
+    ir::BranchOffset,
+    Error,
+};
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},
@@ -8,8 +12,8 @@ use core::{
 /// A label during the Wasmi compilation process.
 #[derive(Debug, Copy, Clone)]
 pub enum Label {
-    /// The label has already been pinned to a particular [`Instr`].
-    Pinned(Instr),
+    /// The label has already been pinned to a particular [`OpPos`].
+    Pinned(OpPos),
     /// The label is still unpinned.
     Unpinned,
 }
@@ -41,12 +45,12 @@ pub struct LabelUser {
     /// The label in use by the user.
     label: LabelRef,
     /// The reference to the using instruction.
-    user: Instr,
+    user: OpPos,
 }
 
 impl LabelUser {
     /// Creates a new [`LabelUser`].
-    pub fn new(label: LabelRef, user: Instr) -> Self {
+    pub fn new(label: LabelRef, user: OpPos) -> Self {
         Self { label, user }
     }
 }
@@ -55,7 +59,7 @@ impl LabelUser {
 #[derive(Debug, Copy, Clone)]
 pub enum LabelError {
     /// When trying to pin an already pinned [`Label`].
-    AlreadyPinned { label: LabelRef, pinned_to: Instr },
+    AlreadyPinned { label: LabelRef, pinned_to: OpPos },
     /// When trying to resolve an unpinned [`Label`].
     Unpinned { label: LabelRef },
 }
@@ -112,8 +116,8 @@ impl LabelRegistry {
     ///
     /// # Errors
     ///
-    /// If the `label` has already been pinned to some other [`Instr`].
-    pub fn pin_label(&mut self, label: LabelRef, instr: Instr) -> Result<(), LabelError> {
+    /// If the `label` has already been pinned to some other [`OpPos`].
+    pub fn pin_label(&mut self, label: LabelRef, instr: OpPos) -> Result<(), LabelError> {
         match self.get_label_mut(label) {
             Label::Pinned(pinned) => Err(LabelError::AlreadyPinned {
                 label,
@@ -127,10 +131,28 @@ impl LabelRegistry {
     }
 
     /// Pins the `label` to the given `instr` if unpinned.
-    pub fn try_pin_label(&mut self, label: LabelRef, instr: Instr) {
+    pub fn try_pin_label(&mut self, label: LabelRef, instr: OpPos) {
         if let unpinned @ Label::Unpinned = self.get_label_mut(label) {
             *unpinned = Label::Pinned(instr)
         }
+    }
+
+    /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
+    ///
+    /// # Errors
+    ///
+    /// If the resulting [`BranchOffset`] is out of bounds.
+    pub fn trace_branch_offset(src: OpPos, dst: OpPos) -> Result<BranchOffset, Error> {
+        fn trace_offset32(src: OpPos, dst: OpPos) -> Option<i32> {
+            let src = isize::try_from(usize::from(src)).ok()?;
+            let dst = isize::try_from(usize::from(dst)).ok()?;
+            let offset = dst.checked_sub(src)?;
+            i32::try_from(offset).ok()
+        }
+        let Some(offset) = trace_offset32(src, dst) else {
+            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
+        };
+        Ok(BranchOffset::from(offset))
     }
 
     /// Tries to resolve the `label`.
@@ -143,12 +165,10 @@ impl LabelRegistry {
     pub fn try_resolve_label(
         &mut self,
         label: LabelRef,
-        user: Instr,
+        user: OpPos,
     ) -> Result<BranchOffset, Error> {
         let offset = match *self.get_label(label) {
-            Label::Pinned(target) => {
-                BranchOffset::from_src_to_dst(u32::from(user), u32::from(target))?
-            }
+            Label::Pinned(target) => Self::trace_branch_offset(user, target)?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
                 BranchOffset::uninit()
@@ -157,19 +177,19 @@ impl LabelRegistry {
         Ok(offset)
     }
 
-    /// Resolves a `label` to its pinned [`Instr`].
+    /// Resolves a `label` to its pinned [`OpPos`].
     ///
     /// # Errors
     ///
     /// If the `label` is unpinned.
-    fn resolve_label(&self, label: LabelRef) -> Result<Instr, LabelError> {
+    fn resolve_label(&self, label: LabelRef) -> Result<OpPos, LabelError> {
         match self.get_label(label) {
             Label::Pinned(instr) => Ok(*instr),
             Label::Unpinned => Err(LabelError::Unpinned { label }),
         }
     }
 
-    /// Returns an iterator over pairs of user [`Instr`] and their [`BranchOffset`].
+    /// Returns an iterator over pairs of user [`OpPos`] and their [`BranchOffset`].
     ///
     /// # Panics
     ///
@@ -184,7 +204,7 @@ impl LabelRegistry {
 
 /// Iterator over resolved label users.
 ///
-/// Iterates over pairs of user [`Instr`] and its respective [`BranchOffset`]
+/// Iterates over pairs of user [`OpPos`] and its respective [`BranchOffset`]
 /// which allows the [`InstructionsBuilder`] to properly update the branching
 /// offsets.
 ///
@@ -196,7 +216,7 @@ pub struct ResolvedUserIter<'a> {
 }
 
 impl Iterator for ResolvedUserIter<'_> {
-    type Item = (Instr, Result<BranchOffset, Error>);
+    type Item = (OpPos, Result<BranchOffset, Error>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.users.next()?;
@@ -205,8 +225,7 @@ impl Iterator for ResolvedUserIter<'_> {
             .registry
             .resolve_label(next.label)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
-        let offset =
-            BranchOffset::from_src_to_dst(u32::from(src), u32::from(dst)).map_err(Into::into);
+        let offset = LabelRegistry::trace_branch_offset(src, dst);
         Some((src, offset))
     }
 }

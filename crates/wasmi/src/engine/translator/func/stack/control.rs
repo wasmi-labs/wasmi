@@ -1,7 +1,7 @@
 use super::{Operand, Reset};
 use crate::{
     engine::{
-        translator::{labels::LabelRef, utils::Instr},
+        translator::{labels::LabelRef, utils::OpPos},
         BlockType,
     },
     Engine,
@@ -43,7 +43,7 @@ pub struct ControlStack {
     /// fuel consumption instruction since this information is accessed commonly.
     ///
     /// [`Op`]: crate::ir::Op
-    consume_fuel_instr: Option<Instr>,
+    consume_fuel_instr: Option<OpPos>,
     /// Special operand stack to memorize operands for `else` control frames.
     else_operands: ElseOperands,
     /// This is `true` if an `if` with else providers was just popped from the stack.
@@ -101,7 +101,7 @@ impl ControlStack {
     ///
     /// Returns `None` otherwise.
     #[inline]
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+    pub fn consume_fuel_instr(&self) -> Option<OpPos> {
         debug_assert!(!self.is_empty());
         self.consume_fuel_instr
     }
@@ -128,7 +128,7 @@ impl ControlStack {
         ty: BlockType,
         height: usize,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) {
         debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(BlockControlFrame {
@@ -147,7 +147,7 @@ impl ControlStack {
         ty: BlockType,
         height: usize,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
     ) {
         debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(LoopControlFrame {
@@ -166,7 +166,7 @@ impl ControlStack {
         ty: BlockType,
         height: usize,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
         reachability: IfReachability,
         else_operands: impl IntoIterator<Item = Operand>,
     ) {
@@ -191,7 +191,7 @@ impl ControlStack {
     pub fn push_else(
         &mut self,
         if_frame: IfControlFrame,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
         is_end_of_then_reachable: bool,
     ) {
         debug_assert!(!self.orphaned_else_operands);
@@ -305,7 +305,7 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
         self.0.len_branch_params(engine)
     }
 
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<OpPos> {
         self.0.consume_fuel_instr()
     }
 }
@@ -418,7 +418,7 @@ pub trait ControlFrameBase {
     /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn consume_fuel_instr(&self) -> Option<Instr>;
+    fn consume_fuel_instr(&self) -> Option<OpPos>;
 }
 
 impl ControlFrameBase for ControlFrame {
@@ -496,7 +496,7 @@ impl ControlFrameBase for ControlFrame {
         }
     }
 
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<OpPos> {
         match self {
             ControlFrame::Block(frame) => frame.consume_fuel_instr(),
             ControlFrame::Loop(frame) => frame.consume_fuel_instr(),
@@ -523,7 +523,7 @@ pub struct BlockControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Instr>,
+    consume_fuel: Option<OpPos>,
     /// The label used to branch to the [`BlockControlFrame`].
     label: LabelRef,
 }
@@ -553,7 +553,7 @@ impl ControlFrameBase for BlockControlFrame {
         self.ty.len_results(engine)
     }
 
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<OpPos> {
         self.consume_fuel
     }
 }
@@ -572,7 +572,7 @@ pub struct LoopControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Instr>,
+    consume_fuel: Option<OpPos>,
     /// The label used to branch to the [`LoopControlFrame`].
     label: LabelRef,
 }
@@ -602,7 +602,7 @@ impl ControlFrameBase for LoopControlFrame {
         self.ty.len_params(engine)
     }
 
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<OpPos> {
         self.consume_fuel
     }
 }
@@ -621,7 +621,7 @@ pub struct IfControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Instr>,
+    consume_fuel: Option<OpPos>,
     /// The label used to branch to the [`IfControlFrame`].
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
@@ -672,7 +672,7 @@ impl ControlFrameBase for IfControlFrame {
         self.ty.len_results(engine)
     }
 
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<OpPos> {
         self.consume_fuel
     }
 }
@@ -716,7 +716,7 @@ pub struct ElseControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Instr>,
+    consume_fuel: Option<OpPos>,
     /// The label used to branch to the [`ElseControlFrame`].
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
@@ -807,7 +807,7 @@ impl ControlFrameBase for ElseControlFrame {
         self.ty.len_results(engine)
     }
 
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn consume_fuel_instr(&self) -> Option<OpPos> {
         self.consume_fuel
     }
 }

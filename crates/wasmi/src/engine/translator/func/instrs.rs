@@ -1,80 +1,127 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::translator::{
-        comparator::{
-            CmpSelectFusion,
-            CompareResult as _,
-            TryIntoCmpSelectInstr as _,
-            UpdateBranchOffset as _,
+    engine::{
+        translator::{
+            comparator::{
+                CmpSelectFusion,
+                CompareResult as _,
+                TryIntoCmpSelectInstr as _,
+                UpdateBranchOffset as _,
+            },
+            func::{Stack, StackLayout, StackSpace},
+            relink_result::RelinkResult,
+            utils::{BumpFuelConsumption as _, OpPos},
         },
-        func::{Operand, Stack, StackLayout, StackSpace},
-        relink_result::RelinkResult,
-        utils::{BumpFuelConsumption as _, Instr, IsInstructionParameter as _},
+        TranslationError,
     },
-    ir::{BranchOffset, Op, Slot},
-    module::ModuleHeader,
+    ir::{self, BranchOffset, Encode as _, Op, Slot},
     Engine,
     Error,
     ValType,
 };
 use alloc::vec::{self, Vec};
 
-/// Creates and encodes the list of [`Op`]s for a function.
 #[derive(Debug, Default)]
-pub struct InstrEncoder {
-    /// The list of constructed instructions and their parameters.
-    instrs: Vec<Op>,
+#[expect(unused)]
+pub struct EncodedOps {
+    buffer: Vec<u8>,
+}
+
+impl ir::Encoder for EncodedOps {
+    type Pos = OpPos;
+    type Error = TranslationError;
+
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<Self::Pos, Self::Error> {
+        let pos = self.buffer.len();
+        self.buffer.extend(bytes);
+        Ok(OpPos::from(pos))
+    }
+
+    fn encode_op_code(&mut self, code: ir::OpCode) -> Result<Self::Pos, Self::Error> {
+        // Note: this implements encoding for indirect threading.
+        //
+        // For direct threading we need to know ahead of time about the
+        // function pointers of all operator execution handlers which
+        // are defined in the Wasmi executor and available to the translator.
+        u16::from(code).encode(self)
+    }
+
+    fn branch_offset(
+        &mut self,
+        _pos: Self::Pos,
+        _branch_offset: BranchOffset,
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
+
+    fn block_fuel(
+        &mut self,
+        _pos: Self::Pos,
+        _block_fuel: ir::BlockFuel,
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
+}
+
+/// Creates and encodes the buffer of encoded [`Op`]s for a function.
+#[derive(Debug, Default)]
+pub struct OpEncoder {
+    /// The last pushed [`Op`].
+    ///
+    /// # Note
+    ///
+    /// - This allows the last [`Op`] to be peeked and manipulated.
+    /// - For example, this is useful to perform op-code fusion or adjusting the result slot.
+    last: Option<OpPos>,
     /// The fuel costs of instructions.
     ///
     /// This is `Some` if fuel metering is enabled, otherwise `None`.
     fuel_costs: Option<FuelCostsProvider>,
-    /// The last pushed non-parameter [`Op`].
-    last_instr: Option<Instr>,
+    /// The list of constructed instructions and their parameters.
+    ops: Vec<Op>,
 }
 
-impl ReusableAllocations for InstrEncoder {
-    type Allocations = InstrEncoderAllocations;
+impl ReusableAllocations for OpEncoder {
+    type Allocations = OpEncoderAllocations;
 
     fn into_allocations(self) -> Self::Allocations {
-        Self::Allocations {
-            instrs: self.instrs,
-        }
+        Self::Allocations { instrs: self.ops }
     }
 }
 
-/// The reusable heap allocations of the [`InstrEncoder`].
+/// The reusable heap allocations of the [`OpEncoder`].
 #[derive(Debug, Default)]
-pub struct InstrEncoderAllocations {
+pub struct OpEncoderAllocations {
     /// The list of constructed instructions and their parameters.
     instrs: Vec<Op>,
 }
 
-impl Reset for InstrEncoderAllocations {
+impl Reset for OpEncoderAllocations {
     fn reset(&mut self) {
         self.instrs.clear();
     }
 }
 
-impl InstrEncoder {
-    /// Creates a new [`InstrEncoder`].
-    pub fn new(engine: &Engine, alloc: InstrEncoderAllocations) -> Self {
+impl OpEncoder {
+    /// Creates a new [`OpEncoder`].
+    pub fn new(engine: &Engine, alloc: OpEncoderAllocations) -> Self {
         let config = engine.config();
         let fuel_costs = config
             .get_consume_fuel()
             .then(|| config.fuel_costs())
             .cloned();
         Self {
-            instrs: alloc.instrs,
+            ops: alloc.instrs,
             fuel_costs,
-            last_instr: None,
+            last: None,
         }
     }
 
-    /// Returns the next [`Instr`].
+    /// Returns the next [`OpPos`].
     #[must_use]
-    pub fn next_instr(&self) -> Instr {
-        Instr::from_usize(self.instrs.len())
+    pub fn next_instr(&self) -> OpPos {
+        OpPos::from(self.ops.len())
     }
 
     /// Pushes an [`Op::ConsumeFuel`] instruction to `self`.
@@ -82,40 +129,33 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The pushes [`Op::ConsumeFuel`] is initialized with base fuel costs.
-    pub fn push_consume_fuel_instr(&mut self) -> Result<Option<Instr>, Error> {
+    pub fn push_consume_fuel_instr(&mut self) -> Result<Option<OpPos>, Error> {
         let Some(fuel_costs) = &self.fuel_costs else {
             return Ok(None);
         };
         let base_costs = fuel_costs.base();
-        let Ok(base_costs) = u32::try_from(base_costs) else {
-            panic!("out of  bounds base fuel costs: {base_costs}");
-        };
-        let instr = self.push_instr_impl(Op::consume_fuel(base_costs))?;
+        let instr = self.push_instr_impl(Op::consume_fuel(base_costs.into()))?;
         Ok(Some(instr))
     }
 
-    /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
+    /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
     ///
-    /// Returns an [`Instr`] that refers to the pushed [`Op`].
+    /// Returns an [`OpPos`] that refers to the pushed [`Op`].
     pub fn push_instr(
         &mut self,
         instruction: Op,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<Instr, Error> {
+    ) -> Result<OpPos, Error> {
         self.bump_fuel_consumption(consume_fuel, f)?;
         self.push_instr_impl(instruction)
     }
 
-    /// Pushes a non-parameter [`Op`] to the [`InstrEncoder`].
-    fn push_instr_impl(&mut self, instruction: Op) -> Result<Instr, Error> {
-        debug_assert!(
-            !instruction.is_instruction_parameter(),
-            "parameter: {instruction:?}"
-        );
+    /// Pushes a non-parameter [`Op`] to the [`OpEncoder`].
+    fn push_instr_impl(&mut self, instruction: Op) -> Result<OpPos, Error> {
         let instr = self.next_instr();
-        self.instrs.push(instruction);
-        self.last_instr = Some(instr);
+        self.ops.push(instruction);
+        self.last = Some(instr);
         Ok(instr)
     }
 
@@ -127,16 +167,11 @@ impl InstrEncoder {
     /// # Panics (Debug)
     ///
     /// If `instr` or `new_instr` are [`Op`] parameters.
-    pub fn try_replace_instr(&mut self, instr: Instr, new_instr: Op) -> Result<bool, Error> {
-        debug_assert!(
-            !new_instr.is_instruction_parameter(),
-            "parameter: {new_instr:?}"
-        );
-        let Some(last_instr) = self.last_instr else {
+    pub fn try_replace_instr(&mut self, instr: OpPos, new_instr: Op) -> Result<bool, Error> {
+        let Some(last_instr) = self.last else {
             return Ok(false);
         };
         let replace = self.get_mut(instr);
-        debug_assert!(!replace.is_instruction_parameter(), "parameter: {instr:?}");
         if instr != last_instr {
             return Ok(false);
         }
@@ -158,19 +193,18 @@ impl InstrEncoder {
         new_result: Slot,
         old_result: Slot,
         layout: &StackLayout,
-        module: &ModuleHeader,
     ) -> Result<bool, Error> {
         if !matches!(layout.stack_space(new_result), StackSpace::Local) {
             // Case: cannot replace result if `new_result` isn't a local.
             return Ok(false);
         }
-        let Some(last_instr) = self.last_instr else {
+        let Some(last_instr) = self.last else {
             // Case: cannot replace result without last instruction.
             return Ok(false);
         };
         if !self
             .get_mut(last_instr)
-            .relink_result(module, new_result, old_result)?
+            .relink_result(new_result, old_result)?
         {
             // Case: it was impossible to relink the result of `last_instr.
             return Ok(false);
@@ -190,68 +224,68 @@ impl InstrEncoder {
         select_condition: Slot,
         layout: &StackLayout,
         stack: &mut Stack,
-    ) -> Result<Option<bool>, Error> {
-        let Some(last_instr) = self.last_instr else {
+        true_val: Slot,
+        false_val: Slot,
+    ) -> Result<bool, Error> {
+        let Some(last_instr) = self.last else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return Ok(None);
+            return Ok(false);
         };
         let last_instruction = self.get(last_instr);
         let Some(last_result) = last_instruction.compare_result() else {
             // All negatable instructions have a single result register.
-            return Ok(None);
+            return Ok(false);
         };
         if matches!(layout.stack_space(last_result), StackSpace::Local) {
             // The instruction stores its result into a local variable which
             // is an observable side effect which we are not allowed to mutate.
-            return Ok(None);
+            return Ok(false);
         }
         if last_result != select_condition {
             // The result of the last instruction and the select's `condition`
             // are not equal thus indicating that we cannot fuse the instructions.
-            return Ok(None);
+            return Ok(false);
         }
-        let CmpSelectFusion::Applied {
-            fused,
-            swap_operands,
-        } = last_instruction.try_into_cmp_select_instr(|| {
-            let select_result = stack.push_temp(ty, Some(last_instr))?;
-            let select_result = layout.temp_to_reg(select_result)?;
-            Ok(select_result)
-        })?
+        let CmpSelectFusion::Applied(fused) =
+            last_instruction.try_into_cmp_select_instr(true_val, false_val, || {
+                let select_result = stack.push_temp(ty, Some(last_instr))?;
+                let select_result = layout.temp_to_slot(select_result)?;
+                Ok(select_result)
+            })?
         else {
-            return Ok(None);
+            return Ok(false);
         };
         let last_instr = self.get_mut(last_instr);
         *last_instr = fused;
-        Ok(Some(swap_operands))
+        Ok(true)
     }
 
-    /// Pushes an [`Op`] parameter to the [`InstrEncoder`].
+    /// Pushes an [`Op`] parameter to the [`OpEncoder`].
     ///
     /// The parameter is associated to the last pushed [`Op`].
     pub fn push_param(&mut self, instruction: Op) {
-        self.instrs.push(instruction);
+        self.ops.push(instruction);
     }
 
-    /// Returns a shared reference to the [`Op`] associated to [`Instr`].
+    /// Returns a shared reference to the [`Op`] associated to [`OpPos`].
     ///
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    pub fn get(&self, instr: Instr) -> &Op {
-        &self.instrs[instr.into_usize()]
+    pub fn get(&self, pos: OpPos) -> &Op {
+        &self.ops[usize::from(pos)]
     }
 
-    /// Returns an exclusive reference to the [`Op`] associated to [`Instr`].
+    /// Returns an exclusive reference to the [`Op`] associated to [`OpPos`].
     ///
     /// # Panics
     ///
     /// If `instr` is out of bounds for `self`.
-    fn get_mut(&mut self, instr: Instr) -> &mut Op {
-        &mut self.instrs[instr.into_usize()]
+    fn get_mut(&mut self, pos: OpPos) -> &mut Op {
+        &mut self.ops[usize::from(pos)]
     }
 
-    /// Resets the [`Instr`] last created via [`InstrEncoder::push_instr`].
+    /// Resets the [`OpPos`] last created via [`OpEncoder::push_instr`].
     ///
     /// # Note
     ///
@@ -262,7 +296,7 @@ impl InstrEncoder {
     /// needs to be reset to `None` to signal that no such optimization is
     /// valid across control flow boundaries.
     pub fn reset_last_instr(&mut self) {
-        self.last_instr = None;
+        self.last = None;
     }
 
     /// Updates the branch offset of `instr` to `offset`.
@@ -272,11 +306,10 @@ impl InstrEncoder {
     /// If the branch offset could not be updated for `instr`.
     pub fn update_branch_offset(
         &mut self,
-        instr: Instr,
+        instr: OpPos,
         offset: BranchOffset,
-        layout: &mut StackLayout,
     ) -> Result<(), Error> {
-        self.get_mut(instr).update_branch_offset(layout, offset)?;
+        self.get_mut(instr).update_branch_offset(offset)?;
         Ok(())
     }
 
@@ -287,7 +320,7 @@ impl InstrEncoder {
     /// If consumed fuel is out of bounds after this operation.
     pub fn bump_fuel_consumption(
         &mut self,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<OpPos>,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let (fuel_costs, consume_fuel) = match (&self.fuel_costs, consume_fuel) {
@@ -306,85 +339,31 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Encode the top-most `len` operands on the stack as register list.
+    /// Returns an iterator yielding all [`Op`]s of the [`OpEncoder`].
     ///
     /// # Note
     ///
-    /// This is used for the following n-ary instructions:
-    ///
-    /// - [`Op::ReturnMany`]
-    /// - [`Op::CopyMany`]
-    /// - [`Op::CallInternal`]
-    /// - [`Op::CallImported`]
-    /// - [`Op::CallIndirect`]
-    /// - [`Op::ReturnCallInternal`]
-    /// - [`Op::ReturnCallImported`]
-    /// - [`Op::ReturnCallIndirect`]
-    pub fn encode_register_list(
-        &mut self,
-        operands: &[Operand],
-        layout: &mut StackLayout,
-    ) -> Result<(), Error> {
-        let mut remaining = operands;
-        let mut operand_to_reg =
-            |operand: &Operand| -> Result<Slot, Error> { layout.operand_to_reg(*operand) };
-        let instr = loop {
-            match remaining {
-                [] => return Ok(()),
-                [v0] => {
-                    let v0 = operand_to_reg(v0)?;
-                    break Op::slot(v0);
-                }
-                [v0, v1] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    break Op::slot2_ext(v0, v1);
-                }
-                [v0, v1, v2] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    let v2 = operand_to_reg(v2)?;
-                    break Op::slot3_ext(v0, v1, v2);
-                }
-                [v0, v1, v2, rest @ ..] => {
-                    let v0 = operand_to_reg(v0)?;
-                    let v1 = operand_to_reg(v1)?;
-                    let v2 = operand_to_reg(v2)?;
-                    let instr = Op::slot_list_ext(v0, v1, v2);
-                    self.push_param(instr);
-                    remaining = rest;
-                }
-            };
-        };
-        self.push_param(instr);
-        Ok(())
-    }
-
-    /// Returns an iterator yielding all [`Op`]s of the [`InstrEncoder`].
-    ///
-    /// # Note
-    ///
-    /// The [`InstrEncoder`] will be empty after this operation.
-    pub fn drain(&mut self) -> InstrEncoderIter<'_> {
-        InstrEncoderIter {
-            iter: self.instrs.drain(..),
+    /// The [`OpEncoder`] will be empty after this operation.
+    pub fn drain(&mut self) -> OpEncoderIter<'_> {
+        OpEncoderIter {
+            iter: self.ops.drain(..),
         }
     }
 
-    /// Returns the last instruction of the [`InstrEncoder`] if any.
-    pub fn last_instr(&self) -> Option<Instr> {
-        self.last_instr
+    /// Returns the last instruction of the [`OpEncoder`] if any.
+    pub fn last_instr(&self) -> Option<OpPos> {
+        self.last
     }
 }
 
-/// Iterator yielding all [`Op`]s of the [`InstrEncoder`].
+/// Iterator yielding all [`Op`]s of the [`OpEncoder`].
 #[derive(Debug)]
-pub struct InstrEncoderIter<'a> {
+pub struct OpEncoderIter<'a> {
     /// The underlying iterator.
     iter: vec::Drain<'a, Op>,
 }
 
-impl<'a> Iterator for InstrEncoderIter<'a> {
+impl<'a> Iterator for OpEncoderIter<'a> {
     type Item = Op;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -396,7 +375,7 @@ impl<'a> Iterator for InstrEncoderIter<'a> {
     }
 }
 
-impl ExactSizeIterator for InstrEncoderIter<'_> {
+impl ExactSizeIterator for OpEncoderIter<'_> {
     fn len(&self) -> usize {
         self.iter.len()
     }
