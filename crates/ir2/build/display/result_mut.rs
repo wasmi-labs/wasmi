@@ -88,6 +88,16 @@ impl Display for DisplayResultMut<&'_ Isa> {
             f,
             "\
             {indent}impl Op {{\n\
+            {indent}    /// Returns a shared reference to the result [`Slot`] of `self` if any.\n\
+            {indent}    pub fn result_ref(&self) -> Option<&Slot> {{\n\
+            {indent}        let res = match self {{\n\
+                                {variants} => result,\n\
+            {indent}            _ => return None,\n\
+            {indent}        }};\n\
+            {indent}        Some(res)\n\
+            {indent}    }}\n\
+            \n\
+            {indent}    /// Returns an exclusive reference to the result [`Slot`] of `self` if any.\n\
             {indent}    pub fn result_mut(&mut self) -> Option<&mut Slot> {{\n\
             {indent}        let res = match self {{\n\
                                 {variants} => result,\n\
