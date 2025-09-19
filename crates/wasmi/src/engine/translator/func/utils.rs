@@ -71,9 +71,7 @@ pub trait UpdateResultSlot: Sized {
 impl UpdateResultSlot for Op {
     fn update_result_slot(&self, new_result: Slot) -> Option<Self> {
         let mut op = *self;
-        let Some(result_mut) = op.result_mut() else {
-            return None;
-        };
+        let result_mut = op.result_mut()?;
         *result_mut = new_result;
         Some(op)
     }

@@ -2178,7 +2178,7 @@ impl FuncTranslator {
             }
         };
         self.push_instr(store_op, FuelCostsProvider::store)?;
-        return Ok(());
+        Ok(())
     }
 
     /// Encodes a Wasm store operator with `(mem 0)` and 16-bit encodable `offset` to Wasmi bytecode.
