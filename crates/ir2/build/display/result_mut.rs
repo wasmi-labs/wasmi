@@ -2,6 +2,7 @@ use crate::build::{
     display::{ident::DisplayIdent, utils::DisplaySequence, Indent},
     isa::Isa,
     op::{
+        Op,
         BinaryOp,
         CmpBranchOp,
         CmpSelectOp,
@@ -17,6 +18,31 @@ use crate::build::{
     },
 };
 use core::fmt::{self, Display};
+
+impl Op {
+    /// Returns `true` if `self` has a result field.
+    fn has_result(&self) -> bool {
+        match self {
+            Op::Unary(_) => true,
+            Op::Binary(_) => true,
+            Op::Ternary(_) => true,
+            Op::CmpBranch(_) => false,
+            Op::CmpSelect(_) => true,
+            Op::Load(_) => true,
+            Op::Store(_) => false,
+            Op::TableGet(_) => true,
+            Op::TableSet(_) => false,
+            Op::Generic0(op) => op.has_result(),
+            Op::Generic1(op) => op.has_result(),
+            Op::Generic2(op) => op.has_result(),
+            Op::Generic3(op) => op.has_result(),
+            Op::Generic4(op) => op.has_result(),
+            Op::Generic5(op) => op.has_result(),
+            Op::V128ReplaceLane(_) => true,
+            Op::V128LoadLane(_) => true,
+        }
+    }
+}
 
 pub struct DisplayResultMut<T> {
     pub value: T,
@@ -43,7 +69,7 @@ impl<'a, T> DisplayResultMut<&'a T> {
     {
         let indent = self.indent;
         let ident = DisplayIdent::camel(self.value);
-        writeln!(f, "{indent}Self::{ident} {{ result, .. }} => result,")
+        write!(f, "{indent}| Self::{ident} {{ result, .. }}")
     }
 }
 
@@ -51,10 +77,11 @@ impl Display for DisplayResultMut<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let variants = DisplaySequence::new(
-            "",
+            "\n",
             self.value
                 .ops
                 .iter()
+                .filter(|op| op.has_result())
                 .map(|op| DisplayResultMut::new(op, indent.inc_by(3))),
         );
         write!(
@@ -63,7 +90,7 @@ impl Display for DisplayResultMut<&'_ Isa> {
             {indent}impl Op {{\n\
             {indent}    pub fn result_mut(&mut self) -> Option<&mut Slot> {{\n\
             {indent}        let res = match self {{\n\
-                                {variants}\
+                                {variants} => result,\n\
             {indent}            _ => return None,\n\
             {indent}        }};\n\
             {indent}        Some(res)\n\
