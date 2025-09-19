@@ -4,7 +4,7 @@ mod encode;
 mod ident;
 mod op;
 mod op_code;
-mod result_mut;
+mod result;
 mod utils;
 
 pub use self::{
@@ -13,7 +13,7 @@ pub use self::{
     encode::DisplayEncode,
     op::DisplayOp,
     op_code::DisplayOpCode,
-    result_mut::DisplayResultMut,
+    result::DisplayResultMut,
     utils::Indent,
 };
 use crate::build::{display::ident::DisplayIdent, op::Op};
