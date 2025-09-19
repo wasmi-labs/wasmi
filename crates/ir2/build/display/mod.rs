@@ -36,6 +36,5 @@ macro_rules! impl_trait_for_op {
 apply_macro_for_ops!(impl_trait_for_op, DisplayOp);
 apply_macro_for_ops!(impl_trait_for_op, DisplayIdent);
 apply_macro_for_ops!(impl_trait_for_op, DisplayConstructor);
-apply_macro_for_ops!(impl_trait_for_op, DisplayResultMut);
 apply_macro_for_ops!(impl_trait_for_op, DisplayEncode);
 apply_macro_for_ops!(impl_trait_for_op, DisplayDecode);
