@@ -81,6 +81,12 @@ impl Display for DisplayOp<&'_ Isa> {
             f,
             "\
             {indent}/// A Wasmi bytecode operator or instruction.\n\
+            {indent}///\n\
+            {indent}/// The [`Op`] type features a small utility API:\n\
+            {indent}///\n\
+            {indent}/// - [`Op::result_ref`]\n\
+            {indent}/// - [`Op::result_mut`]\n\
+            {indent}/// - [`Op::code`]\n\
             {indent}#[allow(non_camel_case_types)]\n\
             {indent}#[derive(Debug)]\n\
             {indent}pub enum Op {{\n\

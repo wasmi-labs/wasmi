@@ -65,7 +65,7 @@ impl Display for DisplayOpCode<&'_ Isa> {
             {indent}}}\n\
             \n\
             {indent}impl Op {{\n\
-            {indent}    /// Returns the [`OpCode`] associated to `self`.
+            {indent}    /// Returns the [`OpCode`] associated to `self`.\n\
             {indent}    pub fn code(&self) -> OpCode {{\n\
             {indent}        match self {{\n\
                                 {match_arms_code}\n\
