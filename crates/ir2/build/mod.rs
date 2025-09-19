@@ -75,8 +75,8 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
 
 fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 210_000,
-        false => 135_000,
+        true => 235_000,
+        false => 150_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
         write!(
