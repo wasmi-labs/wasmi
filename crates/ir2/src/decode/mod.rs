@@ -77,6 +77,17 @@ impl fmt::Display for DecodeError {
     }
 }
 
+impl Decoder for &'_ [u8] {
+    fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), DecodeError> {
+        let Some((bytes, rest)) = self.split_at_checked(buffer.len()) else {
+            return Err(DecodeError::OutOfBytes)
+        };
+        buffer.copy_from_slice(bytes);
+        *self = rest;
+        Ok(())
+    }
+}
+
 /// Types that can be decoded using a type that implements [`Decoder`].
 pub trait Decode: Sized {
     /// Decodes `Self` via `decoder`.
