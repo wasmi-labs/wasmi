@@ -146,7 +146,7 @@ impl TempOperand {
         self.ty
     }
 
-    /// Returns the instruction whcih created this [`TempOperand`] as its result if any.
+    /// Returns the instruction which created this [`TempOperand`] as its result if any.
     pub fn instr(&self) -> Option<Instr> {
         self.instr
     }
