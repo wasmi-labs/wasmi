@@ -2014,7 +2014,7 @@ impl FuncTranslator {
             // Case: cannot fuse with non-zero `rhs`
             return Ok(false);
         }
-        let Some(last_instr) = self.instrs.peek_staged() else {
+        let Some(staged) = self.instrs.peek_staged() else {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
@@ -2024,17 +2024,8 @@ impl FuncTranslator {
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        let Some(origin) = lhs.instr() else {
-            // Case: `lhs` has no origin instruciton, thus not possible to fuse.
-            return Ok(false);
-        };
-        if origin != last_instr {
-            // Case: `lhs`'s origin instruction does not match the last instruction
-            return Ok(false);
-        }
         let lhs_reg = self.layout.temp_to_slot(lhs)?;
-        let last_instruction = self.instrs.get(last_instr);
-        let Some(result) = last_instruction.compare_result() else {
+        let Some(result) = staged.result_ref().copied() else {
             // Case: cannot fuse non-cmp instructions
             return Ok(false);
         };
@@ -2042,7 +2033,7 @@ impl FuncTranslator {
             // Case: the `cmp` instruction does not feed into the `eqz` and cannot be fused
             return Ok(false);
         }
-        let Some(negated) = try_fuse(last_instruction) else {
+        let Some(negated) = try_fuse(&staged) else {
             // Case: the `cmp` instruction cannot be negated
             return Ok(false);
         };
@@ -2055,7 +2046,6 @@ impl FuncTranslator {
         let Some(negated) = negated.update_result_slot(new_result) else {
             unreachable!("`negated` has been asserted as `cmp` instruction");
         };
-        let fuel_pos = self.stack.consume_fuel_instr();
         self.instrs.replace_staged(negated)?;
         Ok(true)
     }
