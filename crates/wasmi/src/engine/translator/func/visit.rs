@@ -125,11 +125,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let consume_fuel = self.stack.consume_fuel_instr();
         self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
         self.pin_label(continue_label);
-        let consume_fuel = self.instrs.push_consume_fuel_instr()?;
+        let consume_fuel = self.instrs.encode_consume_fuel()?;
         self.stack
             .push_loop(block_ty, continue_label, consume_fuel)?;
         // Need to reset `last_instr` because a loop header is a control flow boundary.
-        self.instrs.reset_last_instr();
+        self.instrs.try_encode_staged();
         Ok(())
     }
 
@@ -159,7 +159,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let else_label = self.labels.new_label();
                 self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
-                let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
+                let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
                 (reachability, consume_fuel_instr)
             }
         };
@@ -193,11 +193,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             // Start of `else` block:
             self.labels
-                .pin_label(else_label, self.instrs.next_instr())
+                .pin_label(else_label, self.instrs.next_pos())
                 .unwrap();
-            self.instrs.reset_last_instr();
+            self.instrs.try_encode_staged();
         }
-        let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
+        let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
         self.reachable = frame.is_else_reachable();
         self.stack
             .push_else(frame, is_end_of_then_reachable, consume_fuel_instr)?;
@@ -277,7 +277,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         self.encode_br(label)?;
         self.labels
-            .pin_label(skip_label, self.instrs.next_instr())
+            .pin_label(skip_label, self.instrs.next_pos())
             .unwrap();
         Ok(())
     }
@@ -1824,11 +1824,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 self.stack.push_local(input.local_index(), ValType::I64)?;
                 self.visit_i64_eqz()
             }
-            Operand::Temp(input) => {
+            Operand::Temp(_) => {
                 // Note: `funcref` and `externref` both serialize to `UntypedValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
                 //       via reinterpretation of the value's type.
-                self.stack.push_temp(ValType::I64, input.instr())?;
+                self.stack.push_temp(ValType::I64)?;
                 self.visit_i64_eqz()
             }
             Operand::Immediate(input) => {
