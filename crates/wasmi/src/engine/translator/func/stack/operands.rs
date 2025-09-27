@@ -47,8 +47,6 @@ pub enum StackOperand {
     Temp {
         /// The type of the temporary value.
         ty: ValType,
-        /// The instruction which has this [`StackOperand`] as result if any.
-        instr: Option<BytePos>,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
@@ -147,7 +145,7 @@ impl OperandStack {
     pub fn push_operand(&mut self, operand: Operand) -> Result<OperandIdx, Error> {
         match operand {
             Operand::Local(operand) => self.push_local(operand.local_index(), operand.ty()),
-            Operand::Temp(operand) => self.push_temp(operand.ty(), operand.instr()),
+            Operand::Temp(operand) => self.push_temp(operand.ty()),
             Operand::Immediate(operand) => self.push_immediate(operand.val()),
         }
     }
@@ -183,9 +181,9 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType, instr: Option<BytePos>) -> Result<OperandIdx, Error> {
+    pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
         let idx = self.next_index();
-        self.operands.push(StackOperand::Temp { ty, instr });
+        self.operands.push(StackOperand::Temp { ty });
         self.update_max_stack_height();
         Ok(idx)
     }
@@ -290,7 +288,7 @@ impl OperandStack {
         let operand = self.get_at(index);
         let ty = operand.ty();
         self.try_unlink_local(operand);
-        self.operands[usize::from(index)] = StackOperand::Temp { ty, instr: None };
+        self.operands[usize::from(index)] = StackOperand::Temp { ty };
         operand
     }
 

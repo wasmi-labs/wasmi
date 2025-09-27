@@ -359,7 +359,7 @@ impl Stack {
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
     pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
-        self.operands.push_temp(ty, None)
+        self.operands.push_temp(ty)
     }
 
     /// Pushes an immediate `value` on the [`Stack`].
