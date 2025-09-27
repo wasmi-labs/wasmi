@@ -11,7 +11,7 @@ use crate::{
     core::{Fuel, FuelCostsProvider},
     engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
     errors::FuelError,
-    ir::{index::InternalFunc, Op},
+    ir::index::InternalFunc,
     module::{FuncIdx, ModuleHeader},
     Config,
     Error,
@@ -785,7 +785,7 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 #[derive(Debug)]
 pub struct CompiledFuncEntity {
     /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
-    instrs: Pin<Box<[Op]>>,
+    ops: Pin<Box<[u8]>>,
     /// The number of stack slots used by the [`EngineFunc`] in total.
     ///
     /// # Note
@@ -800,15 +800,12 @@ impl CompiledFuncEntity {
     ///
     /// # Panics
     ///
-    /// - If `instrs` is empty.
-    /// - If `instrs` contains more than `i32::MAX` instructions.
-    pub fn new<I>(len_stack_slots: u16, instrs: I) -> Self
-    where
-        I: IntoIterator<Item = Op>,
-    {
-        let instrs: Pin<Box<[Op]>> = Pin::new(instrs.into_iter().collect());
+    /// - If `ops` is empty.
+    /// - If `ops` contains more than `i32::MAX` encoded bytes.
+    pub fn new(len_stack_slots: u16, ops: &[u8]) -> Self {
+        let ops: Pin<Box<[u8]>> = Pin::new(ops.into());
         assert!(
-            !instrs.is_empty(),
+            !ops.is_empty(),
             "compiled functions must have at least one instruction"
         );
         assert!(
@@ -816,12 +813,12 @@ impl CompiledFuncEntity {
             // However, Wasmi's branch instructions can jump across at most `i32::MAX`
             // forwards or `i32::MIN` instructions backwards and thus having more than
             // `i32::MAX` instructions might introduce problems.
-            instrs.len() <= i32::MAX as usize,
+            ops.len() <= i32::MAX as usize,
             "compiled function has too many instructions: {}",
-            instrs.len(),
+            ops.len(),
         );
         Self {
-            instrs,
+            ops,
             len_stack_slots,
         }
     }
@@ -830,8 +827,8 @@ impl CompiledFuncEntity {
 /// A shared reference to the data of a [`EngineFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CompiledFuncRef<'a> {
-    /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
-    instrs: Pin<&'a [Op]>,
+    /// The sequence of encoded [`Op`]s of the [`CompiledFuncEntity`].
+    ops: Pin<&'a [u8]>,
     /// The number of stack slots used by the [`EngineFunc`] in total.
     len_stack_slots: u16,
 }
@@ -840,17 +837,17 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
     #[inline]
     fn from(func: &'a CompiledFuncEntity) -> Self {
         Self {
-            instrs: func.instrs.as_ref(),
+            ops: func.ops.as_ref(),
             len_stack_slots: func.len_stack_slots,
         }
     }
 }
 
 impl<'a> CompiledFuncRef<'a> {
-    /// Returns the sequence of [`Op`] of the [`EngineFunc`].
+    /// Returns the sequence of encoded [`Op`]s of the [`EngineFunc`].
     #[inline]
-    pub fn instrs(&self) -> &'a [Op] {
-        self.instrs.get_ref()
+    pub fn ops(&self) -> &'a [u8] {
+        self.ops.get_ref()
     }
 
     /// Returns the number of stack slots used by the [`EngineFunc`].
