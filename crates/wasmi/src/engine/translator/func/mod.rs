@@ -1,6 +1,7 @@
 #[macro_use]
 mod utils;
-mod instrs;
+mod encoder;
+mod labels;
 mod layout;
 mod locals;
 mod op;
@@ -10,7 +11,8 @@ mod stack;
 mod visit;
 
 use self::{
-    instrs::{OpEncoder, OpEncoderAllocations},
+    encoder::{OpEncoder, OpEncoderAllocations, Pos},
+    labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
     stack::{
@@ -40,19 +42,21 @@ use crate::{
     engine::{
         translator::{
             comparator::{
+                CmpSelectFusion,
                 CompareResult as _,
                 LogicalizeCmpInstr,
                 NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
+                TryIntoCmpSelectInstr as _,
             },
-            labels::{LabelRef, LabelRegistry},
-            utils::{IntoShiftAmount, OpPos, ToBits, WasmFloat, WasmInteger},
+            utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
             WasmTranslator,
         },
         BlockType,
         CompiledFuncEntity,
         TranslationError,
     },
+    ir,
     ir::{index, Address, BoundedSlotSpan, FixedSlotSpan, Offset16, Op, Sign, Slot, SlotSpan},
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
     Engine,
@@ -178,7 +182,10 @@ impl WasmTranslator<'_> for FuncTranslator {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         self.update_branch_offsets()?;
-        finalize(CompiledFuncEntity::new(frame_size, self.instrs.drain()));
+        finalize(CompiledFuncEntity::new(
+            frame_size,
+            self.instrs.encoded_ops(),
+        ));
         Ok(self.into_allocations())
     }
 }
@@ -246,7 +253,7 @@ impl FuncTranslator {
         let func_ty = self.module.get_type_of_func(self.func);
         let block_ty = BlockType::func_type(func_ty);
         let end_label = self.labels.new_label();
-        let consume_fuel = self.instrs.push_consume_fuel_instr()?;
+        let consume_fuel = self.instrs.encode_consume_fuel()?;
         self.stack
             .push_func_block(block_ty, end_label, consume_fuel)?;
         Ok(())
@@ -336,7 +343,7 @@ impl FuncTranslator {
     fn move_operands_to_temp(
         &mut self,
         len: usize,
-        consume_fuel: Option<OpPos>,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<SlotSpan, Error> {
         for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
@@ -356,7 +363,7 @@ impl FuncTranslator {
     fn copy_branch_params(
         &mut self,
         target: &impl ControlFrameBase,
-        consume_fuel_instr: Option<OpPos>,
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         let len_branch_params = target.len_branch_params(&self.engine);
         let Some(branch_results) = self.frame_results(target)? else {
@@ -381,7 +388,7 @@ impl FuncTranslator {
             .ty()
             .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
                 for result in func_ty.results() {
-                    self.stack.push_temp(*result, None)?;
+                    self.stack.push_temp(*result)?;
                 }
                 Ok(())
             })?;
@@ -399,7 +406,7 @@ impl FuncTranslator {
         &mut self,
         results: SlotSpan,
         len_values: u16,
-        consume_fuel_instr: Option<OpPos>,
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         match len_values {
             0 => Ok(()),
@@ -422,16 +429,23 @@ impl FuncTranslator {
         &mut self,
         result: Slot,
         value: Operand,
-        consume_fuel_instr: Option<OpPos>,
-    ) -> Result<Option<OpPos>, Error> {
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<Option<Pos<Op>>, Error> {
         let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)? else {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let instr =
-            self.instrs
-                .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
-        Ok(Some(instr))
+        let encode_strategy = match self.layout.stack_space(result) {
+            StackSpace::Local => OpEncoder::encode,
+            StackSpace::Temp => OpEncoder::stage,
+        };
+        let pos = encode_strategy(
+            &mut self.instrs,
+            copy_instr,
+            consume_fuel_instr,
+            FuelCostsProvider::base,
+        )?;
+        Ok(Some(pos))
     }
 
     /// Returns the copy instruction to copy the given `operand` to `result`.
@@ -497,17 +511,17 @@ impl FuncTranslator {
         results: SlotSpan,
         values: SlotSpan,
         len: u16,
-        consume_fuel_instr: Option<OpPos>,
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         if results == values {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
         }
         debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
-        self.instrs.push_instr(
+        self.instrs.encode(
             Op::copy_span(results, values, len),
             consume_fuel_instr,
-            |costs| costs.fuel_for_copying_values(u64::from(len)),
+            |costs: &FuelCostsProvider| costs.fuel_for_copying_values(u64::from(len)),
         )?;
         Ok(())
     }
@@ -523,7 +537,7 @@ impl FuncTranslator {
         &mut self,
         results: SlotSpan,
         len: u16,
-        consume_fuel_instr: Option<OpPos>,
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         self.peek_operands_into_buffer(usize::from(len));
         let values = &self.operands[..];
@@ -699,7 +713,7 @@ impl FuncTranslator {
     /// Pins the `label` to the next [`OpPos`].
     fn pin_label(&mut self, label: LabelRef) {
         self.labels
-            .pin_label(label, self.instrs.next_instr())
+            .pin_label(label, self.instrs.next_pos())
             .unwrap_or_else(|err| panic!("failed to pin label to next instruction: {err}"));
     }
 
@@ -711,7 +725,7 @@ impl FuncTranslator {
     fn copy_operand_to_temp(
         &mut self,
         operand: Operand,
-        consume_fuel: Option<OpPos>,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Slot, Error> {
         let result = self.layout.temp_to_slot(operand.index())?;
         self.encode_copy(result, operand, consume_fuel)?;
@@ -735,7 +749,7 @@ impl FuncTranslator {
                 let copy_instr = Self::make_copy_imm_instr(result, value)?;
                 let consume_fuel = self.stack.consume_fuel_instr();
                 self.instrs
-                    .push_instr(copy_instr, consume_fuel, FuelCostsProvider::base)?;
+                    .encode(copy_instr, consume_fuel, FuelCostsProvider::base)?;
                 Ok(result)
             }
         }
@@ -755,7 +769,7 @@ impl FuncTranslator {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
             self.instrs
-                .push_instr(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+                .encode(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         }
         Ok(())
     }
@@ -765,9 +779,9 @@ impl FuncTranslator {
         &mut self,
         instr: Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<OpPos, Error> {
+    ) -> Result<Pos<Op>, Error> {
         let consume_fuel = self.stack.consume_fuel_instr();
-        let instr = self.instrs.push_instr(instr, consume_fuel, fuel_costs)?;
+        let instr = self.instrs.stage(instr, consume_fuel, fuel_costs)?; // TODO: maybe use OpEncoder::encode here instead
         Ok(instr)
     }
 
@@ -779,13 +793,11 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let expected_iidx = self.instrs.next_instr();
-        let result = self
-            .layout
-            .temp_to_slot(self.stack.push_temp(result_ty, Some(expected_iidx))?)?;
-        let actual_iidx =
-            self.instrs
-                .push_instr(make_instr(result), consume_fuel_instr, fuel_costs)?;
+        let expected_iidx = self.instrs.next_pos();
+        let result = self.layout.temp_to_slot(self.stack.push_temp(result_ty)?)?;
+        let actual_iidx = self
+            .instrs
+            .stage(make_instr(result), consume_fuel_instr, fuel_costs)?;
         assert_eq!(expected_iidx, actual_iidx);
         Ok(())
     }
@@ -845,8 +857,8 @@ impl FuncTranslator {
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
             let offset = self
                 .labels
-                .try_resolve_label(frame.label(), self.instrs.next_instr())?;
-            self.instrs.push_param(Op::branch(offset));
+                .try_resolve_label(frame.label(), self.instrs.next_pos())?;
+            // self.instrs.push_param(Op::branch(offset)); // TODO: finish encoding impl
             frame.branch_to();
         }
         Ok(())
@@ -883,7 +895,7 @@ impl FuncTranslator {
             };
             let _offset = self
                 .labels
-                .try_resolve_label(frame.label(), self.instrs.next_instr())?;
+                .try_resolve_label(frame.label(), self.instrs.next_pos())?;
             // self.instrs
             //     .push_param(Op::branch_table_target(results, offset)); // TODO: encode branch table targets properly
             frame.branch_to();
@@ -892,7 +904,10 @@ impl FuncTranslator {
     }
 
     /// Encodes a generic return instruction.
-    fn encode_return(&mut self, consume_fuel: Option<OpPos>) -> Result<OpPos, Error> {
+    fn encode_return(
+        &mut self,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         let instr = match len_results {
             0 => Op::Return {},
@@ -932,7 +947,7 @@ impl FuncTranslator {
         };
         let instr = self
             .instrs
-            .push_instr(instr, consume_fuel, FuelCostsProvider::base)?;
+            .encode(instr, consume_fuel, FuelCostsProvider::base)?;
         Ok(instr)
     }
 
@@ -989,7 +1004,7 @@ impl FuncTranslator {
     fn try_form_regspan_or_move(
         &mut self,
         len: usize,
-        consume_fuel_instr: Option<OpPos>,
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<SlotSpan, Error> {
         if let Some(span) = self.try_form_regspan(len)? {
             return Ok(span);
@@ -1010,10 +1025,7 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        if let Err(err) = self
-            .labels
-            .pin_label(frame.label(), self.instrs.next_instr())
-        {
+        if let Err(err) = self.labels.pin_label(frame.label(), self.instrs.next_pos()) {
             panic!("failed to pin label: {err}")
         }
         self.reachable |= frame.is_branched_to();
@@ -1022,7 +1034,7 @@ impl FuncTranslator {
         }
         if frame.is_branched_to() {
             // No need to reset `last_instr` if there was no branch to the end of a Wasm `block`.
-            self.instrs.reset_last_instr();
+            self.instrs.try_encode_staged();
         }
         Ok(())
     }
@@ -1055,16 +1067,16 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
             let end_offset = self
                 .labels
-                .try_resolve_label(frame.label(), self.instrs.next_instr())
+                .try_resolve_label(frame.label(), self.instrs.next_pos())
                 .unwrap();
-            self.instrs.push_instr(
+            self.instrs.encode(
                 Op::branch(end_offset),
                 consume_fuel_instr,
                 FuelCostsProvider::base,
             )?;
         }
         self.labels
-            .try_pin_label(else_label, self.instrs.next_instr());
+            .try_pin_label(else_label, self.instrs.next_pos());
         self.stack.push_else_operands(&frame)?;
         if has_results {
             // We haven't visited the `else` block and thus the `else`
@@ -1072,16 +1084,16 @@ impl FuncTranslator {
             // be popped. We use them to restore the stack to the state
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
-            let consume_fuel_instr = self.instrs.push_consume_fuel_instr()?;
+            let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
         self.labels
-            .pin_label(frame.label(), self.instrs.next_instr())
+            .pin_label(frame.label(), self.instrs.next_pos())
             .unwrap();
         self.reachable = true;
         // Need to reset `last_instr` since end of `if` is a control flow boundary.
-        self.instrs.reset_last_instr();
+        self.instrs.try_encode_staged();
         Ok(())
     }
 
@@ -1106,16 +1118,16 @@ impl FuncTranslator {
             _ => true,
         };
         if end_of_else_reachable {
-            let consume_fuel_instr: Option<OpPos> = frame.consume_fuel_instr();
+            let consume_fuel_instr: Option<Pos<ir::BlockFuel>> = frame.consume_fuel_instr();
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
         self.labels
-            .pin_label(frame.label(), self.instrs.next_instr())
+            .pin_label(frame.label(), self.instrs.next_pos())
             .unwrap();
         self.reachable = reachable;
         // Need to reset `last_instr` since end of `else` is a control flow boundary.
-        self.instrs.reset_last_instr();
+        self.instrs.try_encode_staged();
         Ok(())
     }
 
@@ -1133,13 +1145,13 @@ impl FuncTranslator {
             self.push_frame_results(&frame)?;
         }
         self.labels
-            .pin_label(frame.label(), self.instrs.next_instr())
+            .pin_label(frame.label(), self.instrs.next_pos())
             .unwrap();
         self.reachable = end_is_reachable || frame.is_branched_to();
         if frame.is_branched_to() {
             // No need to reset `last_instr` if there was no branch to the
             // end of a Wasm `if` where only `then` or `else` is reachable.
-            self.instrs.reset_last_instr();
+            self.instrs.try_encode_staged();
         }
         Ok(())
     }
@@ -1148,7 +1160,7 @@ impl FuncTranslator {
     fn translate_end_unreachable(&mut self, _frame: ControlFrameKind) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
         // We reset `last_instr` out of caution in case there is a control flow boundary.
-        self.instrs.reset_last_instr();
+        self.instrs.try_encode_staged();
         Ok(())
     }
 
@@ -1180,7 +1192,7 @@ impl FuncTranslator {
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = self.layout.temp_to_slot(preserved)?;
             let value = self.layout.local_to_slot(local_idx)?;
-            self.instrs.push_instr(
+            self.instrs.encode(
                 Op::copy(result, value),
                 consume_fuel_instr,
                 FuelCostsProvider::base,
@@ -1219,25 +1231,39 @@ impl FuncTranslator {
         new_result: LocalIdx,
         old_result: Operand,
     ) -> Result<bool, Error> {
-        let result = self.layout.local_to_slot(new_result)?;
-        let old_result = match old_result {
-            Operand::Immediate(_) => {
-                // Case: cannot replace immediate value result.
-                return Ok(false);
-            }
-            Operand::Local(_) => {
-                // Case: cannot replace local with another local due to observable behavior.
-                return Ok(false);
-            }
-            Operand::Temp(operand) => self.layout.temp_to_slot(operand)?,
+        let Some(mut staged) = self.instrs.peek_staged() else {
+            // Case: cannot replace result without staged operator.
+            return Ok(false);
         };
-        self.instrs
-            .try_replace_result(result, old_result, &self.layout)
+        let new_result = self.layout.local_to_slot(new_result)?;
+        debug_assert!(matches!(
+            self.layout.stack_space(new_result),
+            StackSpace::Local
+        ));
+        let old_result = match old_result {
+            Operand::Temp(old_result) => self.layout.temp_to_slot(old_result)?,
+            Operand::Local(_) | Operand::Immediate(_) => {
+                // Case immediate: cannot replace immediate value result.
+                // Case     local: cannot replace local with another local due to observable behavior.
+                return Ok(false);
+            }
+        };
+        let Some(staged_result) = staged.result_mut() else {
+            // Case: staged has no result and thus cannot have its result changed.
+            return Ok(false);
+        };
+        if *staged_result != old_result {
+            // Case: staged result does not match `old_result` and thus is not available for mutation.
+            return Ok(false);
+        }
+        *staged_result = new_result;
+        self.instrs.encode_staged_as(staged)?;
+        Ok(true)
     }
 
     /// Encodes an unconditional Wasm `branch` instruction.
-    fn encode_br(&mut self, label: LabelRef) -> Result<OpPos, Error> {
-        let instr = self.instrs.next_instr();
+    fn encode_br(&mut self, label: LabelRef) -> Result<Pos<Op>, Error> {
+        let instr = self.instrs.next_pos();
         let offset = self.labels.try_resolve_label(label, instr)?;
         let br_instr = self.push_instr(Op::branch(offset), FuelCostsProvider::base)?;
         Ok(br_instr)
@@ -1282,7 +1308,7 @@ impl FuncTranslator {
                 }
             }
         };
-        let instr = self.instrs.next_instr();
+        let instr = self.instrs.next_pos();
         let offset = self.labels.try_resolve_label(label, instr)?;
         let instr = match branch_eqz {
             true => Op::branch_i32_eq_si(condition, 0, offset),
@@ -1299,7 +1325,7 @@ impl FuncTranslator {
         label: LabelRef,
         negate: bool,
     ) -> Result<bool, Error> {
-        let Some(last_instr) = self.instrs.last_instr() else {
+        let Some(last_instr) = self.instrs.peek_staged() else {
             // Case: cannot fuse without a known last instruction
             return Ok(false);
         };
@@ -1323,10 +1349,7 @@ impl FuncTranslator {
             // Case: not possible to perform fusion with last instruction
             return Ok(false);
         };
-        assert!(
-            self.instrs.try_replace_instr(origin, fused_instr)?,
-            "op-code fusion must suceed at this point",
-        );
+        self.instrs.replace_staged(fused_instr)?;
         Ok(true)
     }
 
@@ -1340,7 +1363,7 @@ impl FuncTranslator {
     /// - Returns `Ok(None)`, otherwise.
     fn try_make_fused_branch_cmp_instr(
         &mut self,
-        instr: OpPos,
+        instr: Pos<Op>,
         condition: TempOperand,
         label: LabelRef,
         negate: bool,
@@ -1508,7 +1531,7 @@ impl FuncTranslator {
             }
             Operand::Temp(input) => {
                 debug_assert_eq!(input.ty(), <T as Typed>::TY);
-                self.stack.push_temp(<R as Typed>::TY, None)?;
+                self.stack.push_temp(<R as Typed>::TY)?;
             }
             Operand::Immediate(input) => {
                 let input: T = input.val().into();
@@ -1927,14 +1950,7 @@ impl FuncTranslator {
         };
         let true_val = self.copy_if_immediate(true_val)?;
         let false_val = self.copy_if_immediate(false_val)?;
-        if !self.instrs.try_fuse_select(
-            ty,
-            condition,
-            &self.layout,
-            &mut self.stack,
-            true_val,
-            false_val,
-        )? {
+        if !self.try_fuse_select(ty, condition, true_val, false_val)? {
             self.push_instr_with_result(
                 ty,
                 |result| Op::select_i32_eq_ssi(result, condition, 0_i32, false_val, true_val),
@@ -1942,6 +1958,50 @@ impl FuncTranslator {
             )?;
         };
         Ok(())
+    }
+
+    /// Tries to fuse a compare instruction with a Wasm `select` instruction.
+    ///
+    /// # Returns
+    ///
+    /// - Returns `Some` if fusion was successful.
+    /// - Returns `None` if fusion could not be applied.
+    pub fn try_fuse_select(
+        &mut self,
+        ty: ValType,
+        condition: Slot,
+        true_val: Slot,
+        false_val: Slot,
+    ) -> Result<bool, Error> {
+        let Some(staged) = self.instrs.peek_staged() else {
+            // If there is no last instruction there is no comparison instruction to negate.
+            return Ok(false);
+        };
+        let Some(staged_result) = staged.result_ref().copied() else {
+            // All negatable instructions have a single result register.
+            return Ok(false);
+        };
+        if matches!(self.layout.stack_space(staged_result), StackSpace::Local) {
+            // The operator stores its result into a local variable which
+            // is an observable side effect which we are not allowed to mutate.
+            return Ok(false);
+        }
+        if staged_result != condition {
+            // The result of the last instruction and the select's `condition`
+            // are not equal thus indicating that we cannot fuse the instructions.
+            return Ok(false);
+        }
+        let CmpSelectFusion::Applied(fused_select) =
+            staged.try_into_cmp_select_instr(true_val, false_val, || {
+                let select_result = self.stack.push_temp(ty)?;
+                let select_result = self.layout.temp_to_slot(select_result)?;
+                Ok(select_result)
+            })?
+        else {
+            return Ok(false);
+        };
+        self.instrs.replace_staged(fused_select)?;
+        Ok(true)
     }
 
     /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
@@ -1985,7 +2045,7 @@ impl FuncTranslator {
             // Case: cannot fuse with non-zero `rhs`
             return Ok(false);
         }
-        let Some(last_instr) = self.instrs.last_instr() else {
+        let Some(last_instr) = self.instrs.peek_staged() else {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
@@ -2019,16 +2079,15 @@ impl FuncTranslator {
         };
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        let result_idx = self.stack.push_temp(ValType::I32, lhs.instr())?;
+        let result_idx = self.stack.push_temp(ValType::I32)?;
         // Need to replace `cmp` instruction result register since it might
         // have been misaligned if `lhs` originally referred to the zero operand.
         let new_result = self.layout.temp_to_slot(result_idx)?;
         let Some(negated) = negated.update_result_slot(new_result) else {
             unreachable!("`negated` has been asserted as `cmp` instruction");
         };
-        if !self.instrs.try_replace_instr(last_instr, negated)? {
-            unreachable!("`negated` has been asserted to be `last_instr`");
-        }
+        let fuel_pos = self.stack.consume_fuel_instr();
+        self.instrs.replace_staged(negated)?;
         Ok(true)
     }
 
@@ -2309,8 +2368,8 @@ impl FuncTranslator {
         let rhs_hi = self.copy_if_immediate(rhs_hi)?;
         let lhs_lo = self.copy_if_immediate(lhs_lo)?;
         let lhs_hi = self.copy_if_immediate(lhs_hi)?;
-        let result_lo = self.stack.push_temp(ValType::I64, None)?;
-        let result_hi = self.stack.push_temp(ValType::I64, None)?;
+        let result_lo = self.stack.push_temp(ValType::I64)?;
+        let result_hi = self.stack.push_temp(ValType::I64)?;
         let result_lo = self.layout.temp_to_slot(result_lo)?;
         let result_hi = self.layout.temp_to_slot(result_hi)?;
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
@@ -2364,8 +2423,8 @@ impl FuncTranslator {
                 (lhs, rhs)
             }
         };
-        let result0 = self.stack.push_temp(ValType::I64, None)?;
-        let _result1 = self.stack.push_temp(ValType::I64, None)?;
+        let result0 = self.stack.push_temp(ValType::I64)?;
+        let _result1 = self.stack.push_temp(ValType::I64)?;
         let result0 = self.layout.temp_to_slot(result0)?;
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
