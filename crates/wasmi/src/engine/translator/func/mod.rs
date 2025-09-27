@@ -43,7 +43,6 @@ use crate::{
         translator::{
             comparator::{
                 CmpSelectFusion,
-                CompareResult as _,
                 LogicalizeCmpInstr,
                 NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
@@ -848,7 +847,7 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let offset = self
+            let _offset = self
                 .labels
                 .try_resolve_label(frame.label(), self.instrs.next_pos())?;
             // self.instrs.push_param(Op::branch(offset)); // TODO: finish encoding impl
