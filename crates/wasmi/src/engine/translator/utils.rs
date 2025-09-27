@@ -161,22 +161,6 @@ impl BumpFuelConsumption for Op {
     }
 }
 
-/// A reference to an encoded [`Op`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct OpPos(usize);
-
-impl From<usize> for OpPos {
-    fn from(index: usize) -> Self {
-        Self(index)
-    }
-}
-
-impl From<OpPos> for usize {
-    fn from(pos: OpPos) -> Self {
-        pos.0
-    }
-}
-
 /// Types that can be converted into bits.
 pub trait ToBits {
     /// The output bits type of [`ToBits`].

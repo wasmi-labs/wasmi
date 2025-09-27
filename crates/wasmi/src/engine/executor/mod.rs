@@ -265,7 +265,7 @@ impl<'engine> EngineExecutor<'engine> {
                 uninit_params.init_zeroes();
                 self.stack.calls.push(
                     CallFrame::new(
-                        InstructionPtr::new(compiled_func.instrs().as_ptr()),
+                        InstructionPtr::new(compiled_func.ops().as_ptr()),
                         offsets,
                         SlotSpan::new(Slot::from(0)),
                     ),
