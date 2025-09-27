@@ -1318,7 +1318,7 @@ impl FuncTranslator {
         label: LabelRef,
         negate: bool,
     ) -> Result<bool, Error> {
-        let Some(last_instr) = self.instrs.peek_staged() else {
+        let Some(staged_op) = self.instrs.peek_staged() else {
             // Case: cannot fuse without a known last instruction
             return Ok(false);
         };
@@ -1328,68 +1328,37 @@ impl FuncTranslator {
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        let Some(origin) = condition.instr() else {
-            // Case: cannot fuse temporary operands without origin instruction
-            return Ok(false);
-        };
-        if last_instr != origin {
-            // Case: cannot fuse if last instruction does not match origin instruction
-            return Ok(false);
-        }
         debug_assert!(matches!(condition.ty(), ValType::I32 | ValType::I64));
-        let fused_instr = self.try_make_fused_branch_cmp_instr(origin, condition, label, negate)?;
-        let Some(fused_instr) = fused_instr else {
-            // Case: not possible to perform fusion with last instruction
+        let Some(cmp_result) = staged_op.result_ref().copied() else {
+            // Note: `cmp` operators must have a result.
             return Ok(false);
         };
-        self.instrs.replace_staged(fused_instr)?;
-        Ok(true)
-    }
-
-    /// Try to return a fused cmp+branch [`Op`] from the given parameters.
-    ///
-    ///
-    /// # Note
-    ///
-    /// - The `instr` parameter refers to the to-be-fused cmp instruction.
-    /// - Returns `Ok(Some)` if cmp+branch fusion was successful.
-    /// - Returns `Ok(None)`, otherwise.
-    fn try_make_fused_branch_cmp_instr(
-        &mut self,
-        instr: Pos<Op>,
-        condition: TempOperand,
-        label: LabelRef,
-        negate: bool,
-    ) -> Result<Option<Op>, Error> {
-        let cmp_instr = *self.instrs.get(instr);
-        let Some(result) = cmp_instr.compare_result() else {
-            // Note: cannot fuse non-cmp instructions or cmp-instructions without result.
-            return Ok(None);
-        };
-        if matches!(self.layout.stack_space(result), StackSpace::Local) {
-            // Note: cannot fuse cmp instructions with observable semantics.
-            return Ok(None);
+        if matches!(self.layout.stack_space(cmp_result), StackSpace::Local) {
+            // Note: local variable results have observable behavior which must not change.
+            return Ok(false);
         }
-        if result != self.layout.temp_to_slot(condition)? {
+        let br_condition = self.layout.temp_to_slot(condition)?;
+        if cmp_result != br_condition {
             // Note: cannot fuse cmp instruction with a result that differs
-            //       from the condition operand.
-            return Ok(None);
+            //       from the branch condition operand.
+            return Ok(false);
         }
-        let cmp_instr = match negate {
-            false => cmp_instr,
-            true => match cmp_instr.negate_cmp_instr() {
+        let cmp_op = match negate {
+            false => staged_op,
+            true => match staged_op.negate_cmp_instr() {
                 Some(negated) => negated,
                 None => {
-                    // Note: cannot negate cmp instruction, thus not possible to fuse.
-                    return Ok(None);
+                    // Note: cannot negate staged [`Op`], thus it is not a `cmp` operator and thus not fusable.
+                    return Ok(false);
                 }
             },
         };
         let offset = self.labels.try_resolve_label(label, instr)?;
-        let fused = cmp_instr
-            .try_into_cmp_branch_instr(offset)
-            .expect("cmp+branch fusion must succeed");
-        Ok(Some(fused))
+        let Some(fused_cmp_branch) = cmp_op.try_into_cmp_branch_instr(offset) else {
+            return Ok(false);
+        };
+        self.instrs.replace_staged(fused_cmp_branch)?;
+        Ok(true)
     }
 
     /// Generically translates a `call` or `return_call` Wasm operator.
