@@ -1,6 +1,7 @@
 use crate::{
     engine::{
         translator::func::encoder::{BytePos, Pos},
+        translator::func::utils::Reset,
         TranslationError,
     },
     ir::{BranchOffset, Op},
@@ -100,13 +101,14 @@ impl Display for LabelError {
     }
 }
 
-impl LabelRegistry {
-    /// Resets the [`LabelRegistry`] for reuse.
-    pub fn reset(&mut self) {
+impl Reset for LabelRegistry {
+    fn reset(&mut self) {
         self.labels.clear();
         self.users.clear();
     }
+}
 
+impl LabelRegistry {
     /// Allocates a new unpinned [`Label`].
     pub fn new_label(&mut self) -> LabelRef {
         let index = self.labels.len();
