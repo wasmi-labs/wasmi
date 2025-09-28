@@ -192,9 +192,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 self.encode_br(frame.label())?;
             }
             // Start of `else` block:
-            self.labels
-                .pin_label(else_label, self.instrs.next_pos())
-                .unwrap();
+            self.labels.pin_label(else_label, self.instrs.next_pos());
             self.instrs.try_encode_staged();
         }
         let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
@@ -276,9 +274,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
         }
         self.encode_br(label)?;
-        self.labels
-            .pin_label(skip_label, self.instrs.next_pos())
-            .unwrap();
+        self.labels.pin_label(skip_label, self.instrs.next_pos());
         Ok(())
     }
 
