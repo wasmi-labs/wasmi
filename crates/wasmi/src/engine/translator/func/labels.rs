@@ -201,8 +201,8 @@ impl LabelRegistry {
     /// If the `label` is unpinned.
     fn resolve_label(&self, label: LabelRef) -> Result<Pos<Op>, LabelError> {
         match self.get_label(label) {
-            Label::Pinned(instr) => Ok(*instr),
-            Label::Unpinned => Err(LabelError::Unpinned { label }),
+            Label::Pinned(target) => Ok(*target),
+            Label::Unpinned => Err(LabelError::unpinned(label)),
         }
     }
 
