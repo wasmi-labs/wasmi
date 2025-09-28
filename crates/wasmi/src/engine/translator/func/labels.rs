@@ -170,7 +170,19 @@ impl LabelRegistry {
     /// # Errors
     ///
     /// If the `label` has already been pinned to some other [`Pos<Op>`].
-    pub fn pin_label(&mut self, label: LabelRef, target: Pos<Op>) -> Result<(), LabelError> {
+    #[track_caller]
+    pub fn pin_label(&mut self, label: LabelRef, target: Pos<Op>) {
+        if let Err(error) = self.pin_label_or_err(label, target) {
+            panic!("failed to pin label: {error}")
+        }
+    }
+
+    /// Pins the `label` to the given `target` [`Pos<Op>`].
+    ///
+    /// # Errors
+    ///
+    /// If the `label` has already been pinned to some other [`Pos<Op>`].
+    fn pin_label_or_err(&mut self, label: LabelRef, target: Pos<Op>) -> Result<(), LabelError> {
         let cell = self.labels.get_mut(label);
         if let Label::Pinned(pinned) = cell {
             return Err(LabelError::already_pinned(label, *pinned));
