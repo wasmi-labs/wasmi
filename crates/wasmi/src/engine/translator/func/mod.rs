@@ -1075,7 +1075,7 @@ impl FuncTranslator {
             )?;
         }
         self.labels
-            .try_pin_label(else_label, self.instrs.next_pos());
+            .pin_label_if_unpinned(else_label, self.instrs.next_pos());
         self.stack.push_else_operands(&frame)?;
         if has_results {
             // We haven't visited the `else` block and thus the `else`
