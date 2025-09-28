@@ -160,10 +160,15 @@ impl LabelRegistry {
         Ok(())
     }
 
-    /// Pins the `label` to the given `instr` if unpinned.
-    pub fn try_pin_label(&mut self, label: LabelRef, instr: Pos<Op>) {
-        if let unpinned @ Label::Unpinned = self.get_label_mut(label) {
-            *unpinned = Label::Pinned(instr)
+    /// Pins the `label` to the given `target` if unpinned.
+    ///
+    /// # Note
+    ///
+    /// Does nothing if the `label` is already pinned.
+    pub fn pin_label_if_unpinned(&mut self, label: LabelRef, target: Pos<Op>) {
+        let cell = self.get_label_mut(label);
+        if matches!(cell, Label::Unpinned) {
+            *cell = Label::Pinned(target)
         }
     }
 
