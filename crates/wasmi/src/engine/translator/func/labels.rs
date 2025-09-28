@@ -48,10 +48,44 @@ impl From<LabelRef> for usize {
 /// Allows to allocate new labels pin them and resolve pinned ones.
 #[derive(Debug, Default)]
 pub struct LabelRegistry {
-    /// All registered labels, pinned or unpinned.
-    labels: Vec<Label>,
-    /// All label users that could not be immediately resolved.
+    /// Registered labels and their states: pinned or unpinned.
+    labels: RegisteredLabels,
+    /// Label users that could not be immediately resolved.
     users: Vec<LabelUser>,
+}
+
+/// All registered labels.
+#[derive(Debug, Default)]
+pub struct RegisteredLabels {
+    labels: Vec<Label>,
+}
+
+impl Reset for RegisteredLabels {
+    fn reset(&mut self) {
+        self.labels.clear();
+    }
+}
+
+impl RegisteredLabels {
+    /// Pushes a new [`Label::Unpinned`] to `self` and returns its [`LabelRef`].
+    #[inline]
+    pub fn push(&mut self) -> LabelRef {
+        let index = self.labels.len();
+        self.labels.push(Label::Unpinned);
+        LabelRef::from(index)
+    }
+
+    /// Returns a shared reference to the underlying [`Label`].
+    #[inline]
+    fn get(&self, lref: LabelRef) -> &Label {
+        &self.labels[usize::from(lref)]
+    }
+
+    /// Returns an exclusive reference to the underlying [`Label`].
+    #[inline]
+    fn get_mut(&mut self, lref: LabelRef) -> &mut Label {
+        &mut self.labels[usize::from(lref)]
+    }
 }
 
 /// A user of a label.
@@ -120,7 +154,7 @@ impl Display for LabelError {
 
 impl Reset for LabelRegistry {
     fn reset(&mut self) {
-        self.labels.clear();
+        self.labels.reset();
         self.users.clear();
     }
 }
@@ -128,21 +162,7 @@ impl Reset for LabelRegistry {
 impl LabelRegistry {
     /// Allocates a new unpinned [`Label`].
     pub fn new_label(&mut self) -> LabelRef {
-        let index = self.labels.len();
-        self.labels.push(Label::Unpinned);
-        LabelRef::from(index)
-    }
-
-    /// Returns a shared reference to the underlying [`Label`].
-    #[inline]
-    fn get_label(&self, label: LabelRef) -> &Label {
-        &self.labels[usize::from(label)]
-    }
-
-    /// Returns an exclusive reference to the underlying [`Label`].
-    #[inline]
-    fn get_label_mut(&mut self, label: LabelRef) -> &mut Label {
-        &mut self.labels[usize::from(label)]
+        self.labels.push()
     }
 
     /// Pins the `label` to the given `target` [`Pos<Op>`].
@@ -151,7 +171,7 @@ impl LabelRegistry {
     ///
     /// If the `label` has already been pinned to some other [`Pos<Op>`].
     pub fn pin_label(&mut self, label: LabelRef, target: Pos<Op>) -> Result<(), LabelError> {
-        let cell = self.get_label_mut(label);
+        let cell = self.labels.get_mut(label);
         if let Label::Pinned(pinned) = cell {
             return Err(LabelError::already_pinned(label, *pinned));
         }
@@ -166,7 +186,7 @@ impl LabelRegistry {
     ///
     /// Does nothing if the `label` is already pinned.
     pub fn pin_label_if_unpinned(&mut self, label: LabelRef, target: Pos<Op>) {
-        let cell = self.get_label_mut(label);
+        let cell = self.labels.get_mut(label);
         if matches!(cell, Label::Unpinned) {
             *cell = Label::Pinned(target)
         }
@@ -184,7 +204,7 @@ impl LabelRegistry {
         label: LabelRef,
         user: Pos<Op>,
     ) -> Result<BranchOffset, Error> {
-        let offset = match *self.get_label(label) {
+        let offset = match *self.labels.get(label) {
             Label::Pinned(target) => trace_branch_offset(user, target)?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
@@ -200,7 +220,7 @@ impl LabelRegistry {
     ///
     /// If the `label` is unpinned.
     fn resolve_label(&self, label: LabelRef) -> Result<Pos<Op>, LabelError> {
-        match self.get_label(label) {
+        match self.labels.get(label) {
             Label::Pinned(target) => Ok(*target),
             Label::Unpinned => Err(LabelError::unpinned(label)),
         }
