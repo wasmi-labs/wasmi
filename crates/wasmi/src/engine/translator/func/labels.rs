@@ -85,15 +85,30 @@ pub enum LabelError {
     Unpinned { label: LabelRef },
 }
 
-impl CoreError for LabelError {}
+impl LabelError {
+    /// Creates a [`LabelError::AlreadyPinned`] with `label` and `target`.
+    #[cold]
+    #[inline]
+    fn already_pinned(label: LabelRef, target: Pos<Op>) -> Self {
+        Self::AlreadyPinned { label, target }
+    }
 
+    /// Creates a [`LabelError::Unpinned`] with `label`.
+    #[cold]
+    #[inline]
+    fn unpinned(label: LabelRef) -> Self {
+        Self::Unpinned { label }
+    }
+}
+
+impl CoreError for LabelError {}
 impl Display for LabelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::AlreadyPinned { label, pinned_to } => {
+            Self::AlreadyPinned { label, target } => {
                 write!(
                     f,
-                    "trying to pin already pinned label {label:?} (pinned to {pinned_to:?})"
+                    "trying to pin already pinned label {label:?} (pinned to {target:?})"
                 )
             }
             Self::Unpinned { label } => {
