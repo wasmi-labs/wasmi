@@ -52,16 +52,22 @@ pub struct LabelRegistry {
 /// A user of a label.
 #[derive(Debug)]
 pub struct LabelUser {
-    /// The label in use by the user.
-    label: LabelRef,
+    /// The branch `target` label in use by the `user`.
+    target: LabelRef,
     /// The reference to the using instruction.
     user: Pos<Op>,
+    /// The [`BranchOffset`] of `user` that needs to be updated once `target` has been resolved.
+    offset: Pos<BranchOffset>,
 }
 
 impl LabelUser {
     /// Creates a new [`LabelUser`].
-    pub fn new(label: LabelRef, user: Pos<Op>) -> Self {
-        Self { label, user }
+    pub fn new(target: LabelRef, user: Pos<Op>, offset: Pos<BranchOffset>) -> Self {
+        Self {
+            target,
+            user,
+            offset,
+        }
     }
 }
 
@@ -229,7 +235,7 @@ impl Iterator for ResolvedUserIter<'_> {
         let src = next.user;
         let dst = self
             .registry
-            .resolve_label(next.label)
+            .resolve_label(next.target)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
         let offset = LabelRegistry::trace_branch_offset(src, dst);
         Some((src, offset))
