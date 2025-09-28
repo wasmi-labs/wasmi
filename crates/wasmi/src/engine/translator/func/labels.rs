@@ -45,7 +45,9 @@ impl From<LabelRef> for usize {
 /// Allows to allocate new labels pin them and resolve pinned ones.
 #[derive(Debug, Default)]
 pub struct LabelRegistry {
+    /// All registered labels, pinned or unpinned.
     labels: Vec<Label>,
+    /// All label users that could not be immediately resolved.
     users: Vec<LabelUser>,
 }
 
