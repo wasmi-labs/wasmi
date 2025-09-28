@@ -1,7 +1,9 @@
 use crate::{
     engine::{
-        translator::func::encoder::{BytePos, Pos},
-        translator::func::utils::Reset,
+        translator::func::{
+            encoder::{BytePos, Pos},
+            utils::Reset,
+        },
         TranslationError,
     },
     ir::{BranchOffset, Op},
