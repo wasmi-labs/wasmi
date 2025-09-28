@@ -80,7 +80,7 @@ impl LabelUser {
 #[derive(Debug, Copy, Clone)]
 pub enum LabelError {
     /// When trying to pin an already pinned [`Label`].
-    AlreadyPinned { label: LabelRef, pinned_to: Pos<Op> },
+    AlreadyPinned { label: LabelRef, target: Pos<Op> },
     /// When trying to resolve an unpinned [`Label`].
     Unpinned { label: LabelRef },
 }
@@ -145,22 +145,19 @@ impl LabelRegistry {
         &mut self.labels[usize::from(label)]
     }
 
-    /// Pins the `label` to the given `instr`.
+    /// Pins the `label` to the given `target` [`Pos<Op>`].
     ///
     /// # Errors
     ///
-    /// If the `label` has already been pinned to some other [`OpPos`].
-    pub fn pin_label(&mut self, label: LabelRef, instr: Pos<Op>) -> Result<(), LabelError> {
-        match self.get_label_mut(label) {
-            Label::Pinned(pinned) => Err(LabelError::AlreadyPinned {
-                label,
-                pinned_to: *pinned,
-            }),
-            unpinned @ Label::Unpinned => {
-                *unpinned = Label::Pinned(instr);
-                Ok(())
-            }
+    /// If the `label` has already been pinned to some other [`Pos<Op>`].
+    pub fn pin_label(&mut self, label: LabelRef, target: Pos<Op>) -> Result<(), LabelError> {
+        let cell = self.get_label_mut(label);
+        if let Label::Pinned(pinned) = cell {
+            return Err(LabelError::already_pinned(label, *pinned));
         }
+        debug_assert!(matches!(cell, Label::Unpinned));
+        *cell = Label::Pinned(target);
+        Ok(())
     }
 
     /// Pins the `label` to the given `instr` if unpinned.
