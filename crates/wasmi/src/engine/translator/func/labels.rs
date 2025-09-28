@@ -8,6 +8,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::{
+    error::Error as CoreError,
     fmt::{self, Display},
     slice::Iter as SliceIter,
 };
@@ -67,18 +68,18 @@ pub enum LabelError {
     Unpinned { label: LabelRef },
 }
 
-impl core::error::Error for LabelError {}
+impl CoreError for LabelError {}
 
 impl Display for LabelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            LabelError::AlreadyPinned { label, pinned_to } => {
+            Self::AlreadyPinned { label, pinned_to } => {
                 write!(
                     f,
                     "trying to pin already pinned label {label:?} (pinned to {pinned_to:?})"
                 )
             }
-            LabelError::Unpinned { label } => {
+            Self::Unpinned { label } => {
                 write!(f, "trying to resolve unpinned label: {label:?}")
             }
         }
