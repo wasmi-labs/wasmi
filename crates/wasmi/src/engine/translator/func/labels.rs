@@ -52,7 +52,7 @@ pub struct LabelRegistry {
 }
 
 /// A user of a label.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct LabelUser {
     /// The branch `target` label in use by the `user`.
     target: LabelRef,
