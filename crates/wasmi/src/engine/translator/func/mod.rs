@@ -711,9 +711,7 @@ impl FuncTranslator {
 
     /// Pins the `label` to the next [`OpPos`].
     fn pin_label(&mut self, label: LabelRef) {
-        self.labels
-            .pin_label(label, self.instrs.next_pos())
-            .unwrap_or_else(|err| panic!("failed to pin label to next instruction: {err}"));
+        self.labels.pin_label(label, self.instrs.next_pos());
     }
 
     /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
@@ -1024,9 +1022,7 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        if let Err(err) = self.labels.pin_label(frame.label(), self.instrs.next_pos()) {
-            panic!("failed to pin label: {err}")
-        }
+        self.labels.pin_label(frame.label(), self.instrs.next_pos());
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
             self.encode_return(consume_fuel_instr)?;
@@ -1087,9 +1083,7 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
-        self.labels
-            .pin_label(frame.label(), self.instrs.next_pos())
-            .unwrap();
+        self.labels.pin_label(frame.label(), self.instrs.next_pos());
         self.reachable = true;
         // Need to reset `last_instr` since end of `if` is a control flow boundary.
         self.instrs.try_encode_staged();
@@ -1121,9 +1115,7 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
-        self.labels
-            .pin_label(frame.label(), self.instrs.next_pos())
-            .unwrap();
+        self.labels.pin_label(frame.label(), self.instrs.next_pos());
         self.reachable = reachable;
         // Need to reset `last_instr` since end of `else` is a control flow boundary.
         self.instrs.try_encode_staged();
@@ -1143,9 +1135,7 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        self.labels
-            .pin_label(frame.label(), self.instrs.next_pos())
-            .unwrap();
+        self.labels.pin_label(frame.label(), self.instrs.next_pos());
         self.reachable = end_is_reachable || frame.is_branched_to();
         if frame.is_branched_to() {
             // No need to reset `last_instr` if there was no branch to the
