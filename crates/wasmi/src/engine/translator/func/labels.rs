@@ -112,7 +112,7 @@ impl LabelUser {
 
 /// An error that may occur while operating on the [`LabelRegistry`].
 #[derive(Debug, Copy, Clone)]
-pub enum LabelError {
+enum LabelError {
     /// When trying to pin an already pinned [`Label`].
     AlreadyPinned { label: LabelRef, target: Pos<Op> },
     /// When trying to resolve an unpinned [`Label`].
