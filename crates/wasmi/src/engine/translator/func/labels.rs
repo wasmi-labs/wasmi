@@ -16,15 +16,6 @@ use core::{
     slice::Iter as SliceIter,
 };
 
-/// A label during the Wasmi compilation process.
-#[derive(Debug, Copy, Clone)]
-pub enum Label {
-    /// The label has already been pinned to a particular [`Pos<Op>`].
-    Pinned(Pos<Op>),
-    /// The label is still unpinned.
-    Unpinned,
-}
-
 /// A reference to an [`Label`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LabelRef(usize);
@@ -58,6 +49,15 @@ pub struct LabelRegistry {
 #[derive(Debug, Default)]
 pub struct RegisteredLabels {
     labels: Vec<Label>,
+}
+
+/// A label during the Wasmi compilation process.
+#[derive(Debug, Copy, Clone)]
+pub enum Label {
+    /// The label has already been pinned to a particular [`Pos<Op>`].
+    Pinned(Pos<Op>),
+    /// The label is still unpinned.
+    Unpinned,
 }
 
 impl Reset for RegisteredLabels {
