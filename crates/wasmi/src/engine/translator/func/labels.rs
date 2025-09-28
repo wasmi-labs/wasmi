@@ -24,13 +24,19 @@ pub enum Label {
 
 /// A reference to an [`Label`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct LabelRef(u32);
+pub struct LabelRef(usize);
 
-impl LabelRef {
-    /// Returns the `usize` value of the [`LabelRef`].
+impl From<usize> for LabelRef {
     #[inline]
-    fn into_usize(self) -> usize {
-        self.0 as usize
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl From<LabelRef> for usize {
+    #[inline]
+    fn from(value: LabelRef) -> Self {
+        value.0
     }
 }
 
@@ -95,25 +101,21 @@ impl LabelRegistry {
 
     /// Allocates a new unpinned [`Label`].
     pub fn new_label(&mut self) -> LabelRef {
-        let index: u32 = self
-            .labels
-            .len()
-            .try_into()
-            .unwrap_or_else(|err| panic!("cannot have more than u32::MAX label refs: {err}"));
+        let index = self.labels.len();
         self.labels.push(Label::Unpinned);
-        LabelRef(index)
+        LabelRef::from(index)
     }
 
     /// Returns a shared reference to the underlying [`Label`].
     #[inline]
     fn get_label(&self, label: LabelRef) -> &Label {
-        &self.labels[label.into_usize()]
+        &self.labels[usize::from(label)]
     }
 
     /// Returns an exclusive reference to the underlying [`Label`].
     #[inline]
     fn get_label_mut(&mut self, label: LabelRef) -> &mut Label {
-        &mut self.labels[label.into_usize()]
+        &mut self.labels[usize::from(label)]
     }
 
     /// Pins the `label` to the given `instr`.
