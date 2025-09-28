@@ -77,8 +77,8 @@ impl RegisteredLabels {
 
     /// Returns a shared reference to the underlying [`Label`].
     #[inline]
-    fn get(&self, lref: LabelRef) -> &Label {
-        &self.labels[usize::from(lref)]
+    fn get(&self, lref: LabelRef) -> Label {
+        self.labels[usize::from(lref)]
     }
 
     /// Returns an exclusive reference to the underlying [`Label`].
@@ -204,7 +204,7 @@ impl LabelRegistry {
         label: LabelRef,
         user: Pos<Op>,
     ) -> Result<BranchOffset, Error> {
-        let offset = match *self.labels.get(label) {
+        let offset = match self.labels.get(label) {
             Label::Pinned(target) => trace_branch_offset(user, target)?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
@@ -212,18 +212,6 @@ impl LabelRegistry {
             }
         };
         Ok(offset)
-    }
-
-    /// Resolves a `label` to its pinned [`OpPos`].
-    ///
-    /// # Errors
-    ///
-    /// If the `label` is unpinned.
-    fn resolve_label(&self, label: LabelRef) -> Result<Pos<Op>, LabelError> {
-        match self.labels.get(label) {
-            Label::Pinned(target) => Ok(*target),
-            Label::Unpinned => Err(LabelError::unpinned(label)),
-        }
     }
 
     /// Returns an iterator over pairs of user [`OpPos`] and their [`BranchOffset`].
@@ -234,7 +222,7 @@ impl LabelRegistry {
     pub fn resolved_users(&self) -> ResolvedUserIter<'_> {
         ResolvedUserIter {
             users: self.users.iter(),
-            registry: self,
+            labels: &self.labels,
         }
     }
 }
@@ -249,7 +237,7 @@ impl LabelRegistry {
 #[derive(Debug)]
 pub struct ResolvedUserIter<'a> {
     users: SliceIter<'a, LabelUser>,
-    registry: &'a LabelRegistry,
+    labels: &'a RegisteredLabels,
 }
 
 impl Iterator for ResolvedUserIter<'_> {
@@ -258,10 +246,9 @@ impl Iterator for ResolvedUserIter<'_> {
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.users.next()?;
         let src = next.user;
-        let dst = self
-            .registry
-            .resolve_label(next.target)
-            .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
+        let Label::Pinned(dst) = self.labels.get(next.target) else {
+            panic!("encountered unexpected unpinned label: {:?}", next.target)
+        };
         let offset = trace_branch_offset(src, dst);
         Some((src, offset))
     }
