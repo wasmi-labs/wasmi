@@ -454,10 +454,14 @@ impl OpEncoder {
         fuel_selector: impl FuelCostsSelector,
     ) -> Result<(), Error> {
         debug_assert_eq!(fuel_pos.is_some(), self.fuel_costs.is_some());
-        let fuel_used = match &self.fuel_costs {
-            None => return Ok(()),
-            Some(fuel_costs) => fuel_selector.select(fuel_costs),
-        };
+        let fuel_used = self
+            .fuel_costs
+            .as_ref()
+            .map(|costs| fuel_selector.select(costs))
+            .unwrap_or(0);
+        if fuel_used == 0 {
+            return Ok(());
+        }
         self.bump_fuel_consumption_by(fuel_pos, fuel_used)
     }
 
