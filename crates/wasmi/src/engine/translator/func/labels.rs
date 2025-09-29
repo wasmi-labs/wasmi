@@ -90,23 +90,19 @@ impl RegisteredLabels {
 
 /// A user of a label.
 #[derive(Debug, Copy, Clone)]
-pub struct LabelUser {
-    /// The branch `target` label in use by the `user`.
-    target: LabelRef,
-    /// The reference to the using instruction.
-    user: Pos<Op>,
-    /// The [`BranchOffset`] of `user` that needs to be updated once `target` has been resolved.
-    offset: Pos<BranchOffset>,
+struct LabelUser {
+    /// The branch destination [`Label`].
+    dst: LabelRef,
+    /// The branch source [`Op`].
+    src: Pos<Op>,
+    /// The [`BranchOffset`] of `src` that needs to be updated once `dst` has been pinned.
+    pos: Pos<BranchOffset>,
 }
 
 impl LabelUser {
     /// Creates a new [`LabelUser`].
-    pub fn new(target: LabelRef, user: Pos<Op>, offset: Pos<BranchOffset>) -> Self {
-        Self {
-            target,
-            user,
-            offset,
-        }
+    pub fn new(dst: LabelRef, src: Pos<Op>, pos: Pos<BranchOffset>) -> Self {
+        Self { dst, src, pos }
     }
 }
 
@@ -257,9 +253,9 @@ impl Iterator for ResolvedUserIter<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.users.next()?;
-        let src = next.user;
-        let Label::Pinned(dst) = self.labels.get(next.target) else {
-            panic!("encountered unexpected unpinned label: {:?}", next.target)
+        let src = next.src;
+        let Label::Pinned(dst) = self.labels.get(next.dst) else {
+            panic!("encountered unexpected unpinned label: {:?}", next.dst)
         };
         let offset = trace_branch_offset(src, dst);
         Some((src, offset))
