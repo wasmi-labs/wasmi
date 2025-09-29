@@ -373,26 +373,26 @@ impl OpEncoder {
         Ok(Some(Pos::from(pos)))
     }
 
-    /// Encodes a branch [`Op`] to the [`OpEncoder`] and returns its [`Pos<Op>`] and [`Pos<BranchOffset>`].
+    /// Encodes a type with [`BranchOffset`] to the [`OpEncoder`] and returns its [`Pos<Op>`] and [`Pos<BranchOffset>`].
     ///
     /// # Note
     ///
     /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
-    pub fn encode_branch(
+    pub fn encode_branch<T: ir::Encode>(
         &mut self,
-        op: Op,
+        item: T,
         fuel_pos: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<(Pos<Op>, Pos<BranchOffset>), Error> {
+    ) -> Result<(Pos<T>, Pos<BranchOffset>), Error> {
         self.try_encode_staged()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
-        let pos_op = self.encode_impl(op)?;
+        let pos_item = self.encode_impl(item)?;
         let pos_offset = match self.ops.take_temp() {
             Some((pos, TempBuffer::BranchOffset(_))) => Pos::from(pos),
             _ => panic!("missing encoded position for `BranchOffset`"),
         };
         debug_assert!(self.staged.is_none());
-        Ok((pos_op, pos_offset))
+        Ok((pos_item, pos_offset))
     }
 
     /// Encodes an [`Op`] to the [`OpEncoder`] and returns its [`Pos<Op>`].
