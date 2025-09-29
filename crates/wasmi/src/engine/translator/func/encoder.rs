@@ -354,22 +354,6 @@ impl OpEncoder {
         Ok(pos)
     }
 
-    /// Encodes the given `param` of type `T` to the [`OpEncoder`].
-    ///
-    /// # Note
-    ///
-    /// This is usually used to encode parameters of certain variable width [`Op`]s
-    /// such as for the encoding of Wasm's `br_table`.
-    pub fn encode_param<T>(&mut self, param: T) -> Result<(), Error>
-    where
-        T: ir::Encode,
-    {
-        debug_assert!(self.staged.is_none());
-        self.encode_impl(param)?;
-        debug_assert!(self.ops.take_temp().is_none());
-        Ok(())
-    }
-
     /// Encodes an [`Op::ConsumeFuel`] operator to `self`.
     ///
     /// # Note
