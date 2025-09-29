@@ -664,6 +664,12 @@ where
     }
 }
 
+impl FuelCostsSelector for BlockFuel {
+    fn select(self, _costs: &FuelCostsProvider) -> BlockFuel {
+        self
+    }
+}
+
 /// Encodes an [`ir::OpCode`] to a generic [`ir::Encoder`].
 fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: ir::OpCode) -> Result<E::Pos, E::Error> {
     // Note: this implements encoding for indirect threading.
