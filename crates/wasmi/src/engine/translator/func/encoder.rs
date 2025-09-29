@@ -299,6 +299,26 @@ impl OpEncoder {
         Ok(pos)
     }
 
+    /// Drops the staged [`Op`] without encoding it.
+    ///
+    /// Returns the staged [`Op`]'s fuel information or `None` if fuel metering is disabled.
+    ///
+    /// # Panics
+    ///
+    /// If there was no staged [`Op`].
+    pub fn drop_staged(&mut self) -> (Option<Pos<BlockFuel>>, BlockFuel) {
+        let Some(staged) = self.staged.take() else {
+            panic!("could not drop staged `Op` since there was none")
+        };
+        debug_assert!(self.staged.is_none());
+        let fuel_pos = staged.fuel.map(|(pos, _)| pos);
+        let fuel_used = staged
+            .fuel
+            .map(|(_, used)| used)
+            .unwrap_or(BlockFuel::from(0));
+        (fuel_pos, fuel_used)
+    }
+
     /// Replaces the staged [`Op`] with `new_staged`.
     ///
     /// - This does __not__ encode the currently staged [`Op`] but merely replaces it.
