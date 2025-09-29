@@ -1246,7 +1246,8 @@ impl FuncTranslator {
             return Ok(false);
         }
         *staged_result = new_result;
-        self.instrs.encode_staged_as(staged)?;
+        let (fuel_pos, fuel_used) = self.instrs.drop_staged();
+        self.instrs.encode(staged, fuel_pos, fuel_used)?;
         Ok(true)
     }
 
