@@ -315,27 +315,6 @@ impl OpEncoder {
         Ok(Pos::from(self.ops.next_pos()))
     }
 
-    /// Encodes the staged [`Op`] as `op`.
-    ///
-    /// # Note
-    ///
-    /// - This re-uses the fuel consumption information of the staged [`Op`].
-    /// - After this operation there will no longer be a staged [`Op`].
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If there currently is no staged [`Op`] that can be removed.
-    pub fn encode_staged_as(&mut self, op: Op) -> Result<Pos<Op>, Error> {
-        let Some(mut staged) = self.staged.take() else {
-            panic!("expected a staged `Op` but found `None`")
-        };
-        staged.replace(op);
-        let pos = self.encode_staged(staged)?;
-        debug_assert!(self.staged.is_none());
-        debug_assert!(self.ops.temp.is_none());
-        Ok(pos)
-    }
-
     /// Encodes an [`Op`] to the [`OpEncoder`] and returns its [`Pos<Op>`].
     ///
     /// # Note
