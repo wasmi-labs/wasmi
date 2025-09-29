@@ -9,6 +9,9 @@ use crate::{
 use alloc::vec::Vec;
 use core::{cmp, fmt, marker::PhantomData, mem};
 
+/// Fuel amount required by certain operators.
+type FuelUsed = u64;
+
 /// A byte position within the encoded byte buffer.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BytePos(usize);
@@ -177,12 +180,12 @@ pub struct StagedOp {
     ///
     /// - The [`Op::ConsumeFuel`] operator associated to the staged [`Op`] if any.
     /// - The fuel required by the staged [`Op`].
-    fuel: Option<(Pos<BlockFuel>, BlockFuel)>,
+    fuel: Option<(Pos<BlockFuel>, FuelUsed)>,
 }
 
 impl StagedOp {
     /// Creates a new [`StagedOp`] from `op` and `fuel`.
-    pub fn new(op: Op, fuel: Option<(Pos<BlockFuel>, BlockFuel)>) -> Self {
+    pub fn new(op: Op, fuel: Option<(Pos<BlockFuel>, FuelUsed)>) -> Self {
         Self { op, fuel }
     }
 
@@ -306,16 +309,13 @@ impl OpEncoder {
     /// # Panics
     ///
     /// If there was no staged [`Op`].
-    pub fn drop_staged(&mut self) -> (Option<Pos<BlockFuel>>, BlockFuel) {
+    pub fn drop_staged(&mut self) -> (Option<Pos<BlockFuel>>, FuelUsed) {
         let Some(staged) = self.staged.take() else {
             panic!("could not drop staged `Op` since there was none")
         };
         debug_assert!(self.staged.is_none());
         let fuel_pos = staged.fuel.map(|(pos, _)| pos);
-        let fuel_used = staged
-            .fuel
-            .map(|(_, used)| used)
-            .unwrap_or(BlockFuel::from(0));
+        let fuel_used = staged.fuel.map(|(_, used)| used).unwrap_or(0);
         (fuel_pos, fuel_used)
     }
 
@@ -471,7 +471,7 @@ impl OpEncoder {
     fn bump_fuel_consumption_by(
         &mut self,
         fuel_pos: Option<Pos<BlockFuel>>,
-        delta: BlockFuel,
+        delta: FuelUsed,
     ) -> Result<(), Error> {
         debug_assert_eq!(fuel_pos.is_some(), self.fuel_costs.is_some());
         let fuel_pos = match fuel_pos {
@@ -479,7 +479,7 @@ impl OpEncoder {
             Some(fuel_pos) => fuel_pos,
         };
         self.update_encoded(fuel_pos, |mut fuel| -> Option<BlockFuel> {
-            fuel.bump_by(u64::from(delta)).ok()?;
+            fuel.bump_by(delta).ok()?;
             Some(fuel)
         });
         Ok(())
@@ -652,21 +652,21 @@ impl<'a> ir::Encoder for SliceEncoder<'a> {
 /// Convenience trait to wrap type usable as fuel costs selectors.
 pub trait FuelCostsSelector {
     /// Selects the fuel usage from the [`FuelCostsProvider`].
-    fn select(self, costs: &FuelCostsProvider) -> BlockFuel;
+    fn select(self, costs: &FuelCostsProvider) -> FuelUsed;
 }
 
 impl<T> FuelCostsSelector for T
 where
-    T: FnOnce(&FuelCostsProvider) -> u64,
+    T: FnOnce(&FuelCostsProvider) -> FuelUsed,
 {
-    fn select(self, costs: &FuelCostsProvider) -> BlockFuel {
-        BlockFuel::from(self(costs))
+    fn select(self, costs: &FuelCostsProvider) -> FuelUsed {
+        self(costs)
     }
 }
 
 impl FuelCostsSelector for BlockFuel {
-    fn select(self, _costs: &FuelCostsProvider) -> BlockFuel {
-        self
+    fn select(self, _costs: &FuelCostsProvider) -> FuelUsed {
+        FuelUsed::from(self)
     }
 }
 
