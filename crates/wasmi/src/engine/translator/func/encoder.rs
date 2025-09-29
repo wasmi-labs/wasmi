@@ -335,17 +335,17 @@ impl OpEncoder {
         Ok(Pos::from(self.ops.next_pos()))
     }
 
-    /// Encodes an [`Op`] to the [`OpEncoder`] and returns its [`Pos<Op>`].
+    /// Encodes an item of type `T` to the [`OpEncoder`] and returns its [`Pos`].
     ///
     /// # Note
     ///
     /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
-    pub fn encode(
+    pub fn encode<T: ir::Encode>(
         &mut self,
-        op: Op,
+        op: T,
         fuel_pos: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<Pos<Op>, Error> {
+    ) -> Result<Pos<T>, Error> {
         self.try_encode_staged()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
         let pos = self.encode_impl(op)?;
