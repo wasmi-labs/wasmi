@@ -233,14 +233,9 @@ impl OpEncoder {
         }
     }
 
-    /// Returns the next allocated [`Pos<Op>`].
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If there is a staged [`Op`].
+    /// Returns the [`Pos<Op>`] of the currently staged or next encoded item.
     pub fn next_pos(&self) -> Pos<Op> {
         // TODO: we should probably remove this API again from `OpEncoder`
-        debug_assert!(self.staged.is_none());
         Pos::from(self.ops.next_pos())
     }
 
