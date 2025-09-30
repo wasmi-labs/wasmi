@@ -3,10 +3,10 @@ use crate::{engine::translator::func::LocalIdx, Error};
 use alloc::vec::Vec;
 use core::iter;
 
-/// Store the index of the first occurence on the stack for every local variable.
+/// Store the index of the first occurrence on the stack for every local variable.
 #[derive(Debug, Default)]
 pub struct LocalsHead {
-    /// The index of the first occurence of every local variable.
+    /// The index of the first occurrence of every local variable.
     first_operands: Vec<Option<OperandIdx>>,
 }
 

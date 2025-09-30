@@ -908,7 +908,7 @@ impl UpdateBranchOffset for Op {
             }
         };
         if offset.init(new_offset).is_err() {
-            // Case: we need to covert `self` into its cmp+branch fallback instruction variant
+            // Case: we need to convert `self` into its cmp+branch fallback instruction variant
             //       since adjusting the 16-bit offset failed.
             let Some(fallback) = self.try_into_cmp_branch_fallback_instr(new_offset, stack)? else {
                 unreachable!("failed to create cmp+branch fallback instruction for: {self:?}");
