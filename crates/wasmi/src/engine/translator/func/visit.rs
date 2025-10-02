@@ -108,7 +108,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         self.preserve_all_locals()?;
         let block_ty = BlockType::new(block_ty, &self.module);
-        let end_label = self.labels.new_label();
+        let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
         Ok(())
     }
@@ -121,7 +121,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(&self.engine);
-        let continue_label = self.labels.new_label();
+        let continue_label = self.instrs.new_label();
         let consume_fuel = self.stack.consume_fuel_instr();
         self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
         self.pin_label(continue_label);
@@ -129,7 +129,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.stack
             .push_loop(block_ty, continue_label, consume_fuel)?;
         // Need to reset `last_instr` because a loop header is a control flow boundary.
-        self.instrs.try_encode_staged();
+        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -139,7 +139,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::If)?;
             return Ok(());
         }
-        let end_label = self.labels.new_label();
+        let end_label = self.instrs.new_label();
         let condition = self.stack.pop();
         self.preserve_all_locals()?;
         let (reachability, consume_fuel_instr) = match condition {
@@ -156,7 +156,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 (reachability, consume_fuel_instr)
             }
             _ => {
-                let else_label = self.labels.new_label();
+                let else_label = self.instrs.new_label();
                 self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
                 let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
@@ -192,8 +192,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 self.encode_br(frame.label())?;
             }
             // Start of `else` block:
-            self.instrs.try_encode_staged();
-            self.labels.pin_label(else_label, self.instrs.next_pos());
+            self.instrs.try_encode_staged()?;
+            self.instrs.pin_label(else_label);
         }
         let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
         self.reachable = frame.is_else_reachable();
@@ -268,13 +268,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         // Case: fallback to copy branch parameters conditionally
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let skip_label = self.labels.new_label();
+        let skip_label = self.instrs.new_label();
         self.encode_br_eqz(condition, skip_label)?;
         if let Some(branch_results) = branch_results {
             self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
         }
         self.encode_br(label)?;
-        self.labels.pin_label(skip_label, self.instrs.next_pos());
+        self.instrs.pin_label(skip_label);
         Ok(())
     }
 
