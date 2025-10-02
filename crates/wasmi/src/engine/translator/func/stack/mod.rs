@@ -169,7 +169,7 @@ impl Stack {
     ///
     /// # Note
     ///
-    /// This inherits the `consume_fuel` [`OpPos`] from the parent [`ControlFrame`].
+    /// This inherits the `consume_fuel` [`Pos<BlockFuel>`] from the parent [`ControlFrame`].
     ///
     /// # Errors
     ///
