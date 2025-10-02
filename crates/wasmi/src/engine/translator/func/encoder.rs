@@ -1,7 +1,17 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
-    engine::TranslationError,
+    engine::{
+        translator::{
+            comparator::UpdateBranchOffset,
+            func::{
+                labels::{Label, ResolvedLabelUser},
+                LabelRef,
+                LabelRegistry,
+            },
+        },
+        TranslationError,
+    },
     ir::{self, BlockFuel, BranchOffset, Encode as _, Op},
     Engine,
     Error,
@@ -84,7 +94,6 @@ impl<T> fmt::Debug for Pos<T> {
 }
 
 #[derive(Debug, Default)]
-#[expect(unused)]
 pub struct EncodedOps {
     buffer: Vec<u8>,
     temp: Option<(BytePos, TempBuffer)>,
@@ -92,11 +101,11 @@ pub struct EncodedOps {
 
 /// The kind of temporary/scratch stored object.
 #[derive(Debug)]
-pub enum TempBuffer {
+enum TempBuffer {
     /// The temporary object is a [`BranchOffset`].
-    BranchOffset(ir::BranchOffset),
+    BranchOffset,
     /// The temporary object is a [`BlockFuel`].
-    BlockFuel(ir::BlockFuel),
+    BlockFuel,
 }
 
 impl Reset for EncodedOps {
@@ -108,13 +117,13 @@ impl Reset for EncodedOps {
 impl EncodedOps {
     /// Returns the next [`BytePos`].
     #[must_use]
-    pub fn next_pos(&self) -> BytePos {
+    fn next_pos(&self) -> BytePos {
         BytePos::from(self.buffer.len())
     }
 
     /// Takes the temporay buffer if any exists.
     #[must_use]
-    pub fn take_temp(&mut self) -> Option<(BytePos, TempBuffer)> {
+    fn take_temp(&mut self) -> Option<(BytePos, TempBuffer)> {
         self.temp.take()
     }
 }
@@ -139,16 +148,20 @@ impl ir::Encoder for EncodedOps {
     fn branch_offset(
         &mut self,
         pos: Self::Pos,
-        branch_offset: BranchOffset,
+        _branch_offset: BranchOffset,
     ) -> Result<(), Self::Error> {
         debug_assert!(self.temp.is_none());
-        self.temp = Some((pos, TempBuffer::BranchOffset(branch_offset)));
+        self.temp = Some((pos, TempBuffer::BranchOffset));
         Ok(())
     }
 
-    fn block_fuel(&mut self, pos: Self::Pos, block_fuel: ir::BlockFuel) -> Result<(), Self::Error> {
+    fn block_fuel(
+        &mut self,
+        pos: Self::Pos,
+        _block_fuel: ir::BlockFuel,
+    ) -> Result<(), Self::Error> {
         debug_assert!(self.temp.is_none());
-        self.temp = Some((pos, TempBuffer::BlockFuel(block_fuel)));
+        self.temp = Some((pos, TempBuffer::BlockFuel));
         Ok(())
     }
 }
@@ -169,6 +182,8 @@ pub struct OpEncoder {
     fuel_costs: Option<FuelCostsProvider>,
     /// The list of constructed instructions and their parameters.
     ops: EncodedOps,
+    /// Labels and label users for control flow and encoded branch operators.
+    labels: LabelRegistry,
 }
 
 /// The staged [`Op`] and information about its fuel consumption.
@@ -201,7 +216,10 @@ impl ReusableAllocations for OpEncoder {
     type Allocations = OpEncoderAllocations;
 
     fn into_allocations(self) -> Self::Allocations {
-        Self::Allocations { ops: self.ops }
+        Self::Allocations {
+            ops: self.ops,
+            labels: self.labels,
+        }
     }
 }
 
@@ -210,11 +228,14 @@ impl ReusableAllocations for OpEncoder {
 pub struct OpEncoderAllocations {
     /// The list of constructed instructions and their parameters.
     ops: EncodedOps,
+    /// Labels and label users for control flow and encoded branch operators.
+    labels: LabelRegistry,
 }
 
 impl Reset for OpEncoderAllocations {
     fn reset(&mut self) {
         self.ops.reset();
+        self.labels.reset();
     }
 }
 
@@ -230,13 +251,59 @@ impl OpEncoder {
             staged: None,
             fuel_costs,
             ops: alloc.ops,
+            labels: alloc.labels,
         }
     }
 
-    /// Returns the [`Pos<Op>`] of the currently staged or next encoded item.
-    pub fn next_pos(&self) -> Pos<Op> {
-        // TODO: we should probably remove this API again from `OpEncoder`
-        Pos::from(self.ops.next_pos())
+    /// Allocates a new unpinned [`Label`].
+    pub fn new_label(&mut self) -> LabelRef {
+        self.labels.new_label()
+    }
+
+    /// Pins the [`Label`] at `lref` to the current encoded bytestream position.
+    ///
+    /// # Panics
+    ///
+    /// If there is a staged [`Op`].
+    pub fn pin_label(&mut self, lref: LabelRef) {
+        assert!(self.staged.is_none());
+        let next_pos = Pos::from(self.ops.next_pos());
+        self.labels.pin_label(lref, next_pos);
+    }
+
+    /// Pins the [`Label`] at `lref` to the current encoded bytestream position if unpinned.
+    ///
+    /// # Note
+    ///
+    /// Does nothing if the label is already pinned.
+    ///
+    /// # Panics
+    ///
+    /// If there is a staged [`Op`].
+    pub fn pin_label_if_unpinned(&mut self, lref: LabelRef) {
+        assert!(self.staged.is_none());
+        let next_pos = Pos::from(self.ops.next_pos());
+        self.labels.pin_label_if_unpinned(lref, next_pos);
+    }
+
+    /// Resolves the [`BranchOffset`] to `lref` from the current encoded bytestream position if `lref` is pinned.
+    ///
+    ///
+    /// # Note
+    ///
+    /// Returns an uninitialized [`BranchOffset`] if `lref` refers to an unpinned [`Label`].
+    ///
+    /// # Panics
+    ///
+    /// If there is a staged [`Op`].
+    fn try_resolve_label(&mut self, lref: LabelRef) -> Result<BranchOffset, Error> {
+        assert!(self.staged.is_none());
+        let src = self.ops.next_pos();
+        let offset = match self.labels.get_label(lref) {
+            Label::Pinned(dst) => trace_branch_offset(src, dst)?,
+            Label::Unpinned => BranchOffset::uninit(),
+        };
+        Ok(offset)
     }
 
     /// Returns the staged [`Op`] if any.
@@ -361,7 +428,7 @@ impl OpEncoder {
         let consumed_fuel = BlockFuel::from(fuel_costs.base());
         self.try_encode_staged()?;
         Op::consume_fuel(consumed_fuel).encode(&mut self.ops)?;
-        let Some((pos, TempBuffer::BlockFuel(_))) = self.ops.take_temp() else {
+        let Some((pos, TempBuffer::BlockFuel)) = self.ops.take_temp() else {
             unreachable!("expected encoded `BlockFuel` entry but found none")
         };
         debug_assert!(self.staged.is_none());
@@ -373,19 +440,28 @@ impl OpEncoder {
     /// # Note
     ///
     /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
-    pub fn encode_branch<T: ir::Encode>(
+    pub fn encode_branch<T>(
         &mut self,
-        item: T,
+        dst: LabelRef,
+        make_branch: impl FnOnce(BranchOffset) -> T,
         fuel_pos: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<(Pos<T>, Pos<BranchOffset>), Error> {
+    ) -> Result<(Pos<T>, Pos<BranchOffset>), Error>
+    where
+        T: ir::Encode + UpdateBranchOffset,
+    {
         self.try_encode_staged()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
+        let offset = self.try_resolve_label(dst)?;
+        let item = make_branch(offset);
         let pos_item = self.encode_impl(item)?;
         let pos_offset = match self.ops.take_temp() {
-            Some((pos, TempBuffer::BranchOffset(_))) => Pos::from(pos),
+            Some((pos, TempBuffer::BranchOffset)) => Pos::from(pos),
             _ => panic!("missing encoded position for `BranchOffset`"),
         };
+        if !self.labels.is_pinned(dst) {
+            self.labels.new_user(dst, pos_item.value, pos_offset);
+        }
         debug_assert!(self.staged.is_none());
         Ok((pos_item, pos_offset))
     }
@@ -403,21 +479,6 @@ impl OpEncoder {
         let pos = self.ops.next_pos();
         op.encode(&mut self.ops)?;
         Ok(Pos::from(pos))
-    }
-
-    /// Updates the encoded [`BranchOffset`] at `pos` to `offset`.
-    ///
-    /// # Panics
-    ///
-    /// - If `pos` was out of bounds for `self`.
-    /// - If the [`BranchOffset`] at `pos` failed to be decoded, updated or re-encoded.
-    pub fn update_branch_offset(
-        &mut self,
-        pos: Pos<BranchOffset>,
-        offset: BranchOffset,
-    ) -> Result<(), Error> {
-        self.update_encoded(pos, |_| Some(offset));
-        Ok(())
     }
 
     /// Bumps consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `fuel_selector(fuel_costs)`.
@@ -461,10 +522,11 @@ impl OpEncoder {
             None => return Ok(()),
             Some(fuel_pos) => fuel_pos,
         };
-        self.update_encoded(fuel_pos, |mut fuel| -> Option<BlockFuel> {
-            fuel.bump_by(delta).ok()?;
-            Some(fuel)
-        });
+        self.ops
+            .update_encoded(fuel_pos, |mut fuel| -> Option<BlockFuel> {
+                fuel.bump_by(delta).ok()?;
+                Some(fuel)
+            });
         Ok(())
     }
 
@@ -472,6 +534,20 @@ impl OpEncoder {
     pub fn encoded_ops(&mut self) -> &[u8] {
         debug_assert!(self.staged.is_none());
         &self.ops.buffer[..]
+    }
+
+    /// Updates the branch offsets of all branch instructions inplace.
+    ///
+    /// # Panics
+    ///
+    /// If this is used before all branching labels have been pinned.
+    pub fn update_branch_offsets(&mut self) -> Result<(), Error> {
+        for user in self.labels.resolved_users() {
+            let ResolvedLabelUser { src, dst, pos } = user;
+            let offset = trace_branch_offset(src, dst)?;
+            self.ops.update_branch_offset(pos, offset)?;
+        }
+        Ok(())
     }
 }
 
@@ -493,10 +569,7 @@ impl<T> From<UpdateEncodedErrorKind> for UpdateEncodedError<T> {
 }
 impl<T> Clone for UpdateEncodedError<T> {
     fn clone(&self) -> Self {
-        Self {
-            kind: self.kind,
-            marker: PhantomData,
-        }
+        *self
     }
 }
 impl<T> Copy for UpdateEncodedError<T> {}
@@ -534,7 +607,22 @@ enum UpdateEncodedErrorKind {
     FailedToUpdateEncoded,
 }
 
-impl OpEncoder {
+impl EncodedOps {
+    /// Updates the encoded [`BranchOffset`] at `pos` to `offset`.
+    ///
+    /// # Panics
+    ///
+    /// - If `pos` was out of bounds for `self`.
+    /// - If the [`BranchOffset`] at `pos` failed to be decoded, updated or re-encoded.
+    pub fn update_branch_offset(
+        &mut self,
+        pos: Pos<BranchOffset>,
+        offset: BranchOffset,
+    ) -> Result<(), Error> {
+        self.update_encoded(pos, |_| Some(offset));
+        Ok(())
+    }
+
     /// Updates an encoded value `v` of type `T` at `pos` in-place using the result of `f(v)`.
     ///
     /// # Panics
@@ -571,7 +659,7 @@ impl OpEncoder {
         T: ir::Decode + ir::Encode,
     {
         let at = usize::from(BytePos::from(pos));
-        let Some(buffer) = self.ops.buffer.get_mut(at..) else {
+        let Some(buffer) = self.buffer.get_mut(at..) else {
             return Err(UpdateEncodedErrorKind::BufferOutOfBounds);
         };
         let Ok(decoded) = T::decode(&mut &buffer[..]) else {
@@ -667,4 +755,22 @@ fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: ir::OpCode) -> Result<E
     // function pointers of all operator execution handlers which
     // are defined in the Wasmi executor and available to the translator.
     u16::from(code).encode(encoder)
+}
+
+/// Creates an initialized [`BranchOffset`] from `src` to `dst`.
+///
+/// # Errors
+///
+/// If the resulting [`BranchOffset`] is out of bounds.
+fn trace_branch_offset(src: BytePos, dst: Pos<Op>) -> Result<BranchOffset, Error> {
+    fn trace_offset_or_none(src: BytePos, dst: BytePos) -> Option<BranchOffset> {
+        let src = isize::try_from(usize::from(src)).ok()?;
+        let dst = isize::try_from(usize::from(dst)).ok()?;
+        let offset = dst.checked_sub(src)?;
+        i32::try_from(offset).map(BranchOffset::from).ok()
+    }
+    let Some(offset) = trace_offset_or_none(src, BytePos::from(dst)) else {
+        return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
+    };
+    Ok(offset)
 }
