@@ -62,10 +62,7 @@ impl<T> From<Pos<T>> for BytePos {
 impl<T> Copy for Pos<T> {}
 impl<T> Clone for Pos<T> {
     fn clone(&self) -> Self {
-        Self {
-            value: self.value.clone(),
-            marker: PhantomData,
-        }
+        *self
     }
 }
 impl<T> PartialEq for Pos<T> {
@@ -76,7 +73,7 @@ impl<T> PartialEq for Pos<T> {
 impl<T> Eq for Pos<T> {}
 impl<T> PartialOrd for Pos<T> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
+        Some(self.cmp(other))
     }
 }
 impl<T> Ord for Pos<T> {
