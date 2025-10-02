@@ -93,16 +93,16 @@ impl<T> fmt::Debug for Pos<T> {
 #[derive(Debug, Default)]
 pub struct EncodedOps {
     buffer: Vec<u8>,
-    temp: Option<(BytePos, TempBuffer)>,
+    temp: Option<ReportingPos>,
 }
 
-/// The kind of temporary/scratch stored object.
+/// A [`Pos`] of an encoded item that needs to be reported back.
 #[derive(Debug)]
-enum TempBuffer {
+enum ReportingPos {
     /// The temporary object is a [`BranchOffset`].
-    BranchOffset,
+    BranchOffset(Pos<BranchOffset>),
     /// The temporary object is a [`BlockFuel`].
-    BlockFuel,
+    BlockFuel(Pos<BlockFuel>),
 }
 
 impl Reset for EncodedOps {
@@ -118,9 +118,9 @@ impl EncodedOps {
         BytePos::from(self.buffer.len())
     }
 
-    /// Takes the temporay buffer if any exists.
+    /// Takes the reporting [`Pos`] if any exists.
     #[must_use]
-    fn take_temp(&mut self) -> Option<(BytePos, TempBuffer)> {
+    fn take_reporting_pos(&mut self) -> Option<ReportingPos> {
         self.temp.take()
     }
 }
@@ -148,7 +148,7 @@ impl ir::Encoder for EncodedOps {
         _branch_offset: BranchOffset,
     ) -> Result<(), Self::Error> {
         debug_assert!(self.temp.is_none());
-        self.temp = Some((pos, TempBuffer::BranchOffset));
+        self.temp = Some(ReportingPos::BranchOffset(pos.into()));
         Ok(())
     }
 
@@ -158,7 +158,7 @@ impl ir::Encoder for EncodedOps {
         _block_fuel: ir::BlockFuel,
     ) -> Result<(), Self::Error> {
         debug_assert!(self.temp.is_none());
-        self.temp = Some((pos, TempBuffer::BlockFuel));
+        self.temp = Some(ReportingPos::BlockFuel(pos.into()));
         Ok(())
     }
 }
@@ -408,7 +408,7 @@ impl OpEncoder {
         self.try_encode_staged()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
         let pos = self.encode_impl(op)?;
-        debug_assert!(self.ops.take_temp().is_none());
+        debug_assert!(self.ops.take_reporting_pos().is_none());
         debug_assert!(self.staged.is_none());
         Ok(pos)
     }
@@ -425,11 +425,11 @@ impl OpEncoder {
         let consumed_fuel = BlockFuel::from(fuel_costs.base());
         self.try_encode_staged()?;
         Op::consume_fuel(consumed_fuel).encode(&mut self.ops)?;
-        let Some((pos, TempBuffer::BlockFuel)) = self.ops.take_temp() else {
+        let Some(ReportingPos::BlockFuel(pos)) = self.ops.take_reporting_pos() else {
             unreachable!("expected encoded `BlockFuel` entry but found none")
         };
         debug_assert!(self.staged.is_none());
-        Ok(Some(Pos::from(pos)))
+        Ok(Some(pos))
     }
 
     /// Encodes a type with [`BranchOffset`] to the [`OpEncoder`] and returns its [`Pos<Op>`] and [`Pos<BranchOffset>`].
@@ -452,12 +452,13 @@ impl OpEncoder {
         let offset = self.try_resolve_label(dst)?;
         let item = make_branch(offset);
         let pos_item = self.encode_impl(item)?;
-        let pos_offset = match self.ops.take_temp() {
-            Some((pos, TempBuffer::BranchOffset)) => Pos::from(pos),
+        let pos_offset = match self.ops.take_reporting_pos() {
+            Some(ReportingPos::BranchOffset(pos)) => pos,
             _ => panic!("missing encoded position for `BranchOffset`"),
         };
         if !self.labels.is_pinned(dst) {
-            self.labels.new_user(dst, pos_item.value, pos_offset);
+            self.labels
+                .new_user(dst, BytePos::from(pos_item), pos_offset);
         }
         debug_assert!(self.staged.is_none());
         Ok((pos_item, pos_offset))
