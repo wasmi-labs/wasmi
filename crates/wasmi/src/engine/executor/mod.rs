@@ -364,7 +364,7 @@ impl<'engine> EngineExecutor<'engine> {
         execute_instrs(store.prune(), self.stack, self.code_map)
     }
 
-    /// Convenience forwarder to [`dispatch_host_func`].
+    /// Convenience forwarder to dispatch host functions.
     #[inline(always)]
     fn dispatch_host_func<T>(
         &mut self,
