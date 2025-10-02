@@ -4,7 +4,7 @@ use crate::ir::Op;
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionPtr {
     /// The pointer to the instruction.
-    ptr: *const Op,
+    ptr: *const u8,
 }
 
 /// It is safe to send an [`InstructionPtr`] to another thread.
@@ -20,7 +20,7 @@ unsafe impl Send for InstructionPtr {}
 impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
     #[inline]
-    pub fn new(ptr: *const Op) -> Self {
+    pub fn new(ptr: *const u8) -> Self {
         Self { ptr }
     }
 
@@ -56,9 +56,10 @@ impl InstructionPtr {
     /// the boundaries of its associated compiled Wasm function.
     #[inline(always)]
     pub fn get(&self) -> &Op {
-        // SAFETY: Within Wasm bytecode execution we are guaranteed by
-        //         Wasm validation and Wasmi codegen to never run out
-        //         of valid bounds using this method.
-        unsafe { &*self.ptr }
+        // // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        // //         Wasm validation and Wasmi codegen to never run out
+        // //         of valid bounds using this method.
+        // unsafe { &*self.ptr }
+        todo!()
     }
 }
