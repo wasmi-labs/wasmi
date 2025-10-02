@@ -694,11 +694,6 @@ impl FuncTranslator {
         !can_avoid_copies
     }
 
-    /// Pins the `label` to the next [`Pos<Op>`].
-    fn pin_label(&mut self, label: LabelRef) {
-        self.instrs.pin_label(label);
-    }
-
     /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
     ///
     /// # Note
@@ -1005,14 +1000,10 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        self.instrs.pin_label(frame.label());
+        self.instrs.pin_label(frame.label())?;
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
             self.encode_return(consume_fuel_instr)?;
-        }
-        if frame.is_branched_to() {
-            // No need to reset `last_instr` if there was no branch to the end of a Wasm `block`.
-            self.instrs.try_encode_staged()?;
         }
         Ok(())
     }
@@ -1062,10 +1053,8 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
-        self.instrs.pin_label(frame.label());
+        self.instrs.pin_label(frame.label())?;
         self.reachable = true;
-        // Need to reset `last_instr` since end of `if` is a control flow boundary.
-        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -1094,10 +1083,8 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
-        self.instrs.pin_label(frame.label());
+        self.instrs.pin_label(frame.label())?;
         self.reachable = reachable;
-        // Need to reset `last_instr` since end of `else` is a control flow boundary.
-        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -1114,13 +1101,8 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        self.instrs.pin_label(frame.label());
+        self.instrs.pin_label(frame.label())?;
         self.reachable = end_is_reachable || frame.is_branched_to();
-        if frame.is_branched_to() {
-            // No need to reset `last_instr` if there was no branch to the
-            // end of a Wasm `if` where only `then` or `else` is reachable.
-            self.instrs.try_encode_staged()?;
-        }
         Ok(())
     }
 
