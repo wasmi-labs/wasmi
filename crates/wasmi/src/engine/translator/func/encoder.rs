@@ -262,10 +262,11 @@ impl OpEncoder {
     /// # Panics
     ///
     /// If there is a staged [`Op`].
-    pub fn pin_label(&mut self, lref: LabelRef) {
-        assert!(self.staged.is_none());
+    pub fn pin_label(&mut self, lref: LabelRef) -> Result<(), Error> {
+        self.try_encode_staged()?;
         let next_pos = Pos::from(self.ops.next_pos());
         self.labels.pin_label(lref, next_pos);
+        Ok(())
     }
 
     /// Pins the [`Label`] at `lref` to the current encoded bytestream position if unpinned.
