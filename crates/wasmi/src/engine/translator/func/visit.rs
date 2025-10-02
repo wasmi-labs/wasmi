@@ -124,12 +124,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let continue_label = self.instrs.new_label();
         let consume_fuel = self.stack.consume_fuel_instr();
         self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
-        self.pin_label(continue_label);
+        self.instrs.pin_label(continue_label)?;
         let consume_fuel = self.instrs.encode_consume_fuel()?;
         self.stack
             .push_loop(block_ty, continue_label, consume_fuel)?;
-        // Need to reset `last_instr` because a loop header is a control flow boundary.
-        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -192,8 +190,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 self.encode_br(frame.label())?;
             }
             // Start of `else` block:
-            self.instrs.try_encode_staged()?;
-            self.instrs.pin_label(else_label);
+            self.instrs.pin_label(else_label)?;
         }
         let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
         self.reachable = frame.is_else_reachable();
@@ -274,7 +271,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
         }
         self.encode_br(label)?;
-        self.instrs.pin_label(skip_label);
+        self.instrs.pin_label(skip_label)?;
         Ok(())
     }
 
