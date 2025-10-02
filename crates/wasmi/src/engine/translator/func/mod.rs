@@ -47,6 +47,7 @@ use crate::{
                 NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
                 TryIntoCmpSelectInstr as _,
+                UpdateBranchOffset as _,
             },
             utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
             WasmTranslator,
@@ -55,8 +56,19 @@ use crate::{
         CompiledFuncEntity,
         TranslationError,
     },
-    ir,
-    ir::{index, Address, BoundedSlotSpan, FixedSlotSpan, Offset16, Op, Sign, Slot, SlotSpan},
+    ir::{
+        self,
+        index,
+        Address,
+        BoundedSlotSpan,
+        BranchOffset,
+        FixedSlotSpan,
+        Offset16,
+        Op,
+        Sign,
+        Slot,
+        SlotSpan,
+    },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
     Engine,
     Error,
@@ -98,8 +110,6 @@ pub struct FuncTranslator {
     locals: LocalsRegistry,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
-    /// Slots and pins labels and tracks their users.
-    labels: LabelRegistry,
     /// Constructs and encodes function instructions.
     instrs: OpEncoder,
     /// Temporary buffer for operands.
@@ -117,8 +127,6 @@ pub struct FuncTranslatorAllocations {
     locals: LocalsRegistry,
     /// Wasm layout to map stack slots to Wasmi registers.
     layout: StackLayout,
-    /// Slots and pins labels and tracks their users.
-    labels: LabelRegistry,
     /// Constructs and encodes function instructions.
     instrs: OpEncoderAllocations,
     /// Temporary buffer for operands.
@@ -132,7 +140,6 @@ impl Reset for FuncTranslatorAllocations {
         self.stack.reset();
         self.locals.reset();
         self.layout.reset();
-        self.labels.reset();
         self.instrs.reset();
         self.operands.clear();
         self.immediates.clear();
@@ -180,7 +187,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         let Some(frame_size) = self.frame_size() else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
-        self.update_branch_offsets()?;
+        self.instrs.update_branch_offsets()?;
         finalize(CompiledFuncEntity::new(
             frame_size,
             self.instrs.encoded_ops(),
@@ -197,7 +204,6 @@ impl ReusableAllocations for FuncTranslator {
             stack: self.stack.into_allocations(),
             locals: self.locals,
             layout: self.layout,
-            labels: self.labels,
             instrs: self.instrs.into_allocations(),
             operands: self.operands,
             immediates: self.immediates,
@@ -222,7 +228,6 @@ impl FuncTranslator {
             stack,
             locals,
             layout,
-            labels,
             instrs,
             operands,
             immediates,
@@ -237,7 +242,6 @@ impl FuncTranslator {
             stack,
             locals,
             layout,
-            labels,
             instrs,
             operands,
             immediates,
@@ -251,7 +255,7 @@ impl FuncTranslator {
     fn init_func_body_block(&mut self) -> Result<(), Error> {
         let func_ty = self.module.get_type_of_func(self.func);
         let block_ty = BlockType::func_type(func_ty);
-        let end_label = self.labels.new_label();
+        let end_label = self.instrs.new_label();
         let consume_fuel = self.instrs.encode_consume_fuel()?;
         self.stack
             .push_func_block(block_ty, end_label, consume_fuel)?;
@@ -285,18 +289,6 @@ impl FuncTranslator {
     fn frame_size(&self) -> Option<u16> {
         let frame_size = self.stack.max_height().checked_add(self.locals.len())?;
         u16::try_from(frame_size).ok()
-    }
-
-    /// Updates the branch offsets of all branch instructions inplace.
-    ///
-    /// # Panics
-    ///
-    /// If this is used before all branching labels have been pinned.
-    fn update_branch_offsets(&mut self) -> Result<(), Error> {
-        for (user, offset) in self.labels.resolved_users() {
-            self.instrs.update_branch_offset(user, offset?)?;
-        }
-        Ok(())
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
@@ -711,7 +703,7 @@ impl FuncTranslator {
 
     /// Pins the `label` to the next [`OpPos`].
     fn pin_label(&mut self, label: LabelRef) {
-        self.labels.pin_label(label, self.instrs.next_pos());
+        self.instrs.pin_label(label);
     }
 
     /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
@@ -790,12 +782,9 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let expected_iidx = self.instrs.next_pos();
         let result = self.layout.temp_to_slot(self.stack.push_temp(result_ty)?)?;
-        let actual_iidx = self
-            .instrs
+        self.instrs
             .stage(make_instr(result), consume_fuel_instr, fuel_costs)?;
-        assert_eq!(expected_iidx, actual_iidx);
         Ok(())
     }
 
@@ -846,16 +835,15 @@ impl FuncTranslator {
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
+        let fuel_pos = self.stack.consume_fuel_instr();
         let targets = &self.immediates[..];
         for target in targets {
             let Ok(depth) = usize::try_from(u32::from(*target)) else {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let _offset = self
-                .labels
-                .try_resolve_label(frame.label(), self.instrs.next_pos())?;
-            // self.instrs.push_param(Op::branch(offset)); // TODO: finish encoding impl
+            self.instrs
+                .encode_branch(frame.label(), Op::branch, fuel_pos, 0)?;
             frame.branch_to();
         }
         Ok(())
@@ -880,21 +868,23 @@ impl FuncTranslator {
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
+        let fuel_pos = self.stack.consume_fuel_instr();
         let targets = &self.immediates[..];
         for target in targets {
             let Ok(depth) = usize::try_from(u32::from(*target)) else {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(_results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
+            let Some(results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
             else {
                 panic!("must have frame results since `br_table` requires to copy values");
             };
-            let _offset = self
-                .labels
-                .try_resolve_label(frame.label(), self.instrs.next_pos())?;
-            // self.instrs
-            //     .push_param(Op::branch_table_target(results, offset)); // TODO: encode branch table targets properly
+            self.instrs.encode_branch(
+                frame.label(),
+                |offset| ir::BranchTableTarget::new(results, offset),
+                fuel_pos,
+                0,
+            )?;
             frame.branch_to();
         }
         Ok(())
@@ -1022,14 +1012,14 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        self.labels.pin_label(frame.label(), self.instrs.next_pos());
+        self.instrs.pin_label(frame.label());
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
             self.encode_return(consume_fuel_instr)?;
         }
         if frame.is_branched_to() {
             // No need to reset `last_instr` if there was no branch to the end of a Wasm `block`.
-            self.instrs.try_encode_staged();
+            self.instrs.try_encode_staged()?;
         }
         Ok(())
     }
@@ -1060,18 +1050,14 @@ impl FuncTranslator {
         if is_end_of_then_reachable && has_results {
             let consume_fuel_instr = frame.consume_fuel_instr();
             self.copy_branch_params(&frame, consume_fuel_instr)?;
-            let end_offset = self
-                .labels
-                .try_resolve_label(frame.label(), self.instrs.next_pos())
-                .unwrap();
-            self.instrs.encode(
-                Op::branch(end_offset),
+            self.instrs.encode_branch(
+                frame.label(),
+                Op::branch,
                 consume_fuel_instr,
                 FuelCostsProvider::base,
             )?;
         }
-        self.labels
-            .pin_label_if_unpinned(else_label, self.instrs.next_pos());
+        self.instrs.pin_label_if_unpinned(else_label);
         self.stack.push_else_operands(&frame)?;
         if has_results {
             // We haven't visited the `else` block and thus the `else`
@@ -1083,10 +1069,10 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
-        self.labels.pin_label(frame.label(), self.instrs.next_pos());
+        self.instrs.pin_label(frame.label());
         self.reachable = true;
         // Need to reset `last_instr` since end of `if` is a control flow boundary.
-        self.instrs.try_encode_staged();
+        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -1115,10 +1101,10 @@ impl FuncTranslator {
             self.copy_branch_params(&frame, consume_fuel_instr)?;
         }
         self.push_frame_results(&frame)?;
-        self.labels.pin_label(frame.label(), self.instrs.next_pos());
+        self.instrs.pin_label(frame.label());
         self.reachable = reachable;
         // Need to reset `last_instr` since end of `else` is a control flow boundary.
-        self.instrs.try_encode_staged();
+        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -1135,12 +1121,12 @@ impl FuncTranslator {
             }
             self.push_frame_results(&frame)?;
         }
-        self.labels.pin_label(frame.label(), self.instrs.next_pos());
+        self.instrs.pin_label(frame.label());
         self.reachable = end_is_reachable || frame.is_branched_to();
         if frame.is_branched_to() {
             // No need to reset `last_instr` if there was no branch to the
             // end of a Wasm `if` where only `then` or `else` is reachable.
-            self.instrs.try_encode_staged();
+            self.instrs.try_encode_staged()?;
         }
         Ok(())
     }
@@ -1149,7 +1135,7 @@ impl FuncTranslator {
     fn translate_end_unreachable(&mut self, _frame: ControlFrameKind) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
         // We reset `last_instr` out of caution in case there is a control flow boundary.
-        self.instrs.try_encode_staged();
+        self.instrs.try_encode_staged()?;
         Ok(())
     }
 
@@ -1253,10 +1239,11 @@ impl FuncTranslator {
 
     /// Encodes an unconditional Wasm `branch` instruction.
     fn encode_br(&mut self, label: LabelRef) -> Result<Pos<Op>, Error> {
-        let instr = self.instrs.next_pos();
-        let offset = self.labels.try_resolve_label(label, instr)?;
-        let br_instr = self.push_instr(Op::branch(offset), FuelCostsProvider::base)?;
-        Ok(br_instr)
+        let fuel_pos = self.stack.consume_fuel_instr();
+        let (br_op, _) =
+            self.instrs
+                .encode_branch(label, Op::branch, fuel_pos, FuelCostsProvider::base)?;
+        Ok(br_op)
     }
 
     /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
@@ -1298,13 +1285,16 @@ impl FuncTranslator {
                 }
             }
         };
-        let instr = self.instrs.next_pos();
-        let offset = self.labels.try_resolve_label(label, instr)?;
-        let instr = match branch_eqz {
-            true => Op::branch_i32_eq_si(condition, 0, offset),
-            false => Op::branch_i32_not_eq_si(condition, 0, offset),
-        };
-        self.push_instr(instr, FuelCostsProvider::base)?;
+        let fuel_pos = self.stack.consume_fuel_instr();
+        self.instrs.encode_branch(
+            label,
+            |offset| match branch_eqz {
+                true => Op::branch_i32_eq_si(condition, 0, offset),
+                false => Op::branch_i32_not_eq_si(condition, 0, offset),
+            },
+            fuel_pos,
+            FuelCostsProvider::base,
+        )?;
         Ok(())
     }
 
@@ -1350,11 +1340,17 @@ impl FuncTranslator {
                 }
             },
         };
-        let offset = self.labels.try_resolve_label(label, instr)?;
-        let Some(fused_cmp_branch) = cmp_op.try_into_cmp_branch_instr(offset) else {
+        let Some(fused_cmp_branch) = cmp_op.try_into_cmp_branch_instr(BranchOffset::uninit())
+        else {
             return Ok(false);
         };
-        self.instrs.replace_staged(fused_cmp_branch)?;
+        let (fuel_pos, _) = self.instrs.drop_staged();
+        self.instrs.encode_branch(
+            label,
+            |offset| fused_cmp_branch.with_branch_offset(offset),
+            fuel_pos,
+            FuelCostsProvider::base,
+        )?;
         Ok(true)
     }
 
