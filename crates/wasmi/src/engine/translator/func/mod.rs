@@ -701,7 +701,7 @@ impl FuncTranslator {
         !can_avoid_copies
     }
 
-    /// Pins the `label` to the next [`OpPos`].
+    /// Pins the `label` to the next [`Pos<Op>`].
     fn pin_label(&mut self, label: LabelRef) {
         self.instrs.pin_label(label);
     }
