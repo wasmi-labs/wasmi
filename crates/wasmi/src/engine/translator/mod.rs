@@ -4,7 +4,6 @@ mod comparator;
 mod driver;
 mod error;
 mod func;
-mod relink_result;
 mod utils;
 
 #[cfg(doc)]
