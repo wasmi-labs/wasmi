@@ -192,7 +192,7 @@ impl LabelRegistry {
         }
     }
 
-    /// Returns an iterator over pairs of user [`OpPos`] and their [`BranchOffset`].
+    /// Returns an iterator over pairs of user [`Pos<Op>`] and their [`BranchOffset`].
     ///
     /// # Panics
     ///
@@ -207,11 +207,8 @@ impl LabelRegistry {
 
 /// Iterator over resolved label users.
 ///
-/// Iterates over pairs of user [`OpPos`] and its respective [`BranchOffset`]
-/// which allows the [`InstructionsBuilder`] to properly update the branching
-/// offsets.
-///
-/// [`InstructionsBuilder`]: [`super::InstructionsBuilder`]
+/// Iterates over [`ResolvedLabelUser`]s which allows to properly
+/// update the branching offsets.
 #[derive(Debug)]
 pub struct ResolvedUserIter<'a> {
     users: SliceIter<'a, LabelUser>,
