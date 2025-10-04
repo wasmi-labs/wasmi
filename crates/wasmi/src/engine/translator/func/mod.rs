@@ -329,11 +329,12 @@ impl FuncTranslator {
         len: usize,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<SlotSpan, Error> {
+        debug_assert!(len > 0);
         for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
-        let first_idx = self.stack.peek(len).index();
+        let first_idx = self.stack.peek(len - 1).index();
         let first = self.layout.temp_to_slot(first_idx)?;
         Ok(SlotSpan::new(first))
     }
