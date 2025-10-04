@@ -123,7 +123,7 @@ impl CachedInstance {
     #[inline]
     pub unsafe fn get_memory(&self, index: index::Memory) -> Option<Memory> {
         let instance = unsafe { self.as_ref() };
-        instance.get_memory(u32::from(index))
+        instance.get_memory(u32::from(u16::from(index)))
     }
 
     /// Returns the [`Table`] at the `index` if any.

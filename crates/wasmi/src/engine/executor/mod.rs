@@ -1,9 +1,7 @@
+#![expect(dead_code)]
+
 pub(crate) use self::stack::Stack;
-use self::{
-    instr_ptr::InstructionPtr,
-    instrs::{dispatch_host_func, execute_instrs},
-    stack::CallFrame,
-};
+use self::{instr_ptr::InstructionPtr, instrs::execute_instrs, stack::CallFrame};
 use crate::{
     engine::{
         CallParams,
@@ -15,7 +13,6 @@ use crate::{
     },
     func::HostFuncEntity,
     ir::{Slot, SlotSpan},
-    store::CallHooks,
     CallHook,
     Error,
     Func,
@@ -268,7 +265,7 @@ impl<'engine> EngineExecutor<'engine> {
                 uninit_params.init_zeroes();
                 self.stack.calls.push(
                     CallFrame::new(
-                        InstructionPtr::new(compiled_func.instrs().as_ptr()),
+                        InstructionPtr::new(compiled_func.ops().as_ptr()),
                         offsets,
                         SlotSpan::new(Slot::from(0)),
                     ),
@@ -367,21 +364,22 @@ impl<'engine> EngineExecutor<'engine> {
         execute_instrs(store.prune(), self.stack, self.code_map)
     }
 
-    /// Convenience forwarder to [`dispatch_host_func`].
+    /// Convenience forwarder to dispatch host functions.
     #[inline(always)]
     fn dispatch_host_func<T>(
         &mut self,
-        store: &mut Store<T>,
-        host_func: HostFuncEntity,
+        _store: &mut Store<T>,
+        _host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        dispatch_host_func(
-            store.prune(),
-            &mut self.stack.values,
-            host_func,
-            None,
-            CallHooks::Ignore,
-        )?;
-        Ok(())
+        // dispatch_host_func(
+        //     store.prune(),
+        //     &mut self.stack.values,
+        //     host_func,
+        //     None,
+        //     CallHooks::Ignore,
+        // )?;
+        // Ok(())
+        todo!()
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
