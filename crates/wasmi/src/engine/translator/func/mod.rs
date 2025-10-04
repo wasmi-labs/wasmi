@@ -427,11 +427,9 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let pos = self.instrs.encode(
-            copy_instr,
-            consume_fuel_instr,
-            FuelCostsProvider::base,
-        )?;
+        let pos = self
+            .instrs
+            .encode(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         Ok(Some(pos))
     }
 
