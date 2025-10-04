@@ -420,12 +420,7 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let encode_strategy = match self.layout.stack_space(result) {
-            StackSpace::Local => OpEncoder::encode,
-            StackSpace::Temp => OpEncoder::stage,
-        };
-        let pos = encode_strategy(
-            &mut self.instrs,
+        let pos = self.instrs.encode(
             copy_instr,
             consume_fuel_instr,
             FuelCostsProvider::base,
