@@ -1049,7 +1049,7 @@ impl FuncTranslator {
                 FuelCostsProvider::base,
             )?;
         }
-        self.instrs.pin_label_if_unpinned(else_label);
+        self.instrs.pin_label_if_unpinned(else_label)?;
         self.stack.push_else_operands(&frame)?;
         if has_results {
             // We haven't visited the `else` block and thus the `else`
@@ -1347,9 +1347,8 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let consume_fuel = self.stack.consume_fuel_instr();
         let func_idx = FuncIdx::from(function_index);
-        let len_params = self.resolve_func_type(func_idx).len_params();
-        let params = self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
-        let params = BoundedSlotSpan::new(params, len_params);
+        let callee_ty = self.resolve_func_type(func_idx);
+        let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
         let instr = match self.module.get_engine_func(func_idx) {
             Some(engine_func) => {
                 // Case: We are calling an internal function and can optimize
@@ -1382,16 +1381,40 @@ impl FuncTranslator {
         let index = self.stack.pop();
         let consume_fuel = self.stack.consume_fuel_instr();
         let table = index::Table::from(table_index);
-        let func_type = self.resolve_type(type_index);
+        let callee_ty = self.resolve_type(type_index);
         let index = self.copy_if_immediate(index)?;
-        let len_params = func_type.len_params();
-        let params = self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
-        let params = BoundedSlotSpan::new(params, len_params);
+        let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
         self.push_instr(
             make_instr(params, index, index::FuncType::from(type_index), table),
             FuelCostsProvider::call,
         )?;
         Ok(())
+    }
+
+    /// Adjusts the stack for a call to a function with type `ty`.
+    ///
+    /// Returns a bounded [`SlotSpan`] to the start of the call
+    /// parameters and results.
+    fn adjust_stack_for_call(
+        &mut self,
+        ty: &FuncType,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<BoundedSlotSpan, Error> {
+        let len_params = ty.len_params();
+        let params = match len_params {
+            0 => {
+                let height = self.stack.height();
+                let start = self.layout.temp_to_slot(OperandIdx::from(height))?;
+                SlotSpan::new(start)
+            }
+            _ => self.move_operands_to_temp(usize::from(len_params), fuel_pos)?,
+        };
+        let params = BoundedSlotSpan::new(params, len_params);
+        self.stack.drop_n(usize::from(len_params));
+        for result in ty.results() {
+            self.stack.push_temp(*result)?;
+        }
+        Ok(params)
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
