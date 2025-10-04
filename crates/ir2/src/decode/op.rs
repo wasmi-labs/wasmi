@@ -75,9 +75,9 @@ where
 
 #[derive(Copy, Clone)]
 pub struct CmpBranchOp<Lhs, Rhs> {
+    pub offset: BranchOffset,
     pub lhs: Lhs,
     pub rhs: Rhs,
-    pub offset: BranchOffset,
 }
 
 impl<Lhs, Rhs> Decode for CmpBranchOp<Lhs, Rhs>

@@ -1336,7 +1336,7 @@ impl CmpBranchOp {
     }
 
     pub fn fields(&self) -> [Field; 3] {
-        [self.lhs_field(), self.rhs_field(), self.offset_field()]
+        [self.offset_field(), self.lhs_field(), self.rhs_field()]
     }
 }
 
