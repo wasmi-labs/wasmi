@@ -1336,7 +1336,7 @@ impl CmpBranchOp {
     }
 
     pub fn fields(&self) -> [Field; 3] {
-        [self.lhs_field(), self.rhs_field(), self.offset_field()]
+        [self.offset_field(), self.lhs_field(), self.rhs_field()]
     }
 }
 
@@ -1375,10 +1375,10 @@ impl CmpSelectOp {
     pub fn fields(&self) -> [Field; 5] {
         [
             self.result_field(),
-            self.lhs_field(),
-            self.rhs_field(),
             self.val_true_field(),
             self.val_false_field(),
+            self.lhs_field(),
+            self.rhs_field(),
         ]
     }
 }
