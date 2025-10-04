@@ -471,6 +471,13 @@ impl Stack {
         buffer.reverse();
     }
 
+    /// Drops `len` operands form the stack.
+    pub fn drop_n(&mut self, len: usize) {
+        for _ in 0..len {
+            self.pop();
+        }
+    }
+
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
     ///
     /// This is done by converting those locals to [`Operand::Temp`] and yielding them.
