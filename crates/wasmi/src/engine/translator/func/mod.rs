@@ -1394,16 +1394,13 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
         let len_params = ty.len_params();
-        let params = match len_params {
-            0 => {
-                let height = self.stack.height();
-                let start = self.layout.temp_to_slot(OperandIdx::from(height))?;
-                SlotSpan::new(start)
-            }
-            _ => self.move_operands_to_temp(usize::from(len_params), fuel_pos)?,
-        };
-        let params = BoundedSlotSpan::new(params, len_params);
-        self.stack.drop_n(usize::from(len_params));
+        for _ in 0..len_params {
+            let operand = self.stack.pop();
+            self.copy_operand_to_temp(operand, fuel_pos)?;
+        }
+        let height = self.stack.height();
+        let start = self.layout.temp_to_slot(OperandIdx::from(height))?;
+        let params = BoundedSlotSpan::new(SlotSpan::new(start), len_params);
         for result in ty.results() {
             self.stack.push_temp(*result)?;
         }
