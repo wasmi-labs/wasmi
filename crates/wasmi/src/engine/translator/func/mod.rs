@@ -1264,8 +1264,8 @@ impl FuncTranslator {
         self.instrs.encode_branch(
             label,
             |offset| match branch_eqz {
-                true => Op::branch_i32_eq_si(condition, 0, offset),
-                false => Op::branch_i32_not_eq_si(condition, 0, offset),
+                true => Op::branch_i32_eq_si(offset, condition, 0),
+                false => Op::branch_i32_not_eq_si(offset, condition, 0),
             },
             fuel_pos,
             FuelCostsProvider::base,
@@ -1883,7 +1883,7 @@ impl FuncTranslator {
         if !self.try_fuse_select(ty, condition, true_val, false_val)? {
             self.push_instr_with_result(
                 ty,
-                |result| Op::select_i32_eq_ssi(result, condition, 0_i32, false_val, true_val),
+                |result| Op::select_i32_eq_ssi(result, false_val, true_val, condition, 0_i32),
                 FuelCostsProvider::base,
             )?;
         };
