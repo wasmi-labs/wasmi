@@ -24,6 +24,7 @@ use crate::{
 use super::{code_map::CodeMap, ResumableError};
 
 mod cache;
+mod handler;
 mod instr_ptr;
 mod instrs;
 mod stack;
