@@ -7,7 +7,7 @@ use crate::{
     errors::HostError,
     instance::InstanceEntity,
     ir,
-    ir::{decode, OpCode, Sign, Slot},
+    ir::{OpCode, Sign, Slot},
     store::PrunedStore,
     TrapCode,
 };
@@ -592,6 +592,51 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::BranchF64NotLt_Ss => branch_f64_not_lt_ss,
         OpCode::BranchF64NotLt_Si => branch_f64_not_lt_si,
         OpCode::BranchF64NotLt_Is => branch_f64_not_lt_is,
+        // select
+        OpCode::SelectI32Eq_Sss => select_i32_eq_sss,
+        OpCode::SelectI32Eq_Ssi => select_i32_eq_ssi,
+        OpCode::SelectI32And_Sss => select_i32_and_sss,
+        OpCode::SelectI32And_Ssi => select_i32_and_ssi,
+        OpCode::SelectI32Or_Sss => select_i32_or_sss,
+        OpCode::SelectI32Or_Ssi => select_i32_or_ssi,
+        OpCode::SelectI32Le_Sss => select_i32_le_sss,
+        OpCode::SelectI32Le_Ssi => select_i32_le_ssi,
+        OpCode::SelectI32Lt_Sss => select_i32_lt_sss,
+        OpCode::SelectI32Lt_Ssi => select_i32_lt_ssi,
+        OpCode::SelectU32Le_Sss => select_u32_le_sss,
+        OpCode::SelectU32Le_Ssi => select_u32_le_ssi,
+        OpCode::SelectU32Lt_Sss => select_u32_lt_sss,
+        OpCode::SelectU32Lt_Ssi => select_u32_lt_ssi,
+        OpCode::SelectI64Eq_Sss => select_i64_eq_sss,
+        OpCode::SelectI64Eq_Ssi => select_i64_eq_ssi,
+        OpCode::SelectI64And_Sss => select_i64_and_sss,
+        OpCode::SelectI64And_Ssi => select_i64_and_ssi,
+        OpCode::SelectI64Or_Sss => select_i64_or_sss,
+        OpCode::SelectI64Or_Ssi => select_i64_or_ssi,
+        OpCode::SelectI64Le_Sss => select_i64_le_sss,
+        OpCode::SelectI64Le_Ssi => select_i64_le_ssi,
+        OpCode::SelectI64Lt_Sss => select_i64_lt_sss,
+        OpCode::SelectI64Lt_Ssi => select_i64_lt_ssi,
+        OpCode::SelectU64Le_Sss => select_u64_le_sss,
+        OpCode::SelectU64Le_Ssi => select_u64_le_ssi,
+        OpCode::SelectU64Lt_Sss => select_u64_lt_sss,
+        OpCode::SelectU64Lt_Ssi => select_u64_lt_ssi,
+        OpCode::SelectF32Eq_Sss => select_f32_eq_sss,
+        OpCode::SelectF32Eq_Ssi => select_f32_eq_ssi,
+        OpCode::SelectF32Le_Sss => select_f32_le_sss,
+        OpCode::SelectF32Le_Ssi => select_f32_le_ssi,
+        OpCode::SelectF32Le_Sis => select_f32_le_sis,
+        OpCode::SelectF32Lt_Sss => select_f32_lt_sss,
+        OpCode::SelectF32Lt_Ssi => select_f32_lt_ssi,
+        OpCode::SelectF32Lt_Sis => select_f32_lt_sis,
+        OpCode::SelectF64Eq_Sss => select_f64_eq_sss,
+        OpCode::SelectF64Eq_Ssi => select_f64_eq_ssi,
+        OpCode::SelectF64Le_Sss => select_f64_le_sss,
+        OpCode::SelectF64Le_Ssi => select_f64_le_ssi,
+        OpCode::SelectF64Le_Sis => select_f64_le_sis,
+        OpCode::SelectF64Lt_Sss => select_f64_lt_sss,
+        OpCode::SelectF64Lt_Ssi => select_f64_lt_ssi,
+        OpCode::SelectF64Lt_Sis => select_f64_lt_sis,
         _ => todo!(),
     }
 }
@@ -1026,6 +1071,91 @@ handler_cmp_branch! {
     fn branch_f64_not_lt_is(BranchF64NotLt_Is) = wasmi_f64_not_lt;
 }
 
+macro_rules! handler_select {
+    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    $crate::ir::decode::$decode {
+                        result,
+                        val_true,
+                        val_false,
+                        lhs,
+                        rhs,
+                    },
+                ) = unsafe { ip.decode() };
+                let lhs = get_value(lhs, sp);
+                let rhs = get_value(rhs, sp);
+                let src = match $eval(lhs, rhs) {
+                    true => val_true,
+                    false => val_false,
+                };
+                let src: UntypedVal = get_value(src, sp);
+                set_value(sp, result, src);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_select! {
+    // i32
+    fn select_i32_eq_sss(SelectI32Eq_Sss) = wasm::i32_eq;
+    fn select_i32_eq_ssi(SelectI32Eq_Ssi) = wasm::i32_eq;
+    fn select_i32_and_sss(SelectI32And_Sss) = wasmi_i32_and;
+    fn select_i32_and_ssi(SelectI32And_Ssi) = wasmi_i32_and;
+    fn select_i32_or_sss(SelectI32Or_Sss) = wasmi_i32_or;
+    fn select_i32_or_ssi(SelectI32Or_Ssi) = wasmi_i32_or;
+    fn select_i32_le_sss(SelectI32Le_Sss) = wasm::i32_le_s;
+    fn select_i32_le_ssi(SelectI32Le_Ssi) = wasm::i32_le_s;
+    fn select_i32_lt_sss(SelectI32Lt_Sss) = wasm::i32_lt_s;
+    fn select_i32_lt_ssi(SelectI32Lt_Ssi) = wasm::i32_lt_s;
+    fn select_u32_le_sss(SelectU32Le_Sss) = wasm::i32_le_u;
+    fn select_u32_le_ssi(SelectU32Le_Ssi) = wasm::i32_le_u;
+    fn select_u32_lt_sss(SelectU32Lt_Sss) = wasm::i32_lt_u;
+    fn select_u32_lt_ssi(SelectU32Lt_Ssi) = wasm::i32_lt_u;
+    // i64
+    fn select_i64_eq_sss(SelectI64Eq_Sss) = wasm::i64_eq;
+    fn select_i64_eq_ssi(SelectI64Eq_Ssi) = wasm::i64_eq;
+    fn select_i64_and_sss(SelectI64And_Sss) = wasmi_i64_and;
+    fn select_i64_and_ssi(SelectI64And_Ssi) = wasmi_i64_and;
+    fn select_i64_or_sss(SelectI64Or_Sss) = wasmi_i64_or;
+    fn select_i64_or_ssi(SelectI64Or_Ssi) = wasmi_i64_or;
+    fn select_i64_le_sss(SelectI64Le_Sss) = wasm::i64_le_s;
+    fn select_i64_le_ssi(SelectI64Le_Ssi) = wasm::i64_le_s;
+    fn select_i64_lt_sss(SelectI64Lt_Sss) = wasm::i64_lt_s;
+    fn select_i64_lt_ssi(SelectI64Lt_Ssi) = wasm::i64_lt_s;
+    fn select_u64_le_sss(SelectU64Le_Sss) = wasm::i64_le_u;
+    fn select_u64_le_ssi(SelectU64Le_Ssi) = wasm::i64_le_u;
+    fn select_u64_lt_sss(SelectU64Lt_Sss) = wasm::i64_lt_u;
+    fn select_u64_lt_ssi(SelectU64Lt_Ssi) = wasm::i64_lt_u;
+    // f32
+    fn select_f32_eq_sss(SelectF32Eq_Sss) = wasm::f32_eq;
+    fn select_f32_eq_ssi(SelectF32Eq_Ssi) = wasm::f32_eq;
+    fn select_f32_le_sss(SelectF32Le_Sss) = wasm::f32_le;
+    fn select_f32_le_ssi(SelectF32Le_Ssi) = wasm::f32_le;
+    fn select_f32_le_sis(SelectF32Le_Sis) = wasm::f32_le;
+    fn select_f32_lt_sss(SelectF32Lt_Sss) = wasm::f32_lt;
+    fn select_f32_lt_ssi(SelectF32Lt_Ssi) = wasm::f32_lt;
+    fn select_f32_lt_sis(SelectF32Lt_Sis) = wasm::f32_lt;
+    // f64
+    fn select_f64_eq_sss(SelectF64Eq_Sss) = wasm::f64_eq;
+    fn select_f64_eq_ssi(SelectF64Eq_Ssi) = wasm::f64_eq;
+    fn select_f64_le_sss(SelectF64Le_Sss) = wasm::f64_le;
+    fn select_f64_le_ssi(SelectF64Le_Ssi) = wasm::f64_le;
+    fn select_f64_le_sis(SelectF64Le_Sis) = wasm::f64_le;
+    fn select_f64_lt_sss(SelectF64Lt_Sss) = wasm::f64_lt;
+    fn select_f64_lt_ssi(SelectF64Lt_Ssi) = wasm::f64_lt;
+    fn select_f64_lt_sis(SelectF64Lt_Sis) = wasm::f64_lt;
+}
+
 fn wasmi_i32_div_ssi(lhs: i32, rhs: NonZero<i32>) -> Result<i32, TrapCode> {
     wasm::i32_div_s(lhs, rhs.get())
 }
@@ -1160,62 +1290,4 @@ fn wasmi_f32_not_lt(lhs: f32, rhs: f32) -> bool {
 
 fn wasmi_f64_not_lt(lhs: f64, rhs: f64) -> bool {
     !wasm::f64_lt(lhs, rhs)
-}
-
-fn select_i32_eq_sss(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: *mut u8,
-    mem0_len: usize,
-    instance: NonNull<InstanceEntity>,
-) -> Done {
-    let (
-        ip,
-        decode::SelectI32Eq_Sss {
-            result,
-            val_true,
-            val_false,
-            lhs,
-            rhs,
-        },
-    ) = unsafe { ip.decode() };
-    let lhs = get_value(lhs, sp);
-    let rhs = get_value(rhs, sp);
-    let src = match wasm::i32_eq(lhs, rhs) {
-        true => val_true,
-        false => val_false,
-    };
-    let src: UntypedVal = get_value(src, sp);
-    set_value(sp, result, src);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
-}
-
-fn select_i32_eq_ssi(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: *mut u8,
-    mem0_len: usize,
-    instance: NonNull<InstanceEntity>,
-) -> Done {
-    let (
-        ip,
-        decode::SelectI32Eq_Ssi {
-            result,
-            val_true,
-            val_false,
-            lhs,
-            rhs,
-        },
-    ) = unsafe { ip.decode() };
-    let lhs = get_value(lhs, sp);
-    let rhs = get_value(rhs, sp);
-    let src = match wasm::i32_eq(lhs, rhs) {
-        true => val_true,
-        false => val_false,
-    };
-    let src: UntypedVal = get_value(src, sp);
-    set_value(sp, result, src);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
