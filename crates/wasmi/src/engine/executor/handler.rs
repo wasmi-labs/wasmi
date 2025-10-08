@@ -94,14 +94,6 @@ impl Sp {
         let cell = unsafe { &mut *self.value.add(index) };
         *cell = value.into();
     }
-
-    pub fn get_i32(self, slot: Slot) -> i32 {
-        self.get::<i32>(slot)
-    }
-
-    pub fn set_i32(self, slot: Slot, value: i32) {
-        self.set::<i32>(slot, value)
-    }
 }
 
 type Handler = fn(
