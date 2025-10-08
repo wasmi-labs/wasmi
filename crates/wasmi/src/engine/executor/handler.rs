@@ -461,6 +461,7 @@ macro_rules! handler_binary {
     };
 }
 handler_binary! {
+    // i32
     // i32: commutative
     fn i32_eq_sss(I32Eq_Sss) = wasm::i32_eq;
     fn i32_eq_ssi(I32Eq_Ssi) = wasm::i32_eq;
@@ -521,6 +522,67 @@ handler_binary! {
     fn i32_rotr_sss(I32Rotr_Sss) = wasm::i32_rotr;
     fn i32_rotr_ssi(I32Rotr_Ssi) = wasmi_i32_rotr_ssi;
     fn i32_rotr_sis(I32Rotr_Sis) = wasm::i32_rotr;
+    // i64
+    // i64: commutative
+    fn i64_eq_sss(I64Eq_Sss) = wasm::i64_eq;
+    fn i64_eq_ssi(I64Eq_Ssi) = wasm::i64_eq;
+    fn i64_not_eq_sss(I64NotEq_Sss) = wasm::i64_ne;
+    fn i64_not_eq_ssi(I64NotEq_Ssi) = wasm::i64_ne;
+    fn i64_add_sss(I64Add_Sss) = wasm::i64_add;
+    fn i64_add_ssi(I64Add_Ssi) = wasm::i64_add;
+    fn i64_mul_sss(I64Mul_Sss) = wasm::i64_mul;
+    fn i64_mul_ssi(I64Mul_Ssi) = wasm::i64_mul;
+    fn i64_bitand_sss(I64BitAnd_Sss) = wasm::i64_bitand;
+    fn i64_bitand_ssi(I64BitAnd_Ssi) = wasm::i64_bitand;
+    fn i64_bitor_sss(I64BitOr_Sss) = wasm::i64_bitor;
+    fn i64_bitor_ssi(I64BitOr_Ssi) = wasm::i64_bitor;
+    fn i64_bitxor_sss(I64BitXor_Sss) = wasm::i64_bitxor;
+    fn i64_bitxor_ssi(I64BitXor_Ssi) = wasm::i64_bitxor;
+    // i64: non-commutative
+    fn i64_sub_sss(I64Sub_Sss) = wasm::i64_sub;
+    fn i64_sub_ssi(I64Sub_Ssi) = wasm::i64_sub;
+    fn i64_sub_sis(I64Sub_Sis) = wasm::i64_sub;
+    fn i64_div_sss(I64Div_Sss) = wasm::i64_div_s;
+    fn i64_div_ssi(I64Div_Ssi) = wasmi_i64_div_ssi;
+    fn i64_div_sis(I64Div_Sis) = wasm::i64_div_s;
+    fn u64_div_sss(U64Div_Sss) = wasm::i64_div_u;
+    fn u64_div_ssi(U64Div_Ssi) = wasmi_u64_div_ssi;
+    fn u64_div_sis(U64Div_Sis) = wasm::i64_div_u;
+    fn i64_rem_sss(I64Rem_Sss) = wasm::i64_rem_s;
+    fn i64_rem_ssi(I64Rem_Ssi) = wasmi_i64_rem_ssi;
+    fn i64_rem_sis(I64Rem_Sis) = wasm::i64_rem_s;
+    fn u64_rem_sss(U64Rem_Sss) = wasm::i64_rem_u;
+    fn u64_rem_ssi(U64Rem_Ssi) = wasmi_u64_rem_ssi;
+    fn u64_rem_sis(U64Rem_Sis) = wasm::i64_rem_u;
+    // i64: comparisons
+    fn i64_le_sss(I64Le_Sss) = wasm::i64_le_s;
+    fn i64_le_ssi(I64Le_Ssi) = wasm::i64_le_s;
+    fn i64_le_sis(I64Le_Sis) = wasm::i64_le_s;
+    fn i64_lt_sss(I64Lt_Sss) = wasm::i64_lt_s;
+    fn i64_lt_ssi(I64Lt_Ssi) = wasm::i64_lt_s;
+    fn i64_lt_sis(I64Lt_Sis) = wasm::i64_lt_s;
+    fn u64_le_sss(U64Le_Sss) = wasm::i64_le_u;
+    fn u64_le_ssi(U64Le_Ssi) = wasm::i64_le_u;
+    fn u64_le_sis(U64Le_Sis) = wasm::i64_le_u;
+    fn u64_lt_sss(U64Lt_Sss) = wasm::i64_lt_u;
+    fn u64_lt_ssi(U64Lt_Ssi) = wasm::i64_lt_u;
+    fn u64_lt_sis(U64Lt_Sis) = wasm::i64_lt_u;
+    // i64: shift + rotate
+    fn i64_shl_sss(I64Shl_Sss) = wasm::i64_shl;
+    fn i64_shl_ssi(I64Shl_Ssi) = wasmi_i64_shl_ssi;
+    fn i64_shl_sis(I64Shl_Sis) = wasm::i64_shl;
+    fn i64_shr_sss(I64Shr_Sss) = wasm::i64_shr_s;
+    fn i64_shr_ssi(I64Shr_Ssi) = wasmi_i64_shr_ssi;
+    fn i64_shr_sis(I64Shr_Sis) = wasm::i64_shr_s;
+    fn u64_shr_sss(U64Shr_Sss) = wasm::i64_shr_u;
+    fn u64_shr_ssi(U64Shr_Ssi) = wasmi_u64_shr_ssi;
+    fn u64_shr_sis(U64Shr_Sis) = wasm::i64_shr_u;
+    fn i64_rotl_sss(I64Rotl_Sss) = wasm::i64_rotl;
+    fn i64_rotl_ssi(I64Rotl_Ssi) = wasmi_i64_rotl_ssi;
+    fn i64_rotl_sis(I64Rotl_Sis) = wasm::i64_rotl;
+    fn i64_rotr_sss(I64Rotr_Sss) = wasm::i64_rotr;
+    fn i64_rotr_ssi(I64Rotr_Ssi) = wasmi_i64_rotr_ssi;
+    fn i64_rotr_sis(I64Rotr_Sis) = wasm::i64_rotr;
 }
 
 fn wasmi_i32_div_ssi(lhs: i32, rhs: NonZero<i32>) -> Result<i32, TrapCode> {
@@ -573,6 +635,26 @@ fn wasmi_i32_rotl_ssi(lhs: i32, rhs: u8) -> i32 {
 
 fn wasmi_i32_rotr_ssi(lhs: i32, rhs: u8) -> i32 {
     wasm::i32_rotr(lhs, i32::from(rhs))
+}
+
+fn wasmi_i64_shl_ssi(lhs: i64, rhs: u8) -> i64 {
+    wasm::i64_shl(lhs, i64::from(rhs))
+}
+
+fn wasmi_i64_shr_ssi(lhs: i64, rhs: u8) -> i64 {
+    wasm::i64_shr_s(lhs, i64::from(rhs))
+}
+
+fn wasmi_u64_shr_ssi(lhs: u64, rhs: u8) -> u64 {
+    wasm::i64_shr_u(lhs, u64::from(rhs))
+}
+
+fn wasmi_i64_rotl_ssi(lhs: i64, rhs: u8) -> i64 {
+    wasm::i64_rotl(lhs, i64::from(rhs))
+}
+
+fn wasmi_i64_rotr_ssi(lhs: i64, rhs: u8) -> i64 {
+    wasm::i64_rotr(lhs, i64::from(rhs))
 }
 
 fn branch_i32_eq_ss(
