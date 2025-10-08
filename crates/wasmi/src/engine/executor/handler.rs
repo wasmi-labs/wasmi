@@ -303,8 +303,16 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         // i32
         OpCode::I32Eq_Sss => i32_eq_sss,
         OpCode::I32Eq_Ssi => i32_eq_ssi,
+        OpCode::I32And_Sss => i32_and_sss,
+        OpCode::I32And_Ssi => i32_and_ssi,
+        OpCode::I32Or_Sss => i32_or_sss,
+        OpCode::I32Or_Ssi => i32_or_ssi,
         OpCode::I32NotEq_Sss => i32_not_eq_sss,
         OpCode::I32NotEq_Ssi => i32_not_eq_ssi,
+        OpCode::I32NotAnd_Sss => i32_not_and_sss,
+        OpCode::I32NotAnd_Ssi => i32_not_and_ssi,
+        OpCode::I32NotOr_Sss => i32_not_or_sss,
+        OpCode::I32NotOr_Ssi => i32_not_or_ssi,
         OpCode::I32Add_Sss => i32_add_sss,
         OpCode::I32Add_Ssi => i32_add_ssi,
         OpCode::I32Mul_Sss => i32_mul_sss,
@@ -361,8 +369,16 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         // i64
         OpCode::I64Eq_Sss => i64_eq_sss,
         OpCode::I64Eq_Ssi => i64_eq_ssi,
+        OpCode::I64And_Sss => i64_and_sss,
+        OpCode::I64And_Ssi => i64_and_ssi,
+        OpCode::I64Or_Sss => i64_or_sss,
+        OpCode::I64Or_Ssi => i64_or_ssi,
         OpCode::I64NotEq_Sss => i64_not_eq_sss,
         OpCode::I64NotEq_Ssi => i64_not_eq_ssi,
+        OpCode::I64NotAnd_Sss => i64_not_and_sss,
+        OpCode::I64NotAnd_Ssi => i64_not_and_ssi,
+        OpCode::I64NotOr_Sss => i64_not_or_sss,
+        OpCode::I64NotOr_Ssi => i64_not_or_ssi,
         OpCode::I64Add_Sss => i64_add_sss,
         OpCode::I64Add_Ssi => i64_add_ssi,
         OpCode::I64Mul_Sss => i64_mul_sss,
@@ -523,8 +539,16 @@ handler_binary! {
     // i32: commutative
     fn i32_eq_sss(I32Eq_Sss) = wasm::i32_eq;
     fn i32_eq_ssi(I32Eq_Ssi) = wasm::i32_eq;
+    fn i32_and_sss(I32And_Sss) = wasmi_i32_and;
+    fn i32_and_ssi(I32And_Ssi) = wasmi_i32_and;
+    fn i32_or_sss(I32Or_Sss) = wasmi_i32_or;
+    fn i32_or_ssi(I32Or_Ssi) = wasmi_i32_or;
     fn i32_not_eq_sss(I32NotEq_Sss) = wasm::i32_ne;
     fn i32_not_eq_ssi(I32NotEq_Ssi) = wasm::i32_ne;
+    fn i32_not_and_sss(I32NotAnd_Sss) = wasmi_i32_not_and;
+    fn i32_not_and_ssi(I32NotAnd_Ssi) = wasmi_i32_not_and;
+    fn i32_not_or_sss(I32NotOr_Sss) = wasmi_i32_not_or;
+    fn i32_not_or_ssi(I32NotOr_Ssi) = wasmi_i32_not_or;
     fn i32_add_sss(I32Add_Sss) = wasm::i32_add;
     fn i32_add_ssi(I32Add_Ssi) = wasm::i32_add;
     fn i32_mul_sss(I32Mul_Sss) = wasm::i32_mul;
@@ -584,6 +608,14 @@ handler_binary! {
     // i64: commutative
     fn i64_eq_sss(I64Eq_Sss) = wasm::i64_eq;
     fn i64_eq_ssi(I64Eq_Ssi) = wasm::i64_eq;
+    fn i64_and_sss(I64And_Sss) = wasmi_i64_and;
+    fn i64_and_ssi(I64And_Ssi) = wasmi_i64_and;
+    fn i64_or_sss(I64Or_Sss) = wasmi_i64_or;
+    fn i64_or_ssi(I64Or_Ssi) = wasmi_i64_or;
+    fn i64_not_and_sss(I64NotAnd_Sss) = wasmi_i64_not_and;
+    fn i64_not_and_ssi(I64NotAnd_Ssi) = wasmi_i64_not_and;
+    fn i64_not_or_sss(I64NotOr_Sss) = wasmi_i64_not_or;
+    fn i64_not_or_ssi(I64NotOr_Ssi) = wasmi_i64_not_or;
     fn i64_not_eq_sss(I64NotEq_Sss) = wasm::i64_ne;
     fn i64_not_eq_ssi(I64NotEq_Ssi) = wasm::i64_ne;
     fn i64_add_sss(I64Add_Sss) = wasm::i64_add;
@@ -713,6 +745,38 @@ fn wasmi_i64_rotl_ssi(lhs: i64, rhs: u8) -> i64 {
 
 fn wasmi_i64_rotr_ssi(lhs: i64, rhs: u8) -> i64 {
     wasm::i64_rotr(lhs, i64::from(rhs))
+}
+
+fn wasmi_i32_and(lhs: i32, rhs: i32) -> bool {
+    (lhs != 0) && (rhs != 0)
+}
+
+fn wasmi_i32_not_and(lhs: i32, rhs: i32) -> bool {
+    !wasmi_i32_and(lhs, rhs)
+}
+
+fn wasmi_i32_or(lhs: i32, rhs: i32) -> bool {
+    (lhs != 0) || (rhs != 0)
+}
+
+fn wasmi_i32_not_or(lhs: i32, rhs: i32) -> bool {
+    !wasmi_i32_or(lhs, rhs)
+}
+
+fn wasmi_i64_and(lhs: i64, rhs: i64) -> bool {
+    (lhs != 0) && (rhs != 0)
+}
+
+fn wasmi_i64_not_and(lhs: i64, rhs: i64) -> bool {
+    !wasmi_i64_and(lhs, rhs)
+}
+
+fn wasmi_i64_or(lhs: i64, rhs: i64) -> bool {
+    (lhs != 0) || (rhs != 0)
+}
+
+fn wasmi_i64_not_or(lhs: i64, rhs: i64) -> bool {
+    !wasmi_i64_or(lhs, rhs)
 }
 
 fn branch_i32_eq_ss(
