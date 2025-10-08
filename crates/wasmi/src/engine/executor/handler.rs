@@ -511,6 +511,87 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::F64NotLe_Sss => f64_not_le_sss,
         OpCode::F64NotLe_Ssi => f64_not_le_ssi,
         OpCode::F64NotLe_Sis => f64_not_le_sis,
+        // cmp+branch
+        OpCode::BranchI32Eq_Ss => branch_i32_eq_ss,
+        OpCode::BranchI32Eq_Si => branch_i32_eq_si,
+        OpCode::BranchI32And_Ss => branch_i32_and_ss,
+        OpCode::BranchI32And_Si => branch_i32_and_si,
+        OpCode::BranchI32Or_Ss => branch_i32_or_ss,
+        OpCode::BranchI32Or_Si => branch_i32_or_si,
+        OpCode::BranchI32NotEq_Ss => branch_i32_not_eq_ss,
+        OpCode::BranchI32NotEq_Si => branch_i32_not_eq_si,
+        OpCode::BranchI32NotAnd_Ss => branch_i32_not_and_ss,
+        OpCode::BranchI32NotAnd_Si => branch_i32_not_and_si,
+        OpCode::BranchI32NotOr_Ss => branch_i32_not_or_ss,
+        OpCode::BranchI32NotOr_Si => branch_i32_not_or_si,
+        OpCode::BranchI32Le_Ss => branch_i32_le_ss,
+        OpCode::BranchI32Le_Si => branch_i32_le_si,
+        OpCode::BranchI32Le_Is => branch_i32_le_is,
+        OpCode::BranchI32Lt_Ss => branch_i32_lt_ss,
+        OpCode::BranchI32Lt_Si => branch_i32_lt_si,
+        OpCode::BranchI32Lt_Is => branch_i32_lt_is,
+        OpCode::BranchU32Le_Ss => branch_u32_le_ss,
+        OpCode::BranchU32Le_Si => branch_u32_le_si,
+        OpCode::BranchU32Le_Is => branch_u32_le_is,
+        OpCode::BranchU32Lt_Ss => branch_u32_lt_ss,
+        OpCode::BranchU32Lt_Si => branch_u32_lt_si,
+        OpCode::BranchU32Lt_Is => branch_u32_lt_is,
+        OpCode::BranchI64Eq_Ss => branch_i64_eq_ss,
+        OpCode::BranchI64Eq_Si => branch_i64_eq_si,
+        OpCode::BranchI64And_Ss => branch_i64_and_ss,
+        OpCode::BranchI64And_Si => branch_i64_and_si,
+        OpCode::BranchI64Or_Ss => branch_i64_or_ss,
+        OpCode::BranchI64Or_Si => branch_i64_or_si,
+        OpCode::BranchI64NotEq_Ss => branch_i64_not_eq_ss,
+        OpCode::BranchI64NotEq_Si => branch_i64_not_eq_si,
+        OpCode::BranchI64NotAnd_Ss => branch_i64_not_and_ss,
+        OpCode::BranchI64NotAnd_Si => branch_i64_not_and_si,
+        OpCode::BranchI64NotOr_Ss => branch_i64_not_or_ss,
+        OpCode::BranchI64NotOr_Si => branch_i64_not_or_si,
+        OpCode::BranchI64Le_Ss => branch_i64_le_ss,
+        OpCode::BranchI64Le_Si => branch_i64_le_si,
+        OpCode::BranchI64Le_Is => branch_i64_le_is,
+        OpCode::BranchI64Lt_Ss => branch_i64_lt_ss,
+        OpCode::BranchI64Lt_Si => branch_i64_lt_si,
+        OpCode::BranchI64Lt_Is => branch_i64_lt_is,
+        OpCode::BranchU64Le_Ss => branch_u64_le_ss,
+        OpCode::BranchU64Le_Si => branch_u64_le_si,
+        OpCode::BranchU64Le_Is => branch_u64_le_is,
+        OpCode::BranchU64Lt_Ss => branch_u64_lt_ss,
+        OpCode::BranchU64Lt_Si => branch_u64_lt_si,
+        OpCode::BranchU64Lt_Is => branch_u64_lt_is,
+        OpCode::BranchF32Eq_Ss => branch_f32_eq_ss,
+        OpCode::BranchF32Eq_Si => branch_f32_eq_si,
+        OpCode::BranchF32Le_Ss => branch_f32_le_ss,
+        OpCode::BranchF32Le_Si => branch_f32_le_si,
+        OpCode::BranchF32Le_Is => branch_f32_le_is,
+        OpCode::BranchF32Lt_Ss => branch_f32_lt_ss,
+        OpCode::BranchF32Lt_Si => branch_f32_lt_si,
+        OpCode::BranchF32Lt_Is => branch_f32_lt_is,
+        OpCode::BranchF32NotEq_Ss => branch_f32_not_eq_ss,
+        OpCode::BranchF32NotEq_Si => branch_f32_not_eq_si,
+        OpCode::BranchF32NotLe_Ss => branch_f32_not_le_ss,
+        OpCode::BranchF32NotLe_Si => branch_f32_not_le_si,
+        OpCode::BranchF32NotLe_Is => branch_f32_not_le_is,
+        OpCode::BranchF32NotLt_Ss => branch_f32_not_lt_ss,
+        OpCode::BranchF32NotLt_Si => branch_f32_not_lt_si,
+        OpCode::BranchF32NotLt_Is => branch_f32_not_lt_is,
+        OpCode::BranchF64Eq_Ss => branch_f64_eq_ss,
+        OpCode::BranchF64Eq_Si => branch_f64_eq_si,
+        OpCode::BranchF64Le_Ss => branch_f64_le_ss,
+        OpCode::BranchF64Le_Si => branch_f64_le_si,
+        OpCode::BranchF64Le_Is => branch_f64_le_is,
+        OpCode::BranchF64Lt_Ss => branch_f64_lt_ss,
+        OpCode::BranchF64Lt_Si => branch_f64_lt_si,
+        OpCode::BranchF64Lt_Is => branch_f64_lt_is,
+        OpCode::BranchF64NotEq_Ss => branch_f64_not_eq_ss,
+        OpCode::BranchF64NotEq_Si => branch_f64_not_eq_si,
+        OpCode::BranchF64NotLe_Ss => branch_f64_not_le_ss,
+        OpCode::BranchF64NotLe_Si => branch_f64_not_le_si,
+        OpCode::BranchF64NotLe_Is => branch_f64_not_le_is,
+        OpCode::BranchF64NotLt_Ss => branch_f64_not_lt_ss,
+        OpCode::BranchF64NotLt_Si => branch_f64_not_lt_si,
+        OpCode::BranchF64NotLt_Is => branch_f64_not_lt_is,
         _ => todo!(),
     }
 }
@@ -835,6 +916,116 @@ handler_binary! {
     fn f64_not_le_sis(F64NotLe_Sis) = wasmi_f64_not_le;
 }
 
+macro_rules! handler_cmp_branch {
+    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { ip.decode() };
+                let lhs = get_value(lhs, sp);
+                let rhs = get_value(rhs, sp);
+                let ip = match $eval(lhs, rhs) {
+                    true => unsafe { ip.offset(i32::from(offset) as isize) },
+                    false => next_ip,
+                };
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_cmp_branch! {
+    // i32
+    fn branch_i32_eq_ss(BranchI32Eq_Ss) = wasm::i32_eq;
+    fn branch_i32_eq_si(BranchI32Eq_Si) = wasm::i32_eq;
+    fn branch_i32_and_ss(BranchI32And_Ss) = wasmi_i32_and;
+    fn branch_i32_and_si(BranchI32And_Si) = wasmi_i32_and;
+    fn branch_i32_or_ss(BranchI32Or_Ss) = wasmi_i32_or;
+    fn branch_i32_or_si(BranchI32Or_Si) = wasmi_i32_or;
+    fn branch_i32_not_eq_ss(BranchI32NotEq_Ss) = wasm::i32_ne;
+    fn branch_i32_not_eq_si(BranchI32NotEq_Si) = wasm::i32_ne;
+    fn branch_i32_not_and_ss(BranchI32NotAnd_Ss) = wasmi_i32_not_and;
+    fn branch_i32_not_and_si(BranchI32NotAnd_Si) = wasmi_i32_not_and;
+    fn branch_i32_not_or_ss(BranchI32NotOr_Ss) = wasmi_i32_not_or;
+    fn branch_i32_not_or_si(BranchI32NotOr_Si) = wasmi_i32_not_or;
+    fn branch_i32_le_ss(BranchI32Le_Ss) = wasm::i32_le_s;
+    fn branch_i32_le_si(BranchI32Le_Si) = wasm::i32_le_s;
+    fn branch_i32_le_is(BranchI32Le_Is) = wasm::i32_le_s;
+    fn branch_i32_lt_ss(BranchI32Lt_Ss) = wasm::i32_lt_s;
+    fn branch_i32_lt_si(BranchI32Lt_Si) = wasm::i32_lt_s;
+    fn branch_i32_lt_is(BranchI32Lt_Is) = wasm::i32_lt_s;
+    fn branch_u32_le_ss(BranchU32Le_Ss) = wasm::i32_le_u;
+    fn branch_u32_le_si(BranchU32Le_Si) = wasm::i32_le_u;
+    fn branch_u32_le_is(BranchU32Le_Is) = wasm::i32_le_u;
+    fn branch_u32_lt_ss(BranchU32Lt_Ss) = wasm::i32_lt_u;
+    fn branch_u32_lt_si(BranchU32Lt_Si) = wasm::i32_lt_u;
+    fn branch_u32_lt_is(BranchU32Lt_Is) = wasm::i32_lt_u;
+    // i64
+    fn branch_i64_eq_ss(BranchI64Eq_Ss) = wasm::i64_eq;
+    fn branch_i64_eq_si(BranchI64Eq_Si) = wasm::i64_eq;
+    fn branch_i64_and_ss(BranchI64And_Ss) = wasmi_i64_and;
+    fn branch_i64_and_si(BranchI64And_Si) = wasmi_i64_and;
+    fn branch_i64_or_ss(BranchI64Or_Ss) = wasmi_i64_or;
+    fn branch_i64_or_si(BranchI64Or_Si) = wasmi_i64_or;
+    fn branch_i64_not_eq_ss(BranchI64NotEq_Ss) = wasm::i64_ne;
+    fn branch_i64_not_eq_si(BranchI64NotEq_Si) = wasm::i64_ne;
+    fn branch_i64_not_and_ss(BranchI64NotAnd_Ss) = wasmi_i64_not_and;
+    fn branch_i64_not_and_si(BranchI64NotAnd_Si) = wasmi_i64_not_and;
+    fn branch_i64_not_or_ss(BranchI64NotOr_Ss) = wasmi_i64_not_or;
+    fn branch_i64_not_or_si(BranchI64NotOr_Si) = wasmi_i64_not_or;
+    fn branch_i64_le_ss(BranchI64Le_Ss) = wasm::i64_le_s;
+    fn branch_i64_le_si(BranchI64Le_Si) = wasm::i64_le_s;
+    fn branch_i64_le_is(BranchI64Le_Is) = wasm::i64_le_s;
+    fn branch_i64_lt_ss(BranchI64Lt_Ss) = wasm::i64_lt_s;
+    fn branch_i64_lt_si(BranchI64Lt_Si) = wasm::i64_lt_s;
+    fn branch_i64_lt_is(BranchI64Lt_Is) = wasm::i64_lt_s;
+    fn branch_u64_le_ss(BranchU64Le_Ss) = wasm::i64_le_u;
+    fn branch_u64_le_si(BranchU64Le_Si) = wasm::i64_le_u;
+    fn branch_u64_le_is(BranchU64Le_Is) = wasm::i64_le_u;
+    fn branch_u64_lt_ss(BranchU64Lt_Ss) = wasm::i64_lt_u;
+    fn branch_u64_lt_si(BranchU64Lt_Si) = wasm::i64_lt_u;
+    fn branch_u64_lt_is(BranchU64Lt_Is) = wasm::i64_lt_u;
+    // f32
+    fn branch_f32_eq_ss(BranchF32Eq_Ss) = wasm::f32_eq;
+    fn branch_f32_eq_si(BranchF32Eq_Si) = wasm::f32_eq;
+    fn branch_f32_le_ss(BranchF32Le_Ss) = wasm::f32_le;
+    fn branch_f32_le_si(BranchF32Le_Si) = wasm::f32_le;
+    fn branch_f32_le_is(BranchF32Le_Is) = wasm::f32_le;
+    fn branch_f32_lt_ss(BranchF32Lt_Ss) = wasm::f32_lt;
+    fn branch_f32_lt_si(BranchF32Lt_Si) = wasm::f32_lt;
+    fn branch_f32_lt_is(BranchF32Lt_Is) = wasm::f32_lt;
+    fn branch_f32_not_eq_ss(BranchF32NotEq_Ss) = wasm::f32_ne;
+    fn branch_f32_not_eq_si(BranchF32NotEq_Si) = wasm::f32_ne;
+    fn branch_f32_not_le_ss(BranchF32NotLe_Ss) = wasmi_f32_not_le;
+    fn branch_f32_not_le_si(BranchF32NotLe_Si) = wasmi_f32_not_le;
+    fn branch_f32_not_le_is(BranchF32NotLe_Is) = wasmi_f32_not_le;
+    fn branch_f32_not_lt_ss(BranchF32NotLt_Ss) = wasmi_f32_not_lt;
+    fn branch_f32_not_lt_si(BranchF32NotLt_Si) = wasmi_f32_not_lt;
+    fn branch_f32_not_lt_is(BranchF32NotLt_Is) = wasmi_f32_not_lt;
+    // f64
+    fn branch_f64_eq_ss(BranchF64Eq_Ss) = wasm::f64_eq;
+    fn branch_f64_eq_si(BranchF64Eq_Si) = wasm::f64_eq;
+    fn branch_f64_le_ss(BranchF64Le_Ss) = wasm::f64_le;
+    fn branch_f64_le_si(BranchF64Le_Si) = wasm::f64_le;
+    fn branch_f64_le_is(BranchF64Le_Is) = wasm::f64_le;
+    fn branch_f64_lt_ss(BranchF64Lt_Ss) = wasm::f64_lt;
+    fn branch_f64_lt_si(BranchF64Lt_Si) = wasm::f64_lt;
+    fn branch_f64_lt_is(BranchF64Lt_Is) = wasm::f64_lt;
+    fn branch_f64_not_eq_ss(BranchF64NotEq_Ss) = wasm::f64_ne;
+    fn branch_f64_not_eq_si(BranchF64NotEq_Si) = wasm::f64_ne;
+    fn branch_f64_not_le_ss(BranchF64NotLe_Ss) = wasmi_f64_not_le;
+    fn branch_f64_not_le_si(BranchF64NotLe_Si) = wasmi_f64_not_le;
+    fn branch_f64_not_le_is(BranchF64NotLe_Is) = wasmi_f64_not_le;
+    fn branch_f64_not_lt_ss(BranchF64NotLt_Ss) = wasmi_f64_not_lt;
+    fn branch_f64_not_lt_si(BranchF64NotLt_Si) = wasmi_f64_not_lt;
+    fn branch_f64_not_lt_is(BranchF64NotLt_Is) = wasmi_f64_not_lt;
+}
+
 fn wasmi_i32_div_ssi(lhs: i32, rhs: NonZero<i32>) -> Result<i32, TrapCode> {
     wasm::i32_div_s(lhs, rhs.get())
 }
@@ -969,42 +1160,6 @@ fn wasmi_f32_not_lt(lhs: f32, rhs: f32) -> bool {
 
 fn wasmi_f64_not_lt(lhs: f64, rhs: f64) -> bool {
     !wasm::f64_lt(lhs, rhs)
-}
-
-fn branch_i32_eq_ss(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: *mut u8,
-    mem0_len: usize,
-    instance: NonNull<InstanceEntity>,
-) -> Done {
-    let (next_ip, decode::BranchI32Eq_Ss { offset, lhs, rhs }) = unsafe { ip.decode() };
-    let lhs = get_value(lhs, sp);
-    let rhs = get_value(rhs, sp);
-    let ip = match wasm::i32_eq(lhs, rhs) {
-        true => unsafe { ip.offset(i32::from(offset) as isize) },
-        false => next_ip,
-    };
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
-}
-
-fn branch_i32_eq_si(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: *mut u8,
-    mem0_len: usize,
-    instance: NonNull<InstanceEntity>,
-) -> Done {
-    let (next_ip, decode::BranchI32Eq_Si { offset, lhs, rhs }) = unsafe { ip.decode() };
-    let lhs = get_value(lhs, sp);
-    let rhs = get_value(rhs, sp);
-    let ip = match wasm::i32_eq(lhs, rhs) {
-        true => unsafe { ip.offset(i32::from(offset) as isize) },
-        false => next_ip,
-    };
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 fn select_i32_eq_sss(
