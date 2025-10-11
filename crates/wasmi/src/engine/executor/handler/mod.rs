@@ -14,7 +14,6 @@ use crate::{
 use alloc::boxed::Box;
 use core::{
     num::NonZero,
-    ops::{Div, Rem},
     ptr::{self, NonNull},
 };
 
@@ -745,16 +744,16 @@ handler_binary! {
     // i32: commutative
     fn i32_eq_sss(I32Eq_Sss) = wasm::i32_eq;
     fn i32_eq_ssi(I32Eq_Ssi) = wasm::i32_eq;
-    fn i32_and_sss(I32And_Sss) = wasmi_i32_and;
-    fn i32_and_ssi(I32And_Ssi) = wasmi_i32_and;
-    fn i32_or_sss(I32Or_Sss) = wasmi_i32_or;
-    fn i32_or_ssi(I32Or_Ssi) = wasmi_i32_or;
+    fn i32_and_sss(I32And_Sss) = eval::wasmi_i32_and;
+    fn i32_and_ssi(I32And_Ssi) = eval::wasmi_i32_and;
+    fn i32_or_sss(I32Or_Sss) = eval::wasmi_i32_or;
+    fn i32_or_ssi(I32Or_Ssi) = eval::wasmi_i32_or;
     fn i32_not_eq_sss(I32NotEq_Sss) = wasm::i32_ne;
     fn i32_not_eq_ssi(I32NotEq_Ssi) = wasm::i32_ne;
-    fn i32_not_and_sss(I32NotAnd_Sss) = wasmi_i32_not_and;
-    fn i32_not_and_ssi(I32NotAnd_Ssi) = wasmi_i32_not_and;
-    fn i32_not_or_sss(I32NotOr_Sss) = wasmi_i32_not_or;
-    fn i32_not_or_ssi(I32NotOr_Ssi) = wasmi_i32_not_or;
+    fn i32_not_and_sss(I32NotAnd_Sss) = eval::wasmi_i32_not_and;
+    fn i32_not_and_ssi(I32NotAnd_Ssi) = eval::wasmi_i32_not_and;
+    fn i32_not_or_sss(I32NotOr_Sss) = eval::wasmi_i32_not_or;
+    fn i32_not_or_ssi(I32NotOr_Ssi) = eval::wasmi_i32_not_or;
     fn i32_add_sss(I32Add_Sss) = wasm::i32_add;
     fn i32_add_ssi(I32Add_Ssi) = wasm::i32_add;
     fn i32_mul_sss(I32Mul_Sss) = wasm::i32_mul;
@@ -770,16 +769,16 @@ handler_binary! {
     fn i32_sub_ssi(I32Sub_Ssi) = wasm::i32_sub;
     fn i32_sub_sis(I32Sub_Sis) = wasm::i32_sub;
     fn i32_div_sss(I32Div_Sss) = wasm::i32_div_s;
-    fn i32_div_ssi(I32Div_Ssi) = wasmi_i32_div_ssi;
+    fn i32_div_ssi(I32Div_Ssi) = eval::wasmi_i32_div_ssi;
     fn i32_div_sis(I32Div_Sis) = wasm::i32_div_s;
     fn u32_div_sss(U32Div_Sss) = wasm::i32_div_u;
-    fn u32_div_ssi(U32Div_Ssi) = wasmi_u32_div_ssi;
+    fn u32_div_ssi(U32Div_Ssi) = eval::wasmi_u32_div_ssi;
     fn u32_div_sis(U32Div_Sis) = wasm::i32_div_u;
     fn i32_rem_sss(I32Rem_Sss) = wasm::i32_rem_s;
-    fn i32_rem_ssi(I32Rem_Ssi) = wasmi_i32_rem_ssi;
+    fn i32_rem_ssi(I32Rem_Ssi) = eval::wasmi_i32_rem_ssi;
     fn i32_rem_sis(I32Rem_Sis) = wasm::i32_rem_s;
     fn u32_rem_sss(U32Rem_Sss) = wasm::i32_rem_u;
-    fn u32_rem_ssi(U32Rem_Ssi) = wasmi_u32_rem_ssi;
+    fn u32_rem_ssi(U32Rem_Ssi) = eval::wasmi_u32_rem_ssi;
     fn u32_rem_sis(U32Rem_Sis) = wasm::i32_rem_u;
     // i32: comparisons
     fn i32_le_sss(I32Le_Sss) = wasm::i32_le_s;
@@ -796,32 +795,32 @@ handler_binary! {
     fn u32_lt_sis(U32Lt_Sis) = wasm::i32_lt_u;
     // i32: shift + rotate
     fn i32_shl_sss(I32Shl_Sss) = wasm::i32_shl;
-    fn i32_shl_ssi(I32Shl_Ssi) = wasmi_i32_shl_ssi;
+    fn i32_shl_ssi(I32Shl_Ssi) = eval::wasmi_i32_shl_ssi;
     fn i32_shl_sis(I32Shl_Sis) = wasm::i32_shl;
     fn i32_shr_sss(I32Shr_Sss) = wasm::i32_shr_s;
-    fn i32_shr_ssi(I32Shr_Ssi) = wasmi_i32_shr_ssi;
+    fn i32_shr_ssi(I32Shr_Ssi) = eval::wasmi_i32_shr_ssi;
     fn i32_shr_sis(I32Shr_Sis) = wasm::i32_shr_s;
     fn u32_shr_sss(U32Shr_Sss) = wasm::i32_shr_u;
-    fn u32_shr_ssi(U32Shr_Ssi) = wasmi_u32_shr_ssi;
+    fn u32_shr_ssi(U32Shr_Ssi) = eval::wasmi_u32_shr_ssi;
     fn u32_shr_sis(U32Shr_Sis) = wasm::i32_shr_u;
     fn i32_rotl_sss(I32Rotl_Sss) = wasm::i32_rotl;
-    fn i32_rotl_ssi(I32Rotl_Ssi) = wasmi_i32_rotl_ssi;
+    fn i32_rotl_ssi(I32Rotl_Ssi) = eval::wasmi_i32_rotl_ssi;
     fn i32_rotl_sis(I32Rotl_Sis) = wasm::i32_rotl;
     fn i32_rotr_sss(I32Rotr_Sss) = wasm::i32_rotr;
-    fn i32_rotr_ssi(I32Rotr_Ssi) = wasmi_i32_rotr_ssi;
+    fn i32_rotr_ssi(I32Rotr_Ssi) = eval::wasmi_i32_rotr_ssi;
     fn i32_rotr_sis(I32Rotr_Sis) = wasm::i32_rotr;
     // i64
     // i64: commutative
     fn i64_eq_sss(I64Eq_Sss) = wasm::i64_eq;
     fn i64_eq_ssi(I64Eq_Ssi) = wasm::i64_eq;
-    fn i64_and_sss(I64And_Sss) = wasmi_i64_and;
-    fn i64_and_ssi(I64And_Ssi) = wasmi_i64_and;
-    fn i64_or_sss(I64Or_Sss) = wasmi_i64_or;
-    fn i64_or_ssi(I64Or_Ssi) = wasmi_i64_or;
-    fn i64_not_and_sss(I64NotAnd_Sss) = wasmi_i64_not_and;
-    fn i64_not_and_ssi(I64NotAnd_Ssi) = wasmi_i64_not_and;
-    fn i64_not_or_sss(I64NotOr_Sss) = wasmi_i64_not_or;
-    fn i64_not_or_ssi(I64NotOr_Ssi) = wasmi_i64_not_or;
+    fn i64_and_sss(I64And_Sss) = eval::wasmi_i64_and;
+    fn i64_and_ssi(I64And_Ssi) = eval::wasmi_i64_and;
+    fn i64_or_sss(I64Or_Sss) = eval::wasmi_i64_or;
+    fn i64_or_ssi(I64Or_Ssi) = eval::wasmi_i64_or;
+    fn i64_not_and_sss(I64NotAnd_Sss) = eval::wasmi_i64_not_and;
+    fn i64_not_and_ssi(I64NotAnd_Ssi) = eval::wasmi_i64_not_and;
+    fn i64_not_or_sss(I64NotOr_Sss) = eval::wasmi_i64_not_or;
+    fn i64_not_or_ssi(I64NotOr_Ssi) = eval::wasmi_i64_not_or;
     fn i64_not_eq_sss(I64NotEq_Sss) = wasm::i64_ne;
     fn i64_not_eq_ssi(I64NotEq_Ssi) = wasm::i64_ne;
     fn i64_add_sss(I64Add_Sss) = wasm::i64_add;
@@ -839,16 +838,16 @@ handler_binary! {
     fn i64_sub_ssi(I64Sub_Ssi) = wasm::i64_sub;
     fn i64_sub_sis(I64Sub_Sis) = wasm::i64_sub;
     fn i64_div_sss(I64Div_Sss) = wasm::i64_div_s;
-    fn i64_div_ssi(I64Div_Ssi) = wasmi_i64_div_ssi;
+    fn i64_div_ssi(I64Div_Ssi) = eval::wasmi_i64_div_ssi;
     fn i64_div_sis(I64Div_Sis) = wasm::i64_div_s;
     fn u64_div_sss(U64Div_Sss) = wasm::i64_div_u;
-    fn u64_div_ssi(U64Div_Ssi) = wasmi_u64_div_ssi;
+    fn u64_div_ssi(U64Div_Ssi) = eval::wasmi_u64_div_ssi;
     fn u64_div_sis(U64Div_Sis) = wasm::i64_div_u;
     fn i64_rem_sss(I64Rem_Sss) = wasm::i64_rem_s;
-    fn i64_rem_ssi(I64Rem_Ssi) = wasmi_i64_rem_ssi;
+    fn i64_rem_ssi(I64Rem_Ssi) = eval::wasmi_i64_rem_ssi;
     fn i64_rem_sis(I64Rem_Sis) = wasm::i64_rem_s;
     fn u64_rem_sss(U64Rem_Sss) = wasm::i64_rem_u;
-    fn u64_rem_ssi(U64Rem_Ssi) = wasmi_u64_rem_ssi;
+    fn u64_rem_ssi(U64Rem_Ssi) = eval::wasmi_u64_rem_ssi;
     fn u64_rem_sis(U64Rem_Sis) = wasm::i64_rem_u;
     // i64: comparisons
     fn i64_le_sss(I64Le_Sss) = wasm::i64_le_s;
@@ -865,19 +864,19 @@ handler_binary! {
     fn u64_lt_sis(U64Lt_Sis) = wasm::i64_lt_u;
     // i64: shift + rotate
     fn i64_shl_sss(I64Shl_Sss) = wasm::i64_shl;
-    fn i64_shl_ssi(I64Shl_Ssi) = wasmi_i64_shl_ssi;
+    fn i64_shl_ssi(I64Shl_Ssi) = eval::wasmi_i64_shl_ssi;
     fn i64_shl_sis(I64Shl_Sis) = wasm::i64_shl;
     fn i64_shr_sss(I64Shr_Sss) = wasm::i64_shr_s;
-    fn i64_shr_ssi(I64Shr_Ssi) = wasmi_i64_shr_ssi;
+    fn i64_shr_ssi(I64Shr_Ssi) = eval::wasmi_i64_shr_ssi;
     fn i64_shr_sis(I64Shr_Sis) = wasm::i64_shr_s;
     fn u64_shr_sss(U64Shr_Sss) = wasm::i64_shr_u;
-    fn u64_shr_ssi(U64Shr_Ssi) = wasmi_u64_shr_ssi;
+    fn u64_shr_ssi(U64Shr_Ssi) = eval::wasmi_u64_shr_ssi;
     fn u64_shr_sis(U64Shr_Sis) = wasm::i64_shr_u;
     fn i64_rotl_sss(I64Rotl_Sss) = wasm::i64_rotl;
-    fn i64_rotl_ssi(I64Rotl_Ssi) = wasmi_i64_rotl_ssi;
+    fn i64_rotl_ssi(I64Rotl_Ssi) = eval::wasmi_i64_rotl_ssi;
     fn i64_rotl_sis(I64Rotl_Sis) = wasm::i64_rotl;
     fn i64_rotr_sss(I64Rotr_Sss) = wasm::i64_rotr;
-    fn i64_rotr_ssi(I64Rotr_Ssi) = wasmi_i64_rotr_ssi;
+    fn i64_rotr_ssi(I64Rotr_Ssi) = eval::wasmi_i64_rotr_ssi;
     fn i64_rotr_sis(I64Rotr_Sis) = wasm::i64_rotr;
     // f32
     // f32: binary
@@ -900,7 +899,7 @@ handler_binary! {
     fn f32_max_ssi(F32Max_Ssi) = wasm::f32_max;
     fn f32_max_sis(F32Max_Sis) = wasm::f32_max;
     fn f32_copysign_sss(F32Copysign_Sss) = wasm::f32_copysign;
-    fn f32_copysign_ssi(F32Copysign_Ssi) = wasmi_f32_copysign_ssi;
+    fn f32_copysign_ssi(F32Copysign_Ssi) = eval::wasmi_f32_copysign_ssi;
     fn f32_copysign_sis(F32Copysign_Sis) = wasm::f32_copysign;
     // f32: comparisons
     fn f32_eq_sss(F32Eq_Sss) = wasm::f32_eq;
@@ -911,14 +910,14 @@ handler_binary! {
     fn f32_le_sss(F32Le_Sss) = wasm::f32_le;
     fn f32_le_ssi(F32Le_Ssi) = wasm::f32_le;
     fn f32_le_sis(F32Le_Sis) = wasm::f32_le;
-    fn f32_not_eq_sss(F32NotEq_Sss) = wasmi_f32_not_eq;
-    fn f32_not_eq_ssi(F32NotEq_Ssi) = wasmi_f32_not_eq;
-    fn f32_not_lt_sss(F32NotLt_Sss) = wasmi_f32_not_lt;
-    fn f32_not_lt_ssi(F32NotLt_Ssi) = wasmi_f32_not_lt;
-    fn f32_not_lt_sis(F32NotLt_Sis) = wasmi_f32_not_lt;
-    fn f32_not_le_sss(F32NotLe_Sss) = wasmi_f32_not_le;
-    fn f32_not_le_ssi(F32NotLe_Ssi) = wasmi_f32_not_le;
-    fn f32_not_le_sis(F32NotLe_Sis) = wasmi_f32_not_le;
+    fn f32_not_eq_sss(F32NotEq_Sss) = eval::wasmi_f32_not_eq;
+    fn f32_not_eq_ssi(F32NotEq_Ssi) = eval::wasmi_f32_not_eq;
+    fn f32_not_lt_sss(F32NotLt_Sss) = eval::wasmi_f32_not_lt;
+    fn f32_not_lt_ssi(F32NotLt_Ssi) = eval::wasmi_f32_not_lt;
+    fn f32_not_lt_sis(F32NotLt_Sis) = eval::wasmi_f32_not_lt;
+    fn f32_not_le_sss(F32NotLe_Sss) = eval::wasmi_f32_not_le;
+    fn f32_not_le_ssi(F32NotLe_Ssi) = eval::wasmi_f32_not_le;
+    fn f32_not_le_sis(F32NotLe_Sis) = eval::wasmi_f32_not_le;
     // f64
     // f64: binary
     fn f64_add_sss(F64Add_Sss) = wasm::f64_add;
@@ -940,7 +939,7 @@ handler_binary! {
     fn f64_max_ssi(F64Max_Ssi) = wasm::f64_max;
     fn f64_max_sis(F64Max_Sis) = wasm::f64_max;
     fn f64_copysign_sss(F64Copysign_Sss) = wasm::f64_copysign;
-    fn f64_copysign_ssi(F64Copysign_Ssi) = wasmi_f64_copysign_ssi;
+    fn f64_copysign_ssi(F64Copysign_Ssi) = eval::wasmi_f64_copysign_ssi;
     fn f64_copysign_sis(F64Copysign_Sis) = wasm::f64_copysign;
     // f64: comparisons
     fn f64_eq_sss(F64Eq_Sss) = wasm::f64_eq;
@@ -951,14 +950,14 @@ handler_binary! {
     fn f64_le_sss(F64Le_Sss) = wasm::f64_le;
     fn f64_le_ssi(F64Le_Ssi) = wasm::f64_le;
     fn f64_le_sis(F64Le_Sis) = wasm::f64_le;
-    fn f64_not_eq_sss(F64NotEq_Sss) = wasmi_f64_not_eq;
-    fn f64_not_eq_ssi(F64NotEq_Ssi) = wasmi_f64_not_eq;
-    fn f64_not_lt_sss(F64NotLt_Sss) = wasmi_f64_not_lt;
-    fn f64_not_lt_ssi(F64NotLt_Ssi) = wasmi_f64_not_lt;
-    fn f64_not_lt_sis(F64NotLt_Sis) = wasmi_f64_not_lt;
-    fn f64_not_le_sss(F64NotLe_Sss) = wasmi_f64_not_le;
-    fn f64_not_le_ssi(F64NotLe_Ssi) = wasmi_f64_not_le;
-    fn f64_not_le_sis(F64NotLe_Sis) = wasmi_f64_not_le;
+    fn f64_not_eq_sss(F64NotEq_Sss) = eval::wasmi_f64_not_eq;
+    fn f64_not_eq_ssi(F64NotEq_Ssi) = eval::wasmi_f64_not_eq;
+    fn f64_not_lt_sss(F64NotLt_Sss) = eval::wasmi_f64_not_lt;
+    fn f64_not_lt_ssi(F64NotLt_Ssi) = eval::wasmi_f64_not_lt;
+    fn f64_not_lt_sis(F64NotLt_Sis) = eval::wasmi_f64_not_lt;
+    fn f64_not_le_sss(F64NotLe_Sss) = eval::wasmi_f64_not_le;
+    fn f64_not_le_ssi(F64NotLe_Ssi) = eval::wasmi_f64_not_le;
+    fn f64_not_le_sis(F64NotLe_Sis) = eval::wasmi_f64_not_le;
 }
 
 macro_rules! handler_cmp_branch {
@@ -988,16 +987,16 @@ handler_cmp_branch! {
     // i32
     fn branch_i32_eq_ss(BranchI32Eq_Ss) = wasm::i32_eq;
     fn branch_i32_eq_si(BranchI32Eq_Si) = wasm::i32_eq;
-    fn branch_i32_and_ss(BranchI32And_Ss) = wasmi_i32_and;
-    fn branch_i32_and_si(BranchI32And_Si) = wasmi_i32_and;
-    fn branch_i32_or_ss(BranchI32Or_Ss) = wasmi_i32_or;
-    fn branch_i32_or_si(BranchI32Or_Si) = wasmi_i32_or;
+    fn branch_i32_and_ss(BranchI32And_Ss) = eval::wasmi_i32_and;
+    fn branch_i32_and_si(BranchI32And_Si) = eval::wasmi_i32_and;
+    fn branch_i32_or_ss(BranchI32Or_Ss) = eval::wasmi_i32_or;
+    fn branch_i32_or_si(BranchI32Or_Si) = eval::wasmi_i32_or;
     fn branch_i32_not_eq_ss(BranchI32NotEq_Ss) = wasm::i32_ne;
     fn branch_i32_not_eq_si(BranchI32NotEq_Si) = wasm::i32_ne;
-    fn branch_i32_not_and_ss(BranchI32NotAnd_Ss) = wasmi_i32_not_and;
-    fn branch_i32_not_and_si(BranchI32NotAnd_Si) = wasmi_i32_not_and;
-    fn branch_i32_not_or_ss(BranchI32NotOr_Ss) = wasmi_i32_not_or;
-    fn branch_i32_not_or_si(BranchI32NotOr_Si) = wasmi_i32_not_or;
+    fn branch_i32_not_and_ss(BranchI32NotAnd_Ss) = eval::wasmi_i32_not_and;
+    fn branch_i32_not_and_si(BranchI32NotAnd_Si) = eval::wasmi_i32_not_and;
+    fn branch_i32_not_or_ss(BranchI32NotOr_Ss) = eval::wasmi_i32_not_or;
+    fn branch_i32_not_or_si(BranchI32NotOr_Si) = eval::wasmi_i32_not_or;
     fn branch_i32_le_ss(BranchI32Le_Ss) = wasm::i32_le_s;
     fn branch_i32_le_si(BranchI32Le_Si) = wasm::i32_le_s;
     fn branch_i32_le_is(BranchI32Le_Is) = wasm::i32_le_s;
@@ -1013,16 +1012,16 @@ handler_cmp_branch! {
     // i64
     fn branch_i64_eq_ss(BranchI64Eq_Ss) = wasm::i64_eq;
     fn branch_i64_eq_si(BranchI64Eq_Si) = wasm::i64_eq;
-    fn branch_i64_and_ss(BranchI64And_Ss) = wasmi_i64_and;
-    fn branch_i64_and_si(BranchI64And_Si) = wasmi_i64_and;
-    fn branch_i64_or_ss(BranchI64Or_Ss) = wasmi_i64_or;
-    fn branch_i64_or_si(BranchI64Or_Si) = wasmi_i64_or;
+    fn branch_i64_and_ss(BranchI64And_Ss) = eval::wasmi_i64_and;
+    fn branch_i64_and_si(BranchI64And_Si) = eval::wasmi_i64_and;
+    fn branch_i64_or_ss(BranchI64Or_Ss) = eval::wasmi_i64_or;
+    fn branch_i64_or_si(BranchI64Or_Si) = eval::wasmi_i64_or;
     fn branch_i64_not_eq_ss(BranchI64NotEq_Ss) = wasm::i64_ne;
     fn branch_i64_not_eq_si(BranchI64NotEq_Si) = wasm::i64_ne;
-    fn branch_i64_not_and_ss(BranchI64NotAnd_Ss) = wasmi_i64_not_and;
-    fn branch_i64_not_and_si(BranchI64NotAnd_Si) = wasmi_i64_not_and;
-    fn branch_i64_not_or_ss(BranchI64NotOr_Ss) = wasmi_i64_not_or;
-    fn branch_i64_not_or_si(BranchI64NotOr_Si) = wasmi_i64_not_or;
+    fn branch_i64_not_and_ss(BranchI64NotAnd_Ss) = eval::wasmi_i64_not_and;
+    fn branch_i64_not_and_si(BranchI64NotAnd_Si) = eval::wasmi_i64_not_and;
+    fn branch_i64_not_or_ss(BranchI64NotOr_Ss) = eval::wasmi_i64_not_or;
+    fn branch_i64_not_or_si(BranchI64NotOr_Si) = eval::wasmi_i64_not_or;
     fn branch_i64_le_ss(BranchI64Le_Ss) = wasm::i64_le_s;
     fn branch_i64_le_si(BranchI64Le_Si) = wasm::i64_le_s;
     fn branch_i64_le_is(BranchI64Le_Is) = wasm::i64_le_s;
@@ -1046,12 +1045,12 @@ handler_cmp_branch! {
     fn branch_f32_lt_is(BranchF32Lt_Is) = wasm::f32_lt;
     fn branch_f32_not_eq_ss(BranchF32NotEq_Ss) = wasm::f32_ne;
     fn branch_f32_not_eq_si(BranchF32NotEq_Si) = wasm::f32_ne;
-    fn branch_f32_not_le_ss(BranchF32NotLe_Ss) = wasmi_f32_not_le;
-    fn branch_f32_not_le_si(BranchF32NotLe_Si) = wasmi_f32_not_le;
-    fn branch_f32_not_le_is(BranchF32NotLe_Is) = wasmi_f32_not_le;
-    fn branch_f32_not_lt_ss(BranchF32NotLt_Ss) = wasmi_f32_not_lt;
-    fn branch_f32_not_lt_si(BranchF32NotLt_Si) = wasmi_f32_not_lt;
-    fn branch_f32_not_lt_is(BranchF32NotLt_Is) = wasmi_f32_not_lt;
+    fn branch_f32_not_le_ss(BranchF32NotLe_Ss) = eval::wasmi_f32_not_le;
+    fn branch_f32_not_le_si(BranchF32NotLe_Si) = eval::wasmi_f32_not_le;
+    fn branch_f32_not_le_is(BranchF32NotLe_Is) = eval::wasmi_f32_not_le;
+    fn branch_f32_not_lt_ss(BranchF32NotLt_Ss) = eval::wasmi_f32_not_lt;
+    fn branch_f32_not_lt_si(BranchF32NotLt_Si) = eval::wasmi_f32_not_lt;
+    fn branch_f32_not_lt_is(BranchF32NotLt_Is) = eval::wasmi_f32_not_lt;
     // f64
     fn branch_f64_eq_ss(BranchF64Eq_Ss) = wasm::f64_eq;
     fn branch_f64_eq_si(BranchF64Eq_Si) = wasm::f64_eq;
@@ -1063,12 +1062,12 @@ handler_cmp_branch! {
     fn branch_f64_lt_is(BranchF64Lt_Is) = wasm::f64_lt;
     fn branch_f64_not_eq_ss(BranchF64NotEq_Ss) = wasm::f64_ne;
     fn branch_f64_not_eq_si(BranchF64NotEq_Si) = wasm::f64_ne;
-    fn branch_f64_not_le_ss(BranchF64NotLe_Ss) = wasmi_f64_not_le;
-    fn branch_f64_not_le_si(BranchF64NotLe_Si) = wasmi_f64_not_le;
-    fn branch_f64_not_le_is(BranchF64NotLe_Is) = wasmi_f64_not_le;
-    fn branch_f64_not_lt_ss(BranchF64NotLt_Ss) = wasmi_f64_not_lt;
-    fn branch_f64_not_lt_si(BranchF64NotLt_Si) = wasmi_f64_not_lt;
-    fn branch_f64_not_lt_is(BranchF64NotLt_Is) = wasmi_f64_not_lt;
+    fn branch_f64_not_le_ss(BranchF64NotLe_Ss) = eval::wasmi_f64_not_le;
+    fn branch_f64_not_le_si(BranchF64NotLe_Si) = eval::wasmi_f64_not_le;
+    fn branch_f64_not_le_is(BranchF64NotLe_Is) = eval::wasmi_f64_not_le;
+    fn branch_f64_not_lt_ss(BranchF64NotLt_Ss) = eval::wasmi_f64_not_lt;
+    fn branch_f64_not_lt_si(BranchF64NotLt_Si) = eval::wasmi_f64_not_lt;
+    fn branch_f64_not_lt_is(BranchF64NotLt_Is) = eval::wasmi_f64_not_lt;
 }
 
 macro_rules! handler_select {
@@ -1109,10 +1108,10 @@ handler_select! {
     // i32
     fn select_i32_eq_sss(SelectI32Eq_Sss) = wasm::i32_eq;
     fn select_i32_eq_ssi(SelectI32Eq_Ssi) = wasm::i32_eq;
-    fn select_i32_and_sss(SelectI32And_Sss) = wasmi_i32_and;
-    fn select_i32_and_ssi(SelectI32And_Ssi) = wasmi_i32_and;
-    fn select_i32_or_sss(SelectI32Or_Sss) = wasmi_i32_or;
-    fn select_i32_or_ssi(SelectI32Or_Ssi) = wasmi_i32_or;
+    fn select_i32_and_sss(SelectI32And_Sss) = eval::wasmi_i32_and;
+    fn select_i32_and_ssi(SelectI32And_Ssi) = eval::wasmi_i32_and;
+    fn select_i32_or_sss(SelectI32Or_Sss) = eval::wasmi_i32_or;
+    fn select_i32_or_ssi(SelectI32Or_Ssi) = eval::wasmi_i32_or;
     fn select_i32_le_sss(SelectI32Le_Sss) = wasm::i32_le_s;
     fn select_i32_le_ssi(SelectI32Le_Ssi) = wasm::i32_le_s;
     fn select_i32_lt_sss(SelectI32Lt_Sss) = wasm::i32_lt_s;
@@ -1124,10 +1123,10 @@ handler_select! {
     // i64
     fn select_i64_eq_sss(SelectI64Eq_Sss) = wasm::i64_eq;
     fn select_i64_eq_ssi(SelectI64Eq_Ssi) = wasm::i64_eq;
-    fn select_i64_and_sss(SelectI64And_Sss) = wasmi_i64_and;
-    fn select_i64_and_ssi(SelectI64And_Ssi) = wasmi_i64_and;
-    fn select_i64_or_sss(SelectI64Or_Sss) = wasmi_i64_or;
-    fn select_i64_or_ssi(SelectI64Or_Ssi) = wasmi_i64_or;
+    fn select_i64_and_sss(SelectI64And_Sss) = eval::wasmi_i64_and;
+    fn select_i64_and_ssi(SelectI64And_Ssi) = eval::wasmi_i64_and;
+    fn select_i64_or_sss(SelectI64Or_Sss) = eval::wasmi_i64_or;
+    fn select_i64_or_ssi(SelectI64Or_Ssi) = eval::wasmi_i64_or;
     fn select_i64_le_sss(SelectI64Le_Sss) = wasm::i64_le_s;
     fn select_i64_le_ssi(SelectI64Le_Ssi) = wasm::i64_le_s;
     fn select_i64_lt_sss(SelectI64Lt_Sss) = wasm::i64_lt_s;
@@ -1154,140 +1153,4 @@ handler_select! {
     fn select_f64_lt_sss(SelectF64Lt_Sss) = wasm::f64_lt;
     fn select_f64_lt_ssi(SelectF64Lt_Ssi) = wasm::f64_lt;
     fn select_f64_lt_sis(SelectF64Lt_Sis) = wasm::f64_lt;
-}
-
-fn wasmi_i32_div_ssi(lhs: i32, rhs: NonZero<i32>) -> Result<i32, TrapCode> {
-    wasm::i32_div_s(lhs, rhs.get())
-}
-
-fn wasmi_i64_div_ssi(lhs: i64, rhs: NonZero<i64>) -> Result<i64, TrapCode> {
-    wasm::i64_div_s(lhs, rhs.get())
-}
-
-fn wasmi_u32_div_ssi(lhs: u32, rhs: NonZero<u32>) -> u32 {
-    <u32 as Div<NonZero<u32>>>::div(lhs, rhs)
-}
-
-fn wasmi_u64_div_ssi(lhs: u64, rhs: NonZero<u64>) -> u64 {
-    <u64 as Div<NonZero<u64>>>::div(lhs, rhs)
-}
-
-fn wasmi_i32_rem_ssi(lhs: i32, rhs: NonZero<i32>) -> Result<i32, TrapCode> {
-    wasm::i32_rem_s(lhs, rhs.get())
-}
-
-fn wasmi_i64_rem_ssi(lhs: i64, rhs: NonZero<i64>) -> Result<i64, TrapCode> {
-    wasm::i64_rem_s(lhs, rhs.get())
-}
-
-fn wasmi_u32_rem_ssi(lhs: u32, rhs: NonZero<u32>) -> u32 {
-    <u32 as Rem<NonZero<u32>>>::rem(lhs, rhs)
-}
-
-fn wasmi_u64_rem_ssi(lhs: u64, rhs: NonZero<u64>) -> u64 {
-    <u64 as Rem<NonZero<u64>>>::rem(lhs, rhs)
-}
-
-fn wasmi_i32_shl_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_shl(lhs, i32::from(rhs))
-}
-
-fn wasmi_i32_shr_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_shr_s(lhs, i32::from(rhs))
-}
-
-fn wasmi_u32_shr_ssi(lhs: u32, rhs: u8) -> u32 {
-    wasm::i32_shr_u(lhs, u32::from(rhs))
-}
-
-fn wasmi_i32_rotl_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_rotl(lhs, i32::from(rhs))
-}
-
-fn wasmi_i32_rotr_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_rotr(lhs, i32::from(rhs))
-}
-
-fn wasmi_i64_shl_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_shl(lhs, i64::from(rhs))
-}
-
-fn wasmi_i64_shr_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_shr_s(lhs, i64::from(rhs))
-}
-
-fn wasmi_u64_shr_ssi(lhs: u64, rhs: u8) -> u64 {
-    wasm::i64_shr_u(lhs, u64::from(rhs))
-}
-
-fn wasmi_i64_rotl_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_rotl(lhs, i64::from(rhs))
-}
-
-fn wasmi_i64_rotr_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_rotr(lhs, i64::from(rhs))
-}
-
-fn wasmi_i32_and(lhs: i32, rhs: i32) -> bool {
-    (lhs != 0) && (rhs != 0)
-}
-
-fn wasmi_i32_not_and(lhs: i32, rhs: i32) -> bool {
-    !wasmi_i32_and(lhs, rhs)
-}
-
-fn wasmi_i32_or(lhs: i32, rhs: i32) -> bool {
-    (lhs != 0) || (rhs != 0)
-}
-
-fn wasmi_i32_not_or(lhs: i32, rhs: i32) -> bool {
-    !wasmi_i32_or(lhs, rhs)
-}
-
-fn wasmi_i64_and(lhs: i64, rhs: i64) -> bool {
-    (lhs != 0) && (rhs != 0)
-}
-
-fn wasmi_i64_not_and(lhs: i64, rhs: i64) -> bool {
-    !wasmi_i64_and(lhs, rhs)
-}
-
-fn wasmi_i64_or(lhs: i64, rhs: i64) -> bool {
-    (lhs != 0) || (rhs != 0)
-}
-
-fn wasmi_i64_not_or(lhs: i64, rhs: i64) -> bool {
-    !wasmi_i64_or(lhs, rhs)
-}
-
-fn wasmi_f32_copysign_ssi(lhs: f32, rhs: Sign<f32>) -> f32 {
-    wasm::f32_copysign(lhs, f32::from(rhs))
-}
-
-fn wasmi_f64_copysign_ssi(lhs: f64, rhs: Sign<f64>) -> f64 {
-    wasm::f64_copysign(lhs, f64::from(rhs))
-}
-
-fn wasmi_f32_not_eq(lhs: f32, rhs: f32) -> bool {
-    !wasm::f32_eq(lhs, rhs)
-}
-
-fn wasmi_f64_not_eq(lhs: f64, rhs: f64) -> bool {
-    !wasm::f64_eq(lhs, rhs)
-}
-
-fn wasmi_f32_not_le(lhs: f32, rhs: f32) -> bool {
-    !wasm::f32_le(lhs, rhs)
-}
-
-fn wasmi_f64_not_le(lhs: f64, rhs: f64) -> bool {
-    !wasm::f64_le(lhs, rhs)
-}
-
-fn wasmi_f32_not_lt(lhs: f32, rhs: f32) -> bool {
-    !wasm::f32_lt(lhs, rhs)
-}
-
-fn wasmi_f64_not_lt(lhs: f64, rhs: f64) -> bool {
-    !wasm::f64_lt(lhs, rhs)
 }
