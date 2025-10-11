@@ -2,7 +2,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{Ip, Sp, VmState},
-    utils::{get_value, set_value},
+    utils::{default_memory_bytes, get_value, memory_bytes, set_value},
 };
 use crate::{
     core::{wasm, UntypedVal},
@@ -523,4 +523,136 @@ handler_select! {
     fn select_f64_lt_sss(SelectF64Lt_Sss) = wasm::f64_lt;
     fn select_f64_lt_ssi(SelectF64Lt_Ssi) = wasm::f64_lt;
     fn select_f64_lt_sis(SelectF64Lt_Sis) = wasm::f64_lt;
+}
+
+macro_rules! handler_load_ss {
+    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$decode {
+                        result,
+                        ptr,
+                        offset,
+                        memory,
+                    },
+                ) = unsafe { ip.decode() };
+                let ptr: u64 = get_value(ptr, sp);
+                let offset: u64 = get_value(offset, sp);
+                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
+                let loaded = unwrap_result!($eval(mem_bytes, ptr, offset), state);
+                set_value(sp, result, loaded);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_load_ss! {
+    fn load32_ss(Load32_Ss) = wasm::load32;
+    fn load64_ss(Load64_Ss) = wasm::load64;
+    fn i32_load8_ss(I32Load8_Ss) = wasm::i32_load8_s;
+    fn u32_load8_ss(U32Load8_Ss) = wasm::i32_load8_u;
+    fn i32_load16_ss(I32Load16_Ss) = wasm::i32_load16_s;
+    fn u32_load16_ss(U32Load16_Ss) = wasm::i32_load16_u;
+    fn i64_load8_ss(I64Load8_Ss) = wasm::i64_load8_s;
+    fn u64_load8_ss(U64Load8_Ss) = wasm::i64_load8_u;
+    fn i64_load16_ss(I64Load16_Ss) = wasm::i64_load16_s;
+    fn u64_load16_ss(U64Load16_Ss) = wasm::i64_load16_u;
+    fn i64_load32_ss(I64Load32_Ss) = wasm::i64_load32_s;
+    fn u64_load32_ss(U64Load32_Ss) = wasm::i64_load32_u;
+}
+
+macro_rules! handler_load_si {
+    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$decode {
+                        result,
+                        address,
+                        memory,
+                    },
+                ) = unsafe { ip.decode() };
+                let address = get_value(address, sp);
+                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
+                let loaded = unwrap_result!($eval(mem_bytes, usize::from(address)), state);
+                set_value(sp, result, loaded);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_load_si! {
+    fn load32_si(Load32_Si) = wasm::load32_at;
+    fn load64_si(Load64_Si) = wasm::load64_at;
+    fn i32_load8_si(I32Load8_Si) = wasm::i32_load8_s_at;
+    fn u32_load8_si(U32Load8_Si) = wasm::i32_load8_u_at;
+    fn i32_load16_si(I32Load16_Si) = wasm::i32_load16_s_at;
+    fn u32_load16_si(U32Load16_Si) = wasm::i32_load16_u_at;
+    fn i64_load8_si(I64Load8_Si) = wasm::i64_load8_s_at;
+    fn u64_load8_si(U64Load8_Si) = wasm::i64_load8_u_at;
+    fn i64_load16_si(I64Load16_Si) = wasm::i64_load16_s_at;
+    fn u64_load16_si(U64Load16_Si) = wasm::i64_load16_u_at;
+    fn i64_load32_si(I64Load32_Si) = wasm::i64_load32_s_at;
+    fn u64_load32_si(U64Load32_Si) = wasm::i64_load32_u_at;
+}
+
+macro_rules! handler_load_mem0_offset16_ss {
+    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$decode {
+                        result,
+                        ptr,
+                        offset,
+                    },
+                ) = unsafe { ip.decode() };
+                let ptr = get_value(ptr, sp);
+                let offset = get_value(offset, sp);
+                let mem_bytes = default_memory_bytes(mem0, mem0_len);
+                let loaded = unwrap_result!($eval(mem_bytes, ptr, u64::from(u16::from(offset))), state);
+                set_value(sp, result, loaded);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_load_mem0_offset16_ss! {
+    fn load32_mem0_offset16_ss(Load32Mem0Offset16_Ss) = wasm::load32;
+    fn load64_mem0_offset16_ss(Load64Mem0Offset16_Ss) = wasm::load64;
+    fn i32_load8_mem0_offset16_ss(I32Load8Mem0Offset16_Ss) = wasm::i32_load8_s;
+    fn u32_load8_mem0_offset16_ss(U32Load8Mem0Offset16_Ss) = wasm::i32_load8_u;
+    fn i32_load16_mem0_offset16_ss(I32Load16Mem0Offset16_Ss) = wasm::i32_load16_s;
+    fn u32_load16_mem0_offset16_ss(U32Load16Mem0Offset16_Ss) = wasm::i32_load16_u;
+    fn i64_load8_mem0_offset16_ss(I64Load8Mem0Offset16_Ss) = wasm::i64_load8_s;
+    fn u64_load8_mem0_offset16_ss(U64Load8Mem0Offset16_Ss) = wasm::i64_load8_u;
+    fn i64_load16_mem0_offset16_ss(I64Load16Mem0Offset16_Ss) = wasm::i64_load16_s;
+    fn u64_load16_mem0_offset16_ss(U64Load16Mem0Offset16_Ss) = wasm::i64_load16_u;
+    fn i64_load32_mem0_offset16_ss(I64Load32Mem0Offset16_Ss) = wasm::i64_load32_s;
+    fn u64_load32_mem0_offset16_ss(U64Load32Mem0Offset16_Ss) = wasm::i64_load32_u;
 }
