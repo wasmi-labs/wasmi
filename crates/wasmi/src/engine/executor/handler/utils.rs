@@ -114,7 +114,7 @@ macro_rules! impl_unwrap_result {
 impl_unwrap_result!(bool, i32, i64, u32, u64, f32, f64);
 
 macro_rules! unwrap_result {
-    ($value:expr, $state:expr) => {{
+    ($value:expr, $state:expr $(,)? ) => {{
         match <_ as $crate::engine::executor::handler::utils::UnwrapResult>::unwrap_result(
             $value, $state,
         ) {
