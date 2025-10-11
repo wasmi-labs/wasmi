@@ -1,3 +1,5 @@
+mod eval;
+
 use crate::{
     core::{wasm, UntypedVal},
     engine::executor::{
