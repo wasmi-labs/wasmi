@@ -45,6 +45,7 @@ pub enum DoneReason {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
 pub struct Ip {
     value: *const u8,
 }
@@ -71,6 +72,7 @@ impl Ip {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
 pub struct Sp {
     value: *mut UntypedVal,
 }
