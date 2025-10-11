@@ -1,4 +1,4 @@
-use super::{DoneReason, Sp, VmState};
+use super::state::{DoneReason, Sp, VmState};
 use crate::{
     core::UntypedVal,
     ir::{Sign, Slot},
