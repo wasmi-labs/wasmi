@@ -49,7 +49,6 @@ pub use self::{
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
-    func::FuncInOut,
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,
