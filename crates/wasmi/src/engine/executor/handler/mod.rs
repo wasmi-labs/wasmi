@@ -1,103 +1,22 @@
 mod eval;
 #[macro_use]
 mod utils;
+mod state;
 
-use self::utils::{get_value, set_value};
+use self::{
+    state::{DoneReason, Ip, Sp, VmState},
+    utils::{get_value, set_value},
+};
 use crate::{
     core::{wasm, UntypedVal},
-    engine::executor::{
-        stack::{CallStack, ValueStack},
-        CodeMap,
-    },
-    errors::HostError,
     instance::InstanceEntity,
-    ir,
-    ir::{OpCode, Slot},
-    store::PrunedStore,
-    TrapCode,
+    ir::OpCode,
 };
-use alloc::boxed::Box;
-use core::ptr::{self, NonNull};
+use core::ptr::NonNull;
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Done {
     _priv: (),
-}
-
-pub struct VmState<'vm> {
-    store: &'vm mut PrunedStore,
-    frames: &'vm mut CallStack,
-    stack: &'vm mut ValueStack,
-    code: &'vm CodeMap,
-    done_reason: DoneReason,
-}
-
-#[derive(Debug)]
-pub enum DoneReason {
-    Trap(TrapCode),
-    OutOfFuel {
-        required: u64,
-    },
-    Host(Box<dyn HostError>),
-    Return,
-    Continue {
-        ip: Ip,
-        sp: Sp,
-        mem0: *mut u8,
-        mem0_len: usize,
-        instance: NonNull<InstanceEntity>,
-    },
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Ip {
-    value: *const u8,
-}
-
-struct IpDecoder(Ip);
-impl ir::Decoder for IpDecoder {
-    fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
-        unsafe { ptr::copy_nonoverlapping(self.0.value, buffer.as_mut_ptr(), buffer.len()) };
-        Ok(())
-    }
-}
-
-impl Ip {
-    pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
-        let mut ip = IpDecoder(self);
-        let decoded = <T as ir::Decode>::decode(&mut ip).unwrap();
-        (ip.0, decoded)
-    }
-
-    pub unsafe fn offset(self, delta: isize) -> Self {
-        let value = unsafe { self.value.byte_offset(delta) };
-        Self { value }
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Sp {
-    value: *mut UntypedVal,
-}
-
-impl Sp {
-    fn get<T>(self, slot: Slot) -> T
-    where
-        T: From<UntypedVal>,
-    {
-        let index = usize::from(u16::from(slot));
-        let value = unsafe { *self.value.add(index) };
-        T::from(value)
-    }
-
-    fn set<T>(self, slot: Slot, value: T)
-    where
-        T: Into<UntypedVal>,
-    {
-        let index = usize::from(u16::from(slot));
-        let cell = unsafe { &mut *self.value.add(index) };
-        *cell = value.into();
-    }
 }
 
 type Handler = fn(
