@@ -1,10 +1,11 @@
 use super::state::{DoneReason, Sp, VmState};
 use crate::{
     core::UntypedVal,
-    ir::{Sign, Slot},
+    instance::InstanceEntity,
+    ir::{index, Address, Offset16, Sign, Slot},
     TrapCode,
 };
-use core::num::NonZero;
+use core::{num::NonZero, ptr::NonNull, slice};
 
 pub trait GetValue<T> {
     fn get_value(src: Self, sp: Sp) -> T;
@@ -39,6 +40,8 @@ impl_get_value!(
     NonZero<u64>,
     Sign<f32>,
     Sign<f64>,
+    Address,
+    Offset16,
 );
 
 impl<T> GetValue<T> for Slot
@@ -122,4 +125,32 @@ macro_rules! unwrap_result {
             None => return Done::default(),
         }
     }};
+}
+
+pub fn default_memory_bytes<'a>(mem0: *mut u8, mem0_len: usize) -> &'a mut [u8] {
+    unsafe { slice::from_raw_parts_mut(mem0, mem0_len) }
+}
+
+pub fn memory_bytes<'a>(
+    memory: index::Memory,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+    state: &'a mut VmState,
+) -> &'a [u8] {
+    match memory.is_default() {
+        true => default_memory_bytes::<'a>(mem0, mem0_len),
+        false => {
+            let instance = unsafe { instance.as_ref() };
+            let Some(memory) = instance.get_memory(u32::from(u16::from(memory))) else {
+                // unreachable!("missing memory at: {}", u16::from(memory))
+                return &mut [];
+            };
+            state
+                .store
+                .inner_mut()
+                .resolve_memory_mut(&memory)
+                .data_mut()
+        }
+    }
 }
