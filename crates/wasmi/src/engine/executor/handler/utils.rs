@@ -137,7 +137,7 @@ pub fn memory_bytes<'a>(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
     state: &'a mut VmState,
-) -> &'a [u8] {
+) -> &'a mut [u8] {
     match memory.is_default() {
         true => default_memory_bytes::<'a>(mem0, mem0_len),
         false => {
