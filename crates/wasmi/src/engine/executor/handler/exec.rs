@@ -656,3 +656,141 @@ handler_load_mem0_offset16_ss! {
     fn i64_load32_mem0_offset16_ss(I64Load32Mem0Offset16_Ss) = wasm::i64_load32_s;
     fn u64_load32_mem0_offset16_ss(U64Load32Mem0Offset16_Ss) = wasm::i64_load32_u;
 }
+
+macro_rules! handler_store_sx {
+    ( $( fn $handler:ident($decode:ident, $hint:ty) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$decode {
+                        ptr,
+                        offset,
+                        value,
+                        memory,
+                    },
+                ) = unsafe { ip.decode() };
+                let ptr = get_value(ptr, sp);
+                let offset = get_value(offset, sp);
+                let value: $hint = get_value(value, sp);
+                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
+                unwrap_result!($eval(mem_bytes, ptr, offset, value.into()), state);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_store_sx! {
+    fn store32_ss(Store32_Ss, u32) = wasm::store32;
+    fn store32_si(Store32_Si, u32) = wasm::store32;
+    fn store64_ss(Store64_Ss, u64) = wasm::store64;
+    fn store64_si(Store64_Si, u64) = wasm::store64;
+    fn i32_store8_ss(I32Store8_Ss, i8) = wasm::i32_store8;
+    fn i32_store8_si(I32Store8_Si, i8) = wasm::i32_store8;
+    fn i32_store16_ss(I32Store16_Ss, i16) = wasm::i32_store16;
+    fn i32_store16_si(I32Store16_Si, i16) = wasm::i32_store16;
+    fn i64_store8_ss(I64Store8_Ss, i8) = wasm::i64_store8;
+    fn i64_store8_si(I64Store8_Si, i8) = wasm::i64_store8;
+    fn i64_store16_ss(I64Store16_Ss, i16) = wasm::i64_store16;
+    fn i64_store16_si(I64Store16_Si, i16) = wasm::i64_store16;
+    fn i64_store32_ss(I64Store32_Ss, i32) = wasm::i64_store32;
+    fn i64_store32_si(I64Store32_Si, i32) = wasm::i64_store32;
+}
+
+macro_rules! handler_store_ix {
+    ( $( fn $handler:ident($decode:ident, $hint:ty) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$decode {
+                        address,
+                        value,
+                        memory,
+                    },
+                ) = unsafe { ip.decode() };
+                let address = get_value(address, sp);
+                let value: $hint = get_value(value, sp);
+                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
+                unwrap_result!($eval(mem_bytes, usize::from(address), value.into()), state);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_store_ix! {
+    fn store32_is(Store32_Is, u32) = wasm::store32_at;
+    fn store32_ii(Store32_Ii, u32) = wasm::store32_at;
+    fn store64_is(Store64_Is, u64) = wasm::store64_at;
+    fn store64_ii(Store64_Ii, u64) = wasm::store64_at;
+    fn i32_store8_is(I32Store8_Is, i8) = wasm::i32_store8_at;
+    fn i32_store8_ii(I32Store8_Ii, i8) = wasm::i32_store8_at;
+    fn i32_store16_is(I32Store16_Is, i16) = wasm::i32_store16_at;
+    fn i32_store16_ii(I32Store16_Ii, i16) = wasm::i32_store16_at;
+    fn i64_store8_is(I64Store8_Is, i8) = wasm::i64_store8_at;
+    fn i64_store8_ii(I64Store8_Ii, i8) = wasm::i64_store8_at;
+    fn i64_store16_is(I64Store16_Is, i16) = wasm::i64_store16_at;
+    fn i64_store16_ii(I64Store16_Ii, i16) = wasm::i64_store16_at;
+    fn i64_store32_is(I64Store32_Is, i32) = wasm::i64_store32_at;
+    fn i64_store32_ii(I64Store32_Ii, i32) = wasm::i64_store32_at;
+}
+
+macro_rules! handler_store_mem0_offset16_sx {
+    ( $( fn $handler:ident($decode:ident, $hint:ty) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$decode {
+                        ptr,
+                        offset,
+                        value,
+                    },
+                ) = unsafe { ip.decode() };
+                let ptr = get_value(ptr, sp);
+                let offset = get_value(offset, sp);
+                let value: $hint = get_value(value, sp);
+                let mem_bytes = default_memory_bytes(mem0, mem0_len);
+                unwrap_result!($eval(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()), state);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_store_mem0_offset16_sx! {
+    fn store32_mem0_offset16_ss(Store32Mem0Offset16_Ss, u32) = wasm::store32;
+    fn store32_mem0_offset16_si(Store32Mem0Offset16_Si, u32) = wasm::store32;
+    fn store64_mem0_offset16_ss(Store64Mem0Offset16_Ss, u64) = wasm::store64;
+    fn store64_mem0_offset16_si(Store64Mem0Offset16_Si, u64) = wasm::store64;
+    fn i32_store8_mem0_offset16_ss(I32Store8Mem0Offset16_Ss, i8) = wasm::i32_store8;
+    fn i32_store8_mem0_offset16_si(I32Store8Mem0Offset16_Si, i8) = wasm::i32_store8;
+    fn i32_store16_mem0_offset16_ss(I32Store16Mem0Offset16_Ss, i16) = wasm::i32_store16;
+    fn i32_store16_mem0_offset16_si(I32Store16Mem0Offset16_Si, i16) = wasm::i32_store16;
+    fn i64_store8_mem0_offset16_ss(I64Store8Mem0Offset16_Ss, i8) = wasm::i64_store8;
+    fn i64_store8_mem0_offset16_si(I64Store8Mem0Offset16_Si, i8) = wasm::i64_store8;
+    fn i64_store16_mem0_offset16_ss(I64Store16Mem0Offset16_Ss, i16) = wasm::i64_store16;
+    fn i64_store16_mem0_offset16_si(I64Store16Mem0Offset16_Si, i16) = wasm::i64_store16;
+    fn i64_store32_mem0_offset16_ss(I64Store32Mem0Offset16_Ss, i32) = wasm::i64_store32;
+    fn i64_store32_mem0_offset16_si(I64Store32Mem0Offset16_Si, i32) = wasm::i64_store32;
+}
