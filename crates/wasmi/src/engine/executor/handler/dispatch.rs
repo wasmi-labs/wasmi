@@ -19,6 +19,20 @@ type Handler = fn(
     instance: NonNull<InstanceEntity>,
 ) -> Done;
 
+macro_rules! exec_break {
+    ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        _ = ($ip, $sp, $mem0, $mem0_len, $instance);
+        $crate::engine::executor::handler::dispatch::Done::default()
+    }};
+}
+
+macro_rules! trap {
+    ($trap_code:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        $state.done_reason = $crate::engine::executor::handler::state::DoneReason::Trap($trap_code);
+        exec_break!($ip, $sp, $mem0, $mem0_len, $instance)
+    }};
+}
+
 #[cfg(feature = "trampolines")]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
