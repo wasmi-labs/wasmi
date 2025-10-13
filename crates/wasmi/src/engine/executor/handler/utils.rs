@@ -1,8 +1,8 @@
-use super::state::{DoneReason, Sp, VmState};
+use super::state::{DoneReason, Ip, Sp, VmState};
 use crate::{
     core::UntypedVal,
     instance::InstanceEntity,
-    ir::{index, Address, Offset16, Sign, Slot},
+    ir::{index, Address, BranchOffset, Offset16, Sign, Slot},
     TrapCode,
 };
 use core::{num::NonZero, ptr::NonNull, slice};
@@ -153,4 +153,8 @@ pub fn memory_bytes<'a>(
                 .data_mut()
         }
     }
+}
+
+pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
+    unsafe { ip.offset(i32::from(offset) as isize) }
 }
