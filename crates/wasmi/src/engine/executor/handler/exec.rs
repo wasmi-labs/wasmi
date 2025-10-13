@@ -14,6 +14,18 @@ fn identity<T>(value: T) -> T {
     value
 }
 
+pub fn trap(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::Trap { trap_code }) = unsafe { ip.decode() };
+    trap!(trap_code, state, ip, sp, mem0, mem0_len, instance)
+}
+
 pub fn copy_span(
     state: &mut VmState,
     ip: Ip,
