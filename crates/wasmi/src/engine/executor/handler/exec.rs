@@ -14,6 +14,31 @@ fn identity<T>(value: T) -> T {
     value
 }
 
+pub fn copy_span(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::CopySpan {
+            results,
+            values,
+            len,
+        },
+    ) = unsafe { ip.decode() };
+    let results = results.iter(len);
+    let values = values.iter(len);
+    for (result, value) in results.into_iter().zip(values.into_iter()) {
+        let value: u64 = get_value(value, sp);
+        set_value(sp, result, value);
+    }
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
 macro_rules! handler_unary {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
