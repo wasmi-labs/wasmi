@@ -62,6 +62,7 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::Copy32 => exec::copy32,
         OpCode::Copy64 => exec::copy64,
         OpCode::CopySpan => exec::copy_span,
+        OpCode::Branch => exec::branch,
         // unary
         OpCode::I32Popcnt_Ss => exec::i32_popcnt_ss,
         OpCode::I32Ctz_Ss => exec::i32_ctz_ss,
