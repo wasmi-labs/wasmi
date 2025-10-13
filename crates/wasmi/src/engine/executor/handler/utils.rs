@@ -116,13 +116,13 @@ macro_rules! impl_unwrap_result {
 }
 impl_unwrap_result!(bool, i32, i64, u32, u64, f32, f64);
 
-macro_rules! unwrap_result {
-    ($value:expr, $state:expr $(,)? ) => {{
+macro_rules! break_if_trap {
+    ($value:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
         match <_ as $crate::engine::executor::handler::utils::UnwrapResult>::unwrap_result(
             $value, $state,
         ) {
             Some(value) => value,
-            None => return Done::default(),
+            None => return exec_break!($ip, $sp, $mem0, $mem0_len, $instance),
         }
     }};
 }
