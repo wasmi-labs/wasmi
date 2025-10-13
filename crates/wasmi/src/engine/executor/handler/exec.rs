@@ -10,6 +10,10 @@ use crate::{
 };
 use core::ptr::NonNull;
 
+fn identity<T>(value: T) -> T {
+    value
+}
+
 macro_rules! handler_unary {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
@@ -30,6 +34,10 @@ macro_rules! handler_unary {
     };
 }
 handler_unary! {
+    // copy
+    fn copy(Copy) = identity::<u64>;
+    fn copy32(Copy32) = identity::<u32>;
+    fn copy64(Copy64) = identity::<u64>;
     // i32
     fn i32_popcnt_ss(I32Popcnt_Ss) = wasm::i32_popcnt;
     fn i32_ctz_ss(I32Ctz_Ss) = wasm::i32_ctz;
