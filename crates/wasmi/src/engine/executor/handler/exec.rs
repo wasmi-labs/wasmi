@@ -2,7 +2,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{Ip, Sp, VmState},
-    utils::{default_memory_bytes, get_value, memory_bytes, set_value},
+    utils::{default_memory_bytes, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
     core::{wasm, UntypedVal},
@@ -413,7 +413,7 @@ macro_rules! handler_cmp_branch {
                 let lhs = get_value(lhs, sp);
                 let rhs = get_value(rhs, sp);
                 let ip = match $eval(lhs, rhs) {
-                    true => unsafe { ip.offset(i32::from(offset) as isize) },
+                    true => offset_ip(ip, offset),
                     false => next_ip,
                 };
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
