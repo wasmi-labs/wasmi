@@ -31,7 +31,7 @@ pub struct VmState<'vm> {
 pub enum DoneReason {
     Trap(TrapCode),
     OutOfFuel {
-        required: u64,
+        required_fuel: u64,
     },
     Host(Box<dyn HostError>),
     Return,
