@@ -74,6 +74,19 @@ pub fn copy_span(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+pub fn branch(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { ip.decode() };
+    let ip = offset_ip(ip, offset);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
 macro_rules! handler_unary {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
