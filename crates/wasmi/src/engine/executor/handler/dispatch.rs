@@ -57,11 +57,15 @@ macro_rules! dispatch {
 
 fn op_code_to_handler(code: OpCode) -> Handler {
     match code {
+        // misc
+        OpCode::Trap => exec::trap,
+        OpCode::ConsumeFuel => exec::consume_fuel,
         // copy
         OpCode::Copy => exec::copy,
         OpCode::Copy32 => exec::copy32,
         OpCode::Copy64 => exec::copy64,
         OpCode::CopySpan => exec::copy_span,
+        // unconditional branch
         OpCode::Branch => exec::branch,
         // unary
         OpCode::I32Popcnt_Ss => exec::i32_popcnt_ss,
