@@ -6,6 +6,8 @@ use super::{
 };
 use crate::{
     core::{wasm, UntypedVal},
+    engine::executor::handler::state::DoneReason,
+    errors::FuelError,
     instance::InstanceEntity,
 };
 use core::ptr::NonNull;
@@ -24,6 +26,27 @@ pub fn trap(
 ) -> Done {
     let (ip, crate::ir::decode::Trap { trap_code }) = unsafe { ip.decode() };
     trap!(trap_code, state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn consume_fuel(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { ip.decode() };
+    let consumption_result = state
+        .store
+        .inner_mut()
+        .fuel_mut()
+        .consume_fuel_unchecked(u64::from(fuel));
+    if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
+        state.done_reason = DoneReason::OutOfFuel { required_fuel };
+        return exec_break!(ip, sp, mem0, mem0_len, instance);
+    }
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn copy_span(
