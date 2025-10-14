@@ -65,6 +65,11 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::Copy32 => exec::copy32,
         OpCode::Copy64 => exec::copy64,
         OpCode::CopySpan => exec::copy_span,
+        // global
+        OpCode::GlobalGet => exec::global_get,
+        OpCode::GlobalSet => exec::global_set,
+        OpCode::GlobalSet32 => exec::global_set_32,
+        OpCode::GlobalSet64 => exec::global_set_64,
         // unconditional branch
         OpCode::Branch => exec::branch,
         // unary
