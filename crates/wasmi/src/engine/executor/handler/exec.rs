@@ -6,7 +6,10 @@ use super::{
 };
 use crate::{
     core::{wasm, UntypedVal},
-    engine::executor::handler::state::DoneReason,
+    engine::executor::handler::{
+        state::DoneReason,
+        utils::{resolve_global, set_global},
+    },
     errors::FuelError,
     instance::InstanceEntity,
 };
@@ -84,6 +87,63 @@ pub fn branch(
 ) -> Done {
     let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { ip.decode() };
     let ip = offset_ip(ip, offset);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn global_get(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { ip.decode() };
+    let global = resolve_global(instance, global);
+    let value = *state.store.inner().resolve_global(&global).get_untyped();
+    set_value(sp, result, value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn global_set(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet { global, value }) = unsafe { ip.decode() };
+    let value: UntypedVal = get_value(value, sp);
+    set_global(global, value, state, instance);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn global_set_32(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet32 { global, value }) = unsafe { ip.decode() };
+    let value: UntypedVal = get_value(value, sp).into();
+    set_global(global, value, state, instance);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn global_set_64(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet64 { global, value }) = unsafe { ip.decode() };
+    let value: UntypedVal = get_value(value, sp).into();
+    set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
