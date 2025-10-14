@@ -3,6 +3,7 @@ use crate::{
     core::UntypedVal,
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot},
+    Global,
     TrapCode,
 };
 use core::{num::NonZero, ptr::NonNull, slice};
@@ -157,4 +158,28 @@ pub fn memory_bytes<'a>(
 
 pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
     unsafe { ip.offset(i32::from(offset) as isize) }
+}
+
+pub fn resolve_global(instance: NonNull<InstanceEntity>, global: index::Global) -> Global {
+    let inst = unsafe { instance.as_ref() };
+    let Some(global) = inst.get_global(u32::from(global)) else {
+        unreachable!("missing global at: {}", u32::from(global))
+    };
+    global
+}
+
+pub fn set_global(
+    global: index::Global,
+    value: UntypedVal,
+    state: &mut VmState,
+    instance: NonNull<InstanceEntity>,
+) {
+    let global = resolve_global(instance, global);
+    let mut global_ptr = state
+        .store
+        .inner_mut()
+        .resolve_global_mut(&global)
+        .get_untyped_ptr();
+    let global_ref = unsafe { global_ptr.as_mut() };
+    *global_ref = value;
 }
