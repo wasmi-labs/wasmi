@@ -4,7 +4,7 @@ use crate::{
     engine::{executor::CodeMap, EngineFunc},
     errors::HostError,
     instance::InstanceEntity,
-    ir::{self, Slot, SlotSpan},
+    ir::{self, BoundedSlotSpan, Slot},
     store::PrunedStore,
     Error,
     Instance,
@@ -132,16 +132,17 @@ impl Stack {
         &mut self,
         caller_ip: Option<Ip>,
         callee_ip: Ip,
-        params: SlotSpan,
+        params: BoundedSlotSpan,
         size: usize,
         store: &PrunedStore,
         instance: Option<Instance>,
     ) -> Result<Sp, TrapCode> {
-        let delta = usize::from(u16::from(params.head()));
+        let delta = usize::from(u16::from(params.span().head()));
+        let len_params = params.len();
         let Some(start) = self.frames.top_start().checked_add(delta) else {
             return Err(TrapCode::StackOverflow);
         };
-        let sp = self.values.push(start, size)?;
+        let sp = self.values.push(start, size, len_params)?;
         self.frames
             .push(caller_ip, callee_ip, start, store, instance)?;
         Ok(sp)
@@ -170,7 +171,7 @@ impl ValueStack {
         Sp::from(&mut self.cells[start..]) // TODO: maybe avoid bounds check if necessary for performance
     }
 
-    fn push(&mut self, start: usize, size: usize) -> Result<Sp, TrapCode> {
+    fn push(&mut self, start: usize, size: usize, len_params: u16) -> Result<Sp, TrapCode> {
         let Some(end) = start.checked_add(size) else {
             return Err(TrapCode::StackOverflow);
         };
@@ -178,7 +179,8 @@ impl ValueStack {
             return Err(TrapCode::StackOverflow);
         }
         self.cells.resize_with(end, UntypedVal::default);
-        self.cells[start..end].fill_with(UntypedVal::default);
+        let start_locals = start.wrapping_add(usize::from(len_params));
+        self.cells[start_locals..end].fill_with(UntypedVal::default);
         let sp = self.sp(start);
         Ok(sp)
     }
