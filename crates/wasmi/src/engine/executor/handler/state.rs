@@ -208,10 +208,12 @@ impl CallStack {
         };
         let start = self.top_start();
         if popped.changes_instance {
-            let Some(instance) = self.instances.pop() else {
-                panic!("unexpected empty instance stack") // TODO: return `Result` instead of panicking
-            };
-            return (start, Some(instance));
+            self.instances.pop().expect("must have an instance if changed");
+            // Note: it is expected to return `None` for the instance when the last frame is popped
+            //       since that means that the execution is finished anyways. We might even want to expect
+            //       this at the caller site.
+            let instance = self.instances.last().copied();
+            return (start, instance);
         }
         (start, None)
     }
