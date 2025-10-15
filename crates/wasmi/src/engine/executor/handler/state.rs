@@ -1,12 +1,12 @@
 use crate::{
     collections::HeadVec,
     core::UntypedVal,
-    engine::executor::CodeMap,
+    engine::{executor::CodeMap, EngineFunc},
     errors::HostError,
     instance::InstanceEntity,
-    ir,
-    ir::{Slot, SlotSpan},
+    ir::{self, Slot, SlotSpan},
     store::PrunedStore,
+    Error,
     Instance,
     TrapCode,
 };
@@ -20,10 +20,19 @@ pub struct Done {
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
-    pub frames: &'vm mut CallStack,
-    pub stack: &'vm mut ValueStack,
+    pub stack: &'vm mut Stack,
     pub code: &'vm CodeMap,
     pub done_reason: DoneReason,
+}
+
+impl<'state> VmState<'state> {
+    pub fn compile_or_get_func(&mut self, func: EngineFunc) -> Result<(Ip, usize), Error> {
+        let fuel_mut = self.store.inner_mut().fuel_mut();
+        let compiled_func = self.code.get(Some(fuel_mut), func)?;
+        let ip = Ip::from(compiled_func.ops());
+        let size = usize::from(compiled_func.len_stack_slots());
+        Ok((ip, size))
+    }
 }
 
 #[derive(Debug)]
@@ -34,6 +43,7 @@ pub enum DoneReason {
     },
     Host(Box<dyn HostError>),
     Return,
+    CompileError(Error),
     Continue {
         ip: Ip,
         sp: Sp,
@@ -47,6 +57,14 @@ pub enum DoneReason {
 #[repr(transparent)]
 pub struct Ip {
     value: *const u8,
+}
+
+impl<'a> From<&'a [u8]> for Ip {
+    fn from(ops: &'a [u8]) -> Self {
+        Self {
+            value: ops.as_ptr(),
+        }
+    }
 }
 
 struct IpDecoder(Ip);
@@ -112,10 +130,11 @@ pub struct Stack {
 impl Stack {
     pub fn push_frame(
         &mut self,
-        ip: Ip,
+        caller_ip: Option<Ip>,
+        callee_ip: Ip,
         params: SlotSpan,
         size: usize,
-        state: &VmState,
+        store: &PrunedStore,
         instance: Option<Instance>,
     ) -> Result<Sp, TrapCode> {
         let delta = usize::from(u16::from(params.head()));
@@ -123,7 +142,8 @@ impl Stack {
             return Err(TrapCode::StackOverflow);
         };
         let sp = self.values.push(start, size)?;
-        self.frames.push(ip, start, state, instance)?;
+        self.frames
+            .push(caller_ip, callee_ip, start, store, instance)?;
         Ok(sp)
     }
 
@@ -179,23 +199,35 @@ impl CallStack {
         self.frames.last()
     }
 
+    fn sync_ip(&mut self, ip: Ip) {
+        let Some(top) = self.frames.last_mut() else {
+            panic!("must have top call frame")
+        };
+        top.ip = ip;
+    }
+
     fn push(
         &mut self,
-        ip: Ip,
+        caller_ip: Option<Ip>,
+        callee_ip: Ip,
         start: usize,
-        state: &VmState,
+        store: &PrunedStore,
         instance: Option<Instance>,
     ) -> Result<(), TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
         }
+        match caller_ip {
+            Some(caller_ip) => self.sync_ip(caller_ip),
+            None => debug_assert!(self.frames.is_empty()),
+        }
         let changes_instance = instance.is_some();
         if let Some(instance) = instance {
-            let entity = state.store.inner().resolve_instance(&instance);
+            let entity = store.inner().resolve_instance(&instance);
             self.instances.push(entity.into());
         }
         self.frames.push(Frame {
-            ip,
+            ip: callee_ip,
             start,
             changes_instance,
         });
@@ -208,7 +240,9 @@ impl CallStack {
         };
         let start = self.top_start();
         if popped.changes_instance {
-            self.instances.pop().expect("must have an instance if changed");
+            self.instances
+                .pop()
+                .expect("must have an instance if changed");
             // Note: it is expected to return `None` for the instance when the last frame is popped
             //       since that means that the execution is finished anyways. We might even want to expect
             //       this at the caller site.
