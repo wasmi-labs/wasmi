@@ -162,14 +162,9 @@ pub fn call_internal(
     let func = EngineFunc::from(func);
     let (callee_ip, size) = compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, func);
     let sp = break_if_trap!(
-        state.stack.push_frame(
-            Some(caller_ip),
-            callee_ip,
-            params.span(),
-            size,
-            state.store,
-            None,
-        ),
+        state
+            .stack
+            .push_frame(Some(caller_ip), callee_ip, params, size, state.store, None,),
         state,
         ip,
         sp,
