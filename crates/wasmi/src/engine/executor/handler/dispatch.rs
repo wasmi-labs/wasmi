@@ -19,6 +19,18 @@ type Handler = fn(
     instance: NonNull<InstanceEntity>,
 ) -> Done;
 
+macro_rules! compile_or_get_func {
+    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr, $func:expr) => {{
+        match $state.compile_or_get_func($func) {
+            Ok((ip, size)) => (ip, size),
+            Err(error) => {
+                $state.done_reason = DoneReason::CompileError(error);
+                return exec_break!($ip, $sp, $mem0, $mem0_len, $instance);
+            }
+        }
+    }};
+}
+
 macro_rules! exec_break {
     ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         _ = ($ip, $sp, $mem0, $mem0_len, $instance);
