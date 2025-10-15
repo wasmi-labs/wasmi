@@ -164,7 +164,7 @@ pub fn call_internal(
     let sp = break_if_trap!(
         state
             .stack
-            .push_frame(Some(caller_ip), callee_ip, params, size, state.store, None,),
+            .push_frame(Some(caller_ip), callee_ip, params, size, state.store, None),
         state,
         ip,
         sp,
