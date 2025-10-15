@@ -6,9 +6,12 @@ use super::{
 };
 use crate::{
     core::{wasm, UntypedVal},
-    engine::executor::handler::{
-        state::DoneReason,
-        utils::{resolve_global, set_global},
+    engine::{
+        executor::handler::{
+            state::DoneReason,
+            utils::{resolve_global, set_global},
+        },
+        EngineFunc,
     },
     errors::FuelError,
     instance::InstanceEntity,
@@ -145,6 +148,36 @@ pub fn global_set_64(
     let value: UntypedVal = get_value(value, sp).into();
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn call_internal(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { ip.decode() };
+    let func = EngineFunc::from(func);
+    let (callee_ip, size) = compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, func);
+    let sp = break_if_trap!(
+        state.stack.push_frame(
+            Some(caller_ip),
+            callee_ip,
+            params.span(),
+            size,
+            state.store,
+            None,
+        ),
+        state,
+        ip,
+        sp,
+        mem0,
+        mem0_len,
+        instance,
+    );
+    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
 macro_rules! handler_unary {
