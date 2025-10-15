@@ -177,7 +177,8 @@ impl ValueStack {
         if end > self.max_height {
             return Err(TrapCode::StackOverflow);
         }
-        self.cells.resize(end, UntypedVal::default());
+        self.cells.resize_with(end, UntypedVal::default);
+        self.cells[start..end].fill_with(UntypedVal::default);
         let sp = self.sp(start);
         Ok(sp)
     }
