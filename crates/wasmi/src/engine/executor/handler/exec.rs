@@ -9,7 +9,7 @@ use crate::{
     engine::{
         executor::handler::{
             state::DoneReason,
-            utils::{resolve_global, set_global},
+            utils::{exec_copy_span, resolve_global, set_global},
         },
         EngineFunc,
     },
@@ -71,12 +71,7 @@ pub fn copy_span(
             len,
         },
     ) = unsafe { ip.decode() };
-    let results = results.iter(len);
-    let values = values.iter(len);
-    for (result, value) in results.into_iter().zip(values.into_iter()) {
-        let value: u64 = get_value(value, sp);
-        set_value(sp, result, value);
-    }
+    exec_copy_span(sp, results, values, len);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
