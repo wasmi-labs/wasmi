@@ -1,7 +1,10 @@
 use crate::{
     collections::HeadVec,
     core::UntypedVal,
-    engine::{executor::CodeMap, EngineFunc},
+    engine::{
+        executor::{handler::utils::extract_mem0, CodeMap},
+        EngineFunc,
+    },
     errors::HostError,
     instance::InstanceEntity,
     ir::{self, BoundedSlotSpan, Slot},
@@ -150,14 +153,23 @@ impl Stack {
 
     pub fn pop_frame(
         &mut self,
+        store: &mut PrunedStore,
+        mem0: *mut u8,
+        mem0_len: usize,
         instance: NonNull<InstanceEntity>,
-    ) -> (Sp, NonNull<InstanceEntity>) {
-        let (start, changed_instance) = self.frames.pop();
+    ) -> Option<(Ip, Sp, *mut u8, usize, NonNull<InstanceEntity>)> {
+        let Some((ip, start, changed_instance)) = self.frames.pop() else {
+            return None;
+        };
         let sp = self.values.sp(start);
-        if let Some(instance) = changed_instance {
-            return (sp, instance);
-        }
-        (sp, instance)
+        let (mem0, mem0_len, instance) = match changed_instance {
+            Some(instance) => {
+                let (mem0, mem0_len) = extract_mem0(store, instance);
+                (mem0, mem0_len, instance)
+            }
+            None => (mem0, mem0_len, instance),
+        };
+        Some((ip, sp, mem0, mem0_len, instance))
     }
 }
 
@@ -237,22 +249,25 @@ impl CallStack {
         Ok(())
     }
 
-    fn pop(&mut self) -> (usize, Option<NonNull<InstanceEntity>>) {
+    fn pop(&mut self) -> Option<(Ip, usize, Option<NonNull<InstanceEntity>>)> {
         let Some(popped) = self.frames.pop() else {
             panic!("unexpected empty frame stack") // TODO: return `Result` instead of panicking
         };
-        let start = self.top_start();
-        if popped.changes_instance {
+        let Some(top) = self.top() else {
+            return None;
+        };
+        let ip = top.ip;
+        let start = top.start;
+        let instance = popped.changes_instance.then(|| {
             self.instances
                 .pop()
                 .expect("must have an instance if changed");
-            // Note: it is expected to return `None` for the instance when the last frame is popped
-            //       since that means that the execution is finished anyways. We might even want to expect
-            //       this at the caller site.
-            let instance = self.instances.last().copied();
-            return (start, instance);
-        }
-        (start, None)
+            self.instances
+                .last()
+                .copied()
+                .expect("must have another instance since frame stack is non-empty")
+        });
+        Some((ip, start, instance))
     }
 }
 
