@@ -82,6 +82,8 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::GlobalSet => exec::global_set,
         OpCode::GlobalSet32 => exec::global_set_32,
         OpCode::GlobalSet64 => exec::global_set_64,
+        // call
+        OpCode::CallInternal => exec::call_internal,
         // unconditional branch
         OpCode::Branch => exec::branch,
         // unary
