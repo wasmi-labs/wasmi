@@ -2,7 +2,7 @@ use super::state::{DoneReason, Ip, Sp, VmState};
 use crate::{
     core::UntypedVal,
     instance::InstanceEntity,
-    ir::{index, Address, BranchOffset, Offset16, Sign, Slot},
+    ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
     store::PrunedStore,
     Global,
     TrapCode,
@@ -142,6 +142,15 @@ macro_rules! exec_return {
         };
         dispatch!($state, ip, sp, mem0, mem0_len, instance)
     }};
+}
+
+pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    let dst = dst.iter(len);
+    let src = src.iter(len);
+    for (dst, src) in dst.into_iter().zip(src.into_iter()) {
+        let value: u64 = get_value(src, sp);
+        set_value(sp, dst, value);
+    }
 }
 
 pub fn extract_mem0(
