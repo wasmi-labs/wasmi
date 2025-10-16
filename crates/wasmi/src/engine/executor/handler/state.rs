@@ -158,9 +158,7 @@ impl Stack {
         mem0_len: usize,
         instance: NonNull<InstanceEntity>,
     ) -> Option<(Ip, Sp, *mut u8, usize, NonNull<InstanceEntity>)> {
-        let Some((ip, start, changed_instance)) = self.frames.pop() else {
-            return None;
-        };
+        let (ip, start, changed_instance) = self.frames.pop()?;
         let sp = self.values.sp(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
@@ -253,9 +251,7 @@ impl CallStack {
         let Some(popped) = self.frames.pop() else {
             panic!("unexpected empty frame stack") // TODO: return `Result` instead of panicking
         };
-        let Some(top) = self.top() else {
-            return None;
-        };
+        let top = self.top()?;
         let ip = top.ip;
         let start = top.start;
         let instance = popped.changes_instance.then(|| {
