@@ -135,7 +135,7 @@ pub fn extract_mem0(
 ) -> (*mut u8, usize) {
     let instance = unsafe { instance.as_ref() };
     let Some(memory) = instance.get_memory(0) else {
-        return ((&mut []).as_mut_ptr(), 0);
+        return ([].as_mut_ptr(), 0);
     };
     let mem0 = store.inner_mut().resolve_memory_mut(&memory).data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
