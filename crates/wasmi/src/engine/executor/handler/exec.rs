@@ -183,16 +183,7 @@ pub fn r#return(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let Some((ip, sp, mem0, mem0_len, instance)) =
-        state
-            .stack
-            .pop_frame(&mut state.store, mem0, mem0_len, instance)
-    else {
-        // No more frames on the call stack -> break out of execution!
-        state.done_reason = DoneReason::Return;
-        return Done::default();
-    };
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    exec_return!(state, mem0, mem0_len, instance)
 }
 
 macro_rules! handler_unary {

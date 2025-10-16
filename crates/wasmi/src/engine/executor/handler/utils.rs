@@ -129,6 +129,21 @@ macro_rules! break_if_trap {
     }};
 }
 
+macro_rules! exec_return {
+    ($state:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        let Some((ip, sp, mem0, mem0_len, instance)) =
+            $state
+                .stack
+                .pop_frame(&mut $state.store, $mem0, $mem0_len, $instance)
+        else {
+            // No more frames on the call stack -> break out of execution!
+            $state.done_reason = DoneReason::Return;
+            return Done::default();
+        };
+        dispatch!($state, ip, sp, mem0, mem0_len, instance)
+    }};
+}
+
 pub fn extract_mem0(
     store: &mut PrunedStore,
     instance: NonNull<InstanceEntity>,
