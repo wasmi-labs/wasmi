@@ -84,6 +84,10 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::GlobalSet64 => exec::global_set_64,
         // return
         OpCode::Return => exec::r#return,
+        OpCode::Return32 => exec::return32,
+        OpCode::Return64 => exec::return64,
+        OpCode::ReturnSlot => exec::return_slot,
+        OpCode::ReturnSpan => exec::return_span,
         // call
         OpCode::CallInternal => exec::call_internal,
         // unconditional branch

@@ -15,6 +15,7 @@ use crate::{
     },
     errors::FuelError,
     instance::InstanceEntity,
+    ir::{Slot, SlotSpan},
 };
 use core::ptr::NonNull;
 
@@ -179,6 +180,47 @@ pub fn r#return(
     instance: NonNull<InstanceEntity>,
 ) -> Done {
     exec_return!(state, mem0, mem0_len, instance)
+}
+
+pub fn return_span(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { ip.decode() };
+    let dst = SlotSpan::new(Slot::from(0));
+    let src = values.span();
+    let len = values.len();
+    exec_copy_span(sp, dst, src, len);
+    exec_return!(state, mem0, mem0_len, instance)
+}
+
+macro_rules! handler_return {
+    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: *mut u8,
+                mem0_len: usize,
+                instance: NonNull<InstanceEntity>,
+            ) -> Done {
+                let (_ip, crate::ir::decode::$op { value }) = unsafe { ip.decode() };
+                let value = get_value(value, sp);
+                set_value(sp, Slot::from(0), $eval(value));
+                exec_return!(state, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_return! {
+    fn return_slot(ReturnSlot) = identity::<UntypedVal>;
+    fn return32(Return32) = identity::<u32>;
+    fn return64(Return64) = identity::<u64>;
 }
 
 macro_rules! handler_unary {
