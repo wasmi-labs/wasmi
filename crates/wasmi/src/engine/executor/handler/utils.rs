@@ -3,6 +3,7 @@ use crate::{
     core::UntypedVal,
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot},
+    store::PrunedStore,
     Global,
     TrapCode,
 };
@@ -126,6 +127,20 @@ macro_rules! break_if_trap {
             None => return exec_break!($ip, $sp, $mem0, $mem0_len, $instance),
         }
     }};
+}
+
+pub fn extract_mem0(
+    store: &mut PrunedStore,
+    instance: NonNull<InstanceEntity>,
+) -> (*mut u8, usize) {
+    let instance = unsafe { instance.as_ref() };
+    let Some(memory) = instance.get_memory(0) else {
+        return ((&mut []).as_mut_ptr(), 0);
+    };
+    let mem0 = store.inner_mut().resolve_memory_mut(&memory).data_mut();
+    let mem0_ptr = mem0.as_mut_ptr();
+    let mem0_len = mem0.len();
+    (mem0_ptr, mem0_len)
 }
 
 pub fn default_memory_bytes<'a>(mem0: *mut u8, mem0_len: usize) -> &'a mut [u8] {
