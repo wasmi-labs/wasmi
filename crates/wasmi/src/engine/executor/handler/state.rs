@@ -10,7 +10,6 @@ use crate::{
     ir::{self, BoundedSlotSpan, Slot},
     store::PrunedStore,
     Error,
-    Instance,
     TrapCode,
 };
 use alloc::{boxed::Box, vec::Vec};
@@ -137,8 +136,7 @@ impl Stack {
         callee_ip: Ip,
         params: BoundedSlotSpan,
         size: usize,
-        store: &PrunedStore,
-        instance: Option<Instance>,
+        instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<Sp, TrapCode> {
         let delta = usize::from(u16::from(params.span().head()));
         let len_params = params.len();
@@ -146,8 +144,7 @@ impl Stack {
             return Err(TrapCode::StackOverflow);
         };
         let sp = self.values.push(start, size, len_params)?;
-        self.frames
-            .push(caller_ip, callee_ip, start, store, instance)?;
+        self.frames.push(caller_ip, callee_ip, start, instance)?;
         Ok(sp)
     }
 
@@ -224,8 +221,7 @@ impl CallStack {
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         start: usize,
-        store: &PrunedStore,
-        instance: Option<Instance>,
+        instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<(), TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
@@ -236,8 +232,7 @@ impl CallStack {
         }
         let changes_instance = instance.is_some();
         if let Some(instance) = instance {
-            let entity = store.inner().resolve_instance(&instance);
-            self.instances.push(entity.into());
+            self.instances.push(instance);
         }
         self.frames.push(Frame {
             ip: callee_ip,
