@@ -62,7 +62,12 @@ macro_rules! dispatch {
 #[cfg(not(feature = "trampolines"))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        _ = ($state, $ip, $sp, $mem0, $mem0_len, $instance);
+        let _: &mut VmState = $state;
+        let _: Ip = $ip;
+        let _: Sp = $sp;
+        let _: *mut u8 = $mem0;
+        let _: usize = $mem0_len;
+        let _: NonNull<InstanceEntity> = $instance;
         todo!()
     }};
 }
