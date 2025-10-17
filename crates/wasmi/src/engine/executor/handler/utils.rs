@@ -129,6 +129,13 @@ macro_rules! break_if_trap {
     }};
 }
 
+macro_rules! break_with_trap {
+    ($trap:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
+        $state.done_reason = DoneReason::Trap($trap);
+        return exec_break!($ip, $sp, $mem0, $mem0_len, $instance);
+    }};
+}
+
 macro_rules! exec_return {
     ($state:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let Some((ip, sp, mem0, mem0_len, instance)) =
