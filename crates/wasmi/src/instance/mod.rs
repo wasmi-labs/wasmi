@@ -303,7 +303,7 @@ impl Instance {
     /// Looks up an exported [`Memory`] value by `name`.
     ///
     /// Returns `None` if there was no export named `name`,
-    /// or if there was but it wasn’t a table.
+    /// or if there was but it wasn’t a memory.
     ///
     /// # Panics
     ///
