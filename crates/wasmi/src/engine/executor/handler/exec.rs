@@ -2,7 +2,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{Ip, Sp, VmState},
-    utils::{default_memory_bytes, get_value, memory_bytes, offset_ip, set_value},
+    utils::{default_memory_bytes, get_value, memory_bytes, offset_ip, resolve_func, set_value},
 };
 use crate::{
     core::{wasm, UntypedVal},
@@ -14,6 +14,7 @@ use crate::{
         EngineFunc,
     },
     errors::FuelError,
+    func::FuncEntity,
     instance::InstanceEntity,
     ir::{Slot, SlotSpan},
 };
@@ -165,6 +166,46 @@ pub fn call_internal(
         Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance,),
     };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn call_imported(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { ip.decode() };
+    let func = resolve_func(instance, func);
+    let func = state.store.inner().resolve_func(&func);
+    match func {
+        FuncEntity::Wasm(func) => {
+            let engine_func = func.func_body();
+            let callee_instance = *func.instance();
+            let (callee_ip, size) =
+                compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, engine_func);
+            let callee_instance: NonNull<InstanceEntity> = state
+                .store
+                .inner()
+                .resolve_instance(&callee_instance)
+                .into();
+            match state.stack.push_frame(
+                Some(caller_ip),
+                callee_ip,
+                params,
+                size,
+                (instance == callee_instance).then_some(callee_instance),
+            ) {
+                Ok(sp) => sp,
+                Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance,),
+            };
+            dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+        }
+        FuncEntity::Host(_func) => {
+            todo!()
+        }
+    }
 }
 
 pub fn r#return(

@@ -95,6 +95,7 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::ReturnSpan => exec::return_span,
         // call
         OpCode::CallInternal => exec::call_internal,
+        OpCode::CallImported => exec::call_imported,
         // unconditional branch
         OpCode::Branch => exec::branch,
         // unary

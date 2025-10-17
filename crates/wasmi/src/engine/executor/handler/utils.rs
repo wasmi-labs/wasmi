@@ -4,6 +4,7 @@ use crate::{
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
     store::PrunedStore,
+    Func,
     Global,
     TrapCode,
 };
@@ -204,6 +205,14 @@ pub fn memory_bytes<'a>(
 
 pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
     unsafe { ip.offset(i32::from(offset) as isize) }
+}
+
+pub fn resolve_func(instance: NonNull<InstanceEntity>, func: index::Func) -> Func {
+    let inst = unsafe { instance.as_ref() };
+    let Some(func) = inst.get_func(u32::from(func)) else {
+        unreachable!("missing func at: {}", u32::from(func))
+    };
+    func
 }
 
 pub fn resolve_global(instance: NonNull<InstanceEntity>, global: index::Global) -> Global {
