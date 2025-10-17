@@ -157,17 +157,13 @@ pub fn call_internal(
     let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { ip.decode() };
     let func = EngineFunc::from(func);
     let (callee_ip, size) = compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, func);
-    let sp = break_if_trap!(
-        state
-            .stack
-            .push_frame(Some(caller_ip), callee_ip, params, size, state.store, None),
-        state,
-        ip,
-        sp,
-        mem0,
-        mem0_len,
-        instance,
-    );
+    match state
+        .stack
+        .push_frame(Some(caller_ip), callee_ip, params, size, None)
+    {
+        Ok(sp) => sp,
+        Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance,),
+    };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
