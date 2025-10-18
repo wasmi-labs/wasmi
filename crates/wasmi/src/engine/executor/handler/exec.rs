@@ -163,7 +163,7 @@ pub fn call_internal(
         .push_frame(Some(caller_ip), callee_ip, params, size, None)
     {
         Ok(sp) => sp,
-        Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance,),
+        Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
     };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
@@ -198,7 +198,7 @@ pub fn call_imported(
                 (instance != callee_instance).then_some(callee_instance),
             ) {
                 Ok(sp) => sp,
-                Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance,),
+                Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
             };
             dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
         }
