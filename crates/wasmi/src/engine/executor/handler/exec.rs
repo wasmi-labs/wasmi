@@ -200,6 +200,8 @@ pub fn call_imported(
                 Ok(sp) => sp,
                 Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
             };
+            let (instance, mem0, mem0_len) =
+                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (state, callee_ip, sp, mem0, mem0_len, instance)
         }
         FuncEntity::Host(_func) => {

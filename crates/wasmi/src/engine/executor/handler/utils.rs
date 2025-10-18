@@ -238,3 +238,17 @@ pub fn set_global(
     let global_ref = unsafe { global_ptr.as_mut() };
     *global_ref = value;
 }
+
+pub fn update_instance(
+    store: &mut PrunedStore,
+    instance: NonNull<InstanceEntity>,
+    new_instance: NonNull<InstanceEntity>,
+    mem0: *mut u8,
+    mem0_len: usize,
+) -> (NonNull<InstanceEntity>, *mut u8, usize) {
+    if new_instance == instance {
+        return (instance, mem0, mem0_len);
+    }
+    let (mem0, mem0_len) = extract_mem0(store, new_instance);
+    (new_instance, mem0, mem0_len)
+}
