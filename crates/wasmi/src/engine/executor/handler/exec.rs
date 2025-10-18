@@ -195,7 +195,7 @@ pub fn call_imported(
                 callee_ip,
                 params,
                 size,
-                (instance == callee_instance).then_some(callee_instance),
+                (instance != callee_instance).then_some(callee_instance),
             ) {
                 Ok(sp) => sp,
                 Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance,),
