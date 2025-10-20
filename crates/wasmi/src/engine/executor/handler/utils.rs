@@ -1,4 +1,4 @@
-use super::state::{DoneReason, Ip, Sp, VmState};
+use super::state::{Ip, Sp, VmState};
 use crate::{
     core::UntypedVal,
     engine::DedupFuncType,
@@ -86,49 +86,46 @@ where
     <T as SetValue<V>>::set_value(src, value, sp)
 }
 
-pub trait UnwrapResult {
-    type Item;
+pub trait ExtendToResult {
+    type Value;
 
-    fn unwrap_result(self, state: &mut VmState) -> Option<Self::Item>;
+    fn expand_to_result(self) -> Result<Self::Value, TrapCode>;
 }
 
-impl<T> UnwrapResult for Result<T, TrapCode> {
-    type Item = T;
+impl<T> ExtendToResult for Result<T, TrapCode> {
+    type Value = T;
 
-    fn unwrap_result(self, state: &mut VmState) -> Option<Self::Item> {
-        match self {
-            Ok(item) => Some(item),
-            Err(trap_code) => {
-                state.done_reason = DoneReason::Trap(trap_code);
-                None
-            }
-        }
+    #[inline(always)]
+    fn expand_to_result(self) -> Result<Self::Value, TrapCode> {
+        self
     }
 }
 
-macro_rules! impl_unwrap_result {
+macro_rules! impl_expand_to_result {
     ($($ty:ty),* $(,)?) => {
         $(
-            impl UnwrapResult for $ty {
-                type Item = Self;
+            impl ExtendToResult for $ty {
+                type Value = Self;
 
                 #[inline(always)]
-                fn unwrap_result(self, _state: &mut VmState) -> Option<Self::Item> {
-                    Some(self)
+                fn expand_to_result(self) -> Result<Self::Value, TrapCode> {
+                    Ok(self)
                 }
             }
         )*
     };
 }
-impl_unwrap_result!(bool, i32, i64, u32, u64, f32, f64);
+impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
 
 macro_rules! break_if_trap {
     ($value:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
-        match <_ as $crate::engine::executor::handler::utils::UnwrapResult>::unwrap_result(
-            $value, $state,
+        match <_ as $crate::engine::executor::handler::utils::ExtendToResult>::expand_to_result(
+            $value,
         ) {
-            Some(value) => value,
-            None => return exec_break!($ip, $sp, $mem0, $mem0_len, $instance),
+            ::core::result::Result::Ok(value) => value,
+            ::core::result::Result::Err(trap) => {
+                break_with_trap!(trap, $state, $ip, $sp, $mem0, $mem0_len, $instance)
+            }
         }
     }};
 }
