@@ -12,6 +12,7 @@ use crate::{
             utils::{
                 exec_copy_span,
                 resolve_global,
+                resolve_indirect_func,
                 set_global,
                 update_instance,
             },
@@ -183,6 +184,60 @@ pub fn call_imported(
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { ip.decode() };
     let func = resolve_func(instance, func);
+    let func = state.store.inner().resolve_func(&func);
+    let (state, callee_ip, sp, mem0, mem0_len, instance) = match func {
+        FuncEntity::Wasm(func) => {
+            let engine_func = func.func_body();
+            let callee_instance = *func.instance();
+            let (callee_ip, size) =
+                compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, engine_func);
+            let callee_instance: NonNull<InstanceEntity> = state
+                .store
+                .inner()
+                .resolve_instance(&callee_instance)
+                .into();
+            match state.stack.push_frame(
+                Some(caller_ip),
+                callee_ip,
+                params,
+                size,
+                (instance != callee_instance).then_some(callee_instance),
+            ) {
+                Ok(sp) => sp,
+                Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+            };
+            let (instance, mem0, mem0_len) =
+                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+            (state, callee_ip, sp, mem0, mem0_len, instance)
+        }
+        FuncEntity::Host(_func) => {
+            todo!()
+        }
+    };
+    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn call_indirect(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (
+        caller_ip,
+        crate::ir::decode::CallIndirect {
+            params,
+            index,
+            func_type,
+            table,
+        },
+    ) = unsafe { ip.decode() };
+    let func = match resolve_indirect_func(index, table, func_type, state, sp, instance) {
+        Ok(func) => func,
+        Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+    };
     let func = state.store.inner().resolve_func(&func);
     let (state, callee_ip, sp, mem0, mem0_len, instance) = match func {
         FuncEntity::Wasm(func) => {
