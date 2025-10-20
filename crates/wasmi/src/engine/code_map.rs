@@ -149,7 +149,7 @@ impl EngineFuncSpan {
 
     /// Returns the n-th [`EngineFunc`] in `self`, if any.
     ///
-    /// # Pancis
+    /// # Panics
     ///
     /// If `n` is out of bounds.
     #[track_caller]
