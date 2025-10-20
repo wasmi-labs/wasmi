@@ -9,7 +9,12 @@ use crate::{
     engine::{
         executor::handler::{
             state::DoneReason,
-            utils::{exec_copy_span, resolve_global, set_global},
+            utils::{
+                exec_copy_span,
+                resolve_global,
+                set_global,
+                update_instance,
+            },
         },
         EngineFunc,
     },
