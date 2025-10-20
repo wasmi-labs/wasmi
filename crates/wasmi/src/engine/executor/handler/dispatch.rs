@@ -5,9 +5,39 @@ use super::{
 use crate::{instance::InstanceEntity, ir::OpCode};
 use core::ptr::NonNull;
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
+#[cfg(not(feature = "trampolines"))]
 pub struct Done {
     _priv: (),
+}
+
+#[derive(Debug, Copy, Clone)]
+#[cfg(feature = "trampolines")]
+pub enum Done {
+    Continue,
+    Break,
+}
+
+impl Done {
+    #[cfg(not(feature = "trampolines"))]
+    pub fn control_continue() -> Self {
+        Self { _priv: () }
+    }
+
+    #[cfg(feature = "trampolines")]
+    pub fn control_continue() -> Self {
+        Self::Continue
+    }
+
+    #[cfg(not(feature = "trampolines"))]
+    pub fn control_break() -> Self {
+        Self { _priv: () }
+    }
+
+    #[cfg(feature = "trampolines")]
+    pub fn control_break() -> Self {
+        Self::Break
+    }
 }
 
 type Handler = fn(
@@ -31,10 +61,27 @@ macro_rules! compile_or_get_func {
     }};
 }
 
+#[cfg(not(feature = "trampolines"))]
 macro_rules! exec_break {
     ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        _ = ($ip, $sp, $mem0, $mem0_len, $instance);
-        $crate::engine::executor::handler::dispatch::Done::default()
+        let _: Ip = $ip;
+        let _: Sp = $sp;
+        let _: *mut u8 = $mem0;
+        let _: usize = $mem0_len;
+        let _: NonNull<InstanceEntity> = $instance;
+        $crate::engine::executor::handler::dispatch::Done::control_continue()
+    }};
+}
+
+#[cfg(feature = "trampolines")]
+macro_rules! exec_break {
+    ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        let _: Ip = $ip;
+        let _: Sp = $sp;
+        let _: *mut u8 = $mem0;
+        let _: usize = $mem0_len;
+        let _: NonNull<InstanceEntity> = $instance;
+        $crate::engine::executor::handler::dispatch::Done::Break
     }};
 }
 
@@ -42,6 +89,19 @@ macro_rules! trap {
     ($trap_code:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         $state.done_reason = $crate::engine::executor::handler::state::DoneReason::Trap($trap_code);
         exec_break!($ip, $sp, $mem0, $mem0_len, $instance)
+    }};
+}
+
+#[cfg(not(feature = "trampolines"))]
+macro_rules! dispatch {
+    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        let _: &mut VmState = $state;
+        let _: Ip = $ip;
+        let _: Sp = $sp;
+        let _: *mut u8 = $mem0;
+        let _: usize = $mem0_len;
+        let _: NonNull<InstanceEntity> = $instance;
+        $crate::engine::executor::handler::dispatch::Done::control_continue()
     }};
 }
 
@@ -55,20 +115,7 @@ macro_rules! dispatch {
             mem0_len: $mem0_len,
             instance: $instance,
         };
-        $crate::engine::executor::handler::dispatch::Done::default()
-    }};
-}
-
-#[cfg(not(feature = "trampolines"))]
-macro_rules! dispatch {
-    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let _: &mut VmState = $state;
-        let _: Ip = $ip;
-        let _: Sp = $sp;
-        let _: *mut u8 = $mem0;
-        let _: usize = $mem0_len;
-        let _: NonNull<InstanceEntity> = $instance;
-        todo!()
+        $crate::engine::executor::handler::dispatch::Done::Continue
     }};
 }
 

@@ -146,7 +146,7 @@ macro_rules! exec_return {
         else {
             // No more frames on the call stack -> break out of execution!
             $state.done_reason = DoneReason::Return;
-            return Done::default();
+            return Done::control_break();
         };
         dispatch!($state, ip, sp, mem0, mem0_len, instance)
     }};
