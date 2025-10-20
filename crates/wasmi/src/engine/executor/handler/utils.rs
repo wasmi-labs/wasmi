@@ -1,11 +1,14 @@
 use super::state::{DoneReason, Ip, Sp, VmState};
 use crate::{
     core::UntypedVal,
+    engine::DedupFuncType,
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
     store::PrunedStore,
     Func,
     Global,
+    Ref,
+    Table,
     TrapCode,
 };
 use core::{num::NonZero, ptr::NonNull, slice};
@@ -221,6 +224,51 @@ pub fn resolve_global(instance: NonNull<InstanceEntity>, global: index::Global) 
         unreachable!("missing global at: {}", u32::from(global))
     };
     global
+}
+
+pub fn resolve_table(instance: NonNull<InstanceEntity>, table: index::Table) -> Table {
+    let inst = unsafe { instance.as_ref() };
+    let Some(table) = inst.get_table(u32::from(table)) else {
+        unreachable!("missing table at: {}", u32::from(table))
+    };
+    table
+}
+
+pub fn resolve_func_type_dedup(
+    instance: NonNull<InstanceEntity>,
+    func_type: index::FuncType,
+) -> DedupFuncType {
+    let inst = unsafe { instance.as_ref() };
+    let Some(func_type) = inst.get_signature(u32::from(func_type)) else {
+        unreachable!("missing func type at: {}", u32::from(func_type))
+    };
+    *func_type
+}
+
+pub fn resolve_indirect_func(
+    index: Slot,
+    table: index::Table,
+    func_type: index::FuncType,
+    state: &mut VmState<'_>,
+    sp: Sp,
+    instance: NonNull<InstanceEntity>,
+) -> Result<Func, TrapCode> {
+    let table = resolve_table(instance, table);
+    let index = get_value(index, sp);
+    let funcref = state
+        .store
+        .inner()
+        .resolve_table(&table)
+        .get_untyped(index)
+        .map(<Ref<Func>>::from)
+        .ok_or(TrapCode::TableOutOfBounds)?;
+    let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
+    let actual_signature = state.store.inner().resolve_func(func).ty_dedup();
+    let expected_signature = resolve_func_type_dedup(instance, func_type);
+    if expected_signature.ne(actual_signature) {
+        return Err(TrapCode::BadSignature);
+    }
+    Ok(*func)
 }
 
 pub fn set_global(
