@@ -143,6 +143,7 @@ fn op_code_to_handler(code: OpCode) -> Handler {
         // call
         OpCode::CallInternal => exec::call_internal,
         OpCode::CallImported => exec::call_imported,
+        OpCode::CallIndirect => exec::call_indirect,
         // unconditional branch
         OpCode::Branch => exec::branch,
         // unary
