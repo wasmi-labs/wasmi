@@ -14,19 +14,43 @@ pub struct Done {
 #[derive(Debug, Copy, Clone)]
 #[cfg(feature = "trampolines")]
 pub enum Done {
-    Continue,
+    Continue {
+        next_ip: Ip,
+        next_sp: Sp,
+        next_mem0: *mut u8,
+        next_mem0_len: usize,
+        next_instance: NonNull<InstanceEntity>,
+    },
     Break,
 }
 
 impl Done {
     #[cfg(not(feature = "trampolines"))]
-    pub fn control_continue() -> Self {
+    pub fn control_continue(
+        _ip: Ip,
+        _sp: Sp,
+        _mem0: *mut u8,
+        _mem0_len: usize,
+        _instance: NonNull<InstanceEntity>,
+    ) -> Self {
         Self { _priv: () }
     }
 
     #[cfg(feature = "trampolines")]
-    pub fn control_continue() -> Self {
-        Self::Continue
+    pub fn control_continue(
+        next_ip: Ip,
+        next_sp: Sp,
+        next_mem0: *mut u8,
+        next_mem0_len: usize,
+        next_instance: NonNull<InstanceEntity>,
+    ) -> Self {
+        Self::Continue {
+            next_ip,
+            next_sp,
+            next_mem0,
+            next_mem0_len,
+            next_instance,
+        }
     }
 
     #[cfg(not(feature = "trampolines"))]
@@ -64,12 +88,9 @@ macro_rules! compile_or_get_func {
 #[cfg(not(feature = "trampolines"))]
 macro_rules! exec_break {
     ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let _: Ip = $ip;
-        let _: Sp = $sp;
-        let _: *mut u8 = $mem0;
-        let _: usize = $mem0_len;
-        let _: NonNull<InstanceEntity> = $instance;
-        $crate::engine::executor::handler::dispatch::Done::control_continue()
+        $crate::engine::executor::handler::dispatch::Done::control_continue(
+            $ip, $sp, $mem0, $mem0_len, $instance,
+        )
     }};
 }
 
