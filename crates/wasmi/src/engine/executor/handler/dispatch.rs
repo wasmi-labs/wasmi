@@ -1,9 +1,81 @@
 use super::{
     exec,
-    state::{Ip, Sp, VmState},
+    state::{DoneReason, Ip, Sp, VmState},
 };
-use crate::{instance::InstanceEntity, ir::OpCode};
+use crate::{instance::InstanceEntity, ir::OpCode, Error};
 use core::ptr::NonNull;
+
+pub fn fetch_handler(ip: Ip) -> (Ip, Handler) {
+    match cfg!(feature = "compact") {
+        true => {
+            let (ip, op_code) = unsafe { ip.decode::<OpCode>() };
+            let handler = op_code_to_handler(op_code);
+            (ip, handler)
+        }
+        false => {
+            let (ip, handler) = unsafe { ip.decode::<usize>() };
+            let handler = unsafe { ::core::mem::transmute::<usize, Handler>(handler) };
+            (ip, handler)
+        }
+    }
+}
+
+#[cfg(feature = "trampolines")]
+pub fn execute_ops(
+    state: &mut VmState,
+    ip: Ip,
+    mut sp: Sp,
+    mut mem0: *mut u8,
+    mut mem0_len: usize,
+    mut instance: NonNull<InstanceEntity>,
+) -> Result<(), Error> {
+    let (mut ip, mut handler) = fetch_handler(ip);
+    'exec: loop {
+        match handler(state, ip, sp, mem0, mem0_len, instance) {
+            Done::Continue {
+                next_ip,
+                next_sp,
+                next_mem0,
+                next_mem0_len,
+                next_instance,
+            } => {
+                (ip, handler) = fetch_handler(next_ip);
+                sp = next_sp;
+                mem0 = next_mem0;
+                mem0_len = next_mem0_len;
+                instance = next_instance;
+                continue 'exec;
+            }
+            Done::Break => break 'exec,
+        }
+    }
+    handle_reason(state)
+}
+
+#[cfg(not(feature = "trampolines"))]
+pub fn execute_ops(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Result<(), Error> {
+    let (ip, handler) = fetch_handler(ip);
+    handler(state, ip, sp, mem0, mem0_len, instance);
+    handle_reason(state)
+}
+
+fn handle_reason(state: &mut VmState) -> Result<(), Error> {
+    match &state.done_reason {
+        DoneReason::Trap(_trap_code) => todo!(),
+        DoneReason::OutOfFuel { required_fuel: _ } => todo!(),
+        DoneReason::Host(_host_error) => todo!(),
+        DoneReason::CompileError(_error) => todo!(),
+        DoneReason::Return => todo!(),
+        DoneReason::Continue { .. } => panic!("already handled above"),
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 #[cfg(not(feature = "trampolines"))]
