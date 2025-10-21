@@ -117,19 +117,6 @@ macro_rules! impl_expand_to_result {
 }
 impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
 
-macro_rules! break_if_trap {
-    ($value:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
-        match <_ as $crate::engine::executor::handler::utils::IntoTrapResult>::into_trap_result(
-            $value,
-        ) {
-            ::core::result::Result::Ok(value) => value,
-            ::core::result::Result::Err(trap) => {
-                break_with_trap!(trap, $state, $ip, $sp, $mem0, $mem0_len, $instance)
-            }
-        }
-    }};
-}
-
 macro_rules! break_with_trap {
     ($trap:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
         $state.done_reason = DoneReason::Trap($trap);
