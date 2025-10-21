@@ -52,7 +52,7 @@ impl_get_value!(
 
 impl<T> GetValue<T> for Slot
 where
-    T: From<UntypedVal>,
+    T: Copy + From<UntypedVal>,
 {
     fn get_value(src: Self, sp: Sp) -> T {
         sp.get::<T>(src)
@@ -72,7 +72,7 @@ pub trait SetValue<T> {
 
 impl<T> SetValue<T> for Slot
 where
-    T: Into<UntypedVal>,
+    T: Copy + Into<UntypedVal>,
 {
     fn set_value(src: Self, value: T, sp: Sp) {
         sp.set::<T>(src, value)

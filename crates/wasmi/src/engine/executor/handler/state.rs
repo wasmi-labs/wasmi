@@ -107,7 +107,7 @@ impl<'a> From<&'a mut [UntypedVal]> for Sp {
 impl Sp {
     pub fn get<T>(self, slot: Slot) -> T
     where
-        T: From<UntypedVal>,
+        T: Copy + From<UntypedVal>,
     {
         let index = usize::from(u16::from(slot));
         let value = unsafe { *self.value.add(index) };
@@ -116,7 +116,7 @@ impl Sp {
 
     pub fn set<T>(self, slot: Slot, value: T)
     where
-        T: Into<UntypedVal>,
+        T: Copy + Into<UntypedVal>,
     {
         let index = usize::from(u16::from(slot));
         let cell = unsafe { &mut *self.value.add(index) };
