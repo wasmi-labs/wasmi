@@ -2,7 +2,15 @@ use super::{
     dispatch::Done,
     eval,
     state::{Ip, Sp, VmState},
-    utils::{default_memory_bytes, get_value, memory_bytes, offset_ip, resolve_func, set_value},
+    utils::{
+        default_memory_bytes,
+        get_value,
+        memory_bytes,
+        offset_ip,
+        resolve_func,
+        set_value,
+        IntoTrapResult as _,
+    },
 };
 use crate::{
     core::{wasm, UntypedVal},
@@ -336,7 +344,11 @@ macro_rules! handler_unary {
             ) -> Done {
                 let (ip, $crate::ir::decode::$op { result, value }) = unsafe { ip.decode() };
                 let value = get_value(value, sp);
-                set_value(sp, result, break_if_trap!($eval(value), state, ip, sp, mem0, mem0_len, instance));
+                let value = match $eval(value).into_trap_result() {
+                    Ok(value) => value,
+                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                };
+                set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
@@ -420,7 +432,11 @@ macro_rules! handler_binary {
                 let (ip, $crate::ir::decode::$decode { result, lhs, rhs }) = unsafe { ip.decode() };
                 let lhs = get_value(lhs, sp);
                 let rhs = get_value(rhs, sp);
-                set_value(sp, result, break_if_trap!($eval(lhs, rhs), state, ip, sp, mem0, mem0_len, instance));
+                let value = match $eval(lhs, rhs).into_trap_result() {
+                    Ok(value) => value,
+                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                };
+                set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
@@ -843,7 +859,7 @@ handler_select! {
 }
 
 macro_rules! handler_load_ss {
-    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
             pub fn $handler(
                 state: &mut VmState,
@@ -865,10 +881,10 @@ macro_rules! handler_load_ss {
                 let ptr: u64 = get_value(ptr, sp);
                 let offset: u64 = get_value(offset, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                let loaded = break_if_trap!(
-                    $eval(mem_bytes, ptr, offset),
-                    state, ip, sp, mem0, mem0_len, instance,
-                );
+                let loaded = match $load(mem_bytes, ptr, offset) {
+                    Ok(loaded) => loaded,
+                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                };
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -891,7 +907,7 @@ handler_load_ss! {
 }
 
 macro_rules! handler_load_si {
-    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
             pub fn $handler(
                 state: &mut VmState,
@@ -911,10 +927,10 @@ macro_rules! handler_load_si {
                 ) = unsafe { ip.decode() };
                 let address = get_value(address, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                let loaded = break_if_trap!(
-                    $eval(mem_bytes, usize::from(address)),
-                    state, ip, sp, mem0, mem0_len, instance,
-                );
+                let loaded = match $load(mem_bytes, usize::from(address)) {
+                    Ok(loaded) => loaded,
+                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                };
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -937,7 +953,7 @@ handler_load_si! {
 }
 
 macro_rules! handler_load_mem0_offset16_ss {
-    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
             pub fn $handler(
                 state: &mut VmState,
@@ -958,10 +974,10 @@ macro_rules! handler_load_mem0_offset16_ss {
                 let ptr = get_value(ptr, sp);
                 let offset = get_value(offset, sp);
                 let mem_bytes = default_memory_bytes(mem0, mem0_len);
-                let loaded = break_if_trap!(
-                    $eval(mem_bytes, ptr, u64::from(u16::from(offset))),
-                    state, ip, sp, mem0, mem0_len, instance,
-                );
+                let loaded = match $load(mem_bytes, ptr, u64::from(u16::from(offset))) {
+                    Ok(loaded) => loaded,
+                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                };
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -984,7 +1000,7 @@ handler_load_mem0_offset16_ss! {
 }
 
 macro_rules! handler_store_sx {
-    ( $( fn $handler:ident($decode:ident, $hint:ty) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
             pub fn $handler(
                 state: &mut VmState,
@@ -1007,10 +1023,9 @@ macro_rules! handler_store_sx {
                 let offset = get_value(offset, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                break_if_trap!(
-                    $eval(mem_bytes, ptr, offset, value.into()),
-                    state, ip, sp, mem0, mem0_len, instance,
-                );
+                if let Err(trap) = $store(mem_bytes, ptr, offset, value.into()) {
+                    break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                }
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
@@ -1034,7 +1049,7 @@ handler_store_sx! {
 }
 
 macro_rules! handler_store_ix {
-    ( $( fn $handler:ident($decode:ident, $hint:ty) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
             pub fn $handler(
                 state: &mut VmState,
@@ -1055,10 +1070,9 @@ macro_rules! handler_store_ix {
                 let address = get_value(address, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                break_if_trap!(
-                    $eval(mem_bytes, usize::from(address), value.into()),
-                    state, ip, sp, mem0, mem0_len, instance,
-                );
+                if let Err(trap) = $store(mem_bytes, usize::from(address), value.into()) {
+                    break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                }
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
@@ -1082,7 +1096,7 @@ handler_store_ix! {
 }
 
 macro_rules! handler_store_mem0_offset16_sx {
-    ( $( fn $handler:ident($decode:ident, $hint:ty) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
             pub fn $handler(
                 state: &mut VmState,
@@ -1104,10 +1118,9 @@ macro_rules! handler_store_mem0_offset16_sx {
                 let offset = get_value(offset, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = default_memory_bytes(mem0, mem0_len);
-                break_if_trap!(
-                    $eval(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()),
-                    state, ip, sp, mem0, mem0_len, instance,
-                );
+                if let Err(trap) = $store(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()) {
+                    break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                }
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
