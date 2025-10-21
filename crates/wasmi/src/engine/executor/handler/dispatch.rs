@@ -95,27 +95,18 @@ macro_rules! trap {
 #[cfg(not(feature = "trampolines"))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let _: &mut VmState = $state;
-        let _: Ip = $ip;
-        let _: Sp = $sp;
-        let _: *mut u8 = $mem0;
-        let _: usize = $mem0_len;
-        let _: NonNull<InstanceEntity> = $instance;
-        $crate::engine::executor::handler::dispatch::Done::control_continue()
+        let (ip, handler) = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
+        handler($state, ip, $sp, $mem0, $mem0_len, $instance)
     }};
 }
 
 #[cfg(feature = "trampolines")]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        $state.done_reason = $crate::engine::executor::handler::state::DoneReason::Continue {
-            ip: $ip,
-            sp: $sp,
-            mem0: $mem0,
-            mem0_len: $mem0_len,
-            instance: $instance,
-        };
-        $crate::engine::executor::handler::dispatch::Done::Continue
+        let _: &mut VmState = $state;
+        $crate::engine::executor::handler::dispatch::Done::control_continue(
+            $ip, $sp, $mem0, $mem0_len, $instance,
+        )
     }};
 }
 
