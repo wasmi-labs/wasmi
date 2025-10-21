@@ -86,17 +86,17 @@ where
     <T as SetValue<V>>::set_value(src, value, sp)
 }
 
-pub trait ExtendToResult {
+pub trait IntoTrapResult {
     type Value;
 
-    fn expand_to_result(self) -> Result<Self::Value, TrapCode>;
+    fn into_trap_result(self) -> Result<Self::Value, TrapCode>;
 }
 
-impl<T> ExtendToResult for Result<T, TrapCode> {
+impl<T> IntoTrapResult for Result<T, TrapCode> {
     type Value = T;
 
     #[inline(always)]
-    fn expand_to_result(self) -> Result<Self::Value, TrapCode> {
+    fn into_trap_result(self) -> Result<Self::Value, TrapCode> {
         self
     }
 }
@@ -104,11 +104,11 @@ impl<T> ExtendToResult for Result<T, TrapCode> {
 macro_rules! impl_expand_to_result {
     ($($ty:ty),* $(,)?) => {
         $(
-            impl ExtendToResult for $ty {
+            impl IntoTrapResult for $ty {
                 type Value = Self;
 
                 #[inline(always)]
-                fn expand_to_result(self) -> Result<Self::Value, TrapCode> {
+                fn into_trap_result(self) -> Result<Self::Value, TrapCode> {
                     Ok(self)
                 }
             }
@@ -119,7 +119,7 @@ impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
 
 macro_rules! break_if_trap {
     ($value:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
-        match <_ as $crate::engine::executor::handler::utils::ExtendToResult>::expand_to_result(
+        match <_ as $crate::engine::executor::handler::utils::IntoTrapResult>::into_trap_result(
             $value,
         ) {
             ::core::result::Result::Ok(value) => value,
