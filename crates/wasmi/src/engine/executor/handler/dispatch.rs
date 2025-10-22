@@ -21,17 +21,17 @@ pub fn fetch_handler(ip: Ip) -> (Ip, Handler) {
 }
 
 #[cfg(feature = "trampolines")]
-pub fn execute_ops(
-    state: &mut VmState,
+pub fn execute_until_done(
+    mut state: VmState,
     ip: Ip,
     mut sp: Sp,
     mut mem0: *mut u8,
     mut mem0_len: usize,
     mut instance: NonNull<InstanceEntity>,
-) -> Result<(), Error> {
+) -> Option<DoneReason> {
     let (mut ip, mut handler) = fetch_handler(ip);
     'exec: loop {
-        match handler(state, ip, sp, mem0, mem0_len, instance) {
+        match handler(&mut state, ip, sp, mem0, mem0_len, instance) {
             Done::Continue {
                 next_ip,
                 next_sp,
@@ -49,32 +49,22 @@ pub fn execute_ops(
             Done::Break => break 'exec,
         }
     }
-    handle_reason(state)
+    state.into_done_reason()
 }
 
 #[cfg(not(feature = "trampolines"))]
-pub fn execute_ops(
-    state: &mut VmState,
+pub fn execute_until_done(
+    state: VmState,
     ip: Ip,
     sp: Sp,
     mem0: *mut u8,
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
-) -> Result<(), Error> {
+) -> Option<DoneReason> {
+    let mut state = state;
     let (ip, handler) = fetch_handler(ip);
-    handler(state, ip, sp, mem0, mem0_len, instance);
-    handle_reason(state)
-}
-
-fn handle_reason(state: &mut VmState) -> Result<(), Error> {
-    match &state.done_reason {
-        DoneReason::Trap(_trap_code) => todo!(),
-        DoneReason::OutOfFuel { required_fuel: _ } => todo!(),
-        DoneReason::Host(_host_error) => todo!(),
-        DoneReason::CompileError(_error) => todo!(),
-        DoneReason::Return => todo!(),
-        DoneReason::Continue { .. } => panic!("already handled above"),
-    }
+    handler(&mut state, ip, sp, mem0, mem0_len, instance);
+    state.into_done_reason()
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -150,7 +140,7 @@ macro_rules! compile_or_get_func {
         match $state.compile_or_get_func($func) {
             Ok((ip, size)) => (ip, size),
             Err(error) => {
-                $state.done_reason = DoneReason::CompileError(error);
+                $state.done(DoneReason::CompileError(error));
                 return exec_break!($ip, $sp, $mem0, $mem0_len, $instance);
             }
         }
@@ -180,7 +170,9 @@ macro_rules! exec_break {
 
 macro_rules! trap {
     ($trap_code:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        $state.done_reason = $crate::engine::executor::handler::state::DoneReason::Trap($trap_code);
+        $state.done($crate::engine::executor::handler::state::DoneReason::Trap(
+            $trap_code,
+        ));
         exec_break!($ip, $sp, $mem0, $mem0_len, $instance)
     }};
 }

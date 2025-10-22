@@ -24,35 +24,40 @@ pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
     pub stack: &'vm mut Stack,
     pub code: &'vm CodeMap,
-    pub done_reason: DoneReason,
+    done_reason: Option<DoneReason>,
 }
 
-impl<'state> VmState<'state> {
-    pub fn compile_or_get_func(&mut self, func: EngineFunc) -> Result<(Ip, usize), Error> {
-        let fuel_mut = self.store.inner_mut().fuel_mut();
-        let compiled_func = self.code.get(Some(fuel_mut), func)?;
-        let ip = Ip::from(compiled_func.ops());
-        let size = usize::from(compiled_func.len_stack_slots());
-        Ok((ip, size))
+impl<'vm> VmState<'vm> {
+    pub fn new(store: &'vm mut PrunedStore, stack: &'vm mut Stack, code: &'vm CodeMap) -> Self {
+        Self {
+            store,
+            stack,
+            code,
+            done_reason: None,
+        }
+    }
+
+    pub fn done(&mut self, reason: DoneReason) {
+        assert!(self.done_reason.is_none());
+        self.done_reason = Some(reason);
+    }
+
+    pub fn done_reason(&self) -> Option<&DoneReason> {
+        self.done_reason.as_ref()
+    }
+
+    pub fn into_done_reason(self) -> Option<DoneReason> {
+        self.done_reason
     }
 }
 
 #[derive(Debug)]
 pub enum DoneReason {
+    Return(Sp),
     Trap(TrapCode),
-    OutOfFuel {
-        required_fuel: u64,
-    },
+    OutOfFuel { required_fuel: u64 },
     Host(Box<dyn HostError>),
-    Return,
     CompileError(Error),
-    Continue {
-        ip: Ip,
-        sp: Sp,
-        mem0: *mut u8,
-        mem0_len: usize,
-        instance: NonNull<InstanceEntity>,
-    },
 }
 
 #[derive(Debug, Copy, Clone)]
