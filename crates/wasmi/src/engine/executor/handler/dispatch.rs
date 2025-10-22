@@ -1,9 +1,18 @@
 use super::{
     exec,
-    state::{DoneReason, Ip, Sp, VmState},
+    state::{DoneReason, Ip, Sp, Stack, VmState},
+    utils::set_value,
 };
-use crate::{instance::InstanceEntity, ir::OpCode, Error};
-use core::ptr::NonNull;
+use crate::{
+    engine::{executor::handler::utils, CallParams, CallResults, CodeMap, EngineFunc},
+    instance::InstanceEntity,
+    ir::{BoundedSlotSpan, OpCode, Slot, SlotSpan},
+    CallHook,
+    Error,
+    Instance,
+    Store,
+};
+use core::{marker::PhantomData, ptr::NonNull};
 
 pub fn fetch_handler(ip: Ip) -> (Ip, Handler) {
     match cfg!(feature = "compact") {
@@ -17,6 +26,137 @@ pub fn fetch_handler(ip: Ip) -> (Ip, Handler) {
             let handler = unsafe { ::core::mem::transmute::<usize, Handler>(handler) };
             (ip, handler)
         }
+    }
+}
+
+pub struct WasmFuncCall<'a, T, State> {
+    store: &'a mut Store<T>,
+    stack: &'a mut Stack,
+    code: &'a CodeMap,
+    callee_ip: Ip,
+    callee_sp: Sp,
+    instance: Instance,
+    frame_size: u16,
+    state: State,
+}
+
+impl<'a, T, State> WasmFuncCall<'a, T, State> {
+    fn new_state<NewState>(self, state: NewState) -> WasmFuncCall<'a, T, NewState> {
+        WasmFuncCall {
+            store: self.store,
+            stack: self.stack,
+            code: self.code,
+            callee_ip: self.callee_ip,
+            callee_sp: self.callee_sp,
+            instance: self.instance,
+            frame_size: self.frame_size,
+            state,
+        }
+    }
+}
+
+mod state {
+    use super::Sp;
+    use core::marker::PhantomData;
+
+    pub type Uninit = PhantomData<marker::Uninit>;
+    pub type Init = PhantomData<marker::Init>;
+
+    mod marker {
+        pub enum Uninit {}
+        pub enum Init {}
+    }
+    pub struct Done {
+        pub sp: Sp,
+    }
+}
+
+impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
+    pub fn write_params(self, params: impl CallParams) -> WasmFuncCall<'a, T, state::Init> {
+        let mut param_slot = Slot::from(0);
+        for param_value in params.call_params() {
+            set_value(self.callee_sp, param_slot, param_value);
+            param_slot = param_slot.next();
+        }
+        self.new_state(PhantomData)
+    }
+}
+
+impl<'a, T> WasmFuncCall<'a, T, state::Init> {
+    pub fn execute(mut self) -> Result<WasmFuncCall<'a, T, state::Done>, Error> {
+        self.store.invoke_call_hook(CallHook::CallingWasm)?;
+        let reason = self.execute_until_done();
+        self.store.invoke_call_hook(CallHook::ReturningFromWasm)?;
+        let sp = handle_reason(reason)?;
+        Ok(self.new_state(state::Done { sp }))
+    }
+
+    fn execute_until_done(&mut self) -> Option<DoneReason> {
+        let instance = self.store.inner.resolve_instance(&self.instance).into();
+        let store = self.store.prune();
+        let (mem0, mem0_len) = utils::extract_mem0(store, instance);
+        let state = VmState::new(store, self.stack, self.code);
+        execute_until_done(
+            state,
+            self.callee_ip,
+            self.callee_sp,
+            mem0,
+            mem0_len,
+            instance,
+        )
+    }
+}
+
+impl<'a, T> WasmFuncCall<'a, T, state::Done> {
+    pub fn write_results<R: CallResults>(self, results: R) -> <R as CallResults>::Results {
+        let len_results = results.len_results();
+        let sp = self.state.sp;
+        let slice = unsafe { sp.as_slice(len_results) };
+        results.call_results(slice)
+    }
+}
+
+pub fn init_wasm_func_call<'a, T>(
+    store: &'a mut Store<T>,
+    code: &'a CodeMap,
+    stack: &'a mut Stack,
+    engine_func: EngineFunc,
+    instance: Instance,
+) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
+    let compiled_func = code.get(Some(store.inner.fuel_mut()), engine_func)?;
+    let callee_ip = Ip::from(compiled_func.ops());
+    let frame_size = compiled_func.len_stack_slots();
+    let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), frame_size);
+    let instance_ref = store.inner.resolve_instance(&instance);
+    let callee_sp = stack.push_frame(
+        None,
+        callee_ip,
+        callee_params,
+        usize::from(frame_size),
+        Some(instance_ref.into()),
+    )?;
+    Ok(WasmFuncCall {
+        store,
+        stack,
+        code,
+        callee_ip,
+        callee_sp,
+        frame_size,
+        instance,
+        state: PhantomData,
+    })
+}
+
+fn handle_reason(reason: Option<DoneReason>) -> Result<Sp, Error> {
+    let Some(reason) = reason else {
+        panic!("missing `DoneReason` after execution is done")
+    };
+    match reason {
+        DoneReason::Trap(trap_code) => Err(Error::from(trap_code)),
+        DoneReason::OutOfFuel { required_fuel: _ } => todo!(),
+        DoneReason::Host(_host_error) => todo!(),
+        DoneReason::CompileError(_error) => todo!(),
+        DoneReason::Return(sp) => Ok(sp),
     }
 }
 
