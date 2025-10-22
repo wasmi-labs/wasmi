@@ -1,10 +1,11 @@
 use super::state::{Ip, Sp, VmState};
 use crate::{
     core::UntypedVal,
-    engine::DedupFuncType,
+    engine::{DedupFuncType, EngineFunc},
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
     store::PrunedStore,
+    Error,
     Func,
     Global,
     Ref,
@@ -283,4 +284,12 @@ pub fn update_instance(
     }
     let (mem0, mem0_len) = extract_mem0(store, new_instance);
     (new_instance, mem0, mem0_len)
+}
+
+pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, usize), Error> {
+    let fuel_mut = state.store.inner_mut().fuel_mut();
+    let compiled_func = state.code.get(Some(fuel_mut), func)?;
+    let ip = Ip::from(compiled_func.ops());
+    let size = usize::from(compiled_func.len_stack_slots());
+    Ok((ip, size))
 }
