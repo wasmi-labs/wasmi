@@ -133,6 +133,7 @@ impl Sp {
         let cell = unsafe { &mut *self.value.add(index) };
         *cell = value.into();
     }
+
     pub unsafe fn as_slice<'a>(self, len: usize) -> &'a [UntypedVal] {
         unsafe { core::slice::from_raw_parts(self.value, len) }
     }
