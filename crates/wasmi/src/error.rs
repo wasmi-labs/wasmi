@@ -129,6 +129,7 @@ impl Error {
     }
 
     /// Returns `true` if the [`Error`] represents an out-of-fuel error.
+    #[expect(unused)] // TODO: resolve unused API - used in resumable function calling
     pub(crate) fn is_out_of_fuel(&self) -> bool {
         matches!(
             self.kind(),
