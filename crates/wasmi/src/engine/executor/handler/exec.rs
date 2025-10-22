@@ -282,12 +282,12 @@ pub fn call_indirect(
 pub fn r#return(
     state: &mut VmState,
     _ip: Ip,
-    _sp: Sp,
+    sp: Sp,
     mem0: *mut u8,
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    exec_return!(state, mem0, mem0_len, instance)
+    exec_return!(state, sp, mem0, mem0_len, instance)
 }
 
 pub fn return_span(
@@ -303,7 +303,7 @@ pub fn return_span(
     let src = values.span();
     let len = values.len();
     exec_copy_span(sp, dst, src, len);
-    exec_return!(state, mem0, mem0_len, instance)
+    exec_return!(state, sp, mem0, mem0_len, instance)
 }
 
 macro_rules! handler_return {
@@ -320,7 +320,7 @@ macro_rules! handler_return {
                 let (_ip, crate::ir::decode::$op { value }) = unsafe { ip.decode() };
                 let value = get_value(value, sp);
                 set_value(sp, Slot::from(0), $eval(value));
-                exec_return!(state, mem0, mem0_len, instance)
+                exec_return!(state, sp, mem0, mem0_len, instance)
             }
         )*
     };
