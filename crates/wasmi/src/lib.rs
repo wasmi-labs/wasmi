@@ -124,6 +124,7 @@ mod core {
         Memory as CoreMemory,
         MemoryType as CoreMemoryType,
         MemoryTypeBuilder as CoreMemoryTypeBuilder,
+        ReadAs,
         ResourceLimiterRef,
         Table as CoreTable,
         TableType as CoreTableType,
@@ -131,6 +132,7 @@ mod core {
         TypedVal,
         UntypedError,
         UntypedVal,
+        WriteAs,
     };
 }
 

@@ -1,6 +1,6 @@
 use super::state::{Ip, Sp, VmState};
 use crate::{
-    core::UntypedVal,
+    core::{ReadAs, UntypedVal, WriteAs},
     engine::{DedupFuncType, EngineFunc},
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
@@ -53,7 +53,8 @@ impl_get_value!(
 
 impl<T> GetValue<T> for Slot
 where
-    T: Copy + From<UntypedVal>,
+    T: Copy,
+    UntypedVal: ReadAs<T>,
 {
     fn get_value(src: Self, sp: Sp) -> T {
         sp.get::<T>(src)
@@ -73,7 +74,7 @@ pub trait SetValue<T> {
 
 impl<T> SetValue<T> for Slot
 where
-    T: Copy + Into<UntypedVal>,
+    UntypedVal: WriteAs<T>,
 {
     fn set_value(src: Self, value: T, sp: Sp) {
         sp.set::<T>(src, value)
