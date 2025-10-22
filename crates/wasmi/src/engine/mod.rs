@@ -517,6 +517,9 @@ pub struct EngineStacks {
     config: StackConfig,
 }
 
+unsafe impl Send for EngineStacks {} // TODO: write safety docs
+unsafe impl Sync for EngineStacks {} // TODO: write safety docs
+
 impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackConfig`].
     pub fn new(config: &StackConfig) -> Self {
