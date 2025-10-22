@@ -108,9 +108,9 @@ pub struct Sp {
 }
 
 impl<'a> From<&'a mut [UntypedVal]> for Sp {
-    fn from(value: &'a mut [UntypedVal]) -> Self {
+    fn from(values: &'a mut [UntypedVal]) -> Self {
         Self {
-            value: value.as_mut_ptr(),
+            value: values.as_mut_ptr(),
         }
     }
 }
