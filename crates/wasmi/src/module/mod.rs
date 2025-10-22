@@ -152,9 +152,6 @@ impl ModuleHeader {
     }
 }
 
-/// The index of the default Wasm linear memory.
-pub(crate) const DEFAULT_MEMORY_INDEX: u32 = 0;
-
 /// An imported item declaration in the [`Module`].
 #[derive(Debug)]
 pub enum Imported {
