@@ -65,7 +65,7 @@ pub fn consume_fuel(
         .fuel_mut()
         .consume_fuel_unchecked(u64::from(fuel));
     if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-        state.done_reason = DoneReason::OutOfFuel { required_fuel };
+        state.done(DoneReason::OutOfFuel { required_fuel });
         return exec_break!(ip, sp, mem0, mem0_len, instance);
     }
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
