@@ -135,6 +135,7 @@ impl Sp {
     }
 }
 
+#[derive(Debug)]
 pub struct Stack {
     values: ValueStack,
     frames: CallStack,
@@ -179,6 +180,7 @@ impl Stack {
     }
 }
 
+#[derive(Debug)]
 pub struct ValueStack {
     cells: Vec<UntypedVal>,
     max_height: usize,
@@ -204,6 +206,7 @@ impl ValueStack {
     }
 }
 
+#[derive(Debug)]
 pub struct CallStack {
     frames: Vec<Frame>,
     instances: HeadVec<NonNull<InstanceEntity>>,
@@ -273,6 +276,7 @@ impl CallStack {
     }
 }
 
+#[derive(Debug)]
 pub struct Frame {
     pub ip: Ip,
     start: usize,
