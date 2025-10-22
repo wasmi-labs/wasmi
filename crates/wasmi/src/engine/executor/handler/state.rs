@@ -142,6 +142,29 @@ pub struct Stack {
 }
 
 impl Stack {
+    pub fn new(config: &StackConfig) -> Self {
+        Self {
+            values: ValueStack::new(config.min_stack_height(), config.max_stack_height()),
+            frames: CallStack::new(config.max_recursion_depth()),
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            values: ValueStack::empty(),
+            frames: CallStack::empty(),
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.values.reset();
+        self.frames.reset();
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.values.capacity()
+    }
+
     pub fn push_frame(
         &mut self,
         caller_ip: Option<Ip>,
@@ -187,6 +210,26 @@ pub struct ValueStack {
 }
 
 impl ValueStack {
+    fn new(min_height: usize, max_height: usize) -> Self {
+        let cells = Vec::with_capacity(min_height);
+        Self { cells, max_height }
+    }
+
+    fn empty() -> Self {
+        Self {
+            cells: Vec::new(),
+            max_height: 0,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.cells.clear();
+    }
+
+    fn capacity(&self) -> usize {
+        self.cells.capacity()
+    }
+
     fn sp(&mut self, start: usize) -> Sp {
         Sp::from(&mut self.cells[start..]) // TODO: maybe avoid bounds check if necessary for performance
     }
@@ -214,6 +257,27 @@ pub struct CallStack {
 }
 
 impl CallStack {
+    fn new(max_height: usize) -> Self {
+        Self {
+            frames: Vec::new(),
+            instances: HeadVec::default(),
+            max_height,
+        }
+    }
+
+    fn empty() -> Self {
+        Self {
+            frames: Vec::new(),
+            instances: HeadVec::default(),
+            max_height: 0,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.frames.clear();
+        self.instances.clear();
+    }
+
     fn top_start(&self) -> usize {
         let Some(top) = self.top() else { return 0 };
         top.start
