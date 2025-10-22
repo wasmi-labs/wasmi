@@ -195,7 +195,7 @@ macro_rules! dispatch {
     }};
 }
 
-fn op_code_to_handler(code: OpCode) -> Handler {
+pub fn op_code_to_handler(code: OpCode) -> Handler {
     match code {
         // misc
         OpCode::Trap => exec::trap,
