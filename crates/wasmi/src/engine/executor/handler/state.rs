@@ -3,7 +3,7 @@ use crate::{
     core::UntypedVal,
     engine::{
         executor::{handler::utils::extract_mem0, CodeMap},
-        EngineFunc,
+        StackConfig,
     },
     errors::HostError,
     instance::InstanceEntity,
