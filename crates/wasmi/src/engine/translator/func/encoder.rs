@@ -2,6 +2,7 @@ use super::{Reset, ReusableAllocations};
 use crate::{
     core::FuelCostsProvider,
     engine::{
+        executor::op_code_to_handler,
         translator::{
             comparator::UpdateBranchOffset,
             func::{
@@ -749,12 +750,24 @@ impl FuelCostsSelector for FuelUsed {
 
 /// Encodes an [`ir::OpCode`] to a generic [`ir::Encoder`].
 fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: ir::OpCode) -> Result<E::Pos, E::Error> {
-    // Note: this implements encoding for indirect threading.
-    //
-    // For direct threading we need to know ahead of time about the
-    // function pointers of all operator execution handlers which
-    // are defined in the Wasmi executor and available to the translator.
-    u16::from(code).encode(encoder)
+    match cfg!(feature = "compact") {
+        true => {
+            // Note: encoding for indirect-threading
+            //
+            // The op-codes are not resolved during translation time and must
+            // be resolved during execution time. This decreases memory footprint
+            // of the encoded IR at the cost of execution performance.
+            u16::from(code).encode(encoder)
+        }
+        false => {
+            // Note: encoding for direct-threading
+            //
+            // The op-codes are resolved during translation time (now) to their
+            // underlying function pointers. This increases memory footprint
+            // of the encoded IR but improves execution performance.
+            (op_code_to_handler(code) as usize).encode(encoder)
+        }
+    }
 }
 
 /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
