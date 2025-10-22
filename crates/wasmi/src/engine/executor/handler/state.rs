@@ -107,15 +107,14 @@ pub struct Sp {
     value: *mut UntypedVal,
 }
 
-impl<'a> From<&'a mut [UntypedVal]> for Sp {
-    fn from(values: &'a mut [UntypedVal]) -> Self {
+impl Sp {
+    pub fn new(cells: &mut Vec<UntypedVal>, start: usize) -> Self {
+        debug_assert!(start < cells.len());
         Self {
-            value: values.as_mut_ptr(),
+            value: unsafe { cells.as_mut_ptr().add(start) },
         }
     }
-}
 
-impl Sp {
     pub fn get<T>(self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
@@ -235,7 +234,7 @@ impl ValueStack {
     }
 
     fn sp(&mut self, start: usize) -> Sp {
-        Sp::from(&mut self.cells[start..]) // TODO: maybe avoid bounds check if necessary for performance
+        Sp::new(&mut self.cells, start)
     }
 
     fn push(&mut self, start: usize, size: usize, len_params: u16) -> Result<Sp, TrapCode> {
