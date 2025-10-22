@@ -1,6 +1,6 @@
 use crate::{
     collections::HeadVec,
-    core::UntypedVal,
+    core::{ReadAs, UntypedVal, WriteAs},
     engine::{
         executor::{handler::utils::extract_mem0, CodeMap},
         StackConfig,
@@ -118,20 +118,20 @@ impl<'a> From<&'a mut [UntypedVal]> for Sp {
 impl Sp {
     pub fn get<T>(self, slot: Slot) -> T
     where
-        T: Copy + From<UntypedVal>,
+        UntypedVal: ReadAs<T>,
     {
         let index = usize::from(u16::from(slot));
-        let value = unsafe { *self.value.add(index) };
-        T::from(value)
+        let value = unsafe { &*self.value.add(index) };
+        <UntypedVal as ReadAs<T>>::read_as(value)
     }
 
     pub fn set<T>(self, slot: Slot, value: T)
     where
-        T: Copy + Into<UntypedVal>,
+        UntypedVal: WriteAs<T>,
     {
         let index = usize::from(u16::from(slot));
         let cell = unsafe { &mut *self.value.add(index) };
-        *cell = value.into();
+        <UntypedVal as WriteAs<T>>::write_as(cell, value);
     }
 
     pub unsafe fn as_slice<'a>(self, len: usize) -> &'a [UntypedVal] {
