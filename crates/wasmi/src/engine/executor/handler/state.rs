@@ -235,6 +235,7 @@ impl ValueStack {
     }
 
     fn push(&mut self, start: usize, size: usize, len_params: u16) -> Result<Sp, TrapCode> {
+        debug_assert!(usize::from(len_params) <= size);
         let Some(end) = start.checked_add(size) else {
             return Err(TrapCode::StackOverflow);
         };
