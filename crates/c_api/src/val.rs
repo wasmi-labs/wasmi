@@ -9,7 +9,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
-use wasmi::{Func, Ref, Val, ValType, F32, F64, V128};
+use wasmi::{Func, Ref, Val, ValType, F32, F64};
 
 /// A Wasm value.
 ///
@@ -38,8 +38,6 @@ pub union wasm_val_union {
     pub f32: f32,
     /// A Wasm 64-bit float.
     pub f64: f64,
-    /// A Wasm `v128` value.
-    pub v128: u128,
     /// A Wasm referenced object.
     pub ref_: *mut wasm_ref_t,
 }
@@ -99,12 +97,9 @@ impl From<Val> for wasm_val_t {
                     u64: value.to_bits(),
                 },
             },
-            Val::V128(value) => Self {
-                kind: from_valtype(&ValType::V128),
-                of: wasm_val_union {
-                    v128: value.as_u128(),
-                },
-            },
+            Val::V128(value) => core::panic!(
+                "`wasm_val_t`: creating a `wasm_val_t` from an `v128` value is not supported but found: {value:?}"
+            ),
             Val::FuncRef(funcref) => Self {
                 kind: from_valtype(&ValType::FuncRef),
                 of: wasm_val_union {
@@ -132,17 +127,16 @@ impl wasm_val_t {
     ///
     /// This effectively clones the [`wasm_val_t`] if necessary.
     pub fn to_val(&self) -> Val {
-        match into_valtype(self.kind) {
-            ValType::I32 => Val::from(unsafe { self.of.i32 }),
-            ValType::I64 => Val::from(unsafe { self.of.i64 }),
-            ValType::F32 => Val::from(F32::from(unsafe { self.of.f32 })),
-            ValType::F64 => Val::from(F64::from(unsafe { self.of.f64 })),
-            ValType::V128 => Val::from(V128::from(unsafe { self.of.v128 })),
-            ValType::FuncRef => match unsafe { self.of.ref_ }.is_null() {
+        match self.kind {
+            wasm_valkind_t::WASM_I32 => Val::from(unsafe { self.of.i32 }),
+            wasm_valkind_t::WASM_I64 => Val::from(unsafe { self.of.i64 }),
+            wasm_valkind_t::WASM_F32 => Val::from(F32::from(unsafe { self.of.f32 })),
+            wasm_valkind_t::WASM_F64 => Val::from(F64::from(unsafe { self.of.f64 })),
+            wasm_valkind_t::WASM_FUNCREF => match unsafe { self.of.ref_ }.is_null() {
                 true => Val::FuncRef(<Ref<Func>>::Null),
                 false => ref_to_val(unsafe { &*self.of.ref_ }),
             },
-            ValType::ExternRef => {
+            wasm_valkind_t::WASM_EXTERNREF => {
                 core::unreachable!("`wasm_val_t`: cannot contain non-function reference values")
             }
         }
