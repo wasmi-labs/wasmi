@@ -24,9 +24,9 @@ pub fn fetch_handler(ip: Ip) -> (Ip, Handler) {
         false => {
             let (ip, addr) = unsafe { ip.decode::<usize>() };
             let handler = unsafe {
-                ::core::mem::transmute::<*const (), Handler>(
-                    ::core::ptr::with_exposed_provenance(addr)
-                )
+                ::core::mem::transmute::<*const (), Handler>(::core::ptr::with_exposed_provenance(
+                    addr,
+                ))
             };
             (ip, handler)
         }
