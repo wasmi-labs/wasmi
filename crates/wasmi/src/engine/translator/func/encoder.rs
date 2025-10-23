@@ -1,5 +1,6 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
+    ir::OpCode,
     core::FuelCostsProvider,
     engine::{
         executor::op_code_to_handler,
@@ -779,7 +780,14 @@ fn trace_branch_offset(src: BytePos, dst: Pos<Op>) -> Result<BranchOffset, Error
     fn trace_offset_or_none(src: BytePos, dst: BytePos) -> Option<BranchOffset> {
         let src = isize::try_from(usize::from(src)).ok()?;
         let dst = isize::try_from(usize::from(dst)).ok()?;
-        let offset = dst.checked_sub(src)?;
+        // Offset branch-offset by op-code encoded size since
+        // execution handlers for operations act on `ip` pointing
+        // to the first operand instead of the op-code.
+        let op_code = match cfg!(feature = "compact") {
+            true => mem::size_of::<OpCode>(),
+            false => mem::size_of::<usize>(), // direct-threading uses fn-ptr sized op-codes
+        };
+        let offset = dst.checked_sub(src)?.checked_sub_unsigned(op_code)?;
         i32::try_from(offset).map(BranchOffset::from).ok()
     }
     let Some(offset) = trace_offset_or_none(src, BytePos::from(dst)) else {
