@@ -17,3 +17,7 @@ exclude.workspace = true
 wasmi = { workspace = true, features = ["std", "simd"] }
 wast = { workspace = true, features = ["wasm-module"] }
 anyhow = "1.0"
+
+[features]
+compact = ["wasmi/compact"]
+trampolines = ["wasmi/trampolines"]
