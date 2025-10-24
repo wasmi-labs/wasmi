@@ -14,6 +14,7 @@ use crate::{
 };
 use core::{marker::PhantomData, ptr::NonNull};
 
+#[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
     match cfg!(feature = "compact") {
         true => {
@@ -338,6 +339,7 @@ macro_rules! dispatch {
     }};
 }
 
+#[inline(always)]
 pub fn op_code_to_handler(code: OpCode) -> Handler {
     match code {
         // misc
