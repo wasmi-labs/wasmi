@@ -834,6 +834,8 @@ pub fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::I64Store16Mem0Offset16_Si => exec::i64_store16_mem0_offset16_si,
         OpCode::I64Store32Mem0Offset16_Ss => exec::i64_store32_mem0_offset16_ss,
         OpCode::I64Store32Mem0Offset16_Si => exec::i64_store32_mem0_offset16_si,
-        _ => unreachable!(),
+        unsupported => unsafe {
+            crate::engine::utils::unreachable_unchecked!("unsupported op-code: {unsupported:?}")
+        }
     }
 }
