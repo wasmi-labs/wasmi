@@ -1,6 +1,6 @@
 use super::{
     exec,
-    state::{DoneReason, Ip, Sp, Stack, VmState},
+    state::{DoneReason, Ip, Mem0Ptr, Mem0Len, Sp, Stack, VmState},
     utils::set_value,
 };
 use crate::{
@@ -168,8 +168,8 @@ pub fn execute_until_done(
     mut state: VmState,
     mut ip: Ip,
     mut sp: Sp,
-    mut mem0: *mut u8,
-    mut mem0_len: usize,
+    mut mem0: Mem0Ptr,
+    mut mem0_len: Mem0Len,
     mut instance: NonNull<InstanceEntity>,
 ) -> Option<DoneReason> {
     let mut handler = fetch_handler(ip);
@@ -201,8 +201,8 @@ pub fn execute_until_done(
     state: VmState,
     ip: Ip,
     sp: Sp,
-    mem0: *mut u8,
-    mem0_len: usize,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
     instance: NonNull<InstanceEntity>,
 ) -> Option<DoneReason> {
     let mut state = state;
@@ -223,8 +223,8 @@ pub enum Done {
     Continue {
         next_ip: Ip,
         next_sp: Sp,
-        next_mem0: *mut u8,
-        next_mem0_len: usize,
+        next_mem0: Mem0Ptr,
+        next_mem0_len: Mem0Len,
         next_instance: NonNull<InstanceEntity>,
     },
     Break,
@@ -235,8 +235,8 @@ impl Done {
     pub fn control_continue(
         _ip: Ip,
         _sp: Sp,
-        _mem0: *mut u8,
-        _mem0_len: usize,
+        _mem0: Mem0Ptr,
+        _mem0_len: Mem0Len,
         _instance: NonNull<InstanceEntity>,
     ) -> Self {
         Self { _priv: () }
@@ -246,8 +246,8 @@ impl Done {
     pub fn control_continue(
         next_ip: Ip,
         next_sp: Sp,
-        next_mem0: *mut u8,
-        next_mem0_len: usize,
+        next_mem0: Mem0Ptr,
+        next_mem0_len: Mem0Len,
         next_instance: NonNull<InstanceEntity>,
     ) -> Self {
         Self::Continue {
@@ -274,8 +274,8 @@ type Handler = fn(
     &mut VmState,
     ip: Ip,
     sp: Sp,
-    mem0: *mut u8,
-    mem0_len: usize,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
     instance: NonNull<InstanceEntity>,
 ) -> Done;
 
@@ -305,8 +305,8 @@ macro_rules! exec_break {
     ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let _: Ip = $ip;
         let _: Sp = $sp;
-        let _: *mut u8 = $mem0;
-        let _: usize = $mem0_len;
+        let _: Mem0Ptr = $mem0;
+        let _: Mem0Len = $mem0_len;
         let _: NonNull<InstanceEntity> = $instance;
         $crate::engine::executor::handler::dispatch::Done::Break
     }};
