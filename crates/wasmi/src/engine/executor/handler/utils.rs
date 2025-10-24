@@ -1,4 +1,4 @@
-use super::state::{Ip, Sp, VmState};
+use super::state::{mem0_bytes, Ip, Mem0Ptr, Mem0Len, Sp, VmState};
 use crate::{
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{DedupFuncType, EngineFunc},
@@ -12,7 +12,7 @@ use crate::{
     Table,
     TrapCode,
 };
-use core::{num::NonZero, ptr::NonNull, slice};
+use core::{num::NonZero, ptr::NonNull};
 
 pub trait GetValue<T> {
     fn get_value(src: Self, sp: Sp) -> T;
@@ -159,33 +159,26 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
-pub fn extract_mem0(
-    store: &mut PrunedStore,
-    instance: NonNull<InstanceEntity>,
-) -> (*mut u8, usize) {
+pub fn extract_mem0(store: &mut PrunedStore, instance: NonNull<InstanceEntity>) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { instance.as_ref() };
     let Some(memory) = instance.get_memory(0) else {
-        return ([].as_mut_ptr(), 0);
+        return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
     let mem0 = store.inner_mut().resolve_memory_mut(&memory).data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
-    (mem0_ptr, mem0_len)
-}
-
-pub fn default_memory_bytes<'a>(mem0: *mut u8, mem0_len: usize) -> &'a mut [u8] {
-    unsafe { slice::from_raw_parts_mut(mem0, mem0_len) }
+    (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
 }
 
 pub fn memory_bytes<'a>(
     memory: index::Memory,
-    mem0: *mut u8,
-    mem0_len: usize,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
     instance: NonNull<InstanceEntity>,
     state: &'a mut VmState,
 ) -> &'a mut [u8] {
     match memory.is_default() {
-        true => default_memory_bytes::<'a>(mem0, mem0_len),
+        true => mem0_bytes::<'a>(mem0, mem0_len),
         false => {
             let instance = unsafe { instance.as_ref() };
             let Some(memory) = instance.get_memory(u32::from(u16::from(memory))) else {
@@ -285,9 +278,9 @@ pub fn update_instance(
     store: &mut PrunedStore,
     instance: NonNull<InstanceEntity>,
     new_instance: NonNull<InstanceEntity>,
-    mem0: *mut u8,
-    mem0_len: usize,
-) -> (NonNull<InstanceEntity>, *mut u8, usize) {
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+) -> (NonNull<InstanceEntity>, Mem0Ptr, Mem0Len) {
     if new_instance == instance {
         return (instance, mem0, mem0_len);
     }
