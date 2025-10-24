@@ -502,9 +502,12 @@ impl FuncTranslator {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
         }
-        debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
+        let copy_span = match results.head() > values.head() {
+            true => Op::copy_span_des,
+            false => Op::copy_span_asc,
+        };
         self.instrs.encode(
-            Op::copy_span(results, values, len),
+            copy_span(results, values, len),
             consume_fuel_instr,
             |costs: &FuelCostsProvider| costs.fuel_for_copying_values(u64::from(len)),
         )?;
