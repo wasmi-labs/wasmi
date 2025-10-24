@@ -21,3 +21,4 @@ anyhow = "1.0"
 [features]
 compact = ["wasmi/compact"]
 trampolines = ["wasmi/trampolines"]
+extra-checks = ["wasmi/extra-checks"]
