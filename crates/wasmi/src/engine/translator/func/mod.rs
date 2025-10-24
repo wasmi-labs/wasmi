@@ -405,24 +405,39 @@ impl FuncTranslator {
         }
     }
 
-    /// Encodes a single copy instruction.
-    ///
-    /// # Note
-    ///
-    /// This won't encode a copy if `result` and `value` yields a no-op copy.
+    /// Convenience wrapper for [`Self::encode_copy_impl`].
     fn encode_copy(
         &mut self,
         result: Slot,
         value: Operand,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Option<Pos<Op>>, Error> {
-        let Some(copy_instr) = Self::make_copy_instr(result, value, &mut self.layout)? else {
+        Self::encode_copy_impl(
+            result,
+            value,
+            consume_fuel_instr,
+            &mut self.layout,
+            &mut self.instrs,
+        )
+    }
+
+    /// Encodes a single copy instruction.
+    ///
+    /// # Note
+    ///
+    /// This won't encode a copy if `result` and `value` yields a no-op copy.
+    fn encode_copy_impl(
+        result: Slot,
+        value: Operand,
+        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        layout: &mut StackLayout,
+        encoder: &mut OpEncoder,
+    ) -> Result<Option<Pos<Op>>, Error> {
+        let Some(copy_instr) = Self::make_copy_instr(result, value, layout)? else {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let pos = self
-            .instrs
-            .encode(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+        let pos = encoder.encode(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
         Ok(Some(pos))
     }
 
@@ -538,15 +553,37 @@ impl FuncTranslator {
                 self.encode_copy(result, value, consume_fuel_instr)?;
                 return Ok(());
             }
-            values => {
-                debug_assert!(!values.is_empty());
-                if let Some(values) = Self::try_form_regspan_of(values, &self.layout)? {
-                    return self.encode_copy_span(results, values, len, consume_fuel_instr);
-                }
-            }
+            _values => {}
         }
-        let values = self.move_operands_to_temp(usize::from(len), consume_fuel_instr)?;
+        debug_assert!(!values.is_empty());
+        if let Some(values) = Self::try_form_regspan_of(values, &self.layout)? {
+            return self.encode_copy_span(results, values, len, consume_fuel_instr);
+        }
+        let values = Self::copy_operands_to_temp(
+            values,
+            consume_fuel_instr,
+            &mut self.layout,
+            &mut self.instrs,
+        )?;
         self.encode_copy_span(results, values, len, consume_fuel_instr)
+    }
+
+    /// Copy `values` to temporary stack [`Slot`]s without changing the translation stack.
+    fn copy_operands_to_temp(
+        values: &[Operand],
+        pos_fuel: Option<Pos<ir::BlockFuel>>,
+        layout: &mut StackLayout,
+        instrs: &mut OpEncoder,
+    ) -> Result<SlotSpan, Error> {
+        debug_assert!(!values.is_empty());
+        for value in values {
+            let result = layout.temp_to_slot(value.index())?;
+            let value = *value;
+            Self::encode_copy_impl(result, value, pos_fuel, layout, instrs)?;
+        }
+        let first = layout.temp_to_slot(values[0].index())?;
+        let span = SlotSpan::new(first);
+        Ok(span)
     }
 
     /// Tries to strip noop copies from the start of the `copy_many`.
