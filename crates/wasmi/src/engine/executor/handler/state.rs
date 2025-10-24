@@ -86,7 +86,12 @@ impl ir::Decoder for IpDecoder {
 impl Ip {
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
         let mut ip = IpDecoder(self);
-        let decoded = <T as ir::Decode>::decode(&mut ip).unwrap();
+        let decoded = match <T as ir::Decode>::decode(&mut ip) {
+            Ok(decoded) => decoded,
+            Err(error) => unsafe {
+                crate::engine::utils::unreachable_unchecked!("failed to decode `OpCode` or op-handler: {error}")
+            }
+        };
         (ip.0, decoded)
     }
 
