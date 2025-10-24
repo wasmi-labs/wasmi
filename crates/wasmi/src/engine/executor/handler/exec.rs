@@ -12,19 +12,22 @@ use crate::{
             utils::{
                 exec_copy_span_asc,
                 exec_copy_span_des,
+                extract_mem0,
                 resolve_global,
                 resolve_indirect_func,
+                resolve_memory,
                 set_global,
                 update_instance,
             },
         },
         EngineFunc,
     },
-    errors::FuelError,
+    errors::{FuelError, MemoryError},
     func::FuncEntity,
     instance::InstanceEntity,
     ir,
     ir::{Slot, SlotSpan},
+    TrapCode,
 };
 use core::ptr::NonNull;
 
@@ -353,6 +356,79 @@ handler_return! {
     fn return_slot(ReturnSlot) = identity::<UntypedVal>;
     fn return32(Return32) = identity::<u32>;
     fn return64(Return64) = identity::<u64>;
+}
+
+pub fn memory_size(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
+    let memory = resolve_memory(instance, memory);
+    let size = state.store.inner().resolve_memory(&memory).size();
+    set_value(sp, result, size);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn memory_grow(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::MemoryGrow {
+            memory,
+            result,
+            delta,
+        },
+    ) = unsafe { decode_op(ip) };
+    let delta: u64 = get_value(delta, sp);
+    let memref = resolve_memory(instance, memory);
+    let mut mem0 = mem0;
+    let mut mem0_len = mem0_len;
+    let return_value = match state.store.grow_memory(&memref, delta) {
+        Ok(return_value) => {
+            // The `memory.grow` operation might have invalidated the cached
+            // linear memory so we need to reset it in order for the cache to
+            // reload in case it is used again.
+            if memory.is_default() {
+                (mem0, mem0_len) = extract_mem0(state.store, instance);
+            }
+            return_value
+        }
+        Err(MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory) => {
+            let memory_ty = state.store.inner().resolve_memory(&memref).ty();
+            match memory_ty.is_64() {
+                true => u64::MAX,
+                false => u64::from(u32::MAX),
+            }
+        }
+        Err(MemoryError::OutOfFuel { required_fuel }) => {
+            state.done(DoneReason::OutOfFuel { required_fuel });
+            return exec_break!(ip, sp, mem0, mem0_len, instance);
+        }
+        Err(MemoryError::ResourceLimiterDeniedAllocation) => {
+            break_with_trap!(
+                TrapCode::GrowthOperationLimited,
+                state,
+                ip,
+                sp,
+                mem0,
+                mem0_len,
+                instance
+            )
+        }
+        Err(error) => panic!("encountered an unexpected error: {error}"),
+    };
+    set_value(sp, result, return_value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 macro_rules! handler_unary {
