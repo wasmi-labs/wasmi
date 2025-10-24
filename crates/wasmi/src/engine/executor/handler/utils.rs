@@ -1,4 +1,4 @@
-use super::state::{mem0_bytes, Ip, Mem0Ptr, Mem0Len, Sp, VmState};
+use super::state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
 use crate::{
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{DedupFuncType, EngineFunc},
