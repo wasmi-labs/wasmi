@@ -347,7 +347,8 @@ pub fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::Copy => exec::copy,
         OpCode::Copy32 => exec::copy32,
         OpCode::Copy64 => exec::copy64,
-        OpCode::CopySpan => exec::copy_span,
+        OpCode::CopySpanAsc => exec::copy_span_asc,
+        OpCode::CopySpanDes => exec::copy_span_des,
         // global
         OpCode::GlobalGet => exec::global_get,
         OpCode::GlobalSet => exec::global_set,
