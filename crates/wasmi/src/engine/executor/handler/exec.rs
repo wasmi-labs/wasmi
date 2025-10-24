@@ -1,7 +1,7 @@
 use super::{
     dispatch::Done,
     eval,
-    state::{mem0_bytes, Ip, Mem0Ptr, Mem0Len, Sp, VmState},
+    state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{get_value, memory_bytes, offset_ip, resolve_func, set_value, IntoTrapResult as _},
 };
 use crate::{
