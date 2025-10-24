@@ -916,7 +916,7 @@ impl FuncTranslator {
             },
             _ => {
                 self.move_operands_to_temp(usize::from(len_results), consume_fuel)?;
-                let result0 = self.stack.peek(usize::from(len_results));
+                let result0 = self.stack.peek(usize::from(len_results) - 1);
                 let slot0 = self.layout.temp_to_slot(result0.index())?;
                 Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot0), len_results))
             }
