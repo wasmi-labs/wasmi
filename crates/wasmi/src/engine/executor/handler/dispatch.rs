@@ -14,21 +14,19 @@ use crate::{
 };
 use core::{marker::PhantomData, ptr::NonNull};
 
-pub fn fetch_handler(ip: Ip) -> (Ip, Handler) {
+pub fn fetch_handler(ip: Ip) -> Handler {
     match cfg!(feature = "compact") {
         true => {
-            let (ip, op_code) = unsafe { ip.decode::<OpCode>() };
-            let handler = op_code_to_handler(op_code);
-            (ip, handler)
+            let (_, op_code) = unsafe { ip.decode::<OpCode>() };
+            op_code_to_handler(op_code)
         }
         false => {
-            let (ip, addr) = unsafe { ip.decode::<usize>() };
-            let handler = unsafe {
+            let (_, addr) = unsafe { ip.decode::<usize>() };
+            unsafe {
                 ::core::mem::transmute::<*const (), Handler>(::core::ptr::with_exposed_provenance(
                     addr,
                 ))
-            };
-            (ip, handler)
+            }
         }
     }
 }
@@ -167,13 +165,13 @@ fn handle_reason(reason: Option<DoneReason>) -> Result<Sp, Error> {
 #[cfg(feature = "trampolines")]
 pub fn execute_until_done(
     mut state: VmState,
-    ip: Ip,
+    mut ip: Ip,
     mut sp: Sp,
     mut mem0: *mut u8,
     mut mem0_len: usize,
     mut instance: NonNull<InstanceEntity>,
 ) -> Option<DoneReason> {
-    let (mut ip, mut handler) = fetch_handler(ip);
+    let mut handler = fetch_handler(ip);
     'exec: loop {
         match handler(&mut state, ip, sp, mem0, mem0_len, instance) {
             Done::Continue {
@@ -183,7 +181,8 @@ pub fn execute_until_done(
                 next_mem0_len,
                 next_instance,
             } => {
-                (ip, handler) = fetch_handler(next_ip);
+                handler = fetch_handler(next_ip);
+                ip = next_ip;
                 sp = next_sp;
                 mem0 = next_mem0;
                 mem0_len = next_mem0_len;
@@ -206,7 +205,7 @@ pub fn execute_until_done(
     instance: NonNull<InstanceEntity>,
 ) -> Option<DoneReason> {
     let mut state = state;
-    let (ip, handler) = fetch_handler(ip);
+    let handler = fetch_handler(ip);
     handler(&mut state, ip, sp, mem0, mem0_len, instance);
     state.into_done_reason()
 }
@@ -324,8 +323,8 @@ macro_rules! trap {
 #[cfg(not(feature = "trampolines"))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let (ip, handler) = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
-        handler($state, ip, $sp, $mem0, $mem0_len, $instance)
+        let handler = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
+        handler($state, $ip, $sp, $mem0, $mem0_len, $instance)
     }};
 }
 
