@@ -13,7 +13,10 @@ use crate::{
     TrapCode,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::ptr::{self, NonNull};
+use core::{
+    ptr::{self, NonNull},
+    slice,
+};
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Done {
@@ -58,6 +61,30 @@ pub enum DoneReason {
     OutOfFuel { required_fuel: u64 },
     Host(Box<dyn HostError>),
     CompileError(Error),
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Mem0Ptr(*mut u8);
+
+impl From<*mut u8> for Mem0Ptr {
+    fn from(value: *mut u8) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Mem0Len(usize);
+
+impl From<usize> for Mem0Len {
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+pub fn mem0_bytes<'a>(mem0: Mem0Ptr, mem0_len: Mem0Len) -> &'a mut [u8] {
+    unsafe { slice::from_raw_parts_mut(mem0.0, mem0_len.0) }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -202,10 +229,10 @@ impl Stack {
     pub fn pop_frame(
         &mut self,
         store: &mut PrunedStore,
-        mem0: *mut u8,
-        mem0_len: usize,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
         instance: NonNull<InstanceEntity>,
-    ) -> Option<(Ip, Sp, *mut u8, usize, NonNull<InstanceEntity>)> {
+    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, NonNull<InstanceEntity>)> {
         let (ip, start, changed_instance) = self.frames.pop()?;
         let sp = self.values.sp(start);
         let (mem0, mem0_len, instance) = match changed_instance {
