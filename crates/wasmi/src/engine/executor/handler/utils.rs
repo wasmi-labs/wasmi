@@ -8,6 +8,7 @@ use crate::{
     Error,
     Func,
     Global,
+    Memory,
     Ref,
     Table,
     TrapCode,
@@ -159,7 +160,10 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
-pub fn extract_mem0(store: &mut PrunedStore, instance: NonNull<InstanceEntity>) -> (Mem0Ptr, Mem0Len) {
+pub fn extract_mem0(
+    store: &mut PrunedStore,
+    instance: NonNull<InstanceEntity>,
+) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { instance.as_ref() };
     let Some(memory) = instance.get_memory(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
@@ -211,6 +215,14 @@ pub fn resolve_global(instance: NonNull<InstanceEntity>, global: index::Global) 
         unreachable!("missing global at: {}", u32::from(global))
     };
     global
+}
+
+pub fn resolve_memory(instance: NonNull<InstanceEntity>, memory: index::Memory) -> Memory {
+    let inst = unsafe { instance.as_ref() };
+    let Some(memory) = inst.get_memory(u32::from(u16::from(memory))) else {
+        unreachable!("missing memory at: {}", u16::from(memory))
+    };
+    memory
 }
 
 pub fn resolve_table(instance: NonNull<InstanceEntity>, table: index::Table) -> Table {
