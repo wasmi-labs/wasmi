@@ -18,7 +18,8 @@ use crate::{
         executor::handler::{
             state::DoneReason,
             utils::{
-                exec_copy_span,
+                exec_copy_span_asc,
+                exec_copy_span_des,
                 resolve_global,
                 resolve_indirect_func,
                 set_global,
@@ -80,7 +81,7 @@ pub fn consume_fuel(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
-pub fn copy_span(
+pub fn copy_span_asc(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -90,13 +91,35 @@ pub fn copy_span(
 ) -> Done {
     let (
         ip,
-        crate::ir::decode::CopySpan {
+        crate::ir::decode::CopySpanAsc {
             results,
             values,
             len,
         },
     ) = unsafe { decode_op(ip) };
-    exec_copy_span(sp, results, values, len);
+    debug_assert!(results.head() <= values.head());
+    exec_copy_span_asc(sp, results, values, len);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn copy_span_des(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: *mut u8,
+    mem0_len: usize,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::CopySpanDes {
+            results,
+            values,
+            len,
+        },
+    ) = unsafe { decode_op(ip) };
+    debug_assert!(results.head() >= values.head());
+    exec_copy_span_des(sp, results, values, len);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
@@ -311,7 +334,7 @@ pub fn return_span(
     let dst = SlotSpan::new(Slot::from(0));
     let src = values.span();
     let len = values.len();
-    exec_copy_span(sp, dst, src, len);
+    exec_copy_span_asc(sp, dst, src, len);
     exec_return!(state, sp, mem0, mem0_len, instance)
 }
 
