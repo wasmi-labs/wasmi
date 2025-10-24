@@ -84,6 +84,7 @@ impl ir::Decoder for IpDecoder {
 }
 
 impl Ip {
+    #[inline]
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
         let mut ip = IpDecoder(self);
         let decoded = match <T as ir::Decode>::decode(&mut ip) {
