@@ -30,9 +30,18 @@ use crate::{
     errors::FuelError,
     func::FuncEntity,
     instance::InstanceEntity,
+    ir,
     ir::{Slot, SlotSpan},
 };
 use core::ptr::NonNull;
+
+unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
+    let ip = match cfg!(feature = "compact") {
+        true => unsafe { ip.skip::<ir::OpCode>() },
+        false => unsafe { ip.skip::<::core::primitive::usize>() },
+    };
+    unsafe { ip.decode() }
+}
 
 fn identity<T>(value: T) -> T {
     value
@@ -46,7 +55,7 @@ pub fn trap(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::Trap { trap_code }) = unsafe { ip.decode() };
+    let (ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
     trap!(trap_code, state, ip, sp, mem0, mem0_len, instance)
 }
 
@@ -58,7 +67,7 @@ pub fn consume_fuel(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { ip.decode() };
+    let (ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
     let consumption_result = state
         .store
         .inner_mut()
@@ -86,7 +95,7 @@ pub fn copy_span(
             values,
             len,
         },
-    ) = unsafe { ip.decode() };
+    ) = unsafe { decode_op(ip) };
     exec_copy_span(sp, results, values, len);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -99,7 +108,7 @@ pub fn branch(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { ip.decode() };
+    let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
     let ip = offset_ip(ip, offset);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -112,7 +121,7 @@ pub fn global_get(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { ip.decode() };
+    let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { decode_op(ip) };
     let global = resolve_global(instance, global);
     let value = *state.store.inner().resolve_global(&global).get_untyped();
     set_value(sp, result, value);
@@ -127,7 +136,7 @@ pub fn global_set(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet { global, value }) = unsafe { ip.decode() };
+    let (ip, crate::ir::decode::GlobalSet { global, value }) = unsafe { decode_op(ip) };
     let value: UntypedVal = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -141,7 +150,7 @@ pub fn global_set_32(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet32 { global, value }) = unsafe { ip.decode() };
+    let (ip, crate::ir::decode::GlobalSet32 { global, value }) = unsafe { decode_op(ip) };
     let value: UntypedVal = get_value(value, sp).into();
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -155,7 +164,7 @@ pub fn global_set_64(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet64 { global, value }) = unsafe { ip.decode() };
+    let (ip, crate::ir::decode::GlobalSet64 { global, value }) = unsafe { decode_op(ip) };
     let value: UntypedVal = get_value(value, sp).into();
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -169,7 +178,7 @@ pub fn call_internal(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { ip.decode() };
+    let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
     let func = EngineFunc::from(func);
     let (callee_ip, size) = compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, func);
     let callee_sp = match state
@@ -190,7 +199,7 @@ pub fn call_imported(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { ip.decode() };
+    let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
     let func = resolve_func(instance, func);
     let func = state.store.inner().resolve_func(&func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func {
@@ -241,7 +250,7 @@ pub fn call_indirect(
             func_type,
             table,
         },
-    ) = unsafe { ip.decode() };
+    ) = unsafe { decode_op(ip) };
     let func = match resolve_indirect_func(index, table, func_type, state, sp, instance) {
         Ok(func) => func,
         Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
@@ -298,7 +307,7 @@ pub fn return_span(
     mem0_len: usize,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { ip.decode() };
+    let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { decode_op(ip) };
     let dst = SlotSpan::new(Slot::from(0));
     let src = values.span();
     let len = values.len();
@@ -317,7 +326,7 @@ macro_rules! handler_return {
                 mem0_len: usize,
                 instance: NonNull<InstanceEntity>,
             ) -> Done {
-                let (_ip, crate::ir::decode::$op { value }) = unsafe { ip.decode() };
+                let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                 let value = get_value(value, sp);
                 set_value(sp, Slot::from(0), $eval(value));
                 exec_return!(state, sp, mem0, mem0_len, instance)
@@ -342,7 +351,7 @@ macro_rules! handler_unary {
                 mem0_len: usize,
                 instance: NonNull<InstanceEntity>,
             ) -> Done {
-                let (ip, $crate::ir::decode::$op { result, value }) = unsafe { ip.decode() };
+                let (ip, $crate::ir::decode::$op { result, value }) = unsafe { decode_op(ip) };
                 let value = get_value(value, sp);
                 let value = match $eval(value).into_trap_result() {
                     Ok(value) => value,
@@ -429,7 +438,7 @@ macro_rules! handler_binary {
                 mem0_len: usize,
                 instance: NonNull<InstanceEntity>,
             ) -> Done {
-                let (ip, $crate::ir::decode::$decode { result, lhs, rhs }) = unsafe { ip.decode() };
+                let (ip, $crate::ir::decode::$decode { result, lhs, rhs }) = unsafe { decode_op(ip) };
                 let lhs = get_value(lhs, sp);
                 let rhs = get_value(rhs, sp);
                 let value = match $eval(lhs, rhs).into_trap_result() {
@@ -676,7 +685,7 @@ macro_rules! handler_cmp_branch {
                 mem0_len: usize,
                 instance: NonNull<InstanceEntity>,
             ) -> Done {
-                let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { ip.decode() };
+                let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
                 let lhs = get_value(lhs, sp);
                 let rhs = get_value(rhs, sp);
                 let ip = match $eval(lhs, rhs) {
@@ -795,7 +804,7 @@ macro_rules! handler_select {
                         lhs,
                         rhs,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let lhs = get_value(lhs, sp);
                 let rhs = get_value(rhs, sp);
                 let src = match $eval(lhs, rhs) {
@@ -879,7 +888,7 @@ macro_rules! handler_load_ss {
                         offset,
                         memory,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let ptr: u64 = get_value(ptr, sp);
                 let offset: u64 = get_value(offset, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
@@ -926,7 +935,7 @@ macro_rules! handler_load_si {
                         address,
                         memory,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let address = get_value(address, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                 let loaded = match $load(mem_bytes, usize::from(address)) {
@@ -972,7 +981,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                         ptr,
                         offset,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let ptr = get_value(ptr, sp);
                 let offset = get_value(offset, sp);
                 let mem_bytes = default_memory_bytes(mem0, mem0_len);
@@ -1020,7 +1029,7 @@ macro_rules! handler_store_sx {
                         value,
                         memory,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let ptr = get_value(ptr, sp);
                 let offset = get_value(offset, sp);
                 let value: $hint = get_value(value, sp);
@@ -1068,7 +1077,7 @@ macro_rules! handler_store_ix {
                         value,
                         memory,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let address = get_value(address, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
@@ -1115,7 +1124,7 @@ macro_rules! handler_store_mem0_offset16_sx {
                         offset,
                         value,
                     },
-                ) = unsafe { ip.decode() };
+                ) = unsafe { decode_op(ip) };
                 let ptr = get_value(ptr, sp);
                 let offset = get_value(offset, sp);
                 let value: $hint = get_value(value, sp);
