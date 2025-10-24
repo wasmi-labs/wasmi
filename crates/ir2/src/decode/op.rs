@@ -87,9 +87,9 @@ where
 {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
+            offset: Decode::decode(decoder)?,
             lhs: Decode::decode(decoder)?,
             rhs: Decode::decode(decoder)?,
-            offset: Decode::decode(decoder)?,
         })
     }
 }
