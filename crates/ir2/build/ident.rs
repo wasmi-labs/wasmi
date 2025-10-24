@@ -157,7 +157,8 @@ define_ident!(
     Copy: copy,
     Copy32: copy32,
     Copy64: copy64,
-    CopySpan: copy_span,
+    CopySpanAsc: copy_span_asc,
+    CopySpanDes: copy_span_des,
 
     Table: table,
     Memory: memory,

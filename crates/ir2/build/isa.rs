@@ -459,7 +459,15 @@ fn add_copy_ops(isa: &mut Isa) {
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::CopySpan,
+            Ident::CopySpanAsc,
+            [
+                Field::new(Ident::Results, FieldTy::SlotSpan),
+                Field::new(Ident::Values, FieldTy::SlotSpan),
+                Field::new(Ident::Len, FieldTy::U16),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::CopySpanDes,
             [
                 Field::new(Ident::Results, FieldTy::SlotSpan),
                 Field::new(Ident::Values, FieldTy::SlotSpan),
