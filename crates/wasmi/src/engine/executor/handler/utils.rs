@@ -189,7 +189,6 @@ pub fn memory_bytes<'a>(
         false => {
             let instance = unsafe { instance.as_ref() };
             let Some(memory) = instance.get_memory(u32::from(u16::from(memory))) else {
-                // unreachable!("missing memory at: {}", u16::from(memory))
                 return &mut [];
             };
             state
