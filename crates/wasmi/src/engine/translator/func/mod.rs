@@ -528,6 +528,7 @@ impl FuncTranslator {
         let values = &self.operands[..];
         let (results, values) = Self::copy_many_strip_noop_start(results, values, &self.layout)?;
         let values = Self::copy_many_strip_noop_end(results, values, &self.layout)?;
+        let len = values.len() as u16;
         debug_assert!(!Self::has_overlapping_copies(
             results,
             values,
