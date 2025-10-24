@@ -1,6 +1,5 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
-    ir::OpCode,
     core::FuelCostsProvider,
     engine::{
         executor::op_code_to_handler,
@@ -14,7 +13,7 @@ use crate::{
         },
         TranslationError,
     },
-    ir::{self, BlockFuel, BranchOffset, Encode as _, Op},
+    ir::{self, BlockFuel, BranchOffset, Encode as _, Op, OpCode},
     Engine,
     Error,
 };
@@ -140,7 +139,7 @@ impl ir::Encoder for EncodedOps {
         Ok(BytePos::from(pos))
     }
 
-    fn encode_op_code(&mut self, code: ir::OpCode) -> Result<Self::Pos, Self::Error> {
+    fn encode_op_code(&mut self, code: OpCode) -> Result<Self::Pos, Self::Error> {
         encode_op_code(self, code)
     }
 
@@ -705,7 +704,7 @@ impl<'a> ir::Encoder for SliceEncoder<'a> {
         Ok(())
     }
 
-    fn encode_op_code(&mut self, code: ir::OpCode) -> Result<Self::Pos, Self::Error> {
+    fn encode_op_code(&mut self, code: OpCode) -> Result<Self::Pos, Self::Error> {
         encode_op_code(self, code)
     }
 
@@ -749,8 +748,8 @@ impl FuelCostsSelector for FuelUsed {
     }
 }
 
-/// Encodes an [`ir::OpCode`] to a generic [`ir::Encoder`].
-fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: ir::OpCode) -> Result<E::Pos, E::Error> {
+/// Encodes an [`OpCode`] to a generic [`ir::Encoder`].
+fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: OpCode) -> Result<E::Pos, E::Error> {
     match cfg!(feature = "compact") {
         true => {
             // Note: encoding for indirect-threading
