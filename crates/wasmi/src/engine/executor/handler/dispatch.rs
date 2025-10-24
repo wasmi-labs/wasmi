@@ -1,6 +1,6 @@
 use super::{
     exec,
-    state::{DoneReason, Ip, Mem0Ptr, Mem0Len, Sp, Stack, VmState},
+    state::{DoneReason, Ip, Mem0Len, Mem0Ptr, Sp, Stack, VmState},
     utils::set_value,
 };
 use crate::{
