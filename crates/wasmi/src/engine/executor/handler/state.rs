@@ -89,10 +89,17 @@ impl Ip {
         let decoded = match <T as ir::Decode>::decode(&mut ip) {
             Ok(decoded) => decoded,
             Err(error) => unsafe {
-                crate::engine::utils::unreachable_unchecked!("failed to decode `OpCode` or op-handler: {error}")
-            }
+                crate::engine::utils::unreachable_unchecked!(
+                    "failed to decode `OpCode` or op-handler: {error}"
+                )
+            },
         };
         (ip.0, decoded)
+    }
+
+    pub unsafe fn skip<T: ir::Decode>(self) -> Ip {
+        let (ip, _) = unsafe { self.decode::<T>() };
+        ip
     }
 
     pub unsafe fn offset(self, delta: isize) -> Self {
