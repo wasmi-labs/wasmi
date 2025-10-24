@@ -172,14 +172,14 @@ pub fn call_internal(
     let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { ip.decode() };
     let func = EngineFunc::from(func);
     let (callee_ip, size) = compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, func);
-    match state
+    let callee_sp = match state
         .stack
         .push_frame(Some(caller_ip), callee_ip, params, size, None)
     {
         Ok(sp) => sp,
         Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
     };
-    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
 pub fn call_imported(
@@ -204,7 +204,7 @@ pub fn call_imported(
                 .inner()
                 .resolve_instance(&callee_instance)
                 .into();
-            match state.stack.push_frame(
+            let callee_sp = match state.stack.push_frame(
                 Some(caller_ip),
                 callee_ip,
                 params,
@@ -216,7 +216,7 @@ pub fn call_imported(
             };
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, sp, mem0, mem0_len, instance)
+            (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
         FuncEntity::Host(_func) => {
             todo!()
@@ -258,7 +258,7 @@ pub fn call_indirect(
                 .inner()
                 .resolve_instance(&callee_instance)
                 .into();
-            match state.stack.push_frame(
+            let callee_sp = match state.stack.push_frame(
                 Some(caller_ip),
                 callee_ip,
                 params,
@@ -270,7 +270,7 @@ pub fn call_indirect(
             };
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, sp, mem0, mem0_len, instance)
+            (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
         FuncEntity::Host(_func) => {
             todo!()
@@ -434,7 +434,9 @@ macro_rules! handler_binary {
                 let rhs = get_value(rhs, sp);
                 let value = match $eval(lhs, rhs).into_trap_result() {
                     Ok(value) => value,
-                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                    Err(trap) => {
+                        break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                    },
                 };
                 set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
