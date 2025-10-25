@@ -62,6 +62,12 @@ macro_rules! define_index {
 }
 for_each_index!(define_index);
 
+impl From<Memory> for u32 {
+    fn from(value: Memory) -> Self {
+        u32::from(value.0)
+    }
+}
+
 impl TryFrom<u32> for Memory {
     type Error = Error;
 
