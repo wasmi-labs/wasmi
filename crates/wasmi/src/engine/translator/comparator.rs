@@ -609,6 +609,12 @@ pub trait UpdateBranchOffset: Sized {
     }
 }
 
+impl UpdateBranchOffset for ir::BranchOffset {
+    fn update_branch_offset(&mut self, new_offset: BranchOffset) {
+        *self = new_offset;
+    }
+}
+
 impl UpdateBranchOffset for ir::BranchTableTarget {
     fn update_branch_offset(&mut self, new_offset: BranchOffset) {
         self.offset = new_offset;
