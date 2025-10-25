@@ -234,9 +234,9 @@ macro_rules! impl_resolve_entity {
 }
 impl_resolve_entity! {
     fn resolve_func(func: index::Func) -> Func = InstanceEntity::get_func;
-    fn resolve_global(func: index::Global) -> Global = InstanceEntity::get_global;
-    fn resolve_memory(func: index::Memory) -> Memory = InstanceEntity::get_memory;
-    fn resolve_table(func: index::Table) -> Table = InstanceEntity::get_table;
+    fn resolve_global(global: index::Global) -> Global = InstanceEntity::get_global;
+    fn resolve_memory(memory: index::Memory) -> Memory = InstanceEntity::get_memory;
+    fn resolve_table(table: index::Table) -> Table = InstanceEntity::get_table;
     fn resolve_func_type_dedup(func_type: index::FuncType) -> DedupFuncType = {
         |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
     };
