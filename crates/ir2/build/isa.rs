@@ -418,15 +418,15 @@ fn add_control_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::BranchTable,
             [
-                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::LenTargets, FieldTy::U32),
+                Field::new(Ident::Index, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::BranchTableSpan,
             [
-                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::LenTargets, FieldTy::U32),
+                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::Values, FieldTy::SlotSpan),
                 Field::new(Ident::LenValues, FieldTy::U16),
             ],
