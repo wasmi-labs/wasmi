@@ -10,6 +10,7 @@ use crate::{
         executor::handler::{
             state::DoneReason,
             utils::{
+                exec_copy_span,
                 exec_copy_span_asc,
                 exec_copy_span_des,
                 extract_mem0,
@@ -29,7 +30,7 @@ use crate::{
     ir::{Slot, SlotSpan},
     TrapCode,
 };
-use core::ptr::NonNull;
+use core::{cmp, ptr::NonNull};
 
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "compact") {
@@ -426,6 +427,57 @@ pub fn memory_grow(
         Err(error) => panic!("encountered an unexpected error: {error}"),
     };
     set_value(sp, result, return_value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+/// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
+fn fetch_branch_table_target(sp: Sp, index: Slot, len_targets: u32) -> usize {
+    let index: u32 = get_value(index, sp);
+    let max_index = len_targets - 1;
+    cmp::min(index, max_index) as usize
+}
+
+pub fn branch_table(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (ip, crate::ir::decode::BranchTable { len_targets, index }) = unsafe { decode_op(ip) };
+    let chosen_target = fetch_branch_table_target(sp, index, len_targets);
+    let target_offset = 4 * chosen_target;
+    let ip = unsafe { ip.add(target_offset) };
+    let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
+    let ip = offset_ip(ip, offset);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn branch_table_span(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::BranchTableSpan {
+            len_targets,
+            index,
+            values,
+            len_values,
+        },
+    ) = unsafe { decode_op(ip) };
+    let chosen_target = fetch_branch_table_target(sp, index, len_targets);
+    let target_offset = 6 * chosen_target;
+    let ip = unsafe { ip.add(target_offset) };
+    let (_, ir::BranchTableTarget { results, offset }) =
+        unsafe { ip.decode::<ir::BranchTableTarget>() };
+    exec_copy_span(sp, results, values, len_values); // TODO: maybe provide 2 `br_table_span` operation variants if possible
+    let ip = offset_ip(ip, offset);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 

@@ -371,6 +371,8 @@ pub fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::MemoryGrow => exec::memory_grow,
         // unconditional branch
         OpCode::Branch => exec::branch,
+        OpCode::BranchTable => exec::branch_table,
+        OpCode::BranchTableSpan => exec::branch_table_span,
         // unary
         OpCode::I32Popcnt_Ss => exec::i32_popcnt_ss,
         OpCode::I32Ctz_Ss => exec::i32_ctz_ss,
