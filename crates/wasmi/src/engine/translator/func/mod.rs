@@ -77,6 +77,7 @@ use crate::{
     ValType,
 };
 use alloc::vec::Vec;
+use core::convert::identity;
 use wasmparser::{MemArg, WasmFeatures};
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
@@ -859,9 +860,11 @@ impl FuncTranslator {
     ///
     /// Upon call the `immediates` buffer contains all `br_table` target values.
     fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Slot) -> Result<(), Error> {
-        debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
+        // We add +1 because we include the default target here.
+        let len_targets = table.len() + 1;
+        debug_assert_eq!(self.immediates.len(), len_targets as usize);
         self.push_instr(
-            Op::branch_table(index, table.len() + 1),
+            Op::branch_table(len_targets, index),
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
@@ -873,7 +876,7 @@ impl FuncTranslator {
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
             self.instrs
-                .encode_branch(frame.label(), Op::branch, fuel_pos, 0)?;
+                .encode_branch(frame.label(), identity, fuel_pos, 0)?;
             frame.branch_to();
         }
         Ok(())
@@ -894,7 +897,7 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
         self.push_instr(
-            Op::branch_table_span(index, table.len() + 1, values, len_values),
+            Op::branch_table_span(table.len() + 1, index, values, len_values),
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
