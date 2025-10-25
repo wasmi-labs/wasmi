@@ -154,6 +154,12 @@ impl Sp {
         }
     }
 
+    pub fn null() -> Self {
+        Self {
+            value: ptr::null_mut(),
+        }
+    }
+
     pub fn get<T>(self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
@@ -276,9 +282,12 @@ impl ValueStack {
         Sp::new(&mut self.cells, start)
     }
 
-    fn push(&mut self, start: usize, size: usize, len_params: u16) -> Result<Sp, TrapCode> {
-        debug_assert!(usize::from(len_params) <= size);
-        let Some(end) = start.checked_add(size) else {
+    fn push(&mut self, start: usize, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
+        debug_assert!(usize::from(len_params) <= len_slots);
+        if len_slots == 0 {
+            return Ok(Sp::null());
+        }
+        let Some(end) = start.checked_add(len_slots) else {
             return Err(TrapCode::StackOverflow);
         };
         if end > self.max_height {
