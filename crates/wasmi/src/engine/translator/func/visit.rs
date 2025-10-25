@@ -403,7 +403,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let global_idx = ir::index::Global::from(global_index);
         self.push_instr_with_result(
             content,
-            |result| Op::global_get(result, global_idx),
+            |result| Op::global_get(global_idx, result),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -430,10 +430,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         debug_assert_eq!(global_type.content(), value.ty());
         let global_set_instr = match global_type.content() {
             ValType::I32 => Op::global_set32(global, u32::from(value)),
-            ValType::I64 => Op::global_set64(global, u64::from(value)),
+            ValType::I64 => Op::global_set64(u64::from(value), global),
             ValType::F32 => Op::global_set32(global, f32::from(value).to_bits()),
-            ValType::F64 => Op::global_set64(global, f64::from(value).to_bits()),
-            ValType::FuncRef | ValType::ExternRef => Op::global_set64(global, u64::from(value)),
+            ValType::F64 => Op::global_set64(f64::from(value).to_bits(), global),
+            ValType::FuncRef | ValType::ExternRef => Op::global_set64(u64::from(value), global),
             ValType::V128 => {
                 let consume_fuel = self.stack.consume_fuel_instr();
                 let temp = self.copy_operand_to_temp(input, consume_fuel)?;

@@ -542,8 +542,8 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::GlobalGet,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Global, FieldTy::Global),
+                Field::new(Ident::Result, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
@@ -563,8 +563,8 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::GlobalSet64,
             [
-                Field::new(Ident::Global, FieldTy::Global),
                 Field::new(Ident::Value, FieldTy::U64),
+                Field::new(Ident::Global, FieldTy::Global),
             ],
         )),
     ];
