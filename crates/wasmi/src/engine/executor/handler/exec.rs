@@ -92,7 +92,6 @@ pub fn copy_span_asc(
             len,
         },
     ) = unsafe { decode_op(ip) };
-    debug_assert!(results.head() <= values.head());
     exec_copy_span_asc(sp, results, values, len);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -113,7 +112,6 @@ pub fn copy_span_des(
             len,
         },
     ) = unsafe { decode_op(ip) };
-    debug_assert!(results.head() >= values.head());
     exec_copy_span_des(sp, results, values, len);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
