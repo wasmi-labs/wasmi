@@ -211,47 +211,35 @@ pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
     unsafe { ip.offset(i32::from(offset) as isize) }
 }
 
-pub fn resolve_func(instance: NonNull<InstanceEntity>, func: index::Func) -> Func {
-    let inst = unsafe { instance.as_ref() };
-    let Some(func) = inst.get_func(u32::from(func)) else {
-        unreachable!("missing func at: {}", u32::from(func))
+macro_rules! impl_resolve_entity {
+    (
+        $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
+    ) => {
+        $(
+            pub fn $fn(instance: NonNull<InstanceEntity>, $param: $ty) -> $ret {
+                let instance = unsafe { instance.as_ref() };
+                let index = ::core::primitive::u32::from($param);
+                let Some($param) = $getter(instance, index) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            index,
+                        )
+                    }
+                };
+                $param
+            }
+        )*
     };
-    func
 }
-
-pub fn resolve_global(instance: NonNull<InstanceEntity>, global: index::Global) -> Global {
-    let inst = unsafe { instance.as_ref() };
-    let Some(global) = inst.get_global(u32::from(global)) else {
-        unreachable!("missing global at: {}", u32::from(global))
+impl_resolve_entity! {
+    fn resolve_func(func: index::Func) -> Func = InstanceEntity::get_func;
+    fn resolve_global(func: index::Global) -> Global = InstanceEntity::get_global;
+    fn resolve_memory(func: index::Memory) -> Memory = InstanceEntity::get_memory;
+    fn resolve_table(func: index::Table) -> Table = InstanceEntity::get_table;
+    fn resolve_func_type_dedup(func_type: index::FuncType) -> DedupFuncType = {
+        |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
     };
-    global
-}
-
-pub fn resolve_memory(instance: NonNull<InstanceEntity>, memory: index::Memory) -> Memory {
-    let inst = unsafe { instance.as_ref() };
-    let Some(memory) = inst.get_memory(u32::from(u16::from(memory))) else {
-        unreachable!("missing memory at: {}", u16::from(memory))
-    };
-    memory
-}
-
-pub fn resolve_table(instance: NonNull<InstanceEntity>, table: index::Table) -> Table {
-    let inst = unsafe { instance.as_ref() };
-    let Some(table) = inst.get_table(u32::from(table)) else {
-        unreachable!("missing table at: {}", u32::from(table))
-    };
-    table
-}
-
-pub fn resolve_func_type_dedup(
-    instance: NonNull<InstanceEntity>,
-    func_type: index::FuncType,
-) -> DedupFuncType {
-    let inst = unsafe { instance.as_ref() };
-    let Some(func_type) = inst.get_signature(u32::from(func_type)) else {
-        unreachable!("missing func type at: {}", u32::from(func_type))
-    };
-    *func_type
 }
 
 pub fn resolve_indirect_func(
