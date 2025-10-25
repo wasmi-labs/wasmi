@@ -142,6 +142,14 @@ macro_rules! exec_return {
     }};
 }
 
+pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    let op = match dst.head() <= src.head() {
+        true => exec_copy_span_asc,
+        false => exec_copy_span_des,
+    };
+    op(sp, dst, src, len)
+}
+
 pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert!(dst.head() <= src.head());
     let dst = dst.iter(len);
