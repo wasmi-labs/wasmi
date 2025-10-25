@@ -310,11 +310,7 @@ impl CallStack {
     }
 
     fn empty() -> Self {
-        Self {
-            frames: Vec::new(),
-            instances: HeadVec::default(),
-            max_height: 0,
-        }
+        Self::new(0)
     }
 
     fn reset(&mut self) {
