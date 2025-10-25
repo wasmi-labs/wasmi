@@ -1,5 +1,4 @@
 use crate::{
-    collections::HeadVec,
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{
         executor::{handler::utils::extract_mem0, CodeMap},
@@ -296,7 +295,7 @@ impl ValueStack {
 #[derive(Debug)]
 pub struct CallStack {
     frames: Vec<Frame>,
-    instances: HeadVec<NonNull<InstanceEntity>>,
+    instance: Option<NonNull<InstanceEntity>>,
     max_height: usize,
 }
 
@@ -304,7 +303,7 @@ impl CallStack {
     fn new(max_height: usize) -> Self {
         Self {
             frames: Vec::new(),
-            instances: HeadVec::default(),
+            instance: None,
             max_height,
         }
     }
@@ -315,7 +314,7 @@ impl CallStack {
 
     fn reset(&mut self) {
         self.frames.clear();
-        self.instances.clear();
+        self.instance = None;
     }
 
     fn top_start(&self) -> usize {
@@ -348,14 +347,14 @@ impl CallStack {
             Some(caller_ip) => self.sync_ip(caller_ip),
             None => debug_assert!(self.frames.is_empty()),
         }
-        let changes_instance = instance.is_some();
-        if let Some(instance) = instance {
-            self.instances.push(instance);
-        }
+        let prev_instance = match instance {
+            Some(instance) => self.instance.replace(instance),
+            None => self.instance,
+        };
         self.frames.push(Frame {
             ip: callee_ip,
             start,
-            changes_instance,
+            instance: prev_instance,
         });
         Ok(())
     }
@@ -367,16 +366,10 @@ impl CallStack {
         let top = self.top()?;
         let ip = top.ip;
         let start = top.start;
-        let instance = popped.changes_instance.then(|| {
-            self.instances
-                .pop()
-                .expect("must have an instance if changed");
-            self.instances
-                .last()
-                .copied()
-                .expect("must have another instance since frame stack is non-empty")
-        });
-        Some((ip, start, instance))
+        if let Some(instance) = popped.instance {
+            self.instance = Some(instance);
+        }
+        Some((ip, start, popped.instance))
     }
 }
 
@@ -384,5 +377,5 @@ impl CallStack {
 pub struct Frame {
     pub ip: Ip,
     start: usize,
-    changes_instance: bool,
+    instance: Option<NonNull<InstanceEntity>>,
 }
