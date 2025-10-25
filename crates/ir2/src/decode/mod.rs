@@ -169,6 +169,7 @@ macro_rules! impl_decode_fallible_using {
     ( $($ty:ty as $as:ty = $e:expr),* $(,)? ) => {
         $(
             impl Decode for $ty {
+                #[inline(always)]
                 fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
                     $e(<$as as Decode>::decode(decoder)?)
                 }

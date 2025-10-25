@@ -1,4 +1,4 @@
-use crate::ir::{Const16, Const32, Slot};
+use crate::ir::{Op, Slot};
 
 /// Bail out early in case the current code is unreachable.
 ///
@@ -49,16 +49,30 @@ pub trait ReusableAllocations {
     fn into_allocations(self) -> Self::Allocations;
 }
 
-/// A 16-bit encoded input to Wasmi instruction.
-pub type Input16<T> = Input<Const16<T>>;
-
-/// A 32-bit encoded input to Wasmi instruction.
-pub type Input32<T> = Input<Const32<T>>;
-
 /// A concrete input to a Wasmi instruction.
 pub enum Input<T> {
     /// A [`Slot`] operand.
     Slot(Slot),
     /// A 16-bit encoded immediate value operand.
     Immediate(T),
+}
+
+/// Extension trait to update the result [`Slot`] of an [`Op`].
+pub trait UpdateResultSlot: Sized {
+    /// Updates the result [`Slot`] of `self` if possible.
+    ///
+    /// # Note
+    ///
+    /// - Returns `Some` resulting `Self` if the update was successful.
+    /// - Returns `None` if the result update could not be applied.
+    fn update_result_slot(&self, new_result: Slot) -> Option<Self>;
+}
+
+impl UpdateResultSlot for Op {
+    fn update_result_slot(&self, new_result: Slot) -> Option<Self> {
+        let mut op = *self;
+        let result_mut = op.result_mut()?;
+        *result_mut = new_result;
+        Some(op)
+    }
 }

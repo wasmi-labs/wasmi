@@ -1,5 +1,5 @@
 use super::{LocalIdx, OperandIdx, StackOperand};
-use crate::{core::TypedVal, engine::translator::utils::Instr, ValType};
+use crate::{core::TypedVal, engine::translator::func::encoder::BytePos, ValType};
 
 #[cfg(doc)]
 use super::Stack;
@@ -22,7 +22,7 @@ impl Operand {
             StackOperand::Local {
                 local_index, ty, ..
             } => Self::local(index, local_index, ty),
-            StackOperand::Temp { ty, instr } => Self::temp(index, ty, instr),
+            StackOperand::Temp { ty } => Self::temp(index, ty),
             StackOperand::Immediate { val } => Self::immediate(index, val),
         }
     }
@@ -47,12 +47,8 @@ impl Operand {
     }
 
     /// Creates a temporary [`Operand`].
-    pub(super) fn temp(operand_index: OperandIdx, ty: ValType, instr: Option<Instr>) -> Self {
-        Self::Temp(TempOperand {
-            operand_index,
-            ty,
-            instr,
-        })
+    pub(super) fn temp(operand_index: OperandIdx, ty: ValType) -> Self {
+        Self::Temp(TempOperand { operand_index, ty })
     }
 
     /// Creates an immediate [`Operand`].
@@ -125,8 +121,6 @@ pub struct TempOperand {
     operand_index: OperandIdx,
     /// The type of the temporary.
     ty: ValType,
-    /// The instruction which created this [`TempOperand`] as its result if any.
-    instr: Option<Instr>,
 }
 
 impl From<TempOperand> for Operand {
@@ -144,11 +138,6 @@ impl TempOperand {
     /// Returns the type of the [`TempOperand`].
     pub fn ty(&self) -> ValType {
         self.ty
-    }
-
-    /// Returns the instruction which created this [`TempOperand`] as its result if any.
-    pub fn instr(&self) -> Option<Instr> {
-        self.instr
     }
 }
 

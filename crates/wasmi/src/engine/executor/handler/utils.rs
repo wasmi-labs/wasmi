@@ -1,0 +1,307 @@
+use super::state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
+use crate::{
+    core::{ReadAs, UntypedVal, WriteAs},
+    engine::{DedupFuncType, EngineFunc},
+    instance::InstanceEntity,
+    ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
+    store::PrunedStore,
+    Error,
+    Func,
+    Global,
+    Memory,
+    Ref,
+    Table,
+    TrapCode,
+};
+use core::{num::NonZero, ptr::NonNull};
+
+pub trait GetValue<T> {
+    fn get_value(src: Self, sp: Sp) -> T;
+}
+
+macro_rules! impl_get_value {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl GetValue<$ty> for $ty {
+                #[inline(always)]
+                fn get_value(src: Self, _sp: Sp) -> $ty {
+                    src
+                }
+            }
+        )*
+    };
+}
+impl_get_value!(
+    u8,
+    u16,
+    u32,
+    u64,
+    i8,
+    i16,
+    i32,
+    i64,
+    f32,
+    f64,
+    NonZero<i32>,
+    NonZero<i64>,
+    NonZero<u32>,
+    NonZero<u64>,
+    Sign<f32>,
+    Sign<f64>,
+    Address,
+    Offset16,
+);
+
+impl<T> GetValue<T> for Slot
+where
+    T: Copy,
+    UntypedVal: ReadAs<T>,
+{
+    fn get_value(src: Self, sp: Sp) -> T {
+        sp.get::<T>(src)
+    }
+}
+
+pub fn get_value<T, L>(src: T, sp: Sp) -> L
+where
+    T: GetValue<L>,
+{
+    <T as GetValue<L>>::get_value(src, sp)
+}
+
+pub trait SetValue<T> {
+    fn set_value(src: Self, value: T, sp: Sp);
+}
+
+impl<T> SetValue<T> for Slot
+where
+    UntypedVal: WriteAs<T>,
+{
+    fn set_value(src: Self, value: T, sp: Sp) {
+        sp.set::<T>(src, value)
+    }
+}
+
+pub fn set_value<T, V>(sp: Sp, src: T, value: V)
+where
+    T: SetValue<V>,
+{
+    <T as SetValue<V>>::set_value(src, value, sp)
+}
+
+pub trait IntoTrapResult {
+    type Value;
+
+    fn into_trap_result(self) -> Result<Self::Value, TrapCode>;
+}
+
+impl<T> IntoTrapResult for Result<T, TrapCode> {
+    type Value = T;
+
+    #[inline(always)]
+    fn into_trap_result(self) -> Result<Self::Value, TrapCode> {
+        self
+    }
+}
+
+macro_rules! impl_expand_to_result {
+    ($($ty:ty),* $(,)?) => {
+        $(
+            impl IntoTrapResult for $ty {
+                type Value = Self;
+
+                #[inline(always)]
+                fn into_trap_result(self) -> Result<Self::Value, TrapCode> {
+                    Ok(self)
+                }
+            }
+        )*
+    };
+}
+impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
+
+macro_rules! break_with_trap {
+    ($trap:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
+        $state.done(DoneReason::Trap($trap));
+        return exec_break!($ip, $sp, $mem0, $mem0_len, $instance);
+    }};
+}
+
+macro_rules! exec_return {
+    ($state:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        let Some((ip, sp, mem0, mem0_len, instance)) =
+            $state
+                .stack
+                .pop_frame(&mut $state.store, $mem0, $mem0_len, $instance)
+        else {
+            // No more frames on the call stack -> break out of execution!
+            $state.done(DoneReason::Return($sp));
+            return Done::control_break();
+        };
+        dispatch!($state, ip, sp, mem0, mem0_len, instance)
+    }};
+}
+
+pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    let op = match dst.head() <= src.head() {
+        true => exec_copy_span_asc,
+        false => exec_copy_span_des,
+    };
+    op(sp, dst, src, len)
+}
+
+pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    debug_assert!(dst.head() <= src.head());
+    let dst = dst.iter(len);
+    let src = src.iter(len);
+    for (dst, src) in dst.into_iter().zip(src.into_iter()) {
+        let value: u64 = get_value(src, sp);
+        set_value(sp, dst, value);
+    }
+}
+
+pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    debug_assert!(dst.head() >= src.head());
+    let dst = dst.iter(len);
+    let src = src.iter(len);
+    for (dst, src) in dst.into_iter().zip(src.into_iter()).rev() {
+        let value: u64 = get_value(src, sp);
+        set_value(sp, dst, value);
+    }
+}
+
+pub fn extract_mem0(
+    store: &mut PrunedStore,
+    instance: NonNull<InstanceEntity>,
+) -> (Mem0Ptr, Mem0Len) {
+    let instance = unsafe { instance.as_ref() };
+    let Some(memory) = instance.get_memory(0) else {
+        return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
+    };
+    let mem0 = store.inner_mut().resolve_memory_mut(&memory).data_mut();
+    let mem0_ptr = mem0.as_mut_ptr();
+    let mem0_len = mem0.len();
+    (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
+}
+
+pub fn memory_bytes<'a>(
+    memory: index::Memory,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+    state: &'a mut VmState,
+) -> &'a mut [u8] {
+    match memory.is_default() {
+        true => mem0_bytes::<'a>(mem0, mem0_len),
+        false => {
+            let instance = unsafe { instance.as_ref() };
+            let Some(memory) = instance.get_memory(u32::from(u16::from(memory))) else {
+                return &mut [];
+            };
+            state
+                .store
+                .inner_mut()
+                .resolve_memory_mut(&memory)
+                .data_mut()
+        }
+    }
+}
+
+pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
+    unsafe { ip.offset(i32::from(offset) as isize) }
+}
+
+macro_rules! impl_resolve_entity {
+    (
+        $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
+    ) => {
+        $(
+            pub fn $fn(instance: NonNull<InstanceEntity>, $param: $ty) -> $ret {
+                let instance = unsafe { instance.as_ref() };
+                let index = ::core::primitive::u32::from($param);
+                let Some($param) = $getter(instance, index) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            index,
+                        )
+                    }
+                };
+                $param
+            }
+        )*
+    };
+}
+impl_resolve_entity! {
+    fn resolve_func(func: index::Func) -> Func = InstanceEntity::get_func;
+    fn resolve_global(global: index::Global) -> Global = InstanceEntity::get_global;
+    fn resolve_memory(memory: index::Memory) -> Memory = InstanceEntity::get_memory;
+    fn resolve_table(table: index::Table) -> Table = InstanceEntity::get_table;
+    fn resolve_func_type_dedup(func_type: index::FuncType) -> DedupFuncType = {
+        |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
+    };
+}
+
+pub fn resolve_indirect_func(
+    index: Slot,
+    table: index::Table,
+    func_type: index::FuncType,
+    state: &mut VmState<'_>,
+    sp: Sp,
+    instance: NonNull<InstanceEntity>,
+) -> Result<Func, TrapCode> {
+    let table = resolve_table(instance, table);
+    let index = get_value(index, sp);
+    let funcref = state
+        .store
+        .inner()
+        .resolve_table(&table)
+        .get_untyped(index)
+        .map(<Ref<Func>>::from)
+        .ok_or(TrapCode::TableOutOfBounds)?;
+    let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
+    let actual_signature = state.store.inner().resolve_func(func).ty_dedup();
+    let expected_signature = resolve_func_type_dedup(instance, func_type);
+    if expected_signature.ne(actual_signature) {
+        return Err(TrapCode::BadSignature);
+    }
+    Ok(*func)
+}
+
+pub fn set_global(
+    global: index::Global,
+    value: UntypedVal,
+    state: &mut VmState,
+    instance: NonNull<InstanceEntity>,
+) {
+    let global = resolve_global(instance, global);
+    let mut global_ptr = state
+        .store
+        .inner_mut()
+        .resolve_global_mut(&global)
+        .get_untyped_ptr();
+    let global_ref = unsafe { global_ptr.as_mut() };
+    *global_ref = value;
+}
+
+pub fn update_instance(
+    store: &mut PrunedStore,
+    instance: NonNull<InstanceEntity>,
+    new_instance: NonNull<InstanceEntity>,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+) -> (NonNull<InstanceEntity>, Mem0Ptr, Mem0Len) {
+    if new_instance == instance {
+        return (instance, mem0, mem0_len);
+    }
+    let (mem0, mem0_len) = extract_mem0(store, new_instance);
+    (new_instance, mem0, mem0_len)
+}
+
+pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, usize), Error> {
+    let fuel_mut = state.store.inner_mut().fuel_mut();
+    let compiled_func = state.code.get(Some(fuel_mut), func)?;
+    let ip = Ip::from(compiled_func.ops());
+    let size = usize::from(compiled_func.len_stack_slots());
+    Ok((ip, size))
+}
