@@ -10,7 +10,7 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     ir::{index, Op, Slot, SlotSpan},
-    store::{CallHooks, PrunedStore, StoreInner},
+    store::{CallHooks, PrunedStore, StoreError, StoreInner},
     Error,
     Func,
     Instance,
@@ -42,16 +42,21 @@ pub fn dispatch_host_func(
         usize::from(len_params),
         usize::from(len_results),
     );
-    store
-        .call_host_func(&host_func, instance, params_results, call_hooks)
-        .inspect_err(|_error| {
+    match store.call_host_func(&host_func, instance, params_results, call_hooks) {
+        Err(StoreError::Internal(error)) => {
+            panic!("`call.host`: internal interpreter error: {error}")
+        }
+        Err(StoreError::External(error)) => {
             // Note: We drop the values that have been temporarily added to
             //       the stack to act as parameter and result buffer for the
             //       called host function. Since the host function failed we
             //       need to clean up the temporary buffer values here.
             //       This is required for resumable calls to work properly.
             value_stack.drop(usize::from(max_inout));
-        })?;
+            return Err(error);
+        }
+        _ => {}
+    }
     Ok((len_params, len_results))
 }
 

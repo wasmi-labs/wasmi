@@ -7,7 +7,7 @@ use crate::{
         Op,
         Slot,
     },
-    store::{PrunedStore, StoreInner},
+    store::{PrunedStore, StoreError, StoreInner},
     Error,
     TrapCode,
 };
@@ -46,7 +46,7 @@ impl Executor<'_> {
     /// Executes an [`Op::DataDrop`].
     pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: Data) {
         let segment = self.get_data_segment(segment_index);
-        store.resolve_data_segment_mut(&segment).drop_bytes();
+        store.resolve_data_mut(&segment).drop_bytes();
         self.next_instr();
     }
 
@@ -88,20 +88,24 @@ impl Executor<'_> {
                 unsafe { self.cache.update_memory(store.inner_mut()) };
                 return_value
             }
-            Err(MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory) => {
+            Err(StoreError::External(
+                MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
+            )) => {
                 let memory_ty = store.inner().resolve_memory(&memory).ty();
                 match memory_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
                 }
             }
-            Err(MemoryError::OutOfFuel { required_fuel }) => {
+            Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
                 return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)))
             }
-            Err(MemoryError::ResourceLimiterDeniedAllocation) => {
+            Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
                 return Err(Error::from(TrapCode::GrowthOperationLimited))
             }
-            Err(error) => panic!("encountered an unexpected error: {error}"),
+            Err(error) => {
+                panic!("`table.grow`: internal interpreter error: {error}")
+            }
         };
         self.set_stack_slot(result, return_value);
         self.try_next_instr_at(2)

@@ -56,6 +56,10 @@ impl Global {
     }
 
     /// Returns the [`GlobalType`] of the global variable.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
     pub fn ty(&self, ctx: impl AsContext) -> GlobalType {
         ctx.as_context().store.inner.resolve_global(self).ty()
     }

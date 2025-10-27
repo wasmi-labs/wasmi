@@ -9,7 +9,7 @@ use crate::{
         Op,
         Slot,
     },
-    store::{PrunedStore, StoreInner},
+    store::{PrunedStore, StoreError, StoreInner},
     Error,
     TrapCode,
 };
@@ -224,20 +224,24 @@ impl Executor<'_> {
         let value = self.get_stack_slot(value);
         let return_value = match store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
-            Err(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory) => {
+            Err(StoreError::External(
+                TableError::GrowOutOfBounds | TableError::OutOfSystemMemory,
+            )) => {
                 let table_ty = store.inner().resolve_table(&table).ty();
                 match table_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
                 }
             }
-            Err(TableError::OutOfFuel { required_fuel }) => {
+            Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
                 return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)))
             }
-            Err(TableError::ResourceLimiterDeniedAllocation) => {
+            Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
                 return Err(Error::from(TrapCode::GrowthOperationLimited))
             }
-            Err(error) => panic!("encountered unexpected error: {error}"),
+            Err(error) => {
+                panic!("`memory.grow`: internal interpreter error: {error}")
+            }
         };
         self.set_stack_slot(result, return_value);
         self.try_next_instr_at(2)
@@ -246,7 +250,7 @@ impl Executor<'_> {
     /// Executes an [`Op::ElemDrop`].
     pub fn execute_element_drop(&mut self, store: &mut StoreInner, segment_index: Elem) {
         let segment = self.get_element_segment(segment_index);
-        store.resolve_element_segment_mut(&segment).drop_items();
+        store.resolve_element_mut(&segment).drop_items();
         self.next_instr();
     }
 }
