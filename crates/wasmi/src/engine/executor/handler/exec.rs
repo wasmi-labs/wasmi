@@ -2,7 +2,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{get_value, memory_bytes, offset_ip, resolve_func, set_value, IntoTrapResult as _},
+    utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value, IntoTrapResult as _},
 };
 use crate::{
     core::{wasm, UntypedVal},
@@ -14,8 +14,12 @@ use crate::{
                 exec_copy_span_asc,
                 exec_copy_span_des,
                 extract_mem0,
+                fetch_global,
+                fetch_memory,
+                resolve_func,
                 resolve_global,
                 resolve_indirect_func,
+                resolve_instance,
                 resolve_memory,
                 set_global,
                 update_instance,
@@ -26,8 +30,8 @@ use crate::{
     errors::{FuelError, MemoryError},
     func::FuncEntity,
     instance::InstanceEntity,
-    ir,
-    ir::{Slot, SlotSpan},
+    ir::{self, Slot, SlotSpan},
+    store::StoreError,
     TrapCode,
 };
 use core::{cmp, ptr::NonNull};
@@ -139,8 +143,9 @@ pub fn global_get(
     instance: NonNull<InstanceEntity>,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { decode_op(ip) };
-    let global = resolve_global(instance, global);
-    let value = *state.store.inner().resolve_global(&global).get_untyped();
+    let global = fetch_global(instance, global);
+    let global = resolve_global(state.store, &global);
+    let value = *global.get_untyped();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -217,19 +222,15 @@ pub fn call_imported(
     instance: NonNull<InstanceEntity>,
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
-    let func = resolve_func(instance, func);
-    let func = state.store.inner().resolve_func(&func);
+    let func = fetch_func(instance, func);
+    let func = resolve_func(state.store, &func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func {
         FuncEntity::Wasm(func) => {
             let engine_func = func.func_body();
             let callee_instance = *func.instance();
             let (callee_ip, size) =
                 compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, engine_func);
-            let callee_instance: NonNull<InstanceEntity> = state
-                .store
-                .inner()
-                .resolve_instance(&callee_instance)
-                .into();
+            let callee_instance = resolve_instance(state.store, &callee_instance).into();
             let callee_sp = match state.stack.push_frame(
                 Some(caller_ip),
                 callee_ip,
@@ -272,18 +273,15 @@ pub fn call_indirect(
         Ok(func) => func,
         Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
     };
-    let func = state.store.inner().resolve_func(&func);
+    let func = resolve_func(state.store, &func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func {
         FuncEntity::Wasm(func) => {
             let engine_func = func.func_body();
             let callee_instance = *func.instance();
             let (callee_ip, size) =
                 compile_or_get_func!(state, ip, sp, mem0, mem0_len, instance, engine_func);
-            let callee_instance: NonNull<InstanceEntity> = state
-                .store
-                .inner()
-                .resolve_instance(&callee_instance)
-                .into();
+            let callee_instance: NonNull<InstanceEntity> =
+                resolve_instance(state.store, &callee_instance).into();
             let callee_sp = match state.stack.push_frame(
                 Some(caller_ip),
                 callee_ip,
@@ -366,8 +364,8 @@ pub fn memory_size(
     instance: NonNull<InstanceEntity>,
 ) -> Done {
     let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
-    let memory = resolve_memory(instance, memory);
-    let size = state.store.inner().resolve_memory(&memory).size();
+    let memory = fetch_memory(instance, memory);
+    let size = resolve_memory(state.store, &memory).size();
     set_value(sp, result, size);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -389,7 +387,7 @@ pub fn memory_grow(
         },
     ) = unsafe { decode_op(ip) };
     let delta: u64 = get_value(delta, sp);
-    let memref = resolve_memory(instance, memory);
+    let memref = fetch_memory(instance, memory);
     let mut mem0 = mem0;
     let mut mem0_len = mem0_len;
     let return_value = match state.store.grow_memory(&memref, delta) {
@@ -402,18 +400,20 @@ pub fn memory_grow(
             }
             return_value
         }
-        Err(MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory) => {
-            let memory_ty = state.store.inner().resolve_memory(&memref).ty();
+        Err(StoreError::External(
+            MemoryError::OutOfBoundsAccess | MemoryError::OutOfSystemMemory,
+        )) => {
+            let memory_ty = resolve_memory(state.store, &memref).ty();
             match memory_ty.is_64() {
                 true => u64::MAX,
                 false => u64::from(u32::MAX),
             }
         }
-        Err(MemoryError::OutOfFuel { required_fuel }) => {
+        Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
             state.done(DoneReason::OutOfFuel { required_fuel });
             return exec_break!(ip, sp, mem0, mem0_len, instance);
         }
-        Err(MemoryError::ResourceLimiterDeniedAllocation) => {
+        Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
             break_with_trap!(
                 TrapCode::GrowthOperationLimited,
                 state,
@@ -424,7 +424,16 @@ pub fn memory_grow(
                 instance
             )
         }
-        Err(error) => panic!("encountered an unexpected error: {error}"),
+        Err(StoreError::Internal(_error)) => {
+            // TODO: we do not want to panic in the executor handlers so we somehow
+            //       want to establish a way to signal to the executor that a panic
+            //       occurred, instead.
+            todo!()
+        }
+        Err(error) => {
+            // TODO: see above
+            panic!("encountered an unexpected error: {error}")
+        }
     };
     set_value(sp, result, return_value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
