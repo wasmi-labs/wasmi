@@ -1,7 +1,7 @@
 use core::{any::type_name, fmt};
 
 #[cfg(doc)]
-use super::{Store, PrunedStore, StoreInner};
+use super::{PrunedStore, Store, StoreInner};
 
 /// An error occurred on [`Store<T>`] or [`StoreInner`] methods.
 #[derive(Debug, Copy, Clone)]
