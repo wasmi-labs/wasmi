@@ -2,6 +2,7 @@ use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, StoreInner};
 use crate::{
     core::{hint, UntypedVal},
     errors::{MemoryError, TableError},
+    store::error::{InternalStoreError, StoreError},
     CallHook,
     Error,
     Instance,
@@ -10,7 +11,6 @@ use crate::{
     Table,
 };
 use core::{
-    any::type_name,
     fmt::{self, Debug},
     mem,
 };
@@ -36,16 +36,17 @@ pub struct PrunedStoreVTable {
         instance: Option<&Instance>,
         params_results: FuncInOut,
         call_hooks: CallHooks,
-    ) -> Result<(), Error>,
+    ) -> Result<(), StoreError<Error>>,
     /// Grows `memory` by `delta` pages.
-    grow_memory: fn(&mut PrunedStore, memory: &Memory, delta: u64) -> Result<u64, MemoryError>,
+    grow_memory:
+        fn(&mut PrunedStore, memory: &Memory, delta: u64) -> Result<u64, StoreError<MemoryError>>,
     /// Grows `table` by `delta` items filling with `init`.
     grow_table: fn(
         &mut PrunedStore,
         table: &Table,
         delta: u64,
         init: UntypedVal,
-    ) -> Result<u64, TableError>,
+    ) -> Result<u64, StoreError<TableError>>,
 }
 impl PrunedStoreVTable {
     pub fn new<T>() -> Self {
@@ -55,35 +56,43 @@ impl PrunedStoreVTable {
                              instance: Option<&Instance>,
                              params_results: FuncInOut,
                              call_hooks: CallHooks|
-             -> Result<(), Error> {
-                let store: &mut Store<T> = pruned.restore_or_panic();
+             -> Result<(), StoreError<Error>> {
+                let store: &mut Store<T> = pruned.restore()?;
                 if matches!(call_hooks, CallHooks::Call) {
-                    store.invoke_call_hook(CallHook::CallingHost)?;
+                    store
+                        .invoke_call_hook(CallHook::CallingHost)
+                        .map_err(StoreError::external)?;
                 }
                 store.call_host_func(func, instance, params_results)?;
                 if matches!(call_hooks, CallHooks::Call) {
-                    store.invoke_call_hook(CallHook::ReturningFromHost)?;
+                    store
+                        .invoke_call_hook(CallHook::ReturningFromHost)
+                        .map_err(StoreError::external)?;
                 }
                 Ok(())
             },
             grow_memory: |pruned: &mut PrunedStore,
                           memory: &Memory,
                           delta: u64|
-             -> Result<u64, MemoryError> {
-                let store: &mut Store<T> = pruned.restore_or_panic();
+             -> Result<u64, StoreError<MemoryError>> {
+                let store: &mut Store<T> = pruned.restore()?;
                 let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
-                let (memory, fuel) = store.resolve_memory_and_fuel_mut(memory);
-                memory.grow(delta, Some(fuel), &mut resource_limiter)
+                let (memory, fuel) = store.try_resolve_memory_and_fuel_mut(memory)?;
+                memory
+                    .grow(delta, Some(fuel), &mut resource_limiter)
+                    .map_err(StoreError::external)
             },
             grow_table: |pruned: &mut PrunedStore,
                          table: &Table,
                          delta: u64,
                          init: UntypedVal|
-             -> Result<u64, TableError> {
-                let store: &mut Store<T> = pruned.restore_or_panic();
+             -> Result<u64, StoreError<TableError>> {
+                let store: &mut Store<T> = pruned.restore()?;
                 let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
-                let (table, fuel) = store.resolve_table_and_fuel_mut(table);
-                table.grow_untyped(delta, init, Some(fuel), &mut resource_limiter)
+                let (table, fuel) = store.try_resolve_table_and_fuel_mut(table)?;
+                table
+                    .grow_untyped(delta, init, Some(fuel), &mut resource_limiter)
+                    .map_err(StoreError::external)
             },
         }
     }
@@ -97,7 +106,7 @@ impl PrunedStoreVTable {
         instance: Option<&Instance>,
         params_results: FuncInOut,
         call_hooks: CallHooks,
-    ) -> Result<(), Error> {
+    ) -> Result<(), StoreError<Error>> {
         (self.call_host_func)(pruned, func, instance, params_results, call_hooks)
     }
 
@@ -107,7 +116,7 @@ impl PrunedStoreVTable {
         pruned: &mut PrunedStore,
         memory: &Memory,
         delta: u64,
-    ) -> Result<u64, MemoryError> {
+    ) -> Result<u64, StoreError<MemoryError>> {
         (self.grow_memory)(pruned, memory, delta)
     }
 
@@ -118,7 +127,7 @@ impl PrunedStoreVTable {
         table: &Table,
         delta: u64,
         init: UntypedVal,
-    ) -> Result<u64, TableError> {
+    ) -> Result<u64, StoreError<TableError>> {
         (self.grow_table)(pruned, table, delta, init)
     }
 }
@@ -187,7 +196,7 @@ impl PrunedStore {
         instance: Option<&Instance>,
         params_results: FuncInOut,
         call_hooks: CallHooks,
-    ) -> Result<(), Error> {
+    ) -> Result<(), StoreError<Error>> {
         self.pruned.restore_pruned.clone().call_host_func(
             self,
             func,
@@ -199,7 +208,11 @@ impl PrunedStore {
 
     /// Grows the [`Memory`] by `delta` pages and returns the result.
     #[inline]
-    pub fn grow_memory(&mut self, memory: &Memory, delta: u64) -> Result<u64, MemoryError> {
+    pub fn grow_memory(
+        &mut self,
+        memory: &Memory,
+        delta: u64,
+    ) -> Result<u64, StoreError<MemoryError>> {
         self.pruned
             .restore_pruned
             .clone()
@@ -213,7 +226,7 @@ impl PrunedStore {
         table: &Table,
         delta: u64,
         init: UntypedVal,
-    ) -> Result<u64, TableError> {
+    ) -> Result<u64, StoreError<TableError>> {
         self.pruned
             .restore_pruned
             .clone()
@@ -222,28 +235,13 @@ impl PrunedStore {
 
     /// Restores `self` to a proper [`Store<T>`] if possible.
     ///
-    /// # Panics
-    ///
-    /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
-    fn restore_or_panic<T>(&mut self) -> &mut Store<T> {
-        let Ok(store) = self.restore() else {
-            panic!(
-                "failed to convert `PrunedStore` back into `Store<{}>`",
-                type_name::<T>(),
-            );
-        };
-        store
-    }
-
-    /// Restores `self` to a proper [`Store<T>`] if possible.
-    ///
     /// # Errors
     ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
-    fn restore<T>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
+    fn restore<T>(&mut self) -> Result<&mut Store<T>, InternalStoreError> {
         if hint::unlikely(typeid::of::<T>() != self.pruned.id) {
-            return Err(PrunedStoreError);
+            return Err(InternalStoreError::restore_type_mismatch::<T>());
         }
         let store = {
             // Safety: we restore the original `Store<T>` from the pruned `Store<Pruned>`.
@@ -258,10 +256,6 @@ impl PrunedStore {
         Ok(store)
     }
 }
-
-/// Returned when [`PrunedStore::restore`] failed.
-#[derive(Debug)]
-pub struct PrunedStoreError;
 
 #[test]
 fn pruning_works() {

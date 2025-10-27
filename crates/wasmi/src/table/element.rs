@@ -78,10 +78,6 @@ impl ElementSegment {
 
     /// Returns the number of items in the [`ElementSegment`].
     pub fn size(&self, ctx: impl AsContext) -> u32 {
-        ctx.as_context()
-            .store
-            .inner
-            .resolve_element_segment(self)
-            .size()
+        ctx.as_context().store.inner.resolve_element(self).size()
     }
 }

@@ -1,4 +1,5 @@
 mod context;
+mod error;
 mod inner;
 mod pruned;
 mod typeid;
@@ -6,6 +7,7 @@ mod typeid;
 use self::pruned::PrunedStoreVTable;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
+    error::{InternalStoreError, StoreError},
     inner::{StoreInner, Stored},
     pruned::PrunedStore,
 };
@@ -109,9 +111,11 @@ impl<T> Store<T> {
         func: &HostFuncEntity,
         instance: Option<&Instance>,
         params_results: FuncInOut,
-    ) -> Result<(), Error> {
-        let trampoline = self.resolve_trampoline(func.trampoline()).clone();
-        trampoline.call(self, instance, params_results)?;
+    ) -> Result<(), StoreError<Error>> {
+        let trampoline = self.resolve_trampoline(func.trampoline())?.clone();
+        trampoline
+            .call(self, instance, params_results)
+            .map_err(StoreError::external)?;
         Ok(())
     }
 
@@ -223,12 +227,15 @@ impl<T> Store<T> {
     ///
     /// - If the [`Trampoline`] does not originate from this [`Store`].
     /// - If the [`Trampoline`] cannot be resolved to its entity.
-    fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
-        let entity_index = self.inner.unwrap_stored(func.as_inner());
-        self.typed
-            .trampolines
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
+    fn resolve_trampoline(
+        &self,
+        func: &Trampoline,
+    ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
+        let entity_index = self.inner.unwrap_stored(func.as_inner())?;
+        let Some(trampoline) = self.typed.trampolines.get(entity_index) else {
+            return Err(InternalStoreError::not_found());
+        };
+        Ok(trampoline)
     }
 
     /// Sets a callback function that is executed whenever a WebAssembly

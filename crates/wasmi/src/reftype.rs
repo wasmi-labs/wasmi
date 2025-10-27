@@ -126,7 +126,7 @@ impl ExternRef {
     ///
     /// Panics if `ctx` does not own this [`ExternRef`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a dyn Any {
-        ctx.into().store.inner.resolve_external_object(self).data()
+        ctx.into().store.inner.resolve_externref(self).data()
     }
 }
 

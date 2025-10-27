@@ -4,6 +4,7 @@ use crate::{
     engine::DedupFuncType,
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
+    store::error::InternalStoreError,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -181,19 +182,17 @@ impl StoreInner {
 
     /// Unwraps the given [`Stored<Idx>`] reference and returns the `Idx`.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// If the [`Stored<Idx>`] does not originate from this [`StoreInner`].
-    pub(super) fn unwrap_stored<Idx>(&self, stored: &Stored<Idx>) -> Idx
+    pub(super) fn unwrap_stored<Idx>(&self, stored: &Stored<Idx>) -> Result<Idx, InternalStoreError>
     where
         Idx: ArenaIndex + Debug,
     {
-        stored.entity_index(self.store_idx).unwrap_or_else(|| {
-            panic!(
-                "entity reference ({:?}) does not belong to store {:?}",
-                stored, self.store_idx,
-            )
-        })
+        match stored.entity_index(self.store_idx) {
+            Some(index) => Ok(index),
+            None => Err(InternalStoreError::store_mismatch()),
+        }
     }
 
     /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
@@ -263,7 +262,10 @@ impl StoreInner {
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
-        let idx = self.unwrap_stored(instance.as_inner());
+        let idx = match self.unwrap_stored(instance.as_inner()) {
+            Ok(idx) => idx,
+            Err(error) => panic!("failed to unwrap stored entity: {error}"),
+        };
         let uninit = self
             .instances
             .get_mut(idx)
@@ -277,7 +279,7 @@ impl StoreInner {
 
     /// Returns a shared reference to the entity indexed by the given `idx`.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the indexed entity does not originate from this [`StoreInner`].
     /// - If the entity index cannot be resolved to its entity.
@@ -285,14 +287,15 @@ impl StoreInner {
         &self,
         idx: &Stored<Idx>,
         entities: &'a Arena<Idx, Entity>,
-    ) -> &'a Entity
+    ) -> Result<&'a Entity, InternalStoreError>
     where
         Idx: ArenaIndex + Debug,
     {
-        let idx = self.unwrap_stored(idx);
-        entities
-            .get(idx)
-            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"))
+        let idx = self.unwrap_stored(idx)?;
+        match entities.get(idx) {
+            Some(entity) => Ok(entity),
+            None => Err(InternalStoreError::not_found()),
+        }
     }
 
     /// Returns an exclusive reference to the entity indexed by the given `idx`.
@@ -302,16 +305,20 @@ impl StoreInner {
     /// Due to borrow checking issues this method takes an already unwrapped
     /// `Idx` unlike the [`StoreInner::resolve`] method.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// - If the entity index cannot be resolved to its entity.
-    fn resolve_mut<Idx, Entity>(idx: Idx, entities: &mut Arena<Idx, Entity>) -> &mut Entity
+    /// If the entity index cannot be resolved to its entity.
+    fn resolve_mut<Idx, Entity>(
+        idx: Idx,
+        entities: &mut Arena<Idx, Entity>,
+    ) -> Result<&mut Entity, InternalStoreError>
     where
         Idx: ArenaIndex + Debug,
     {
-        entities
-            .get_mut(idx)
-            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"))
+        match entities.get_mut(idx) {
+            Some(entity) => Ok(entity),
+            None => Err(InternalStoreError::not_found()),
+        }
     }
 
     /// Returns the [`FuncType`] associated to the given [`DedupFuncType`].
@@ -340,64 +347,70 @@ impl StoreInner {
 
     /// Returns a shared reference to the [`CoreGlobal`] associated to the given [`Global`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global(&self, global: &Global) -> &CoreGlobal {
+    pub fn try_resolve_global(&self, global: &Global) -> Result<&CoreGlobal, InternalStoreError> {
         self.resolve(global.as_inner(), &self.globals)
     }
 
     /// Returns an exclusive reference to the [`CoreGlobal`] associated to the given [`Global`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global_mut(&mut self, global: &Global) -> &mut CoreGlobal {
-        let idx = self.unwrap_stored(global.as_inner());
+    pub fn try_resolve_global_mut(
+        &mut self,
+        global: &Global,
+    ) -> Result<&mut CoreGlobal, InternalStoreError> {
+        let idx = self.unwrap_stored(global.as_inner())?;
         Self::resolve_mut(idx, &mut self.globals)
     }
 
     /// Returns a shared reference to the [`CoreTable`] associated to the given [`Table`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table(&self, table: &Table) -> &CoreTable {
+    pub fn try_resolve_table(&self, table: &Table) -> Result<&CoreTable, InternalStoreError> {
         self.resolve(table.as_inner(), &self.tables)
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_mut(&mut self, table: &Table) -> &mut CoreTable {
-        let idx = self.unwrap_stored(table.as_inner());
+    pub fn try_resolve_table_mut(
+        &mut self,
+        table: &Table,
+    ) -> Result<&mut CoreTable, InternalStoreError> {
+        let idx = self.unwrap_stored(table.as_inner())?;
         Self::resolve_mut(idx, &mut self.tables)
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] and [`CoreElementSegment`] associated to `table` and `elem`.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn resolve_table_and_element_mut(
+    pub fn try_resolve_table_and_element_mut(
         &mut self,
         table: &Table,
         elem: &ElementSegment,
-    ) -> (&mut CoreTable, &mut CoreElementSegment) {
-        let table_idx = self.unwrap_stored(table.as_inner());
-        let elem_idx = self.unwrap_stored(elem.as_inner());
-        let table = Self::resolve_mut(table_idx, &mut self.tables);
-        let elem = Self::resolve_mut(elem_idx, &mut self.elems);
-        (table, elem)
+    ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
+        let table_idx = self.unwrap_stored(table.as_inner())?;
+        let elem_idx = self.unwrap_stored(elem.as_inner())?;
+        let table = Self::resolve_mut(table_idx, &mut self.tables)?;
+        let elem = Self::resolve_mut(elem_idx, &mut self.elems)?;
+        Ok((table, elem))
     }
 
     /// Returns both
@@ -405,35 +418,38 @@ impl StoreInner {
     /// - an exclusive reference to the [`CoreTable`] associated to the given [`Table`]
     /// - an exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut CoreTable, &mut Fuel) {
-        let idx = self.unwrap_stored(table.as_inner());
-        let table = Self::resolve_mut(idx, &mut self.tables);
+    pub fn try_resolve_table_and_fuel_mut(
+        &mut self,
+        table: &Table,
+    ) -> Result<(&mut CoreTable, &mut Fuel), InternalStoreError> {
+        let idx = self.unwrap_stored(table.as_inner())?;
+        let table = Self::resolve_mut(idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
-        (table, fuel)
+        Ok((table, fuel))
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_pair_and_fuel(
+    pub fn try_resolve_table_pair_and_fuel(
         &mut self,
         fst: &Table,
         snd: &Table,
-    ) -> (&mut CoreTable, &mut CoreTable, &mut Fuel) {
-        let fst = self.unwrap_stored(fst.as_inner());
-        let snd = self.unwrap_stored(snd.as_inner());
+    ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
+        let fst = self.unwrap_stored(fst.as_inner())?;
+        let snd = self.unwrap_stored(snd.as_inner())?;
         let (fst, snd) = self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
             panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
         });
         let fuel = &mut self.fuel;
-        (fst, snd, fuel)
+        Ok((fst, snd, fuel))
     }
 
     /// Returns the following data:
@@ -448,7 +464,7 @@ impl StoreInner {
     /// This method exists to properly handle use cases where
     /// otherwise the Rust borrow-checker would not accept.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Instance`] does not originate from this [`StoreInner`].
     /// - If the [`Instance`] cannot be resolved to its entity.
@@ -456,75 +472,87 @@ impl StoreInner {
     /// - If the [`Table`] cannot be resolved to its entity.
     /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn resolve_table_init_params(
+    pub fn try_resolve_table_init_params(
         &mut self,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (&mut CoreTable, &CoreElementSegment, &mut Fuel) {
-        let mem_idx = self.unwrap_stored(table.as_inner());
+    ) -> Result<(&mut CoreTable, &CoreElementSegment, &mut Fuel), InternalStoreError> {
+        let mem_idx = self.unwrap_stored(table.as_inner())?;
         let elem_idx = segment.as_inner();
-        let elem = self.resolve(elem_idx, &self.elems);
-        let mem = Self::resolve_mut(mem_idx, &mut self.tables);
+        let elem = self.resolve(elem_idx, &self.elems)?;
+        let mem = Self::resolve_mut(mem_idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
-        (mem, elem, fuel)
+        Ok((mem, elem, fuel))
     }
 
     /// Returns a shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &CoreElementSegment {
+    pub fn try_resolve_element(
+        &self,
+        segment: &ElementSegment,
+    ) -> Result<&CoreElementSegment, InternalStoreError> {
         self.resolve(segment.as_inner(), &self.elems)
     }
 
     /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn resolve_element_segment_mut(
+    pub fn try_resolve_element_mut(
         &mut self,
         segment: &ElementSegment,
-    ) -> &mut CoreElementSegment {
-        let idx = self.unwrap_stored(segment.as_inner());
+    ) -> Result<&mut CoreElementSegment, InternalStoreError> {
+        let idx = self.unwrap_stored(segment.as_inner())?;
         Self::resolve_mut(idx, &mut self.elems)
     }
 
     /// Returns a shared reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a CoreMemory {
+    pub fn try_resolve_memory<'a>(
+        &'a self,
+        memory: &Memory,
+    ) -> Result<&'a CoreMemory, InternalStoreError> {
         self.resolve(memory.as_inner(), &self.memories)
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut CoreMemory {
-        let idx = self.unwrap_stored(memory.as_inner());
+    pub fn try_resolve_memory_mut<'a>(
+        &'a mut self,
+        memory: &Memory,
+    ) -> Result<&'a mut CoreMemory, InternalStoreError> {
+        let idx = self.unwrap_stored(memory.as_inner())?;
         Self::resolve_mut(idx, &mut self.memories)
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_and_fuel_mut(&mut self, memory: &Memory) -> (&mut CoreMemory, &mut Fuel) {
-        let idx = self.unwrap_stored(memory.as_inner());
-        let memory = Self::resolve_mut(idx, &mut self.memories);
+    pub fn try_resolve_memory_and_fuel_mut(
+        &mut self,
+        memory: &Memory,
+    ) -> Result<(&mut CoreMemory, &mut Fuel), InternalStoreError> {
+        let idx = self.unwrap_stored(memory.as_inner())?;
+        let memory = Self::resolve_mut(idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
-        (memory, fuel)
+        Ok((memory, fuel))
     }
 
     /// Returns the following data:
@@ -538,73 +566,82 @@ impl StoreInner {
     /// This method exists to properly handle use cases where
     /// otherwise the Rust borrow-checker would not accept.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     /// - If the [`DataSegment`] does not originate from this [`StoreInner`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn resolve_memory_init_params(
+    pub fn try_resolve_memory_init_params(
         &mut self,
         memory: &Memory,
         segment: &DataSegment,
-    ) -> (&mut CoreMemory, &DataSegmentEntity, &mut Fuel) {
-        let mem_idx = self.unwrap_stored(memory.as_inner());
+    ) -> Result<(&mut CoreMemory, &DataSegmentEntity, &mut Fuel), InternalStoreError> {
+        let mem_idx = self.unwrap_stored(memory.as_inner())?;
         let data_idx = segment.as_inner();
-        let data = self.resolve(data_idx, &self.datas);
-        let mem = Self::resolve_mut(mem_idx, &mut self.memories);
+        let data = self.resolve(data_idx, &self.datas)?;
+        let mem = Self::resolve_mut(mem_idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
-        (mem, data, fuel)
+        Ok((mem, data, fuel))
     }
 
     /// Returns an exclusive pair of references to the [`CoreMemory`] associated to the given [`Memory`]s.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Memory`] does not originate from this [`StoreInner`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_pair_and_fuel(
+    pub fn try_resolve_memory_pair_and_fuel(
         &mut self,
         fst: &Memory,
         snd: &Memory,
-    ) -> (&mut CoreMemory, &mut CoreMemory, &mut Fuel) {
-        let fst = self.unwrap_stored(fst.as_inner());
-        let snd = self.unwrap_stored(snd.as_inner());
+    ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
+        let fst = self.unwrap_stored(fst.as_inner())?;
+        let snd = self.unwrap_stored(snd.as_inner())?;
         let (fst, snd) = self.memories.get_pair_mut(fst, snd).unwrap_or_else(|| {
             panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
         });
         let fuel = &mut self.fuel;
-        (fst, snd, fuel)
+        Ok((fst, snd, fuel))
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`DataSegment`] does not originate from this [`StoreInner`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn resolve_data_segment_mut(&mut self, segment: &DataSegment) -> &mut DataSegmentEntity {
-        let idx = self.unwrap_stored(segment.as_inner());
+    pub fn try_resolve_data_mut(
+        &mut self,
+        segment: &DataSegment,
+    ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
+        let idx = self.unwrap_stored(segment.as_inner())?;
         Self::resolve_mut(idx, &mut self.datas)
     }
 
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Instance`] does not originate from this [`StoreInner`].
     /// - If the [`Instance`] cannot be resolved to its entity.
-    pub fn resolve_instance(&self, instance: &Instance) -> &InstanceEntity {
+    pub fn try_resolve_instance(
+        &self,
+        instance: &Instance,
+    ) -> Result<&InstanceEntity, InternalStoreError> {
         self.resolve(instance.as_inner(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`ExternRef`] does not originate from this [`StoreInner`].
     /// - If the [`ExternRef`] cannot be resolved to its entity.
-    pub fn resolve_external_object(&self, object: &ExternRef) -> &ExternRefEntity {
+    pub fn try_resolve_externref(
+        &self,
+        object: &ExternRef,
+    ) -> Result<&ExternRefEntity, InternalStoreError> {
         self.resolve(object.as_inner(), &self.extern_objects)
     }
 
@@ -616,14 +653,102 @@ impl StoreInner {
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
-    pub fn resolve_func(&self, func: &Func) -> &FuncEntity {
-        let entity_index = self.unwrap_stored(func.as_inner());
-        self.funcs.get(entity_index).unwrap_or_else(|| {
-            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
-        })
+    pub fn try_resolve_func(&self, func: &Func) -> Result<&FuncEntity, InternalStoreError> {
+        self.resolve(func.as_inner(), &self.funcs)
+    }
+}
+
+macro_rules! define_panicking_getters {
+    (
+        $(
+            pub fn $getter:ident($receiver:ty, $( $param_name:ident: $param_ty:ty ),* $(,)? ) -> $ret_ty:ty = $try_getter:expr
+        );*
+        $(;)?
+    ) => {
+        $(
+            #[doc = ::core::concat!(
+                "Resolves `",
+                ::core::stringify!($ret_ty),
+                "` via [`",
+                ::core::stringify!($try_getter),
+                "`] panicking upon error."
+            )]
+            pub fn $getter(self: $receiver, $( $param_name: $param_ty ),*) -> $ret_ty {
+                match $try_getter(self, $($param_name),*) {
+                    ::core::result::Result::Ok(value) => value,
+                    ::core::result::Result::Err(error) => ::core::panic!(
+                        ::core::concat!(
+                            "failed to resolve stored",
+                            $( " ", ::core::stringify!($param_name), )*
+                            ": {}"
+                        ),
+                        error,
+                    )
+                }
+            }
+        )*
+    };
+}
+impl StoreInner {
+    define_panicking_getters! {
+        pub fn resolve_global(&Self, global: &Global) -> &CoreGlobal = Self::try_resolve_global;
+        pub fn resolve_global_mut(&mut Self, global: &Global) -> &mut CoreGlobal = Self::try_resolve_global_mut;
+
+        pub fn resolve_memory(&Self, memory: &Memory) -> &CoreMemory = Self::try_resolve_memory;
+        pub fn resolve_memory_mut(&mut Self, memory: &Memory) -> &mut CoreMemory = Self::try_resolve_memory_mut;
+
+        pub fn resolve_table(&Self, table: &Table) -> &CoreTable = Self::try_resolve_table;
+        pub fn resolve_table_mut(&mut Self, table: &Table) -> &mut CoreTable = Self::try_resolve_table_mut;
+
+        pub fn resolve_element(&Self, elem: &ElementSegment) -> &CoreElementSegment = Self::try_resolve_element;
+        pub fn resolve_element_mut(&mut Self, elem: &ElementSegment) -> &mut CoreElementSegment = Self::try_resolve_element_mut;
+
+        pub fn resolve_func(&Self, func: &Func) -> &FuncEntity = Self::try_resolve_func;
+        pub fn resolve_data_mut(&mut Self, data: &DataSegment) -> &mut DataSegmentEntity = Self::try_resolve_data_mut;
+        pub fn resolve_instance(&Self, instance: &Instance) -> &InstanceEntity = Self::try_resolve_instance;
+        pub fn resolve_externref(&Self, data: &ExternRef) -> &ExternRefEntity = Self::try_resolve_externref;
+
+        pub fn resolve_table_and_element_mut(
+            &mut Self,
+            table: &Table, elem: &ElementSegment,
+        ) -> (&mut CoreTable, &mut CoreElementSegment) = Self::try_resolve_table_and_element_mut;
+
+        pub fn resolve_table_and_fuel_mut(
+            &mut Self,
+            table: &Table,
+        ) -> (&mut CoreTable, &mut Fuel) = Self::try_resolve_table_and_fuel_mut;
+
+        pub fn resolve_table_pair_and_fuel(
+            &mut Self,
+            fst: &Table,
+            snd: &Table,
+        ) -> (&mut CoreTable, &mut CoreTable, &mut Fuel) = Self::try_resolve_table_pair_and_fuel;
+
+        pub fn resolve_table_init_params(
+            &mut Self,
+            table: &Table,
+            elem: &ElementSegment,
+        ) -> (&mut CoreTable, &CoreElementSegment, &mut Fuel) = Self::try_resolve_table_init_params;
+
+        pub fn resolve_memory_and_fuel_mut(
+            &mut Self,
+            memory: &Memory,
+        ) -> (&mut CoreMemory, &mut Fuel) = Self::try_resolve_memory_and_fuel_mut;
+
+        pub fn resolve_memory_init_params(
+            &mut Self,
+            memory: &Memory,
+            segment: &DataSegment,
+        ) -> (&mut CoreMemory, &DataSegmentEntity, &mut Fuel) = Self::try_resolve_memory_init_params;
+
+        pub fn resolve_memory_pair_and_fuel(
+            &mut Self,
+            fst: &Memory,
+            snd: &Memory,
+        ) -> (&mut CoreMemory, &mut CoreMemory, &mut Fuel) = Self::try_resolve_memory_pair_and_fuel;
     }
 }
