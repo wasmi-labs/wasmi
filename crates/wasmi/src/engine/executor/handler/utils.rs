@@ -1,13 +1,17 @@
 use super::state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
 use crate::{
-    core::{ReadAs, UntypedVal, WriteAs},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
     engine::{DedupFuncType, EngineFunc},
+    func::FuncEntity,
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
-    store::PrunedStore,
+    memory::DataSegment,
+    store::{PrunedStore, StoreInner},
+    table::ElementSegment,
     Error,
     Func,
     Global,
+    Instance,
     Memory,
     Ref,
     Table,
@@ -178,7 +182,7 @@ pub fn extract_mem0(
     let Some(memory) = instance.get_memory(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
-    let mem0 = store.inner_mut().resolve_memory_mut(&memory).data_mut();
+    let mem0 = resolve_memory_mut(store, &memory).data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
     (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
@@ -198,11 +202,7 @@ pub fn memory_bytes<'a>(
             let Some(memory) = instance.get_memory(u32::from(u16::from(memory))) else {
                 return &mut [];
             };
-            state
-                .store
-                .inner_mut()
-                .resolve_memory_mut(&memory)
-                .data_mut()
+            resolve_memory_mut(state.store, &memory).data_mut()
         }
     }
 }
@@ -211,7 +211,7 @@ pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
     unsafe { ip.offset(i32::from(offset) as isize) }
 }
 
-macro_rules! impl_resolve_entity {
+macro_rules! impl_fetch_from_instance {
     (
         $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
     ) => {
@@ -232,14 +232,50 @@ macro_rules! impl_resolve_entity {
         )*
     };
 }
-impl_resolve_entity! {
-    fn resolve_func(func: index::Func) -> Func = InstanceEntity::get_func;
-    fn resolve_global(global: index::Global) -> Global = InstanceEntity::get_global;
-    fn resolve_memory(memory: index::Memory) -> Memory = InstanceEntity::get_memory;
-    fn resolve_table(table: index::Table) -> Table = InstanceEntity::get_table;
-    fn resolve_func_type_dedup(func_type: index::FuncType) -> DedupFuncType = {
+impl_fetch_from_instance! {
+    fn fetch_data(func: index::Data) -> DataSegment = InstanceEntity::get_data_segment;
+    fn fetch_elem(func: index::Elem) -> ElementSegment = InstanceEntity::get_element_segment;
+    fn fetch_func(func: index::Func) -> Func = InstanceEntity::get_func;
+    fn fetch_global(global: index::Global) -> Global = InstanceEntity::get_global;
+    fn fetch_memory(memory: index::Memory) -> Memory = InstanceEntity::get_memory;
+    fn fetch_table(table: index::Table) -> Table = InstanceEntity::get_table;
+    fn fetch_func_type(func_type: index::FuncType) -> DedupFuncType = {
         |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
     };
+}
+
+macro_rules! impl_resolve_from_store {
+    (
+        $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
+    ) => {
+        $(
+            pub fn $fn<'a>(store: &'a mut PrunedStore, $param: $ty) -> $ret {
+                match $getter(store.inner_mut(), $param) {
+                    ::core::result::Result::Ok($param) => $param,
+                    ::core::result::Result::Err(error) => unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("could not resolve stored ", ::core::stringify!($param), ": {:?}"),
+                            error,
+                        )
+                    },
+                }
+            }
+        )*
+    };
+}
+impl_resolve_from_store! {
+    fn resolve_elem(elem: &ElementSegment) -> &'a CoreElementSegment = StoreInner::try_resolve_element;
+    fn resolve_func(func: &Func) -> &'a FuncEntity = StoreInner::try_resolve_func;
+    fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
+    fn resolve_memory(memory: &Memory) -> &'a CoreMemory = StoreInner::try_resolve_memory;
+    fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
+    fn resolve_instance(func: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
+    // fn resolve_func_type(func_type: DedupFuncType) -> DedupFuncType = StoreInner::resolve_func_type;
+
+    fn resolve_elem_mut(elem: &ElementSegment) -> &'a mut CoreElementSegment = StoreInner::try_resolve_element_mut;
+    fn resolve_global_mut(global: &Global) -> &'a mut CoreGlobal = StoreInner::try_resolve_global_mut;
+    fn resolve_memory_mut(memory: &Memory) -> &'a mut CoreMemory = StoreInner::try_resolve_memory_mut;
+    fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
 pub fn resolve_indirect_func(
@@ -250,19 +286,17 @@ pub fn resolve_indirect_func(
     sp: Sp,
     instance: NonNull<InstanceEntity>,
 ) -> Result<Func, TrapCode> {
-    let table = resolve_table(instance, table);
     let index = get_value(index, sp);
-    let funcref = state
-        .store
-        .inner()
-        .resolve_table(&table)
+    let table = fetch_table(instance, table);
+    let table = resolve_table(state.store, &table);
+    let funcref = table
         .get_untyped(index)
         .map(<Ref<Func>>::from)
         .ok_or(TrapCode::TableOutOfBounds)?;
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
-    let actual_signature = state.store.inner().resolve_func(func).ty_dedup();
-    let expected_signature = resolve_func_type_dedup(instance, func_type);
-    if expected_signature.ne(actual_signature) {
+    let actual_fnty = resolve_func(state.store, func).ty_dedup();
+    let expected_fnty = fetch_func_type(instance, func_type);
+    if expected_fnty.ne(actual_fnty) {
         return Err(TrapCode::BadSignature);
     }
     Ok(*func)
@@ -274,13 +308,10 @@ pub fn set_global(
     state: &mut VmState,
     instance: NonNull<InstanceEntity>,
 ) {
-    let global = resolve_global(instance, global);
-    let mut global_ptr = state
-        .store
-        .inner_mut()
-        .resolve_global_mut(&global)
-        .get_untyped_ptr();
-    let global_ref = unsafe { global_ptr.as_mut() };
+    let global = fetch_global(instance, global);
+    let global = resolve_global_mut(state.store, &global);
+    let mut value_ptr = global.get_untyped_ptr();
+    let global_ref = unsafe { value_ptr.as_mut() };
     *global_ref = value;
 }
 
