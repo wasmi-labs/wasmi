@@ -17,11 +17,6 @@ use core::{
     slice,
 };
 
-#[derive(Debug, Default, Copy, Clone)]
-pub struct Done {
-    _priv: (),
-}
-
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
     pub stack: &'vm mut Stack,
