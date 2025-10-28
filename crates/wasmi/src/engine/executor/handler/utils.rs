@@ -124,13 +124,6 @@ macro_rules! impl_expand_to_result {
 }
 impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
 
-macro_rules! break_with_trap {
-    ($trap:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr $(,)? ) => {{
-        $state.done(DoneReason::Trap($trap));
-        return exec_break!($ip, $sp, $mem0, $mem0_len, $instance);
-    }};
-}
-
 macro_rules! exec_return {
     ($state:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let Some((ip, sp, mem0, mem0_len, instance)) =
