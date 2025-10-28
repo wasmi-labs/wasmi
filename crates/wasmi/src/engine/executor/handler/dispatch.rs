@@ -217,6 +217,23 @@ pub struct Done {
     _priv: (),
 }
 
+#[cfg(not(feature = "trampolines"))]
+impl Done {
+    pub fn control_continue(
+        _ip: Ip,
+        _sp: Sp,
+        _mem0: Mem0Ptr,
+        _mem0_len: Mem0Len,
+        _instance: NonNull<InstanceEntity>,
+    ) -> Self {
+        Self { _priv: () }
+    }
+
+    pub fn control_break() -> Self {
+        Self { _priv: () }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 #[cfg(feature = "trampolines")]
 pub enum Done {
@@ -230,19 +247,8 @@ pub enum Done {
     Break,
 }
 
+#[cfg(feature = "trampolines")]
 impl Done {
-    #[cfg(not(feature = "trampolines"))]
-    pub fn control_continue(
-        _ip: Ip,
-        _sp: Sp,
-        _mem0: Mem0Ptr,
-        _mem0_len: Mem0Len,
-        _instance: NonNull<InstanceEntity>,
-    ) -> Self {
-        Self { _priv: () }
-    }
-
-    #[cfg(feature = "trampolines")]
     pub fn control_continue(
         next_ip: Ip,
         next_sp: Sp,
@@ -259,12 +265,6 @@ impl Done {
         }
     }
 
-    #[cfg(not(feature = "trampolines"))]
-    pub fn control_break() -> Self {
-        Self { _priv: () }
-    }
-
-    #[cfg(feature = "trampolines")]
     pub fn control_break() -> Self {
         Self::Break
     }
