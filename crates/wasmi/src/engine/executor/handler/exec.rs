@@ -51,13 +51,13 @@ fn identity<T>(value: T) -> T {
 pub fn trap(
     state: &mut VmState,
     ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    _sp: Sp,
+    _mem0: Mem0Ptr,
+    _mem0_len: Mem0Len,
+    _instance: NonNull<InstanceEntity>,
 ) -> Done {
-    let (ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
-    trap!(trap_code, state, ip, sp, mem0, mem0_len, instance)
+    let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
+    done!(state, trap_code)
 }
 
 pub fn consume_fuel(
