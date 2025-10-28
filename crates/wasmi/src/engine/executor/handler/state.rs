@@ -40,7 +40,7 @@ impl<'vm> VmState<'vm> {
     }
 
     pub fn done(&mut self, reason: DoneReason) {
-        assert!(self.done_reason.is_none());
+        debug_assert!(self.done_reason.is_none());
         self.done_reason = Some(reason);
     }
 
