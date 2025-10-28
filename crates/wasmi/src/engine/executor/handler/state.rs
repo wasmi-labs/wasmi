@@ -62,6 +62,12 @@ pub enum DoneReason {
     CompileError(Error),
 }
 
+impl From<TrapCode> for DoneReason {
+    fn from(trap_code: TrapCode) -> Self {
+        Self::Trap(trap_code)
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Mem0Ptr(*mut u8);
