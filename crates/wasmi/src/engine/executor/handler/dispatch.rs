@@ -280,7 +280,7 @@ type Handler = fn(
 ) -> Done;
 
 macro_rules! compile_or_get_func {
-    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr, $func:expr) => {{
+    ($state:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func($state, $func) {
             Ok((ip, size)) => (ip, size),
             Err(error) => done!($state, DoneReason::CompileError(error)),
