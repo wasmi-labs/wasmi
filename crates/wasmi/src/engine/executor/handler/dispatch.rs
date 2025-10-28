@@ -317,7 +317,7 @@ macro_rules! done {
         $state.done(<_ as ::core::convert::Into<
             $crate::engine::executor::handler::DoneReason,
         >>::into($reason));
-        $crate::engine::executor::handler::Done::control_break()
+        return $crate::engine::executor::handler::Done::control_break();
     }};
 }
 
