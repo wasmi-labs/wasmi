@@ -75,8 +75,7 @@ pub fn consume_fuel(
         .fuel_mut()
         .consume_fuel_unchecked(u64::from(fuel));
     if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-        state.done(DoneReason::OutOfFuel { required_fuel });
-        return exec_break!(ip, sp, mem0, mem0_len, instance);
+        done!(state, DoneReason::OutOfFuel { required_fuel });
     }
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -195,7 +194,7 @@ pub fn global_set_64(
 pub fn call_internal(
     state: &mut VmState,
     ip: Ip,
-    sp: Sp,
+    _sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: NonNull<InstanceEntity>,
@@ -208,7 +207,7 @@ pub fn call_internal(
         .push_frame(Some(caller_ip), callee_ip, params, size, None)
     {
         Ok(sp) => sp,
-        Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+        Err(trap) => done!(state, trap),
     };
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
@@ -216,7 +215,7 @@ pub fn call_internal(
 pub fn call_imported(
     state: &mut VmState,
     ip: Ip,
-    sp: Sp,
+    _sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: NonNull<InstanceEntity>,
@@ -239,7 +238,7 @@ pub fn call_imported(
                 (instance != callee_instance).then_some(callee_instance),
             ) {
                 Ok(sp) => sp,
-                Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                Err(trap) => done!(state, trap),
             };
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
@@ -271,7 +270,7 @@ pub fn call_indirect(
     ) = unsafe { decode_op(ip) };
     let func = match resolve_indirect_func(index, table, func_type, state, sp, instance) {
         Ok(func) => func,
-        Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+        Err(trap) => done!(state, trap),
     };
     let func = resolve_func(state.store, &func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func {
@@ -290,7 +289,7 @@ pub fn call_indirect(
                 (instance != callee_instance).then_some(callee_instance),
             ) {
                 Ok(sp) => sp,
-                Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                Err(trap) => done!(state, trap),
             };
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
@@ -410,19 +409,10 @@ pub fn memory_grow(
             }
         }
         Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-            state.done(DoneReason::OutOfFuel { required_fuel });
-            return exec_break!(ip, sp, mem0, mem0_len, instance);
+            done!(state, DoneReason::OutOfFuel { required_fuel });
         }
         Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
-            break_with_trap!(
-                TrapCode::GrowthOperationLimited,
-                state,
-                ip,
-                sp,
-                mem0,
-                mem0_len,
-                instance
-            )
+            done!(state, TrapCode::GrowthOperationLimited);
         }
         Err(StoreError::Internal(_error)) => {
             // TODO: we do not want to panic in the executor handlers so we somehow
@@ -505,7 +495,7 @@ macro_rules! handler_unary {
                 let value = get_value(value, sp);
                 let value = match $eval(value).into_trap_result() {
                     Ok(value) => value,
-                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                    Err(trap) => done!(state, trap),
                 };
                 set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -594,7 +584,7 @@ macro_rules! handler_binary {
                 let value = match $eval(lhs, rhs).into_trap_result() {
                     Ok(value) => value,
                     Err(trap) => {
-                        break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                        done!(state, trap)
                     },
                 };
                 set_value(sp, result, value);
@@ -1044,7 +1034,7 @@ macro_rules! handler_load_ss {
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                 let loaded = match $load(mem_bytes, ptr, offset) {
                     Ok(loaded) => loaded,
-                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                    Err(trap) => done!(state, trap),
                 };
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -1090,7 +1080,7 @@ macro_rules! handler_load_si {
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                 let loaded = match $load(mem_bytes, usize::from(address)) {
                     Ok(loaded) => loaded,
-                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                    Err(trap) => done!(state, trap),
                 };
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -1137,7 +1127,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                 let mem_bytes = mem0_bytes(mem0, mem0_len);
                 let loaded = match $load(mem_bytes, ptr, u64::from(u16::from(offset))) {
                     Ok(loaded) => loaded,
-                    Err(trap) => break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance),
+                    Err(trap) => done!(state, trap),
                 };
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -1185,7 +1175,7 @@ macro_rules! handler_store_sx {
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                 if let Err(trap) = $store(mem_bytes, ptr, offset, value.into()) {
-                    break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                    done!(state, trap)
                 }
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -1232,7 +1222,7 @@ macro_rules! handler_store_ix {
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                 if let Err(trap) = $store(mem_bytes, usize::from(address), value.into()) {
-                    break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                    done!(state, trap)
                 }
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -1280,7 +1270,7 @@ macro_rules! handler_store_mem0_offset16_sx {
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = mem0_bytes(mem0, mem0_len);
                 if let Err(trap) = $store(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()) {
-                    break_with_trap!(trap, state, ip, sp, mem0, mem0_len, instance)
+                    done!(state, trap)
                 }
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
