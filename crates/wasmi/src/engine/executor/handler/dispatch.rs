@@ -312,12 +312,12 @@ macro_rules! exec_break {
     }};
 }
 
-macro_rules! trap {
-    ($trap_code:expr, $state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        $state.done($crate::engine::executor::handler::state::DoneReason::Trap(
-            $trap_code,
-        ));
-        exec_break!($ip, $sp, $mem0, $mem0_len, $instance)
+macro_rules! done {
+    ($state:expr, $reason:expr) => {{
+        $state.done(<_ as ::core::convert::Into<
+            $crate::engine::executor::handler::DoneReason,
+        >>::into($reason));
+        $crate::engine::executor::handler::Done::control_break()
     }};
 }
 
