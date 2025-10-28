@@ -283,32 +283,8 @@ macro_rules! compile_or_get_func {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func($state, $func) {
             Ok((ip, size)) => (ip, size),
-            Err(error) => {
-                $state.done(DoneReason::CompileError(error));
-                return exec_break!($ip, $sp, $mem0, $mem0_len, $instance);
-            }
+            Err(error) => done!($state, DoneReason::CompileError(error)),
         }
-    }};
-}
-
-#[cfg(not(feature = "trampolines"))]
-macro_rules! exec_break {
-    ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        $crate::engine::executor::handler::dispatch::Done::control_continue(
-            $ip, $sp, $mem0, $mem0_len, $instance,
-        )
-    }};
-}
-
-#[cfg(feature = "trampolines")]
-macro_rules! exec_break {
-    ($ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let _: Ip = $ip;
-        let _: Sp = $sp;
-        let _: Mem0Ptr = $mem0;
-        let _: Mem0Len = $mem0_len;
-        let _: NonNull<InstanceEntity> = $instance;
-        $crate::engine::executor::handler::dispatch::Done::Break
     }};
 }
 
