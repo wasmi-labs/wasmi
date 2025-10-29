@@ -2,6 +2,7 @@ use crate::{
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{
         executor::{handler::utils::extract_mem0, CodeMap},
+        utils::unreachable_unchecked,
         StackConfig,
     },
     errors::HostError,
@@ -251,6 +252,22 @@ impl Stack {
         };
         Some((ip, sp, mem0, mem0_len, instance))
     }
+
+    pub fn replace_frame(
+        &mut self,
+        callee_ip: Ip,
+        callee_params: BoundedSlotSpan,
+        callee_size: usize,
+        callee_instance: Option<NonNull<InstanceEntity>>,
+    ) -> Result<Sp, TrapCode> {
+        let params_start = usize::from(u16::from(callee_params.span().head()));
+        let params_len = callee_params.len();
+        let start = self.frames.replace(callee_ip, callee_instance)?;
+        let sp = self
+            .values
+            .replace(start, callee_size, params_start, params_len)?;
+        Ok(sp)
+    }
 }
 
 #[derive(Debug)]
@@ -299,6 +316,36 @@ impl ValueStack {
         self.cells.resize_with(end, UntypedVal::default);
         let start_locals = start.wrapping_add(usize::from(len_params));
         self.cells[start_locals..end].fill_with(UntypedVal::default);
+        let sp = self.sp(start);
+        Ok(sp)
+    }
+
+    fn replace(
+        &mut self,
+        start: usize,
+        len_slots: usize,
+        params_start: usize,
+        params_len: u16,
+    ) -> Result<Sp, TrapCode> {
+        debug_assert!(params_start <= len_slots);
+        debug_assert!(params_start + usize::from(params_len) <= len_slots);
+        if len_slots == 0 {
+            return Ok(Sp::null());
+        }
+        let Some(end) = start.checked_add(len_slots) else {
+            return Err(TrapCode::StackOverflow);
+        };
+        if end > self.max_height {
+            return Err(TrapCode::StackOverflow);
+        }
+        self.cells.resize_with(end, UntypedVal::default);
+        let Some(cells) = self.cells.get_mut(start..end) else {
+            unsafe { unreachable_unchecked!() }
+        };
+        let params_end = params_start.wrapping_add(usize::from(params_len));
+        cells.copy_within(params_start..params_end, 0);
+        let locals_start = start.wrapping_add(usize::from(params_len));
+        cells[locals_start..].fill_with(UntypedVal::default);
         let sp = self.sp(start);
         Ok(sp)
     }
@@ -383,6 +430,27 @@ impl CallStack {
             self.instance = Some(instance);
         }
         Some((ip, start, popped.instance))
+    }
+
+    fn replace(
+        &mut self,
+        callee_ip: Ip,
+        instance: Option<NonNull<InstanceEntity>>,
+    ) -> Result<usize, TrapCode> {
+        let Some(caller_frame) = self.frames.last_mut() else {
+            unsafe { unreachable_unchecked!("missing caller frame on the call stack") }
+        };
+        let prev_instance = match instance {
+            Some(instance) => self.instance.replace(instance),
+            None => self.instance,
+        };
+        let start = caller_frame.start;
+        *caller_frame = Frame {
+            start,
+            ip: callee_ip,
+            instance: prev_instance,
+        };
+        Ok(start)
     }
 }
 
