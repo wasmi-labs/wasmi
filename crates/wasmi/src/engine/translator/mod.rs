@@ -470,6 +470,7 @@ macro_rules! impl_visit_operator {
     ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $ann:tt $($rest:tt)* ) => {
         #[inline]
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
+            $( $( let _ = $arg; )* )?
             Ok(())
         }
         impl_visit_operator!($($rest)*);
