@@ -319,6 +319,92 @@ pub fn return_call_internal(
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
+pub fn return_call_imported(
+    state: &mut VmState,
+    ip: Ip,
+    _sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
+    let func = fetch_func(instance, func);
+    let func = resolve_func(state.store, &func);
+    let (callee_ip, sp, mem0, mem0_len, instance) = match func {
+        FuncEntity::Wasm(func) => {
+            let engine_func = func.func_body();
+            let callee_instance = *func.instance();
+            let (callee_ip, size) = compile_or_get_func!(state, engine_func);
+            let callee_instance = resolve_instance(state.store, &callee_instance).into();
+            let callee_sp = match state.stack.replace_frame(
+                callee_ip,
+                params,
+                size,
+                (instance != callee_instance).then_some(callee_instance),
+            ) {
+                Ok(sp) => sp,
+                Err(trap) => done!(state, trap),
+            };
+            let (instance, mem0, mem0_len) =
+                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+            (callee_ip, callee_sp, mem0, mem0_len, instance)
+        }
+        FuncEntity::Host(_func) => {
+            todo!()
+        }
+    };
+    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn return_call_indirect(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (
+        _,
+        crate::ir::decode::ReturnCallIndirect {
+            params,
+            index,
+            func_type,
+            table,
+        },
+    ) = unsafe { decode_op(ip) };
+    let func = match resolve_indirect_func(index, table, func_type, state, sp, instance) {
+        Ok(func) => func,
+        Err(trap) => done!(state, trap),
+    };
+    let func = resolve_func(state.store, &func);
+    let (callee_ip, sp, mem0, mem0_len, instance) = match func {
+        FuncEntity::Wasm(func) => {
+            let engine_func = func.func_body();
+            let callee_instance = *func.instance();
+            let (callee_ip, size) = compile_or_get_func!(state, engine_func);
+            let callee_instance: NonNull<InstanceEntity> =
+                resolve_instance(state.store, &callee_instance).into();
+            let callee_sp = match state.stack.replace_frame(
+                callee_ip,
+                params,
+                size,
+                (instance != callee_instance).then_some(callee_instance),
+            ) {
+                Ok(sp) => sp,
+                Err(trap) => done!(state, trap),
+            };
+            let (instance, mem0, mem0_len) =
+                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+            (callee_ip, callee_sp, mem0, mem0_len, instance)
+        }
+        FuncEntity::Host(_func) => {
+            todo!()
+        }
+    };
+    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+}
+
 pub fn r#return(
     state: &mut VmState,
     _ip: Ip,

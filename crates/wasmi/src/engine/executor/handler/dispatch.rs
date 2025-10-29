@@ -343,6 +343,8 @@ pub fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::CallImported => exec::call_imported,
         OpCode::CallIndirect => exec::call_indirect,
         OpCode::ReturnCallInternal => exec::return_call_internal,
+        OpCode::ReturnCallImported => exec::return_call_imported,
+        OpCode::ReturnCallIndirect => exec::return_call_indirect,
         // memory
         OpCode::MemorySize => exec::memory_size,
         OpCode::MemoryGrow => exec::memory_grow,
