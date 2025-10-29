@@ -253,6 +253,7 @@ impl Stack {
         Some((ip, sp, mem0, mem0_len, instance))
     }
 
+    #[inline(always)]
     pub fn replace_frame(
         &mut self,
         callee_ip: Ip,
@@ -320,6 +321,7 @@ impl ValueStack {
         Ok(sp)
     }
 
+    #[inline(always)]
     fn replace(
         &mut self,
         start: usize,
@@ -432,6 +434,7 @@ impl CallStack {
         Some((ip, start, popped.instance))
     }
 
+    #[inline(always)]
     fn replace(
         &mut self,
         callee_ip: Ip,
