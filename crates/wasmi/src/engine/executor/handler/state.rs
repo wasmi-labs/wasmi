@@ -214,6 +214,7 @@ impl Stack {
         self.values.capacity()
     }
 
+    #[inline(always)]
     pub fn push_frame(
         &mut self,
         caller_ip: Option<Ip>,
@@ -283,6 +284,7 @@ impl ValueStack {
         Sp::new(&mut self.cells, start)
     }
 
+    #[inline(always)]
     fn push(&mut self, start: usize, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
         debug_assert!(usize::from(len_params) <= len_slots);
         if len_slots == 0 {
@@ -343,6 +345,7 @@ impl CallStack {
         top.ip = ip;
     }
 
+    #[inline(always)]
     fn push(
         &mut self,
         caller_ip: Option<Ip>,
