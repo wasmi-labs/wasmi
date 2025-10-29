@@ -13,6 +13,7 @@ use crate::{
                 exec_copy_span,
                 exec_copy_span_asc,
                 exec_copy_span_des,
+                exec_return,
                 extract_mem0,
                 fetch_global,
                 fetch_memory,
@@ -308,7 +309,7 @@ pub fn r#return(
     mem0_len: Mem0Len,
     instance: NonNull<InstanceEntity>,
 ) -> Done {
-    exec_return!(state, sp, mem0, mem0_len, instance)
+    exec_return(state, sp, mem0, mem0_len, instance)
 }
 
 pub fn return_span(
@@ -324,7 +325,7 @@ pub fn return_span(
     let src = values.span();
     let len = values.len();
     exec_copy_span_asc(sp, dst, src, len);
-    exec_return!(state, sp, mem0, mem0_len, instance)
+    exec_return(state, sp, mem0, mem0_len, instance)
 }
 
 macro_rules! handler_return {
@@ -341,7 +342,7 @@ macro_rules! handler_return {
                 let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                 let value = get_value(value, sp);
                 set_value(sp, Slot::from(0), $eval(value));
-                exec_return!(state, sp, mem0, mem0_len, instance)
+                exec_return(state, sp, mem0, mem0_len, instance)
             }
         )*
     };
