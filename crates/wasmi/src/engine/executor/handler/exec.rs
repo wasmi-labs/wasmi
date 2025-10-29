@@ -301,6 +301,24 @@ pub fn call_indirect(
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
+pub fn return_call_internal(
+    state: &mut VmState,
+    ip: Ip,
+    _sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
+    let func = EngineFunc::from(func);
+    let (callee_ip, size) = compile_or_get_func!(state, func);
+    let callee_sp = match state.stack.replace_frame(callee_ip, params, size, None) {
+        Ok(sp) => sp,
+        Err(trap) => done!(state, trap),
+    };
+    dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+}
+
 pub fn r#return(
     state: &mut VmState,
     _ip: Ip,
