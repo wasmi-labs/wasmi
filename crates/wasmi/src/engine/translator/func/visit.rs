@@ -55,6 +55,7 @@ macro_rules! impl_visit_operator {
     ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
+            $( $( let _ = $arg; )* )?
             self.translate_unsupported_operator(stringify!($op))
         }
         impl_visit_operator!($($rest)*);
