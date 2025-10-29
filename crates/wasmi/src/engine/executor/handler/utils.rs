@@ -1,7 +1,11 @@
 use super::state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
 use crate::{
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
-    engine::{DedupFuncType, EngineFunc},
+    engine::{
+        executor::handler::{Done, DoneReason},
+        DedupFuncType,
+        EngineFunc,
+    },
     func::FuncEntity,
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
@@ -124,19 +128,20 @@ macro_rules! impl_expand_to_result {
 }
 impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
 
-macro_rules! exec_return {
-    ($state:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let Some((ip, sp, mem0, mem0_len, instance)) =
-            $state
-                .stack
-                .pop_frame(&mut $state.store, $mem0, $mem0_len, $instance)
-        else {
-            // No more frames on the call stack -> break out of execution!
-            $state.done(DoneReason::Return($sp));
-            return Done::control_break();
-        };
-        dispatch!($state, ip, sp, mem0, mem0_len, instance)
-    }};
+pub fn exec_return(
+    state: &mut VmState,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: NonNull<InstanceEntity>,
+) -> Done {
+    let Some((ip, sp, mem0, mem0_len, instance)) =
+        state.stack.pop_frame(state.store, mem0, mem0_len, instance)
+    else {
+        // No more frames on the call stack -> break out of execution!
+        done!(state, DoneReason::Return(sp))
+    };
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
