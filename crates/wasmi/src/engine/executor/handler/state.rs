@@ -220,17 +220,17 @@ impl Stack {
         &mut self,
         caller_ip: Option<Ip>,
         callee_ip: Ip,
-        params: BoundedSlotSpan,
-        size: usize,
-        instance: Option<NonNull<InstanceEntity>>,
+        callee_params: BoundedSlotSpan,
+        callee_size: usize,
+        callee_instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<Sp, TrapCode> {
-        let delta = usize::from(u16::from(params.span().head()));
-        let len_params = params.len();
+        let delta = usize::from(u16::from(callee_params.span().head()));
+        let len_params = callee_params.len();
         let Some(start) = self.frames.top_start().checked_add(delta) else {
             return Err(TrapCode::StackOverflow);
         };
-        let sp = self.values.push(start, size, len_params)?;
-        self.frames.push(caller_ip, callee_ip, start, instance)?;
+        let sp = self.values.push(start, callee_size, len_params)?;
+        self.frames.push(caller_ip, callee_ip, start, callee_instance)?;
         Ok(sp)
     }
 
