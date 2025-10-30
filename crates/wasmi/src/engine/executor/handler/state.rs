@@ -224,14 +224,10 @@ impl Stack {
         callee_size: usize,
         callee_instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<Sp, TrapCode> {
-        let delta = usize::from(u16::from(callee_params.span().head()));
-        let len_params = callee_params.len();
-        let Some(start) = self.frames.top_start().checked_add(delta) else {
-            return Err(TrapCode::StackOverflow);
-        };
-        let sp = self.values.push(start, callee_size, len_params)?;
-        self.frames.push(caller_ip, callee_ip, start, callee_instance)?;
-        Ok(sp)
+        let start = self
+            .frames
+            .push(caller_ip, callee_ip, callee_params, callee_instance)?;
+        self.values.push(start, callee_size, callee_params.len())
     }
 
     pub fn pop_frame(
@@ -261,13 +257,8 @@ impl Stack {
         callee_size: usize,
         callee_instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<Sp, TrapCode> {
-        let params_start = usize::from(u16::from(callee_params.span().head()));
-        let params_len = callee_params.len();
         let start = self.frames.replace(callee_ip, callee_instance)?;
-        let sp = self
-            .values
-            .replace(start, callee_size, params_start, params_len)?;
-        Ok(sp)
+        self.values.replace(start, callee_size, callee_params)
     }
 }
 
@@ -326,11 +317,12 @@ impl ValueStack {
         &mut self,
         start: usize,
         len_slots: usize,
-        params_start: usize,
-        params_len: u16,
+        callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
-        debug_assert!(params_start <= len_slots);
-        debug_assert!(params_start + usize::from(params_len) <= len_slots);
+        let params_len = callee_params.len();
+        let params_offset = usize::from(u16::from(callee_params.span().head()));
+        debug_assert!(params_offset <= len_slots);
+        debug_assert!(params_offset + usize::from(params_len) <= len_slots);
         if len_slots == 0 {
             return Ok(Sp::null());
         }
@@ -344,8 +336,8 @@ impl ValueStack {
         let Some(cells) = self.cells.get_mut(start..end) else {
             unsafe { unreachable_unchecked!() }
         };
-        let params_end = params_start.wrapping_add(usize::from(params_len));
-        cells.copy_within(params_start..params_end, 0);
+        let params_end = params_offset.wrapping_add(usize::from(params_len));
+        cells.copy_within(params_offset..params_end, 0);
         let locals_start = start.wrapping_add(usize::from(params_len));
         cells[locals_start..].fill_with(UntypedVal::default);
         let sp = self.sp(start);
@@ -399,9 +391,9 @@ impl CallStack {
         &mut self,
         caller_ip: Option<Ip>,
         callee_ip: Ip,
-        start: usize,
+        callee_params: BoundedSlotSpan,
         instance: Option<NonNull<InstanceEntity>>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<usize, TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
         }
@@ -413,12 +405,16 @@ impl CallStack {
             Some(instance) => self.instance.replace(instance),
             None => self.instance,
         };
+        let params_offset = usize::from(u16::from(callee_params.span().head()));
+        let Some(start) = self.top_start().checked_add(params_offset) else {
+            return Err(TrapCode::StackOverflow);
+        };
         self.frames.push(Frame {
             ip: callee_ip,
             start,
             instance: prev_instance,
         });
-        Ok(())
+        Ok(start)
     }
 
     fn pop(&mut self) -> Option<(Ip, usize, Option<NonNull<InstanceEntity>>)> {
