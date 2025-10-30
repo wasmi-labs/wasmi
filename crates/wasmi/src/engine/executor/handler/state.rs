@@ -419,7 +419,7 @@ impl CallStack {
 
     fn pop(&mut self) -> Option<(Ip, usize, Option<NonNull<InstanceEntity>>)> {
         let Some(popped) = self.frames.pop() else {
-            panic!("unexpected empty frame stack") // TODO: return `Result` instead of panicking
+            unsafe { unreachable_unchecked!("call stack must not be empty") }
         };
         let top = self.top()?;
         let ip = top.ip;
