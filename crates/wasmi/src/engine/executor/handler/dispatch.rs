@@ -1,18 +1,17 @@
 use super::{
     exec,
-    state::{DoneReason, Ip, Mem0Len, Mem0Ptr, Sp, Stack, VmState},
+    state::{DoneReason, Inst, Ip, Mem0Len, Mem0Ptr, Sp, Stack, VmState},
     utils::{resolve_instance, set_value},
 };
 use crate::{
     engine::{executor::handler::utils, CallParams, CallResults, CodeMap, EngineFunc},
-    instance::InstanceEntity,
     ir::{BoundedSlotSpan, OpCode, Slot, SlotSpan},
     CallHook,
     Error,
     Instance,
     Store,
 };
-use core::{marker::PhantomData, ptr::NonNull};
+use core::marker::PhantomData;
 
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
@@ -170,7 +169,7 @@ pub fn execute_until_done(
     mut sp: Sp,
     mut mem0: Mem0Ptr,
     mut mem0_len: Mem0Len,
-    mut instance: NonNull<InstanceEntity>,
+    mut instance: Inst,
 ) -> Option<DoneReason> {
     let mut handler = fetch_handler(ip);
     'exec: loop {
@@ -203,7 +202,7 @@ pub fn execute_until_done(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Option<DoneReason> {
     let mut state = state;
     let handler = fetch_handler(ip);
@@ -224,7 +223,7 @@ impl Done {
         _sp: Sp,
         _mem0: Mem0Ptr,
         _mem0_len: Mem0Len,
-        _instance: NonNull<InstanceEntity>,
+        _instance: Inst,
     ) -> Self {
         Self { _priv: () }
     }
@@ -242,7 +241,7 @@ pub enum Done {
         next_sp: Sp,
         next_mem0: Mem0Ptr,
         next_mem0_len: Mem0Len,
-        next_instance: NonNull<InstanceEntity>,
+        next_instance: Inst,
     },
     Break,
 }
@@ -254,7 +253,7 @@ impl Done {
         next_sp: Sp,
         next_mem0: Mem0Ptr,
         next_mem0_len: Mem0Len,
-        next_instance: NonNull<InstanceEntity>,
+        next_instance: Inst,
     ) -> Self {
         Self::Continue {
             next_ip,
@@ -270,14 +269,8 @@ impl Done {
     }
 }
 
-type Handler = fn(
-    &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
-) -> Done;
+type Handler =
+    fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
 
 macro_rules! compile_or_get_func {
     ($state:expr, $func:expr) => {{
