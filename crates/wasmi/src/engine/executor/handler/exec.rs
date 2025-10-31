@@ -1,7 +1,7 @@
 use super::{
     dispatch::Done,
     eval,
-    state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+    state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value, IntoTrapResult as _},
 };
 use crate::{
@@ -30,12 +30,11 @@ use crate::{
     },
     errors::{FuelError, MemoryError},
     func::FuncEntity,
-    instance::InstanceEntity,
     ir::{self, Slot, SlotSpan},
     store::StoreError,
     TrapCode,
 };
-use core::{cmp, ptr::NonNull};
+use core::cmp;
 
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "compact") {
@@ -55,7 +54,7 @@ pub fn trap(
     _sp: Sp,
     _mem0: Mem0Ptr,
     _mem0_len: Mem0Len,
-    _instance: NonNull<InstanceEntity>,
+    _instance: Inst,
 ) -> Done {
     let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
     done!(state, trap_code)
@@ -67,7 +66,7 @@ pub fn consume_fuel(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
     let consumption_result = state
@@ -87,7 +86,7 @@ pub fn copy_span_asc(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (
         ip,
@@ -107,7 +106,7 @@ pub fn copy_span_des(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (
         ip,
@@ -127,7 +126,7 @@ pub fn branch(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
     let ip = offset_ip(ip, offset);
@@ -140,7 +139,7 @@ pub fn global_get(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
@@ -156,7 +155,7 @@ pub fn global_set(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalSet { global, value }) = unsafe { decode_op(ip) };
     let value: UntypedVal = get_value(value, sp);
@@ -170,7 +169,7 @@ pub fn global_set_32(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalSet32 { global, value }) = unsafe { decode_op(ip) };
     let value: UntypedVal = get_value(value, sp).into();
@@ -184,7 +183,7 @@ pub fn global_set_64(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalSet64 { global, value }) = unsafe { decode_op(ip) };
     let value: UntypedVal = get_value(value, sp).into();
@@ -198,7 +197,7 @@ pub fn call_internal(
     _sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
     let func = EngineFunc::from(func);
@@ -219,7 +218,7 @@ pub fn call_imported(
     _sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
@@ -257,7 +256,7 @@ pub fn call_indirect(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (
         caller_ip,
@@ -278,8 +277,7 @@ pub fn call_indirect(
             let engine_func = func.func_body();
             let callee_instance = *func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
-            let callee_instance: NonNull<InstanceEntity> =
-                resolve_instance(state.store, &callee_instance).into();
+            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
             let callee_sp = match state.stack.push_frame(
                 Some(caller_ip),
                 callee_ip,
@@ -307,7 +305,7 @@ pub fn return_call_internal(
     _sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
     let func = EngineFunc::from(func);
@@ -325,7 +323,7 @@ pub fn return_call_imported(
     _sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
@@ -362,7 +360,7 @@ pub fn return_call_indirect(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (
         _,
@@ -383,8 +381,7 @@ pub fn return_call_indirect(
             let engine_func = func.func_body();
             let callee_instance = *func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
-            let callee_instance: NonNull<InstanceEntity> =
-                resolve_instance(state.store, &callee_instance).into();
+            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
             let callee_sp = match state.stack.replace_frame(
                 callee_ip,
                 params,
@@ -411,7 +408,7 @@ pub fn r#return(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     exec_return(state, sp, mem0, mem0_len, instance)
 }
@@ -422,7 +419,7 @@ pub fn return_span(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { decode_op(ip) };
     let dst = SlotSpan::new(Slot::from(0));
@@ -441,7 +438,7 @@ macro_rules! handler_return {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                 let value = get_value(value, sp);
@@ -463,7 +460,7 @@ pub fn memory_size(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
     let memory = fetch_memory(instance, memory);
@@ -478,7 +475,7 @@ pub fn memory_grow(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (
         ip,
@@ -545,7 +542,7 @@ pub fn branch_table(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::BranchTable { len_targets, index }) = unsafe { decode_op(ip) };
     let chosen_target = fetch_branch_table_target(sp, index, len_targets);
@@ -562,7 +559,7 @@ pub fn branch_table_span(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let (
         ip,
@@ -592,7 +589,7 @@ macro_rules! handler_unary {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (ip, $crate::ir::decode::$op { result, value }) = unsafe { decode_op(ip) };
                 let value = get_value(value, sp);
@@ -679,7 +676,7 @@ macro_rules! handler_binary {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (ip, $crate::ir::decode::$decode { result, lhs, rhs }) = unsafe { decode_op(ip) };
                 let lhs = get_value(lhs, sp);
@@ -926,7 +923,7 @@ macro_rules! handler_cmp_branch {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
                 let lhs = get_value(lhs, sp);
@@ -1036,7 +1033,7 @@ macro_rules! handler_select {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
@@ -1121,7 +1118,7 @@ macro_rules! handler_load_ss {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
@@ -1169,7 +1166,7 @@ macro_rules! handler_load_si {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
@@ -1215,7 +1212,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
@@ -1262,7 +1259,7 @@ macro_rules! handler_store_sx {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
@@ -1311,7 +1308,7 @@ macro_rules! handler_store_ix {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
@@ -1358,7 +1355,7 @@ macro_rules! handler_store_mem0_offset16_sx {
                 sp: Sp,
                 mem0: Mem0Ptr,
                 mem0_len: Mem0Len,
-                instance: NonNull<InstanceEntity>,
+                instance: Inst,
             ) -> Done {
                 let (
                     ip,
