@@ -1,4 +1,4 @@
-use super::state::{mem0_bytes, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
+use super::state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
 use crate::{
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
     engine::{
@@ -21,7 +21,7 @@ use crate::{
     Table,
     TrapCode,
 };
-use core::{num::NonZero, ptr::NonNull};
+use core::num::NonZero;
 
 pub trait GetValue<T> {
     fn get_value(src: Self, sp: Sp) -> T;
@@ -133,7 +133,7 @@ pub fn exec_return(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Done {
     let Some((ip, sp, mem0, mem0_len, instance)) =
         state.stack.pop_frame(state.store, mem0, mem0_len, instance)
@@ -172,10 +172,7 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
-pub fn extract_mem0(
-    store: &mut PrunedStore,
-    instance: NonNull<InstanceEntity>,
-) -> (Mem0Ptr, Mem0Len) {
+pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { instance.as_ref() };
     let Some(memory) = instance.get_memory(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
@@ -190,7 +187,7 @@ pub fn memory_bytes<'a>(
     memory: index::Memory,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
     state: &'a mut VmState,
 ) -> &'a mut [u8] {
     match memory.is_default() {
@@ -214,7 +211,7 @@ macro_rules! impl_fetch_from_instance {
         $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
     ) => {
         $(
-            pub fn $fn(instance: NonNull<InstanceEntity>, $param: $ty) -> $ret {
+            pub fn $fn(instance: Inst, $param: $ty) -> $ret {
                 let instance = unsafe { instance.as_ref() };
                 let index = ::core::primitive::u32::from($param);
                 let Some($param) = $getter(instance, index) else {
@@ -282,7 +279,7 @@ pub fn resolve_indirect_func(
     func_type: index::FuncType,
     state: &mut VmState<'_>,
     sp: Sp,
-    instance: NonNull<InstanceEntity>,
+    instance: Inst,
 ) -> Result<Func, TrapCode> {
     let index = get_value(index, sp);
     let table = fetch_table(instance, table);
@@ -300,12 +297,7 @@ pub fn resolve_indirect_func(
     Ok(*func)
 }
 
-pub fn set_global(
-    global: index::Global,
-    value: UntypedVal,
-    state: &mut VmState,
-    instance: NonNull<InstanceEntity>,
-) {
+pub fn set_global(global: index::Global, value: UntypedVal, state: &mut VmState, instance: Inst) {
     let global = fetch_global(instance, global);
     let global = resolve_global_mut(state.store, &global);
     let mut value_ptr = global.get_untyped_ptr();
@@ -315,11 +307,11 @@ pub fn set_global(
 
 pub fn update_instance(
     store: &mut PrunedStore,
-    instance: NonNull<InstanceEntity>,
-    new_instance: NonNull<InstanceEntity>,
+    instance: Inst,
+    new_instance: Inst,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-) -> (NonNull<InstanceEntity>, Mem0Ptr, Mem0Len) {
+) -> (Inst, Mem0Ptr, Mem0Len) {
     if new_instance == instance {
         return (instance, mem0, mem0_len);
     }
