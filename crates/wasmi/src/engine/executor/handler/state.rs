@@ -65,6 +65,28 @@ impl From<TrapCode> for DoneReason {
 }
 
 #[derive(Debug, Copy, Clone)]
+pub struct Inst(NonNull<InstanceEntity>);
+
+impl From<&'_ InstanceEntity> for Inst {
+    fn from(entity: &'_ InstanceEntity) -> Self {
+        Self(entity.into())
+    }
+}
+
+impl PartialEq for Inst {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for Inst {}
+
+impl Inst {
+    pub unsafe fn as_ref(&self) -> &InstanceEntity {
+        unsafe { self.0.as_ref() }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Mem0Ptr(*mut u8);
 
@@ -222,7 +244,7 @@ impl Stack {
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         callee_size: usize,
-        callee_instance: Option<NonNull<InstanceEntity>>,
+        callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self
             .frames
@@ -235,8 +257,8 @@ impl Stack {
         store: &mut PrunedStore,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
-        instance: NonNull<InstanceEntity>,
-    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, NonNull<InstanceEntity>)> {
+        instance: Inst,
+    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
         let (ip, start, changed_instance) = self.frames.pop()?;
         let sp = self.values.sp(start);
         let (mem0, mem0_len, instance) = match changed_instance {
@@ -255,7 +277,7 @@ impl Stack {
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         callee_size: usize,
-        callee_instance: Option<NonNull<InstanceEntity>>,
+        callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self.frames.replace(callee_ip, callee_instance)?;
         self.values.replace(start, callee_size, callee_params)
@@ -348,7 +370,7 @@ impl ValueStack {
 #[derive(Debug)]
 pub struct CallStack {
     frames: Vec<Frame>,
-    instance: Option<NonNull<InstanceEntity>>,
+    instance: Option<Inst>,
     max_height: usize,
 }
 
@@ -392,7 +414,7 @@ impl CallStack {
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
-        instance: Option<NonNull<InstanceEntity>>,
+        instance: Option<Inst>,
     ) -> Result<usize, TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
@@ -417,7 +439,7 @@ impl CallStack {
         Ok(start)
     }
 
-    fn pop(&mut self) -> Option<(Ip, usize, Option<NonNull<InstanceEntity>>)> {
+    fn pop(&mut self) -> Option<(Ip, usize, Option<Inst>)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
         };
@@ -431,11 +453,7 @@ impl CallStack {
     }
 
     #[inline(always)]
-    fn replace(
-        &mut self,
-        callee_ip: Ip,
-        instance: Option<NonNull<InstanceEntity>>,
-    ) -> Result<usize, TrapCode> {
+    fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<usize, TrapCode> {
         let Some(caller_frame) = self.frames.last_mut() else {
             unsafe { unreachable_unchecked!("missing caller frame on the call stack") }
         };
@@ -457,5 +475,5 @@ impl CallStack {
 pub struct Frame {
     pub ip: Ip,
     start: usize,
-    instance: Option<NonNull<InstanceEntity>>,
+    instance: Option<Inst>,
 }
