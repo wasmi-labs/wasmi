@@ -23,7 +23,13 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Engine, Error, Val};
+use crate::{
+    collections::arena::ArenaIndex,
+    engine::{Inst, ResumableCall},
+    Engine,
+    Error,
+    Val,
+};
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 
@@ -294,7 +300,7 @@ impl<T> TrampolineEntity<T> {
     pub fn call(
         &self,
         mut ctx: impl AsContextMut<Data = T>,
-        instance: Option<&Instance>,
+        instance: Option<Inst>,
         params: FuncInOut,
     ) -> Result<FuncFinished, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);

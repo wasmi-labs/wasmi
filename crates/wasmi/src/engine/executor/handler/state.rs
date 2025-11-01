@@ -3,6 +3,8 @@ use crate::{
     engine::{
         executor::{handler::utils::extract_mem0, CodeMap},
         utils::unreachable_unchecked,
+        ResumableHostTrapError,
+        ResumableOutOfFuelError,
         StackConfig,
     },
     errors::HostError,
@@ -12,7 +14,7 @@ use crate::{
     Error,
     TrapCode,
 };
-use alloc::{boxed::Box, vec::Vec};
+use alloc::vec::Vec;
 use core::{
     ptr::{self, NonNull},
     slice,
@@ -53,8 +55,8 @@ impl<'vm> VmState<'vm> {
 pub enum DoneReason {
     Return(Sp),
     Trap(TrapCode),
-    OutOfFuel { required_fuel: u64 },
-    Host(Box<dyn HostError>),
+    Host(ResumableHostTrapError),
+    OutOfFuel(ResumableOutOfFuelError),
     CompileError(Error),
 }
 
