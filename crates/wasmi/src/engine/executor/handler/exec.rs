@@ -931,8 +931,8 @@ handler_binary! {
     fn f32_le_sss(F32Le_Sss) = wasm::f32_le;
     fn f32_le_ssi(F32Le_Ssi) = wasm::f32_le;
     fn f32_le_sis(F32Le_Sis) = wasm::f32_le;
-    fn f32_not_eq_sss(F32NotEq_Sss) = eval::wasmi_f32_not_eq;
-    fn f32_not_eq_ssi(F32NotEq_Ssi) = eval::wasmi_f32_not_eq;
+    fn f32_not_eq_sss(F32NotEq_Sss) = wasm::f32_ne;
+    fn f32_not_eq_ssi(F32NotEq_Ssi) = wasm::f32_ne;
     fn f32_not_lt_sss(F32NotLt_Sss) = eval::wasmi_f32_not_lt;
     fn f32_not_lt_ssi(F32NotLt_Ssi) = eval::wasmi_f32_not_lt;
     fn f32_not_lt_sis(F32NotLt_Sis) = eval::wasmi_f32_not_lt;
@@ -971,8 +971,8 @@ handler_binary! {
     fn f64_le_sss(F64Le_Sss) = wasm::f64_le;
     fn f64_le_ssi(F64Le_Ssi) = wasm::f64_le;
     fn f64_le_sis(F64Le_Sis) = wasm::f64_le;
-    fn f64_not_eq_sss(F64NotEq_Sss) = eval::wasmi_f64_not_eq;
-    fn f64_not_eq_ssi(F64NotEq_Ssi) = eval::wasmi_f64_not_eq;
+    fn f64_not_eq_sss(F64NotEq_Sss) = wasm::f64_ne;
+    fn f64_not_eq_ssi(F64NotEq_Ssi) = wasm::f64_ne;
     fn f64_not_lt_sss(F64NotLt_Sss) = eval::wasmi_f64_not_lt;
     fn f64_not_lt_ssi(F64NotLt_Ssi) = eval::wasmi_f64_not_lt;
     fn f64_not_lt_sis(F64NotLt_Sis) = eval::wasmi_f64_not_lt;
