@@ -13,7 +13,7 @@ mod utils;
 
 pub(crate) use self::{
     block_type::BlockType,
-    executor::Stack,
+    executor::{Inst, Stack},
     func_types::DedupFuncType,
     translator::{
         FuncTranslationDriver,
