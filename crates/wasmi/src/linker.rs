@@ -185,6 +185,8 @@ impl<T> Definition<T> {
     ///   defined host function.
     /// - This unifies handling of [`Definition::Extern(Extern::Func)`] and
     ///   [`Definition::HostFunc`].
+    ///
+    /// [`Definition::Extern(Extern::Func)`]: crate::Extern::Func
     pub fn as_func(&self, mut ctx: impl AsContextMut<Data = T>) -> Option<Func> {
         match self {
             Definition::Extern(Extern::Func(func)) => Some(*func),
