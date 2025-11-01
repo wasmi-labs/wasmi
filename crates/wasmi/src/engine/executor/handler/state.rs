@@ -273,7 +273,7 @@ impl Stack {
         instance: Inst,
     ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
         let (ip, start, changed_instance) = self.frames.pop()?;
-        let sp = self.values.sp(start);
+        let sp = self.values.sp_or_dangling(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
                 let (mem0, mem0_len) = extract_mem0(store, instance);
@@ -325,7 +325,18 @@ impl ValueStack {
     }
 
     fn sp(&mut self, start: usize) -> Sp {
+        debug_assert!(!self.cells.is_empty());
         Sp::new(&mut self.cells, start)
+    }
+
+    fn sp_or_dangling(&mut self, start: usize) -> Sp {
+        match self.cells.is_empty() {
+            true => {
+                debug_assert_eq!(start, 0);
+                Sp::dangling()
+            }
+            false => self.sp(start),
+        }
     }
 
     fn prepare_host_frame<'a>(
