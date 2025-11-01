@@ -26,6 +26,7 @@ use crate::{
                 update_instance,
             },
         },
+        utils::unreachable_unchecked,
         EngineFunc,
         ResumableHostTrapError,
         ResumableOutOfFuelError,
@@ -33,7 +34,7 @@ use crate::{
     errors::{FuelError, MemoryError},
     func::FuncEntity,
     ir::{self, Slot, SlotSpan},
-    store::StoreError,
+    store::{CallHooks, StoreError},
     TrapCode,
 };
 use core::cmp;
@@ -249,9 +250,39 @@ pub fn call_imported(
             (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
         FuncEntity::Host(host_func) => {
+            debug_assert_eq!(params.len(), host_func.len_params());
+            let trampoline = *host_func.trampoline();
+            let (sp, params_results) =
+                match state
+                    .stack
+                    .prepare_host_frame(caller_ip, params, host_func.len_results())
+                {
+                    Ok(params_results) => params_results,
+                    Err(trap) => done!(state, trap),
+                };
+            match state.store.call_host_func(
+                trampoline,
+                Some(instance),
+                params_results,
+                CallHooks::Call,
+            ) {
+                Ok(()) => {}
+                Err(StoreError::External(error)) => {
+                    done!(
+                        state,
+                        DoneReason::Host(ResumableHostTrapError::new(error, func, params.span()))
+                    )
+                }
+                Err(StoreError::Internal(error)) => unsafe {
+                    unreachable_unchecked!(
+                        "internal interpreter error while executing host function: {error}"
+                    )
+                },
+            }
+            (caller_ip, sp, mem0, mem0_len, instance)
         }
     };
-    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn call_indirect(
@@ -296,8 +327,37 @@ pub fn call_indirect(
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
-        FuncEntity::Host(_func) => {
-            todo!()
+        FuncEntity::Host(host_func) => {
+            debug_assert_eq!(params.len(), host_func.len_params());
+            let trampoline = *host_func.trampoline();
+            let (sp, params_results) =
+                match state
+                    .stack
+                    .prepare_host_frame(caller_ip, params, host_func.len_results())
+                {
+                    Ok(params_results) => params_results,
+                    Err(trap) => done!(state, trap),
+                };
+            match state.store.call_host_func(
+                trampoline,
+                Some(instance),
+                params_results,
+                CallHooks::Call,
+            ) {
+                Ok(()) => {}
+                Err(StoreError::External(error)) => {
+                    done!(
+                        state,
+                        DoneReason::Host(ResumableHostTrapError::new(error, func, params.span()))
+                    )
+                }
+                Err(StoreError::Internal(error)) => unsafe {
+                    unreachable_unchecked!(
+                        "internal interpreter error while executing host function: {error}"
+                    )
+                },
+            }
+            (caller_ip, sp, mem0, mem0_len, instance)
         }
     };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
@@ -351,7 +411,8 @@ pub fn return_call_imported(
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
-        FuncEntity::Host(host_func) => {
+        FuncEntity::Host(_host_func) => {
+            todo!()
         }
     };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
