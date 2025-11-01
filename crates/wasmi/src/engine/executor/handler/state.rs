@@ -7,7 +7,7 @@ use crate::{
         ResumableOutOfFuelError,
         StackConfig,
     },
-    errors::HostError,
+    func::FuncInOut,
     instance::InstanceEntity,
     ir::{self, BoundedSlotSpan, Slot},
     store::PrunedStore,
@@ -239,6 +239,17 @@ impl Stack {
         self.values.capacity()
     }
 
+    pub fn prepare_host_frame<'a>(
+        &'a mut self,
+        caller_ip: Ip,
+        callee_params: BoundedSlotSpan,
+        results_len: u16,
+    ) -> Result<(Sp, FuncInOut<'a>), TrapCode> {
+        let caller_start = self.frames.prepare_host_frame(caller_ip);
+        self.values
+            .prepare_host_frame(caller_start, callee_params, results_len)
+    }
+
     #[inline(always)]
     pub fn push_frame(
         &mut self,
@@ -315,6 +326,29 @@ impl ValueStack {
 
     fn sp(&mut self, start: usize) -> Sp {
         Sp::new(&mut self.cells, start)
+    }
+
+    fn prepare_host_frame<'a>(
+        &'a mut self,
+        caller_start: usize,
+        callee_params: BoundedSlotSpan,
+        results_len: u16,
+    ) -> Result<(Sp, FuncInOut<'a>), TrapCode> {
+        let params_offset = usize::from(u16::from(callee_params.span().head()));
+        let params_len = usize::from(callee_params.len());
+        let results_len = usize::from(results_len);
+        let callee_size = params_len.max(results_len);
+        let Some(callee_start) = caller_start.checked_add(params_offset) else {
+            return Err(TrapCode::StackOverflow);
+        };
+        let Some(callee_end) = callee_start.checked_add(callee_size) else {
+            return Err(TrapCode::StackOverflow);
+        };
+        self.cells.resize(callee_end, UntypedVal::default());
+        let sp = self.sp(caller_start);
+        let cells = &mut self.cells[callee_start..];
+        let inout = FuncInOut::new(cells, params_len, results_len);
+        Ok((sp, inout))
     }
 
     #[inline(always)]
@@ -408,6 +442,11 @@ impl CallStack {
             panic!("must have top call frame")
         };
         top.ip = ip;
+    }
+
+    fn prepare_host_frame(&mut self, caller_ip: Ip) -> usize {
+        self.sync_ip(caller_ip);
+        self.top_start()
     }
 
     #[inline(always)]
