@@ -227,11 +227,11 @@ pub fn call_imported(
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let func = resolve_func(state.store, &func);
-    let (callee_ip, sp, mem0, mem0_len, instance) = match func {
-        FuncEntity::Wasm(func) => {
-            let engine_func = func.func_body();
-            let callee_instance = *func.instance();
+    let func_entity = resolve_func(state.store, &func);
+    let (ip, sp, mem0, mem0_len, instance) = match func_entity {
+        FuncEntity::Wasm(wasm_func) => {
+            let engine_func = wasm_func.func_body();
+            let callee_instance = *wasm_func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance = resolve_instance(state.store, &callee_instance).into();
             let callee_sp = match state.stack.push_frame(
@@ -248,8 +248,7 @@ pub fn call_imported(
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
-        FuncEntity::Host(_func) => {
-            todo!()
+        FuncEntity::Host(host_func) => {
         }
     };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
@@ -276,11 +275,11 @@ pub fn call_indirect(
         Ok(func) => func,
         Err(trap) => done!(state, trap),
     };
-    let func = resolve_func(state.store, &func);
-    let (callee_ip, sp, mem0, mem0_len, instance) = match func {
-        FuncEntity::Wasm(func) => {
-            let engine_func = func.func_body();
-            let callee_instance = *func.instance();
+    let func_entity = resolve_func(state.store, &func);
+    let (callee_ip, sp, mem0, mem0_len, instance) = match func_entity {
+        FuncEntity::Wasm(wasm_func) => {
+            let engine_func = wasm_func.func_body();
+            let callee_instance = *wasm_func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
             let callee_sp = match state.stack.push_frame(
@@ -352,8 +351,7 @@ pub fn return_call_imported(
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
         }
-        FuncEntity::Host(_func) => {
-            todo!()
+        FuncEntity::Host(host_func) => {
         }
     };
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
