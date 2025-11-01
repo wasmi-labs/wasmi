@@ -174,7 +174,7 @@ pub struct Sp {
 
 impl Sp {
     pub fn new(cells: &mut Vec<UntypedVal>, start: usize) -> Self {
-        debug_assert!(start < cells.len());
+        debug_assert!(start < cells.len(), "start = {}, cells.len() = {}", start, cells.len());
         Self {
             value: unsafe { cells.as_mut_ptr().add(start) },
         }
