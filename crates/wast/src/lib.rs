@@ -374,11 +374,26 @@ impl WastRunner {
                 .iter()
                 .map(|expected| self.assert_result_core(result, expected))
                 .any(|result| result.is_ok()),
-            (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
-            (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
-            (Val::F32(result), WastRetCore::F32(expected)) => return f32_matches_or_err(result, expected),
-            (Val::F64(result), WastRetCore::F64(expected)) => return f64_matches_or_err(result, expected),
-            (Val::V128(result), WastRetCore::V128(expected)) => v128_matches(result, expected),
+            (Val::I32(result), WastRetCore::I32(expected)) => {
+                return i32_matches_or_err(result, expected)
+                    .map_err(|error| error.context("evaluation mismatch of `i32` values"))
+            }
+            (Val::I64(result), WastRetCore::I64(expected)) => {
+                return i64_matches_or_err(result, expected)
+                    .map_err(|error| error.context("evaluation mismatch of `i64` values"))
+            }
+            (Val::F32(result), WastRetCore::F32(expected)) => {
+                return f32_matches_or_err(result, expected)
+                    .map_err(|error| error.context("evaluation mismatch of `f32` values"))
+            }
+            (Val::F64(result), WastRetCore::F64(expected)) => {
+                return f64_matches_or_err(result, expected)
+                    .map_err(|error| error.context("evaluation mismatch of `f64` values"))
+            }
+            (Val::V128(result), WastRetCore::V128(expected)) => {
+                return v128_matches_or_err(result, expected)
+                    .map_err(|error| error.context("evaluation mismatch of `v128` values"))
+            }
             (
                 Val::FuncRef(funcref),
                 WastRetCore::RefNull(Some(HeapType::Abstract {
@@ -595,96 +610,129 @@ impl WastRunner {
     }
 }
 
-/// Returns `true` if `actual` matches `expected`.
+/// Returns `Err` if `actual` does not match `expected`.
+fn i32_matches_or_err(actual: &i32, expected: &i32) -> Result<()> {
+    if actual == expected {
+        return Ok(());
+    }
+    let expected_u = *expected as u32;
+    let actual_u = *actual as u32;
+    if actual.is_negative() || expected.is_negative() {
+        bail!(
+            "\n\
+            \t- expected: {expected:10} (unsigned = {expected_u:10}) (bits = 0x{expected_u:08X})\n\
+            \t- found   : {actual:10} (unsigned = {actual_u:10}) (bits = 0x{actual_u:08X})"
+        )
+    }
+    bail!(
+        "\
+        expected: {expected} (bits = 0x{expected_u:X}) \
+        but found: {actual} (bits = 0x{actual_u:X})"
+    )
+}
+
+/// Returns `Err` if `actual` does not match `expected`.
+fn i64_matches_or_err(actual: &i64, expected: &i64) -> Result<()> {
+    if actual == expected {
+        return Ok(());
+    }
+    let expected_u = *expected as u64;
+    let actual_u = *actual as u64;
+    if actual.is_negative() || expected.is_negative() {
+        bail!(
+            "\n\
+            \t- expected: {expected:20} (unsigned = {expected_u:20}) (bits = 0x{expected_u:016X})\n\
+            \t- found   : {actual:20} (unsigned = {actual_u:20}) (bits = 0x{actual_u:016X})"
+        )
+    }
+    bail!(
+        "\
+        expected: {expected} (bits = 0x{expected_u:X}) \
+        but found: {actual} (bits = 0x{actual_u:X})"
+    )
+}
+
+/// Returns `Err` if `actual` does not match `expected`.
 fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
     match expected {
         NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
             if !actual.to_float().is_nan() {
-                bail!("encountered mismatch in evaluation: expected NaN ({expected:?}) but found {actual:?}.")
+                bail!("expected NaN ({expected:?}) but found {actual:?}.")
             }
         }
         NanPattern::Value(expected) => {
             if actual.to_bits() != expected.bits {
-                let expected = f32::from_bits(expected.bits);
-                bail!("encountered mismatch in evaluation: expected {expected:?} but found {actual:?}.")
+                let expected_value = f32::from_bits(expected.bits);
+                let expected_bits = expected.bits;
+                bail!("expected {expected_value:?} (bits = 0x{expected_bits:X}) but found {actual:?}.")
             }
         }
     }
     Ok(())
 }
 
-/// Returns `true` if `actual` matches `expected`.
-fn f32_matches(actual: &F32, expected: &NanPattern<wast::token::F32>) -> bool {
-    match expected {
-        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => actual.to_float().is_nan(),
-        NanPattern::Value(expected) => actual.to_bits() == expected.bits,
-    }
-}
-
-/// Returns `true` if `actual` matches `expected`.
+/// Returns `Err` if `actual` does not match `expected`.
 fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> Result<()> {
     match expected {
         NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
             if !actual.to_float().is_nan() {
-                bail!("encountered mismatch in evaluation: expected NaN ({expected:?}) but found {actual:?}.")
+                bail!("expected NaN ({expected:?}) but found {actual:?}.")
             }
         }
         NanPattern::Value(expected) => {
             if actual.to_bits() != expected.bits {
-                let expected = f64::from_bits(expected.bits);
-                bail!("encountered mismatch in evaluation: expected {expected:?} but found {actual:?}.")
+                let expected_value = f64::from_bits(expected.bits);
+                let expected_bits = expected.bits;
+                bail!("expected {expected_value:?} (bits = 0x{expected_bits:X}) but found {actual:?}.")
             }
         }
     }
     Ok(())
 }
 
-/// Returns `true` if `actual` matches `expected`.
-fn f64_matches(actual: &F64, expected: &NanPattern<wast::token::F64>) -> bool {
-    match expected {
-        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => actual.to_float().is_nan(),
-        NanPattern::Value(expected) => actual.to_bits() == expected.bits,
-    }
-}
-
-/// Returns `true` if `actual` matches `expected`.
-fn v128_matches(actual: &V128, expected: &V128Pattern) -> bool {
+/// Returns `Err` if `actual` does not match `expected`.
+fn v128_matches_or_err(actual: &V128, expected: &V128Pattern) -> Result<()> {
     match expected {
         V128Pattern::I8x16(expected) => {
             let actual: [i8; 16] = array::from_fn(|i| extract_lane_as_i8(actual, i));
-            actual == *expected
+            if actual != *expected {
+                bail!("expected = {expected:?}, actual = {actual:?}")
+            }
         }
         V128Pattern::I16x8(expected) => {
             let actual: [i16; 8] = array::from_fn(|i| extract_lane_as_i16(actual, i));
-            actual == *expected
+            if actual != *expected {
+                bail!("expected = {expected:?}, actual = {actual:?}")
+            }
         }
         V128Pattern::I32x4(expected) => {
             let actual: [i32; 4] = array::from_fn(|i| extract_lane_as_i32(actual, i));
-            actual == *expected
+            if actual != *expected {
+                bail!("expected = {expected:?}, actual = {actual:?}")
+            }
         }
         V128Pattern::I64x2(expected) => {
             let actual: [i64; 2] = array::from_fn(|i| extract_lane_as_i64(actual, i));
-            actual == *expected
+            if actual != *expected {
+                bail!("expected = {expected:?}, actual = {actual:?}")
+            }
         }
         V128Pattern::F32x4(expected) => {
             for (i, expected) in expected.iter().enumerate() {
                 let bits = extract_lane_as_i32(actual, i) as u32;
-                if !f32_matches(&F32::from_bits(bits), expected) {
-                    return false;
-                }
+                f32_matches_or_err(&F32::from_bits(bits), expected)
+                    .map_err(|error| error.context("mismatch at vector position {i}"))?;
             }
-            true
         }
         V128Pattern::F64x2(expected) => {
             for (i, expected) in expected.iter().enumerate() {
                 let bits = extract_lane_as_i64(actual, i) as u64;
-                if !f64_matches(&F64::from_bits(bits), expected) {
-                    return false;
-                }
+                f64_matches_or_err(&F64::from_bits(bits), expected)
+                    .map_err(|error| error.context("mismatch at vector position {i}"))?;
             }
-            true
         }
     }
+    Ok(())
 }
 
 /// Returns the `i8` at `lane` from `v128`.
