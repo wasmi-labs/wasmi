@@ -155,8 +155,8 @@ fn handle_reason(reason: Option<DoneReason>) -> Result<Sp, Error> {
     };
     match reason {
         DoneReason::Trap(trap_code) => Err(Error::from(trap_code)),
-        DoneReason::OutOfFuel { required_fuel: _ } => todo!(),
-        DoneReason::Host(_host_error) => todo!(),
+        DoneReason::OutOfFuel(_error) => todo!(),
+        DoneReason::Host(_error) => todo!(),
         DoneReason::CompileError(_error) => todo!(),
         DoneReason::Return(sp) => Ok(sp),
     }
