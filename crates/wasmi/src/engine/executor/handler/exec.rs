@@ -564,7 +564,7 @@ pub fn memory_grow(
             return_value
         }
         Err(StoreError::External(
-            MemoryError::OutOfBoundsAccess | MemoryError::OutOfSystemMemory,
+            MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
         )) => {
             let memory_ty = resolve_memory(state.store, &memref).ty();
             match memory_ty.is_64() {
@@ -589,7 +589,7 @@ pub fn memory_grow(
         }
         Err(error) => {
             // TODO: see above
-            panic!("encountered an unexpected error: {error}")
+            panic!("encountered an unexpected error: {error:?}")
         }
     };
     set_value(sp, result, return_value);
