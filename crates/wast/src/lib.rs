@@ -376,7 +376,7 @@ impl WastRunner {
                 .any(|result| result.is_ok()),
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
             (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
-            (Val::F32(result), WastRetCore::F32(expected)) => f32_matches(result, expected),
+            (Val::F32(result), WastRetCore::F32(expected)) => return f32_matches_or_err(result, expected),
             (Val::F64(result), WastRetCore::F64(expected)) => f64_matches(result, expected),
             (Val::V128(result), WastRetCore::V128(expected)) => v128_matches(result, expected),
             (
@@ -593,6 +593,24 @@ impl WastRunner {
         self.results.clear();
         self.results.resize(len_results, Val::I32(0));
     }
+}
+
+/// Returns `true` if `actual` matches `expected`.
+fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
+    match expected {
+        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
+            if !actual.to_float().is_nan() {
+                bail!("encountered mismatch in evaluation: expected NaN ({expected:?}) but found {actual:?}.")
+            }
+        }
+        NanPattern::Value(expected) => {
+            if actual.to_bits() != expected.bits {
+                let expected = f32::from_bits(expected.bits);
+                bail!("encountered mismatch in evaluation: expected {expected:?} but found {actual:?}.")
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Returns `true` if `actual` matches `expected`.
