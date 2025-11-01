@@ -116,14 +116,6 @@ pub fn wasmi_f64_copysign_ssi(lhs: f64, rhs: Sign<f64>) -> f64 {
     wasm::f64_copysign(lhs, f64::from(rhs))
 }
 
-pub fn wasmi_f32_not_eq(lhs: f32, rhs: f32) -> bool {
-    !wasm::f32_eq(lhs, rhs)
-}
-
-pub fn wasmi_f64_not_eq(lhs: f64, rhs: f64) -> bool {
-    !wasm::f64_eq(lhs, rhs)
-}
-
 pub fn wasmi_f32_not_le(lhs: f32, rhs: f32) -> bool {
     !wasm::f32_le(lhs, rhs)
 }
