@@ -9,5 +9,5 @@ mod state;
 use self::{dispatch::Done, state::DoneReason};
 pub use self::{
     dispatch::{init_wasm_func_call, op_code_to_handler},
-    state::Stack,
+    state::{Inst, Stack},
 };

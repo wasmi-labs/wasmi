@@ -27,6 +27,8 @@ use crate::{
             },
         },
         EngineFunc,
+        ResumableHostTrapError,
+        ResumableOutOfFuelError,
     },
     errors::{FuelError, MemoryError},
     func::FuncEntity,
@@ -75,7 +77,10 @@ pub fn consume_fuel(
         .fuel_mut()
         .consume_fuel_unchecked(u64::from(fuel));
     if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-        done!(state, DoneReason::OutOfFuel { required_fuel });
+        done!(
+            state,
+            DoneReason::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
+        );
     }
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -509,7 +514,10 @@ pub fn memory_grow(
             }
         }
         Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-            done!(state, DoneReason::OutOfFuel { required_fuel });
+            done!(
+                state,
+                DoneReason::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
+            );
         }
         Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
             done!(state, TrapCode::GrowthOperationLimited);
