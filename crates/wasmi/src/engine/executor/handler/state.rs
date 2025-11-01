@@ -180,9 +180,9 @@ impl Sp {
         }
     }
 
-    pub fn null() -> Self {
+    pub fn dangling() -> Self {
         Self {
-            value: ptr::null_mut(),
+            value: ptr::dangling_mut(),
         }
     }
 
@@ -355,7 +355,7 @@ impl ValueStack {
     fn push(&mut self, start: usize, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
         debug_assert!(usize::from(len_params) <= len_slots);
         if len_slots == 0 {
-            return Ok(Sp::null());
+            return Ok(Sp::dangling());
         }
         let Some(end) = start.checked_add(len_slots) else {
             return Err(TrapCode::StackOverflow);
@@ -382,7 +382,7 @@ impl ValueStack {
         debug_assert!(params_offset <= len_slots);
         debug_assert!(params_offset + usize::from(params_len) <= len_slots);
         if len_slots == 0 {
-            return Ok(Sp::null());
+            return Ok(Sp::dangling());
         }
         let Some(end) = start.checked_add(len_slots) else {
             return Err(TrapCode::StackOverflow);
