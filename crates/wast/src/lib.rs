@@ -656,19 +656,36 @@ fn i64_matches_or_err(actual: &i64, expected: &i64) -> Result<()> {
 fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
     match expected {
         NanPattern::CanonicalNan => {
+            // Properties of canonical NaNs:
+            //
+            // - The sign bit is unspecified.
+            // - The 11-bits exponent are all set to 1.
+            // - The MSB of the payload is set to 1 (quieted NaN) and all others to 0.
+            //
+            // Fore more information visit:
+            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+            const CANONICAL_NAN: u32 = 0x7FC0_0000;
             let bits = actual.to_bits();
             let value = f32::from_bits(bits);
-            let is_canonical_nan = bits == 0x7FC00000 || bits == 0xFFC00000;
+            let is_canonical_nan = (bits & 0x7FFF_FFFF) == CANONICAL_NAN;
             if !is_canonical_nan {
                 bail!("expected canonical NaN but found {value} (bits = 0x{bits:08X}).")
             }
         }
-        NanPattern::ArithmeticNan  => {
+        NanPattern::ArithmeticNan => {
+            // Properties of arithmetic NaNs:
+            //
+            // - Same as canonical NaNs but one of more of the payload (besides MSB) may be set to 1.
+            //
+            // For more information visit:
+            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+            const ARITHMETIC_NAN: u32 = 0x7F80_0000;
+            const ARITHMETIC_PAYLOAD_MSB: u32 = 0x0040_0000;
             let bits = actual.to_bits();
             let value = f32::from_bits(bits);
-            let is_quiet_nan = (bits & 0x7FC00000) == 0x7FC00000;
-            let is_arithmetic_nan = is_quiet_nan && bits != 0x7FC00000 && bits != 0xFFC00000;
-            if !is_arithmetic_nan {
+            let is_anan = (bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
+            let is_msb_set = (bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
+            if !(is_anan && is_msb_set) {
                 bail!("expected arithmetic NaN but found {value} (bits = 0x{bits:08X}).")
             }
         }
@@ -688,9 +705,38 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
 /// Returns `Err` if `actual` does not match `expected`.
 fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> Result<()> {
     match expected {
-        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
-            if !actual.to_float().is_nan() {
-                bail!("expected NaN ({expected:?}) but found {actual:?}.")
+        NanPattern::CanonicalNan => {
+            // Properties of canonical NaNs:
+            //
+            // - The sign bit is unspecified.
+            // - The 11-bits exponent are all set to 1.
+            // - The MSB of the payload is set to 1 (quieted NaN) and all others to 0.
+            //
+            // Fore more information visit:
+            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+            const CANONICAL_NAN: u64 = 0x7ff8_0000_0000_0000;
+            let bits = actual.to_bits();
+            let value = f64::from_bits(bits);
+            let is_canonical_nan = (bits & 0x7fff_ffff_ffff_ffff) == CANONICAL_NAN;
+            if !is_canonical_nan {
+                bail!("expected canonical NaN but found {value} (bits = 0x{bits:016X}).")
+            }
+        }
+        NanPattern::ArithmeticNan => {
+            // Properties of arithmetic NaNs:
+            //
+            // - Same as canonical NaNs but one of more of the payload (besides MSB) may be set to 1.
+            //
+            // For more information visit:
+            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+            const ARITHMETIC_NAN: u64 = 0x7ff0_0000_0000_0000;
+            const ARITHMETIC_PAYLOAD_MSB: u64 = 0x0008_0000_0000_0000;
+            let bits = actual.to_bits();
+            let value = f64::from_bits(bits);
+            let is_anan = (bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
+            let is_msb_set = (bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
+            if !(is_anan && is_msb_set) {
+                bail!("expected arithmetic NaN but found {value} (bits = 0x{bits:016X}).")
             }
         }
         NanPattern::Value(expected) => {
