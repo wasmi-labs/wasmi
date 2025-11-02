@@ -655,9 +655,21 @@ fn i64_matches_or_err(actual: &i64, expected: &i64) -> Result<()> {
 /// Returns `Err` if `actual` does not match `expected`.
 fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
     match expected {
-        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
-            if !actual.to_float().is_nan() {
-                bail!("expected NaN ({expected:?}) but found {actual:?}.")
+        NanPattern::CanonicalNan => {
+            let bits = actual.to_bits();
+            let value = f32::from_bits(bits);
+            let is_canonical_nan = bits == 0x7FC00000 || bits == 0xFFC00000;
+            if !is_canonical_nan {
+                bail!("expected canonical NaN but found {value} (bits = 0x{bits:08X}).")
+            }
+        }
+        NanPattern::ArithmeticNan  => {
+            let bits = actual.to_bits();
+            let value = f32::from_bits(bits);
+            let is_quiet_nan = (bits & 0x7FC00000) == 0x7FC00000;
+            let is_arithmetic_nan = is_quiet_nan && bits != 0x7FC00000 && bits != 0xFFC00000;
+            if !is_arithmetic_nan {
+                bail!("expected arithmetic NaN but found {value} (bits = 0x{bits:08X}).")
             }
         }
         NanPattern::Value(expected) => {
