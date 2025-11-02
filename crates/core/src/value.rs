@@ -513,6 +513,36 @@ impl V128 {
     }
 }
 
+/// Extension trait for `f32` and `f64` to turn a NaN value into a quiet-NaN value.
+#[cfg(feature = "std")]
+trait IntoQuietNan: Sized {
+    /// Converts `self` into a quiet-NaN if `self` is a NaN, otherwise returns `None`.
+    fn into_quiet_nan(self) -> Option<Self>;
+}
+
+#[cfg(feature = "std")]
+macro_rules! impl_into_quiet_nan {
+    ( $( ($float:ty, $bits:ty, $mask:literal) );* $(;)? ) => {
+        $(
+            impl IntoQuietNan for $float {
+                #[inline]
+                fn into_quiet_nan(self) -> Option<Self> {
+                    const QUIET_BIT: $bits = $mask;
+                    if !self.is_nan() {
+                        return None;
+                    }
+                    Some(Self::from_bits(self.to_bits() | QUIET_BIT))
+                }
+            }
+        )*
+    };
+}
+#[cfg(feature = "std")]
+impl_into_quiet_nan! {
+    (f32, u32, 0x0040_0000);
+    (f64, u64, 0x0008_0000_0000_0000);
+}
+
 #[cfg(feature = "std")]
 macro_rules! impl_wasm_float {
     ($ty:ty) => {
@@ -524,26 +554,41 @@ macro_rules! impl_wasm_float {
 
             #[inline]
             fn ceil(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 self.ceil()
             }
 
             #[inline]
             fn floor(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 self.floor()
             }
 
             #[inline]
             fn trunc(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 self.trunc()
             }
 
             #[inline]
             fn nearest(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 self.round_ties_even()
             }
 
             #[inline]
             fn sqrt(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 self.sqrt()
             }
 
