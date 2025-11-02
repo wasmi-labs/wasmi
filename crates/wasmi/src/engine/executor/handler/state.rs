@@ -174,7 +174,12 @@ pub struct Sp {
 
 impl Sp {
     pub fn new(cells: &mut Vec<UntypedVal>, start: usize) -> Self {
-        debug_assert!(start < cells.len(), "start = {}, cells.len() = {}", start, cells.len());
+        debug_assert!(
+            start < cells.len(),
+            "start = {}, cells.len() = {}",
+            start,
+            cells.len()
+        );
         Self {
             value: unsafe { cells.as_mut_ptr().add(start) },
         }
@@ -390,8 +395,7 @@ impl ValueStack {
     ) -> Result<Sp, TrapCode> {
         let params_len = callee_params.len();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
-        debug_assert!(params_offset <= len_slots);
-        debug_assert!(params_offset + usize::from(params_len) <= len_slots);
+        debug_assert!(usize::from(params_len) <= len_slots);
         if len_slots == 0 {
             return Ok(Sp::dangling());
         }
@@ -401,12 +405,15 @@ impl ValueStack {
         if end > self.max_height {
             return Err(TrapCode::StackOverflow);
         }
-        self.cells.resize_with(end, UntypedVal::default);
-        let Some(cells) = self.cells.get_mut(start..end) else {
+        let Some(cells) = self.cells.get_mut(start..) else {
             unsafe { unreachable_unchecked!() }
         };
         let params_end = params_offset.wrapping_add(usize::from(params_len));
         cells.copy_within(params_offset..params_end, 0);
+        self.cells.resize_with(end, UntypedVal::default);
+        let Some(cells) = self.cells.get_mut(start..end) else {
+            unsafe { unreachable_unchecked!() }
+        };
         let locals_start = start.wrapping_add(usize::from(params_len));
         cells[locals_start..].fill_with(UntypedVal::default);
         let sp = self.sp(start);
