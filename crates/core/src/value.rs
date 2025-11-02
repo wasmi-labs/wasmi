@@ -514,11 +514,13 @@ impl V128 {
 }
 
 /// Extension trait for `f32` and `f64` to turn a NaN value into a quiet-NaN value.
+#[cfg(feature = "std")]
 trait IntoQuietNan: Sized {
     /// Converts `self` into a quiet-NaN if `self` is a NaN, otherwise returns `None`.
     fn into_quiet_nan(self) -> Option<Self>;
 }
 
+#[cfg(feature = "std")]
 impl IntoQuietNan for f32 {
     fn into_quiet_nan(self) -> Option<Self> {
         const QUIET_BIT: u32 = 0x0040_0000;
@@ -529,6 +531,7 @@ impl IntoQuietNan for f32 {
     }
 }
 
+#[cfg(feature = "std")]
 impl IntoQuietNan for f64 {
     fn into_quiet_nan(self) -> Option<Self> {
         const QUIET_BIT: u64 = 0x0008_0000_0000_0000;
