@@ -521,27 +521,26 @@ trait IntoQuietNan: Sized {
 }
 
 #[cfg(feature = "std")]
-impl IntoQuietNan for f32 {
-    #[inline]
-    fn into_quiet_nan(self) -> Option<Self> {
-        const QUIET_BIT: u32 = 0x0040_0000;
-        if !self.is_nan() {
-            return None;
-        }
-        Some(Self::from_bits(self.to_bits() | QUIET_BIT))
-    }
+macro_rules! impl_into_quiet_nan {
+    ( $( ($float:ty, $bits:ty, $mask:literal) );* $(;)? ) => {
+        $(
+            impl IntoQuietNan for $float {
+                #[inline]
+                fn into_quiet_nan(self) -> Option<Self> {
+                    const QUIET_BIT: $bits = 0x0040_0000;
+                    if !self.is_nan() {
+                        return None;
+                    }
+                    Some(Self::from_bits(self.to_bits() | QUIET_BIT))
+                }
+            }
+        )*
+    };
 }
-
 #[cfg(feature = "std")]
-impl IntoQuietNan for f64 {
-    #[inline]
-    fn into_quiet_nan(self) -> Option<Self> {
-        const QUIET_BIT: u64 = 0x0008_0000_0000_0000;
-        if !self.is_nan() {
-            return None;
-        }
-        Some(Self::from_bits(self.to_bits() | QUIET_BIT))
-    }
+impl_into_quiet_nan! {
+    (f32, u32, 0x0040_0000);
+    (f64, u64, 0x0008_0000_0000_0000);
 }
 
 #[cfg(feature = "std")]
