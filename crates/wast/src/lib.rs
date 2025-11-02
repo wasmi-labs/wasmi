@@ -681,11 +681,11 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
             //
             // For more information visit:
             // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
-            const ARITHMETIC_NAN: u32 = 0x7F80_0000;
-            const ARITHMETIC_PAYLOAD_MSB: u32 = 0x0040_0000;
-            let is_anan = (actual_bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
-            let is_msb_set = (actual_bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
-            if !(is_anan && is_msb_set) {
+            const EXPONENT_MASK: u32 = 0x7F80_0000_u32;
+            const QUIET_BIT: u32 = 0x0040_0000_u32;
+            let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
+            let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
+            if !(is_nan && is_quiet) {
                 bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:08X}).")
             }
         }
@@ -727,11 +727,11 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
             //
             // For more information visit:
             // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
-            const ARITHMETIC_NAN: u64 = 0x7ff0_0000_0000_0000;
-            const ARITHMETIC_PAYLOAD_MSB: u64 = 0x0008_0000_0000_0000;
-            let is_anan = (actual_bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
-            let is_msb_set = (actual_bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
-            if !(is_anan && is_msb_set) {
+            const EXPONENT_MASK: u64 = 0x7FF0_0000_0000_0000_u64;
+            const QUIET_BIT: u64 = 0x0008_0000_0000_0000_u64;
+            let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
+            let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
+            if !(is_nan && is_quiet) {
                 bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
             }
         }
