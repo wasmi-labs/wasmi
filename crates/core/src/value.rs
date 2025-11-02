@@ -447,23 +447,11 @@ macro_rules! impl_wasm_float {
 
             #[inline]
             fn ceil(self) -> Self {
-                if self.is_nan() {
-                    // Note: if we wanted to preserve NaN payload we could instead
-                    //       unset the quiet NaN bit via:
-                    //       `Self::from_bits(self.to_bits() | 0x0040_0000)`
-                    return <$ty>::NAN;
-                }
                 <libm::Libm<Self>>::ceil(self)
             }
 
             #[inline]
             fn floor(self) -> Self {
-                if self.is_nan() {
-                    // Note: if we wanted to preserve NaN payload we could instead
-                    //       unset the quiet NaN bit via:
-                    //       `Self::from_bits(self.to_bits() | 0x0040_0000)`
-                    return <$ty>::NAN;
-                }
                 <libm::Libm<Self>>::floor(self)
             }
 
