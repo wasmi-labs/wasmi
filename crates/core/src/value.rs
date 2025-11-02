@@ -527,7 +527,7 @@ macro_rules! impl_into_quiet_nan {
             impl IntoQuietNan for $float {
                 #[inline]
                 fn into_quiet_nan(self) -> Option<Self> {
-                    const QUIET_BIT: $bits = 0x0040_0000;
+                    const QUIET_BIT: $bits = $mask;
                     if !self.is_nan() {
                         return None;
                     }
