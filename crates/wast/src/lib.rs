@@ -673,10 +673,12 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
             }
         }
         NanPattern::Value(expected) => {
-            if actual.to_bits() != expected.bits {
+            let actual_bits = actual.to_bits();
+            if actual_bits != expected.bits {
+                let actual_value = f32::from_bits(actual_bits);
                 let expected_value = f32::from_bits(expected.bits);
                 let expected_bits = expected.bits;
-                bail!("expected {expected_value:?} (bits = 0x{expected_bits:X}) but found {actual:?}.")
+                bail!("expected {expected_value:?} (bits = 0x{expected_bits:08X}) but found {actual_value:?} (bits = 0x{actual_bits:08X}).")
             }
         }
     }
@@ -692,10 +694,12 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
             }
         }
         NanPattern::Value(expected) => {
+            let actual_bits = actual.to_bits();
             if actual.to_bits() != expected.bits {
+                let actual_value = f64::from_bits(actual_bits);
                 let expected_value = f64::from_bits(expected.bits);
                 let expected_bits = expected.bits;
-                bail!("expected {expected_value:?} (bits = 0x{expected_bits:X}) but found {actual:?}.")
+                bail!("expected {expected_value:?} (bits = 0x{expected_bits:016X}) but found {actual_value:?} (bits = 0x{actual_bits:016X}).")
             }
         }
     }
