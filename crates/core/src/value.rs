@@ -522,6 +522,7 @@ trait IntoQuietNan: Sized {
 
 #[cfg(feature = "std")]
 impl IntoQuietNan for f32 {
+    #[inline]
     fn into_quiet_nan(self) -> Option<Self> {
         const QUIET_BIT: u32 = 0x0040_0000;
         if !self.is_nan() {
@@ -533,6 +534,7 @@ impl IntoQuietNan for f32 {
 
 #[cfg(feature = "std")]
 impl IntoQuietNan for f64 {
+    #[inline]
     fn into_quiet_nan(self) -> Option<Self> {
         const QUIET_BIT: u64 = 0x0008_0000_0000_0000;
         if !self.is_nan() {
