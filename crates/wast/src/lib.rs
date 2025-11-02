@@ -654,6 +654,8 @@ fn i64_matches_or_err(actual: &i64, expected: &i64) -> Result<()> {
 
 /// Returns `Err` if `actual` does not match `expected`.
 fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
+    let actual_bits = actual.to_bits();
+    let actual_value = f32::from_bits(actual_bits);
     match expected {
         NanPattern::CanonicalNan => {
             // Properties of canonical NaNs:
@@ -665,11 +667,11 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
             // Fore more information visit:
             // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
             const CANONICAL_NAN: u32 = 0x7FC0_0000;
-            let bits = actual.to_bits();
-            let value = f32::from_bits(bits);
-            let is_canonical_nan = (bits & 0x7FFF_FFFF) == CANONICAL_NAN;
+            let is_canonical_nan = (actual_bits & 0x7FFF_FFFF) == CANONICAL_NAN;
             if !is_canonical_nan {
-                bail!("expected canonical NaN but found {value} (bits = 0x{bits:08X}).")
+                bail!(
+                    "expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:08X})."
+                )
             }
         }
         NanPattern::ArithmeticNan => {
@@ -681,18 +683,14 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
             // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
             const ARITHMETIC_NAN: u32 = 0x7F80_0000;
             const ARITHMETIC_PAYLOAD_MSB: u32 = 0x0040_0000;
-            let bits = actual.to_bits();
-            let value = f32::from_bits(bits);
-            let is_anan = (bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
-            let is_msb_set = (bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
+            let is_anan = (actual_bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
+            let is_msb_set = (actual_bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
             if !(is_anan && is_msb_set) {
-                bail!("expected arithmetic NaN but found {value} (bits = 0x{bits:08X}).")
+                bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:08X}).")
             }
         }
         NanPattern::Value(expected) => {
-            let actual_bits = actual.to_bits();
             if actual_bits != expected.bits {
-                let actual_value = f32::from_bits(actual_bits);
                 let expected_value = f32::from_bits(expected.bits);
                 let expected_bits = expected.bits;
                 bail!("expected {expected_value:?} (bits = 0x{expected_bits:08X}) but found {actual_value:?} (bits = 0x{actual_bits:08X}).")
@@ -704,6 +702,8 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
 
 /// Returns `Err` if `actual` does not match `expected`.
 fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> Result<()> {
+    let actual_bits = actual.to_bits();
+    let actual_value = f64::from_bits(actual_bits);
     match expected {
         NanPattern::CanonicalNan => {
             // Properties of canonical NaNs:
@@ -715,11 +715,9 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
             // Fore more information visit:
             // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
             const CANONICAL_NAN: u64 = 0x7ff8_0000_0000_0000;
-            let bits = actual.to_bits();
-            let value = f64::from_bits(bits);
-            let is_canonical_nan = (bits & 0x7fff_ffff_ffff_ffff) == CANONICAL_NAN;
+            let is_canonical_nan = (actual_bits & 0x7fff_ffff_ffff_ffff) == CANONICAL_NAN;
             if !is_canonical_nan {
-                bail!("expected canonical NaN but found {value} (bits = 0x{bits:016X}).")
+                bail!("expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
             }
         }
         NanPattern::ArithmeticNan => {
@@ -731,18 +729,14 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
             // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
             const ARITHMETIC_NAN: u64 = 0x7ff0_0000_0000_0000;
             const ARITHMETIC_PAYLOAD_MSB: u64 = 0x0008_0000_0000_0000;
-            let bits = actual.to_bits();
-            let value = f64::from_bits(bits);
-            let is_anan = (bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
-            let is_msb_set = (bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
+            let is_anan = (actual_bits & ARITHMETIC_NAN) == ARITHMETIC_NAN;
+            let is_msb_set = (actual_bits & ARITHMETIC_PAYLOAD_MSB) == ARITHMETIC_PAYLOAD_MSB;
             if !(is_anan && is_msb_set) {
-                bail!("expected arithmetic NaN but found {value} (bits = 0x{bits:016X}).")
+                bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
             }
         }
         NanPattern::Value(expected) => {
-            let actual_bits = actual.to_bits();
             if actual.to_bits() != expected.bits {
-                let actual_value = f64::from_bits(actual_bits);
                 let expected_value = f64::from_bits(expected.bits);
                 let expected_bits = expected.bits;
                 bail!("expected {expected_value:?} (bits = 0x{expected_bits:016X}) but found {actual_value:?} (bits = 0x{actual_bits:016X}).")
