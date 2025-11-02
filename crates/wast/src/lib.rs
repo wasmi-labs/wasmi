@@ -733,14 +733,14 @@ fn v128_matches_or_err(actual: &V128, expected: &V128Pattern) -> Result<()> {
             for (i, expected) in expected.iter().enumerate() {
                 let bits = extract_lane_as_i32(actual, i) as u32;
                 f32_matches_or_err(&F32::from_bits(bits), expected)
-                    .map_err(|error| error.context("mismatch at vector position {i}"))?;
+                    .map_err(|error| error.context(format!("mismatch at vector position {i}")))?;
             }
         }
         V128Pattern::F64x2(expected) => {
             for (i, expected) in expected.iter().enumerate() {
                 let bits = extract_lane_as_i64(actual, i) as u64;
                 f64_matches_or_err(&F64::from_bits(bits), expected)
-                    .map_err(|error| error.context("mismatch at vector position {i}"))?;
+                    .map_err(|error| error.context(format!("mismatch at vector position {i}")))?;
             }
         }
     }
