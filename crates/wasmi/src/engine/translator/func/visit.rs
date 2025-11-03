@@ -1741,7 +1741,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let len = self.copy_if_immediate(len)?;
         let value = self.copy_if_immediate(value)?;
         self.push_instr(
-            Op::memory_fill(memory, dst, value, len),
+            Op::memory_fill(memory, dst, len, value),
             FuelCostsProvider::instance,
         )?;
         Ok(())
