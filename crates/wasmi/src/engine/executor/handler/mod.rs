@@ -6,8 +6,11 @@ mod eval;
 mod exec;
 mod state;
 
-use self::{dispatch::Done, state::DoneReason};
 pub use self::{
-    dispatch::{init_wasm_func_call, op_code_to_handler, ControlFlowBreak, ControlFlowContinue},
+    dispatch::{init_wasm_func_call, op_code_to_handler},
     state::{Inst, Stack},
+};
+use self::{
+    dispatch::{Control, ControlFlowBreak, ControlFlowContinue, Done},
+    state::DoneReason,
 };
