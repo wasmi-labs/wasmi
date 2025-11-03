@@ -28,6 +28,7 @@ use crate::{
                 set_global,
                 update_instance,
             },
+            Control,
         },
         utils::unreachable_unchecked,
         EngineFunc,
@@ -39,7 +40,7 @@ use crate::{
     store::{CallHooks, StoreError},
     TrapCode,
 };
-use core::{cmp, ops::ControlFlow};
+use core::cmp;
 
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "compact") {
@@ -660,7 +661,7 @@ fn memory_copy_within(
     dst_index: usize,
     src_index: usize,
     len: usize,
-) -> ControlFlow<Break, ()> {
+) -> Control<(), Break> {
     let memory = fetch_memory(instance, dst_memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     let bytes = memory.data_mut();
@@ -682,7 +683,7 @@ fn memory_copy_within(
     consume_fuel!(state, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
-    ControlFlow::Continue(())
+    Control::Continue(())
 }
 
 pub fn memory_fill(
