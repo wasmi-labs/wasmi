@@ -1,8 +1,8 @@
 #[macro_use]
 mod dispatch;
-mod eval;
 #[macro_use]
 mod utils;
+mod eval;
 mod exec;
 mod state;
 
