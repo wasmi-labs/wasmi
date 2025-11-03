@@ -35,8 +35,7 @@ use crate::{
     },
     errors::{FuelError, MemoryError},
     func::FuncEntity,
-    ir::index,
-    ir::{self, Slot, SlotSpan},
+    ir::{self, index, Slot, SlotSpan},
     store::{CallHooks, StoreError},
     TrapCode,
 };
