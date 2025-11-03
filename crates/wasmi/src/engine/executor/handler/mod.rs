@@ -11,6 +11,6 @@ pub use self::{
     state::{Inst, Stack},
 };
 use self::{
-    dispatch::{Control, ControlFlowBreak, ControlFlowContinue, Done},
+    dispatch::{Control, ControlBreak, ControlContinue, Done},
     state::DoneReason,
 };
