@@ -282,7 +282,7 @@ macro_rules! compile_or_get_func {
 }
 
 macro_rules! done {
-    ($state:expr, $reason:expr) => {{
+    ($state:expr, $reason:expr $(,)? ) => {{
         $state.done(<_ as ::core::convert::Into<
             $crate::engine::executor::handler::DoneReason,
         >>::into($reason));
