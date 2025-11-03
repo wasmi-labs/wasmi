@@ -224,16 +224,16 @@ pub struct Break;
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
 pub type Done<T = NextState> = Control<T, Break>;
 
-pub trait ControlFlowContinue: Sized {
+pub trait ControlContinue: Sized {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
 }
 
-pub trait ControlFlowBreak: Sized {
+pub trait ControlBreak: Sized {
     fn control_break() -> Self;
 }
 
 #[cfg(not(feature = "trampolines"))]
-impl ControlFlowContinue for Done<NextState> {
+impl ControlContinue for Done<NextState> {
     fn control_continue(
         _ip: Ip,
         _sp: Sp,
@@ -245,14 +245,14 @@ impl ControlFlowContinue for Done<NextState> {
     }
 }
 
-impl<T> ControlFlowBreak for Done<T> {
+impl<T> ControlBreak for Done<T> {
     fn control_break() -> Self {
         Self::Break(Break)
     }
 }
 
 #[cfg(feature = "trampolines")]
-impl ControlFlowContinue for Done<NextState> {
+impl ControlContinue for Done<NextState> {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self {
         Self::Continue(NextState {
             ip,
@@ -281,7 +281,7 @@ macro_rules! done {
         $state.done(<_ as ::core::convert::Into<
             $crate::engine::executor::handler::DoneReason,
         >>::into($reason));
-        return <$crate::engine::executor::handler::Done<_> as $crate::engine::executor::handler::ControlFlowBreak>::control_break();
+        return <$crate::engine::executor::handler::Done<_> as $crate::engine::executor::handler::ControlBreak>::control_break();
     }};
 }
 
@@ -297,7 +297,7 @@ macro_rules! dispatch {
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let _: &mut VmState = $state;
-        return <$crate::engine::executor::handler::dispatch::Done as $crate::engine::executor::handler::ControlFlowContinue>::control_continue(
+        return <$crate::engine::executor::handler::dispatch::Done as $crate::engine::executor::handler::ControlContinue>::control_continue(
             $ip, $sp, $mem0, $mem0_len, $instance,
         );
     }};
