@@ -11,7 +11,7 @@ use crate::{
     Instance,
     Store,
 };
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::ControlFlow};
 
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
@@ -174,22 +174,16 @@ pub fn execute_until_done(
     let mut handler = fetch_handler(ip);
     'exec: loop {
         match handler(&mut state, ip, sp, mem0, mem0_len, instance) {
-            Done::Continue {
-                next_ip,
-                next_sp,
-                next_mem0,
-                next_mem0_len,
-                next_instance,
-            } => {
-                handler = fetch_handler(next_ip);
-                ip = next_ip;
-                sp = next_sp;
-                mem0 = next_mem0;
-                mem0_len = next_mem0_len;
-                instance = next_instance;
+            Done::Continue(next) => {
+                handler = fetch_handler(next.ip);
+                ip = next.ip;
+                sp = next.sp;
+                mem0 = next.mem0;
+                mem0_len = next.mem0_len;
+                instance = next.instance;
                 continue 'exec;
             }
-            Done::Break => break 'exec,
+            Done::Break(_) => break 'exec,
         }
     }
     state.into_done_reason()
@@ -206,66 +200,66 @@ pub fn execute_until_done(
 ) -> Option<DoneReason> {
     let mut state = state;
     let handler = fetch_handler(ip);
-    handler(&mut state, ip, sp, mem0, mem0_len, instance);
+    let _ = handler(&mut state, ip, sp, mem0, mem0_len, instance);
     state.into_done_reason()
 }
 
-#[derive(Debug, Copy, Clone)]
 #[cfg(not(feature = "trampolines"))]
-pub struct Done {
-    _priv: (),
+#[derive(Debug)]
+pub enum NextState {}
+
+#[cfg(feature = "trampolines")]
+#[derive(Debug, Copy, Clone)]
+pub struct NextState {
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct Break;
+
+pub type Done<T = NextState> = ControlFlow<Break, T>;
+
+pub trait ControlFlowContinue: Sized {
+    fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
+}
+
+pub trait ControlFlowBreak: Sized {
+    fn control_break() -> Self;
 }
 
 #[cfg(not(feature = "trampolines"))]
-impl Done {
-    pub fn control_continue(
+impl ControlFlowContinue for Done<NextState> {
+    fn control_continue(
         _ip: Ip,
         _sp: Sp,
         _mem0: Mem0Ptr,
         _mem0_len: Mem0Len,
         _instance: Inst,
     ) -> Self {
-        Self { _priv: () }
-    }
-
-    pub fn control_break() -> Self {
-        Self { _priv: () }
+        Self::Break(Break)
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-#[cfg(feature = "trampolines")]
-pub enum Done {
-    Continue {
-        next_ip: Ip,
-        next_sp: Sp,
-        next_mem0: Mem0Ptr,
-        next_mem0_len: Mem0Len,
-        next_instance: Inst,
-    },
-    Break,
+impl<T> ControlFlowBreak for Done<T> {
+    fn control_break() -> Self {
+        Self::Break(Break)
+    }
 }
 
 #[cfg(feature = "trampolines")]
-impl Done {
-    pub fn control_continue(
-        next_ip: Ip,
-        next_sp: Sp,
-        next_mem0: Mem0Ptr,
-        next_mem0_len: Mem0Len,
-        next_instance: Inst,
-    ) -> Self {
-        Self::Continue {
-            next_ip,
-            next_sp,
-            next_mem0,
-            next_mem0_len,
-            next_instance,
-        }
-    }
-
-    pub fn control_break() -> Self {
-        Self::Break
+impl ControlFlowContinue for Done<NextState> {
+    fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self {
+        Self::Continue(NextState {
+            ip,
+            sp,
+            mem0,
+            mem0_len,
+            instance,
+        })
     }
 }
 
@@ -286,7 +280,7 @@ macro_rules! done {
         $state.done(<_ as ::core::convert::Into<
             $crate::engine::executor::handler::DoneReason,
         >>::into($reason));
-        return $crate::engine::executor::handler::Done::control_break();
+        return <$crate::engine::executor::handler::Done<_> as $crate::engine::executor::handler::ControlFlowBreak>::control_break();
     }};
 }
 
@@ -302,7 +296,7 @@ macro_rules! dispatch {
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let _: &mut VmState = $state;
-        return $crate::engine::executor::handler::dispatch::Done::control_continue(
+        return <$crate::engine::executor::handler::dispatch::Done as $crate::engine::executor::handler::ControlFlowContinue>::control_continue(
             $ip, $sp, $mem0, $mem0_len, $instance,
         );
     }};
