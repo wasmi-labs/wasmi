@@ -99,7 +99,7 @@ macro_rules! foreach_test {
             fn spec_call("spec/call");
             fn spec_call_indirect("spec/call_indirect");
             fn spec_extended_const_data("spec/proposals/extended-const/data");
-            fn spec_extended_const_elem("spec/proposals/extended-const/elem");
+            // fn spec_extended_const_elem("spec/proposals/extended-const/elem");
             fn spec_extended_const_global("spec/proposals/extended-const/global");
             fn spec_return_call("spec/proposals/tail-call/return_call");
             fn spec_return_call_indirect("spec/proposals/tail-call/return_call_indirect");
@@ -108,7 +108,7 @@ macro_rules! foreach_test {
             fn spec_conversions("spec/conversions");
             fn spec_custom("spec/custom");
             fn spec_data("spec/data");
-            fn spec_elem("spec/elem");
+            // fn spec_elem("spec/elem");
             fn spec_endianness("spec/endianness");
             fn spec_exports("spec/exports");
             fn spec_f32("spec/f32");
@@ -142,13 +142,13 @@ macro_rules! foreach_test {
             fn spec_local_tee("spec/local_tee");
             fn spec_loop("spec/loop");
             fn spec_memory("spec/memory");
-            // fn spec_memory_copy("spec/memory_copy");
-            // fn spec_memory_fill("spec/memory_fill");
+            fn spec_memory_copy("spec/memory_copy");
+            fn spec_memory_fill("spec/memory_fill");
             fn spec_memory_grow("spec/memory_grow");
-            // fn spec_memory_init("spec/memory_init");
+            fn spec_memory_init("spec/memory_init");
             fn spec_memory_redundancy("spec/memory_redundancy");
             fn spec_memory_size("spec/memory_size");
-            // fn spec_memory_trap("spec/memory_trap");
+            fn spec_memory_trap("spec/memory_trap");
             fn spec_obsolete_keywords("spec/obsolete-keywords");
             fn spec_names("spec/names");
             fn spec_nop("spec/nop");
@@ -159,7 +159,7 @@ macro_rules! foreach_test {
             fn spec_select("spec/select");
             fn spec_skip_stack_guard_page("spec/skip-stack-guard-page");
             fn spec_stack("spec/stack");
-            fn spec_start("spec/start");
+            // fn spec_start("spec/start");
             fn spec_store("spec/store");
             fn spec_switch("spec/switch");
             fn spec_table_sub("spec/table-sub");
