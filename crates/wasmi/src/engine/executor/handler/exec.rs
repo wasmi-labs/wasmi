@@ -15,8 +15,10 @@ use crate::{
                 exec_copy_span_des,
                 exec_return,
                 extract_mem0,
+                fetch_data,
                 fetch_global,
                 fetch_memory,
+                resolve_data_mut,
                 resolve_func,
                 resolve_global,
                 resolve_indirect_func,
@@ -586,6 +588,208 @@ pub fn memory_grow(
         }
     };
     set_value(sp, result, return_value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn memory_copy(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::MemoryCopy {
+            dst_memory,
+            src_memory,
+            dst,
+            src,
+            len,
+        },
+    ) = unsafe { decode_op(ip) };
+    let dst: u64 = get_value(dst, sp);
+    let src: u64 = get_value(src, sp);
+    let len: u64 = get_value(len, sp);
+    let Ok(dst_index) = usize::try_from(dst) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Ok(src_index) = usize::try_from(src) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Ok(len) = usize::try_from(len) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    if dst_memory == src_memory {
+        let memory = fetch_memory(instance, dst_memory);
+        let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
+        let bytes = memory.data_mut();
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        if bytes
+            .get(src_index..)
+            .and_then(|memory| memory.get(..len))
+            .is_none()
+        {
+            done!(state, TrapCode::MemoryOutOfBounds)
+        }
+        if bytes
+            .get(dst_index..)
+            .and_then(|memory| memory.get(..len))
+            .is_none()
+        {
+            done!(state, TrapCode::MemoryOutOfBounds)
+        }
+        if let Err(FuelError::OutOfFuel { required_fuel }) =
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
+        {
+            done!(state, DoneReason::out_of_fuel(required_fuel))
+        }
+        bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
+    let dst_memory = fetch_memory(instance, dst_memory);
+    let src_memory = fetch_memory(instance, src_memory);
+    let (src_memory, dst_memory, fuel) = state
+        .store
+        .inner_mut()
+        .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
+    // These accesses just perform the bounds checks required by the Wasm spec.
+    let Some(src_bytes) = src_memory
+        .data()
+        .get(src_index..)
+        .and_then(|memory| memory.get(..len))
+    else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Some(dst_bytes) = dst_memory
+        .data_mut()
+        .get_mut(dst_index..)
+        .and_then(|memory| memory.get_mut(..len))
+    else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    if let Err(FuelError::OutOfFuel { required_fuel }) =
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
+    {
+        done!(state, DoneReason::out_of_fuel(required_fuel))
+    }
+    dst_bytes.copy_from_slice(src_bytes);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn memory_fill(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::MemoryFill {
+            memory,
+            dst,
+            len,
+            value,
+        },
+    ) = unsafe { decode_op(ip) };
+    let dst: u64 = get_value(dst, sp);
+    let len: u64 = get_value(len, sp);
+    let value: u8 = get_value(value, sp);
+    let Ok(dst) = usize::try_from(dst) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Ok(len) = usize::try_from(len) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let memory = fetch_memory(instance, memory);
+    let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
+    let Some(slice) = memory
+        .data_mut()
+        .get_mut(dst..)
+        .and_then(|memory| memory.get_mut(..len))
+    else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    if let Err(FuelError::OutOfFuel { required_fuel }) =
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
+    {
+        done!(state, DoneReason::out_of_fuel(required_fuel))
+    }
+    slice.fill(value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn memory_init(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::MemoryInit {
+            memory,
+            data,
+            dst,
+            src,
+            len,
+        },
+    ) = unsafe { decode_op(ip) };
+    let dst: u64 = get_value(dst, sp);
+    let src: u32 = get_value(src, sp);
+    let len: u32 = get_value(len, sp);
+    let Ok(dst_index) = usize::try_from(dst) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Ok(src_index) = usize::try_from(src) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Ok(len) = usize::try_from(len) else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let (memory, data, fuel) = state
+        .store
+        .inner_mut()
+        .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
+    let Some(memory) = memory
+        .data_mut()
+        .get_mut(dst_index..)
+        .and_then(|memory| memory.get_mut(..len))
+    else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    let Some(data) = data
+        .bytes()
+        .get(src_index..)
+        .and_then(|data| data.get(..len))
+    else {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    };
+    if let Err(FuelError::OutOfFuel { required_fuel }) =
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
+    {
+        done!(state, DoneReason::out_of_fuel(required_fuel))
+    }
+    memory.copy_from_slice(data);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn data_drop(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::DataDrop { data }) = unsafe { decode_op(ip) };
+    let data = fetch_data(instance, data);
+    resolve_data_mut(state.store, &data).drop_bytes();
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
