@@ -294,7 +294,7 @@ macro_rules! done {
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let handler = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
-        handler($state, $ip, $sp, $mem0, $mem0_len, $instance)
+        return handler($state, $ip, $sp, $mem0, $mem0_len, $instance);
     }};
 }
 
@@ -302,9 +302,9 @@ macro_rules! dispatch {
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let _: &mut VmState = $state;
-        $crate::engine::executor::handler::dispatch::Done::control_continue(
+        return $crate::engine::executor::handler::dispatch::Done::control_continue(
             $ip, $sp, $mem0, $mem0_len, $instance,
-        )
+        );
     }};
 }
 
