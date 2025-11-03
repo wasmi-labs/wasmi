@@ -327,3 +327,16 @@ pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip,
     let size = usize::from(compiled_func.len_stack_slots());
     Ok((ip, size))
 }
+
+macro_rules! consume_fuel {
+    ($state:expr, $fuel:expr, $eval:expr) => {{
+        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
+            $fuel.consume_fuel_if($eval)
+        {
+            done!(
+                $state,
+                $crate::engine::executor::handler::DoneReason::out_of_fuel(required_fuel),
+            )
+        }
+    }};
+}
