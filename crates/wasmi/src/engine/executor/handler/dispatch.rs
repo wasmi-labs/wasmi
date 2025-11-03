@@ -341,6 +341,10 @@ pub fn op_code_to_handler(code: OpCode) -> Handler {
         // memory
         OpCode::MemorySize => exec::memory_size,
         OpCode::MemoryGrow => exec::memory_grow,
+        OpCode::MemoryCopy => exec::memory_copy,
+        OpCode::MemoryFill => exec::memory_fill,
+        OpCode::MemoryInit => exec::memory_init,
+        OpCode::DataDrop => exec::data_drop,
         // unconditional branch
         OpCode::Branch => exec::branch,
         OpCode::BranchTable => exec::branch_table,
