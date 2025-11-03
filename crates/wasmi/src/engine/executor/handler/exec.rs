@@ -640,11 +640,8 @@ pub fn memory_copy(
         {
             done!(state, TrapCode::MemoryOutOfBounds)
         }
-        if let Err(FuelError::OutOfFuel { required_fuel }) =
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
-        {
-            done!(state, DoneReason::out_of_fuel(required_fuel))
-        }
+        consume_fuel!(state, fuel, |costs| costs
+            .fuel_for_copying_bytes(len as u64));
         bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
         dispatch!(state, ip, sp, mem0, mem0_len, instance)
     }
@@ -669,11 +666,8 @@ pub fn memory_copy(
     else {
         done!(state, TrapCode::MemoryOutOfBounds)
     };
-    if let Err(FuelError::OutOfFuel { required_fuel }) =
-        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
-    {
-        done!(state, DoneReason::out_of_fuel(required_fuel))
-    }
+    consume_fuel!(state, fuel, |costs| costs
+        .fuel_for_copying_bytes(len as u64));
     dst_bytes.copy_from_slice(src_bytes);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -713,11 +707,8 @@ pub fn memory_fill(
     else {
         done!(state, TrapCode::MemoryOutOfBounds)
     };
-    if let Err(FuelError::OutOfFuel { required_fuel }) =
-        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
-    {
-        done!(state, DoneReason::out_of_fuel(required_fuel))
-    }
+    consume_fuel!(state, fuel, |costs| costs
+        .fuel_for_copying_bytes(len as u64));
     slice.fill(value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -770,11 +761,8 @@ pub fn memory_init(
     else {
         done!(state, TrapCode::MemoryOutOfBounds)
     };
-    if let Err(FuelError::OutOfFuel { required_fuel }) =
-        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))
-    {
-        done!(state, DoneReason::out_of_fuel(required_fuel))
-    }
+    consume_fuel!(state, fuel, |costs| costs
+        .fuel_for_copying_bytes(len as u64));
     memory.copy_from_slice(data);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
