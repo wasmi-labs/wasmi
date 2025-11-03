@@ -8,6 +8,7 @@ use crate::{
     core::{wasm, UntypedVal},
     engine::{
         executor::handler::{
+            dispatch::Break,
             state::DoneReason,
             utils::{
                 exec_copy_span,
@@ -34,11 +35,12 @@ use crate::{
     },
     errors::{FuelError, MemoryError},
     func::FuncEntity,
+    ir::index,
     ir::{self, Slot, SlotSpan},
     store::{CallHooks, StoreError},
     TrapCode,
 };
-use core::cmp;
+use core::{cmp, ops::ControlFlow};
 
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "compact") {
@@ -622,27 +624,7 @@ pub fn memory_copy(
         done!(state, TrapCode::MemoryOutOfBounds)
     };
     if dst_memory == src_memory {
-        let memory = fetch_memory(instance, dst_memory);
-        let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
-        let bytes = memory.data_mut();
-        // These accesses just perform the bounds checks required by the Wasm spec.
-        if bytes
-            .get(src_index..)
-            .and_then(|memory| memory.get(..len))
-            .is_none()
-        {
-            done!(state, TrapCode::MemoryOutOfBounds)
-        }
-        if bytes
-            .get(dst_index..)
-            .and_then(|memory| memory.get(..len))
-            .is_none()
-        {
-            done!(state, TrapCode::MemoryOutOfBounds)
-        }
-        consume_fuel!(state, fuel, |costs| costs
-            .fuel_for_copying_bytes(len as u64));
-        bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
+        memory_copy_within(state, instance, dst_memory, dst_index, src_index, len)?;
         dispatch!(state, ip, sp, mem0, mem0_len, instance)
     }
     let dst_memory = fetch_memory(instance, dst_memory);
@@ -670,6 +652,38 @@ pub fn memory_copy(
         .fuel_for_copying_bytes(len as u64));
     dst_bytes.copy_from_slice(src_bytes);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+fn memory_copy_within(
+    state: &mut VmState<'_>,
+    instance: Inst,
+    dst_memory: index::Memory,
+    dst_index: usize,
+    src_index: usize,
+    len: usize,
+) -> ControlFlow<Break, ()> {
+    let memory = fetch_memory(instance, dst_memory);
+    let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
+    let bytes = memory.data_mut();
+    // These accesses just perform the bounds checks required by the Wasm spec.
+    if bytes
+        .get(src_index..)
+        .and_then(|memory| memory.get(..len))
+        .is_none()
+    {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    }
+    if bytes
+        .get(dst_index..)
+        .and_then(|memory| memory.get(..len))
+        .is_none()
+    {
+        done!(state, TrapCode::MemoryOutOfBounds)
+    }
+    consume_fuel!(state, fuel, |costs| costs
+        .fuel_for_copying_bytes(len as u64));
+    bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
+    ControlFlow::Continue(())
 }
 
 pub fn memory_fill(
