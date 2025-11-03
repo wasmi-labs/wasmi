@@ -9,7 +9,7 @@ use crate::{
     func::FuncEntity,
     instance::InstanceEntity,
     ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
-    memory::DataSegment,
+    memory::{DataSegment, DataSegmentEntity},
     store::{PrunedStore, StoreInner},
     table::ElementSegment,
     Error,
@@ -268,6 +268,7 @@ impl_resolve_from_store! {
     // fn resolve_func_type(func_type: DedupFuncType) -> DedupFuncType = StoreInner::resolve_func_type;
 
     fn resolve_elem_mut(elem: &ElementSegment) -> &'a mut CoreElementSegment = StoreInner::try_resolve_element_mut;
+    fn resolve_data_mut(data: &DataSegment) -> &'a mut DataSegmentEntity = StoreInner::try_resolve_data_mut;
     fn resolve_global_mut(global: &Global) -> &'a mut CoreGlobal = StoreInner::try_resolve_global_mut;
     fn resolve_memory_mut(memory: &Memory) -> &'a mut CoreMemory = StoreInner::try_resolve_memory_mut;
     fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
