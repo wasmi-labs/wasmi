@@ -66,6 +66,14 @@ impl From<TrapCode> for DoneReason {
     }
 }
 
+impl DoneReason {
+    #[cold]
+    #[inline]
+    pub fn out_of_fuel(required_fuel: u64) -> Self {
+        Self::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct Inst(NonNull<InstanceEntity>);
 
