@@ -221,7 +221,8 @@ pub struct NextState {
 #[derive(Debug, Copy, Clone)]
 pub struct Break;
 
-pub type Done<T = NextState> = ControlFlow<Break, T>;
+pub type Control<C = (), B = Break> = ControlFlow<B, C>;
+pub type Done<T = NextState> = Control<T, Break>;
 
 pub trait ControlFlowContinue: Sized {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
