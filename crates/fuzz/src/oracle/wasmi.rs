@@ -175,7 +175,9 @@ impl From<wasmi::Error> for FuzzError {
             | TrapCode::BadConversionToInteger => crate::TrapCode::BadConversionToInteger,
             | TrapCode::StackOverflow => crate::TrapCode::StackOverflow,
             | TrapCode::BadSignature => crate::TrapCode::BadSignature,
-            | TrapCode::OutOfFuel | TrapCode::GrowthOperationLimited => return FuzzError::Other,
+            | TrapCode::OutOfFuel
+            | TrapCode::GrowthOperationLimited
+            | TrapCode::OutOfSystemMemory => return FuzzError::Other,
         };
         FuzzError::Trap(trap_code)
     }
