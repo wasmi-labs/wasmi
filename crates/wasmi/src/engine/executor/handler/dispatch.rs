@@ -232,7 +232,7 @@ pub enum Break {
     BadSignature = TrapCode::BadSignature as _,
     OutOfFuel = TrapCode::OutOfFuel as _,
     GrowthOperationLimited = TrapCode::GrowthOperationLimited as _,
-    OutOfSystemMemory,
+    OutOfSystemMemory = TrapCode::OutOfSystemMemory as _,
     /// Signals that there must be a reason stored externally supplying the caller with more information.
     WithReason,
 }
@@ -252,6 +252,7 @@ impl From<TrapCode> for Break {
             TrapCode::BadSignature => Self::BadSignature,
             TrapCode::OutOfFuel => Self::OutOfFuel,
             TrapCode::GrowthOperationLimited => Self::GrowthOperationLimited,
+            TrapCode::OutOfSystemMemory => Self::OutOfSystemMemory,
         }
     }
 }
@@ -276,6 +277,7 @@ impl Break {
             Self::BadSignature => TrapCode::BadSignature,
             Self::OutOfFuel => TrapCode::OutOfFuel,
             Self::GrowthOperationLimited => TrapCode::GrowthOperationLimited,
+            Self::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
             _ => return None,
         };
         Some(trap_code)
