@@ -10,6 +10,7 @@ use crate::{
     Error,
     Instance,
     Store,
+    TrapCode,
 };
 use core::{marker::PhantomData, ops::ControlFlow};
 
@@ -219,7 +220,67 @@ pub struct NextState {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Break;
+pub enum Break {
+    UnreachableCodeReached = TrapCode::UnreachableCodeReached as _,
+    MemoryOutOfBounds = TrapCode::MemoryOutOfBounds as _,
+    TableOutOfBounds = TrapCode::TableOutOfBounds as _,
+    IndirectCallToNull = TrapCode::IndirectCallToNull as _,
+    IntegerDivisionByZero = TrapCode::IntegerDivisionByZero as _,
+    IntegerOverflow = TrapCode::IntegerOverflow as _,
+    BadConversionToInteger = TrapCode::BadConversionToInteger as _,
+    StackOverflow = TrapCode::StackOverflow as _,
+    BadSignature = TrapCode::BadSignature as _,
+    OutOfFuel = TrapCode::OutOfFuel as _,
+    GrowthOperationLimited = TrapCode::GrowthOperationLimited as _,
+    OutOfSystemMemory,
+    /// Signals that there must be a reason stored externally supplying the caller with more information.
+    WithReason,
+}
+
+impl From<TrapCode> for Break {
+    #[inline]
+    fn from(trap_code: TrapCode) -> Self {
+        match trap_code {
+            TrapCode::UnreachableCodeReached => Self::UnreachableCodeReached,
+            TrapCode::MemoryOutOfBounds => Self::MemoryOutOfBounds,
+            TrapCode::TableOutOfBounds => Self::TableOutOfBounds,
+            TrapCode::IndirectCallToNull => Self::IndirectCallToNull,
+            TrapCode::IntegerDivisionByZero => Self::IntegerDivisionByZero,
+            TrapCode::IntegerOverflow => Self::IntegerOverflow,
+            TrapCode::BadConversionToInteger => Self::BadConversionToInteger,
+            TrapCode::StackOverflow => Self::StackOverflow,
+            TrapCode::BadSignature => Self::BadSignature,
+            TrapCode::OutOfFuel => Self::OutOfFuel,
+            TrapCode::GrowthOperationLimited => Self::GrowthOperationLimited,
+        }
+    }
+}
+
+impl Break {
+    #[inline]
+    pub fn has_reason(self) -> bool {
+        matches!(self, Self::WithReason)
+    }
+
+    #[inline]
+    pub fn trap_code(self) -> Option<TrapCode> {
+        let trap_code = match self {
+            Self::UnreachableCodeReached => TrapCode::UnreachableCodeReached,
+            Self::MemoryOutOfBounds => TrapCode::MemoryOutOfBounds,
+            Self::TableOutOfBounds => TrapCode::TableOutOfBounds,
+            Self::IndirectCallToNull => TrapCode::IndirectCallToNull,
+            Self::IntegerDivisionByZero => TrapCode::IntegerDivisionByZero,
+            Self::IntegerOverflow => TrapCode::IntegerOverflow,
+            Self::BadConversionToInteger => TrapCode::BadConversionToInteger,
+            Self::StackOverflow => TrapCode::StackOverflow,
+            Self::BadSignature => TrapCode::BadSignature,
+            Self::OutOfFuel => TrapCode::OutOfFuel,
+            Self::GrowthOperationLimited => TrapCode::GrowthOperationLimited,
+            _ => return None,
+        };
+        Some(trap_code)
+    }
+}
 
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
 pub type Done<T = NextState> = Control<T, Break>;
