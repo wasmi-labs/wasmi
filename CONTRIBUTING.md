@@ -42,7 +42,7 @@ come together to work towards a common goal.
 English naturally is the language of choice for developing and communicating
 technicalities concerning Wasmi. If you feel like your English skills are not
 on par to properly communicate your intent don't feel ashamed to use any of
-the well known translators in order to make everyone's lifes simpler.
+the well known translators in order to make everyone's lives simpler.
 Feeding properly articulated sentences in your language to an established
 translation engine usually yields good translation results.
 
@@ -141,7 +141,7 @@ https://docs.github.com/en/authentication/managing-commit-signature-verification
 
 ### Commit Messages
 
-We losely follow [semantic commit messages] without the `<type>` tags.
+We loosely follow [semantic commit messages] without the `<type>` tags.
 You are free to add those commit tags though and if you do please follow
 the linked guidelines.
 In any case please use decent language, short and precise commit messages,

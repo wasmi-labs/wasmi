@@ -86,7 +86,7 @@ pub struct Args {
     #[clap(long = "compilation-mode", value_enum, default_value_t=CompilationMode::LazyTranslation)]
     compilation_mode: CompilationMode,
 
-    /// Enable execution fiel metering with N units of fuel.
+    /// Enable execution fuel metering with N units of fuel.
     ///
     /// The execution will trap after running out of the N units of fuel.
     #[clap(long = "fuel", value_name = "N")]
