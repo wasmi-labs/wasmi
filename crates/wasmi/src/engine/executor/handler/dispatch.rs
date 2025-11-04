@@ -4,7 +4,15 @@ use super::{
     utils::{resolve_instance, set_value},
 };
 use crate::{
-    engine::{executor::handler::utils, CallParams, CallResults, CodeMap, EngineFunc},
+    engine::{
+        executor::handler::utils,
+        CallParams,
+        CallResults,
+        CodeMap,
+        EngineFunc,
+        ResumableHostTrapError,
+        ResumableOutOfFuelError,
+    },
     ir::{BoundedSlotSpan, OpCode, Slot, SlotSpan},
     CallHook,
     Error,
@@ -86,15 +94,15 @@ impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Init> {
-    pub fn execute(mut self) -> Result<WasmFuncCall<'a, T, state::Done>, Error> {
+    pub fn execute(mut self) -> Result<WasmFuncCall<'a, T, state::Done>, ExecutionOutcome> {
         self.store.invoke_call_hook(CallHook::CallingWasm)?;
-        let reason = self.execute_until_done();
+        let outcome = self.execute_until_done();
         self.store.invoke_call_hook(CallHook::ReturningFromWasm)?;
-        let sp = handle_reason(reason)?;
+        let sp = outcome?;
         Ok(self.new_state(state::Done { sp }))
     }
 
-    fn execute_until_done(&mut self) -> Option<DoneReason> {
+    fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
         let instance = resolve_instance(self.store.prune(), &self.instance).into();
         let store = self.store.prune();
         let (mem0, mem0_len) = utils::extract_mem0(store, instance);
@@ -155,7 +163,6 @@ fn handle_reason(reason: Option<DoneReason>) -> Result<Sp, Error> {
         panic!("missing `DoneReason` after execution is done")
     };
     match reason {
-        DoneReason::Trap(trap_code) => Err(Error::from(trap_code)),
         DoneReason::OutOfFuel(_error) => todo!(),
         DoneReason::Host(_error) => todo!(),
         DoneReason::CompileError(_error) => todo!(),
@@ -171,7 +178,7 @@ pub fn execute_until_done(
     mut mem0: Mem0Ptr,
     mut mem0_len: Mem0Len,
     mut instance: Inst,
-) -> Option<DoneReason> {
+) -> Result<Sp, ExecutionOutcome> {
     let mut handler = fetch_handler(ip);
     'exec: loop {
         match handler(&mut state, ip, sp, mem0, mem0_len, instance) {
@@ -184,10 +191,15 @@ pub fn execute_until_done(
                 instance = next.instance;
                 continue 'exec;
             }
-            Done::Break(_) => break 'exec,
+            Done::Break(reason) => {
+                if let Some(trap_code) = reason.trap_code() {
+                    return Err(ExecutionOutcome::from(trap_code));
+                }
+                break 'exec;
+            }
         }
     }
-    state.into_done_reason()
+    state.into_execution_outcome()
 }
 
 #[cfg(not(feature = "trampolines"))]
@@ -198,11 +210,55 @@ pub fn execute_until_done(
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
-) -> Option<DoneReason> {
+) -> Result<Sp, ExecutionOutcome> {
     let mut state = state;
     let handler = fetch_handler(ip);
-    let _ = handler(&mut state, ip, sp, mem0, mem0_len, instance);
-    state.into_done_reason()
+    let Control::Break(reason) = handler(&mut state, ip, sp, mem0, mem0_len, instance);
+    if let Some(trap_code) = reason.trap_code() {
+        return Err(ExecutionOutcome::from(trap_code));
+    }
+    state.into_execution_outcome()
+}
+
+#[derive(Debug)]
+pub enum ExecutionOutcome {
+    Host(ResumableHostTrapError),
+    OutOfFuel(ResumableOutOfFuelError),
+    Error(Error),
+}
+
+impl From<ExecutionOutcome> for Error {
+    fn from(error: ExecutionOutcome) -> Self {
+        match error {
+            ExecutionOutcome::Host(error) => error.into(),
+            ExecutionOutcome::OutOfFuel(error) => error.into(),
+            ExecutionOutcome::Error(error) => error,
+        }
+    }
+}
+
+impl From<ResumableHostTrapError> for ExecutionOutcome {
+    fn from(error: ResumableHostTrapError) -> Self {
+        Self::Host(error)
+    }
+}
+
+impl From<ResumableOutOfFuelError> for ExecutionOutcome {
+    fn from(error: ResumableOutOfFuelError) -> Self {
+        Self::OutOfFuel(error)
+    }
+}
+
+impl From<TrapCode> for ExecutionOutcome {
+    fn from(error: TrapCode) -> Self {
+        Self::Error(error.into())
+    }
+}
+
+impl From<Error> for ExecutionOutcome {
+    fn from(error: Error) -> Self {
+        Self::Error(error)
+    }
 }
 
 #[cfg(not(feature = "trampolines"))]
@@ -324,6 +380,14 @@ macro_rules! compile_or_get_func {
             Ok((ip, size)) => (ip, size),
             Err(error) => done!($state, DoneReason::CompileError(error)),
         }
+    }};
+}
+
+macro_rules! trap {
+    ($trap_code:expr) => {{
+        return $crate::engine::executor::handler::Control::Break(
+            $crate::engine::executor::handler::Break::from($trap_code),
+        );
     }};
 }
 
