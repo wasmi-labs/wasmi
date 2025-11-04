@@ -1,7 +1,10 @@
 use crate::{
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{
-        executor::{handler::utils::extract_mem0, CodeMap},
+        executor::{
+            handler::{dispatch::ExecutionOutcome, utils::extract_mem0},
+            CodeMap,
+        },
         utils::unreachable_unchecked,
         ResumableHostTrapError,
         ResumableOutOfFuelError,
@@ -49,21 +52,27 @@ impl<'vm> VmState<'vm> {
     pub fn into_done_reason(self) -> Option<DoneReason> {
         self.done_reason
     }
+
+    pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
+        let Some(reason) = self.done_reason else {
+            panic!("missing break reason")
+        };
+        let outcome = match reason {
+            DoneReason::Return(sp) => return Ok(sp),
+            DoneReason::Host(error) => error.into(),
+            DoneReason::OutOfFuel(error) => error.into(),
+            DoneReason::CompileError(error) => error.into(),
+        };
+        Err(outcome)
+    }
 }
 
 #[derive(Debug)]
 pub enum DoneReason {
     Return(Sp),
-    Trap(TrapCode),
     Host(ResumableHostTrapError),
     OutOfFuel(ResumableOutOfFuelError),
     CompileError(Error),
-}
-
-impl From<TrapCode> for DoneReason {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::Trap(trap_code)
-    }
 }
 
 impl DoneReason {
