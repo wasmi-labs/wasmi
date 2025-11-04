@@ -228,10 +228,6 @@ pub trait ControlContinue: Sized {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
 }
 
-pub trait ControlBreak: Sized {
-    fn control_break() -> Self;
-}
-
 #[cfg(not(feature = "trampolines"))]
 impl ControlContinue for Done<NextState> {
     fn control_continue(
@@ -241,12 +237,6 @@ impl ControlContinue for Done<NextState> {
         _mem0_len: Mem0Len,
         _instance: Inst,
     ) -> Self {
-        Self::Break(Break)
-    }
-}
-
-impl<T> ControlBreak for Done<T> {
-    fn control_break() -> Self {
         Self::Break(Break)
     }
 }
@@ -261,6 +251,16 @@ impl ControlContinue for Done<NextState> {
             mem0_len,
             instance,
         })
+    }
+}
+
+pub trait ControlBreak: Sized {
+    fn control_break() -> Self;
+}
+
+impl<T> ControlBreak for Done<T> {
+    fn control_break() -> Self {
+        Self::Break(Break::WithReason)
     }
 }
 
