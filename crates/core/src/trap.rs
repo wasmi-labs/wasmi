@@ -336,6 +336,10 @@ generate_trap_code! {
     /// desire on the part of the embedder to trap the interpreter rather than
     /// merely fail the growth operation.
     GrowthOperationLimited = 10,
+
+    /// This trap is raised when a WebAssembly operation demanded a memory
+    /// allocation and the host system could not supply the requested amount.
+    OutOfSystemMemory = 11,
 }
 
 impl TrapCode {
@@ -358,6 +362,7 @@ impl TrapCode {
             Self::BadSignature => "indirect call type mismatch",
             Self::OutOfFuel => "all fuel consumed by WebAssembly",
             Self::GrowthOperationLimited => "growth operation limited",
+            Self::OutOfSystemMemory => "out of system memory",
         }
     }
 }
