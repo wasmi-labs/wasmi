@@ -224,21 +224,9 @@ pub struct Break;
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
 pub type Done<T = NextState> = Control<T, Break>;
 
+#[cfg(feature = "trampolines")]
 pub trait ControlContinue: Sized {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
-}
-
-#[cfg(not(feature = "trampolines"))]
-impl ControlContinue for Done<NextState> {
-    fn control_continue(
-        _ip: Ip,
-        _sp: Sp,
-        _mem0: Mem0Ptr,
-        _mem0_len: Mem0Len,
-        _instance: Inst,
-    ) -> Self {
-        Self::Break(Break)
-    }
 }
 
 #[cfg(feature = "trampolines")]
