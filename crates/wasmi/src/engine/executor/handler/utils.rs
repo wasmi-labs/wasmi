@@ -134,37 +134,6 @@ where
     <T as SetValue<V>>::set_value(src, value, sp)
 }
 
-pub trait IntoTrapResult {
-    type Value;
-
-    fn into_trap_result(self) -> Result<Self::Value, TrapCode>;
-}
-
-impl<T> IntoTrapResult for Result<T, TrapCode> {
-    type Value = T;
-
-    #[inline(always)]
-    fn into_trap_result(self) -> Result<Self::Value, TrapCode> {
-        self
-    }
-}
-
-macro_rules! impl_expand_to_result {
-    ($($ty:ty),* $(,)?) => {
-        $(
-            impl IntoTrapResult for $ty {
-                type Value = Self;
-
-                #[inline(always)]
-                fn into_trap_result(self) -> Result<Self::Value, TrapCode> {
-                    Ok(self)
-                }
-            }
-        )*
-    };
-}
-impl_expand_to_result!(bool, i32, i64, u32, u64, f32, f64);
-
 pub fn exec_return(
     state: &mut VmState,
     sp: Sp,
