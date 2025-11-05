@@ -5,7 +5,7 @@ use super::{
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
-    core::{wasm, UntypedVal},
+    core::{wasm, CoreTable, UntypedVal},
     engine::{
         executor::handler::{
             dispatch::Break,
@@ -19,16 +19,21 @@ use crate::{
                 exec_return,
                 extract_mem0,
                 fetch_data,
+                fetch_elem,
                 fetch_global,
                 fetch_memory,
+                fetch_table,
                 memory_slice,
                 memory_slice_mut,
                 resolve_data_mut,
+                resolve_elem_mut,
                 resolve_func,
                 resolve_global,
                 resolve_indirect_func,
                 resolve_instance,
                 resolve_memory,
+                resolve_table,
+                resolve_table_mut,
                 return_call_wasm,
                 set_global,
                 update_instance,
@@ -38,10 +43,12 @@ use crate::{
         },
         EngineFunc,
     },
-    errors::{FuelError, MemoryError},
+    errors::{FuelError, MemoryError, TableError},
     func::FuncEntity,
     ir::{self, index, Slot, SlotSpan},
     store::StoreError,
+    Func,
+    Ref,
     TrapCode,
 };
 use core::cmp;
@@ -455,7 +462,7 @@ pub fn memory_grow(
         }
         Err(error) => {
             // TODO: see above
-            panic!("encountered an unexpected error: {error:?}")
+            panic!("`memory.grow`: internal interpreter error: {error}")
         }
     };
     set_value(sp, result, return_value);
@@ -626,6 +633,293 @@ pub fn data_drop(
     let (ip, crate::ir::decode::DataDrop { data }) = unsafe { decode_op(ip) };
     let data = fetch_data(instance, data);
     resolve_data_mut(state.store, &data).drop_bytes();
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn table_size(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
+    let table = fetch_table(instance, table);
+    let size = resolve_table(state.store, &table).size();
+    set_value(sp, result, size);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn table_grow(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::TableGrow {
+            table,
+            result,
+            delta,
+            value,
+        },
+    ) = unsafe { decode_op(ip) };
+    let table = fetch_table(instance, table);
+    let delta = get_value(delta, sp);
+    let value = get_value(value, sp);
+    let return_value = match state.store.grow_table(&table, delta, value) {
+        Ok(return_value) => return_value,
+        Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
+            let table = resolve_table(state.store, &table);
+            match table.ty().is_64() {
+                true => u64::MAX,
+                false => u64::from(u32::MAX),
+            }
+        }
+        Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
+            done!(state, DoneReason::out_of_fuel(required_fuel));
+        }
+        Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
+            trap!(TrapCode::GrowthOperationLimited);
+        }
+        Err(StoreError::Internal(_error)) => {
+            // TODO: we do not want to panic in the executor handlers so we somehow
+            //       want to establish a way to signal to the executor that a panic
+            //       occurred, instead.
+            todo!()
+        }
+        Err(error) => {
+            panic!("`table.grow`: internal interpreter error: {error}")
+        }
+    };
+    set_value(sp, result, return_value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn table_copy(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::TableCopy {
+            dst_table,
+            src_table,
+            dst,
+            src,
+            len,
+        },
+    ) = unsafe { decode_op(ip) };
+    let dst: u64 = get_value(dst, sp);
+    let src: u64 = get_value(src, sp);
+    let len: u64 = get_value(len, sp);
+    if dst_table == src_table {
+        // Case: copy within the same table
+        let table = fetch_table(instance, dst_table);
+        let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
+        if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
+            let trap_code = match error {
+                TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
+                TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+                _ => panic!("table.copy: unexpected error: {error:?}"),
+            };
+            trap!(trap_code)
+        }
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
+    // Case: copy between two different tables
+    let dst_table = fetch_table(instance, dst_table);
+    let src_table = fetch_table(instance, src_table);
+    let (dst_table, src_table, fuel) = state
+        .store
+        .inner_mut()
+        .resolve_table_pair_and_fuel(&dst_table, &src_table);
+    if let Err(error) = CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
+        let trap_code = match error {
+            TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
+            TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+            TableError::OutOfFuel { required_fuel } => {
+                done!(state, DoneReason::out_of_fuel(required_fuel))
+            }
+            _ => panic!("table.copy: unexpected error: {error:?}"),
+        };
+        trap!(trap_code)
+    }
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn table_fill(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::TableFill {
+            table,
+            dst,
+            len,
+            value,
+        },
+    ) = unsafe { decode_op(ip) };
+    let dst: u64 = get_value(dst, sp);
+    let len: u64 = get_value(len, sp);
+    let value: UntypedVal = get_value(value, sp);
+    let table = fetch_table(instance, table);
+    let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
+    if let Err(error) = table.fill_untyped(dst, value, len, Some(fuel)) {
+        let trap_code = match error {
+            TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+            TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
+            TableError::OutOfFuel { required_fuel } => {
+                done!(state, DoneReason::out_of_fuel(required_fuel))
+            }
+            _ => panic!("table.fill: unexpected error: {error:?}"),
+        };
+        trap!(trap_code)
+    }
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn table_init(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::TableInit {
+            table,
+            elem,
+            dst,
+            src,
+            len,
+        },
+    ) = unsafe { decode_op(ip) };
+    let dst: u64 = get_value(dst, sp);
+    let src: u32 = get_value(src, sp);
+    let len: u32 = get_value(len, sp);
+    let table = fetch_table(instance, table);
+    let elem = fetch_elem(instance, elem);
+    let (table, element, fuel) = state
+        .store
+        .inner_mut()
+        .resolve_table_init_params(&table, &elem);
+    if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
+        let trap_code = match error {
+            TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+            TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
+            TableError::OutOfFuel { required_fuel } => {
+                done!(state, DoneReason::out_of_fuel(required_fuel))
+            }
+            _ => panic!("table.init: unexpected error: {error:?}"),
+        };
+        trap!(trap_code)
+    }
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+pub fn elem_drop(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::ElemDrop { elem }) = unsafe { decode_op(ip) };
+    let elem = fetch_elem(instance, elem);
+    resolve_elem_mut(state.store, &elem).drop_items();
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+macro_rules! impl_table_get {
+    ( $( fn $handler:ident($op:ident) = $ext:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
+                let table = fetch_table(instance, table);
+                let table = resolve_table(state.store, &table);
+                let index = $ext(get_value(index, sp));
+                let value = match table.get_untyped(index) {
+                    Some(value) => value,
+                    None => trap!(TrapCode::TableOutOfBounds)
+                };
+                set_value(sp, result, value);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+impl_table_get! {
+    fn table_get_ss(TableGet_Ss) = identity;
+    fn table_get_si(TableGet_Si) = u64::from;
+}
+
+macro_rules! impl_table_set {
+    ( $( fn $handler:ident($op:ident) = $ext:expr );* $(;)? ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
+                let table = fetch_table(instance, table);
+                let table = resolve_table_mut(state.store, &table);
+                let index = $ext(get_value(index, sp));
+                let value: u64 = get_value(value, sp);
+                if let Err(TableError::SetOutOfBounds) = table.set_untyped(index, UntypedVal::from(value)) {
+                    trap!(TrapCode::TableOutOfBounds)
+                };
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+impl_table_set! {
+    fn table_set_ss(TableSet_Ss) = identity;
+    fn table_set_si(TableSet_Si) = identity;
+    fn table_set_is(TableSet_Is) = u64::from;
+    fn table_set_ii(TableSet_Ii) = u64::from;
+}
+
+pub fn ref_func(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
+    let func = fetch_func(instance, func);
+    let funcref = <Ref<Func>>::from(func);
+    set_value(sp, result, funcref);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
