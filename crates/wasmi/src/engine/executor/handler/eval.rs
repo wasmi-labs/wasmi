@@ -77,7 +77,7 @@ pub fn wasmi_i64_rotr_ssi(lhs: i64, rhs: u8) -> i64 {
 }
 
 pub fn wasmi_i32_and(lhs: i32, rhs: i32) -> bool {
-    (lhs != 0) && (rhs != 0)
+    (rhs != 0) && (lhs != 0)
 }
 
 pub fn wasmi_i32_not_and(lhs: i32, rhs: i32) -> bool {
@@ -85,7 +85,7 @@ pub fn wasmi_i32_not_and(lhs: i32, rhs: i32) -> bool {
 }
 
 pub fn wasmi_i32_or(lhs: i32, rhs: i32) -> bool {
-    (lhs != 0) || (rhs != 0)
+    (rhs != 0) || (lhs != 0)
 }
 
 pub fn wasmi_i32_not_or(lhs: i32, rhs: i32) -> bool {
@@ -93,7 +93,7 @@ pub fn wasmi_i32_not_or(lhs: i32, rhs: i32) -> bool {
 }
 
 pub fn wasmi_i64_and(lhs: i64, rhs: i64) -> bool {
-    (lhs != 0) && (rhs != 0)
+    (rhs != 0) && (lhs != 0)
 }
 
 pub fn wasmi_i64_not_and(lhs: i64, rhs: i64) -> bool {
@@ -101,7 +101,7 @@ pub fn wasmi_i64_not_and(lhs: i64, rhs: i64) -> bool {
 }
 
 pub fn wasmi_i64_or(lhs: i64, rhs: i64) -> bool {
-    (lhs != 0) || (rhs != 0)
+    (rhs != 0) || (lhs != 0)
 }
 
 pub fn wasmi_i64_not_or(lhs: i64, rhs: i64) -> bool {
