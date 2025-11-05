@@ -12,9 +12,10 @@ use crate::{
     },
     func::FuncInOut,
     instance::InstanceEntity,
-    ir::{self, BoundedSlotSpan, Slot},
+    ir::{self, BoundedSlotSpan, Slot, SlotSpan},
     store::PrunedStore,
     Error,
+    Func,
     TrapCode,
 };
 use alloc::vec::Vec;
@@ -68,6 +69,12 @@ pub enum DoneReason {
 }
 
 impl DoneReason {
+    #[cold]
+    #[inline]
+    pub fn host_error(error: Error, func: Func, results: SlotSpan) -> Self {
+        Self::Host(ResumableHostTrapError::new(error, func, results))
+    }
+
     #[cold]
     #[inline]
     pub fn out_of_fuel(required_fuel: u64) -> Self {
@@ -255,7 +262,7 @@ impl Stack {
 
     pub fn prepare_host_frame<'a>(
         &'a mut self,
-        caller_ip: Ip,
+        caller_ip: Option<Ip>,
         callee_params: BoundedSlotSpan,
         results_len: u16,
     ) -> Result<(Sp, FuncInOut<'a>), TrapCode> {
@@ -471,8 +478,10 @@ impl CallStack {
         top.ip = ip;
     }
 
-    fn prepare_host_frame(&mut self, caller_ip: Ip) -> usize {
-        self.sync_ip(caller_ip);
+    fn prepare_host_frame(&mut self, caller_ip: Option<Ip>) -> usize {
+        if let Some(caller_ip) = caller_ip {
+            self.sync_ip(caller_ip);
+        }
         self.top_start()
     }
 

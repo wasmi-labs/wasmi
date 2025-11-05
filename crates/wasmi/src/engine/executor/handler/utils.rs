@@ -3,14 +3,15 @@ use crate::{
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
     engine::{
         executor::handler::{Break, Control, Done, DoneReason},
+        utils::unreachable_unchecked,
         DedupFuncType,
         EngineFunc,
     },
-    func::FuncEntity,
+    func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
     ir::{index, Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan},
     memory::{DataSegment, DataSegmentEntity},
-    store::{PrunedStore, StoreInner},
+    store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
     Error,
     Func,
@@ -380,4 +381,36 @@ pub fn call_wasm(
         .push_frame(Some(caller_ip), callee_ip, params, size, instance)
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
+}
+
+pub fn call_host(
+    state: &mut VmState,
+    func: Func,
+    caller_ip: Option<Ip>,
+    host_func: HostFuncEntity,
+    params: BoundedSlotSpan,
+    instance: Option<Inst>,
+    call_hooks: CallHooks,
+) -> Control<Sp, Break> {
+    debug_assert_eq!(params.len(), host_func.len_params());
+    let trampoline = *host_func.trampoline();
+    let (sp, params_results) = state
+        .stack
+        .prepare_host_frame(caller_ip, params, host_func.len_results())
+        .into_control()?;
+    match state
+        .store
+        .call_host_func(trampoline, instance, params_results, call_hooks)
+    {
+        Ok(()) => {}
+        Err(StoreError::External(error)) => {
+            done!(state, DoneReason::host_error(error, func, params.span()))
+        }
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!(
+                "internal interpreter error while executing host function: {error}"
+            )
+        },
+    }
+    Control::Continue(sp)
 }
