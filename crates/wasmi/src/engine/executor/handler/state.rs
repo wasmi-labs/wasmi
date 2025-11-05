@@ -45,14 +45,6 @@ impl<'vm> VmState<'vm> {
         self.done_reason = Some(reason);
     }
 
-    pub fn done_reason(&self) -> Option<&DoneReason> {
-        self.done_reason.as_ref()
-    }
-
-    pub fn into_done_reason(self) -> Option<DoneReason> {
-        self.done_reason
-    }
-
     pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
         let Some(reason) = self.done_reason else {
             panic!("missing break reason")

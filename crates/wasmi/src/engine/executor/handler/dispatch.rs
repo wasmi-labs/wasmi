@@ -158,18 +158,6 @@ pub fn init_wasm_func_call<'a, T>(
     })
 }
 
-fn handle_reason(reason: Option<DoneReason>) -> Result<Sp, Error> {
-    let Some(reason) = reason else {
-        panic!("missing `DoneReason` after execution is done")
-    };
-    match reason {
-        DoneReason::OutOfFuel(_error) => todo!(),
-        DoneReason::Host(_error) => todo!(),
-        DoneReason::CompileError(_error) => todo!(),
-        DoneReason::Return(sp) => Ok(sp),
-    }
-}
-
 #[cfg(feature = "trampolines")]
 pub fn execute_until_done(
     mut state: VmState,
