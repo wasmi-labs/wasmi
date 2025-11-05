@@ -210,10 +210,6 @@ pub struct EngineExecutor<'engine> {
     stack: &'engine mut Stack,
 }
 
-/// Convenience function that does nothing to its `&mut` parameter.
-#[inline]
-fn do_nothing<T>(_: &mut T) {}
-
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] for the given [`Stack`].
     fn new(code_map: &'engine CodeMap, stack: &'engine mut Stack) -> Self {
