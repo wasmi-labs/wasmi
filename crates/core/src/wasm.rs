@@ -27,6 +27,7 @@ macro_rules! impl_untyped_val {
         /// # Errors
         ///
         $( #[$attr] )*
+        #[inline]
         pub fn $name(value: $ty) -> Result<$ret_ty, TrapCode> {
             ($f)(value)
         }
@@ -37,6 +38,7 @@ macro_rules! impl_untyped_val {
         fn $name:ident(value: $ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
     ) => {
         #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        #[inline]
         pub fn $name(value: $ty) -> $ret_ty {
             ($f)(value)
         }
@@ -52,6 +54,7 @@ macro_rules! impl_untyped_val {
         /// # Errors
         ///
         $( #[$attr] )*
+        #[inline]
         pub fn $name(lhs: $lhs_ty, rhs: $rhs_ty) -> Result<$ret_ty, TrapCode> {
             ($f)(lhs, rhs)
         }
@@ -62,6 +65,7 @@ macro_rules! impl_untyped_val {
         fn $name:ident(lhs: $lhs_ty:ty, rhs: $rhs_ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
     ) => {
         #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        #[inline]
         pub fn $name(lhs: $lhs_ty, rhs: $rhs_ty) -> $ret_ty {
             ($f)(lhs, rhs)
         }
