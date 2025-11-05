@@ -383,6 +383,20 @@ pub fn call_wasm(
     Control::Continue((callee_ip, callee_sp))
 }
 
+pub fn return_call_wasm(
+    state: &mut VmState,
+    params: BoundedSlotSpan,
+    func: EngineFunc,
+    instance: Option<Inst>,
+) -> Control<(Ip, Sp), Break> {
+    let (callee_ip, size) = compile_or_get_func!(state, func);
+    let callee_sp = state
+        .stack
+        .replace_frame(callee_ip, params, size, instance)
+        .into_control()?;
+    Control::Continue((callee_ip, callee_sp))
+}
+
 pub fn call_host(
     state: &mut VmState,
     func: Func,
