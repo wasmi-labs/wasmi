@@ -226,7 +226,7 @@ pub fn call_imported(
     let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
     let (ip, sp, mem0, mem0_len, instance) =
-        call_wasm_or_host(state, caller_ip, params, func, mem0, mem0_len, instance)?;
+        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
@@ -250,7 +250,7 @@ pub fn call_indirect(
     let func =
         resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
     let (callee_ip, sp, mem0, mem0_len, instance) =
-        call_wasm_or_host(state, caller_ip, params, func, mem0, mem0_len, instance)?;
+        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 

@@ -432,8 +432,8 @@ pub fn call_host(
 pub fn call_wasm_or_host(
     state: &mut VmState,
     caller_ip: Ip,
-    params: BoundedSlotSpan,
     func: Func,
+    params: BoundedSlotSpan,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
