@@ -15,6 +15,8 @@ pub struct Caller<'a, T> {
 
 impl<'a, T> Caller<'a, T> {
     /// Creates a new [`Caller`] from the given store context and [`Instance`] handle.
+    ///
+    /// [`Instance`]: crate::Instance
     pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<Inst>) -> Self
     where
         C: AsContextMut<Data = T>,
@@ -29,6 +31,8 @@ impl<'a, T> Caller<'a, T> {
     ///
     /// Returns `None` if there is no associated [`Instance`] of the caller
     /// or if the caller does not provide an export under the name `name`.
+    ///
+    /// [`Instance`]: crate::Instance
     pub fn get_export(&self, name: &str) -> Option<Extern> {
         let Some(instance) = &self.instance else {
             return None;

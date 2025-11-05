@@ -101,7 +101,7 @@ impl<T> Store<T> {
         self.typed.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    /// Calls the host function with the `params` and `results` on `instance`.
     ///
     /// # Errors
     ///
