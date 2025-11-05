@@ -1893,8 +1893,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index_ty = table_type.index_ty();
         let (index, value) = self.stack.pop2();
         let index = self.make_index32_or_copy(index, index_ty)?;
-        let value =
-            self.make_input(value, |_this, value| Ok(Input::Immediate(u64::from(value))))?;
+        let value = self.make_input(value, |_this, value| {
+            Ok(Input::Immediate(u64::from(value.untyped())))
+        })?;
         let instr = match (index, value) {
             (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(table, index, value),
             (Input::Slot(index), Input::Immediate(value)) => Op::table_set_si(table, index, value),
