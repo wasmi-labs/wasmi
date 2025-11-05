@@ -2,7 +2,7 @@ use super::state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
 use crate::{
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
     engine::{
-        executor::handler::{Done, DoneReason},
+        executor::handler::{Break, Control, Done, DoneReason},
         DedupFuncType,
         EngineFunc,
     },
@@ -22,6 +22,43 @@ use crate::{
     TrapCode,
 };
 use core::num::NonZero;
+
+pub trait IntoControl {
+    type Value;
+
+    fn into_control(self) -> Control<Self::Value, Break>;
+}
+
+impl<T> IntoControl for Result<T, TrapCode> {
+    type Value = T;
+
+    fn into_control(self) -> Control<Self::Value, Break> {
+        match self {
+            Ok(value) => Control::Continue(value),
+            Err(trap_code) => Control::Break(Break::from(trap_code)),
+        }
+    }
+}
+
+macro_rules! impl_into_control {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl IntoControl for $ty {
+                type Value = Self;
+
+                fn into_control(self) -> Control<Self::Value, Break> {
+                    Control::Continue(self)
+                }
+            }
+        )*
+    };
+}
+impl_into_control! {
+    bool,
+    u8, u16, u32, u64, usize,
+    i8, i16, i32, i64, isize,
+    f32, f64,
+}
 
 pub trait GetValue<T> {
     fn get_value(src: Self, sp: Sp) -> T;
