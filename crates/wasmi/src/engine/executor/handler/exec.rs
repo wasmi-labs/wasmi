@@ -11,6 +11,7 @@ use crate::{
             dispatch::Break,
             state::DoneReason,
             utils::{
+                call_wasm,
                 exec_copy_span,
                 exec_copy_span_asc,
                 exec_copy_span_des,
@@ -210,11 +211,7 @@ pub fn call_internal(
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
     let func = EngineFunc::from(func);
-    let (callee_ip, size) = compile_or_get_func!(state, func);
-    let callee_sp = state
-        .stack
-        .push_frame(Some(caller_ip), callee_ip, params, size, None)
-        .into_control()?;
+    let (callee_ip, callee_sp) = call_wasm(state, caller_ip, params, func, None)?;
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
@@ -231,20 +228,11 @@ pub fn call_imported(
     let func_entity = resolve_func(state.store, &func);
     let (ip, sp, mem0, mem0_len, instance) = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
-            let engine_func = wasm_func.func_body();
+            let func = wasm_func.func_body();
             let callee_instance = *wasm_func.instance();
-            let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance = resolve_instance(state.store, &callee_instance).into();
-            let callee_sp = state
-                .stack
-                .push_frame(
-                    Some(caller_ip),
-                    callee_ip,
-                    params,
-                    size,
-                    (instance != callee_instance).then_some(callee_instance),
-                )
-                .into_control()?;
+            let (callee_ip, callee_sp) =
+                call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
@@ -303,20 +291,11 @@ pub fn call_indirect(
     let func_entity = resolve_func(state.store, &func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
-            let engine_func = wasm_func.func_body();
+            let func = wasm_func.func_body();
             let callee_instance = *wasm_func.instance();
-            let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-            let callee_sp = state
-                .stack
-                .push_frame(
-                    Some(caller_ip),
-                    callee_ip,
-                    params,
-                    size,
-                    (instance != callee_instance).then_some(callee_instance),
-                )
-                .into_control()?;
+            let (callee_ip, callee_sp) =
+                call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
