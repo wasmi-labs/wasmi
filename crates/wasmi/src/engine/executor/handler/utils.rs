@@ -8,7 +8,7 @@ use crate::{
     },
     func::FuncEntity,
     instance::InstanceEntity,
-    ir::{index, Address, BranchOffset, Offset16, Sign, Slot, SlotSpan},
+    ir::{index, Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan},
     memory::{DataSegment, DataSegmentEntity},
     store::{PrunedStore, StoreInner},
     table::ElementSegment,
@@ -365,4 +365,19 @@ macro_rules! consume_fuel {
             )
         }
     }};
+}
+
+pub fn call_wasm(
+    state: &mut VmState,
+    caller_ip: Ip,
+    params: BoundedSlotSpan,
+    func: EngineFunc,
+    instance: Option<Inst>,
+) -> Control<(Ip, Sp), Break> {
+    let (callee_ip, size) = compile_or_get_func!(state, func);
+    let callee_sp = state
+        .stack
+        .push_frame(Some(caller_ip), callee_ip, params, size, instance)
+        .into_control()?;
+    Control::Continue((callee_ip, callee_sp))
 }
