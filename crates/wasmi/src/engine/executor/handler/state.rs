@@ -41,9 +41,25 @@ impl<'vm> VmState<'vm> {
         }
     }
 
-    pub fn done(&mut self, reason: DoneReason) {
-        debug_assert!(self.done_reason.is_none());
-        self.done_reason = Some(reason);
+    pub fn done_with(&mut self, reason: impl FnOnce() -> DoneReason) {
+        #[cold]
+        #[inline(never)]
+        fn err(prev: &DoneReason, reason: impl FnOnce() -> DoneReason) -> ! {
+            unimplemented!(
+                "\
+                tried to done with reason while reason already exists:\n\
+                \t- new reason: {:?},\n\
+                \t- old reason: {:?},\
+                ",
+                reason(),
+                prev,
+            )
+        }
+
+        if let Some(prev) = &self.done_reason {
+            err(prev, reason)
+        }
+        self.done_reason = Some(reason());
     }
 
     pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
