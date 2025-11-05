@@ -11,8 +11,8 @@ use crate::{
             dispatch::Break,
             state::DoneReason,
             utils::{
-                call_host,
                 call_wasm,
+                call_wasm_or_host,
                 exec_copy_span,
                 exec_copy_span_asc,
                 exec_copy_span_des,
@@ -41,7 +41,7 @@ use crate::{
     errors::{FuelError, MemoryError},
     func::FuncEntity,
     ir::{self, index, Slot, SlotSpan},
-    store::{CallHooks, StoreError},
+    store::StoreError,
     TrapCode,
 };
 use core::cmp;
@@ -225,32 +225,8 @@ pub fn call_imported(
 ) -> Done {
     let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let func_entity = resolve_func(state.store, &func);
-    let (ip, sp, mem0, mem0_len, instance) = match func_entity {
-        FuncEntity::Wasm(wasm_func) => {
-            let func = wasm_func.func_body();
-            let callee_instance = *wasm_func.instance();
-            let callee_instance = resolve_instance(state.store, &callee_instance).into();
-            let (callee_ip, callee_sp) =
-                call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
-            let (instance, mem0, mem0_len) =
-                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, callee_sp, mem0, mem0_len, instance)
-        }
-        FuncEntity::Host(host_func) => {
-            let host_func = *host_func;
-            let sp = call_host(
-                state,
-                func,
-                Some(caller_ip),
-                host_func,
-                params,
-                Some(instance),
-                CallHooks::Call,
-            )?;
-            (caller_ip, sp, mem0, mem0_len, instance)
-        }
-    };
+    let (ip, sp, mem0, mem0_len, instance) =
+        call_wasm_or_host(state, caller_ip, params, func, mem0, mem0_len, instance)?;
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
@@ -273,32 +249,8 @@ pub fn call_indirect(
     ) = unsafe { decode_op(ip) };
     let func =
         resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
-    let func_entity = resolve_func(state.store, &func);
-    let (callee_ip, sp, mem0, mem0_len, instance) = match func_entity {
-        FuncEntity::Wasm(wasm_func) => {
-            let func = wasm_func.func_body();
-            let callee_instance = *wasm_func.instance();
-            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-            let (callee_ip, callee_sp) =
-                call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
-            let (instance, mem0, mem0_len) =
-                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, callee_sp, mem0, mem0_len, instance)
-        }
-        FuncEntity::Host(host_func) => {
-            let host_func = *host_func;
-            let sp = call_host(
-                state,
-                func,
-                Some(caller_ip),
-                host_func,
-                params,
-                Some(instance),
-                CallHooks::Call,
-            )?;
-            (caller_ip, sp, mem0, mem0_len, instance)
-        }
-    };
+    let (callee_ip, sp, mem0, mem0_len, instance) =
+        call_wasm_or_host(state, caller_ip, params, func, mem0, mem0_len, instance)?;
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
