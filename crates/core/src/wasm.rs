@@ -316,6 +316,7 @@ macro_rules! gen_load_extend_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
                 memory::load_extend::<$ty, $wrapped>(memory, ptr, offset)
             }
@@ -325,6 +326,7 @@ macro_rules! gen_load_extend_fn {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
                 memory::load_extend_at::<$ty, $wrapped>(memory, address)
             }
@@ -355,6 +357,7 @@ macro_rules! gen_load_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
                 memory::load::<$ty>(memory, ptr, offset)
             }
@@ -364,6 +367,7 @@ macro_rules! gen_load_fn {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
                 memory::load_at::<$ty>(memory, address)
             }
@@ -386,6 +390,7 @@ macro_rules! gen_store_wrap_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
                 memory::store_wrap::<$ty, $wrapped>(memory, ptr, offset, value)
             }
@@ -395,6 +400,7 @@ macro_rules! gen_store_wrap_fn {
             /// # Errors
             ///
             /// If `address` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
                 memory::store_wrap_at::<$ty, $wrapped>(memory, address, value)
             }
@@ -420,6 +426,7 @@ macro_rules! gen_store_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
                 memory::store::<$ty>(memory, ptr, offset, value)
             }
@@ -429,6 +436,7 @@ macro_rules! gen_store_fn {
             /// # Errors
             ///
             /// If `address` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
                 memory::store_at::<$ty>(memory, address, value)
             }
