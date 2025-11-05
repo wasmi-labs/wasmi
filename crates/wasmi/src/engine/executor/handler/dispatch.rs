@@ -381,7 +381,7 @@ macro_rules! trap {
 
 macro_rules! done {
     ($state:expr, $reason:expr $(,)? ) => {{
-        $state.done(<_ as ::core::convert::Into<
+        $state.done_with(move || <_ as ::core::convert::Into<
             $crate::engine::executor::handler::DoneReason,
         >>::into($reason));
         return <$crate::engine::executor::handler::Done<_> as $crate::engine::executor::handler::ControlBreak>::control_break();
