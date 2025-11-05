@@ -26,7 +26,7 @@ use crate::Engine;
 #[allow(clippy::type_complexity)]
 #[derive(Copy, Clone)]
 pub struct PrunedStoreVTable {
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    /// Calls the host function with the `params` and `results` on `instance`.
     ///
     /// # Errors
     ///
