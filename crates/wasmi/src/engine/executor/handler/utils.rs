@@ -239,6 +239,26 @@ pub fn memory_bytes<'a>(
     }
 }
 
+pub fn memory_slice(memory: &CoreMemory, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
+    memory
+        .data()
+        .get(pos..)
+        .and_then(|memory| memory.get(..len))
+        .ok_or(TrapCode::MemoryOutOfBounds)
+}
+
+pub fn memory_slice_mut(
+    memory: &mut CoreMemory,
+    pos: usize,
+    len: usize,
+) -> Result<&mut [u8], TrapCode> {
+    memory
+        .data_mut()
+        .get_mut(pos..)
+        .and_then(|memory| memory.get_mut(..len))
+        .ok_or(TrapCode::MemoryOutOfBounds)
+}
+
 pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
     unsafe { ip.offset(i32::from(offset) as isize) }
 }
