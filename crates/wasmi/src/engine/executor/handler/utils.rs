@@ -428,3 +428,41 @@ pub fn call_host(
     }
     Control::Continue(sp)
 }
+
+pub fn call_wasm_or_host(
+    state: &mut VmState,
+    caller_ip: Ip,
+    params: BoundedSlotSpan,
+    func: Func,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
+    let func_entity = resolve_func(state.store, &func);
+    let next_state = match func_entity {
+        FuncEntity::Wasm(wasm_func) => {
+            let func = wasm_func.func_body();
+            let callee_instance = *wasm_func.instance();
+            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+            let (callee_ip, callee_sp) =
+                call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
+            let (instance, mem0, mem0_len) =
+                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+            (callee_ip, callee_sp, mem0, mem0_len, instance)
+        }
+        FuncEntity::Host(host_func) => {
+            let host_func = *host_func;
+            let sp = call_host(
+                state,
+                func,
+                Some(caller_ip),
+                host_func,
+                params,
+                Some(instance),
+                CallHooks::Call,
+            )?;
+            (caller_ip, sp, mem0, mem0_len, instance)
+        }
+    };
+    Control::Continue(next_state)
+}
