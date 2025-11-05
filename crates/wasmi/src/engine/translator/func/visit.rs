@@ -1896,11 +1896,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let value =
             self.make_input(value, |_this, value| Ok(Input::Immediate(u64::from(value))))?;
         let instr = match (index, value) {
-            (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(index, value, table),
-            (Input::Slot(index), Input::Immediate(value)) => Op::table_set_si(index, value, table),
-            (Input::Immediate(index), Input::Slot(value)) => Op::table_set_is(index, value, table),
+            (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(table, index, value),
+            (Input::Slot(index), Input::Immediate(value)) => Op::table_set_si(table, index, value),
+            (Input::Immediate(index), Input::Slot(value)) => Op::table_set_is(table, index, value),
             (Input::Immediate(index), Input::Immediate(value)) => {
-                Op::table_set_ii(index, value, table)
+                Op::table_set_ii(table, index, value)
             }
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
