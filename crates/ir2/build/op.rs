@@ -2150,7 +2150,7 @@ impl TableSetOp {
     }
 
     pub fn fields(&self) -> [Field; 3] {
-        [self.index_field(), self.value_field(), self.table_field()]
+        [self.table_field(), self.index_field(), self.value_field()]
     }
 }
 
