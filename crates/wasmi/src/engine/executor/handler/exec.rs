@@ -2,7 +2,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value, IntoTrapResult as _},
+    utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
     core::{wasm, UntypedVal},
@@ -19,6 +19,8 @@ use crate::{
                 fetch_data,
                 fetch_global,
                 fetch_memory,
+                memory_slice,
+                memory_slice_mut,
                 resolve_data_mut,
                 resolve_func,
                 resolve_global,
@@ -27,6 +29,7 @@ use crate::{
                 resolve_memory,
                 set_global,
                 update_instance,
+                IntoControl as _,
             },
             Control,
         },
@@ -208,13 +211,10 @@ pub fn call_internal(
     let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
     let func = EngineFunc::from(func);
     let (callee_ip, size) = compile_or_get_func!(state, func);
-    let callee_sp = match state
+    let callee_sp = state
         .stack
         .push_frame(Some(caller_ip), callee_ip, params, size, None)
-    {
-        Ok(sp) => sp,
-        Err(trap) => trap!(trap),
-    };
+        .into_control()?;
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
@@ -235,16 +235,16 @@ pub fn call_imported(
             let callee_instance = *wasm_func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance = resolve_instance(state.store, &callee_instance).into();
-            let callee_sp = match state.stack.push_frame(
-                Some(caller_ip),
-                callee_ip,
-                params,
-                size,
-                (instance != callee_instance).then_some(callee_instance),
-            ) {
-                Ok(sp) => sp,
-                Err(trap) => trap!(trap),
-            };
+            let callee_sp = state
+                .stack
+                .push_frame(
+                    Some(caller_ip),
+                    callee_ip,
+                    params,
+                    size,
+                    (instance != callee_instance).then_some(callee_instance),
+                )
+                .into_control()?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
@@ -252,14 +252,10 @@ pub fn call_imported(
         FuncEntity::Host(host_func) => {
             debug_assert_eq!(params.len(), host_func.len_params());
             let trampoline = *host_func.trampoline();
-            let (sp, params_results) =
-                match state
-                    .stack
-                    .prepare_host_frame(caller_ip, params, host_func.len_results())
-                {
-                    Ok(params_results) => params_results,
-                    Err(trap) => trap!(trap),
-                };
+            let (sp, params_results) = state
+                .stack
+                .prepare_host_frame(caller_ip, params, host_func.len_results())
+                .into_control()?;
             match state.store.call_host_func(
                 trampoline,
                 Some(instance),
@@ -302,10 +298,8 @@ pub fn call_indirect(
             table,
         },
     ) = unsafe { decode_op(ip) };
-    let func = match resolve_indirect_func(index, table, func_type, state, sp, instance) {
-        Ok(func) => func,
-        Err(trap) => trap!(trap),
-    };
+    let func =
+        resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
     let func_entity = resolve_func(state.store, &func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
@@ -313,16 +307,16 @@ pub fn call_indirect(
             let callee_instance = *wasm_func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-            let callee_sp = match state.stack.push_frame(
-                Some(caller_ip),
-                callee_ip,
-                params,
-                size,
-                (instance != callee_instance).then_some(callee_instance),
-            ) {
-                Ok(sp) => sp,
-                Err(trap) => trap!(trap),
-            };
+            let callee_sp = state
+                .stack
+                .push_frame(
+                    Some(caller_ip),
+                    callee_ip,
+                    params,
+                    size,
+                    (instance != callee_instance).then_some(callee_instance),
+                )
+                .into_control()?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
@@ -330,14 +324,10 @@ pub fn call_indirect(
         FuncEntity::Host(host_func) => {
             debug_assert_eq!(params.len(), host_func.len_params());
             let trampoline = *host_func.trampoline();
-            let (sp, params_results) =
-                match state
-                    .stack
-                    .prepare_host_frame(caller_ip, params, host_func.len_results())
-                {
-                    Ok(params_results) => params_results,
-                    Err(trap) => trap!(trap),
-                };
+            let (sp, params_results) = state
+                .stack
+                .prepare_host_frame(caller_ip, params, host_func.len_results())
+                .into_control()?;
             match state.store.call_host_func(
                 trampoline,
                 Some(instance),
@@ -374,10 +364,10 @@ pub fn return_call_internal(
     let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
     let func = EngineFunc::from(func);
     let (callee_ip, size) = compile_or_get_func!(state, func);
-    let callee_sp = match state.stack.replace_frame(callee_ip, params, size, None) {
-        Ok(sp) => sp,
-        Err(trap) => trap!(trap),
-    };
+    let callee_sp = state
+        .stack
+        .replace_frame(callee_ip, params, size, None)
+        .into_control()?;
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
@@ -398,15 +388,15 @@ pub fn return_call_imported(
             let callee_instance = *func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance = resolve_instance(state.store, &callee_instance).into();
-            let callee_sp = match state.stack.replace_frame(
-                callee_ip,
-                params,
-                size,
-                (instance != callee_instance).then_some(callee_instance),
-            ) {
-                Ok(sp) => sp,
-                Err(trap) => trap!(trap),
-            };
+            let callee_sp = state
+                .stack
+                .replace_frame(
+                    callee_ip,
+                    params,
+                    size,
+                    (instance != callee_instance).then_some(callee_instance),
+                )
+                .into_control()?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
@@ -435,10 +425,8 @@ pub fn return_call_indirect(
             table,
         },
     ) = unsafe { decode_op(ip) };
-    let func = match resolve_indirect_func(index, table, func_type, state, sp, instance) {
-        Ok(func) => func,
-        Err(trap) => trap!(trap),
-    };
+    let func =
+        resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
     let func = resolve_func(state.store, &func);
     let (callee_ip, sp, mem0, mem0_len, instance) = match func {
         FuncEntity::Wasm(func) => {
@@ -446,15 +434,15 @@ pub fn return_call_indirect(
             let callee_instance = *func.instance();
             let (callee_ip, size) = compile_or_get_func!(state, engine_func);
             let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-            let callee_sp = match state.stack.replace_frame(
-                callee_ip,
-                params,
-                size,
-                (instance != callee_instance).then_some(callee_instance),
-            ) {
-                Ok(sp) => sp,
-                Err(trap) => trap!(trap),
-            };
+            let callee_sp = state
+                .stack
+                .replace_frame(
+                    callee_ip,
+                    params,
+                    size,
+                    (instance != callee_instance).then_some(callee_instance),
+                )
+                .into_control()?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)
@@ -634,20 +622,8 @@ pub fn memory_copy(
         .inner_mut()
         .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
     // These accesses just perform the bounds checks required by the Wasm spec.
-    let Some(src_bytes) = src_memory
-        .data()
-        .get(src_index..)
-        .and_then(|memory| memory.get(..len))
-    else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let Some(dst_bytes) = dst_memory
-        .data_mut()
-        .get_mut(dst_index..)
-        .and_then(|memory| memory.get_mut(..len))
-    else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
+    let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
+    let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
     consume_fuel!(state, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     dst_bytes.copy_from_slice(src_bytes);
@@ -664,25 +640,14 @@ fn memory_copy_within(
 ) -> Control<(), Break> {
     let memory = fetch_memory(instance, dst_memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
-    let bytes = memory.data_mut();
     // These accesses just perform the bounds checks required by the Wasm spec.
-    if bytes
-        .get(src_index..)
-        .and_then(|memory| memory.get(..len))
-        .is_none()
-    {
-        trap!(TrapCode::MemoryOutOfBounds)
-    }
-    if bytes
-        .get(dst_index..)
-        .and_then(|memory| memory.get(..len))
-        .is_none()
-    {
-        trap!(TrapCode::MemoryOutOfBounds)
-    }
+    memory_slice(memory, src_index, len).into_control()?;
+    memory_slice(memory, dst_index, len).into_control()?;
     consume_fuel!(state, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
-    bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
+    memory
+        .data_mut()
+        .copy_within(src_index..src_index.wrapping_add(len), dst_index);
     Control::Continue(())
 }
 
@@ -714,13 +679,7 @@ pub fn memory_fill(
     };
     let memory = fetch_memory(instance, memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
-    let Some(slice) = memory
-        .data_mut()
-        .get_mut(dst..)
-        .and_then(|memory| memory.get_mut(..len))
-    else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
+    let slice = memory_slice_mut(memory, dst, len).into_control()?;
     consume_fuel!(state, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     slice.fill(value);
@@ -761,13 +720,7 @@ pub fn memory_init(
         .store
         .inner_mut()
         .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
-    let Some(memory) = memory
-        .data_mut()
-        .get_mut(dst_index..)
-        .and_then(|memory| memory.get_mut(..len))
-    else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
+    let memory = memory_slice_mut(memory, dst_index, len).into_control()?;
     let Some(data) = data
         .bytes()
         .get(src_index..)
@@ -860,10 +813,7 @@ macro_rules! handler_unary {
             ) -> Done {
                 let (ip, $crate::ir::decode::$op { result, value }) = unsafe { decode_op(ip) };
                 let value = get_value(value, sp);
-                let value = match $eval(value).into_trap_result() {
-                    Ok(value) => value,
-                    Err(trap) => trap!(trap),
-                };
+                let value = $eval(value).into_control()?;
                 set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -948,12 +898,7 @@ macro_rules! handler_binary {
                 let (ip, $crate::ir::decode::$decode { result, lhs, rhs }) = unsafe { decode_op(ip) };
                 let lhs = get_value(lhs, sp);
                 let rhs = get_value(rhs, sp);
-                let value = match $eval(lhs, rhs).into_trap_result() {
-                    Ok(value) => value,
-                    Err(trap) => {
-                        trap!(trap)
-                    },
-                };
+                let value = $eval(lhs, rhs).into_control()?;
                 set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -1399,10 +1344,7 @@ macro_rules! handler_load_ss {
                 let ptr: u64 = get_value(ptr, sp);
                 let offset: u64 = get_value(offset, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                let loaded = match $load(mem_bytes, ptr, offset) {
-                    Ok(loaded) => loaded,
-                    Err(trap) => trap!(trap),
-                };
+                let loaded = $load(mem_bytes, ptr, offset).into_control()?;
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -1445,10 +1387,7 @@ macro_rules! handler_load_si {
                 ) = unsafe { decode_op(ip) };
                 let address = get_value(address, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                let loaded = match $load(mem_bytes, usize::from(address)) {
-                    Ok(loaded) => loaded,
-                    Err(trap) => trap!(trap),
-                };
+                let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -1492,10 +1431,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                 let ptr = get_value(ptr, sp);
                 let offset = get_value(offset, sp);
                 let mem_bytes = mem0_bytes(mem0, mem0_len);
-                let loaded = match $load(mem_bytes, ptr, u64::from(u16::from(offset))) {
-                    Ok(loaded) => loaded,
-                    Err(trap) => trap!(trap),
-                };
+                let loaded = $load(mem_bytes, ptr, u64::from(u16::from(offset))).into_control()?;
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -1541,9 +1477,7 @@ macro_rules! handler_store_sx {
                 let offset = get_value(offset, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                if let Err(trap) = $store(mem_bytes, ptr, offset, value.into()) {
-                    trap!(trap)
-                }
+                $store(mem_bytes, ptr, offset, value.into()).into_control()?;
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
@@ -1588,9 +1522,7 @@ macro_rules! handler_store_ix {
                 let address = get_value(address, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                if let Err(trap) = $store(mem_bytes, usize::from(address), value.into()) {
-                    trap!(trap)
-                }
+                $store(mem_bytes, usize::from(address), value.into()).into_control()?;
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
@@ -1636,9 +1568,7 @@ macro_rules! handler_store_mem0_offset16_sx {
                 let offset = get_value(offset, sp);
                 let value: $hint = get_value(value, sp);
                 let mem_bytes = mem0_bytes(mem0, mem0_len);
-                if let Err(trap) = $store(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()) {
-                    trap!(trap)
-                }
+                $store(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()).into_control()?;
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
         )*
