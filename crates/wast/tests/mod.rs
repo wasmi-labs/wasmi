@@ -182,7 +182,7 @@ macro_rules! foreach_test {
             fn spec_utf8_import_field("spec/utf8-import-field");
             fn spec_utf8_import_module("spec/utf8-import-module");
             fn spec_utf8_invalid_encoding("spec/utf8-invalid-encoding");
-            // fn spec_wide_arithmetic("spec/proposals/wide-arithmetic/wide-arithmetic");
+            fn spec_wide_arithmetic("spec/proposals/wide-arithmetic/wide-arithmetic");
 
             // Wasmi specific test cases and regression tests.
             fn wasmi_fibonacci("wasmi/tests/fibonacci");
