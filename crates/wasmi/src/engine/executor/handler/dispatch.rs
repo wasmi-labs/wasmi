@@ -457,6 +457,11 @@ pub fn op_code_to_handler(code: OpCode) -> Handler {
         OpCode::TableSet_Ii => exec::table_set_ii,
         OpCode::ElemDrop => exec::elem_drop,
         OpCode::RefFunc => exec::ref_func,
+        // wide-arithmetic
+        OpCode::I64Add128 => exec::i64_add128,
+        OpCode::I64Sub128 => exec::i64_sub128,
+        OpCode::I64MulWide => exec::i64_mul_wide,
+        OpCode::U64MulWide => exec::u64_mul_wide,
         // unconditional branch
         OpCode::Branch => exec::branch,
         OpCode::BranchTable => exec::branch_table,
