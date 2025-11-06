@@ -923,6 +923,68 @@ pub fn ref_func(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+macro_rules! impl_i64_binop128 {
+    (
+        $( fn $handler:ident($op:ident) = $eval:expr );* $(;)?
+    ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
+                let lhs_lo: i64 = get_value(lhs_lo, sp);
+                let lhs_hi: i64 = get_value(lhs_hi, sp);
+                let rhs_lo: i64 = get_value(rhs_lo, sp);
+                let rhs_hi: i64 = get_value(rhs_hi, sp);
+                let results = results.to_array();
+                let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
+                set_value(sp, results[0], result_lo);
+                set_value(sp, results[1], result_hi);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+impl_i64_binop128! {
+    fn i64_add128(I64Add128) = wasm::i64_add128;
+    fn i64_sub128(I64Sub128) = wasm::i64_sub128;
+}
+
+macro_rules! impl_i64_mul_wide {
+    (
+        $( fn $handler:ident($op:ident) = $eval:expr );* $(;)?
+    ) => {
+        $(
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
+                let lhs: i64 = get_value(lhs, sp);
+                let rhs: i64 = get_value(rhs, sp);
+                let (result_lo, result_hi) = $eval(lhs, rhs);
+                let results = results.to_array();
+                set_value(sp, results[0], result_lo);
+                set_value(sp, results[1], result_hi);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+impl_i64_mul_wide! {
+    fn i64_mul_wide(I64MulWide) = wasm::i64_mul_wide_s;
+    fn u64_mul_wide(U64MulWide) = wasm::i64_mul_wide_u;
+}
+
 /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
 fn fetch_branch_table_target(sp: Sp, index: Slot, len_targets: u32) -> usize {
     let index: u32 = get_value(index, sp);
