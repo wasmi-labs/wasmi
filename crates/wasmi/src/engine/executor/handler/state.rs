@@ -45,7 +45,7 @@ impl<'vm> VmState<'vm> {
         #[cold]
         #[inline(never)]
         fn err(prev: &DoneReason, reason: impl FnOnce() -> DoneReason) -> ! {
-            unimplemented!(
+            panic!(
                 "\
                 tried to done with reason while reason already exists:\n\
                 \t- new reason: {:?},\n\
