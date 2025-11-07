@@ -286,7 +286,7 @@ macro_rules! impl_resolve_from_store {
     };
 }
 impl_resolve_from_store! {
-    fn resolve_elem(elem: &ElementSegment) -> &'a CoreElementSegment = StoreInner::try_resolve_element;
+    // fn resolve_elem(elem: &ElementSegment) -> &'a CoreElementSegment = StoreInner::try_resolve_element;
     fn resolve_func(func: &Func) -> &'a FuncEntity = StoreInner::try_resolve_func;
     fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
     fn resolve_memory(memory: &Memory) -> &'a CoreMemory = StoreInner::try_resolve_memory;

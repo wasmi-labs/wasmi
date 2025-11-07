@@ -303,11 +303,6 @@ impl From<TrapCode> for Break {
 
 impl Break {
     #[inline]
-    pub fn has_reason(self) -> bool {
-        matches!(self, Self::WithReason)
-    }
-
-    #[inline]
     pub fn trap_code(self) -> Option<TrapCode> {
         let trap_code = match self {
             Self::UnreachableCodeReached => TrapCode::UnreachableCodeReached,

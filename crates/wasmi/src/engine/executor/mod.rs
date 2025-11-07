@@ -1,5 +1,3 @@
-#![expect(dead_code)]
-
 pub use self::handler::{op_code_to_handler, Inst, Stack};
 use super::{code_map::CodeMap, ResumableError};
 use crate::{
@@ -316,6 +314,7 @@ impl<'engine> EngineExecutor<'engine> {
 
     /// Convenience forwarder to dispatch host functions.
     #[inline(always)]
+    #[expect(dead_code)]
     fn dispatch_host_func<T>(
         &mut self,
         _store: &mut Store<T>,
