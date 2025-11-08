@@ -136,6 +136,33 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Sets up the Wasmi specific testsuite module for `self`.
+    pub fn register_wasmitest(&mut self) -> Result<(), wasmi::Error> {
+        self.linker.func_wrap("wasmitest", "identity-0", || {})?;
+        self.linker
+            .func_wrap("wasmitest", "identity-1", |v0: i64| -> i64 { v0 })?;
+        self.linker.func_wrap(
+            "wasmitest",
+            "identity-2",
+            |v0: i64, v1: i64| -> (i64, i64) { (v0, v1) },
+        )?;
+        self.linker
+            .func_wrap("wasmitest", "offset-1", |v0: i64| -> i64 { v0 + 1 })?;
+        self.linker
+            .func_wrap("wasmitest", "offset-2", |v0: i64, v1: i64| -> (i64, i64) {
+                (v0 + 1, v1 + 2)
+            })?;
+        self.linker
+            .func_wrap("wasmitest", "sum-3", |v0: i64, v1: i64, v2: i64| -> i64 {
+                v0.wrapping_add(v1).wrapping_add(v2)
+            })?;
+        self.linker
+            .func_wrap("wasmitest", "iota-3", |v0: i64| -> (i64, i64, i64) {
+                (v0.wrapping_add(1), v0.wrapping_add(2), v0.wrapping_add(3))
+            })?;
+        Ok(())
+    }
+
     /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
     fn value(&mut self, value: &WastArgCore) -> Option<Val> {
         use wasmi::{ExternRef, Func, Ref};
