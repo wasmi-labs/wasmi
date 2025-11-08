@@ -75,6 +75,7 @@ impl Display for DisplayOpCode<&'_ Isa> {
             \n\
             {indent}impl TryFrom<u16> for OpCode {{\n\
             {indent}    type Error = InvalidOpCode;\n\
+            {indent}    #[inline(always)]
             {indent}    fn try_from(value: u16) -> Result<Self, Self::Error> {{\n\
             {indent}        let op_code = match value {{\n\
                                 {match_arms_tryfrom},\n\
