@@ -429,6 +429,39 @@ pub fn call_host(
     Control::Continue(sp)
 }
 
+pub fn return_call_host(
+    state: &mut VmState,
+    func: Func,
+    host_func: HostFuncEntity,
+    params: BoundedSlotSpan,
+    instance: Inst,
+) -> Control<(Ip, Sp, Inst), Break> {
+    debug_assert_eq!(params.len(), host_func.len_params());
+    let trampoline = *host_func.trampoline();
+    let (control, params_results) = state
+        .stack
+        .return_prepare_host_frame(params, host_func.len_results(), instance)
+        .into_control()?;
+    match state
+        .store
+        .call_host_func(trampoline, Some(instance), params_results, CallHooks::Call)
+    {
+        Ok(()) => {}
+        Err(StoreError::External(error)) => {
+            done!(state, DoneReason::host_error(error, func, params.span()))
+        }
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!(
+                "internal interpreter error while executing host function: {error}"
+            )
+        },
+    }
+    match control {
+        Control::Continue((ip, sp, instance)) => Control::Continue((ip, sp, instance)),
+        Control::Break(sp) => done!(state, DoneReason::Return(sp)),
+    }
+}
+
 pub fn call_wasm_or_host(
     state: &mut VmState,
     caller_ip: Ip,
