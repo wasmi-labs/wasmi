@@ -93,7 +93,12 @@ macro_rules! impl_from_typed_value_for {
                     // since the whole translation process assumes that Wasm validation
                     // was already performed and thus type checking does not necessarily
                     // need to happen redundantly outside of debug builds.
-                    debug_assert!(matches!(typed_value.ty, <$ty as Typed>::TY));
+                    debug_assert!(
+                        matches!(typed_value.ty, <$ty as Typed>::TY),
+                        "type mismatch: expected {:?} but found {:?}",
+                        <$ty as Typed>::TY,
+                        typed_value.ty,
+                    );
                     Self::from(typed_value.value)
                 }
             }
