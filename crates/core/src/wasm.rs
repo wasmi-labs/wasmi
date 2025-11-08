@@ -27,6 +27,7 @@ macro_rules! impl_untyped_val {
         /// # Errors
         ///
         $( #[$attr] )*
+        #[inline]
         pub fn $name(value: $ty) -> Result<$ret_ty, TrapCode> {
             ($f)(value)
         }
@@ -37,6 +38,7 @@ macro_rules! impl_untyped_val {
         fn $name:ident(value: $ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
     ) => {
         #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        #[inline]
         pub fn $name(value: $ty) -> $ret_ty {
             ($f)(value)
         }
@@ -52,6 +54,7 @@ macro_rules! impl_untyped_val {
         /// # Errors
         ///
         $( #[$attr] )*
+        #[inline]
         pub fn $name(lhs: $lhs_ty, rhs: $rhs_ty) -> Result<$ret_ty, TrapCode> {
             ($f)(lhs, rhs)
         }
@@ -62,6 +65,7 @@ macro_rules! impl_untyped_val {
         fn $name:ident(lhs: $lhs_ty:ty, rhs: $rhs_ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
     ) => {
         #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        #[inline]
         pub fn $name(lhs: $lhs_ty, rhs: $rhs_ty) -> $ret_ty {
             ($f)(lhs, rhs)
         }
@@ -312,6 +316,7 @@ macro_rules! gen_load_extend_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
                 memory::load_extend::<$ty, $wrapped>(memory, ptr, offset)
             }
@@ -321,6 +326,7 @@ macro_rules! gen_load_extend_fn {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
                 memory::load_extend_at::<$ty, $wrapped>(memory, address)
             }
@@ -351,6 +357,7 @@ macro_rules! gen_load_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
                 memory::load::<$ty>(memory, ptr, offset)
             }
@@ -360,6 +367,7 @@ macro_rules! gen_load_fn {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
                 memory::load_at::<$ty>(memory, address)
             }
@@ -382,6 +390,7 @@ macro_rules! gen_store_wrap_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
                 memory::store_wrap::<$ty, $wrapped>(memory, ptr, offset, value)
             }
@@ -391,6 +400,7 @@ macro_rules! gen_store_wrap_fn {
             /// # Errors
             ///
             /// If `address` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
                 memory::store_wrap_at::<$ty, $wrapped>(memory, address, value)
             }
@@ -416,6 +426,7 @@ macro_rules! gen_store_fn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
                 memory::store::<$ty>(memory, ptr, offset, value)
             }
@@ -425,6 +436,7 @@ macro_rules! gen_store_fn {
             /// # Errors
             ///
             /// If `address` stores out of bounds from `memory`.
+            #[inline]
             pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
                 memory::store_at::<$ty>(memory, address, value)
             }
