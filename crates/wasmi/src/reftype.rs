@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::UntypedVal,
+    core::{ReadAs, UntypedVal, WriteAs},
     store::Stored,
     AsContextMut,
     Func,
@@ -174,6 +174,39 @@ fn funcref_null_to_zero() {
 macro_rules! impl_conversions {
     ( $( $reftype:ty ),* $(,)? ) => {
         $(
+            impl ReadAs<$reftype> for UntypedVal {
+                fn read_as(&self) -> $reftype {
+                    let bits = u64::from(*self);
+                    unsafe { mem::transmute::<u64, $reftype>(bits) }
+                }
+            }
+
+            impl ReadAs<Ref<$reftype>> for UntypedVal {
+                fn read_as(&self) -> Ref<$reftype> {
+                    let bits = u64::from(*self);
+                    if bits == 0 {
+                        return <Ref<$reftype>>::Null;
+                    }
+                    <Ref<$reftype>>::Val(<Self as ReadAs<$reftype>>::read_as(self))
+                }
+            }
+
+            impl WriteAs<$reftype> for UntypedVal {
+                fn write_as(&mut self, value: $reftype) {
+                    let bits = unsafe { mem::transmute::<$reftype, u64>(value) };
+                    self.write_as(bits)
+                }
+            }
+
+            impl WriteAs<Ref<$reftype>> for UntypedVal {
+                fn write_as(&mut self, value: Ref<$reftype>) {
+                    match value {
+                        Ref::Null => self.write_as(0_u64),
+                        Ref::Val(value) => self.write_as(value),
+                    }
+                }
+            }
+
             impl From<UntypedVal> for Ref<$reftype> {
                 fn from(untyped: UntypedVal) -> Self {
                     if u64::from(untyped) == 0 {
