@@ -34,6 +34,7 @@ use crate::{
                 resolve_memory,
                 resolve_table,
                 resolve_table_mut,
+                return_call_host,
                 return_call_wasm,
                 set_global,
                 update_instance,
@@ -285,22 +286,23 @@ pub fn return_call_imported(
 ) -> Done {
     let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let func = resolve_func(state.store, &func);
-    let (callee_ip, sp, mem0, mem0_len, instance) = match func {
+    let func_entity = resolve_func(state.store, &func);
+    let (callee_ip, sp, new_instance) = match func_entity {
         FuncEntity::Wasm(func) => {
             let wasm_func = func.func_body();
             let callee_instance = *func.instance();
             let callee_instance = resolve_instance(state.store, &callee_instance).into();
             let (callee_ip, callee_sp) =
                 return_call_wasm(state, params, wasm_func, Some(instance))?;
-            let (instance, mem0, mem0_len) =
-                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, callee_sp, mem0, mem0_len, instance)
+            (callee_ip, callee_sp, callee_instance)
         }
-        FuncEntity::Host(_host_func) => {
-            todo!()
+        FuncEntity::Host(host_func) => {
+            let host_func = *host_func;
+            return_call_host(state, func, host_func, params, instance)?
         }
     };
+    let (instance, mem0, mem0_len) =
+        update_instance(state.store, instance, new_instance, mem0, mem0_len);
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
@@ -323,22 +325,23 @@ pub fn return_call_indirect(
     ) = unsafe { decode_op(ip) };
     let func =
         resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
-    let func = resolve_func(state.store, &func);
-    let (callee_ip, sp, mem0, mem0_len, instance) = match func {
+    let func_entity = resolve_func(state.store, &func);
+    let (callee_ip, sp, callee_instance) = match func_entity {
         FuncEntity::Wasm(func) => {
             let wasm_func = func.func_body();
             let callee_instance = *func.instance();
             let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
             let (callee_ip, callee_sp) =
                 return_call_wasm(state, params, wasm_func, Some(instance))?;
-            let (instance, mem0, mem0_len) =
-                update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, callee_sp, mem0, mem0_len, instance)
+            (callee_ip, callee_sp, callee_instance)
         }
-        FuncEntity::Host(_func) => {
-            todo!()
+        FuncEntity::Host(host_func) => {
+            let host_func = *host_func;
+            return_call_host(state, func, host_func, params, instance)?
         }
     };
+    let (instance, mem0, mem0_len) =
+        update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 

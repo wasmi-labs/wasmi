@@ -2,7 +2,10 @@ use crate::{
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{
         executor::{
-            handler::{dispatch::ExecutionOutcome, utils::extract_mem0},
+            handler::{
+                dispatch::{Control, ExecutionOutcome},
+                utils::extract_mem0,
+            },
             CodeMap,
         },
         utils::unreachable_unchecked,
@@ -252,6 +255,8 @@ pub struct Stack {
     frames: CallStack,
 }
 
+type ReturnCallHost = Control<(Ip, Sp, Inst), Sp>;
+
 impl Stack {
     pub fn new(config: &StackConfig) -> Self {
         Self {
@@ -274,6 +279,17 @@ impl Stack {
 
     pub fn capacity(&self) -> usize {
         self.values.capacity()
+    }
+
+    pub fn return_prepare_host_frame<'a>(
+        &'a mut self,
+        callee_params: BoundedSlotSpan,
+        results_len: u16,
+        caller_instance: Inst,
+    ) -> Result<(ReturnCallHost, FuncInOut<'a>), TrapCode> {
+        let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
+        self.values
+            .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
     }
 
     pub fn prepare_host_frame<'a>(
@@ -374,6 +390,57 @@ impl ValueStack {
             }
             false => self.sp(start),
         }
+    }
+
+    /// # Note
+    ///
+    /// In the following code, `callee` represents the called host function frame
+    /// and `caller` represents the caller of the caller of the host function, a.k.a.
+    /// the caller's caller.
+    fn return_prepare_host_frame<'a>(
+        &'a mut self,
+        caller: Option<(Ip, usize, Inst)>,
+        callee_start: usize,
+        callee_params: BoundedSlotSpan,
+        results_len: u16,
+    ) -> Result<(ReturnCallHost, FuncInOut<'a>), TrapCode> {
+        let caller_start = caller.map(|(_, start, _)| start).unwrap_or(0);
+        let params_offset = usize::from(u16::from(callee_params.span().head()));
+        let params_len = usize::from(callee_params.len());
+        let results_len = usize::from(results_len);
+        let callee_size = params_len.max(results_len);
+        if callee_size == 0 {
+            let sp = match caller {
+                Some(_) if caller_start != callee_start => self.sp(caller_start),
+                _ => Sp::dangling(),
+            };
+            let inout = FuncInOut::new(&mut [], 0, 0);
+            let control = match caller {
+                Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
+                None => ReturnCallHost::Break(sp),
+            };
+            return Ok((control, inout));
+        }
+        let Some(params_start) = callee_start.checked_add(params_offset) else {
+            return Err(TrapCode::StackOverflow);
+        };
+        let Some(params_end) = params_start.checked_add(params_len) else {
+            return Err(TrapCode::StackOverflow);
+        };
+        self.cells
+            .copy_within(params_start..params_end, callee_start);
+        let Some(callee_end) = callee_start.checked_add(callee_size) else {
+            return Err(TrapCode::StackOverflow);
+        };
+        self.cells.resize(callee_end, UntypedVal::default());
+        let caller_sp = self.sp(caller_start);
+        let cells = &mut self.cells[callee_start..];
+        let inout = FuncInOut::new(cells, params_len, results_len);
+        let control = match caller {
+            Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
+            None => ReturnCallHost::Break(caller_sp),
+        };
+        Ok((control, inout))
     }
 
     fn prepare_host_frame<'a>(
@@ -502,6 +569,26 @@ impl CallStack {
             self.sync_ip(caller_ip);
         }
         self.top_start()
+    }
+
+    /// # Note
+    ///
+    /// In the following code, `callee` represents the called host function frame
+    /// and `caller` represents the caller of the caller of the host function, a.k.a.
+    /// the caller's caller.
+    pub fn return_prepare_host_frame(
+        &mut self,
+        callee_instance: Inst,
+    ) -> (usize, Option<(Ip, usize, Inst)>) {
+        let callee_start = self.top_start();
+        let caller = match self.pop() {
+            Some((ip, start, instance)) => {
+                let instance = instance.unwrap_or(callee_instance);
+                Some((ip, start, instance))
+            }
+            None => None,
+        };
+        (callee_start, caller)
     }
 
     #[inline(always)]
