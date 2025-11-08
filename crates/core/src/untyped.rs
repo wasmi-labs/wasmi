@@ -35,6 +35,12 @@ pub trait ReadAs<T> {
     fn read_as(&self) -> T;
 }
 
+impl ReadAs<UntypedVal> for UntypedVal {
+    fn read_as(&self) -> UntypedVal {
+        *self
+    }
+}
+
 macro_rules! impl_read_as_for_int {
     ( $( $int:ty ),* $(,)? ) => {
         $(
@@ -81,6 +87,12 @@ impl ReadAs<bool> for UntypedVal {
 pub trait WriteAs<T> {
     /// Writes to `self` as value of type `T`.
     fn write_as(&mut self, value: T);
+}
+
+impl WriteAs<UntypedVal> for UntypedVal {
+    fn write_as(&mut self, value: UntypedVal) {
+        *self = value;
+    }
 }
 
 macro_rules! impl_write_as_for_int {
