@@ -166,16 +166,17 @@ impl From<wasmi::Error> for FuzzError {
             return FuzzError::Other;
         };
         let trap_code = match trap_code {
-            TrapCode::UnreachableCodeReached => crate::TrapCode::UnreachableCodeReached,
-            TrapCode::MemoryOutOfBounds => crate::TrapCode::MemoryOutOfBounds,
-            TrapCode::TableOutOfBounds => crate::TrapCode::TableOutOfBounds,
-            TrapCode::IndirectCallToNull => crate::TrapCode::IndirectCallToNull,
-            TrapCode::IntegerDivisionByZero => crate::TrapCode::IntegerDivisionByZero,
-            TrapCode::IntegerOverflow => crate::TrapCode::IntegerOverflow,
-            TrapCode::BadConversionToInteger => crate::TrapCode::BadConversionToInteger,
-            TrapCode::StackOverflow => crate::TrapCode::StackOverflow,
-            TrapCode::BadSignature => crate::TrapCode::BadSignature,
-            TrapCode::OutOfFuel | TrapCode::GrowthOperationLimited => return FuzzError::Other,
+            | TrapCode::UnreachableCodeReached => crate::TrapCode::UnreachableCodeReached,
+            | TrapCode::MemoryOutOfBounds => crate::TrapCode::MemoryOutOfBounds,
+            | TrapCode::TableOutOfBounds => crate::TrapCode::TableOutOfBounds,
+            | TrapCode::IndirectCallToNull => crate::TrapCode::IndirectCallToNull,
+            | TrapCode::IntegerDivisionByZero => crate::TrapCode::IntegerDivisionByZero,
+            | TrapCode::IntegerOverflow => crate::TrapCode::IntegerOverflow,
+            | TrapCode::BadConversionToInteger => crate::TrapCode::BadConversionToInteger,
+            | TrapCode::StackOverflow => crate::TrapCode::StackOverflow,
+            | TrapCode::BadSignature => crate::TrapCode::BadSignature,
+            | TrapCode::OutOfFuel
+            | TrapCode::GrowthOperationLimited => return FuzzError::Other,
         };
         FuzzError::Trap(trap_code)
     }
