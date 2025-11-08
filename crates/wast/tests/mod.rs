@@ -7,6 +7,9 @@ fn process_wast(path: &'static str, wast: &'static str, config: Config) {
     if let Err(error) = runner.register_spectest() {
         panic!("{path}: failed to setup Wasm spectest module: {error}");
     }
+    if let Err(error) = runner.register_wasmitest() {
+        panic!("{path}: failed to setup Wasmi test module: {error:?}");
+    }
     if let Err(error) = runner.process_directives(path, wast) {
         panic!("{error:#}")
     }
@@ -182,6 +185,7 @@ macro_rules! foreach_test {
             fn spec_wide_arithmetic("spec/proposals/wide-arithmetic/wide-arithmetic");
 
             // Wasmi specific test cases and regression tests.
+            fn wasmi_fibonacci("wasmi/tests/fibonacci");
             fn wasmi_wide_arithmetic("wasmi/tests/wide-arithmetic");
             fn wasmi_replace_result("wasmi/tests/replace-result");
             fn wasmi_local_tee("wasmi/tests/local-tee");
@@ -192,6 +196,10 @@ macro_rules! foreach_test {
             fn wasmi_many_inout("wasmi/tests/many-inout");
             fn wasmi_copy_span("wasmi/tests/copy-span");
             fn wasmi_audit("wasmi/tests/audit");
+            fn wasmi_call("wasmi/tests/call");
+            fn wasmi_call_indirect("wasmi/tests/call-indirect");
+            fn wasmi_return_call("wasmi/tests/return-call");
+            fn wasmi_return_call_indirect("wasmi/tests/return-call-indirect");
             // Wasmi: binary operators
             fn wasmi_i32_add("wasmi/tests/op/i32-add");
             fn wasmi_i32_sub("wasmi/tests/op/i32-sub");
