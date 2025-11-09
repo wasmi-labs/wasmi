@@ -31,7 +31,7 @@ pub trait Reset: Sized {
     /// Resets `self` for reuse.
     fn reset(&mut self);
 
-    /// Returns `self` in resetted state.
+    /// Returns `self` in reset state.
     #[must_use]
     fn into_reset(self) -> Self {
         let mut this = self;

@@ -79,7 +79,7 @@ impl<'a> FuncInOut<'a> {
     ///
     /// # Panics
     ///
-    /// If the length of hte `params_results` slice does not match the maximum
+    /// If the length of the `params_results` slice does not match the maximum
     /// of the `len_params` and `Len_results`.
     pub fn new(
         params_results: &'a mut [UntypedVal],
