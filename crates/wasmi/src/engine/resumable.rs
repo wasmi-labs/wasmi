@@ -7,7 +7,6 @@ use crate::{
     AsContextMut,
     Engine,
     Error,
-    TrapCode,
     Val,
     WasmResults,
 };
@@ -30,23 +29,6 @@ pub(crate) enum ResumableCallBase<T> {
     HostTrap(ResumableCallHostTrap),
     /// The resumable call ran out of fuel and can be resumed.
     OutOfFuel(ResumableCallOutOfFuel),
-}
-
-/// Any resumable error.
-#[derive(Debug)]
-pub enum ResumableError {
-    HostTrap(ResumableHostTrapError),
-    OutOfFuel(ResumableOutOfFuelError),
-}
-
-impl ResumableError {
-    /// Consumes `self` to return the underlying [`Error`].
-    pub fn into_error(self) -> Error {
-        match self {
-            ResumableError::HostTrap(error) => error.into_error(),
-            ResumableError::OutOfFuel(error) => error.into_error(),
-        }
-    }
 }
 
 /// Error returned from a called host function in a resumable state.
@@ -124,11 +106,6 @@ impl ResumableOutOfFuelError {
     /// Consumes `self` to return the underlying [`Error`].
     pub(crate) fn required_fuel(self) -> u64 {
         self.required_fuel
-    }
-
-    /// Consumes `self` to return the underlying [`Error`].
-    pub(crate) fn into_error(self) -> Error {
-        Error::from(TrapCode::OutOfFuel)
     }
 }
 
