@@ -1,8 +1,8 @@
 pub use self::handler::{op_code_to_handler, Inst, Stack};
-use super::{code_map::CodeMap, ResumableError};
+use super::code_map::CodeMap;
 use crate::{
     engine::{
-        executor::handler::init_wasm_func_call,
+        executor::handler::{init_wasm_func_call, ExecutionOutcome},
         CallParams,
         CallResults,
         EngineInner,
@@ -41,13 +41,9 @@ impl EngineInner {
     {
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&self.code_map, &mut stack)
-            .execute_root_func(ctx.store, func, params, results)
-            .map_err(|error| match error.into_resumable() {
-                Ok(error) => error.into_error(),
-                Err(error) => error,
-            });
+            .execute_root_func(ctx.store, func, params, results)?;
         self.stacks.lock().recycle(stack);
-        results
+        Ok(results)
     }
 
     /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
@@ -69,42 +65,39 @@ impl EngineInner {
     {
         let store = ctx.store;
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&self.code_map, &mut stack)
+        let outcome = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(store, func, params, results);
-        match results {
-            Ok(results) => {
-                self.stacks.lock().recycle(stack);
-                Ok(ResumableCallBase::Finished(results))
+        let results = match outcome {
+            Ok(results) => results,
+            Err(ExecutionOutcome::Host(error)) => {
+                let host_func = *error.host_func();
+                let caller_results = *error.caller_results();
+                let host_error = error.into_error();
+                return Ok(ResumableCallBase::HostTrap(ResumableCallHostTrap::new(
+                    store.engine().clone(),
+                    *func,
+                    host_func,
+                    host_error,
+                    caller_results,
+                    stack,
+                )));
             }
-            Err(error) => match error.into_resumable() {
-                Ok(ResumableError::HostTrap(error)) => {
-                    let host_func = *error.host_func();
-                    let caller_results = *error.caller_results();
-                    let host_error = error.into_error();
-                    Ok(ResumableCallBase::HostTrap(ResumableCallHostTrap::new(
-                        store.engine().clone(),
-                        *func,
-                        host_func,
-                        host_error,
-                        caller_results,
-                        stack,
-                    )))
-                }
-                Ok(ResumableError::OutOfFuel(error)) => {
-                    let required_fuel = error.required_fuel();
-                    Ok(ResumableCallBase::OutOfFuel(ResumableCallOutOfFuel::new(
-                        store.engine().clone(),
-                        *func,
-                        stack,
-                        required_fuel,
-                    )))
-                }
-                Err(error) => {
-                    self.stacks.lock().recycle(stack);
-                    Err(error)
-                }
-            },
-        }
+            Err(ExecutionOutcome::OutOfFuel(error)) => {
+                let required_fuel = error.required_fuel();
+                return Ok(ResumableCallBase::OutOfFuel(ResumableCallOutOfFuel::new(
+                    store.engine().clone(),
+                    *func,
+                    stack,
+                    required_fuel,
+                )));
+            }
+            Err(ExecutionOutcome::Error(error)) => {
+                self.stacks.lock().recycle(stack);
+                return Err(error);
+            }
+        };
+        self.stacks.lock().recycle(stack);
+        Ok(ResumableCallBase::Finished(results))
     }
 
     /// Resumes the given [`Func`] with the given `params` and returns the `results`.
@@ -126,30 +119,27 @@ impl EngineInner {
     {
         let caller_results = invocation.caller_results();
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let results = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
-        match results {
-            Ok(results) => {
-                self.stacks.lock().recycle(invocation.common.take_stack());
-                Ok(ResumableCallBase::Finished(results))
+        let outcome = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
+        let results = match outcome {
+            Ok(results) => results,
+            Err(ExecutionOutcome::Host(error)) => {
+                let host_func = *error.host_func();
+                let caller_results = *error.caller_results();
+                invocation.update(host_func, error.into_error(), caller_results);
+                return Ok(ResumableCallBase::HostTrap(invocation));
             }
-            Err(error) => match error.into_resumable() {
-                Ok(ResumableError::HostTrap(error)) => {
-                    let host_func = *error.host_func();
-                    let caller_results = *error.caller_results();
-                    invocation.update(host_func, error.into_error(), caller_results);
-                    Ok(ResumableCallBase::HostTrap(invocation))
-                }
-                Ok(ResumableError::OutOfFuel(error)) => {
-                    let required_fuel = error.required_fuel();
-                    let invocation = invocation.update_to_out_of_fuel(required_fuel);
-                    Ok(ResumableCallBase::OutOfFuel(invocation))
-                }
-                Err(error) => {
-                    self.stacks.lock().recycle(invocation.common.take_stack());
-                    Err(error)
-                }
-            },
-        }
+            Err(ExecutionOutcome::OutOfFuel(error)) => {
+                let required_fuel = error.required_fuel();
+                let invocation = invocation.update_to_out_of_fuel(required_fuel);
+                return Ok(ResumableCallBase::OutOfFuel(invocation));
+            }
+            Err(ExecutionOutcome::Error(error)) => {
+                self.stacks.lock().recycle(invocation.common.take_stack());
+                return Err(error);
+            }
+        };
+        self.stacks.lock().recycle(invocation.common.take_stack());
+        Ok(ResumableCallBase::Finished(results))
     }
 
     /// Resumes the given [`Func`] after running out of fuel and returns the `results`.
@@ -169,33 +159,27 @@ impl EngineInner {
         Results: CallResults,
     {
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let results = executor.resume_func_out_of_fuel(ctx.store, results);
-        match results {
-            Ok(results) => {
-                self.stacks.lock().recycle(invocation.common.take_stack());
-                Ok(ResumableCallBase::Finished(results))
+        let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
+        let results = match outcome {
+            Ok(results) => results,
+            Err(ExecutionOutcome::Host(error)) => {
+                let host_func = *error.host_func();
+                let caller_results = *error.caller_results();
+                let invocation =
+                    invocation.update_to_host_trap(host_func, error.into_error(), caller_results);
+                return Ok(ResumableCallBase::HostTrap(invocation));
             }
-            Err(error) => match error.into_resumable() {
-                Ok(ResumableError::HostTrap(error)) => {
-                    let host_func = *error.host_func();
-                    let caller_results = *error.caller_results();
-                    let invocation = invocation.update_to_host_trap(
-                        host_func,
-                        error.into_error(),
-                        caller_results,
-                    );
-                    Ok(ResumableCallBase::HostTrap(invocation))
-                }
-                Ok(ResumableError::OutOfFuel(error)) => {
-                    invocation.update(error.required_fuel());
-                    Ok(ResumableCallBase::OutOfFuel(invocation))
-                }
-                Err(error) => {
-                    self.stacks.lock().recycle(invocation.common.take_stack());
-                    Err(error)
-                }
-            },
-        }
+            Err(ExecutionOutcome::OutOfFuel(error)) => {
+                invocation.update(error.required_fuel());
+                return Ok(ResumableCallBase::OutOfFuel(invocation));
+            }
+            Err(ExecutionOutcome::Error(error)) => {
+                self.stacks.lock().recycle(invocation.common.take_stack());
+                return Err(error);
+            }
+        };
+        self.stacks.lock().recycle(invocation.common.take_stack());
+        Ok(ResumableCallBase::Finished(results))
     }
 }
 
@@ -229,7 +213,7 @@ impl<'engine> EngineExecutor<'engine> {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Error>
+    ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
     where
         Results: CallResults,
     {
@@ -269,7 +253,7 @@ impl<'engine> EngineExecutor<'engine> {
         _params: impl CallParams,
         _caller_results: SlotSpan,
         _results: Results,
-    ) -> Result<<Results as CallResults>::Results, Error>
+    ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
     where
         Results: CallResults,
     {
@@ -302,7 +286,7 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         _store: &mut Store<T>,
         _results: Results,
-    ) -> Result<<Results as CallResults>::Results, Error>
+    ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
     where
         Results: CallResults,
     {
