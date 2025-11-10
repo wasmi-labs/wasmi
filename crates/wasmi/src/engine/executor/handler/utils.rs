@@ -455,7 +455,13 @@ pub fn return_call_host(
     {
         Ok(()) => {}
         Err(StoreError::External(error)) => {
-            done!(state, DoneReason::host_error(error, func, params.span()))
+            // Note: we won't allow resumption in case the execution would
+            //       have returned with this the host function tail call.
+            let reason = match control {
+                Control::Continue(_) => DoneReason::host_error(error, func, params.span()),
+                Control::Break(_) => DoneReason::error(error),
+            };
+            done!(state, reason)
         }
         Err(StoreError::Internal(error)) => unsafe {
             unreachable_unchecked!(
