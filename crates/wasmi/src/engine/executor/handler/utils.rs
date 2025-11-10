@@ -356,15 +356,22 @@ pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip,
 }
 
 macro_rules! consume_fuel {
-    ($state:expr, $fuel:expr, $eval:expr) => {{
+    ($state:expr, $ip:expr, $fuel:expr, $eval:expr) => {{
         if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
             $fuel.consume_fuel_if($eval)
         {
-            done!(
-                $state,
-                $crate::engine::executor::handler::DoneReason::out_of_fuel(required_fuel),
-            )
+            out_of_fuel!($state, $ip, required_fuel)
         }
+    }};
+}
+
+macro_rules! out_of_fuel {
+    ($state:expr, $ip:expr, $required_fuel:expr) => {{
+        $state.stack.sync_ip($ip);
+        done!(
+            $state,
+            $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
+        )
     }};
 }
 
