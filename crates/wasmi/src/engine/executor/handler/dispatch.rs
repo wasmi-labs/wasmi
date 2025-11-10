@@ -70,11 +70,16 @@ mod state {
 
     pub type Uninit = PhantomData<marker::Uninit>;
     pub type Init = PhantomData<marker::Init>;
+    pub type Resumed = PhantomData<marker::Resumed>;
 
     mod marker {
         pub enum Uninit {}
         pub enum Init {}
+        pub enum Resumed {}
     }
+    pub trait Execute {}
+    impl Execute for Init {}
+    impl Execute for Resumed {}
     pub struct Done {
         pub sp: Sp,
     }
@@ -91,7 +96,7 @@ impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
     }
 }
 
-impl<'a, T> WasmFuncCall<'a, T, state::Init> {
+impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
     pub fn execute(mut self) -> Result<WasmFuncCall<'a, T, state::Done>, ExecutionOutcome> {
         self.store.invoke_call_hook(CallHook::CallingWasm)?;
         let outcome = self.execute_until_done();
@@ -112,6 +117,21 @@ impl<'a, T> WasmFuncCall<'a, T, state::Init> {
             mem0_len,
             self.instance,
         )
+    }
+}
+
+impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
+    pub fn provide_host_results(
+        self,
+        params: impl CallParams,
+        slots: SlotSpan,
+    ) -> WasmFuncCall<'a, T, state::Init> {
+        let mut param_slot = slots.head();
+        for param_value in params.call_params() {
+            set_value(self.callee_sp, param_slot, param_value);
+            param_slot = param_slot.next();
+        }
+        self.new_state(PhantomData)
     }
 }
 
@@ -158,7 +178,7 @@ pub fn resume_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
     code: &'a CodeMap,
     stack: &'a mut Stack,
-) -> Result<WasmFuncCall<'a, T, state::Init>, Error> {
+) -> Result<WasmFuncCall<'a, T, state::Resumed>, Error> {
     let (callee_ip, callee_sp, instance) = stack.restore_frame();
     Ok(WasmFuncCall {
         store,
