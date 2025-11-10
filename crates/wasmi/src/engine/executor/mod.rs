@@ -249,29 +249,19 @@ impl<'engine> EngineExecutor<'engine> {
     /// - When encountering a Wasm or host trap during the execution of `func`.
     fn resume_func_host_trap<T, Results>(
         &mut self,
-        _store: &mut Store<T>,
-        _params: impl CallParams,
-        _caller_results: SlotSpan,
-        _results: Results,
+        store: &mut Store<T>,
+        params: impl CallParams,
+        params_slots: SlotSpan,
+        results: Results,
     ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
     where
         Results: CallResults,
     {
-        // let caller = self
-        //     .stack
-        //     .calls
-        //     .peek()
-        //     .expect("must have caller call frame on stack upon function resumption");
-        // let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller.base_offset()) };
-        // let call_params = params.call_params();
-        // let len_params = call_params.len();
-        // for (result, param) in caller_results.iter_sized(len_params).zip(call_params) {
-        //     unsafe { caller_sp.set(result, param) };
-        // }
-        // self.execute_func(store)?;
-        // let results = self.write_results_back(results);
-        // Ok(results)
-        todo!()
+        let results = resume_wasm_func_call(store, self.code_map, self.stack)?
+            .provide_host_results(params, params_slots)
+            .execute()?
+            .write_results(results);
+        Ok(results)
     }
 
     /// Resumes the execution of the given [`Func`] using `params` after running out of fuel.
