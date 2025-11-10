@@ -154,6 +154,23 @@ pub fn init_wasm_func_call<'a, T>(
     })
 }
 
+pub fn resume_wasm_func_call<'a, T>(
+    store: &'a mut Store<T>,
+    code: &'a CodeMap,
+    stack: &'a mut Stack,
+) -> Result<WasmFuncCall<'a, T, state::Init>, Error> {
+    let (callee_ip, callee_sp, instance) = stack.restore_frame();
+    Ok(WasmFuncCall {
+        store,
+        stack,
+        code,
+        callee_ip,
+        callee_sp,
+        instance,
+        state: PhantomData,
+    })
+}
+
 #[cfg(feature = "trampolines")]
 pub fn execute_until_done(
     mut state: VmState,

@@ -285,6 +285,14 @@ impl Stack {
         self.frames.sync_ip(ip);
     }
 
+    pub fn restore_frame(&mut self) -> (Ip, Sp, Inst) {
+        let Some((ip, start, instance)) = self.frames.restore_frame() else {
+            panic!("restore_frame: missing top-frame")
+        };
+        let sp = self.values.sp(start);
+        (ip, sp, instance)
+    }
+
     pub fn return_prepare_host_frame<'a>(
         &'a mut self,
         callee_params: BoundedSlotSpan,
@@ -566,6 +574,12 @@ impl CallStack {
             panic!("must have top call frame")
         };
         top.ip = ip;
+    }
+
+    fn restore_frame(&self) -> Option<(Ip, usize, Inst)> {
+        let instance = self.instance?;
+        let top = self.top()?;
+        Some((top.ip, top.start, instance))
     }
 
     fn prepare_host_frame(&mut self, caller_ip: Option<Ip>) -> usize {

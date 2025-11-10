@@ -2,7 +2,7 @@ pub use self::handler::{op_code_to_handler, Inst, Stack};
 use super::code_map::CodeMap;
 use crate::{
     engine::{
-        executor::handler::{init_wasm_func_call, ExecutionOutcome},
+        executor::handler::{init_wasm_func_call, resume_wasm_func_call, ExecutionOutcome},
         CallParams,
         CallResults,
         EngineInner,
@@ -284,16 +284,16 @@ impl<'engine> EngineExecutor<'engine> {
     /// - When encountering a Wasm or host trap during the execution of `func`.
     fn resume_func_out_of_fuel<T, Results>(
         &mut self,
-        _store: &mut Store<T>,
-        _results: Results,
+        store: &mut Store<T>,
+        results: Results,
     ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
     where
         Results: CallResults,
     {
-        // self.execute_func(store)?;
-        // let results = self.write_results_back(results);
-        // Ok(results)
-        todo!()
+        let results = resume_wasm_func_call(store, self.code_map, self.stack)?
+            .execute()?
+            .write_results(results);
+        Ok(results)
     }
 
     /// Convenience forwarder to dispatch host functions.
