@@ -168,8 +168,8 @@ impl FuelCostsProvider {
         let Ok(size_of_val) = u64::try_from(mem::size_of::<UntypedVal>()) else {
             return u64::MAX;
         };
-        self.fuel_for_copying_bytes(len_values)
-            .saturating_mul(size_of_val)
+        let copied_bytes = len_values.saturating_mul(size_of_val);
+        self.fuel_for_copying_bytes(copied_bytes)
     }
 }
 
