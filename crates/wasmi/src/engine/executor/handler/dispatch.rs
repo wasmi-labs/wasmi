@@ -47,7 +47,6 @@ pub struct WasmFuncCall<'a, T, State> {
     callee_ip: Ip,
     callee_sp: Sp,
     instance: Instance,
-    frame_size: u16,
     state: State,
 }
 
@@ -60,7 +59,6 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
             callee_ip: self.callee_ip,
             callee_sp: self.callee_sp,
             instance: self.instance,
-            frame_size: self.frame_size,
             state,
         }
     }
@@ -152,7 +150,6 @@ pub fn init_wasm_func_call<'a, T>(
         code,
         callee_ip,
         callee_sp,
-        frame_size,
         instance,
         state: PhantomData,
     })
