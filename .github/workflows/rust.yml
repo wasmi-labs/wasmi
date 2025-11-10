@@ -181,7 +181,7 @@ jobs:
       - name: Install Doxygen
         run: |
             tar --version
-            curl -L https://sourceforge.net/projects/doxygen/files/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz/download \
+            curl -L https://downloads.sourceforge.net/project/doxygen/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz \
               | tar xzf - -C $GITHUB_WORKSPACE
             echo "$GITHUB_WORKSPACE/doxygen-1.11.0/bin" >> $GITHUB_PATH
       - name: Configure CMake for Wasmi C-API
