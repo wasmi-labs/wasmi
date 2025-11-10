@@ -73,7 +73,7 @@ impl<'vm> VmState<'vm> {
             DoneReason::Return(sp) => return Ok(sp),
             DoneReason::Host(error) => error.into(),
             DoneReason::OutOfFuel(error) => error.into(),
-            DoneReason::CompileError(error) => error.into(),
+            DoneReason::Error(error) => error.into(),
         };
         Err(outcome)
     }
@@ -81,13 +81,23 @@ impl<'vm> VmState<'vm> {
 
 #[derive(Debug)]
 pub enum DoneReason {
+    /// The execution finished successfully with a result found at the [`Sp`].
     Return(Sp),
+    /// A resumable error indicating an error returned by a called host function.
     Host(ResumableHostTrapError),
+    /// A resumable error indicating that the execution ran out of fuel.
     OutOfFuel(ResumableOutOfFuelError),
-    CompileError(Error),
+    /// A non-resumable error.
+    Error(Error),
 }
 
 impl DoneReason {
+    #[cold]
+    #[inline]
+    pub fn error(error: Error) -> Self {
+        Self::Error(error)
+    }
+
     #[cold]
     #[inline]
     pub fn host_error(error: Error, func: Func, results: SlotSpan) -> Self {
