@@ -46,7 +46,7 @@ pub struct WasmFuncCall<'a, T, State> {
     code: &'a CodeMap,
     callee_ip: Ip,
     callee_sp: Sp,
-    instance: Instance,
+    instance: Inst,
     state: State,
 }
 
@@ -101,9 +101,8 @@ impl<'a, T> WasmFuncCall<'a, T, state::Init> {
     }
 
     fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
-        let instance = resolve_instance(self.store.prune(), &self.instance).into();
         let store = self.store.prune();
-        let (mem0, mem0_len) = utils::extract_mem0(store, instance);
+        let (mem0, mem0_len) = utils::extract_mem0(store, self.instance);
         let state = VmState::new(store, self.stack, self.code);
         execute_until_done(
             state,
@@ -111,7 +110,7 @@ impl<'a, T> WasmFuncCall<'a, T, state::Init> {
             self.callee_sp,
             mem0,
             mem0_len,
-            instance,
+            self.instance,
         )
     }
 }
@@ -136,13 +135,13 @@ pub fn init_wasm_func_call<'a, T>(
     let callee_ip = Ip::from(compiled_func.ops());
     let frame_size = compiled_func.len_stack_slots();
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), frame_size);
-    let instance_ref = resolve_instance(store.prune(), &instance);
+    let instance = resolve_instance(store.prune(), &instance).into();
     let callee_sp = stack.push_frame(
         None,
         callee_ip,
         callee_params,
         usize::from(frame_size),
-        Some(instance_ref.into()),
+        Some(instance),
     )?;
     Ok(WasmFuncCall {
         store,
