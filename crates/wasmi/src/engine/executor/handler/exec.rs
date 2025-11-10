@@ -86,16 +86,16 @@ pub fn consume_fuel(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
+    let (next_ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
     let consumption_result = state
         .store
         .inner_mut()
         .fuel_mut()
         .consume_fuel_unchecked(u64::from(fuel));
     if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-        done!(state, DoneReason::out_of_fuel(required_fuel));
+        out_of_fuel!(state, ip, required_fuel)
     }
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn copy_span_asc(
@@ -421,7 +421,7 @@ pub fn memory_grow(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::MemoryGrow {
             memory,
             result,
@@ -452,7 +452,7 @@ pub fn memory_grow(
             }
         }
         Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-            done!(state, DoneReason::out_of_fuel(required_fuel));
+            out_of_fuel!(state, ip, required_fuel)
         }
         Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
             trap!(TrapCode::GrowthOperationLimited);
@@ -469,7 +469,7 @@ pub fn memory_grow(
         }
     };
     set_value(sp, result, return_value);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn memory_copy(
@@ -481,7 +481,7 @@ pub fn memory_copy(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::MemoryCopy {
             dst_memory,
             src_memory,
@@ -503,8 +503,8 @@ pub fn memory_copy(
         trap!(TrapCode::MemoryOutOfBounds)
     };
     if dst_memory == src_memory {
-        memory_copy_within(state, instance, dst_memory, dst_index, src_index, len)?;
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        memory_copy_within(state, ip, instance, dst_memory, dst_index, src_index, len)?;
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
     }
     let dst_memory = fetch_memory(instance, dst_memory);
     let src_memory = fetch_memory(instance, src_memory);
@@ -515,14 +515,15 @@ pub fn memory_copy(
     // These accesses just perform the bounds checks required by the Wasm spec.
     let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
     let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
-    consume_fuel!(state, fuel, |costs| costs
+    consume_fuel!(state, ip, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     dst_bytes.copy_from_slice(src_bytes);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 fn memory_copy_within(
     state: &mut VmState<'_>,
+    ip: Ip,
     instance: Inst,
     dst_memory: index::Memory,
     dst_index: usize,
@@ -534,7 +535,7 @@ fn memory_copy_within(
     // These accesses just perform the bounds checks required by the Wasm spec.
     memory_slice(memory, src_index, len).into_control()?;
     memory_slice(memory, dst_index, len).into_control()?;
-    consume_fuel!(state, fuel, |costs| costs
+    consume_fuel!(state, ip, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     memory
         .data_mut()
@@ -551,7 +552,7 @@ pub fn memory_fill(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::MemoryFill {
             memory,
             dst,
@@ -571,10 +572,10 @@ pub fn memory_fill(
     let memory = fetch_memory(instance, memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     let slice = memory_slice_mut(memory, dst, len).into_control()?;
-    consume_fuel!(state, fuel, |costs| costs
+    consume_fuel!(state, ip, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     slice.fill(value);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn memory_init(
@@ -586,7 +587,7 @@ pub fn memory_init(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::MemoryInit {
             memory,
             data,
@@ -619,10 +620,10 @@ pub fn memory_init(
     else {
         trap!(TrapCode::MemoryOutOfBounds)
     };
-    consume_fuel!(state, fuel, |costs| costs
+    consume_fuel!(state, ip, fuel, |costs| costs
         .fuel_for_copying_bytes(len as u64));
     memory.copy_from_slice(data);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn data_drop(
@@ -712,7 +713,7 @@ pub fn table_copy(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::TableCopy {
             dst_table,
             src_table,
@@ -732,11 +733,14 @@ pub fn table_copy(
             let trap_code = match error {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+                TableError::OutOfFuel { required_fuel } => {
+                    out_of_fuel!(state, ip, required_fuel)
+                }
                 _ => panic!("table.copy: unexpected error: {error:?}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
     }
     // Case: copy between two different tables
     let dst_table = fetch_table(instance, dst_table);
@@ -750,13 +754,13 @@ pub fn table_copy(
             TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
             TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
             TableError::OutOfFuel { required_fuel } => {
-                done!(state, DoneReason::out_of_fuel(required_fuel))
+                out_of_fuel!(state, ip, required_fuel)
             }
             _ => panic!("table.copy: unexpected error: {error:?}"),
         };
         trap!(trap_code)
     }
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn table_fill(
@@ -768,7 +772,7 @@ pub fn table_fill(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::TableFill {
             table,
             dst,
@@ -786,13 +790,13 @@ pub fn table_fill(
             TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
             TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
             TableError::OutOfFuel { required_fuel } => {
-                done!(state, DoneReason::out_of_fuel(required_fuel))
+                out_of_fuel!(state, ip, required_fuel)
             }
             _ => panic!("table.fill: unexpected error: {error:?}"),
         };
         trap!(trap_code)
     }
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn table_init(
@@ -804,7 +808,7 @@ pub fn table_init(
     instance: Inst,
 ) -> Done {
     let (
-        ip,
+        next_ip,
         crate::ir::decode::TableInit {
             table,
             elem,
@@ -827,13 +831,13 @@ pub fn table_init(
             TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
             TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
             TableError::OutOfFuel { required_fuel } => {
-                done!(state, DoneReason::out_of_fuel(required_fuel))
+                out_of_fuel!(state, ip, required_fuel)
             }
             _ => panic!("table.init: unexpected error: {error:?}"),
         };
         trap!(trap_code)
     }
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
 pub fn elem_drop(
