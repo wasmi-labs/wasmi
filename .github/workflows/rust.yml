@@ -13,7 +13,7 @@ concurrency:
 
 env:
   # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-  RUST_NIGHTLY_VERSION: nightly-2025-07-22
+  RUST_NIGHTLY_VERSION: nightly-2025-11-09
 
 jobs:
   check:
