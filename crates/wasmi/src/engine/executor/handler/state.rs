@@ -281,6 +281,10 @@ impl Stack {
         self.values.capacity()
     }
 
+    pub fn sync_ip(&mut self, ip: Ip) {
+        self.frames.sync_ip(ip);
+    }
+
     pub fn return_prepare_host_frame<'a>(
         &'a mut self,
         callee_params: BoundedSlotSpan,
