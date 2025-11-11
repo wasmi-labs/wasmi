@@ -23,6 +23,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::{
+    cmp,
     mem,
     ptr::{self, NonNull},
     slice,
@@ -417,6 +418,44 @@ impl ValueStack {
             }
             false => self.sp(start),
         }
+    }
+
+    /// Grows the number of cells to `new_len` if the current number is less than `new_len`.
+    ///
+    /// Does nothing if the number of cells is already at least `new_len`.
+    ///
+    /// # Errors
+    ///
+    /// - Returns [`TrapCode::OutOfSystemMemory`] if the machine ran out of memory.
+    /// - Returns [`TrapCode::StackOverflow`] if this exceeds the stack's predefined limits.
+    fn grow_if_needed(&mut self, new_len: usize) -> Result<(), TrapCode> {
+        if new_len > self.max_height {
+            return Err(TrapCode::StackOverflow);
+        }
+        let capacity = self.cells.capacity();
+        let len = self.cells.len();
+        if new_len > capacity {
+            debug_assert!(
+                self.cells.len() <= self.cells.capacity(),
+                "capacity must always be larger or equal to the actual number of the cells"
+            );
+            let additional = new_len - len;
+            self.cells
+                .try_reserve(additional)
+                .map_err(|_| TrapCode::OutOfSystemMemory)?;
+            debug_assert!(
+                self.cells.capacity() >= new_len,
+                "capacity must now be at least as large as `new_len` ({new_len}) but found {}",
+                self.cells.capacity()
+            );
+        }
+        let max_len = cmp::max(new_len, len);
+        // Safety: there is no need to initialize the cells since we are operating
+        //         on `UntypedVal` which only has valid bit patterns.
+        // Note: non-security related initialization of function parameters
+        //       and zero-initialization of function locals happens elsewhere.
+        unsafe { self.cells.set_len(max_len) };
+        Ok(())
     }
 
     /// # Note
