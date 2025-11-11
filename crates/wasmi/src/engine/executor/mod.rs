@@ -217,15 +217,14 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.stack.reset();
-        match store.inner.resolve_func(func) {
+        let results = match store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
                 let instance = *wasm_func.instance();
                 let engine_func = wasm_func.func_body();
                 let call =
                     init_wasm_func_call(store, self.code_map, self.stack, engine_func, instance)?;
-                let results = call.write_params(params).execute()?.write_results(results);
-                Ok(results)
+                call.write_params(params).execute()?.write_results(results)
             }
             FuncEntity::Host(_host_func) => {
                 // The host function signature is required for properly
@@ -234,7 +233,8 @@ impl<'engine> EngineExecutor<'engine> {
                 // we are required to extend the value stack.
                 todo!()
             }
-        }
+        };
+        Ok(results)
     }
 
     /// Resumes the execution of the given [`Func`] using `params` after a host function trapped.
