@@ -23,6 +23,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::{
+    mem,
     ptr::{self, NonNull},
     slice,
 };
