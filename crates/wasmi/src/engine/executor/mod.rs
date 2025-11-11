@@ -79,19 +79,19 @@ impl EngineInner {
                 let host_error = error.into_error();
                 return Ok(ResumableCallBase::HostTrap(ResumableCallHostTrap::new(
                     store.engine().clone(),
+                    stack,
                     *func,
                     host_func,
                     host_error,
                     caller_results,
-                    stack,
                 )));
             }
             Err(ExecutionOutcome::OutOfFuel(error)) => {
                 let required_fuel = error.required_fuel();
                 return Ok(ResumableCallBase::OutOfFuel(ResumableCallOutOfFuel::new(
                     store.engine().clone(),
-                    *func,
                     stack,
+                    *func,
                     required_fuel,
                 )));
             }
