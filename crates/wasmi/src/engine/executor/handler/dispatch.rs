@@ -170,7 +170,7 @@ pub fn init_wasm_func_call<'a, T>(
     let compiled_func = code.get(Some(store.inner.fuel_mut()), engine_func)?;
     let callee_ip = Ip::from(compiled_func.ops());
     let frame_size = compiled_func.len_stack_slots();
-    let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), frame_size);
+    let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
     let instance = resolve_instance(store.prune(), &instance).into();
     let callee_sp = stack.push_frame(
         None,
