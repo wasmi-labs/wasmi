@@ -9,7 +9,13 @@ mod state;
 #[cfg(feature = "trampolines")]
 use self::dispatch::ControlContinue;
 pub use self::{
-    dispatch::{init_wasm_func_call, op_code_to_handler, resume_wasm_func_call, ExecutionOutcome},
+    dispatch::{
+        init_host_func_call,
+        init_wasm_func_call,
+        op_code_to_handler,
+        resume_wasm_func_call,
+        ExecutionOutcome,
+    },
     state::{Inst, Stack},
 };
 use self::{
