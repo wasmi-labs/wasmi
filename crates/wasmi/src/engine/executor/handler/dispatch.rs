@@ -13,7 +13,9 @@ use crate::{
         ResumableHostTrapError,
         ResumableOutOfFuelError,
     },
+    func::HostFuncEntity,
     ir::{BoundedSlotSpan, OpCode, Slot, SlotSpan},
+    store::{CallHooks, StoreError},
     CallHook,
     Error,
     Instance,
@@ -66,6 +68,7 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
 
 mod state {
     use super::Sp;
+    use crate::func::{FuncInOut, Trampoline};
     use core::marker::PhantomData;
 
     pub type Uninit = PhantomData<marker::Uninit>;
@@ -77,6 +80,19 @@ mod state {
         pub enum Init {}
         pub enum Resumed {}
     }
+
+    pub struct UninitHost<'a> {
+        pub sp: Sp,
+        pub inout: FuncInOut<'a>,
+        pub trampoline: Trampoline,
+    }
+
+    pub struct InitHost<'a> {
+        pub sp: Sp,
+        pub inout: FuncInOut<'a>,
+        pub trampoline: Trampoline,
+    }
+
     pub trait Execute {}
     impl Execute for Init {}
     impl Execute for Resumed {}
@@ -189,6 +205,88 @@ pub fn resume_wasm_func_call<'a, T>(
         instance,
         state: PhantomData,
     })
+}
+
+pub fn init_host_func_call<'a, T>(
+    store: &'a mut Store<T>,
+    stack: &'a mut Stack,
+    func: HostFuncEntity,
+) -> Result<HostFuncCall<'a, T, state::UninitHost<'a>>, Error> {
+    let len_params = func.len_params();
+    let len_results = func.len_results();
+    let trampoline = *func.trampoline();
+    let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), len_params);
+    let (sp, inout) = stack.prepare_host_frame(None, callee_params, len_results)?;
+    Ok(HostFuncCall {
+        store,
+        state: state::UninitHost {
+            sp,
+            inout,
+            trampoline,
+        },
+    })
+}
+
+#[derive(Debug)]
+pub struct HostFuncCall<'a, T, State> {
+    store: &'a mut Store<T>,
+    state: State,
+}
+
+impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
+    pub fn write_params(self, params: impl CallParams) -> HostFuncCall<'a, T, state::InitHost<'a>> {
+        let state::UninitHost {
+            sp,
+            inout,
+            trampoline,
+        } = self.state;
+        let mut param_slot = Slot::from(0);
+        for param_value in params.call_params() {
+            set_value(sp, param_slot, param_value);
+            param_slot = param_slot.next();
+        }
+        HostFuncCall {
+            store: self.store,
+            state: state::InitHost {
+                sp,
+                inout,
+                trampoline,
+            },
+        }
+    }
+}
+
+impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
+    pub fn execute(self) -> Result<HostFuncCall<'a, T, state::Done>, Error> {
+        let state::InitHost {
+            sp,
+            inout,
+            trampoline,
+        } = self.state;
+        let outcome = self
+            .store
+            .prune()
+            .call_host_func(trampoline, None, inout, CallHooks::Ignore);
+        if let Err(error) = outcome {
+            match error {
+                StoreError::External(error) => return Err(error),
+                StoreError::Internal(error) => panic!("internal interpreter error: {error}"),
+            }
+        }
+        Ok(HostFuncCall {
+            store: self.store,
+            state: state::Done { sp },
+        })
+    }
+}
+
+impl<'a, T> HostFuncCall<'a, T, state::Done> {
+    pub fn write_results<R: CallResults>(self, results: R) -> <R as CallResults>::Results {
+        let len_results = results.len_results();
+        let sp = self.state.sp;
+        let slice = unsafe { sp.as_slice(len_results) };
+        results.call_results(slice)
+    }
 }
 
 #[cfg(feature = "trampolines")]

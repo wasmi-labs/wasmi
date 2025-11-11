@@ -2,7 +2,12 @@ pub use self::handler::{op_code_to_handler, Inst, Stack};
 use super::code_map::CodeMap;
 use crate::{
     engine::{
-        executor::handler::{init_wasm_func_call, resume_wasm_func_call, ExecutionOutcome},
+        executor::handler::{
+            init_host_func_call,
+            init_wasm_func_call,
+            resume_wasm_func_call,
+            ExecutionOutcome,
+        },
         CallParams,
         CallResults,
         EngineInner,
@@ -226,12 +231,14 @@ impl<'engine> EngineExecutor<'engine> {
                     init_wasm_func_call(store, self.code_map, self.stack, engine_func, instance)?;
                 call.write_params(params).execute()?.write_results(results)
             }
-            FuncEntity::Host(_host_func) => {
+            FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
                 // adjusting, inspecting and manipulating the value stack.
                 // In case the host function returns more values than it takes
                 // we are required to extend the value stack.
-                todo!()
+                let host_func = *host_func;
+                let call = init_host_func_call(store, self.stack, host_func)?;
+                call.write_params(params).execute()?.write_results(results)
             }
         };
         Ok(results)
