@@ -300,7 +300,7 @@ impl Stack {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
         };
-        let sp = self.values.sp(start);
+        let sp = self.values.sp_or_dangling(start);
         (ip, sp, instance)
     }
 
