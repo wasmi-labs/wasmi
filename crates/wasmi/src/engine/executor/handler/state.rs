@@ -498,9 +498,9 @@ impl ValueStack {
         let Some(callee_end) = callee_start.checked_add(callee_size) else {
             return Err(TrapCode::StackOverflow);
         };
-        self.cells.resize(callee_end, UntypedVal::default());
+        self.grow_if_needed(callee_end)?;
         let caller_sp = self.sp(caller_start);
-        let cells = &mut self.cells[callee_start..];
+        let cells = &mut self.cells[callee_start..callee_end];
         let inout = FuncInOut::new(cells, params_len, results_len);
         let control = match caller {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
@@ -528,27 +528,25 @@ impl ValueStack {
         let Some(callee_end) = callee_start.checked_add(callee_size) else {
             return Err(TrapCode::StackOverflow);
         };
-        self.cells.resize(callee_end, UntypedVal::default());
+        self.grow_if_needed(callee_end)?;
         let sp = self.sp(caller_start);
-        let cells = &mut self.cells[callee_start..];
+        let cells = &mut self.cells[callee_start..callee_end];
         let inout = FuncInOut::new(cells, params_len, results_len);
         Ok((sp, inout))
     }
 
     #[inline(always)]
     fn push(&mut self, start: usize, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
-        debug_assert!(usize::from(len_params) <= len_slots);
+        let len_params = usize::from(len_params);
+        debug_assert!(len_params <= len_slots);
         if len_slots == 0 {
             return Ok(Sp::dangling());
         }
         let Some(end) = start.checked_add(len_slots) else {
             return Err(TrapCode::StackOverflow);
         };
-        if end > self.max_height {
-            return Err(TrapCode::StackOverflow);
-        }
-        self.cells.resize_with(end, UntypedVal::default);
-        let start_locals = start.wrapping_add(usize::from(len_params));
+        self.grow_if_needed(end)?;
+        let start_locals = start.wrapping_add(len_params);
         self.cells[start_locals..end].fill_with(UntypedVal::default);
         let sp = self.sp(start);
         Ok(sp)
@@ -570,20 +568,14 @@ impl ValueStack {
         let Some(end) = start.checked_add(len_slots) else {
             return Err(TrapCode::StackOverflow);
         };
-        if end > self.max_height {
-            return Err(TrapCode::StackOverflow);
-        }
-        let Some(cells) = self.cells.get_mut(start..) else {
+        self.grow_if_needed(end)?;
+        let params_len = usize::from(params_len);
+        let params_end = params_offset.wrapping_add(params_len);
+        let Some(cells) = self.cells.get_mut(start..params_end) else {
             unsafe { unreachable_unchecked!() }
         };
-        let params_end = params_offset.wrapping_add(usize::from(params_len));
         cells.copy_within(params_offset..params_end, 0);
-        self.cells.resize_with(end, UntypedVal::default);
-        let Some(cells) = self.cells.get_mut(start..end) else {
-            unsafe { unreachable_unchecked!() }
-        };
-        let locals_start = start.wrapping_add(usize::from(params_len));
-        cells[locals_start..].fill_with(UntypedVal::default);
+        cells[params_len..].fill_with(UntypedVal::default);
         let sp = self.sp(start);
         Ok(sp)
     }
