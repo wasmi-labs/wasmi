@@ -260,11 +260,11 @@ impl ResumableCallHostTrap {
     /// Creates a new [`ResumableCallHostTrap`].
     pub(super) fn new(
         engine: Engine,
+        stack: Stack,
         func: Func,
         host_func: Func,
         host_error: Error,
         caller_results: SlotSpan,
-        stack: Stack,
     ) -> Self {
         Self {
             common: ResumableCallCommon::new(engine, func, stack),
@@ -391,7 +391,7 @@ pub struct ResumableCallOutOfFuel {
 
 impl ResumableCallOutOfFuel {
     /// Creates a new [`ResumableCallOutOfFuel`].
-    pub(super) fn new(engine: Engine, func: Func, stack: Stack, required_fuel: u64) -> Self {
+    pub(super) fn new(engine: Engine, stack: Stack, func: Func, required_fuel: u64) -> Self {
         Self {
             common: ResumableCallCommon::new(engine, func, stack),
             required_fuel,
