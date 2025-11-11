@@ -381,8 +381,8 @@ pub struct ValueStack {
 
 impl ValueStack {
     fn new(min_height: usize, max_height: usize) -> Self {
-        // We need to convert from `size_of<Cell>`` to `size_of<u8>`:
         debug_assert!(min_height <= max_height);
+        // We need to convert from `size_of<Cell>`` to `size_of<u8>`:
         let sizeof_cell = mem::size_of::<UntypedVal>();
         let min_height = min_height / sizeof_cell;
         let max_height = max_height / sizeof_cell;
