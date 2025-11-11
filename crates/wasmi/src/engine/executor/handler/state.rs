@@ -400,7 +400,6 @@ impl ValueStack {
     }
 
     fn sp(&mut self, start: usize) -> Sp {
-        debug_assert!(!self.cells.is_empty());
         Sp::new(&mut self.cells, start)
     }
 
