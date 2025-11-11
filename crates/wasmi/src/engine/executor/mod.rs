@@ -10,7 +10,6 @@ use crate::{
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
     },
-    func::HostFuncEntity,
     ir::SlotSpan,
     Error,
     Func,
@@ -284,24 +283,5 @@ impl<'engine> EngineExecutor<'engine> {
             .execute()?
             .write_results(results);
         Ok(results)
-    }
-
-    /// Convenience forwarder to dispatch host functions.
-    #[inline(always)]
-    #[expect(dead_code)]
-    fn dispatch_host_func<T>(
-        &mut self,
-        _store: &mut Store<T>,
-        _host_func: HostFuncEntity,
-    ) -> Result<(), Error> {
-        // dispatch_host_func(
-        //     store.prune(),
-        //     &mut self.stack.values,
-        //     host_func,
-        //     None,
-        //     CallHooks::Ignore,
-        // )?;
-        // Ok(())
-        todo!()
     }
 }
