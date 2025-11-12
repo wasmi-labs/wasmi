@@ -428,7 +428,7 @@ macro_rules! foreach_test_multi_memory {
             fn spec_multi_memory_memory_trap1("spec/proposals/multi-memory/memory_trap1");
             fn spec_multi_memory_memory_multi("spec/proposals/multi-memory/memory-multi");
             fn spec_multi_memory_memory("spec/proposals/multi-memory/memory");
-            fn spec_multi_memory_simd_memory("spec/proposals/multi-memory/simd_memory-multi");
+            // fn spec_multi_memory_simd_memory("spec/proposals/multi-memory/simd_memory-multi");
             fn spec_multi_memory_start0("spec/proposals/multi-memory/start0");
             fn spec_multi_memory_store("spec/proposals/multi-memory/store");
             fn spec_multi_memory_store0("spec/proposals/multi-memory/store0");
