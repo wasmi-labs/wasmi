@@ -19,6 +19,7 @@ wast = { workspace = true, features = ["wasm-module"] }
 anyhow = "1.0"
 
 [features]
+default = ["trampolines", "extra-checks"]
 compact = ["wasmi/compact"]
 trampolines = ["wasmi/trampolines"]
 extra-checks = ["wasmi/extra-checks"]
