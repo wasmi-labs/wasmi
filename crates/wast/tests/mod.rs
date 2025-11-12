@@ -205,10 +205,12 @@ macro_rules! foreach_test {
             fn wasmi_i32_sub("wasmi/tests/op/i32-sub");
             fn wasmi_i32_mul("wasmi/tests/op/i32-mul");
             fn wasmi_i32_sdiv("wasmi/tests/op/i32-sdiv");
+            fn wasmi_i32_and("wasmi/tests/op/i32-and");
             fn wasmi_i64_add("wasmi/tests/op/i64-add");
             fn wasmi_i64_sub("wasmi/tests/op/i64-sub");
             fn wasmi_i64_mul("wasmi/tests/op/i64-mul");
             fn wasmi_i64_sdiv("wasmi/tests/op/i64-sdiv");
+            fn wasmi_i64_and("wasmi/tests/op/i64-and");
             // Wasmi: fuse br_if + cmp
             fn wasmi_fuse_br_i32_ge_s("wasmi/tests/fuse-br/i32_ge_s");
             fn wasmi_fuse_br_i32_ge_u("wasmi/tests/fuse-br/i32_ge_u");
