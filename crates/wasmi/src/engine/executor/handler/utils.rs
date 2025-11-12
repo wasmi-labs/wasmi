@@ -197,16 +197,11 @@ pub fn memory_bytes<'a>(
     instance: Inst,
     state: &'a mut VmState,
 ) -> &'a mut [u8] {
-    match memory.is_default() {
-        true => mem0_bytes::<'a>(mem0, mem0_len),
-        false => {
-            let instance = unsafe { instance.as_ref() };
-            let Some(memory) = instance.get_memory(u32::from(u16::from(memory))) else {
-                return &mut [];
-            };
-            resolve_memory_mut(state.store, &memory).data_mut()
-        }
+    if memory.is_default() {
+        return mem0_bytes::<'a>(mem0, mem0_len);
     }
+    let memory = fetch_memory(instance, memory);
+    resolve_memory_mut(state.store, &memory).data_mut()
 }
 
 pub fn memory_slice(memory: &CoreMemory, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
