@@ -77,7 +77,7 @@ pub fn wasmi_i64_rotr_ssi(lhs: i64, rhs: u8) -> i64 {
 }
 
 pub fn wasmi_i32_and(lhs: i32, rhs: i32) -> bool {
-    (rhs != 0) && (lhs != 0)
+    (lhs & rhs) != 0
 }
 
 pub fn wasmi_i32_not_and(lhs: i32, rhs: i32) -> bool {
