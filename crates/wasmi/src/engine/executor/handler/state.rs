@@ -521,9 +521,6 @@ impl ValueStack {
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
         let callee_size = params_len.max(results_len);
-        if callee_size == 0 {
-            return Ok((Sp::dangling(), FuncInOut::new(&mut [], 0, 0)));
-        }
         let Some(callee_start) = caller_start.checked_add(params_offset) else {
             return Err(TrapCode::StackOverflow);
         };
