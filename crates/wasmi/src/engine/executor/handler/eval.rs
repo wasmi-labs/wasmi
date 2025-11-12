@@ -93,7 +93,7 @@ pub fn wasmi_i32_not_or(lhs: i32, rhs: i32) -> bool {
 }
 
 pub fn wasmi_i64_and(lhs: i64, rhs: i64) -> bool {
-    (rhs != 0) && (lhs != 0)
+    (lhs & rhs) != 0
 }
 
 pub fn wasmi_i64_not_and(lhs: i64, rhs: i64) -> bool {
