@@ -222,14 +222,16 @@ pub struct Sp {
 impl Sp {
     pub fn new(cells: &mut Vec<UntypedVal>, start: usize) -> Self {
         debug_assert!(
-            start < cells.len(),
+            // Note: it is fine to use <= here because for zero sized frames
+            //       we sometimes end up with `start == cells.len()` which isn't
+            //       bad since in those cases `Sp` is never used.
+            start <= cells.len(),
             "start = {}, cells.len() = {}",
             start,
             cells.len()
         );
-        Self {
-            value: unsafe { cells.as_mut_ptr().add(start) },
-        }
+        let value = unsafe { cells.as_mut_ptr().add(start) };
+        Self { value }
     }
 
     pub fn dangling() -> Self {
