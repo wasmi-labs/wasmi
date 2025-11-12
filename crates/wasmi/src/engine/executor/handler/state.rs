@@ -554,28 +554,26 @@ impl ValueStack {
     #[inline(always)]
     fn replace(
         &mut self,
-        start: usize,
-        len_slots: usize,
+        callee_start: usize,
+        callee_size: usize,
         callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
-        let params_len = callee_params.len();
-        let params_offset = usize::from(u16::from(callee_params.span().head()));
-        debug_assert!(usize::from(params_len) <= len_slots);
-        if len_slots == 0 {
+        let params_len = usize::from(callee_params.len());
+        let params_start = usize::from(u16::from(callee_params.span().head()));
+        let params_end = params_start.wrapping_add(params_len);
+        if callee_size == 0 {
             return Ok(Sp::dangling());
         }
-        let Some(end) = start.checked_add(len_slots) else {
+        let Some(callee_end) = callee_start.checked_add(callee_size) else {
             return Err(TrapCode::StackOverflow);
         };
-        self.grow_if_needed(end)?;
-        let params_len = usize::from(params_len);
-        let params_end = params_offset.wrapping_add(params_len);
-        let Some(cells) = self.cells.get_mut(start..params_end) else {
-            unsafe { unreachable_unchecked!() }
+        self.grow_if_needed(callee_end)?;
+        let Some(callee_cells) = self.cells.get_mut(callee_start..) else {
+            unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
-        cells.copy_within(params_offset..params_end, 0);
-        cells[params_len..].fill_with(UntypedVal::default);
-        let sp = self.sp(start);
+        callee_cells.copy_within(params_start..params_end, 0);
+        callee_cells[params_len..callee_size].fill_with(UntypedVal::default);
+        let sp = self.sp(callee_start);
         Ok(sp)
     }
 }
