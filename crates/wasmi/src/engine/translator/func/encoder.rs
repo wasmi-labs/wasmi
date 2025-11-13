@@ -750,7 +750,7 @@ impl FuelCostsSelector for FuelUsed {
 
 /// Encodes an [`OpCode`] to a generic [`ir::Encoder`].
 fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: OpCode) -> Result<E::Pos, E::Error> {
-    match cfg!(feature = "compact") {
+    match cfg!(feature = "indirect-dispatch") {
         true => {
             // Note: encoding for indirect-threading
             //
