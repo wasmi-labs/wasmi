@@ -26,7 +26,7 @@ use core::{marker::PhantomData, ops::ControlFlow};
 
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
-    match cfg!(feature = "compact") {
+    match cfg!(feature = "indirect-dispatch") {
         true => {
             let (_, op_code) = unsafe { ip.decode::<OpCode>() };
             op_code_to_handler(op_code)
@@ -289,7 +289,7 @@ impl<'a, T> HostFuncCall<'a, T, state::Done> {
     }
 }
 
-#[cfg(feature = "trampolines")]
+#[cfg(feature = "portable-dispatch")]
 pub fn execute_until_done(
     mut state: VmState,
     mut ip: Ip,
@@ -321,7 +321,7 @@ pub fn execute_until_done(
     state.into_execution_outcome()
 }
 
-#[cfg(not(feature = "trampolines"))]
+#[cfg(not(feature = "portable-dispatch"))]
 pub fn execute_until_done(
     state: VmState,
     ip: Ip,
@@ -380,11 +380,11 @@ impl From<Error> for ExecutionOutcome {
     }
 }
 
-#[cfg(not(feature = "trampolines"))]
+#[cfg(not(feature = "portable-dispatch"))]
 #[derive(Debug)]
 pub enum NextState {}
 
-#[cfg(feature = "trampolines")]
+#[cfg(feature = "portable-dispatch")]
 #[derive(Debug, Copy, Clone)]
 pub struct NextState {
     ip: Ip,
@@ -457,12 +457,12 @@ impl Break {
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
 pub type Done<T = NextState> = Control<T, Break>;
 
-#[cfg(feature = "trampolines")]
+#[cfg(feature = "portable-dispatch")]
 pub trait ControlContinue: Sized {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
 }
 
-#[cfg(feature = "trampolines")]
+#[cfg(feature = "portable-dispatch")]
 impl ControlContinue for Done<NextState> {
     fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self {
         Self::Continue(NextState {
@@ -514,7 +514,7 @@ macro_rules! done {
     }};
 }
 
-#[cfg(not(feature = "trampolines"))]
+#[cfg(not(feature = "portable-dispatch"))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let handler = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
@@ -522,7 +522,7 @@ macro_rules! dispatch {
     }};
 }
 
-#[cfg(feature = "trampolines")]
+#[cfg(feature = "portable-dispatch")]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let _: &mut VmState = $state;
