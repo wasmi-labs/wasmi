@@ -137,6 +137,7 @@ where
 
 pub fn exec_return(
     state: &mut VmState,
+    _ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
@@ -370,6 +371,7 @@ macro_rules! out_of_fuel {
     }};
 }
 
+#[inline(always)]
 pub fn call_wasm(
     state: &mut VmState,
     caller_ip: Ip,

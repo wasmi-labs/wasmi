@@ -518,7 +518,7 @@ macro_rules! done {
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let handler = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
-        return handler($state, $ip, $sp, $mem0, $mem0_len, $instance);
+        become handler($state, $ip, $sp, $mem0, $mem0_len, $instance);
     }};
 }
 

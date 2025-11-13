@@ -69,6 +69,8 @@
 //! | `extra-checks` | `wasmi` | Enables extra runtime checks in the Wasmi executor. Expected execution overhead is ~20%. Enable this if your focus is on safety. Disable this for maximum execution performance. <br><br> Disabled by default. |
 
 #![no_std]
+#![feature(explicit_tail_calls)]
+#![allow(incomplete_features)]
 #![warn(
     clippy::cast_lossless,
     clippy::missing_errors_doc,
