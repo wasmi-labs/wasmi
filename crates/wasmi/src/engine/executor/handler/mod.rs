@@ -6,7 +6,7 @@ mod eval;
 mod exec;
 mod state;
 
-#[cfg(feature = "trampolines")]
+#[cfg(feature = "portable-dispatch")]
 use self::dispatch::ControlContinue;
 pub use self::{
     dispatch::{

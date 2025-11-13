@@ -55,7 +55,7 @@ use crate::{
 use core::cmp;
 
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let ip = match cfg!(feature = "compact") {
+    let ip = match cfg!(feature = "indirect-dispatch") {
         true => unsafe { ip.skip::<ir::OpCode>() },
         false => unsafe { ip.skip::<::core::primitive::usize>() },
     };
