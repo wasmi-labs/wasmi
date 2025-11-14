@@ -1,3 +1,9 @@
+#[cfg(feature = "simd")]
+mod simd;
+
+#[cfg(feature = "simd")]
+pub use self::simd::*;
+
 use super::{
     dispatch::Done,
     eval,
