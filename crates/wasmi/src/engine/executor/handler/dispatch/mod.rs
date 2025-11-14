@@ -1,5 +1,6 @@
 #[cfg_attr(feature = "portable-dispatch", path = "backend/loop.rs")]
 #[cfg_attr(not(feature = "portable-dispatch"), path = "backend/tail.rs")]
+#[macro_use]
 mod backend;
 
 pub use self::backend::execute_until_done;
@@ -182,24 +183,6 @@ impl<T> ControlBreak for Control<T, Break> {
 
 type Handler =
     fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
-
-#[cfg(not(feature = "portable-dispatch"))]
-macro_rules! dispatch {
-    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let handler = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
-        return handler($state, $ip, $sp, $mem0, $mem0_len, $instance);
-    }};
-}
-
-#[cfg(feature = "portable-dispatch")]
-macro_rules! dispatch {
-    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
-        let _: &mut VmState = $state;
-        return <$crate::engine::executor::handler::dispatch::Done as $crate::engine::executor::handler::ControlContinue>::control_continue(
-            $ip, $sp, $mem0, $mem0_len, $instance,
-        );
-    }};
-}
 
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
