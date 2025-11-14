@@ -1,6 +1,6 @@
 use crate::engine::executor::handler::{
-    state::{Mem0Ptr, Mem0Len, Inst, Ip, Sp, VmState},
     dispatch::Done,
+    state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
 };
 
 macro_rules! gen_execution_handler_stubs {
