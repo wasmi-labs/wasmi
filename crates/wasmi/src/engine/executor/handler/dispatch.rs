@@ -489,32 +489,6 @@ impl<T> ControlBreak for Control<T, Break> {
 type Handler =
     fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
 
-macro_rules! compile_or_get_func {
-    ($state:expr, $func:expr) => {{
-        match $crate::engine::executor::handler::utils::compile_or_get_func($state, $func) {
-            Ok((ip, size)) => (ip, size),
-            Err(error) => done!($state, DoneReason::error(error)),
-        }
-    }};
-}
-
-macro_rules! trap {
-    ($trap_code:expr) => {{
-        return $crate::engine::executor::handler::Control::Break(
-            $crate::engine::executor::handler::Break::from($trap_code),
-        );
-    }};
-}
-
-macro_rules! done {
-    ($state:expr, $reason:expr $(,)? ) => {{
-        $state.done_with(move || <_ as ::core::convert::Into<
-            $crate::engine::executor::handler::DoneReason,
-        >>::into($reason));
-        return <$crate::engine::executor::handler::Control<_, Break> as $crate::engine::executor::handler::ControlBreak>::control_break();
-    }};
-}
-
 #[cfg(not(feature = "portable-dispatch"))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
