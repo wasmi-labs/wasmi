@@ -1,14 +1,10 @@
 use crate::engine::executor::handler::{
-    dispatch::{fetch_handler, Control, Break, ExecutionOutcome},
+    dispatch::{fetch_handler, Break, Control, ExecutionOutcome},
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
 };
 
-pub enum NextState {}
-
-#[inline(always)]
-pub fn control_break<T>() -> Control<T> {
-    Control::Break(Break::WithReason)
-}
+pub enum Never {}
+pub type Done = Control<Never, Break>;
 
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
