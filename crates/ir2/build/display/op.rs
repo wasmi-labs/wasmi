@@ -131,7 +131,7 @@ impl Display for DisplayOp<&'_ Isa> {
             {indent}/// \n\
             {indent}/// The expanded code format fed to the `mac` macro is as follows:\n\
             {indent}/// \n\
-            {indent}/// ```\n\
+            {indent}/// ```no-compile\n\
             {indent}/// i32_add_sss => I32Add_Sss,\n\
             {indent}/// i32_add_ssi => I32Add_Ssi,\n\
             {indent}/// i32_sub_sss => I32Sub_Sss,\n\
