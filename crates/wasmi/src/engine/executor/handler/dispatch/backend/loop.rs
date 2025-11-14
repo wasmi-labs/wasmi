@@ -1,5 +1,5 @@
 use crate::engine::executor::handler::{
-    dispatch::{fetch_handler, Done, ExecutionOutcome},
+    dispatch::{fetch_handler, Done, Control, ExecutionOutcome, Break},
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
 };
 
@@ -21,6 +21,11 @@ pub fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instan
         mem0_len,
         instance,
     })
+}
+
+#[inline(always)]
+pub fn control_break<T>() -> Control<T> {
+    Control::Break(Break::WithReason)
 }
 
 macro_rules! dispatch {
