@@ -1,3 +1,8 @@
+#[cfg_attr(feature = "portable-dispatch", path = "backend/loop.rs")]
+#[cfg_attr(not(feature = "portable-dispatch"), path = "backend/tail.rs")]
+mod backend;
+
+pub use self::backend::execute_until_done;
 use super::{
     exec,
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
@@ -27,56 +32,6 @@ pub fn fetch_handler(ip: Ip) -> Handler {
             }
         }
     }
-}
-
-#[cfg(feature = "portable-dispatch")]
-pub fn execute_until_done(
-    mut state: VmState,
-    mut ip: Ip,
-    mut sp: Sp,
-    mut mem0: Mem0Ptr,
-    mut mem0_len: Mem0Len,
-    mut instance: Inst,
-) -> Result<Sp, ExecutionOutcome> {
-    let mut handler = fetch_handler(ip);
-    'exec: loop {
-        match handler(&mut state, ip, sp, mem0, mem0_len, instance) {
-            Done::Continue(next) => {
-                handler = fetch_handler(next.ip);
-                ip = next.ip;
-                sp = next.sp;
-                mem0 = next.mem0;
-                mem0_len = next.mem0_len;
-                instance = next.instance;
-                continue 'exec;
-            }
-            Done::Break(reason) => {
-                if let Some(trap_code) = reason.trap_code() {
-                    return Err(ExecutionOutcome::from(trap_code));
-                }
-                break 'exec;
-            }
-        }
-    }
-    state.into_execution_outcome()
-}
-
-#[cfg(not(feature = "portable-dispatch"))]
-pub fn execute_until_done(
-    state: VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Result<Sp, ExecutionOutcome> {
-    let mut state = state;
-    let handler = fetch_handler(ip);
-    let Control::Break(reason) = handler(&mut state, ip, sp, mem0, mem0_len, instance);
-    if let Some(trap_code) = reason.trap_code() {
-        return Err(ExecutionOutcome::from(trap_code));
-    }
-    state.into_execution_outcome()
 }
 
 #[derive(Debug)]
