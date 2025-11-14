@@ -74,7 +74,7 @@ macro_rules! done {
         $state.done_with(move || <_ as ::core::convert::Into<
             $crate::engine::executor::handler::DoneReason,
         >>::into($reason));
-        return <$crate::engine::executor::handler::Control<_, Break> as $crate::engine::executor::handler::ControlBreak>::control_break();
+        return $crate::engine::executor::handler::dispatch::control_break()
     }};
 }
 

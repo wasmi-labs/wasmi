@@ -3,7 +3,7 @@
 #[macro_use]
 pub mod backend;
 
-pub use self::backend::{execute_until_done, NextState};
+pub use self::backend::{execute_until_done, NextState, control_break};
 use super::{
     exec,
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
@@ -138,16 +138,6 @@ impl Break {
 
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
 pub type Done = Control<NextState, Break>;
-
-pub trait ControlBreak: Sized {
-    fn control_break() -> Self;
-}
-
-impl<T> ControlBreak for Control<T, Break> {
-    fn control_break() -> Self {
-        Self::Break(Break::WithReason)
-    }
-}
 
 type Handler =
     fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
