@@ -71,10 +71,12 @@ macro_rules! trap {
 
 macro_rules! done {
     ($state:expr, $reason:expr $(,)? ) => {{
-        $state.done_with(move || <_ as ::core::convert::Into<
-            $crate::engine::executor::handler::DoneReason,
-        >>::into($reason));
-        return $crate::engine::executor::handler::dispatch::control_break()
+        $state.done_with(move || {
+            <_ as ::core::convert::Into<$crate::engine::executor::handler::DoneReason>>::into(
+                $reason,
+            )
+        });
+        return $crate::engine::executor::handler::dispatch::control_break();
     }};
 }
 
