@@ -3,10 +3,30 @@ use crate::engine::executor::handler::{
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
 };
 
+#[derive(Debug, Copy, Clone)]
+pub struct NextState {
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+}
+
+#[inline(always)]
+pub fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done {
+    Done::Continue(NextState {
+        ip,
+        sp,
+        mem0,
+        mem0_len,
+        instance,
+    })
+}
+
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let _: &mut VmState = $state;
-        return <$crate::engine::executor::handler::dispatch::Done as $crate::engine::executor::handler::ControlContinue>::control_continue(
+        return $crate::engine::executor::handler::dispatch::backend::control_continue(
             $ip, $sp, $mem0, $mem0_len, $instance,
         );
     }};
