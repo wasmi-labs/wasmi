@@ -12,6 +12,7 @@ use crate::build::{
         Field,
         GenericOp,
         LoadOp,
+        Op,
         StoreOp,
         TableGetOp,
         TableSetOp,
@@ -67,6 +68,26 @@ where
     }
 }
 
+pub struct DisplayForEachOpBody<T> {
+    pub value: T,
+    pub indent: Indent,
+}
+
+impl<T> DisplayForEachOpBody<T> {
+    pub fn new(value: T, indent: Indent) -> Self {
+        Self { value, indent }
+    }
+}
+
+impl Display for DisplayForEachOpBody<&'_ Op> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent.inc();
+        let camel_ident = DisplayIdent::camel(self.value);
+        let snake_ident = DisplayIdent::snake(self.value);
+        write!(f, "{indent}{snake_ident} => {camel_ident}")
+    }
+}
+
 impl Display for DisplayOp<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
@@ -76,6 +97,13 @@ impl Display for DisplayOp<&'_ Isa> {
                 .ops
                 .iter()
                 .map(|op| DisplayOp::new(op, indent.inc())),
+        );
+        let for_each_op_body = DisplaySequence::new(
+            ",\n",
+            self.value
+                .ops
+                .iter()
+                .map(|op| DisplayForEachOpBody::new(op, indent.inc())),
         );
         write!(
             f,
@@ -91,6 +119,33 @@ impl Display for DisplayOp<&'_ Isa> {
             {indent}#[derive(Debug)]\n\
             {indent}pub enum Op {{\n\
                         {variants}\n\
+            {indent}}}\n\
+            \n\
+            {indent}/// Expands `mac` using the snake-case and camel-case identifiers of all operators.
+            {indent}/// \n\
+            {indent}/// # Note\n\
+            {indent}/// \n\
+            {indent}/// Simd related operators are only included if the `simd` crate feature is enabled.\n\
+            {indent}/// \n\
+            {indent}/// # Example\n\
+            {indent}/// \n\
+            {indent}/// The expanded code format fed to the `mac` macro is as follows:\n\
+            {indent}/// \n\
+            {indent}/// ```no-compile\n\
+            {indent}/// i32_add_sss => I32Add_Sss,\n\
+            {indent}/// i32_add_ssi => I32Add_Ssi,\n\
+            {indent}/// i32_sub_sss => I32Sub_Sss,\n\
+            {indent}/// i32_sub_ssi => I32Sub_Ssi,\n\
+            {indent}/// i32_sub_sis => I32Sub_Sis,\n\
+            {indent}/// i32_mul_sss => I32Mul_Sss,\n\
+            {indent}/// i32_mul_ssi => I32Mul_Ssi,\n\
+            {indent}/// etc ..\n\
+            {indent}/// ```\n\
+            {indent}#[macro_export]\n\
+            {indent}macro_rules! for_each_op {{\n\
+            {indent}    ($mac:ident) => {{\n\
+                            {for_each_op_body},\n\
+            {indent}    }};\n\
             {indent}}}\n\
         "
         )
