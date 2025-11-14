@@ -181,7 +181,7 @@ pub fn global_set(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
-pub fn global_set_32(
+pub fn global_set32(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -195,7 +195,7 @@ pub fn global_set_32(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
-pub fn global_set_64(
+pub fn global_set64(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -1075,7 +1075,7 @@ handler_unary! {
     fn i32_clz_ss(I32Clz_Ss) = wasm::i32_clz;
     fn i32_sext8_ss(I32Sext8_Ss) = wasm::i32_extend8_s;
     fn i32_sext16_ss(I32Sext16_Ss) = wasm::i32_extend16_s;
-    fn i32_wrap_i64(I32WrapI64_Ss) = wasm::i32_wrap_i64;
+    fn i32_wrap_i64_ss(I32WrapI64_Ss) = wasm::i32_wrap_i64;
     // i64
     fn i64_popcnt_ss(I64Popcnt_Ss) = wasm::i64_popcnt;
     fn i64_ctz_ss(I64Ctz_Ss) = wasm::i64_ctz;
@@ -1108,24 +1108,24 @@ handler_unary! {
     fn f64_convert_u32_ss(F64ConvertU32_Ss) = wasm::f64_convert_i32_u;
     fn f64_convert_i64_ss(F64ConvertI64_Ss) = wasm::f64_convert_i64_s;
     fn f64_convert_u64_ss(F64ConvertU64_Ss) = wasm::f64_convert_i64_u;
-    fn f64_demote_f64_ss(F64PromoteF32_Ss) = wasm::f64_promote_f32;
+    fn f64_promote_f32_ss(F64PromoteF32_Ss) = wasm::f64_promote_f32;
     // f2i conversions
-    fn i32_trunc_f32(I32TruncF32_Ss) = wasm::i32_trunc_f32_s;
-    fn u32_trunc_f32(U32TruncF32_Ss) = wasm::i32_trunc_f32_u;
-    fn i32_trunc_f64(I32TruncF64_Ss) = wasm::i32_trunc_f64_s;
-    fn u32_trunc_f64(U32TruncF64_Ss) = wasm::i32_trunc_f64_u;
-    fn i64_trunc_f32(I64TruncF32_Ss) = wasm::i64_trunc_f32_s;
-    fn u64_trunc_f32(U64TruncF32_Ss) = wasm::i64_trunc_f32_u;
-    fn i64_trunc_f64(I64TruncF64_Ss) = wasm::i64_trunc_f64_s;
-    fn u64_trunc_f64(U64TruncF64_Ss) = wasm::i64_trunc_f64_u;
-    fn i32_trunc_sat_f32(I32TruncSatF32_Ss) = wasm::i32_trunc_sat_f32_s;
-    fn u32_trunc_sat_f32(U32TruncSatF32_Ss) = wasm::i32_trunc_sat_f32_u;
-    fn i32_trunc_sat_f64(I32TruncSatF64_Ss) = wasm::i32_trunc_sat_f64_s;
-    fn u32_trunc_sat_f64(U32TruncSatF64_Ss) = wasm::i32_trunc_sat_f64_u;
-    fn i64_trunc_sat_f32(I64TruncSatF32_Ss) = wasm::i64_trunc_sat_f32_s;
-    fn u64_trunc_sat_f32(U64TruncSatF32_Ss) = wasm::i64_trunc_sat_f32_u;
-    fn i64_trunc_sat_f64(I64TruncSatF64_Ss) = wasm::i64_trunc_sat_f64_s;
-    fn u64_trunc_sat_f64(U64TruncSatF64_Ss) = wasm::i64_trunc_sat_f64_u;
+    fn i32_trunc_f32_ss(I32TruncF32_Ss) = wasm::i32_trunc_f32_s;
+    fn u32_trunc_f32_ss(U32TruncF32_Ss) = wasm::i32_trunc_f32_u;
+    fn i32_trunc_f64_ss(I32TruncF64_Ss) = wasm::i32_trunc_f64_s;
+    fn u32_trunc_f64_ss(U32TruncF64_Ss) = wasm::i32_trunc_f64_u;
+    fn i64_trunc_f32_ss(I64TruncF32_Ss) = wasm::i64_trunc_f32_s;
+    fn u64_trunc_f32_ss(U64TruncF32_Ss) = wasm::i64_trunc_f32_u;
+    fn i64_trunc_f64_ss(I64TruncF64_Ss) = wasm::i64_trunc_f64_s;
+    fn u64_trunc_f64_ss(U64TruncF64_Ss) = wasm::i64_trunc_f64_u;
+    fn i32_trunc_sat_f32_ss(I32TruncSatF32_Ss) = wasm::i32_trunc_sat_f32_s;
+    fn u32_trunc_sat_f32_ss(U32TruncSatF32_Ss) = wasm::i32_trunc_sat_f32_u;
+    fn i32_trunc_sat_f64_ss(I32TruncSatF64_Ss) = wasm::i32_trunc_sat_f64_s;
+    fn u32_trunc_sat_f64_ss(U32TruncSatF64_Ss) = wasm::i32_trunc_sat_f64_u;
+    fn i64_trunc_sat_f32_ss(I64TruncSatF32_Ss) = wasm::i64_trunc_sat_f32_s;
+    fn u64_trunc_sat_f32_ss(U64TruncSatF32_Ss) = wasm::i64_trunc_sat_f32_u;
+    fn i64_trunc_sat_f64_ss(I64TruncSatF64_Ss) = wasm::i64_trunc_sat_f64_s;
+    fn u64_trunc_sat_f64_ss(U64TruncSatF64_Ss) = wasm::i64_trunc_sat_f64_u;
 }
 
 macro_rules! handler_binary {
