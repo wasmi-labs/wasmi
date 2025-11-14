@@ -13,6 +13,6 @@ pub use self::{
     state::{Inst, Stack},
 };
 use self::{
-    dispatch::{Break, Control, ControlBreak, Done},
+    dispatch::{Break, Control, Done},
     state::DoneReason,
 };
