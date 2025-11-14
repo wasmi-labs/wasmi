@@ -144,7 +144,9 @@ impl Display for DisplayOp<&'_ Isa> {
             {indent}#[macro_export]\n\
             {indent}macro_rules! for_each_op {{\n\
             {indent}    ($mac:ident) => {{\n\
-                            {for_each_op_body},\n\
+            {indent}        $mac! {{\n\
+                                {for_each_op_body},\n\
+            {indent}        }}\n\
             {indent}    }};\n\
             {indent}}}\n\
         "
