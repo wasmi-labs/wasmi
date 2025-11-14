@@ -24,6 +24,60 @@ use crate::{
 };
 use core::num::NonZero;
 
+macro_rules! consume_fuel {
+    ($state:expr, $ip:expr, $fuel:expr, $eval:expr) => {{
+        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
+            $fuel.consume_fuel_if($eval)
+        {
+            out_of_fuel!($state, $ip, required_fuel)
+        }
+    }};
+}
+
+macro_rules! out_of_fuel {
+    ($state:expr, $ip:expr, $required_fuel:expr) => {{
+        $state.stack.sync_ip($ip);
+        done!(
+            $state,
+            $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
+        )
+    }};
+}
+
+pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, usize), Error> {
+    let fuel_mut = state.store.inner_mut().fuel_mut();
+    let compiled_func = state.code.get(Some(fuel_mut), func)?;
+    let ip = Ip::from(compiled_func.ops());
+    let size = usize::from(compiled_func.len_stack_slots());
+    Ok((ip, size))
+}
+
+macro_rules! compile_or_get_func {
+    ($state:expr, $func:expr) => {{
+        match $crate::engine::executor::handler::utils::compile_or_get_func($state, $func) {
+            Ok((ip, size)) => (ip, size),
+            Err(error) => done!($state, DoneReason::error(error)),
+        }
+    }};
+}
+
+macro_rules! trap {
+    ($trap_code:expr) => {{
+        return $crate::engine::executor::handler::Control::Break(
+            $crate::engine::executor::handler::Break::from($trap_code),
+        );
+    }};
+}
+
+macro_rules! done {
+    ($state:expr, $reason:expr $(,)? ) => {{
+        $state.done_with(move || <_ as ::core::convert::Into<
+            $crate::engine::executor::handler::DoneReason,
+        >>::into($reason));
+        return <$crate::engine::executor::handler::Control<_, Break> as $crate::engine::executor::handler::ControlBreak>::control_break();
+    }};
+}
+
 pub trait IntoControl {
     type Value;
 
@@ -340,34 +394,6 @@ pub fn update_instance(
     }
     let (mem0, mem0_len) = extract_mem0(store, new_instance);
     (new_instance, mem0, mem0_len)
-}
-
-pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, usize), Error> {
-    let fuel_mut = state.store.inner_mut().fuel_mut();
-    let compiled_func = state.code.get(Some(fuel_mut), func)?;
-    let ip = Ip::from(compiled_func.ops());
-    let size = usize::from(compiled_func.len_stack_slots());
-    Ok((ip, size))
-}
-
-macro_rules! consume_fuel {
-    ($state:expr, $ip:expr, $fuel:expr, $eval:expr) => {{
-        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
-            $fuel.consume_fuel_if($eval)
-        {
-            out_of_fuel!($state, $ip, required_fuel)
-        }
-    }};
-}
-
-macro_rules! out_of_fuel {
-    ($state:expr, $ip:expr, $required_fuel:expr) => {{
-        $state.stack.sync_ip($ip);
-        done!(
-            $state,
-            $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
-        )
-    }};
 }
 
 pub fn call_wasm(
