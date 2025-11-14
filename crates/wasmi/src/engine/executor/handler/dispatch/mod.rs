@@ -3,7 +3,7 @@
 #[macro_use]
 pub mod backend;
 
-pub use self::backend::{execute_until_done, NextState, control_break};
+pub use self::backend::{execute_until_done, Done};
 use super::{
     exec,
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
@@ -16,6 +16,11 @@ use crate::{
     TrapCode,
 };
 use core::ops::ControlFlow;
+
+#[inline(always)]
+pub fn control_break<T>() -> Control<T> {
+    Control::Break(Break::WithReason)
+}
 
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
@@ -137,7 +142,6 @@ impl Break {
 }
 
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
-pub type Done = Control<NextState, Break>;
 
 type Handler =
     fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
