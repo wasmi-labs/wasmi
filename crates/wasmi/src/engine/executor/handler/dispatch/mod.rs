@@ -1,9 +1,9 @@
 #[cfg_attr(feature = "portable-dispatch", path = "backend/loop.rs")]
 #[cfg_attr(not(feature = "portable-dispatch"), path = "backend/tail.rs")]
 #[macro_use]
-mod backend;
+pub mod backend;
 
-pub use self::backend::execute_until_done;
+pub use self::backend::{execute_until_done, NextState};
 use super::{
     exec,
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
@@ -76,20 +76,6 @@ impl From<Error> for ExecutionOutcome {
     }
 }
 
-#[cfg(not(feature = "portable-dispatch"))]
-#[derive(Debug)]
-pub enum NextState {}
-
-#[cfg(feature = "portable-dispatch")]
-#[derive(Debug, Copy, Clone)]
-pub struct NextState {
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-}
-
 #[derive(Debug, Copy, Clone)]
 pub enum Break {
     UnreachableCodeReached = TrapCode::UnreachableCodeReached as _,
@@ -152,24 +138,6 @@ impl Break {
 
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
 pub type Done = Control<NextState, Break>;
-
-#[cfg(feature = "portable-dispatch")]
-pub trait ControlContinue: Sized {
-    fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self;
-}
-
-#[cfg(feature = "portable-dispatch")]
-impl ControlContinue for Done {
-    fn control_continue(ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Self {
-        Self::Continue(NextState {
-            ip,
-            sp,
-            mem0,
-            mem0_len,
-            instance,
-        })
-    }
-}
 
 pub trait ControlBreak: Sized {
     fn control_break() -> Self;

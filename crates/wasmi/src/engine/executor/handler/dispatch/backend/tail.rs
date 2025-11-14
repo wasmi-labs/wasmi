@@ -3,6 +3,8 @@ use crate::engine::executor::handler::{
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
 };
 
+pub enum NextState {}
+
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let handler = $crate::engine::executor::handler::dispatch::fetch_handler($ip);
