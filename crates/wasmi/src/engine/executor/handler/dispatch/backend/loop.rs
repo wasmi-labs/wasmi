@@ -3,6 +3,15 @@ use crate::engine::executor::handler::{
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
 };
 
+macro_rules! dispatch {
+    ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
+        let _: &mut VmState = $state;
+        return <$crate::engine::executor::handler::dispatch::Done as $crate::engine::executor::handler::ControlContinue>::control_continue(
+            $ip, $sp, $mem0, $mem0_len, $instance,
+        );
+    }};
+}
+
 pub fn execute_until_done(
     mut state: VmState,
     mut ip: Ip,
