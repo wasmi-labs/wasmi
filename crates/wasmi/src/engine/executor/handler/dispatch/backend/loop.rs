@@ -63,38 +63,57 @@ pub struct Executor {
 }
 
 #[cfg(feature = "indirect-dispatch")]
-macro_rules! impl_dispatch_handler {
+macro_rules! impl_execute_until_break {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         #[inline(always)]
-        fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
-            let op_code = super::decode_op_code(self.ip);
-            match op_code {
-                $( OpCode::$camel_case => self.$snake_case(state), )*
+        fn execute_until_break(&mut self, state: &mut VmState) -> Break {
+            let mut op_code = super::decode_op_code(self.ip);
+            loop {
+                op_code = 'next: {
+                    match op_code {
+                        $(
+                            OpCode::$camel_case => {
+                                if let Control::Break(reason) = self.$snake_case(state) {
+                                    return reason
+                                }
+                                op_code = super::decode_op_code(self.ip);
+                                break 'next op_code
+                            },
+                        )*
+                    }
+                }
             }
         }
     };
 }
 #[cfg(feature = "indirect-dispatch")]
 impl Executor {
-    ir::for_each_op!(impl_dispatch_handler);
+    ir::for_each_op!(impl_execute_until_break);
 }
 
+#[cfg(not(feature = "indirect-dispatch"))]
 impl Executor {
-    #[inline(never)]
-    fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
+    fn execute_until_break(&mut self, state: &mut VmState) -> Break {
         'next: loop {
             if let Control::Break(reason) = self.dispatch_handler(state) {
-                return self.handle_break(state, reason);
+                return reason;
             }
             continue 'next;
         }
     }
 
-    #[cfg(not(feature = "indirect-dispatch"))]
     #[inline]
     fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
         let handler = super::decode_handler(self.ip);
         handler(self, state)
+    }
+}
+
+impl Executor {
+    #[inline(never)]
+    fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
+        let reason = self.execute_until_break(state);
+        self.handle_break(state, reason)
     }
 
     #[cold]
