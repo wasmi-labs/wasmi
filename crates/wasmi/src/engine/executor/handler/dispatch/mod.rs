@@ -3,14 +3,10 @@
 #[macro_use]
 pub mod backend;
 
-pub use self::backend::{execute_until_done, Done};
-use super::{
-    exec,
-    state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
-};
+pub use self::backend::{execute_until_done, op_code_to_handler, Done, Handler};
+use super::state::Ip;
 use crate::{
     engine::{ResumableHostTrapError, ResumableOutOfFuelError},
-    ir,
     ir::OpCode,
     Error,
     TrapCode,
@@ -142,18 +138,3 @@ impl Break {
 }
 
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
-
-type Handler =
-    fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
-
-macro_rules! expand_op_code_to_handler {
-    ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
-        #[inline(always)]
-        pub fn op_code_to_handler(code: OpCode) -> Handler {
-            match code {
-                $( OpCode::$camel_case => exec::$snake_case, )*
-            }
-        }
-    };
-}
-ir::for_each_op!(expand_op_code_to_handler);
