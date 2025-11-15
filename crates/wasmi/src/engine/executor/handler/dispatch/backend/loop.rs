@@ -62,35 +62,6 @@ pub struct Executor {
     instance: Inst,
 }
 
-#[cfg(feature = "indirect-dispatch")]
-macro_rules! impl_execute_until_break {
-    ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
-        #[inline(always)]
-        fn execute_until_break(&mut self, state: &mut VmState) -> Break {
-            let mut op_code = super::decode_op_code(self.ip);
-            loop {
-                op_code = 'next: {
-                    match op_code {
-                        $(
-                            OpCode::$camel_case => {
-                                if let Control::Break(reason) = self.$snake_case(state) {
-                                    return reason
-                                }
-                                op_code = super::decode_op_code(self.ip);
-                                break 'next op_code
-                            },
-                        )*
-                    }
-                }
-            }
-        }
-    };
-}
-#[cfg(feature = "indirect-dispatch")]
-impl Executor {
-    ir::for_each_op!(impl_execute_until_break);
-}
-
 #[cfg(not(feature = "indirect-dispatch"))]
 impl Executor {
     fn execute_until_break(&mut self, state: &mut VmState) -> Break {
@@ -129,6 +100,34 @@ impl Executor {
     #[inline]
     fn forward_break(reason: Break) -> Control<(), Break> {
         Control::Break(reason)
+    }
+}
+
+#[cfg(feature = "indirect-dispatch")]
+impl Executor {
+    #[inline(always)]
+    fn execute_until_break(&mut self, state: &mut VmState) -> Break {
+        macro_rules! impl_body {
+            ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
+                let mut op_code = super::decode_op_code(self.ip);
+                loop {
+                    op_code = 'next: {
+                        match op_code {
+                            $(
+                                OpCode::$camel_case => {
+                                    if let Control::Break(reason) = self.$snake_case(state) {
+                                        return reason
+                                    }
+                                    op_code = super::decode_op_code(self.ip);
+                                    break 'next op_code
+                                },
+                            )*
+                        }
+                    }
+                }
+            };
+        }
+        ir::for_each_op! { impl_body }
     }
 }
 
