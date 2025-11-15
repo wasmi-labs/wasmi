@@ -102,9 +102,9 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
     fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
         let store = self.store.prune();
         let (mem0, mem0_len) = utils::extract_mem0(store, self.instance);
-        let state = VmState::new(store, self.stack, self.code);
+        let mut state = VmState::new(store, self.stack, self.code);
         execute_until_done(
-            state,
+            &mut state,
             self.callee_ip,
             self.callee_sp,
             mem0,
