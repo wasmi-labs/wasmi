@@ -67,17 +67,15 @@ impl<'vm> VmState<'vm> {
         self.done_reason = Some(reason());
     }
 
-    pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
-        let Some(reason) = self.done_reason else {
+    pub fn take_done_reason(&mut self) -> DoneReason {
+        let Some(reason) = self.done_reason.take() else {
             panic!("missing break reason")
         };
-        let outcome = match reason {
-            DoneReason::Return(sp) => return Ok(sp),
-            DoneReason::Host(error) => error.into(),
-            DoneReason::OutOfFuel(error) => error.into(),
-            DoneReason::Error(error) => error.into(),
-        };
-        Err(outcome)
+        reason
+    }
+
+    pub fn execution_outcome(&mut self) -> Result<Sp, ExecutionOutcome> {
+        self.take_done_reason().into_execution_outcome()
     }
 }
 
@@ -110,6 +108,17 @@ impl DoneReason {
     #[inline]
     pub fn out_of_fuel(required_fuel: u64) -> Self {
         Self::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
+    }
+
+    #[inline]
+    pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
+        let outcome = match self {
+            DoneReason::Return(sp) => return Ok(sp),
+            DoneReason::Host(error) => error.into(),
+            DoneReason::OutOfFuel(error) => error.into(),
+            DoneReason::Error(error) => error.into(),
+        };
+        Err(outcome)
     }
 }
 

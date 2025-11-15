@@ -14,7 +14,7 @@ macro_rules! dispatch {
 }
 
 pub fn execute_until_done(
-    state: VmState,
+    state: &mut VmState,
     ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
@@ -27,5 +27,5 @@ pub fn execute_until_done(
     if let Some(trap_code) = reason.trap_code() {
         return Err(ExecutionOutcome::from(trap_code));
     }
-    state.into_execution_outcome()
+    state.execution_outcome()
 }
