@@ -63,6 +63,7 @@ pub struct Executor {
 }
 
 impl Executor {
+    #[inline(never)]
     fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
         'next: loop {
             let handler = fetch_handler(self.ip);
