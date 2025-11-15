@@ -1,6 +1,6 @@
 use crate::{
     engine::executor::handler::{
-        dispatch::{fetch_handler, Break, Control, ExecutionOutcome},
+        dispatch::{Break, Control, ExecutionOutcome},
         exec,
         state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     },
@@ -62,6 +62,23 @@ pub struct Executor {
     instance: Inst,
 }
 
+#[cfg(feature = "indirect-dispatch")]
+macro_rules! impl_dispatch_handler {
+    ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
+        #[inline(always)]
+        fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
+            let op_code = super::decode_op_code(self.ip);
+            match op_code {
+                $( OpCode::$camel_case => self.$snake_case(state), )*
+            }
+        }
+    };
+}
+#[cfg(feature = "indirect-dispatch")]
+impl Executor {
+    ir::for_each_op!(impl_dispatch_handler);
+}
+
 impl Executor {
     #[inline(never)]
     fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
@@ -73,9 +90,10 @@ impl Executor {
         }
     }
 
+    #[cfg(not(feature = "indirect-dispatch"))]
     #[inline]
     fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
-        let handler = fetch_handler(self.ip);
+        let handler = super::decode_handler(self.ip);
         handler(self, state)
     }
 
@@ -98,9 +116,9 @@ impl Executor {
 macro_rules! impl_executor_handlers {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         $(
-            #[cfg_attr(feature = "indirect-dispatch", inline(never))]
+            #[cfg_attr(feature = "indirect-dispatch", inline(always))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
-            pub fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
+            fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
                 match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance) {
                     Done::Continue(NextState { ip, sp, mem0, mem0_len, instance }) => {
                         self.ip = ip;
