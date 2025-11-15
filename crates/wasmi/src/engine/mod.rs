@@ -13,7 +13,7 @@ mod utils;
 
 pub(crate) use self::{
     block_type::BlockType,
-    executor::Stack,
+    executor::{Inst, Stack},
     func_types::DedupFuncType,
     translator::{
         FuncTranslationDriver,
@@ -37,7 +37,6 @@ pub use self::{
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
-        ResumableError,
         ResumableHostTrapError,
         ResumableOutOfFuelError,
         TypedResumableCall,
@@ -49,7 +48,6 @@ pub use self::{
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
-    func::FuncInOut,
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,
@@ -517,6 +515,9 @@ pub struct EngineStacks {
     /// The stack configuration.
     config: StackConfig,
 }
+
+unsafe impl Send for EngineStacks {} // TODO: write safety docs
+unsafe impl Sync for EngineStacks {} // TODO: write safety docs
 
 impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackConfig`].

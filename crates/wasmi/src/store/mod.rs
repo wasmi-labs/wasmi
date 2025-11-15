@@ -14,10 +14,10 @@ pub use self::{
 use crate::{
     collections::arena::Arena,
     core::{CoreMemory, ResourceLimiterRef},
-    func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
+    engine::Inst,
+    func::{FuncInOut, Trampoline, TrampolineEntity, TrampolineIdx},
     Engine,
     Error,
-    Instance,
     Memory,
     ResourceLimiter,
 };
@@ -101,18 +101,18 @@ impl<T> Store<T> {
         self.typed.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    /// Calls the host function with the `params` and `results` on `instance`.
     ///
     /// # Errors
     ///
     /// If the called host function returned an error.
     fn call_host_func(
         &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
+        trampoline: Trampoline,
+        instance: Option<Inst>,
         params_results: FuncInOut,
     ) -> Result<(), StoreError<Error>> {
-        let trampoline = self.resolve_trampoline(func.trampoline())?.clone();
+        let trampoline = self.resolve_trampoline(&trampoline)?.clone();
         trampoline
             .call(self, instance, params_results)
             .map_err(StoreError::external)?;

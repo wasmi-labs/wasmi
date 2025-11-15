@@ -17,3 +17,9 @@ exclude.workspace = true
 wasmi = { workspace = true, features = ["std", "simd"] }
 wast = { workspace = true, features = ["wasm-module"] }
 anyhow = "1.0"
+
+[features]
+default = ["portable-dispatch", "extra-checks"]
+portable-dispatch = ["wasmi/portable-dispatch"]
+indirect-dispatch = ["wasmi/indirect-dispatch"]
+extra-checks = ["wasmi/extra-checks"]
