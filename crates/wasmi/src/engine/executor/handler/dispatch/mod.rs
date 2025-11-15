@@ -7,7 +7,6 @@ pub use self::backend::{execute_until_done, op_code_to_handler, Done, Handler};
 use super::state::Ip;
 use crate::{
     engine::{ResumableHostTrapError, ResumableOutOfFuelError},
-    ir::OpCode,
     Error,
     TrapCode,
 };
@@ -18,22 +17,19 @@ pub fn control_break<T>() -> Control<T> {
     Control::Break(Break::WithReason)
 }
 
+#[allow(unused)]
 #[inline(always)]
-pub fn fetch_handler(ip: Ip) -> Handler {
-    match cfg!(feature = "indirect-dispatch") {
-        true => {
-            let (_, op_code) = unsafe { ip.decode::<OpCode>() };
-            op_code_to_handler(op_code)
-        }
-        false => {
-            let (_, addr) = unsafe { ip.decode::<usize>() };
-            unsafe {
-                ::core::mem::transmute::<*const (), Handler>(::core::ptr::with_exposed_provenance(
-                    addr,
-                ))
-            }
-        }
-    }
+fn decode_op_code(ip: Ip) -> crate::ir::OpCode {
+    let (_, op_code) = unsafe { ip.decode::<crate::ir::OpCode>() };
+    op_code
+}
+
+#[allow(unused)]
+#[inline(always)]
+fn decode_handler(ip: Ip) -> Handler {
+    use core::{mem, ptr};
+    let (_, addr) = unsafe { ip.decode::<usize>() };
+    unsafe { mem::transmute::<*const (), Handler>(ptr::with_exposed_provenance(addr)) }
 }
 
 #[derive(Debug)]
