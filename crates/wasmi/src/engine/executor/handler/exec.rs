@@ -72,6 +72,7 @@ fn identity<T>(value: T) -> T {
     value
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn trap(
     _state: &mut VmState,
     ip: Ip,
@@ -84,6 +85,7 @@ pub fn trap(
     trap!(trap_code)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn consume_fuel(
     state: &mut VmState,
     ip: Ip,
@@ -104,6 +106,7 @@ pub fn consume_fuel(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn copy_span_asc(
     state: &mut VmState,
     ip: Ip,
@@ -124,6 +127,7 @@ pub fn copy_span_asc(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn copy_span_des(
     state: &mut VmState,
     ip: Ip,
@@ -144,6 +148,7 @@ pub fn copy_span_des(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn branch(
     state: &mut VmState,
     ip: Ip,
@@ -157,6 +162,7 @@ pub fn branch(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn global_get(
     state: &mut VmState,
     ip: Ip,
@@ -173,6 +179,7 @@ pub fn global_get(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn global_set(
     state: &mut VmState,
     ip: Ip,
@@ -187,6 +194,7 @@ pub fn global_set(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn global_set32(
     state: &mut VmState,
     ip: Ip,
@@ -201,6 +209,7 @@ pub fn global_set32(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn global_set64(
     state: &mut VmState,
     ip: Ip,
@@ -215,6 +224,7 @@ pub fn global_set64(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn call_internal(
     state: &mut VmState,
     ip: Ip,
@@ -229,6 +239,7 @@ pub fn call_internal(
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn call_imported(
     state: &mut VmState,
     ip: Ip,
@@ -244,6 +255,7 @@ pub fn call_imported(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn call_indirect(
     state: &mut VmState,
     ip: Ip,
@@ -268,6 +280,7 @@ pub fn call_indirect(
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn return_call_internal(
     state: &mut VmState,
     ip: Ip,
@@ -282,6 +295,7 @@ pub fn return_call_internal(
     dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn return_call_imported(
     state: &mut VmState,
     ip: Ip,
@@ -312,6 +326,7 @@ pub fn return_call_imported(
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn return_call_indirect(
     state: &mut VmState,
     ip: Ip,
@@ -351,6 +366,7 @@ pub fn return_call_indirect(
     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn r#return(
     state: &mut VmState,
     _ip: Ip,
@@ -362,6 +378,7 @@ pub fn r#return(
     exec_return(state, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn return_span(
     state: &mut VmState,
     ip: Ip,
@@ -381,7 +398,8 @@ pub fn return_span(
 macro_rules! handler_return {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            pub fn $handler(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
                 sp: Sp,
@@ -403,6 +421,7 @@ handler_return! {
     fn return64(Return64) = identity::<u64>;
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn memory_size(
     state: &mut VmState,
     ip: Ip,
@@ -418,6 +437,7 @@ pub fn memory_size(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn memory_grow(
     state: &mut VmState,
     ip: Ip,
@@ -478,6 +498,7 @@ pub fn memory_grow(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn memory_copy(
     state: &mut VmState,
     ip: Ip,
@@ -549,6 +570,7 @@ fn memory_copy_within(
     Control::Continue(())
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn memory_fill(
     state: &mut VmState,
     ip: Ip,
@@ -584,6 +606,7 @@ pub fn memory_fill(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn memory_init(
     state: &mut VmState,
     ip: Ip,
@@ -632,6 +655,7 @@ pub fn memory_init(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn data_drop(
     state: &mut VmState,
     ip: Ip,
@@ -646,6 +670,7 @@ pub fn data_drop(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn table_size(
     state: &mut VmState,
     ip: Ip,
@@ -661,6 +686,7 @@ pub fn table_size(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn table_grow(
     state: &mut VmState,
     ip: Ip,
@@ -710,6 +736,7 @@ pub fn table_grow(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn table_copy(
     state: &mut VmState,
     ip: Ip,
@@ -769,6 +796,7 @@ pub fn table_copy(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn table_fill(
     state: &mut VmState,
     ip: Ip,
@@ -805,6 +833,7 @@ pub fn table_fill(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn table_init(
     state: &mut VmState,
     ip: Ip,
@@ -846,6 +875,7 @@ pub fn table_init(
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn elem_drop(
     state: &mut VmState,
     ip: Ip,
@@ -863,6 +893,7 @@ pub fn elem_drop(
 macro_rules! impl_table_get {
     ( $( fn $handler:ident($op:ident) = $ext:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -893,6 +924,7 @@ impl_table_get! {
 macro_rules! impl_table_set {
     ( $( fn $handler:ident($op:ident) = $ext:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -921,6 +953,7 @@ impl_table_set! {
     fn table_set_ii(TableSet_Ii) = u64::from;
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn ref_func(
     state: &mut VmState,
     ip: Ip,
@@ -941,6 +974,7 @@ macro_rules! impl_i64_binop128 {
         $( fn $handler:ident($op:ident) = $eval:expr );* $(;)?
     ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -973,6 +1007,7 @@ macro_rules! impl_i64_mul_wide {
         $( fn $handler:ident($op:ident) = $eval:expr );* $(;)?
     ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1005,6 +1040,7 @@ fn fetch_branch_table_target(sp: Sp, index: Slot, len_targets: u32) -> usize {
     cmp::min(index, max_index) as usize
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn branch_table(
     state: &mut VmState,
     ip: Ip,
@@ -1022,6 +1058,7 @@ pub fn branch_table(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
 pub fn branch_table_span(
     state: &mut VmState,
     ip: Ip,
@@ -1053,6 +1090,7 @@ pub fn branch_table_span(
 macro_rules! handler_unary {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1137,6 +1175,7 @@ handler_unary! {
 macro_rules! handler_binary {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1379,6 +1418,7 @@ handler_binary! {
 macro_rules! handler_cmp_branch {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1489,6 +1529,7 @@ handler_cmp_branch! {
 macro_rules! handler_select {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1574,6 +1615,7 @@ handler_select! {
 macro_rules! handler_load_ss {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1619,6 +1661,7 @@ handler_load_ss! {
 macro_rules! handler_load_si {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1662,6 +1705,7 @@ handler_load_si! {
 macro_rules! handler_load_mem0_offset16_ss {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1706,6 +1750,7 @@ handler_load_mem0_offset16_ss! {
 macro_rules! handler_store_sx {
     ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1753,6 +1798,7 @@ handler_store_sx! {
 macro_rules! handler_store_ix {
     ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
@@ -1798,6 +1844,7 @@ handler_store_ix! {
 macro_rules! handler_store_mem0_offset16_sx {
     ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
                 state: &mut VmState,
                 ip: Ip,
