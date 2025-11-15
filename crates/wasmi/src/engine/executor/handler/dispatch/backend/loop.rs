@@ -53,6 +53,24 @@ macro_rules! expand_op_code_to_handler {
 }
 ir::for_each_op!(expand_op_code_to_handler);
 
+pub fn execute_until_done(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Result<Sp, ExecutionOutcome> {
+    let mut executor = Executor {
+        ip,
+        sp,
+        mem0,
+        mem0_len,
+        instance,
+    };
+    executor.execute_until_done(state)
+}
+
 #[derive(Debug)]
 pub struct Executor {
     ip: Ip,
@@ -60,24 +78,6 @@ pub struct Executor {
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
-}
-
-#[cfg(not(feature = "indirect-dispatch"))]
-impl Executor {
-    fn execute_until_break(&mut self, state: &mut VmState) -> Break {
-        'next: loop {
-            if let Control::Break(reason) = self.dispatch_handler(state) {
-                return reason;
-            }
-            continue 'next;
-        }
-    }
-
-    #[inline]
-    fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
-        let handler = super::decode_handler(self.ip);
-        handler(self, state)
-    }
 }
 
 impl Executor {
@@ -131,6 +131,24 @@ impl Executor {
     }
 }
 
+#[cfg(not(feature = "indirect-dispatch"))]
+impl Executor {
+    fn execute_until_break(&mut self, state: &mut VmState) -> Break {
+        'next: loop {
+            if let Control::Break(reason) = self.dispatch_handler(state) {
+                return reason;
+            }
+            continue 'next;
+        }
+    }
+
+    #[inline]
+    fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
+        let handler = super::decode_handler(self.ip);
+        handler(self, state)
+    }
+}
+
 macro_rules! impl_executor_handlers {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         $(
@@ -154,22 +172,4 @@ macro_rules! impl_executor_handlers {
 }
 impl Executor {
     ir::for_each_op!(impl_executor_handlers);
-}
-
-pub fn execute_until_done(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Result<Sp, ExecutionOutcome> {
-    let mut executor = Executor {
-        ip,
-        sp,
-        mem0,
-        mem0_len,
-        instance,
-    };
-    executor.execute_until_done(state)
 }
