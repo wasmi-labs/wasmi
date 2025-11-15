@@ -1,6 +1,11 @@
-use crate::engine::executor::handler::{
-    dispatch::{fetch_handler, Control, ExecutionOutcome, Break},
-    state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+use crate::{
+    engine::executor::handler::{
+        dispatch::{fetch_handler, Break, Control, ExecutionOutcome},
+        exec,
+        state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+    },
+    ir,
+    ir::OpCode,
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -34,33 +39,93 @@ macro_rules! dispatch {
     }};
 }
 
-pub fn execute_until_done(
-    mut state: VmState,
-    mut ip: Ip,
-    mut sp: Sp,
-    mut mem0: Mem0Ptr,
-    mut mem0_len: Mem0Len,
-    mut instance: Inst,
-) -> Result<Sp, ExecutionOutcome> {
-    let mut handler = fetch_handler(ip);
-    'exec: loop {
-        match handler(&mut state, ip, sp, mem0, mem0_len, instance) {
-            Done::Continue(next) => {
-                handler = fetch_handler(next.ip);
-                ip = next.ip;
-                sp = next.sp;
-                mem0 = next.mem0;
-                mem0_len = next.mem0_len;
-                instance = next.instance;
-                continue 'exec;
-            }
-            Done::Break(reason) => {
-                if let Some(trap_code) = reason.trap_code() {
-                    return Err(ExecutionOutcome::from(trap_code));
-                }
-                break 'exec;
+pub type Handler = fn(&mut Executor, state: &mut VmState) -> Control<(), Break>;
+
+macro_rules! expand_op_code_to_handler {
+    ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
+        #[inline(always)]
+        pub fn op_code_to_handler(code: OpCode) -> Handler {
+            match code {
+                $( OpCode::$camel_case => Executor::$snake_case, )*
             }
         }
+    };
+}
+ir::for_each_op!(expand_op_code_to_handler);
+
+#[derive(Debug)]
+pub struct Executor {
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+}
+
+impl Executor {
+    #[cold]
+    fn handle_break(&mut self, state: &mut VmState, reason: Break) -> Result<Sp, ExecutionOutcome> {
+        if let Some(trap_code) = reason.trap_code() {
+            return Err(ExecutionOutcome::from(trap_code));
+        }
+        state.execution_outcome()
     }
-    state.into_execution_outcome()
+
+    #[cold]
+    #[inline]
+    fn forward_break(reason: Break) -> Control<(), Break> {
+        Control::Break(reason)
+    }
+}
+
+macro_rules! impl_executor_handlers {
+    ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
+        $(
+            #[cfg_attr(feature = "indirect-dispatch", inline(never))]
+            #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
+            pub fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
+                match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance) {
+                    Done::Continue(NextState { ip, sp, mem0, mem0_len, instance }) => {
+                        self.ip = ip;
+                        self.sp = sp;
+                        self.mem0 = mem0;
+                        self.mem0_len = mem0_len;
+                        self.instance = instance;
+                        Control::Continue(())
+                    }
+                    Done::Break(reason) => Self::forward_break(reason),
+                }
+            }
+        )*
+    };
+}
+impl Executor {
+    ir::for_each_op!(impl_executor_handlers);
+}
+
+pub fn execute_until_done(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Result<Sp, ExecutionOutcome> {
+    let mut executor = Executor {
+        ip,
+        sp,
+        mem0,
+        mem0_len,
+        instance,
+    };
+    let mut handler = fetch_handler(ip);
+    'next: loop {
+        match handler(&mut executor, state) {
+            Control::Continue(_) => {
+                handler = fetch_handler(executor.ip);
+                continue 'next;
+            }
+            Control::Break(reason) => return executor.handle_break(state, reason),
+        }
+    }
 }
