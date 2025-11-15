@@ -66,15 +66,21 @@ impl Executor {
     #[inline(never)]
     fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
         'next: loop {
-            let handler = fetch_handler(self.ip);
-            if let Control::Break(reason) = handler(self, state) {
+            if let Control::Break(reason) = self.dispatch_handler(state) {
                 return self.handle_break(state, reason);
             }
             continue 'next;
         }
     }
 
+    #[inline]
+    fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
+        let handler = fetch_handler(self.ip);
+        handler(self, state)
+    }
+
     #[cold]
+    #[inline(never)]
     fn handle_break(&mut self, state: &mut VmState, reason: Break) -> Result<Sp, ExecutionOutcome> {
         if let Some(trap_code) = reason.trap_code() {
             return Err(ExecutionOutcome::from(trap_code));
