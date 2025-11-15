@@ -63,6 +63,16 @@ pub struct Executor {
 }
 
 impl Executor {
+    fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
+        'next: loop {
+            let handler = fetch_handler(self.ip);
+            if let Control::Break(reason) = handler(self, state) {
+                return self.handle_break(state, reason);
+            }
+            continue 'next;
+        }
+    }
+
     #[cold]
     fn handle_break(&mut self, state: &mut VmState, reason: Break) -> Result<Sp, ExecutionOutcome> {
         if let Some(trap_code) = reason.trap_code() {
@@ -118,14 +128,5 @@ pub fn execute_until_done(
         mem0_len,
         instance,
     };
-    let mut handler = fetch_handler(ip);
-    'next: loop {
-        match handler(&mut executor, state) {
-            Control::Continue(_) => {
-                handler = fetch_handler(executor.ip);
-                continue 'next;
-            }
-            Control::Break(reason) => return executor.handle_break(state, reason),
-        }
-    }
+    executor.execute_until_done(state)
 }
