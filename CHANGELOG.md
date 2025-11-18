@@ -8,6 +8,18 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `0.51.2` - 2025-11-18
+
+### Fixed
+
+- Fixed a bug that caused miscalculation of function frame sizes. [#1699]
+  - This only affected Wasm modules with very large functions with well over 30k instructions.
+  - This bug was introduced in Wasmi v0.49.0.
+- Fixed a bug that may cause incorrect fuel consumption for some `bulk-memory` table instructions. [#1690]
+
+[#1699]: https://github.com/wasmi-labs/wasmi/pull/1699
+[#1690]: https://github.com/wasmi-labs/wasmi/pull/1690
+
 ## `0.51.1` - 2025-08-25
 
 ### Fixed
