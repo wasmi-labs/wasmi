@@ -9,3 +9,4 @@ mod host_calls_wasm;
 mod instantitation;
 mod resource_limiter;
 mod resumable_call;
+mod regression;

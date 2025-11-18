@@ -374,7 +374,12 @@ impl FrameParams {
 
     /// Zero-initialize the remaining locals and parameters.
     pub fn init_zeroes(mut self) {
-        debug_assert!(self.range.start <= self.range.end);
+        debug_assert!(
+            self.range.start <= self.range.end,
+            "failed to zero-initialize `FrameParams`: start = {:?}, end = {:?}",
+            self.range.start,
+            self.range.end,
+        );
         while !core::ptr::eq(self.range.start, self.range.end) {
             // Safety: We do not write out-of-buffer due to the above condition.
             unsafe { self.init_next(UntypedVal::from(0_u64)) }
