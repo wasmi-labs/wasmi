@@ -8,7 +8,7 @@ jobs:
     name: Miri
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
         - uses: dtolnay/rust-toolchain@nightly
           with:
             components: miri
