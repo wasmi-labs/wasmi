@@ -9,6 +9,32 @@ use crate::{
     V128,
 };
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn copy128(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::Copy128 {
+            result,
+            value_lo,
+            value_hi,
+        },
+    ) = unsafe { decode_op(ip) };
+    let value_lo = get_value(value_lo, sp);
+    let value_hi = get_value(value_hi, sp);
+    let result_lo = result;
+    let result_hi = result.next();
+    set_value(sp, result_lo, value_lo);
+    set_value(sp, result_hi, value_hi);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
 macro_rules! impl_splat_bytes {
     ( $(fn $name:ident(value: $ty:ty) -> V128 = $signed:expr; )* ) => {
         $(
@@ -247,7 +273,6 @@ macro_rules! gen_execution_handler_stubs {
     };
 }
 gen_execution_handler_stubs! {
-    copy128,
     i8x16_shuffle,
     s8x16_extract_lane,
     u8x16_extract_lane,
