@@ -34,6 +34,66 @@ handler_unary! {
     fn v128_splat32_si(V128Splat32_Si) = splat32;
     fn v128_splat64_ss(V128Splat64_Ss) = splat64;
     fn v128_splat64_si(V128Splat64_Si) = splat64;
+
+    fn v128_not_ss(V128Not_Ss) = simd::v128_not;
+    fn v128_any_true_ss(V128AnyTrue_Ss) = simd::v128_any_true;
+    fn i8x16_abs_ss(I8x16Abs_Ss) = simd::i8x16_abs;
+    fn i8x16_neg_ss(I8x16Neg_Ss) = simd::i8x16_neg;
+    fn i8x16_popcnt_ss(I8x16Popcnt_Ss) = simd::i8x16_popcnt;
+    fn i8x16_all_true_ss(I8x16AllTrue_Ss) = simd::i8x16_all_true;
+    fn i8x16_bitmask_ss(I8x16Bitmask_Ss) = simd::i8x16_bitmask;
+    fn i16x8_abs_ss(I16x8Abs_Ss) = simd::i16x8_abs;
+    fn i16x8_neg_ss(I16x8Neg_Ss) = simd::i16x8_neg;
+    fn i16x8_all_true_ss(I16x8AllTrue_Ss) = simd::i16x8_all_true;
+    fn i16x8_bitmask_ss(I16x8Bitmask_Ss) = simd::i16x8_bitmask;
+    fn i16x8_extadd_pairwise_i8x16_ss(I16x8ExtaddPairwiseI8x16_Ss) = simd::i16x8_extadd_pairwise_i8x16_s;
+    fn u16x8_extadd_pairwise_i8x16_ss(U16x8ExtaddPairwiseI8x16_Ss) = simd::i16x8_extadd_pairwise_i8x16_u;
+    fn i16x8_extend_low_i8x16_ss(I16x8ExtendLowI8x16_Ss) = simd::i16x8_extend_low_i8x16_s;
+    fn u16x8_extend_low_i8x16_ss(U16x8ExtendLowI8x16_Ss) = simd::i16x8_extend_low_i8x16_u;
+    fn i16x8_extend_high_i8x16_ss(I16x8ExtendHighI8x16_Ss) = simd::i16x8_extend_high_i8x16_s;
+    fn u16x8_extend_high_i8x16_ss(U16x8ExtendHighI8x16_Ss) = simd::i16x8_extend_high_i8x16_u;
+    fn i32x4_abs_ss(I32x4Abs_Ss) = simd::i32x4_abs;
+    fn i32x4_neg_ss(I32x4Neg_Ss) = simd::i32x4_neg;
+    fn i32x4_all_true_ss(I32x4AllTrue_Ss) = simd::i32x4_all_true;
+    fn i32x4_bitmask_ss(I32x4Bitmask_Ss) = simd::i32x4_bitmask;
+    fn i32x4_extadd_pairwise_i16x8_ss(I32x4ExtaddPairwiseI16x8_Ss) = simd::i32x4_extadd_pairwise_i16x8_s;
+    fn u32x4_extadd_pairwise_i16x8_ss(U32x4ExtaddPairwiseI16x8_Ss) = simd::i32x4_extadd_pairwise_i16x8_u;
+    fn i32x4_extend_low_i16x8_ss(I32x4ExtendLowI16x8_Ss) = simd::i32x4_extend_low_i16x8_s;
+    fn u32x4_extend_low_i16x8_ss(U32x4ExtendLowI16x8_Ss) = simd::i32x4_extend_low_i16x8_u;
+    fn i32x4_extend_high_i16x8_ss(I32x4ExtendHighI16x8_Ss) = simd::i32x4_extend_high_i16x8_s;
+    fn u32x4_extend_high_i16x8_ss(U32x4ExtendHighI16x8_Ss) = simd::i32x4_extend_high_i16x8_u;
+    fn i64x2_abs_ss(I64x2Abs_Ss) = simd::i64x2_abs;
+    fn i64x2_neg_ss(I64x2Neg_Ss) = simd::i64x2_neg;
+    fn i64x2_all_true_ss(I64x2AllTrue_Ss) = simd::i64x2_all_true;
+    fn i64x2_bitmask_ss(I64x2Bitmask_Ss) = simd::i64x2_bitmask;
+    fn i64x2_extend_low_i32x4_ss(I64x2ExtendLowI32x4_Ss) = simd::i64x2_extend_low_i32x4_s;
+    fn u64x2_extend_low_i32x4_ss(U64x2ExtendLowI32x4_Ss) = simd::i64x2_extend_low_i32x4_u;
+    fn i64x2_extend_high_i32x4_ss(I64x2ExtendHighI32x4_Ss) = simd::i64x2_extend_high_i32x4_s;
+    fn u64x2_extend_high_i32x4_ss(U64x2ExtendHighI32x4_Ss) = simd::i64x2_extend_high_i32x4_u;
+    fn f32x4_demote_zero_f64x2_ss(F32x4DemoteZeroF64x2_Ss) = simd::f32x4_demote_f64x2_zero;
+    fn f32x4_ceil_ss(F32x4Ceil_Ss) = simd::f32x4_ceil;
+    fn f32x4_floor_ss(F32x4Floor_Ss) = simd::f32x4_floor;
+    fn f32x4_trunc_ss(F32x4Trunc_Ss) = simd::f32x4_trunc;
+    fn f32x4_nearest_ss(F32x4Nearest_Ss) = simd::f32x4_nearest;
+    fn f32x4_abs_ss(F32x4Abs_Ss) = simd::f32x4_abs;
+    fn f32x4_neg_ss(F32x4Neg_Ss) = simd::f32x4_neg;
+    fn f32x4_sqrt_ss(F32x4Sqrt_Ss) = simd::f32x4_sqrt;
+    fn f64x2_promote_low_f32x4_ss(F64x2PromoteLowF32x4_Ss) = simd::f64x2_promote_low_f32x4;
+    fn f64x2_ceil_ss(F64x2Ceil_Ss) = simd::f64x2_ceil;
+    fn f64x2_floor_ss(F64x2Floor_Ss) = simd::f64x2_floor;
+    fn f64x2_trunc_ss(F64x2Trunc_Ss) = simd::f64x2_trunc;
+    fn f64x2_nearest_ss(F64x2Nearest_Ss) = simd::f64x2_nearest;
+    fn f64x2_abs_ss(F64x2Abs_Ss) = simd::f64x2_abs;
+    fn f64x2_neg_ss(F64x2Neg_Ss) = simd::f64x2_neg;
+    fn f64x2_sqrt_ss(F64x2Sqrt_Ss) = simd::f64x2_sqrt;
+    fn i32x4_trunc_sat_f32x4_ss(I32x4TruncSatF32x4_Ss) = simd::i32x4_trunc_sat_f32x4_s;
+    fn u32x4_trunc_sat_f32x4_ss(U32x4TruncSatF32x4_Ss) = simd::i32x4_trunc_sat_f32x4_u;
+    fn i32x4_trunc_sat_zero_f64x2_ss(I32x4TruncSatZeroF64x2_Ss) = simd::i32x4_trunc_sat_f64x2_s_zero;
+    fn u32x4_trunc_sat_zero_f64x2_ss(U32x4TruncSatZeroF64x2_Ss) = simd::i32x4_trunc_sat_f64x2_u_zero;
+    fn f32x4_convert_i32x4_ss(F32x4ConvertI32x4_Ss) = simd::f32x4_convert_i32x4_s;
+    fn f32x4_convert_u32x4_ss(F32x4ConvertU32x4_Ss) = simd::f32x4_convert_i32x4_u;
+    fn f64x2_convert_low_i32x4_ss(F64x2ConvertLowI32x4_Ss) = simd::f64x2_convert_low_i32x4_s;
+    fn f64x2_convert_low_u32x4_ss(F64x2ConvertLowU32x4_Ss) = simd::f64x2_convert_low_i32x4_u;
 }
 
 handler_binary! {
@@ -203,65 +263,6 @@ gen_execution_handler_stubs! {
     v128_replace_lane32x4_ssi,
     v128_replace_lane64x2_sss,
     v128_replace_lane64x2_ssi,
-    v128_not_ss,
-    v128_any_true_ss,
-    i8x16_abs_ss,
-    i8x16_neg_ss,
-    i8x16_popcnt_ss,
-    i8x16_all_true_ss,
-    i8x16_bitmask_ss,
-    i16x8_abs_ss,
-    i16x8_neg_ss,
-    i16x8_all_true_ss,
-    i16x8_bitmask_ss,
-    i16x8_extadd_pairwise_i8x16_ss,
-    u16x8_extadd_pairwise_i8x16_ss,
-    i16x8_extend_low_i8x16_ss,
-    u16x8_extend_low_i8x16_ss,
-    i16x8_extend_high_i8x16_ss,
-    u16x8_extend_high_i8x16_ss,
-    i32x4_abs_ss,
-    i32x4_neg_ss,
-    i32x4_all_true_ss,
-    i32x4_bitmask_ss,
-    i32x4_extadd_pairwise_i16x8_ss,
-    u32x4_extadd_pairwise_i16x8_ss,
-    i32x4_extend_low_i16x8_ss,
-    u32x4_extend_low_i16x8_ss,
-    i32x4_extend_high_i16x8_ss,
-    u32x4_extend_high_i16x8_ss,
-    i64x2_abs_ss,
-    i64x2_neg_ss,
-    i64x2_all_true_ss,
-    i64x2_bitmask_ss,
-    i64x2_extend_low_i32x4_ss,
-    u64x2_extend_low_i32x4_ss,
-    i64x2_extend_high_i32x4_ss,
-    u64x2_extend_high_i32x4_ss,
-    f32x4_demote_zero_f64x2_ss,
-    f32x4_ceil_ss,
-    f32x4_floor_ss,
-    f32x4_trunc_ss,
-    f32x4_nearest_ss,
-    f32x4_abs_ss,
-    f32x4_neg_ss,
-    f32x4_sqrt_ss,
-    f64x2_promote_low_f32x4_ss,
-    f64x2_ceil_ss,
-    f64x2_floor_ss,
-    f64x2_trunc_ss,
-    f64x2_nearest_ss,
-    f64x2_abs_ss,
-    f64x2_neg_ss,
-    f64x2_sqrt_ss,
-    i32x4_trunc_sat_f32x4_ss,
-    u32x4_trunc_sat_f32x4_ss,
-    i32x4_trunc_sat_zero_f64x2_ss,
-    u32x4_trunc_sat_zero_f64x2_ss,
-    f32x4_convert_i32x4_ss,
-    f32x4_convert_u32x4_ss,
-    f64x2_convert_low_i32x4_ss,
-    f64x2_convert_low_u32x4_ss,
     v128_load_ss,
     v128_load_mem0_offset16_ss,
     i16x8_load8x8_ss,
