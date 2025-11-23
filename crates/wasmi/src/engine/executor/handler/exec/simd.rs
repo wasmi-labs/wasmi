@@ -6,6 +6,7 @@ use crate::{
         state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
         utils::{get_value, set_value, IntoControl as _},
     },
+    V128,
 };
 
 handler_binary! {
@@ -96,6 +97,59 @@ handler_binary! {
     fn u32x4_min_sss(U32x4Min_Sss) = simd::i32x4_min_u;
     fn i32x4_max_sss(I32x4Max_Sss) = simd::i32x4_max_s;
     fn u32x4_max_sss(U32x4Max_Sss) = simd::i32x4_max_u;
+
+    fn i32x4_dot_i16x8_sss(I32x4DotI16x8_Sss) = simd::i32x4_dot_i16x8_s;
+    fn i64x2_add_sss(I64x2Add_Sss) = simd::i64x2_add;
+    fn i64x2_sub_sss(I64x2Sub_Sss) = simd::i64x2_sub;
+    fn i64x2_mul_sss(I64x2Mul_Sss) = simd::i64x2_mul;
+    fn f32x4_add_sss(F32x4Add_Sss) = simd::f32x4_add;
+    fn f32x4_sub_sss(F32x4Sub_Sss) = simd::f32x4_sub;
+    fn f32x4_mul_sss(F32x4Mul_Sss) = simd::f32x4_mul;
+    fn f32x4_div_sss(F32x4Div_Sss) = simd::f32x4_div;
+    fn f32x4_min_sss(F32x4Min_Sss) = simd::f32x4_min;
+    fn f32x4_max_sss(F32x4Max_Sss) = simd::f32x4_max;
+    fn f32x4_pmin_sss(F32x4Pmin_Sss) = simd::f32x4_pmin;
+    fn f32x4_pmax_sss(F32x4Pmax_Sss) = simd::f32x4_pmax;
+    fn f64x2_add_sss(F64x2Add_Sss) = simd::f64x2_add;
+    fn f64x2_sub_sss(F64x2Sub_Sss) = simd::f64x2_sub;
+    fn f64x2_mul_sss(F64x2Mul_Sss) = simd::f64x2_mul;
+    fn f64x2_div_sss(F64x2Div_Sss) = simd::f64x2_div;
+    fn f64x2_min_sss(F64x2Min_Sss) = simd::f64x2_min;
+    fn f64x2_max_sss(F64x2Max_Sss) = simd::f64x2_max;
+    fn f64x2_pmin_sss(F64x2Pmin_Sss) = simd::f64x2_pmin;
+    fn f64x2_pmax_sss(F64x2Pmax_Sss) = simd::f64x2_pmax;
+}
+
+macro_rules! wrap_shift {
+    ($f:expr) => {{
+        |v128: V128, rhs: u8| -> V128 { $f(v128, u32::from(rhs)) }
+    }};
+}
+handler_binary! {
+    fn i8x16_shl_sss(I8x16Shl_Sss) = wrap_shift!(simd::i8x16_shl);
+    fn i8x16_shl_ssi(I8x16Shl_Ssi) = wrap_shift!(simd::i8x16_shl);
+    fn i8x16_shr_sss(I8x16Shr_Sss) = wrap_shift!(simd::i8x16_shr_s);
+    fn i8x16_shr_ssi(I8x16Shr_Ssi) = wrap_shift!(simd::i8x16_shr_s);
+    fn u8x16_shr_sss(U8x16Shr_Sss) = wrap_shift!(simd::i8x16_shr_u);
+    fn u8x16_shr_ssi(U8x16Shr_Ssi) = wrap_shift!(simd::i8x16_shr_u);
+    fn i16x8_shl_sss(I16x8Shl_Sss) = wrap_shift!(simd::i16x8_shl);
+    fn i16x8_shl_ssi(I16x8Shl_Ssi) = wrap_shift!(simd::i16x8_shl);
+    fn i16x8_shr_sss(I16x8Shr_Sss) = wrap_shift!(simd::i16x8_shr_s);
+    fn i16x8_shr_ssi(I16x8Shr_Ssi) = wrap_shift!(simd::i16x8_shr_s);
+    fn u16x8_shr_sss(U16x8Shr_Sss) = wrap_shift!(simd::i16x8_shr_u);
+    fn u16x8_shr_ssi(U16x8Shr_Ssi) = wrap_shift!(simd::i16x8_shr_u);
+    fn i32x4_shl_sss(I32x4Shl_Sss) = wrap_shift!(simd::i32x4_shl);
+    fn i32x4_shl_ssi(I32x4Shl_Ssi) = wrap_shift!(simd::i32x4_shl);
+    fn i32x4_shr_sss(I32x4Shr_Sss) = wrap_shift!(simd::i32x4_shr_s);
+    fn i32x4_shr_ssi(I32x4Shr_Ssi) = wrap_shift!(simd::i32x4_shr_s);
+    fn u32x4_shr_sss(U32x4Shr_Sss) = wrap_shift!(simd::i32x4_shr_u);
+    fn u32x4_shr_ssi(U32x4Shr_Ssi) = wrap_shift!(simd::i32x4_shr_u);
+    fn i64x2_shl_sss(I64x2Shl_Sss) = wrap_shift!(simd::i64x2_shl);
+    fn i64x2_shl_ssi(I64x2Shl_Ssi) = wrap_shift!(simd::i64x2_shl);
+    fn i64x2_shr_sss(I64x2Shr_Sss) = wrap_shift!(simd::i64x2_shr_s);
+    fn i64x2_shr_ssi(I64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_s);
+    fn u64x2_shr_sss(U64x2Shr_Sss) = wrap_shift!(simd::i64x2_shr_u);
+    fn u64x2_shr_ssi(U64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_u);
 }
 
 macro_rules! gen_execution_handler_stubs {
@@ -130,50 +184,6 @@ gen_execution_handler_stubs! {
     v128_replace_lane32x4_ssi,
     v128_replace_lane64x2_sss,
     v128_replace_lane64x2_ssi,
-    i32x4_dot_i16x8_sss,
-    i64x2_add_sss,
-    i64x2_sub_sss,
-    i64x2_mul_sss,
-    f32x4_add_sss,
-    f32x4_sub_sss,
-    f32x4_mul_sss,
-    f32x4_div_sss,
-    f32x4_min_sss,
-    f32x4_max_sss,
-    f32x4_pmin_sss,
-    f32x4_pmax_sss,
-    f64x2_add_sss,
-    f64x2_sub_sss,
-    f64x2_mul_sss,
-    f64x2_div_sss,
-    f64x2_min_sss,
-    f64x2_max_sss,
-    f64x2_pmin_sss,
-    f64x2_pmax_sss,
-    i8x16_shl_sss,
-    i8x16_shl_ssi,
-    i8x16_shr_sss,
-    i8x16_shr_ssi,
-    u8x16_shr_sss,
-    u8x16_shr_ssi,
-    i16x8_shl_sss,
-    i16x8_shl_ssi,
-    i16x8_shr_sss,
-    i16x8_shr_ssi,
-    u16x8_shr_sss,
-    u16x8_shr_ssi,
-    i32x4_shl_sss,
-    i32x4_shl_ssi,
-    i32x4_shr_sss,
-    i32x4_shr_ssi,
-    u32x4_shr_sss,
-    u32x4_shr_ssi,
-    i64x2_shl_sss,
-    i64x2_shl_ssi,
-    i64x2_shr_sss,
-    i64x2_shr_ssi,
-    u64x2_shr_sss,
-    u64x2_shr_ssi,
     v128_not_ss,
     v128_any_true_ss,
     i8x16_abs_ss,
