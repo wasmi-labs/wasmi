@@ -76,6 +76,26 @@ handler_binary! {
     fn u64x2_extmul_low_i32x4_sss(U64x2ExtmulLowI32x4_Sss) = simd::i64x2_extmul_low_i32x4_u;
     fn i64x2_extmul_high_i32x4_sss(I64x2ExtmulHighI32x4_Sss) = simd::i64x2_extmul_high_i32x4_s;
     fn u64x2_extmul_high_i32x4_sss(U64x2ExtmulHighI32x4_Sss) = simd::i64x2_extmul_high_i32x4_u;
+
+    fn i16x8_add_sss(I16x8Add_Sss) = simd::i16x8_add;
+    fn i16x8_add_sat_sss(I16x8AddSat_Sss) = simd::i16x8_add_sat_s;
+    fn u16x8_add_sat_sss(U16x8AddSat_Sss) = simd::i16x8_add_sat_u;
+    fn i16x8_sub_sss(I16x8Sub_Sss) = simd::i16x8_sub;
+    fn i16x8_sub_sat_sss(I16x8SubSat_Sss) = simd::i16x8_sub_sat_s;
+    fn u16x8_sub_sat_sss(U16x8SubSat_Sss) = simd::i16x8_sub_sat_u;
+    fn i16x8_mul_sss(I16x8Mul_Sss) = simd::i16x8_mul;
+    fn i16x8_min_sss(I16x8Min_Sss) = simd::i16x8_min_s;
+    fn u16x8_min_sss(U16x8Min_Sss) = simd::i16x8_min_u;
+    fn i16x8_max_sss(I16x8Max_Sss) = simd::i16x8_max_s;
+    fn u16x8_max_sss(U16x8Max_Sss) = simd::i16x8_max_u;
+    fn u16x8_avgr_sss(U16x8Avgr_Sss) = simd::i16x8_avgr_u;
+    fn i32x4_add_sss(I32x4Add_Sss) = simd::i32x4_add;
+    fn i32x4_sub_sss(I32x4Sub_Sss) = simd::i32x4_sub;
+    fn i32x4_mul_sss(I32x4Mul_Sss) = simd::i32x4_mul;
+    fn i32x4_min_sss(I32x4Min_Sss) = simd::i32x4_min_s;
+    fn u32x4_min_sss(U32x4Min_Sss) = simd::i32x4_min_u;
+    fn i32x4_max_sss(I32x4Max_Sss) = simd::i32x4_max_s;
+    fn u32x4_max_sss(U32x4Max_Sss) = simd::i32x4_max_u;
 }
 
 macro_rules! gen_execution_handler_stubs {
@@ -110,25 +130,6 @@ gen_execution_handler_stubs! {
     v128_replace_lane32x4_ssi,
     v128_replace_lane64x2_sss,
     v128_replace_lane64x2_ssi,
-    i16x8_add_sss,
-    i16x8_add_sat_sss,
-    u16x8_add_sat_sss,
-    i16x8_sub_sss,
-    i16x8_sub_sat_sss,
-    u16x8_sub_sat_sss,
-    i16x8_mul_sss,
-    i16x8_min_sss,
-    u16x8_min_sss,
-    i16x8_max_sss,
-    u16x8_max_sss,
-    u16x8_avgr_sss,
-    i32x4_add_sss,
-    i32x4_sub_sss,
-    i32x4_mul_sss,
-    i32x4_min_sss,
-    u32x4_min_sss,
-    i32x4_max_sss,
-    u32x4_max_sss,
     i32x4_dot_i16x8_sss,
     i64x2_add_sss,
     i64x2_sub_sss,
