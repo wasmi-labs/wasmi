@@ -1,7 +1,51 @@
-use crate::engine::executor::handler::{
-    dispatch::Done,
-    state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+use crate::{
+    core::simd,
+    engine::executor::handler::{
+        dispatch::Done,
+        exec::decode_op,
+        state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+        utils::{get_value, set_value, IntoControl as _},
+    },
 };
+
+handler_binary! {
+    fn i8x16_swizzle_sss(I8x16Swizzle_Sss) = simd::i8x16_swizzle;
+
+    fn i8x16_eq_sss(I8x16Eq_Sss) = simd::i8x16_eq;
+    fn i8x16_not_eq_sss(I8x16NotEq_Sss) = simd::i8x16_ne;
+    fn i16x8_eq_sss(I16x8Eq_Sss) = simd::i16x8_eq;
+    fn i16x8_not_eq_sss(I16x8NotEq_Sss) = simd::i16x8_ne;
+    fn i32x4_eq_sss(I32x4Eq_Sss) = simd::i32x4_eq;
+    fn i32x4_not_eq_sss(I32x4NotEq_Sss) = simd::i32x4_ne;
+    fn i64x2_eq_sss(I64x2Eq_Sss) = simd::i64x2_eq;
+    fn i64x2_not_eq_sss(I64x2NotEq_Sss) = simd::i64x2_ne;
+    fn i8x16_lt_sss(I8x16Lt_Sss) = simd::i8x16_lt_s;
+    fn i8x16_le_sss(I8x16Le_Sss) = simd::i8x16_le_s;
+    fn i16x8_lt_sss(I16x8Lt_Sss) = simd::i16x8_lt_s;
+    fn i16x8_le_sss(I16x8Le_Sss) = simd::i16x8_le_s;
+    fn i32x4_lt_sss(I32x4Lt_Sss) = simd::i32x4_lt_s;
+    fn i32x4_le_sss(I32x4Le_Sss) = simd::i32x4_le_s;
+    fn i64x2_lt_sss(I64x2Lt_Sss) = simd::i64x2_lt_s;
+    fn i64x2_le_sss(I64x2Le_Sss) = simd::i64x2_le_s;
+    fn u8x16_lt_sss(U8x16Lt_Sss) = simd::i8x16_lt_u;
+    fn u8x16_le_sss(U8x16Le_Sss) = simd::i8x16_le_u;
+    fn u16x8_lt_sss(U16x8Lt_Sss) = simd::i16x8_lt_u;
+    fn u16x8_le_sss(U16x8Le_Sss) = simd::i16x8_le_u;
+    fn u32x4_lt_sss(U32x4Lt_Sss) = simd::i32x4_lt_u;
+    fn u32x4_le_sss(U32x4Le_Sss) = simd::i32x4_le_u;
+    fn f32x4_eq_sss(F32x4Eq_Sss) = simd::f32x4_eq;
+    fn f32x4_not_eq_sss(F32x4NotEq_Sss) = simd::f32x4_ne;
+    fn f32x4_lt_sss(F32x4Lt_Sss) = simd::f32x4_lt;
+    fn f32x4_le_sss(F32x4Le_Sss) = simd::f32x4_le;
+    fn f64x2_eq_sss(F64x2Eq_Sss) = simd::f64x2_eq;
+    fn f64x2_not_eq_sss(F64x2NotEq_Sss) = simd::f64x2_ne;
+    fn f64x2_lt_sss(F64x2Lt_Sss) = simd::f64x2_lt;
+    fn f64x2_le_sss(F64x2Le_Sss) = simd::f64x2_le;
+    fn v128_and_sss(V128And_Sss) = simd::v128_and;
+    fn v128_and_not_sss(V128AndNot_Sss) = simd::v128_andnot;
+    fn v128_or_sss(V128Or_Sss) = simd::v128_or;
+    fn v128_xor_sss(V128Xor_Sss) = simd::v128_xor;
+}
 
 macro_rules! gen_execution_handler_stubs {
     ( $($name:ident),* $(,)? ) => {
@@ -35,41 +79,6 @@ gen_execution_handler_stubs! {
     v128_replace_lane32x4_ssi,
     v128_replace_lane64x2_sss,
     v128_replace_lane64x2_ssi,
-    i8x16_swizzle_sss,
-    i8x16_eq_sss,
-    i8x16_not_eq_sss,
-    i16x8_eq_sss,
-    i16x8_not_eq_sss,
-    i32x4_eq_sss,
-    i32x4_not_eq_sss,
-    i64x2_eq_sss,
-    i64x2_not_eq_sss,
-    i8x16_lt_sss,
-    i8x16_le_sss,
-    i16x8_lt_sss,
-    i16x8_le_sss,
-    i32x4_lt_sss,
-    i32x4_le_sss,
-    i64x2_lt_sss,
-    i64x2_le_sss,
-    u8x16_lt_sss,
-    u8x16_le_sss,
-    u16x8_lt_sss,
-    u16x8_le_sss,
-    u32x4_lt_sss,
-    u32x4_le_sss,
-    f32x4_eq_sss,
-    f32x4_not_eq_sss,
-    f32x4_lt_sss,
-    f32x4_le_sss,
-    f64x2_eq_sss,
-    f64x2_not_eq_sss,
-    f64x2_lt_sss,
-    f64x2_le_sss,
-    v128_and_sss,
-    v128_and_not_sss,
-    v128_or_sss,
-    v128_xor_sss,
     i8x16_narrow_i16x8_sss,
     u8x16_narrow_i16x8_sss,
     i8x16_add_sss,

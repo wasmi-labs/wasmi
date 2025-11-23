@@ -21,6 +21,7 @@ use crate::{
     Ref,
     Table,
     TrapCode,
+    V128,
 };
 use core::num::NonZero;
 
@@ -115,6 +116,7 @@ impl_into_control! {
     u8, u16, u32, u64, usize,
     i8, i16, i32, i64, isize,
     f32, f64,
+    V128,
 }
 
 pub trait GetValue<T> {
