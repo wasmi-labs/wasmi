@@ -9,6 +9,33 @@ use crate::{
     V128,
 };
 
+macro_rules! impl_splat_bytes {
+    ( $(fn $name:ident(value: $ty:ty) -> V128 = $signed:expr; )* ) => {
+        $(
+            fn $name(value: $ty) -> V128 {
+                $signed(value as _)
+            }
+        )*
+    }
+}
+impl_splat_bytes! {
+    fn splat8(value: u8) -> V128 = simd::i8x16_splat;
+    fn splat16(value: u16) -> V128 = simd::i16x8_splat;
+    fn splat32(value: u32) -> V128 = simd::i32x4_splat;
+    fn splat64(value: u64) -> V128 = simd::i64x2_splat;
+}
+
+handler_unary! {
+    fn v128_splat8_ss(V128Splat8_Ss) = splat8;
+    fn v128_splat8_si(V128Splat8_Si) = splat8;
+    fn v128_splat16_ss(V128Splat16_Ss) = splat16;
+    fn v128_splat16_si(V128Splat16_Si) = splat16;
+    fn v128_splat32_ss(V128Splat32_Ss) = splat32;
+    fn v128_splat32_si(V128Splat32_Si) = splat32;
+    fn v128_splat64_ss(V128Splat64_Ss) = splat64;
+    fn v128_splat64_si(V128Splat64_Si) = splat64;
+}
+
 handler_binary! {
     fn i8x16_swizzle_sss(I8x16Swizzle_Sss) = simd::i8x16_swizzle;
 
@@ -162,14 +189,6 @@ macro_rules! gen_execution_handler_stubs {
 gen_execution_handler_stubs! {
     copy128,
     i8x16_shuffle,
-    v128_splat8_ss,
-    v128_splat8_si,
-    v128_splat16_ss,
-    v128_splat16_si,
-    v128_splat32_ss,
-    v128_splat32_si,
-    v128_splat64_ss,
-    v128_splat64_si,
     s8x16_extract_lane,
     u8x16_extract_lane,
     s16x8_extract_lane,
