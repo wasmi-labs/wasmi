@@ -63,6 +63,19 @@ handler_binary! {
     fn i16x8_q15_mulr_sat_sss(I16x8Q15MulrSat_Sss) = simd::i16x8_q15mulr_sat_s;
     fn i16x8_narrow_i32x4_sss(I16x8NarrowI32x4_Sss) = simd::i16x8_narrow_i32x4_s;
     fn u16x8_narrow_i32x4_sss(U16x8NarrowI32x4_Sss) = simd::i16x8_narrow_i32x4_u;
+
+    fn i16x8_extmul_low_i8x16_sss(I16x8ExtmulLowI8x16_Sss) = simd::i16x8_extmul_low_i8x16_s;
+    fn u16x8_extmul_low_i8x16_sss(U16x8ExtmulLowI8x16_Sss) = simd::i16x8_extmul_low_i8x16_u;
+    fn i16x8_extmul_high_i8x16_sss(I16x8ExtmulHighI8x16_Sss) = simd::i16x8_extmul_high_i8x16_s;
+    fn u16x8_extmul_high_i8x16_sss(U16x8ExtmulHighI8x16_Sss) = simd::i16x8_extmul_high_i8x16_u;
+    fn i32x4_extmul_low_i16x8_sss(I32x4ExtmulLowI16x8_Sss) = simd::i32x4_extmul_low_i16x8_s;
+    fn u32x4_extmul_low_i16x8_sss(U32x4ExtmulLowI16x8_Sss) = simd::i32x4_extmul_low_i16x8_u;
+    fn i32x4_extmul_high_i16x8_sss(I32x4ExtmulHighI16x8_Sss) = simd::i32x4_extmul_high_i16x8_s;
+    fn u32x4_extmul_high_i16x8_sss(U32x4ExtmulHighI16x8_Sss) = simd::i32x4_extmul_high_i16x8_u;
+    fn i64x2_extmul_low_i32x4_sss(I64x2ExtmulLowI32x4_Sss) = simd::i64x2_extmul_low_i32x4_s;
+    fn u64x2_extmul_low_i32x4_sss(U64x2ExtmulLowI32x4_Sss) = simd::i64x2_extmul_low_i32x4_u;
+    fn i64x2_extmul_high_i32x4_sss(I64x2ExtmulHighI32x4_Sss) = simd::i64x2_extmul_high_i32x4_s;
+    fn u64x2_extmul_high_i32x4_sss(U64x2ExtmulHighI32x4_Sss) = simd::i64x2_extmul_high_i32x4_u;
 }
 
 macro_rules! gen_execution_handler_stubs {
@@ -97,10 +110,6 @@ gen_execution_handler_stubs! {
     v128_replace_lane32x4_ssi,
     v128_replace_lane64x2_sss,
     v128_replace_lane64x2_ssi,
-    i16x8_extmul_low_i8x16_sss,
-    u16x8_extmul_low_i8x16_sss,
-    i16x8_extmul_high_i8x16_sss,
-    u16x8_extmul_high_i8x16_sss,
     i16x8_add_sss,
     i16x8_add_sat_sss,
     u16x8_add_sat_sss,
@@ -121,17 +130,9 @@ gen_execution_handler_stubs! {
     i32x4_max_sss,
     u32x4_max_sss,
     i32x4_dot_i16x8_sss,
-    i32x4_extmul_low_i16x8_sss,
-    u32x4_extmul_low_i16x8_sss,
-    i32x4_extmul_high_i16x8_sss,
-    u32x4_extmul_high_i16x8_sss,
     i64x2_add_sss,
     i64x2_sub_sss,
     i64x2_mul_sss,
-    i64x2_extmul_low_i32x4_sss,
-    u64x2_extmul_low_i32x4_sss,
-    i64x2_extmul_high_i32x4_sss,
-    u64x2_extmul_high_i32x4_sss,
     f32x4_add_sss,
     f32x4_sub_sss,
     f32x4_mul_sss,
