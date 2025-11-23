@@ -45,6 +45,24 @@ handler_binary! {
     fn v128_and_not_sss(V128AndNot_Sss) = simd::v128_andnot;
     fn v128_or_sss(V128Or_Sss) = simd::v128_or;
     fn v128_xor_sss(V128Xor_Sss) = simd::v128_xor;
+
+    fn i8x16_narrow_i16x8_sss(I8x16NarrowI16x8_Sss) = simd::i8x16_narrow_i16x8_s;
+    fn u8x16_narrow_i16x8_sss(U8x16NarrowI16x8_Sss) = simd::i8x16_narrow_i16x8_u;
+    fn i8x16_add_sss(I8x16Add_Sss) = simd::i8x16_add;
+    fn i8x16_add_sat_sss(I8x16AddSat_Sss) = simd::i8x16_add_sat_s;
+    fn u8x16_add_sat_sss(U8x16AddSat_Sss) = simd::i8x16_add_sat_u;
+    fn i8x16_sub_sss(I8x16Sub_Sss) = simd::i8x16_sub;
+    fn i8x16_sub_sat_sss(I8x16SubSat_Sss) = simd::i8x16_sub_sat_s;
+    fn u8x16_sub_sat_sss(U8x16SubSat_Sss) = simd::i8x16_sub_sat_u;
+    fn i8x16_min_sss(I8x16Min_Sss) = simd::i8x16_min_s;
+    fn u8x16_min_sss(U8x16Min_Sss) = simd::i8x16_min_u;
+    fn i8x16_max_sss(I8x16Max_Sss) = simd::i8x16_max_s;
+    fn u8x16_max_sss(U8x16Max_Sss) = simd::i8x16_max_u;
+    fn u8x16_avgr_sss(U8x16Avgr_Sss) = simd::i8x16_avgr_u;
+    fn i16x8_relaxed_dot_i8x16_i7x16_sss(I16x8RelaxedDotI8x16I7x16_Sss) = simd::i16x8_relaxed_dot_i8x16_i7x16_s;
+    fn i16x8_q15_mulr_sat_sss(I16x8Q15MulrSat_Sss) = simd::i16x8_q15mulr_sat_s;
+    fn i16x8_narrow_i32x4_sss(I16x8NarrowI32x4_Sss) = simd::i16x8_narrow_i32x4_s;
+    fn u16x8_narrow_i32x4_sss(U16x8NarrowI32x4_Sss) = simd::i16x8_narrow_i32x4_u;
 }
 
 macro_rules! gen_execution_handler_stubs {
@@ -79,23 +97,6 @@ gen_execution_handler_stubs! {
     v128_replace_lane32x4_ssi,
     v128_replace_lane64x2_sss,
     v128_replace_lane64x2_ssi,
-    i8x16_narrow_i16x8_sss,
-    u8x16_narrow_i16x8_sss,
-    i8x16_add_sss,
-    i8x16_add_sat_sss,
-    u8x16_add_sat_sss,
-    i8x16_sub_sss,
-    i8x16_sub_sat_sss,
-    u8x16_sub_sat_sss,
-    i8x16_min_sss,
-    u8x16_min_sss,
-    i8x16_max_sss,
-    u8x16_max_sss,
-    u8x16_avgr_sss,
-    i16x8_relaxed_dot_i8x16_i7x16_sss,
-    i16x8_q15_mulr_sat_sss,
-    i16x8_narrow_i32x4_sss,
-    u16x8_narrow_i32x4_sss,
     i16x8_extmul_low_i8x16_sss,
     u16x8_extmul_low_i8x16_sss,
     i16x8_extmul_high_i8x16_sss,
