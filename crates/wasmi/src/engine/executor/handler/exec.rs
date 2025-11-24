@@ -1092,7 +1092,7 @@ pub fn branch_table_span(
 
 handler_unary! {
     // copy
-    fn copy(Copy) = identity::<u64>;
+    fn copy(Copy) = identity::<UntypedVal>;
     fn copy32(Copy32) = identity::<u32>;
     fn copy64(Copy64) = identity::<u64>;
     // i32
