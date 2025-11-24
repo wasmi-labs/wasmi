@@ -297,12 +297,12 @@ macro_rules! handler_extract_lane {
     };
 }
 handler_extract_lane! {
-    fn i8x16_extract_lane(I8x16ExtractLane) = simd::i8x16_extract_lane_s;
-    fn u8x16_extract_lane(U8x16ExtractLane) = simd::i8x16_extract_lane_u;
-    fn i16x8_extract_lane(I16x8ExtractLane) = simd::i16x8_extract_lane_s;
-    fn u16x8_extract_lane(U16x8ExtractLane) = simd::i16x8_extract_lane_u;
-    fn u32x4_extract_lane(U32x4ExtractLane) = simd::i32x4_extract_lane;
-    fn u64x2_extract_lane(U64x2ExtractLane) = simd::i64x2_extract_lane;
+    fn i8x16_extract_lane_ss(I8x16ExtractLane_Ss) = simd::i8x16_extract_lane_s;
+    fn u8x16_extract_lane_ss(U8x16ExtractLane_Ss) = simd::i8x16_extract_lane_u;
+    fn i16x8_extract_lane_ss(I16x8ExtractLane_Ss) = simd::i16x8_extract_lane_s;
+    fn u16x8_extract_lane_ss(U16x8ExtractLane_Ss) = simd::i16x8_extract_lane_u;
+    fn u32x4_extract_lane_ss(U32x4ExtractLane_Ss) = simd::i32x4_extract_lane;
+    fn u64x2_extract_lane_ss(U64x2ExtractLane_Ss) = simd::i64x2_extract_lane;
 }
 
 macro_rules! impl_replace_lane {
