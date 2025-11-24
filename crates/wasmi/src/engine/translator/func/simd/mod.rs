@@ -93,7 +93,7 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let input = self.layout.operand_to_slot(input)?;
+        let input = self.copy_if_immediate(input)?;
         let value = self.make_input::<T::Immediate>(value, |_this, value| {
             Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
         })?;
@@ -148,8 +148,8 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_slot(lhs)?;
-        let rhs = self.layout.operand_to_slot(rhs)?;
+        let lhs = self.copy_if_immediate(lhs)?;
+        let rhs = self.copy_if_immediate(rhs)?;
         self.push_instr_with_result(
             ValType::V128,
             |result| make_instr(result, lhs, rhs),
@@ -216,8 +216,8 @@ impl FuncTranslator {
             )?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_slot(lhs)?;
-        let rhs = self.layout.operand_to_slot(rhs)?;
+        let lhs = self.copy_if_immediate(lhs)?;
+        let rhs = self.copy_if_immediate(rhs)?;
         self.push_instr_with_result(
             ValType::V128,
             |result| make_instr_sss(result, lhs, rhs),
