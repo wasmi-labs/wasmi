@@ -245,15 +245,11 @@ impl Display for DisplayIdent<&'_ V128ExtractLaneOp> {
         let case = self.case;
         let op = self.value;
         let sep = case.wrap(Sep);
-        let v128 = case.wrap(Ident::V128);
         let ident = case.wrap(Ident::ExtractLane);
         let lane_ty = case.wrap(Ty::from(op.ty));
         let result_suffix = case.wrap(OperandKind::Slot);
         let v128_suffix = SnakeCase(OperandKind::Slot);
-        write!(
-            f,
-            "{v128}{sep}{ident}{lane_ty}_{result_suffix}{v128_suffix}"
-        )
+        write!(f, "{lane_ty}{sep}{ident}_{result_suffix}{v128_suffix}")
     }
 }
 
