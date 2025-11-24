@@ -179,23 +179,23 @@ where
 }
 
 pub trait SetValue<T> {
-    fn set_value(src: Self, value: T, sp: Sp);
+    fn set_value(dst: Self, value: T, sp: Sp);
 }
 
 impl<T> SetValue<T> for Slot
 where
     UntypedVal: WriteAs<T>,
 {
-    fn set_value(src: Self, value: T, sp: Sp) {
-        sp.set::<T>(src, value)
+    fn set_value(dst: Self, value: T, sp: Sp) {
+        sp.set::<T>(dst, value)
     }
 }
 
-pub fn set_value<T, V>(sp: Sp, src: T, value: V)
+pub fn set_value<T, V>(sp: Sp, dst: T, value: V)
 where
     T: SetValue<V>,
 {
-    <T as SetValue<V>>::set_value(src, value, sp)
+    <T as SetValue<V>>::set_value(dst, value, sp)
 }
 
 pub fn exec_return(
