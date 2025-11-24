@@ -265,6 +265,43 @@ handler_binary! {
     fn u64x2_shr_ssi(U64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_u);
 }
 
+macro_rules! handler_extract_lane {
+    ( $( fn $handler:ident($op:ident) = $eval:expr; )* ) => {
+        $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$op {
+                        result,
+                        value,
+                        lane,
+                    },
+                ) = unsafe { decode_op(ip) };
+                let value = get_value(value, sp);
+                let extracted = $eval(value, lane);
+                set_value(sp, result, extracted);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_extract_lane! {
+    fn i8x16_extract_lane(I8x16ExtractLane) = simd::i8x16_extract_lane_s;
+    fn u8x16_extract_lane(U8x16ExtractLane) = simd::i8x16_extract_lane_u;
+    fn i16x8_extract_lane(I16x8ExtractLane) = simd::i16x8_extract_lane_s;
+    fn u16x8_extract_lane(U16x8ExtractLane) = simd::i16x8_extract_lane_u;
+    fn u32x4_extract_lane(U32x4ExtractLane) = simd::i32x4_extract_lane;
+    fn u64x2_extract_lane(U64x2ExtractLane) = simd::i64x2_extract_lane;
+}
+
 macro_rules! gen_execution_handler_stubs {
     ( $($name:ident),* $(,)? ) => {
         $(
@@ -274,12 +311,6 @@ macro_rules! gen_execution_handler_stubs {
 }
 gen_execution_handler_stubs! {
     i8x16_shuffle,
-    s8x16_extract_lane,
-    u8x16_extract_lane,
-    s16x8_extract_lane,
-    u16x8_extract_lane,
-    u32x4_extract_lane,
-    u64x2_extract_lane,
     v128_replace_lane8x16_sss,
     v128_replace_lane8x16_ssi,
     v128_replace_lane16x8_sss,
