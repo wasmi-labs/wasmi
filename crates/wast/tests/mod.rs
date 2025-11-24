@@ -159,7 +159,7 @@ macro_rules! foreach_test {
             fn spec_select("spec/select");
             fn spec_skip_stack_guard_page("spec/skip-stack-guard-page");
             fn spec_stack("spec/stack");
-            // fn spec_start("spec/start");
+            fn spec_start("spec/start");
             fn spec_store("spec/store");
             fn spec_switch("spec/switch");
             fn spec_table_sub("spec/table-sub");
