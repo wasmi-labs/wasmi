@@ -515,20 +515,70 @@ handler_store_mem0_offset16_sx! {
     fn store128_mem0_offset16_ss(Store128Mem0Offset16_Ss, V128) = simd::v128_store;
 }
 
-macro_rules! gen_execution_handler_stubs {
-    ( $($name:ident),* $(,)? ) => {
+macro_rules! handler_store_lane_ss {
+    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            pub fn $name(_state: &mut VmState, _ip: Ip, _sp: Sp, _mem0: Mem0Ptr, _mem0_len: Mem0Len, _instance: Inst) -> Done { todo!() }
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (
+                    ip,
+                    $crate::ir::decode::$op { ptr, offset, value, memory, lane },
+                ) = unsafe { decode_op(ip) };
+                let ptr = get_value(ptr, sp);
+                let offset = get_value(offset, sp);
+                let value = get_value(value, sp);
+                let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
+                    memory, mem0, mem0_len, instance, state,
+                );
+                $eval(mem_bytes, ptr, offset, value, lane).into_control()?;
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
         )*
     };
 }
-gen_execution_handler_stubs! {
-    v128_store8_lane_ss,
-    v128_store8_lane_mem0_offset16_ss,
-    v128_store16_lane_ss,
-    v128_store16_lane_mem0_offset16_ss,
-    v128_store32_lane_ss,
-    v128_store32_lane_mem0_offset16_ss,
-    v128_store64_lane_ss,
-    v128_store64_lane_mem0_offset16_ss,
+handler_store_lane_ss! {
+    fn v128_store8_lane_ss(V128Store8Lane_Ss) = simd::v128_store8_lane;
+    fn v128_store16_lane_ss(V128Store16Lane_Ss) = simd::v128_store16_lane;
+    fn v128_store32_lane_ss(V128Store32Lane_Ss) = simd::v128_store32_lane;
+    fn v128_store64_lane_ss(V128Store64Lane_Ss) = simd::v128_store64_lane;
+}
+
+macro_rules! handler_store_lane_mem0_offset16_ss {
+    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (
+                    ip,
+                    $crate::ir::decode::$op { ptr, offset, value, lane },
+                ) = unsafe { decode_op(ip) };
+                let ptr = get_value(ptr, sp);
+                let offset = get_value(offset, sp);
+                let value = get_value(value, sp);
+                let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
+                $eval(mem_bytes, ptr, u64::from(u16::from(offset)), value, lane).into_control()?;
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_store_lane_mem0_offset16_ss! {
+    fn v128_store8_lane_mem0_offset16_ss(V128Store8LaneMem0Offset16_Ss) = simd::v128_store8_lane;
+    fn v128_store16_lane_mem0_offset16_ss(V128Store16LaneMem0Offset16_Ss) = simd::v128_store16_lane;
+    fn v128_store32_lane_mem0_offset16_ss(V128Store32LaneMem0Offset16_Ss) = simd::v128_store32_lane;
+    fn v128_store64_lane_mem0_offset16_ss(V128Store64LaneMem0Offset16_Ss) = simd::v128_store64_lane;
 }
