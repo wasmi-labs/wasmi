@@ -82,14 +82,20 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_load::<simd_op::V128Load64Zero>(memarg)
     }
 
-    fn visit_v128_store(&mut self, _memarg: MemArg) -> Self::Output {
-        // self.translate_store(
-        //     memarg,
-        //     Op::v128_store,
-        //     Op::v128_store_offset16,
-        //     Op::v128_store_at,
-        // )
-        todo!()
+    fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
+        bail_unreachable!(self);
+        let (ptr, value) = self.stack.pop2();
+        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let ptr = self.copy_if_immediate(ptr)?;
+        let value = self.copy_if_immediate(value)?;
+        if self.translate_store128_mem0_offset16(ptr, offset, memory, value)? {
+            return Ok(());
+        }
+        self.push_instr(
+            Op::store128_ss(ptr, offset, value, memory),
+            FuelCostsProvider::store,
+        )?;
+        Ok(())
     }
 
     fn visit_v128_load8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {

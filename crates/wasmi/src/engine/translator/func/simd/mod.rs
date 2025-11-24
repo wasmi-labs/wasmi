@@ -323,4 +323,31 @@ impl FuncTranslator {
         )?;
         Ok(())
     }
+
+    /// Encodes a Wasmi `store128` operator with `(mem 0)` and 16-bit encodable `offset` to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// - Returns `Ok(true)` if encoding was successfull.
+    /// - Returns `Ok(false)` if encoding was unsuccessful.
+    /// - Returns `Err(_)` if an error occurred.
+    fn translate_store128_mem0_offset16(
+        &mut self,
+        ptr: Slot,
+        offset: u64,
+        memory: index::Memory,
+        value: Slot,
+    ) -> Result<bool, Error> {
+        if !memory.is_default() {
+            return Ok(false);
+        }
+        let Ok(offset16) = Offset16::try_from(offset) else {
+            return Ok(false);
+        };
+        self.push_instr(
+            Op::store128_mem0_offset16_ss(ptr, offset16, value),
+            FuelCostsProvider::store,
+        )?;
+        Ok(true)
+    }
 }
