@@ -184,11 +184,10 @@ impl WasmTranslator<'_> for FuncTranslator {
         // This only happens if the function has so many instructions that some conditional branch
         // operators need to be encoded as their fallbacks which requires to allocate more function
         // local constant values, thus increasing the size of the function frame.
-        self.update_branch_offsets()?;
+        self.instrs.update_branch_offsets()?;
         let Some(frame_size) = self.frame_size() else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
-        self.instrs.update_branch_offsets()?;
         finalize(CompiledFuncEntity::new(
             frame_size,
             self.instrs.encoded_ops(),
