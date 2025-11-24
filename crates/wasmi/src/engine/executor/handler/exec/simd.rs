@@ -399,6 +399,7 @@ handler_ternary! {
 
 handler_load_ss! {
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
+
     fn i16x8_load8x8_ss(I16x8Load8x8_Ss) = simd::v128_load8x8_s;
     fn u16x8_load8x8_ss(U16x8Load8x8_Ss) = simd::v128_load8x8_u;
     fn i32x4_load16x4_ss(I32x4Load16x4_Ss) = simd::v128_load16x4_s;
@@ -416,6 +417,7 @@ handler_load_ss! {
 
 handler_load_mem0_offset16_ss! {
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
+
     fn i16x8_load8x8_mem0_offset16_ss(I16x8Load8x8Mem0Offset16_Ss) = simd::v128_load8x8_s;
     fn u16x8_load8x8_mem0_offset16_ss(U16x8Load8x8Mem0Offset16_Ss) = simd::v128_load8x8_u;
     fn i32x4_load16x4_mem0_offset16_ss(I32x4Load16x4Mem0Offset16_Ss) = simd::v128_load16x4_s;
