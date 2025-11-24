@@ -1,5 +1,8 @@
 use crate::{
-    core::simd,
+    core::{
+        simd,
+        simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8},
+    },
     engine::executor::handler::{
         dispatch::Done,
         exec::decode_op,
@@ -302,6 +305,64 @@ handler_extract_lane! {
     fn u64x2_extract_lane(U64x2ExtractLane) = simd::i64x2_extract_lane;
 }
 
+macro_rules! impl_replace_lane {
+    ( $( fn $name:ident(v128: V128, lane: $lane_ty:ty, item: $item_ty:ty) -> V128 = $eval:expr; )* ) => {
+        $(
+            #[inline]
+            fn $name(v128: V128, lane: $lane_ty, item: $item_ty) -> V128 {
+                $eval(v128, lane, item as _)
+            }
+        )*
+    };
+}
+impl_replace_lane! {
+    fn v128_replace_lane8x16(v128: V128, lane: ImmLaneIdx16, item: u8) -> V128 = simd::i8x16_replace_lane;
+    fn v128_replace_lane16x8(v128: V128, lane: ImmLaneIdx8, item: u16) -> V128 = simd::i16x8_replace_lane;
+    fn v128_replace_lane32x4(v128: V128, lane: ImmLaneIdx4, item: u32) -> V128 = simd::i32x4_replace_lane;
+    fn v128_replace_lane64x2(v128: V128, lane: ImmLaneIdx2, item: u64) -> V128 = simd::i64x2_replace_lane;
+}
+
+macro_rules! handler_extract_lane {
+    ( $( fn $handler:ident($op:ident) = $eval:expr; )* ) => {
+        $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (
+                    ip,
+                    crate::ir::decode::$op {
+                        result,
+                        v128,
+                        value,
+                        lane,
+                    },
+                ) = unsafe { decode_op(ip) };
+                let v128 = get_value(v128, sp);
+                let value = get_value(value, sp);
+                let replaced = $eval(v128, lane, value);
+                set_value(sp, result, replaced);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_extract_lane! {
+    fn v128_replace_lane8x16_sss(V128ReplaceLane8x16_Sss) = v128_replace_lane8x16;
+    fn v128_replace_lane8x16_ssi(V128ReplaceLane8x16_Ssi) = v128_replace_lane8x16;
+    fn v128_replace_lane16x8_sss(V128ReplaceLane16x8_Sss) = v128_replace_lane16x8;
+    fn v128_replace_lane16x8_ssi(V128ReplaceLane16x8_Ssi) = v128_replace_lane16x8;
+    fn v128_replace_lane32x4_sss(V128ReplaceLane32x4_Sss) = v128_replace_lane32x4;
+    fn v128_replace_lane32x4_ssi(V128ReplaceLane32x4_Ssi) = v128_replace_lane32x4;
+    fn v128_replace_lane64x2_sss(V128ReplaceLane64x2_Sss) = v128_replace_lane64x2;
+    fn v128_replace_lane64x2_ssi(V128ReplaceLane64x2_Ssi) = v128_replace_lane64x2;
+}
+
 macro_rules! gen_execution_handler_stubs {
     ( $($name:ident),* $(,)? ) => {
         $(
@@ -311,14 +372,6 @@ macro_rules! gen_execution_handler_stubs {
 }
 gen_execution_handler_stubs! {
     i8x16_shuffle,
-    v128_replace_lane8x16_sss,
-    v128_replace_lane8x16_ssi,
-    v128_replace_lane16x8_sss,
-    v128_replace_lane16x8_ssi,
-    v128_replace_lane32x4_sss,
-    v128_replace_lane32x4_ssi,
-    v128_replace_lane64x2_sss,
-    v128_replace_lane64x2_ssi,
     v128_load_ss,
     v128_load_mem0_offset16_ss,
     i16x8_load8x8_ss,
