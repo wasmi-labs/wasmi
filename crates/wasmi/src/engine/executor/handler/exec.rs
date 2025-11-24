@@ -1572,37 +1572,6 @@ handler_select! {
     fn select_f64_lt_sis(SelectF64Lt_Sis) = wasm::f64_lt;
 }
 
-macro_rules! handler_load_ss {
-    ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
-        $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$decode {
-                        result,
-                        ptr,
-                        offset,
-                        memory,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let ptr: u64 = get_value(ptr, sp);
-                let offset: u64 = get_value(offset, sp);
-                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                let loaded = $load(mem_bytes, ptr, offset).into_control()?;
-                set_value(sp, result, loaded);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
-            }
-        )*
-    };
-}
 handler_load_ss! {
     fn load32_ss(Load32_Ss) = wasm::load32;
     fn load64_ss(Load64_Ss) = wasm::load64;
@@ -1662,36 +1631,6 @@ handler_load_si! {
     fn u64_load32_si(U64Load32_Si) = wasm::i64_load32_u_at;
 }
 
-macro_rules! handler_load_mem0_offset16_ss {
-    ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
-        $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$decode {
-                        result,
-                        ptr,
-                        offset,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let mem_bytes = mem0_bytes(mem0, mem0_len);
-                let loaded = $load(mem_bytes, ptr, u64::from(u16::from(offset))).into_control()?;
-                set_value(sp, result, loaded);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
-            }
-        )*
-    };
-}
 handler_load_mem0_offset16_ss! {
     fn load32_mem0_offset16_ss(Load32Mem0Offset16_Ss) = wasm::load32;
     fn load64_mem0_offset16_ss(Load64Mem0Offset16_Ss) = wasm::load64;
