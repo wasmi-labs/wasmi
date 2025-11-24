@@ -363,6 +363,36 @@ handler_extract_lane! {
     fn v128_replace_lane64x2_ssi(V128ReplaceLane64x2_Ssi) = v128_replace_lane64x2;
 }
 
+macro_rules! handler_ternary {
+    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+        $(
+            #[cfg_attr(feature = "portable-dispatch", inline(always))]
+            pub fn $handler(
+                state: &mut VmState,
+                ip: Ip,
+                sp: Sp,
+                mem0: Mem0Ptr,
+                mem0_len: Mem0Len,
+                instance: Inst,
+            ) -> Done {
+                let (ip, $crate::ir::decode::$decode { result, a, b, c }) = unsafe { decode_op(ip) };
+                let a = get_value(a, sp);
+                let b = get_value(b, sp);
+                let c = get_value(c, sp);
+                let value = $eval(a, b, c).into_control()?;
+                set_value(sp, result, value);
+                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            }
+        )*
+    };
+}
+handler_ternary! {
+    fn f32x4_relaxed_madd_ssss(F32x4RelaxedMadd_Ssss) = simd::f32x4_relaxed_madd;
+    fn f32x4_relaxed_nmadd_ssss(F32x4RelaxedNmadd_Ssss) = simd::f32x4_relaxed_nmadd;
+    fn f64x2_relaxed_madd_ssss(F64x2RelaxedMadd_Ssss) = simd::f64x2_relaxed_madd;
+    fn f64x2_relaxed_nmadd_ssss(F64x2RelaxedNmadd_Ssss) = simd::f64x2_relaxed_nmadd;
+}
+
 macro_rules! gen_execution_handler_stubs {
     ( $($name:ident),* $(,)? ) => {
         $(
@@ -417,9 +447,5 @@ gen_execution_handler_stubs! {
     v128_store64_lane_ss,
     v128_store64_lane_mem0_offset16_ss,
     i32x4_relaxed_dot_i8x16_i7x16_add_ssss,
-    f32x4_relaxed_madd_ssss,
-    f32x4_relaxed_nmadd_ssss,
-    f64x2_relaxed_madd_ssss,
-    f64x2_relaxed_nmadd_ssss,
     v128_bitselect_ssss,
 }
