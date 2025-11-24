@@ -78,7 +78,6 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm SIMD replace lane instruction.
-    #[allow(clippy::type_complexity)]
     fn translate_replace_lane<T: op::SimdReplaceLane>(&mut self, lane: u8) -> Result<(), Error>
     where
         T::Item: IntoLaneIdx + From<TypedVal> + Copy,
