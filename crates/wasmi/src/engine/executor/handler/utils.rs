@@ -156,6 +156,9 @@ impl_get_value!(
     Sign<f64>,
     Address,
     Offset16,
+);
+#[cfg(feature = "simd")]
+impl_get_value!(
     [ImmLaneIdx<32>; 16],
 );
 
