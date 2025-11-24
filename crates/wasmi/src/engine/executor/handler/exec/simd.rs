@@ -364,7 +364,7 @@ handler_extract_lane! {
 }
 
 macro_rules! handler_ternary {
-    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident, $v0:ident, $v1:ident, $v2:ident) = $eval:expr );* $(;)? ) => {
         $(
             #[cfg_attr(feature = "portable-dispatch", inline(always))]
             pub fn $handler(
@@ -375,11 +375,11 @@ macro_rules! handler_ternary {
                 mem0_len: Mem0Len,
                 instance: Inst,
             ) -> Done {
-                let (ip, $crate::ir::decode::$decode { result, a, b, c }) = unsafe { decode_op(ip) };
-                let a = get_value(a, sp);
-                let b = get_value(b, sp);
-                let c = get_value(c, sp);
-                let value = $eval(a, b, c).into_control()?;
+                let (ip, $crate::ir::decode::$decode { result, $v0, $v1, $v2 }) = unsafe { decode_op(ip) };
+                let $v0 = get_value($v0, sp);
+                let $v1 = get_value($v1, sp);
+                let $v2 = get_value($v2, sp);
+                let value = $eval($v0, $v1, $v2).into_control()?;
                 set_value(sp, result, value);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
@@ -387,10 +387,14 @@ macro_rules! handler_ternary {
     };
 }
 handler_ternary! {
-    fn f32x4_relaxed_madd_ssss(F32x4RelaxedMadd_Ssss) = simd::f32x4_relaxed_madd;
-    fn f32x4_relaxed_nmadd_ssss(F32x4RelaxedNmadd_Ssss) = simd::f32x4_relaxed_nmadd;
-    fn f64x2_relaxed_madd_ssss(F64x2RelaxedMadd_Ssss) = simd::f64x2_relaxed_madd;
-    fn f64x2_relaxed_nmadd_ssss(F64x2RelaxedNmadd_Ssss) = simd::f64x2_relaxed_nmadd;
+    fn i8x16_shuffle(I8x16Shuffle, lhs, rhs, selector) = simd::i8x16_shuffle;
+    fn v128_bitselect_ssss(V128Bitselect_Ssss, a, b, c) = simd::v128_bitselect;
+    
+    fn i32x4_relaxed_dot_i8x16_i7x16_add_ssss(I32x4RelaxedDotI8x16I7x16Add_Ssss, a, b, c) = simd::i32x4_relaxed_dot_i8x16_i7x16_add_s;
+    fn f32x4_relaxed_madd_ssss(F32x4RelaxedMadd_Ssss, a, b, c) = simd::f32x4_relaxed_madd;
+    fn f32x4_relaxed_nmadd_ssss(F32x4RelaxedNmadd_Ssss, a, b, c) = simd::f32x4_relaxed_nmadd;
+    fn f64x2_relaxed_madd_ssss(F64x2RelaxedMadd_Ssss, a, b, c) = simd::f64x2_relaxed_madd;
+    fn f64x2_relaxed_nmadd_ssss(F64x2RelaxedNmadd_Ssss, a, b, c) = simd::f64x2_relaxed_nmadd;
 }
 
 macro_rules! gen_execution_handler_stubs {
@@ -401,7 +405,6 @@ macro_rules! gen_execution_handler_stubs {
     };
 }
 gen_execution_handler_stubs! {
-    i8x16_shuffle,
     v128_load_ss,
     v128_load_mem0_offset16_ss,
     i16x8_load8x8_ss,
@@ -446,6 +449,4 @@ gen_execution_handler_stubs! {
     v128_store32_lane_mem0_offset16_ss,
     v128_store64_lane_ss,
     v128_store64_lane_mem0_offset16_ss,
-    i32x4_relaxed_dot_i8x16_i7x16_add_ssss,
-    v128_bitselect_ssss,
 }
