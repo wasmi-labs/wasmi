@@ -389,7 +389,7 @@ macro_rules! handler_ternary {
 handler_ternary! {
     fn i8x16_shuffle(I8x16Shuffle, lhs, rhs, selector) = simd::i8x16_shuffle;
     fn v128_bitselect_ssss(V128Bitselect_Ssss, a, b, c) = simd::v128_bitselect;
-    
+
     fn i32x4_relaxed_dot_i8x16_i7x16_add_ssss(I32x4RelaxedDotI8x16I7x16Add_Ssss, a, b, c) = simd::i32x4_relaxed_dot_i8x16_i7x16_add_s;
     fn f32x4_relaxed_madd_ssss(F32x4RelaxedMadd_Ssss, a, b, c) = simd::f32x4_relaxed_madd;
     fn f32x4_relaxed_nmadd_ssss(F32x4RelaxedNmadd_Ssss, a, b, c) = simd::f32x4_relaxed_nmadd;
