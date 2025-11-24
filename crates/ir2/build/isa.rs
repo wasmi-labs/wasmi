@@ -14,6 +14,7 @@ use crate::build::{
         LoadOp,
         LoadOpKind,
         OperandKind,
+        SimdTy,
         StoreOp,
         StoreOpKind,
         TableGetOp,
@@ -23,6 +24,7 @@ use crate::build::{
         Ty,
         UnaryOp,
         UnaryOpKind,
+        V128ExtractLaneOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
@@ -778,55 +780,14 @@ fn add_simd_splat_ops(isa: &mut Isa) {
 
 fn add_simd_extract_lane_ops(isa: &mut Isa) {
     let ops = [
-        Op::from(GenericOp::new(
-            Ident::S8x16ExtractLane,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Lane, FieldTy::ImmLaneIdx16),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::U8x16ExtractLane,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Lane, FieldTy::ImmLaneIdx16),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::S16x8ExtractLane,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Lane, FieldTy::ImmLaneIdx8),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::U16x8ExtractLane,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Lane, FieldTy::ImmLaneIdx8),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::U32x4ExtractLane,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Lane, FieldTy::ImmLaneIdx4),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::U64x2ExtractLane,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Lane, FieldTy::ImmLaneIdx2),
-            ],
-        )),
-    ];
+        V128ExtractLaneOp::new(SimdTy::I8x16),
+        V128ExtractLaneOp::new(SimdTy::U8x16),
+        V128ExtractLaneOp::new(SimdTy::I16x8),
+        V128ExtractLaneOp::new(SimdTy::U16x8),
+        V128ExtractLaneOp::new(SimdTy::U32x4),
+        V128ExtractLaneOp::new(SimdTy::U64x2),
+    ]
+    .map(Op::from);
     isa.push_ops(ops);
 }
 

@@ -82,6 +82,7 @@ impl Op {
             Op::Generic4(op) => op.has_result(),
             Op::Generic5(op) => op.has_result(),
             Op::V128ReplaceLane(_) => true,
+            Op::V128ExtractLane(_) => true,
             Op::V128LoadLane(_) => true,
         }
     }
