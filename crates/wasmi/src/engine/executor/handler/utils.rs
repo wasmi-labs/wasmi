@@ -158,9 +158,7 @@ impl_get_value!(
     Offset16,
 );
 #[cfg(feature = "simd")]
-impl_get_value!(
-    [ImmLaneIdx<32>; 16],
-);
+impl_get_value!([ImmLaneIdx<32>; 16]);
 
 impl<T> GetValue<T> for Slot
 where
