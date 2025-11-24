@@ -311,32 +311,32 @@ macro_rules! foreach_test {
             fn wasmi_simd("wasmi/tests/simd");
 
             // Wasm `simd` tests
-            // fn spec_simd_address("spec/simd_address");
-            // fn spec_simd_align("spec/simd_align");
+            fn spec_simd_address("spec/simd_address");
+            fn spec_simd_align("spec/simd_align");
             // fn spec_simd_bit_shift("spec/simd_bit_shift");
             fn spec_simd_bitwise("spec/simd_bitwise");
             fn spec_simd_boolean("spec/simd_boolean");
-            // fn spec_simd_const("spec/simd_const");
+            fn spec_simd_const("spec/simd_const");
             fn spec_simd_conversions("spec/simd_conversions");
-            // fn spec_simd_f32x4("spec/simd_f32x4");
-            // fn spec_simd_f32x4_arith("spec/simd_f32x4_arith");
+            fn spec_simd_f32x4("spec/simd_f32x4");
+            fn spec_simd_f32x4_arith("spec/simd_f32x4_arith");
             fn spec_simd_f32x4_cmp("spec/simd_f32x4_cmp");
             fn spec_simd_f32x4_pmin_pmax("spec/simd_f32x4_pmin_pmax");
             fn spec_simd_f32x4_rounding("spec/simd_f32x4_rounding");
-            // fn spec_simd_f64x2("spec/simd_f64x2");
-            // fn spec_simd_f64x2_arith("spec/simd_f64x2_arith");
+            fn spec_simd_f64x2("spec/simd_f64x2");
+            fn spec_simd_f64x2_arith("spec/simd_f64x2_arith");
             fn spec_simd_f64x2_cmp("spec/simd_f64x2_cmp");
             fn spec_simd_f64x2_pmin_pmax("spec/simd_f64x2_pmin_pmax");
             fn spec_simd_f64x2_rounding("spec/simd_f64x2_rounding");
             fn spec_simd_i16x8_arith("spec/simd_i16x8_arith");
-            // fn spec_simd_i16x8_arith2("spec/simd_i16x8_arith2");
+            fn spec_simd_i16x8_arith2("spec/simd_i16x8_arith2");
             fn spec_simd_i16x8_cmp("spec/simd_i16x8_cmp");
             fn spec_simd_i16x8_extadd_pairwise_i8x16("spec/simd_i16x8_extadd_pairwise_i8x16");
             fn spec_simd_i16x8_extmul_i8x16("spec/simd_i16x8_extmul_i8x16");
             fn spec_simd_i16x8_q15mulr_sat_s("spec/simd_i16x8_q15mulr_sat_s");
             fn spec_simd_i16x8_sat_arith("spec/simd_i16x8_sat_arith");
             fn spec_simd_i32x4_arith("spec/simd_i32x4_arith");
-            // fn spec_simd_i32x4_arith2("spec/simd_i32x4_arith2");
+            fn spec_simd_i32x4_arith2("spec/simd_i32x4_arith2");
             fn spec_simd_i32x4_cmp("spec/simd_i32x4_cmp");
             fn spec_simd_i32x4_dot_i16x8("spec/simd_i32x4_dot_i16x8");
             fn spec_simd_i32x4_extadd_pairwise_i16x8("spec/simd_i32x4_extadd_pairwise_i16x8");
@@ -344,11 +344,11 @@ macro_rules! foreach_test {
             fn spec_simd_i32x4_trunc_sat_f32x4("spec/simd_i32x4_trunc_sat_f32x4");
             fn spec_simd_i32x4_trunc_sat_f64x2("spec/simd_i32x4_trunc_sat_f64x2");
             fn spec_simd_i64x2_arith("spec/simd_i64x2_arith");
-            // fn spec_simd_i64x2_arith2("spec/simd_i64x2_arith2");
+            fn spec_simd_i64x2_arith2("spec/simd_i64x2_arith2");
             fn spec_simd_i64x2_cmp("spec/simd_i64x2_cmp");
             // fn spec_simd_i64x2_extmul_i32x4("spec/simd_i64x2_extmul_i32x4");
             fn spec_simd_i8x16_arith("spec/simd_i8x16_arith");
-            // fn spec_simd_i8x16_arith2("spec/simd_i8x16_arith2");
+            fn spec_simd_i8x16_arith2("spec/simd_i8x16_arith2");
             fn spec_simd_i8x16_cmp("spec/simd_i8x16_cmp");
             fn spec_simd_i8x16_sat_arith("spec/simd_i8x16_sat_arith");
             fn spec_simd_int_to_int_extend("spec/simd_int_to_int_extend");
@@ -363,7 +363,7 @@ macro_rules! foreach_test {
             fn spec_simd_load_extend("spec/simd_load_extend");
             fn spec_simd_load_zero("spec/simd_load_zero");
             fn spec_simd_splat("spec/simd_splat");
-            // fn spec_simd_store("spec/simd_store");
+            fn spec_simd_store("spec/simd_store");
             fn spec_simd_store16_lane("spec/simd_store16_lane");
             fn spec_simd_store32_lane("spec/simd_store32_lane");
             fn spec_simd_store64_lane("spec/simd_store64_lane");
@@ -375,7 +375,7 @@ macro_rules! foreach_test {
             fn spec_relaxed_simd_i8x16_relaxed_swizzle("spec/proposals/relaxed-simd/i8x16_relaxed_swizzle");
             fn spec_relaxed_simd_relaxed_dot_product("spec/proposals/relaxed-simd/relaxed_dot_product");
             fn spec_relaxed_simd_relaxed_laneselect("spec/proposals/relaxed-simd/relaxed_laneselect");
-            // fn spec_relaxed_simd_relaxed_madd_nmadd("spec/proposals/relaxed-simd/relaxed_madd_nmadd");
+            fn spec_relaxed_simd_relaxed_madd_nmadd("spec/proposals/relaxed-simd/relaxed_madd_nmadd");
             fn spec_relaxed_simd_relaxed_min_max("spec/proposals/relaxed-simd/relaxed_min_max");
         }
     };
