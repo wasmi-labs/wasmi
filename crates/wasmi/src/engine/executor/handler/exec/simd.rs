@@ -29,12 +29,10 @@ pub fn copy128(
             value_hi,
         },
     ) = unsafe { decode_op(ip) };
-    let value_lo = get_value(value_lo, sp);
-    let value_hi = get_value(value_hi, sp);
-    let result_lo = result;
-    let result_hi = result.next();
-    set_value(sp, result_lo, value_lo);
-    set_value(sp, result_hi, value_hi);
+    let value_lo: u64 = get_value(value_lo, sp);
+    let value_hi: u64 = get_value(value_hi, sp);
+    let v128: V128 = V128::from((u128::from(value_hi) << 64) | u128::from(value_lo));
+    set_value(sp, result, v128);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
