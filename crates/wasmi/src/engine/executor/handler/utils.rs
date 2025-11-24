@@ -1,4 +1,6 @@
 use super::state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
+#[cfg(feature = "simd")]
+use crate::core::simd::ImmLaneIdx;
 use crate::{
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
     engine::{
@@ -154,6 +156,7 @@ impl_get_value!(
     Sign<f64>,
     Address,
     Offset16,
+    [ImmLaneIdx<32>; 16],
 );
 
 impl<T> GetValue<T> for Slot
