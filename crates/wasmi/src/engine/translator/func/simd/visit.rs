@@ -218,7 +218,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_i8x16_extract_lane_s(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<i8, _>(
             lane,
-            Op::i8x16_extract_lane,
+            Op::i8x16_extract_lane_ss,
             simd::i8x16_extract_lane_s,
         )
     }
@@ -226,7 +226,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_i8x16_extract_lane_u(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<u8, _>(
             lane,
-            Op::u8x16_extract_lane,
+            Op::u8x16_extract_lane_ss,
             simd::i8x16_extract_lane_u,
         )
     }
@@ -234,7 +234,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_i16x8_extract_lane_s(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<i16, _>(
             lane,
-            Op::i16x8_extract_lane,
+            Op::i16x8_extract_lane_ss,
             simd::i16x8_extract_lane_s,
         )
     }
@@ -242,7 +242,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_i16x8_extract_lane_u(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<u16, _>(
             lane,
-            Op::u16x8_extract_lane,
+            Op::u16x8_extract_lane_ss,
             simd::i16x8_extract_lane_u,
         )
     }
@@ -250,7 +250,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_i32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<i32, _>(
             lane,
-            Op::u32x4_extract_lane,
+            Op::u32x4_extract_lane_ss,
             simd::i32x4_extract_lane,
         )
     }
@@ -258,7 +258,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_i64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<i64, _>(
             lane,
-            Op::u64x2_extract_lane,
+            Op::u64x2_extract_lane_ss,
             simd::i64x2_extract_lane,
         )
     }
@@ -266,7 +266,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_f32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<f32, _>(
             lane,
-            Op::u32x4_extract_lane,
+            Op::u32x4_extract_lane_ss,
             simd::f32x4_extract_lane,
         )
     }
@@ -274,7 +274,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_f64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<f64, _>(
             lane,
-            Op::u64x2_extract_lane,
+            Op::u64x2_extract_lane_ss,
             simd::f64x2_extract_lane,
         )
     }
