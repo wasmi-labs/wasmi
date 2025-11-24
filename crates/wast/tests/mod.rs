@@ -352,7 +352,7 @@ macro_rules! foreach_test {
             fn spec_simd_i8x16_cmp("spec/simd_i8x16_cmp");
             fn spec_simd_i8x16_sat_arith("spec/simd_i8x16_sat_arith");
             fn spec_simd_int_to_int_extend("spec/simd_int_to_int_extend");
-            // fn spec_simd_lane("spec/simd_lane");
+            fn spec_simd_lane("spec/simd_lane");
             fn spec_simd_linking("spec/simd_linking");
             fn spec_simd_load("spec/simd_load");
             fn spec_simd_load16_lane("spec/simd_load16_lane");
@@ -362,12 +362,12 @@ macro_rules! foreach_test {
             fn spec_simd_load_splat("spec/simd_load_splat");
             fn spec_simd_load_extend("spec/simd_load_extend");
             fn spec_simd_load_zero("spec/simd_load_zero");
-            // fn spec_simd_splat("spec/simd_splat");
+            fn spec_simd_splat("spec/simd_splat");
             // fn spec_simd_store("spec/simd_store");
-            // fn spec_simd_store16_lane("spec/simd_store16_lane");
-            // fn spec_simd_store32_lane("spec/simd_store32_lane");
-            // fn spec_simd_store64_lane("spec/simd_store64_lane");
-            // fn spec_simd_store8_lane("spec/simd_store8_lane");
+            fn spec_simd_store16_lane("spec/simd_store16_lane");
+            fn spec_simd_store32_lane("spec/simd_store32_lane");
+            fn spec_simd_store64_lane("spec/simd_store64_lane");
+            fn spec_simd_store8_lane("spec/simd_store8_lane");
 
             // Wasm `relaxed-simd` tests
             fn spec_relaxed_simd_i16x8_relaxed_q15mulr_s("spec/proposals/relaxed-simd/i16x8_relaxed_q15mulr_s");
