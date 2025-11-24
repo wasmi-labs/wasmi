@@ -507,6 +507,14 @@ handler_load_lane_mem0_offset16! {
     fn v128_load_lane64_mem0_offset16_sss(V128LoadLane64Mem0Offset16_Sss) = simd::v128_load64_lane;
 }
 
+handler_store_sx! {
+    fn store128_ss(Store128_Ss, V128) = simd::v128_store;
+}
+
+handler_store_mem0_offset16_sx! {
+    fn store128_mem0_offset16_ss(Store128Mem0Offset16_Ss, V128) = simd::v128_store;
+}
+
 macro_rules! gen_execution_handler_stubs {
     ( $($name:ident),* $(,)? ) => {
         $(
@@ -515,8 +523,6 @@ macro_rules! gen_execution_handler_stubs {
     };
 }
 gen_execution_handler_stubs! {
-    store128_ss,
-    store128_mem0_offset16_ss,
     v128_store8_lane_ss,
     v128_store8_lane_mem0_offset16_ss,
     v128_store16_lane_ss,
