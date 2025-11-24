@@ -11,6 +11,7 @@ use crate::build::{
         CmpSelectOp,
         FieldTy,
         GenericOp,
+        LaneWidth,
         LoadOp,
         OperandKind,
         StoreOp,
@@ -18,6 +19,7 @@ use crate::build::{
         TableSetOp,
         TernaryOp,
         UnaryOp,
+        V128ExtractLaneOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
@@ -221,6 +223,18 @@ impl Display for DisplayDecode<&'_ V128ReplaceLaneOp> {
         writeln!(
             f,
             "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {len_lanes}>;"
+        )
+    }
+}
+
+impl Display for DisplayDecode<&'_ V128ExtractLaneOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let len_lanes = LaneWidth::from(op.ty).len_lanes();
+        writeln!(
+            f,
+            "pub type {camel_ident} = V128ExtractLaneOp<{len_lanes}>;"
         )
     }
 }

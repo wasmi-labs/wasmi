@@ -18,6 +18,7 @@ use crate::build::{
         TableSetOp,
         TernaryOp,
         UnaryOp,
+        V128ExtractLaneOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
@@ -177,6 +178,7 @@ impl_display_variant! {
     TableGetOp,
     TableSetOp,
     V128ReplaceLaneOp,
+    V128ExtractLaneOp,
     V128LoadLaneOp,
 }
 

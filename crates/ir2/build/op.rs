@@ -21,6 +21,7 @@ macro_rules! apply_macro_for_ops {
             Generic4(GenericOp<4>),
             Generic5(GenericOp<5>),
             V128ReplaceLane(V128ReplaceLaneOp),
+            V128ExtractLane(V128ExtractLaneOp),
             V128LoadLane(V128LoadLaneOp),
         }
     };
@@ -2198,6 +2199,82 @@ impl LaneWidth {
             Self::W32 => FieldTy::ImmLaneIdx4,
             Self::W64 => FieldTy::ImmLaneIdx2,
         }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum SimdTy {
+    I8x16,
+    U8x16,
+    I16x8,
+    U16x8,
+    U32x4,
+    U64x2,
+}
+
+impl From<SimdTy> for Ty {
+    fn from(value: SimdTy) -> Self {
+        match value {
+            SimdTy::I8x16 => Self::I8x16,
+            SimdTy::U8x16 => Self::U8x16,
+            SimdTy::I16x8 => Self::I16x8,
+            SimdTy::U16x8 => Self::U16x8,
+            SimdTy::U32x4 => Self::U32x4,
+            SimdTy::U64x2 => Self::U64x2,
+        }
+    }
+}
+
+impl From<SimdTy> for LaneWidth {
+    fn from(value: SimdTy) -> Self {
+        match value {
+            SimdTy::I8x16 => Self::W8,
+            SimdTy::U8x16 => Self::W8,
+            SimdTy::I16x8 => Self::W16,
+            SimdTy::U16x8 => Self::W16,
+            SimdTy::U32x4 => Self::W32,
+            SimdTy::U64x2 => Self::W64,
+        }
+    }
+}
+
+impl SimdTy {
+    pub fn lane_ty(self) -> FieldTy {
+        match self {
+            SimdTy::I8x16 => FieldTy::ImmLaneIdx16,
+            SimdTy::U8x16 => FieldTy::ImmLaneIdx16,
+            SimdTy::I16x8 => FieldTy::ImmLaneIdx8,
+            SimdTy::U16x8 => FieldTy::ImmLaneIdx8,
+            SimdTy::U32x4 => FieldTy::ImmLaneIdx4,
+            SimdTy::U64x2 => FieldTy::ImmLaneIdx2,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct V128ExtractLaneOp {
+    pub ty: SimdTy,
+}
+
+impl V128ExtractLaneOp {
+    pub fn new(ty: SimdTy) -> Self {
+        Self { ty }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Slot)
+    }
+
+    pub fn value_field(&self) -> Field {
+        Field::new(Ident::Value, FieldTy::Slot)
+    }
+
+    pub fn lane_field(&self) -> Field {
+        Field::new(Ident::Lane, self.ty.lane_ty())
+    }
+
+    pub fn fields(&self) -> [Field; 3] {
+        [self.result_field(), self.value_field(), self.lane_field()]
     }
 }
 
