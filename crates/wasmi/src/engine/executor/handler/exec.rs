@@ -10,7 +10,7 @@ pub use self::simd::*;
 use super::{
     dispatch::Done,
     eval,
-    state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+    state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
@@ -1646,37 +1646,6 @@ handler_load_mem0_offset16_ss! {
     fn u64_load32_mem0_offset16_ss(U64Load32Mem0Offset16_Ss) = wasm::i64_load32_u;
 }
 
-macro_rules! handler_store_sx {
-    ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
-        $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$decode {
-                        ptr,
-                        offset,
-                        value,
-                        memory,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let value: $hint = get_value(value, sp);
-                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                $store(mem_bytes, ptr, offset, value.into()).into_control()?;
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
-            }
-        )*
-    };
-}
 handler_store_sx! {
     fn store32_ss(Store32_Ss, u32) = wasm::store32;
     fn store32_si(Store32_Si, u32) = wasm::store32;
@@ -1740,36 +1709,6 @@ handler_store_ix! {
     fn i64_store32_ii(I64Store32_Ii, i32) = wasm::i64_store32_at;
 }
 
-macro_rules! handler_store_mem0_offset16_sx {
-    ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
-        $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$decode {
-                        ptr,
-                        offset,
-                        value,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let value: $hint = get_value(value, sp);
-                let mem_bytes = mem0_bytes(mem0, mem0_len);
-                $store(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()).into_control()?;
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
-            }
-        )*
-    };
-}
 handler_store_mem0_offset16_sx! {
     fn store32_mem0_offset16_ss(Store32Mem0Offset16_Ss, u32) = wasm::store32;
     fn store32_mem0_offset16_si(Store32Mem0Offset16_Si, u32) = wasm::store32;
