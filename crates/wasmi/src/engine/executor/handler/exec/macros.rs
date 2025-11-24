@@ -97,7 +97,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                 ) = unsafe { decode_op(ip) };
                 let ptr = get_value(ptr, sp);
                 let offset = get_value(offset, sp);
-                let mem_bytes = mem0_bytes(mem0, mem0_len);
+                let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
                 let loaded = $load(mem_bytes, ptr, u64::from(u16::from(offset))).into_control()?;
                 set_value(sp, result, loaded);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
