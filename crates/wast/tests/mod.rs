@@ -313,7 +313,7 @@ macro_rules! foreach_test {
             // Wasm `simd` tests
             fn spec_simd_address("spec/simd_address");
             fn spec_simd_align("spec/simd_align");
-            // fn spec_simd_bit_shift("spec/simd_bit_shift");
+            fn spec_simd_bit_shift("spec/simd_bit_shift");
             fn spec_simd_bitwise("spec/simd_bitwise");
             fn spec_simd_boolean("spec/simd_boolean");
             fn spec_simd_const("spec/simd_const");
