@@ -1781,12 +1781,12 @@ impl FuncTranslator {
     fn translate_shift<T>(
         &mut self,
         make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Value) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::ShiftAmount) -> Op,
         make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
-        T: WasmInteger + IntoShiftAmount,
+        T: WasmInteger + IntoShiftAmount<ShiftSource: From<TypedVal>>,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -1794,7 +1794,8 @@ impl FuncTranslator {
                 self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
             }
             (lhs, Operand::Immediate(rhs)) => {
-                let Some(rhs) = T::into_shift_amount(T::from(rhs.val())) else {
+                let shift_amount = <T::ShiftSource>::from(rhs.val());
+                let Some(rhs) = T::into_shift_amount(shift_amount) else {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
                     self.stack.push_operand(lhs)?;
                     return Ok(());
