@@ -63,4 +63,4 @@ inherits = "dev"
 debug-assertions = false
 
 [profile.release]
-codegen-units = 1
+codegen-units = 1 # required to avoid stackoverflows when _not_ using `wasmi`'s `portable-dispatch` feature
