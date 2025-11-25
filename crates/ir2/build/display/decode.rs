@@ -9,7 +9,6 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         CmpSelectOp,
-        FieldTy,
         GenericOp,
         LaneWidth,
         LoadOp,
