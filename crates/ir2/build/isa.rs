@@ -420,15 +420,15 @@ fn add_control_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::BranchTable,
             [
-                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::LenTargets, FieldTy::U32),
+                Field::new(Ident::Index, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::BranchTableSpan,
             [
-                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::LenTargets, FieldTy::U32),
+                Field::new(Ident::Index, FieldTy::Slot),
                 Field::new(Ident::Values, FieldTy::SlotSpan),
                 Field::new(Ident::LenValues, FieldTy::U16),
             ],
@@ -544,8 +544,8 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::GlobalGet,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Global, FieldTy::Global),
+                Field::new(Ident::Result, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
@@ -565,8 +565,8 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::GlobalSet64,
             [
-                Field::new(Ident::Global, FieldTy::Global),
                 Field::new(Ident::Value, FieldTy::U64),
+                Field::new(Ident::Global, FieldTy::Global),
             ],
         )),
     ];
