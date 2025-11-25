@@ -1045,7 +1045,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i64x2_extmul_low_i32x4_u(&mut self) -> Self::Output {
         self.translate_simd_binary(
-            Op::i64x2_extmul_low_i32x4_sss,
+            Op::u64x2_extmul_low_i32x4_sss,
             simd::i64x2_extmul_low_i32x4_u,
         )
     }
