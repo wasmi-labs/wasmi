@@ -307,6 +307,8 @@ macro_rules! foreach_test {
             fn wasmi_fuse_select_f64_le("wasmi/tests/fuse-select/f64_le");
             fn wasmi_fuse_select_f64_gt("wasmi/tests/fuse-select/f64_gt");
             fn wasmi_fuse_select_f64_ge("wasmi/tests/fuse-select/f64_ge");
+            // Simd
+            fn wasmi_simd("wasmi/tests/simd");
 
             // Wasm `simd` tests
             fn spec_simd_address("spec/simd_address");
