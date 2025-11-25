@@ -89,7 +89,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             custom_page_sizes_enabled: true,
             bulk_memory_enabled: true,
             reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
-            simd_enabled: false,
+            simd_enabled: true,
             relaxed_simd_enabled: false,
             multi_value_enabled: true,
             memory64_enabled: true,
