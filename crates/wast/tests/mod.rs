@@ -346,7 +346,7 @@ macro_rules! foreach_test {
             fn spec_simd_i64x2_arith("spec/simd_i64x2_arith");
             fn spec_simd_i64x2_arith2("spec/simd_i64x2_arith2");
             fn spec_simd_i64x2_cmp("spec/simd_i64x2_cmp");
-            // fn spec_simd_i64x2_extmul_i32x4("spec/simd_i64x2_extmul_i32x4");
+            fn spec_simd_i64x2_extmul_i32x4("spec/simd_i64x2_extmul_i32x4");
             fn spec_simd_i8x16_arith("spec/simd_i8x16_arith");
             fn spec_simd_i8x16_arith2("spec/simd_i8x16_arith2");
             fn spec_simd_i8x16_cmp("spec/simd_i8x16_cmp");
