@@ -532,7 +532,7 @@ impl OpEncoder {
     }
 
     /// Returns an iterator yielding all encoded [`Op`]s of the [`OpEncoder`] as bytes.
-    pub fn encoded_ops(&mut self) -> &[u8] {
+    pub fn encoded_ops(&self) -> &[u8] {
         debug_assert!(self.staged.is_none());
         &self.ops.buffer[..]
     }
