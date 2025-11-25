@@ -37,10 +37,10 @@ pub fn copy128(
 }
 
 macro_rules! impl_splat_bytes {
-    ( $(fn $name:ident(value: $ty:ty) -> V128 = $signed:expr; )* ) => {
+    ( $(fn $name:ident(value: $ty:ty) -> V128 = $splat:expr; )* ) => {
         $(
             fn $name(value: $ty) -> V128 {
-                $signed(value as _)
+                $splat(value as _)
             }
         )*
     }
