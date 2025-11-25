@@ -177,26 +177,30 @@ impl_to_bits! {
 }
 
 pub trait IntoShiftAmount {
-    /// The type denoting the shift amount.
+    /// The source type expected by the Wasm specification.
+    type ShiftSource: Copy;
+
+    /// The type denoting the shift amount in Wasmi bytecode.
     ///
     /// This is an unsigned integer ranging from `1..N` where `N` is the number of bits in `Self`.
-    type Value: Copy;
+    type ShiftAmount: Copy;
 
     /// Returns `self` wrapped into a proper shift amount for `Self`.
     ///
     /// Returns `None` if the resulting shift amount is 0, a.k.a. a no-op.
-    fn into_shift_amount(self) -> Option<Self::Value>;
+    fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount>;
 }
 
 macro_rules! impl_into_shift_amount {
     ( $($ty:ty),* $(,)? ) => {
         $(
             impl IntoShiftAmount for $ty {
-                type Value = u8;
+                type ShiftSource = Self;
+                type ShiftAmount = u8;
 
-                fn into_shift_amount(self) -> Option<Self::Value> {
-                    let len_bits = (::core::mem::size_of::<Self>() * 8) as Self;
-                    let shamt = self.checked_rem_euclid(len_bits)?;
+                fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount> {
+                    let len_bits = (::core::mem::size_of::<Self::ShiftSource>() * 8) as Self;
+                    let shamt = source.checked_rem_euclid(len_bits)?;
                     Some(shamt as _)
                 }
             }
@@ -204,3 +208,21 @@ macro_rules! impl_into_shift_amount {
     };
 }
 impl_into_shift_amount!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+
+macro_rules! impl_into_simd_shift_amount {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl IntoShiftAmount for $ty {
+                type ShiftSource = u32;
+                type ShiftAmount = u8;
+
+                fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount> {
+                    let len_bits = (::core::mem::size_of::<Self::ShiftSource>() * 8) as Self::ShiftSource;
+                    let shamt = source.checked_rem_euclid(len_bits)?;
+                    Some(shamt as _)
+                }
+            }
+        )*
+    };
+}
+impl_into_simd_shift_amount!([u8; 16], [u16; 8], [u32; 4], [u64; 2]);

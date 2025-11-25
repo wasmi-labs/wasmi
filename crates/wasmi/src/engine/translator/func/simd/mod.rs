@@ -188,11 +188,11 @@ impl FuncTranslator {
     fn translate_simd_shift<T>(
         &mut self,
         make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Value) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::ShiftAmount) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: IntoShiftAmount + From<TypedVal>,
+        T: IntoShiftAmount<ShiftSource: From<TypedVal>>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
@@ -203,7 +203,8 @@ impl FuncTranslator {
             return Ok(());
         }
         if let Operand::Immediate(rhs) = rhs {
-            let Some(rhs) = T::into_shift_amount(rhs.val().into()) else {
+            let shift_amount = <T::ShiftSource>::from(rhs.val());
+            let Some(rhs) = T::into_shift_amount(shift_amount) else {
                 // Case: the shift operation is a no-op
                 self.stack.push_operand(lhs)?;
                 return Ok(());
