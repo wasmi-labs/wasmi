@@ -211,8 +211,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_slot(lhs)?;
-        let rhs = self.layout.operand_to_slot(rhs)?;
+        let lhs = self.copy_if_immediate(lhs)?;
+        let rhs = self.copy_if_immediate(rhs)?;
         self.push_instr_with_result(
             ValType::V128,
             |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
