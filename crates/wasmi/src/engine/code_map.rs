@@ -369,7 +369,7 @@ impl CodeMap {
         func: EngineFunc,
         mut uncompiled: UncompiledFuncEntity,
     ) -> Result<CompiledFuncRef<'a>, Error> {
-        // Note: it is important that compilation happens without locking the `CodeMap`
+        // Note: It is important that compilation happens without locking the `CodeMap`
         //       since compilation can take a prolonged time.
         let compiled_func = uncompiled.compile(fuel, &self.features);
         let mut funcs = self.funcs.lock();
@@ -744,7 +744,7 @@ impl SmallByteSlice {
     /// The maximum amount of bytes that can be stored inline.
     ///
     /// This value was chosen because it allows for the maximum
-    /// amount of bytes stored inline with minimal `size_of`.
+    /// amount of bytes to be stored inline with minimal `size_of`.
     const MAX_INLINE_SIZE: usize = 22;
 
     /// Returns the underlying slice of bytes.

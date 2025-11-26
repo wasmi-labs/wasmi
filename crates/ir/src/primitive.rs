@@ -156,7 +156,7 @@ impl BranchOffset {
         let src = i64::from(src);
         let dst = i64::from(dst);
         let Some(offset) = dst.checked_sub(src) else {
-            // Note: This never needs to be called on backwards branches since they are immediated resolved.
+            // Note: This never needs to be called on backwards branches since they are immediately resolved.
             unreachable!(
                 "offset for forward branches must have `src` be smaller than or equal to `dst`"
             );
