@@ -268,7 +268,7 @@ impl Module {
     /// Validates `wasm` as a WebAssembly binary given the configuration (via [`Config`]) in `engine`.
     ///
     /// This function performs Wasm validation of the binary input WebAssembly module and
-    /// returns either `Ok`` or `Err`` depending on the results of the validation.
+    /// returns either `Ok` or `Err` depending on the results of the validation.
     /// The [`Config`] of the `engine` is used for Wasm validation which indicates which WebAssembly
     /// features are valid and invalid for the validation.
     ///
@@ -371,9 +371,9 @@ impl Module {
     fn internal_tables(&self) -> SliceIter<'_, TableType> {
         let header = self.module_header();
         let len_imported = header.imports.len_tables;
-        // We skip the first `len_imported` elements in `memories`
+        // We skip the first `len_imported` elements in `tables`
         // since they refer to imported and not internally defined
-        // linear memories.
+        // tables.
         let tables = &header.tables[len_imported..];
         tables.iter()
     }
