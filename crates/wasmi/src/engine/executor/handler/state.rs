@@ -263,15 +263,22 @@ impl Sp {
     }
 }
 
+/// The Wasmi stack.
+///
+/// This combines both value stack and call stack and provides a common API
+/// to interact with both.
 #[derive(Debug)]
 pub struct Stack {
+    /// The underlying value stack.
     values: ValueStack,
+    /// The underlying call stack.
     frames: CallStack,
 }
 
 type ReturnCallHost = Control<(Ip, Sp, Inst), Sp>;
 
 impl Stack {
+    /// Creates a new [`Stack`] with the given [`StackConfig`] limits.
     pub fn new(config: &StackConfig) -> Self {
         Self {
             values: ValueStack::new(config.min_stack_height(), config.max_stack_height()),
@@ -279,6 +286,7 @@ impl Stack {
         }
     }
 
+    /// Creates a new [`Stack`] without heap allocations.
     pub fn empty() -> Self {
         Self {
             values: ValueStack::empty(),
@@ -286,11 +294,13 @@ impl Stack {
         }
     }
 
+    /// Resets `self` for reuse.
     pub fn reset(&mut self) {
         self.values.reset();
         self.frames.reset();
     }
 
+    /// Returns the total number of heap allocated bytes of `self`.
     pub fn bytes_allocated(&self) -> usize {
         // Note: we use saturating add since this API is only used to separate
         //       heap allocating from non-heap allocating instances.
@@ -299,10 +309,23 @@ impl Stack {
             .saturating_add(self.frames.bytes_allocates())
     }
 
+    /// Synchronizes the [`Ip`] of the top-most function frame.
+    ///
+    /// # Note
+    ///
+    /// - Usually the current [`Ip`] is stored outside of the [`Stack`].
+    /// - Synchronization is required when calling another function or when
+    ///   finishing a resumable call in order to be able to resume execution
+    ///   at that point later.
     pub fn sync_ip(&mut self, ip: Ip) {
         self.frames.sync_ip(ip);
     }
 
+    /// Restores the top-most function frame and its [`Ip`], [`Sp`] and [`Inst`].
+    ///
+    /// # Note
+    ///
+    /// This is useful and required to resume a function execution that yielded back to the host.
     pub fn restore_frame(&mut self) -> (Ip, Sp, Inst) {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
@@ -311,6 +334,7 @@ impl Stack {
         (ip, sp, instance)
     }
 
+    /// Prepares `self` for a host function tail call.
     pub fn return_prepare_host_frame<'a>(
         &'a mut self,
         callee_params: BoundedSlotSpan,
@@ -322,6 +346,7 @@ impl Stack {
             .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
     }
 
+    /// Prepares `self` for a host function call.
     pub fn prepare_host_frame<'a>(
         &'a mut self,
         caller_ip: Option<Ip>,
@@ -333,6 +358,7 @@ impl Stack {
             .prepare_host_frame(caller_start, callee_params, results_len)
     }
 
+    /// Adjusts `self` for a normal function call.
     #[inline(always)]
     pub fn push_frame(
         &mut self,
@@ -348,6 +374,7 @@ impl Stack {
         self.values.push(start, callee_size, callee_params.len())
     }
 
+    /// Adjusts `self` after returning from a function.
     pub fn pop_frame(
         &mut self,
         store: &mut PrunedStore,
@@ -367,6 +394,7 @@ impl Stack {
         Some((ip, sp, mem0, mem0_len, instance))
     }
 
+    /// Adjusts `self` for a function tail call.
     #[inline(always)]
     pub fn replace_frame(
         &mut self,
@@ -380,13 +408,27 @@ impl Stack {
     }
 }
 
+/// The value stack.
+///
+/// The Wasmi value stack is organized in 64-bit cells
+/// where each is associated to a single function frame.
+///
+/// Cells can be read from and written to via [`Slot`]s.
+///
+/// # Note
+///
+/// - A [`ValueStack`] has a maximum height which it cannot exceed.
+/// - A [`ValueStack`] can only grow (via [`ValueStack::grow_if_needed`]) and never shrink.
 #[derive(Debug)]
 pub struct ValueStack {
+    /// The cells of the value stack.
     cells: Vec<UntypedVal>,
+    /// The maximum height of the value stack.
     max_height: usize,
 }
 
 impl ValueStack {
+    /// Create a new [`ValueStack`] with the minimum and maximum height limits.
     fn new(min_height: usize, max_height: usize) -> Self {
         debug_assert!(min_height <= max_height);
         // We need to convert from `size_of<Cell>`` to `size_of<u8>`:
@@ -397,6 +439,7 @@ impl ValueStack {
         Self { cells, max_height }
     }
 
+    /// Create an empty [`ValueStack`] which uses no heap allocations.
     fn empty() -> Self {
         Self {
             cells: Vec::new(),
@@ -404,15 +447,22 @@ impl ValueStack {
         }
     }
 
+    /// Reset `self` for reuse.
     fn reset(&mut self) {
         self.cells.clear();
     }
 
+    /// Returns the number of heap allocated bytes of `self`.
+    ///
+    /// # Note
+    ///
+    /// This is mostly used to separate instances with and without heap allocations for caching.
     fn bytes_allocates(&self) -> usize {
         let bytes_per_frame = mem::size_of::<UntypedVal>();
         self.cells.capacity() * bytes_per_frame
     }
 
+    /// Returns an [`Sp`] pointing to the cell at the `start` index.
     fn sp(&mut self, start: usize) -> Sp {
         debug_assert!(
             // Note: it is fine to use <= here because for zero sized frames
@@ -427,6 +477,9 @@ impl ValueStack {
         Sp::new(value)
     }
 
+    /// Returns an [`Sp`] pointing to the cell at the `start` index if `self` is non-empty.
+    ///
+    /// Otherwise returns a dangling [`Sp`] that must not be derefenced.
     fn sp_or_dangling(&mut self, start: usize) -> Sp {
         match self.cells.is_empty() {
             true => {
@@ -475,6 +528,8 @@ impl ValueStack {
         Ok(())
     }
 
+    /// Prepares `self` for a host function tail call.
+    ///
     /// # Note
     ///
     /// In the following code, `callee` represents the called host function frame
@@ -526,6 +581,7 @@ impl ValueStack {
         Ok((control, inout))
     }
 
+    /// Prepares `self` for a host function call.
     fn prepare_host_frame<'a>(
         &'a mut self,
         caller_start: usize,
@@ -549,6 +605,7 @@ impl ValueStack {
         Ok((sp, inout))
     }
 
+    /// Adjusts `self` for a normal function call.
     #[inline(always)]
     fn push(&mut self, start: usize, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
         let len_params = usize::from(len_params);
@@ -566,6 +623,7 @@ impl ValueStack {
         Ok(sp)
     }
 
+    /// Adjusts `self` for a function tail call.
     #[inline(always)]
     fn replace(
         &mut self,
@@ -593,14 +651,28 @@ impl ValueStack {
     }
 }
 
+/// The Wasmi call stack.
+///
+/// This holds all the information about function frames that are on the call stack.
+/// Additionally it keeps track of the [`Inst`] that is currently in use.
+///
+/// # Note
+///
+/// - A [`CallStack`] has a maximum height which it cannot exceed.
 #[derive(Debug)]
 pub struct CallStack {
+    /// The stack of function frames.
     frames: Vec<Frame>,
+    /// The currently used [`Inst`] if any.
+    ///
+    /// This may be `None`, for example if the [`CallStack`] is empty.
     instance: Option<Inst>,
+    /// The maximum height of the call stack.
     max_height: usize,
 }
 
 impl CallStack {
+    /// Creates a new [`CallStack`] with the given maximum height.
     fn new(max_height: usize) -> Self {
         Self {
             frames: Vec::new(),
@@ -609,29 +681,50 @@ impl CallStack {
         }
     }
 
+    /// Returns the number of heap allocated bytes of `self`.
+    ///
+    /// # Note
+    ///
+    /// This is mostly used to separate instances with and without heap allocations for caching.
     fn bytes_allocates(&self) -> usize {
         let bytes_per_frame = mem::size_of::<Frame>();
         self.frames.capacity() * bytes_per_frame
     }
 
+    /// Creates an empty [`CallStack`] which uses no heap allocations.
     fn empty() -> Self {
         Self::new(0)
     }
 
+    /// Resets `self` for reuse.
     fn reset(&mut self) {
         self.frames.clear();
         self.instance = None;
     }
 
+    /// Returns the `start` index of the top-most function frame.
+    ///
+    /// Returns 0 if `self` is empty.
     fn top_start(&self) -> usize {
         let Some(top) = self.top() else { return 0 };
         top.start
     }
 
+    /// Returns a shared reference to the top-most function frame if any.
+    ///
+    /// Returns `None` if `self` is empty.
     fn top(&self) -> Option<&Frame> {
         self.frames.last()
     }
 
+    /// Synchronizes the [`Ip`] of the top-most function frame.
+    ///
+    /// # Note
+    ///
+    /// - Usually the current [`Ip`] is stored outside of the [`CallStack`].
+    /// - Synchronization is required when calling another function or when
+    ///   finishing a resumable call in order to be able to resume execution
+    ///   at that point later.
     fn sync_ip(&mut self, ip: Ip) {
         let Some(top) = self.frames.last_mut() else {
             panic!("must have top call frame")
@@ -639,12 +732,18 @@ impl CallStack {
         top.ip = ip;
     }
 
+    /// Restores the top-most function frame and its [`Ip`], `start` index and [`Inst`].
+    ///
+    /// # Note
+    ///
+    /// This is useful and required to resume a function execution that yielded back to the host.
     fn restore_frame(&self) -> Option<(Ip, usize, Inst)> {
         let instance = self.instance?;
         let top = self.top()?;
         Some((top.ip, top.start, instance))
     }
 
+    /// Prepares `self` for a host function call.
     fn prepare_host_frame(&mut self, caller_ip: Option<Ip>) -> usize {
         if let Some(caller_ip) = caller_ip {
             self.sync_ip(caller_ip);
@@ -652,6 +751,8 @@ impl CallStack {
         self.top_start()
     }
 
+    /// Prepares `self` for a host function tail call.
+    ///
     /// # Note
     ///
     /// In the following code, `callee` represents the called host function frame
@@ -672,6 +773,7 @@ impl CallStack {
         (callee_start, caller)
     }
 
+    /// Adjusts `self` for a normal function call.
     #[inline(always)]
     fn push(
         &mut self,
@@ -703,6 +805,7 @@ impl CallStack {
         Ok(start)
     }
 
+    /// Adjusts `self` after returning from a function.
     fn pop(&mut self) -> Option<(Ip, usize, Option<Inst>)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
@@ -716,6 +819,7 @@ impl CallStack {
         Some((ip, start, popped.instance))
     }
 
+    /// Adjusts `self` for a function tail call.
     #[inline(always)]
     fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<usize, TrapCode> {
         let Some(caller_frame) = self.frames.last_mut() else {
@@ -735,9 +839,23 @@ impl CallStack {
     }
 }
 
+/// The state of a single function frame.
 #[derive(Debug)]
 pub struct Frame {
+    /// The functions [`Ip`].
+    ///
+    /// # Note
+    ///
+    /// This needs to be kept in sync for example when calling another function
+    /// or yielding back to the host in for resumable calls.
     pub ip: Ip,
+    /// The start index on the value stack for this function frame.
     start: usize,
+    /// The [`Inst`] used if any.
+    ///
+    /// # Note
+    ///
+    /// This is only `Some` if [`Frame`] and its caller originate from different
+    /// Wasm instances and thus execution needs to change the currently used [`Inst`].
     instance: Option<Inst>,
 }
