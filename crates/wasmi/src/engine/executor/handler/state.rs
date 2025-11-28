@@ -229,17 +229,8 @@ pub struct Sp {
 }
 
 impl Sp {
-    pub fn new(cells: &mut Vec<UntypedVal>, start: usize) -> Self {
-        debug_assert!(
-            // Note: it is fine to use <= here because for zero sized frames
-            //       we sometimes end up with `start == cells.len()` which isn't
-            //       bad since in those cases `Sp` is never used.
-            start <= cells.len(),
-            "start = {}, cells.len() = {}",
-            start,
-            cells.len()
-        );
-        let value = unsafe { cells.as_mut_ptr().add(start) };
+    #[inline]
+    pub fn new(value: *mut UntypedVal) -> Self {
         Self { value }
     }
 
@@ -423,7 +414,17 @@ impl ValueStack {
     }
 
     fn sp(&mut self, start: usize) -> Sp {
-        Sp::new(&mut self.cells, start)
+        debug_assert!(
+            // Note: it is fine to use <= here because for zero sized frames
+            //       we sometimes end up with `start == cells.len()` which isn't
+            //       bad since in those cases `Sp` is never used.
+            start <= self.cells.len(),
+            "start = {}, cells.len() = {}",
+            start,
+            self.cells.len()
+        );
+        let value = unsafe { self.cells.as_mut_ptr().add(start) };
+        Sp::new(value)
     }
 
     fn sp_or_dangling(&mut self, start: usize) -> Sp {
