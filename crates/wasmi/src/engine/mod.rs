@@ -538,7 +538,7 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if stack.capacity() > 0 && self.stacks.len() < self.config.max_cached_stacks() {
+        if stack.bytes_allocated() > 0 && self.stacks.len() < self.config.max_cached_stacks() {
             self.stacks.push(stack);
         }
     }

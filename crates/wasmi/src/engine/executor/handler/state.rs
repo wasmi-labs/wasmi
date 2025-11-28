@@ -300,8 +300,12 @@ impl Stack {
         self.frames.reset();
     }
 
-    pub fn capacity(&self) -> usize {
-        self.values.capacity()
+    pub fn bytes_allocated(&self) -> usize {
+        // Note: we use saturating add since this API is only used to separate
+        //       heap allocating from non-heap allocating instances.
+        self.values
+            .bytes_allocates()
+            .saturating_add(self.frames.bytes_allocates())
     }
 
     pub fn sync_ip(&mut self, ip: Ip) {
@@ -413,8 +417,9 @@ impl ValueStack {
         self.cells.clear();
     }
 
-    fn capacity(&self) -> usize {
-        self.cells.capacity()
+    fn bytes_allocates(&self) -> usize {
+        let bytes_per_frame = mem::size_of::<UntypedVal>();
+        self.cells.capacity() * bytes_per_frame
     }
 
     fn sp(&mut self, start: usize) -> Sp {
@@ -601,6 +606,11 @@ impl CallStack {
             instance: None,
             max_height,
         }
+    }
+
+    fn bytes_allocates(&self) -> usize {
+        let bytes_per_frame = mem::size_of::<Frame>();
+        self.frames.capacity() * bytes_per_frame
     }
 
     fn empty() -> Self {
