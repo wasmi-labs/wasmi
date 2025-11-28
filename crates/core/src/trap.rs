@@ -263,18 +263,22 @@ macro_rules! generate_trap_code {
     };
 }
 generate_trap_code! {
+    // Note: we deliberately do _not_ assign the zero value so that it can be used as success state
+    //       in `Result<(), TrapCode>` or `Control<(), TrapCode>` as the compiler can then generate
+    //       slightly better code.
+
     /// Wasm code executed `unreachable` opcode.
     ///
     /// This indicates that unreachable Wasm code was actually reached.
     /// This opcode have a similar purpose as `ud2` in x86.
-    UnreachableCodeReached = 0,
+    UnreachableCodeReached = 1,
 
     /// Attempt to load or store at the address which
     /// lies outside of bounds of the memory.
     ///
     /// Since addresses are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative addresses (i.e. they will always wrap).
-    MemoryOutOfBounds = 1,
+    MemoryOutOfBounds = 2,
 
     /// Attempt to access table element at index which
     /// lies outside of bounds.
@@ -284,36 +288,36 @@ generate_trap_code! {
     ///
     /// Since indexes are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative indexes (i.e. they will always wrap).
-    TableOutOfBounds = 2,
+    TableOutOfBounds = 3,
 
     /// Indicates that a `call_indirect` instruction called a function at
     /// an uninitialized (i.e. `null`) table index.
-    IndirectCallToNull = 3,
+    IndirectCallToNull = 4,
 
     /// Attempt to divide by zero.
     ///
     /// This trap typically can happen if `div` or `rem` is executed with
     /// zero as divider.
-    IntegerDivisionByZero = 4,
+    IntegerDivisionByZero = 5,
 
     /// An integer arithmetic operation caused an overflow.
     ///
     /// This can happen when trying to do signed division (or get the remainder)
     /// -2<sup>N-1</sup> over -1. This is because the result +2<sup>N-1</sup>
     /// isn't representable as a N-bit signed integer.
-    IntegerOverflow = 5,
+    IntegerOverflow = 6,
 
     /// Attempted to make an invalid conversion to an integer type.
     ///
     /// This can for example happen when trying to truncate NaNs,
     /// infinity, or value for which the result is out of range into an integer.
-    BadConversionToInteger = 6,
+    BadConversionToInteger = 7,
 
     /// Stack overflow.
     ///
     /// This is likely caused by some infinite or very deep recursion.
     /// Extensive inlining might also be the cause of stack overflow.
-    StackOverflow = 7,
+    StackOverflow = 8,
 
     /// Attempt to invoke a function with mismatching signature.
     ///
@@ -321,25 +325,25 @@ generate_trap_code! {
     /// specify the expected signature of function. If an indirect call is executed
     /// with an index that points to a function with signature different of what is
     /// expected by this indirect call, this trap is raised.
-    BadSignature = 8,
+    BadSignature = 9,
 
     /// This trap is raised when a WebAssembly execution ran out of fuel.
     ///
     /// The Wasmi execution engine can be configured to instrument its
     /// internal bytecode so that fuel is consumed for each executed instruction.
     /// This is useful to deterministically halt or yield a WebAssembly execution.
-    OutOfFuel = 9,
+    OutOfFuel = 10,
 
     /// This trap is raised when a growth operation was attempted and an
     /// installed `wasmi::ResourceLimiter` returned `Err(...)` from the
     /// associated `table_growing` or `memory_growing` method, indicating a
     /// desire on the part of the embedder to trap the interpreter rather than
     /// merely fail the growth operation.
-    GrowthOperationLimited = 10,
+    GrowthOperationLimited = 11,
 
     /// This trap is raised when a WebAssembly operation demanded a memory
     /// allocation and the host system could not supply the requested amount.
-    OutOfSystemMemory = 11,
+    OutOfSystemMemory = 12,
 }
 
 impl TrapCode {
