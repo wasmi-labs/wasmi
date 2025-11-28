@@ -50,24 +50,32 @@ impl From<ExecutionOutcome> for Error {
 }
 
 impl From<ResumableHostTrapError> for ExecutionOutcome {
+    #[cold]
+    #[inline]
     fn from(error: ResumableHostTrapError) -> Self {
         Self::Host(error)
     }
 }
 
 impl From<ResumableOutOfFuelError> for ExecutionOutcome {
+    #[cold]
+    #[inline]
     fn from(error: ResumableOutOfFuelError) -> Self {
         Self::OutOfFuel(error)
     }
 }
 
 impl From<TrapCode> for ExecutionOutcome {
+    #[cold]
+    #[inline]
     fn from(error: TrapCode) -> Self {
         Self::Error(error.into())
     }
 }
 
 impl From<Error> for ExecutionOutcome {
+    #[cold]
+    #[inline]
     fn from(error: Error) -> Self {
         Self::Error(error)
     }
