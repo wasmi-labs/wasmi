@@ -140,7 +140,7 @@ impl Executor {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
         let handler = super::decode_handler(self.ip);
         handler(self, state)
