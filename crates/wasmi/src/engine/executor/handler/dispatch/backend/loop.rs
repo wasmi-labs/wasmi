@@ -84,12 +84,12 @@ impl Executor {
     #[inline(never)]
     fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
         let Control::Break(reason) = self.execute_until_break(state);
-        self.handle_break(state, reason)
+        Self::handle_break(state, reason)
     }
 
     #[cold]
     #[inline(never)]
-    fn handle_break(&mut self, state: &mut VmState, reason: Break) -> Result<Sp, ExecutionOutcome> {
+    fn handle_break(state: &mut VmState, reason: Break) -> Result<Sp, ExecutionOutcome> {
         if let Some(trap_code) = reason.trap_code() {
             return Err(ExecutionOutcome::from(trap_code));
         }
