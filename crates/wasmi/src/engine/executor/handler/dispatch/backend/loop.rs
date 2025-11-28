@@ -83,7 +83,7 @@ pub struct Executor {
 impl Executor {
     #[inline(never)]
     fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
-        let reason = self.execute_until_break(state);
+        let Control::Break(reason) = self.execute_until_break(state);
         self.handle_break(state, reason)
     }
 
@@ -103,10 +103,13 @@ impl Executor {
     }
 }
 
+/// Represents the never type `!`.
+pub enum Never {}
+
 #[cfg(feature = "indirect-dispatch")]
 impl Executor {
     #[inline(always)]
-    fn execute_until_break(&mut self, state: &mut VmState) -> Break {
+    fn execute_until_break(&mut self, state: &mut VmState) -> Control<Never, Break> {
         macro_rules! impl_body {
             ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
                 let mut op_code = super::decode_op_code(self.ip);
@@ -115,9 +118,7 @@ impl Executor {
                         match op_code {
                             $(
                                 OpCode::$camel_case => {
-                                    if let Control::Break(reason) = self.$snake_case(state) {
-                                        return reason
-                                    }
+                                    self.$snake_case(state)?;
                                     op_code = super::decode_op_code(self.ip);
                                     break 'next op_code
                                 },
@@ -133,12 +134,9 @@ impl Executor {
 
 #[cfg(not(feature = "indirect-dispatch"))]
 impl Executor {
-    fn execute_until_break(&mut self, state: &mut VmState) -> Break {
-        'next: loop {
-            if let Control::Break(reason) = self.dispatch_handler(state) {
-                return reason;
-            }
-            continue 'next;
+    fn execute_until_break(&mut self, state: &mut VmState) -> Control<Never, Break> {
+        loop {
+            self.dispatch_handler(state)?
         }
     }
 
