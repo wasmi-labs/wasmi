@@ -21,7 +21,7 @@ wasmtime = { workspace = true, optional = true, features = [
     "runtime",
     "std",
     "gc", # required for full reference-types support in fuzzing
-    "gc-null", # required because of `gc`
+    "gc-drc", # required because of `gc`
 ] }
 wasm-smith = { workspace = true }
 wasmprinter = { workspace = true }
