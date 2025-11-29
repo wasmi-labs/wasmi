@@ -23,6 +23,7 @@ impl<'a> Arbitrary<'a> for FuzzInput<'a> {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         let config = FuzzWasmiConfig::arbitrary(u)?;
         let mut fuzz_config = FuzzSmithConfig::arbitrary(u)?;
+        fuzz_config.allow_execution();
         fuzz_config.export_everything();
         let module = FuzzModule::new(fuzz_config, u)?;
         Ok(Self {
