@@ -1,7 +1,7 @@
 [package]
 name = "wasmi_fuzz"
 version.workspace = true
-rust-version.workspace = true
+# rust-version.workspace = true # cannot use `rust-version.workspace = true` due to Wasmtime dependency
 documentation = "https://docs.rs/wasmi_fuzz"
 description = "Fuzzing utilities and infrastructure for the Wasmi interpreter"
 authors.workspace = true
