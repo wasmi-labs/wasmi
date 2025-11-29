@@ -88,7 +88,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             // Wasm proposals supported by Wasmi:
             custom_page_sizes_enabled: true,
             bulk_memory_enabled: true,
-            reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
+            reference_types_enabled: true,
             simd_enabled: true,
             relaxed_simd_enabled: true,
             multi_value_enabled: true,
