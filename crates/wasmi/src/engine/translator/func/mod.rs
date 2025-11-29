@@ -799,8 +799,9 @@ impl FuncTranslator {
         instr: Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<Pos<Op>, Error> {
+        debug_assert!(instr.result_ref().is_none());
         let consume_fuel = self.stack.consume_fuel_instr();
-        let instr = self.instrs.stage(instr, consume_fuel, fuel_costs)?; // TODO: maybe use OpEncoder::encode here instead
+        let instr = self.instrs.encode(instr, consume_fuel, fuel_costs)?;
         Ok(instr)
     }
 
@@ -813,8 +814,9 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let result = self.layout.temp_to_slot(self.stack.push_temp(result_ty)?)?;
-        self.instrs
-            .stage(make_instr(result), consume_fuel_instr, fuel_costs)?;
+        let op = make_instr(result);
+        debug_assert!(op.result_ref().is_some());
+        self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
         Ok(())
     }
 
