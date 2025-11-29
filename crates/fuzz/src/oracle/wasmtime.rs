@@ -37,9 +37,9 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // scheme that might yield worse codegen, but this translation time
         // trade-off usually is not worth it during fuzzing.
 
-        // TODO: re-enable fast regalloc once the Wasmtime issue has been resolved:
-        //       https://github.com/bytecodealliance/wasmtime/pull/10554
-        // config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
+        // Note: we use `SinglePass` reg-alloc because it is way faster and
+        //       thus less likely will time-out the fuzzing process in some instances.
+        config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
 
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
