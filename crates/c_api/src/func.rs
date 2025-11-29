@@ -129,7 +129,6 @@ pub unsafe extern "C" fn wasm_func_new(
     ty: &wasm_functype_t,
     callback: wasm_func_callback_t,
 ) -> Box<wasm_func_t> {
-    #[allow(clippy::redundant_closure)] // TODO: remove once the `clippy` false-positive is fixed
     create_function(store, ty, move |params, results| callback(params, results))
 }
 
