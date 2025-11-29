@@ -50,9 +50,9 @@ wasm-smith = "0.228.0"
 wasmprinter = { version = "0.228.0", default-features = false }
 
 # Wasmtime dependencies
-wasi-common = { version = "36.0.0", default-features = false }
-wiggle = { version = "36.0.0", default-features = false }
-wasmtime = { version = "36.0.0", default-features = false }
+wasi-common = { version = "39.0.0", default-features = false }
+wiggle = { version = "39.0.0", default-features = false }
+wasmtime = { version = "39.0.0", default-features = false }
 
 [profile.bench]
 lto = "fat"
