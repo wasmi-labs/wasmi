@@ -516,8 +516,33 @@ pub struct EngineStacks {
     config: StackConfig,
 }
 
-unsafe impl Send for EngineStacks {} // TODO: write safety docs
-unsafe impl Sync for EngineStacks {} // TODO: write safety docs
+// # Safety
+//
+// The `EngineStacks` type does not automatically implement `Send` because
+// its internal `Stack` type used in `Vec<Stack>` does not implement `Send`.
+// The reason is that for execution performance reasons `Stack` uses raw pointers
+// internally.
+// However, those raw pointers never leak outside and are only point to memory
+// areas heap allocated for the `Stack`. The `Stack` itself is used via `Vec`
+// and no accesses to it are always going through a `&mut Store`.
+//
+// In summary it is safe to impl `Send` for the outer `EngineStack` since we
+// make sure not to break safety invariants that make `Stack` itself not `Send`.
+unsafe impl Send for EngineStacks {}
+
+// # Safety
+//
+// The `EngineStacks` type does not automatically implement `Sync` because
+// its internal `Stack` type used in `Vec<Stack>` does not implement `Sync`.
+// The reason is that for execution performance reasons `Stack` uses raw pointers
+// internally.
+// However, those raw pointers never leak outside and are only point to memory
+// areas heap allocated for the `Stack`. The `Stack` itself is used via `Vec`
+// and no accesses to it are always going through a `&mut Store`.
+//
+// In summary it is safe to impl `Sync` for the outer `EngineStack` since we
+// make sure not to break safety invariants that make `Stack` itself not `Sync`.
+unsafe impl Sync for EngineStacks {}
 
 impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackConfig`].
