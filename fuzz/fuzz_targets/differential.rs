@@ -32,6 +32,7 @@ pub struct FuzzInput<'a> {
 impl<'a> Arbitrary<'a> for FuzzInput<'a> {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         let mut fuzz_config = FuzzSmithConfig::arbitrary(u)?;
+        fuzz_config.allow_execution();
         fuzz_config.enable_nan_canonicalization();
         fuzz_config.export_everything();
         let chosen_oracle = ChosenOracle::arbitrary(u).unwrap_or_default();
