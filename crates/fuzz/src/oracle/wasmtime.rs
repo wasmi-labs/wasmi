@@ -33,12 +33,8 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // improves performance of the translation process that can quickly
         // become very slow.
         config.cranelift_opt_level(wasmtime::OptLevel::None);
-        // We tell Cranelift to use a somewhat faster register allocation
-        // scheme that might yield worse codegen, but this translation time
-        // trade-off usually is not worth it during fuzzing.
-
-        // Note: we use `SinglePass` reg-alloc because it is way faster and
-        //       thus less likely will time-out the fuzzing process in some instances.
+        // We use `SinglePass` reg-alloc because it is way faster and
+        // thus less likely will time-out the fuzzing process in some instances.
         config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
 
         config.wasm_custom_page_sizes(true);
