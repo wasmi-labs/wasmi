@@ -614,7 +614,6 @@ impl WastRunner {
     fn fill_params(&mut self, args: &[WastArg]) -> Result<()> {
         self.params.clear();
         for arg in args {
-            #[allow(unreachable_patterns)] // TODO: remove once `wast v220` is used
             let arg = match arg {
                 WastArg::Core(arg) => arg,
                 _ => {
