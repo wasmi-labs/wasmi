@@ -51,6 +51,7 @@ use crate::{
             },
             Control,
         },
+        utils::unreachable_unchecked,
         EngineFunc,
     },
     errors::{FuelError, MemoryError, TableError},
@@ -486,12 +487,9 @@ pub fn memory_grow(
         Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
             trap!(TrapCode::GrowthOperationLimited);
         }
-        Err(StoreError::Internal(_error)) => {
-            // TODO: we do not want to panic in the executor handlers so we somehow
-            //       want to establish a way to signal to the executor that a panic
-            //       occurred, instead.
-            todo!()
-        }
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!("internal interpreter error: {error}")
+        },
         Err(error) => {
             // TODO: see above
             panic!("`memory.grow`: internal interpreter error: {error}")
@@ -725,12 +723,9 @@ pub fn table_grow(
         Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
             trap!(TrapCode::GrowthOperationLimited);
         }
-        Err(StoreError::Internal(_error)) => {
-            // TODO: we do not want to panic in the executor handlers so we somehow
-            //       want to establish a way to signal to the executor that a panic
-            //       occurred, instead.
-            todo!()
-        }
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!("internal interpreter error: {error}")
+        },
         Err(error) => {
             panic!("`table.grow`: internal interpreter error: {error}")
         }
