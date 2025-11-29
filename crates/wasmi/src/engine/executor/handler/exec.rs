@@ -491,7 +491,6 @@ pub fn memory_grow(
             unreachable_unchecked!("internal interpreter error: {error}")
         },
         Err(error) => {
-            // TODO: see above
             panic!("`memory.grow`: internal interpreter error: {error}")
         }
     };
