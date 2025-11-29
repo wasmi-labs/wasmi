@@ -96,8 +96,8 @@ impl_untyped_val! {
     fn i64_shl(lhs: i64, rhs: i64) -> i64 = Integer::shl;
     fn i32_shr_s(lhs: i32, rhs: i32) -> i32 = Integer::shr_s;
     fn i64_shr_s(lhs: i64, rhs: i64) -> i64 = Integer::shr_s;
-    fn i32_shr_u(lhs: i32, rhs: i32) -> i32 = Integer::shr_u;
-    fn i64_shr_u(lhs: i64, rhs: i64) -> i64 = Integer::shr_u;
+    fn i32_shr_u(lhs: u32, rhs: u32) -> u32 = <i32 as Integer>::shr_u;
+    fn i64_shr_u(lhs: u64, rhs: u64) -> u64 = <i64 as Integer>::shr_u;
     fn i32_rotl(lhs: i32, rhs: i32) -> i32 = Integer::rotl;
     fn i64_rotl(lhs: i64, rhs: i64) -> i64 = Integer::rotl;
     fn i32_rotr(lhs: i32, rhs: i32) -> i32 = Integer::rotr;

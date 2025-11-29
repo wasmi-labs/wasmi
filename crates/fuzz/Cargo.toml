@@ -15,7 +15,7 @@ exclude.workspace = true
 publish = false
 
 [dependencies]
-wasmi = { workspace = true, features = ["std", "simd"] }
+wasmi = { workspace = true, features = ["std", "simd", "portable-dispatch", "extra-checks"] }
 wasmtime = { workspace = true, optional = true, features = [
     "cranelift",
     "runtime",

@@ -7,20 +7,15 @@ use crate::{
     core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
     engine::translator::{
         func::{utils::Input, Operand},
-        utils::{Instr, Wrap},
+        utils::{IntoShiftAmount, ToBits, Wrap},
     },
     ir::{
         index::{self, Memory},
-        Address32,
-        IntoShiftAmount,
-        Offset64,
-        Offset64Lo,
-        Offset8,
+        Offset16,
         Op,
         Slot,
     },
     Error,
-    TrapCode,
     ValType,
     V128,
 };
@@ -30,24 +25,24 @@ impl FuncTranslator {
     /// Generically translate any of the Wasm `simd` splat instructions.
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
-        make_instr: fn(result: Slot, value: Slot) -> Op,
-        const_eval: fn(Wrapped) -> V128,
+        make_instr_ss: fn(result: Slot, value: Slot) -> Op,
+        make_instr_si: fn(result: Slot, value: <Wrapped as ToBits>::Out) -> Op,
     ) -> Result<(), Error>
     where
         T: From<TypedVal> + Wrap<Wrapped>,
+        Wrapped: ToBits,
     {
         bail_unreachable!(self);
         let value = self.stack.pop();
-        if let Operand::Immediate(value) = value {
-            let value = T::from(value.val()).wrap();
-            let result = const_eval(value);
-            self.stack.push_immediate(result)?;
-            return Ok(());
-        };
-        let value = self.layout.operand_to_reg(value)?;
+        let value = self.make_input(value, |_this, value| {
+            Ok(Input::Immediate(T::from(value).wrap().to_bits()))
+        })?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| make_instr(result, value),
+            |result| match value {
+                Input::Slot(value) => make_instr_ss(result, value),
+                Input::Immediate(value) => make_instr_si(result, value),
+            },
             FuelCostsProvider::simd,
         )?;
         Ok(())
@@ -73,7 +68,7 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         };
-        let input = self.layout.operand_to_reg(input)?;
+        let input = self.layout.operand_to_slot(input)?;
         self.push_instr_with_result(
             <R as Typed>::TY,
             |result| make_instr(result, input, lane),
@@ -83,7 +78,6 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm SIMD replace lane instruction.
-    #[allow(clippy::type_complexity)]
     fn translate_replace_lane<T: op::SimdReplaceLane>(&mut self, lane: u8) -> Result<(), Error>
     where
         T::Item: IntoLaneIdx + From<TypedVal> + Copy,
@@ -99,32 +93,18 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let input = self.layout.operand_to_reg(input)?;
-        let value =
-            self.make_input::<T::Immediate>(value, |this, value| {
-                match T::value_to_imm(T::Item::from(value)) {
-                    Some(imm) => Ok(Input::Immediate(imm)),
-                    None => {
-                        let imm = this.layout.const_to_reg(value)?;
-                        Ok(Input::Slot(imm))
-                    }
-                }
-            })?;
-        let param = match value {
-            Input::Slot(value) => Some(Op::slot(value)),
-            Input::Immediate(value) => T::replace_lane_imm_param(value),
-        };
+        let input = self.copy_if_immediate(input)?;
+        let value = self.make_input::<T::Immediate>(value, |_this, value| {
+            Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
+        })?;
         self.push_instr_with_result(
             <T::Item as Typed>::TY,
             |result| match value {
-                Input::Slot(_) => T::replace_lane(result, input, lane),
-                Input::Immediate(value) => T::replace_lane_imm(result, input, lane, value),
+                Input::Slot(value) => T::replace_lane_sss(result, input, lane, value),
+                Input::Immediate(value) => T::replace_lane_ssi(result, input, lane, value),
             },
             FuelCostsProvider::simd,
         )?;
-        if let Some(param) = param {
-            self.push_param(param)?;
-        }
         Ok(())
     }
 
@@ -145,7 +125,7 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         };
-        let input = self.layout.operand_to_reg(input)?;
+        let input = self.layout.operand_to_slot(input)?;
         self.push_instr_with_result(
             <T as Typed>::TY,
             |result| make_instr(result, input),
@@ -168,8 +148,8 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_reg(lhs)?;
-        let rhs = self.layout.operand_to_reg(rhs)?;
+        let lhs = self.copy_if_immediate(lhs)?;
+        let rhs = self.copy_if_immediate(rhs)?;
         self.push_instr_with_result(
             ValType::V128,
             |result| make_instr(result, lhs, rhs),
@@ -181,7 +161,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm ternary instruction.
     fn translate_simd_ternary(
         &mut self,
-        make_instr: fn(result: Slot, a: Slot, b: Slot) -> Op,
+        make_instr: fn(result: Slot, a: Slot, b: Slot, c: Slot) -> Op,
         const_eval: fn(lhas: V128, b: V128, c: V128) -> V128,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -193,27 +173,26 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_reg(a)?;
-        let rhs = self.layout.operand_to_reg(b)?;
-        let selector = self.layout.operand_to_reg(c)?;
+        let lhs = self.copy_if_immediate(a)?;
+        let rhs = self.copy_if_immediate(b)?;
+        let selector = self.copy_if_immediate(c)?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| make_instr(result, lhs, rhs),
+            |result| make_instr(result, lhs, rhs, selector),
             FuelCostsProvider::simd,
         )?;
-        self.push_param(Op::slot(selector))?;
         Ok(())
     }
 
     /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
-        make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_imm: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::Output) -> Op,
+        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::ShiftAmount) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: IntoShiftAmount<Input: From<TypedVal>>,
+        T: IntoShiftAmount<ShiftSource: From<TypedVal>>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
@@ -224,24 +203,25 @@ impl FuncTranslator {
             return Ok(());
         }
         if let Operand::Immediate(rhs) = rhs {
-            let Some(rhs) = T::into_shift_amount(rhs.val().into()) else {
+            let shift_amount = <T::ShiftSource>::from(rhs.val());
+            let Some(rhs) = T::into_shift_amount(shift_amount) else {
                 // Case: the shift operation is a no-op
                 self.stack.push_operand(lhs)?;
                 return Ok(());
             };
-            let lhs = self.layout.operand_to_reg(lhs)?;
+            let lhs = self.copy_if_immediate(lhs)?;
             self.push_instr_with_result(
                 ValType::V128,
-                |result| make_instr_imm(result, lhs, rhs),
+                |result| make_instr_ssi(result, lhs, rhs),
                 FuelCostsProvider::simd,
             )?;
             return Ok(());
         }
-        let lhs = self.layout.operand_to_reg(lhs)?;
-        let rhs = self.layout.operand_to_reg(rhs)?;
+        let lhs = self.copy_if_immediate(lhs)?;
+        let rhs = self.copy_if_immediate(rhs)?;
         self.push_instr_with_result(
             ValType::V128,
-            |result| make_instr(result, lhs, rhs),
+            |result| make_instr_sss(result, lhs, rhs),
             FuelCostsProvider::simd,
         )?;
         Ok(())
@@ -251,72 +231,45 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(result: Slot, offset_lo: Offset64Lo) -> Op,
-        make_instr_at: fn(result: Slot, address: Address32) -> Op,
+        load_lane: fn(
+            result: Slot,
+            ptr: Slot,
+            offset: u64,
+            memory: index::Memory,
+            v128: Slot,
+            lane: T::LaneIdx,
+        ) -> Op,
+        load_lane_mem0_offset16: fn(
+            result: Slot,
+            ptr: Slot,
+            offset: Offset16,
+            v128: Slot,
+            lane: T::LaneIdx,
+        ) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg);
+        let (memory, offset) = Self::decode_memarg(memarg)?;
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane: {lane}");
         };
-        let (ptr, x) = self.stack.pop2();
-        let x = self.layout.operand_to_reg(x)?;
-        let (ptr, offset) = match ptr {
-            Operand::Immediate(ptr) => {
-                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_load_lane_at::<T, _>(
-                        memory,
-                        x,
-                        lane,
-                        address,
-                        make_instr_at,
-                    );
-                }
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
+        let (ptr, v128) = self.stack.pop2();
+        let ptr = self.copy_if_immediate(ptr)?;
+        let v128 = self.copy_if_immediate(v128)?;
+        if memory.is_default() {
+            if let Ok(offset) = Offset16::try_from(offset) {
+                self.push_instr_with_result(
+                    <T as Typed>::TY,
+                    |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
+                    FuelCostsProvider::load,
+                )?;
+                return Ok(());
             }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
-        };
-        let (offset_hi, offset_lo) = Offset64::split(offset);
+        }
         self.push_instr_with_result(
             <T as Typed>::TY,
-            |result| make_instr(result, offset_lo),
+            |result| load_lane(result, ptr, offset, memory, v128, lane),
             FuelCostsProvider::load,
         )?;
-        self.push_param(Op::slot_and_offset_hi(ptr, offset_hi))?;
-        self.push_param(Op::slot_and_lane(x, lane))?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
-        Ok(())
-    }
-
-    fn translate_v128_load_lane_at<T: Typed, LaneType>(
-        &mut self,
-        memory: Memory,
-        x: Slot,
-        lane: LaneType,
-        address: Address32,
-        make_instr_at: fn(result: Slot, address: Address32) -> Op,
-    ) -> Result<(), Error>
-    where
-        LaneType: Into<u8>,
-    {
-        self.push_instr_with_result(
-            <T as Typed>::TY,
-            |result| make_instr_at(result, address),
-            FuelCostsProvider::load,
-        )?;
-        self.push_param(Op::slot_and_lane(x, lane))?;
-        if !memory.is_default() {
-            self.push_param(Op::memory_index(memory))?;
-        }
         Ok(())
     }
 
@@ -325,9 +278,13 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(ptr: Slot, offset_lo: Offset64Lo) -> Op,
-        make_instr_offset8: fn(ptr: Slot, value: Slot, offset: Offset8, lane: T::LaneIdx) -> Op,
-        make_instr_at: fn(value: Slot, address: Address32) -> Op,
+        make_instr: fn(ptr: Slot, offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        make_instr_mem0_offset16: fn(
+            ptr: Slot,
+            offset: Offset16,
+            value: Slot,
+            lane: T::LaneIdx,
+        ) -> Op,
         translate_imm: fn(
             &mut Self,
             memarg: MemArg,
@@ -347,81 +304,51 @@ impl FuncTranslator {
                 //       lane value and translate as a more efficient non-SIMD operation.
                 return translate_imm(self, memarg, ptr, lane, V128::from(v128.val()));
             }
-            v128 => self.layout.operand_to_reg(v128)?,
+            Operand::Local(v128) => self.layout.local_to_slot(v128)?,
+            Operand::Temp(v128) => self.layout.temp_to_slot(v128)?,
         };
-        let (memory, offset) = Self::decode_memarg(memarg);
-        let (ptr, offset) = match ptr {
-            Operand::Immediate(ptr) => {
-                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_store_lane_at::<T>(
-                        memory,
-                        address,
-                        v128,
-                        lane,
-                        make_instr_at,
-                    );
-                }
-                // Case: we cannot use specialized encoding and thus have to fall back
-                //       to the general case where `ptr` is zero and `offset` stores the
-                //       `ptr+offset` address value.
-                let zero_ptr = self.layout.const_to_reg(0_u64)?;
-                (zero_ptr, u64::from(address))
+        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let ptr = self.copy_if_immediate(ptr)?;
+        if memory.is_default() {
+            if let Ok(offset16) = Offset16::try_from(offset) {
+                self.push_instr(
+                    make_instr_mem0_offset16(ptr, offset16, v128, lane),
+                    FuelCostsProvider::store,
+                )?;
+                return Ok(());
             }
-            ptr => {
-                let ptr = self.layout.operand_to_reg(ptr)?;
-                (ptr, offset)
-            }
-        };
-        if let Ok(Some(_)) =
-            self.translate_v128_store_lane_mem0(memory, ptr, offset, v128, lane, make_instr_offset8)
-        {
-            return Ok(());
         }
-        let (offset_hi, offset_lo) = Offset64::split(offset);
-        let instr = make_instr(ptr, offset_lo);
-        let param = Op::slot_and_offset_hi(v128, offset_hi);
-        let param2 = Op::lane_and_memory_index(lane, memory);
-        self.push_instr(instr, FuelCostsProvider::store)?;
-        self.push_param(param)?;
-        self.push_param(param2)?;
-        Ok(())
-    }
-
-    fn translate_v128_store_lane_at<T: IntoLaneIdx>(
-        &mut self,
-        memory: index::Memory,
-        address: Address32,
-        value: Slot,
-        lane: T::LaneIdx,
-        make_instr_at: fn(value: Slot, address: Address32) -> Op,
-    ) -> Result<(), Error> {
-        self.push_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
-        self.push_param(Op::lane_and_memory_index(lane, memory))?;
-        Ok(())
-    }
-
-    fn translate_v128_store_lane_mem0<LaneType>(
-        &mut self,
-        memory: Memory,
-        ptr: Slot,
-        offset: u64,
-        value: Slot,
-        lane: LaneType,
-        make_instr_offset8: fn(Slot, Slot, Offset8, LaneType) -> Op,
-    ) -> Result<Option<Instr>, Error> {
-        if !memory.is_default() {
-            return Ok(None);
-        }
-        let Ok(offset8) = Offset8::try_from(offset) else {
-            return Ok(None);
-        };
-        let instr = self.push_instr(
-            make_instr_offset8(ptr, value, offset8, lane),
+        self.push_instr(
+            make_instr(ptr, offset, v128, memory, lane),
             FuelCostsProvider::store,
         )?;
-        Ok(Some(instr))
+        Ok(())
+    }
+
+    /// Encodes a Wasmi `store128` operator with `(mem 0)` and 16-bit encodable `offset` to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// - Returns `Ok(true)` if encoding was successfull.
+    /// - Returns `Ok(false)` if encoding was unsuccessful.
+    /// - Returns `Err(_)` if an error occurred.
+    fn translate_store128_mem0_offset16(
+        &mut self,
+        ptr: Slot,
+        offset: u64,
+        memory: index::Memory,
+        value: Slot,
+    ) -> Result<bool, Error> {
+        if !memory.is_default() {
+            return Ok(false);
+        }
+        let Ok(offset16) = Offset16::try_from(offset) else {
+            return Ok(false);
+        };
+        self.push_instr(
+            Op::store128_mem0_offset16_ss(ptr, offset16, value),
+            FuelCostsProvider::store,
+        )?;
+        Ok(true)
     }
 }

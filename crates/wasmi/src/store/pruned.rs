@@ -1,11 +1,12 @@
-use super::{typeid, CallHooks, FuncInOut, HostFuncEntity, StoreInner};
+use super::{typeid, CallHooks, FuncInOut, StoreInner};
 use crate::{
     core::{hint, UntypedVal},
+    engine::Inst,
     errors::{MemoryError, TableError},
+    func::Trampoline,
     store::error::{InternalStoreError, StoreError},
     CallHook,
     Error,
-    Instance,
     Memory,
     Store,
     Table,
@@ -25,15 +26,15 @@ use crate::Engine;
 #[allow(clippy::type_complexity)]
 #[derive(Copy, Clone)]
 pub struct PrunedStoreVTable {
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    /// Calls the host function with the `params` and `results` on `instance`.
     ///
     /// # Errors
     ///
     /// If the called host function returned an error.
     call_host_func: fn(
         store: &mut PrunedStore,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
+        trampoline: Trampoline,
+        instance: Option<Inst>,
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>>,
@@ -52,8 +53,8 @@ impl PrunedStoreVTable {
     pub fn new<T>() -> Self {
         Self {
             call_host_func: |pruned: &mut PrunedStore,
-                             func: &HostFuncEntity,
-                             instance: Option<&Instance>,
+                             trampoline: Trampoline,
+                             instance: Option<Inst>,
                              params_results: FuncInOut,
                              call_hooks: CallHooks|
              -> Result<(), StoreError<Error>> {
@@ -63,7 +64,7 @@ impl PrunedStoreVTable {
                         .invoke_call_hook(CallHook::CallingHost)
                         .map_err(StoreError::external)?;
                 }
-                store.call_host_func(func, instance, params_results)?;
+                store.call_host_func(trampoline, instance, params_results)?;
                 if matches!(call_hooks, CallHooks::Call) {
                     store
                         .invoke_call_hook(CallHook::ReturningFromHost)
@@ -102,12 +103,12 @@ impl PrunedStoreVTable {
     fn call_host_func(
         &self,
         pruned: &mut PrunedStore,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
+        trampoline: Trampoline,
+        instance: Option<Inst>,
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>> {
-        (self.call_host_func)(pruned, func, instance, params_results, call_hooks)
+        (self.call_host_func)(pruned, trampoline, instance, params_results, call_hooks)
     }
 
     #[inline]
@@ -192,14 +193,14 @@ impl PrunedStore {
     #[inline]
     pub fn call_host_func(
         &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
+        trampoline: Trampoline,
+        instance: Option<Inst>,
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>> {
         self.pruned.restore_pruned.clone().call_host_func(
             self,
-            func,
+            trampoline,
             instance,
             params_results,
             call_hooks,
