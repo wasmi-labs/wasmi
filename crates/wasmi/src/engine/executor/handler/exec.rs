@@ -1078,7 +1078,7 @@ pub fn branch_table_span(
     let ip = unsafe { ip.add(target_offset) };
     let (_, ir::BranchTableTarget { results, offset }) =
         unsafe { ip.decode::<ir::BranchTableTarget>() };
-    // TODO: maybe provide 2 `br_table_span` operation variants if possible: `br_table_span_{asc,des}`
+    // TODO: maybe provide 2 `br_table_span` operation variants if needed: `br_table_span_{asc,des}`
     exec_copy_span(sp, results, values, len_values);
     let ip = offset_ip(ip, offset);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
