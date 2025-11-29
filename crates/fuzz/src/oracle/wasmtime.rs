@@ -37,6 +37,7 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // thus less likely will time-out the fuzzing process in some instances.
         config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
 
+        config.wasm_gc(true);
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
         config.relaxed_simd_deterministic(true);
