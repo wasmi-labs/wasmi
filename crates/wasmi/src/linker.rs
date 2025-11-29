@@ -217,7 +217,7 @@ pub struct Linker<T> {
     /// # Note
     ///
     /// Primarily required to define [`Linker`] owned host functions
-    //  using [`Linker::func_wrap`] and [`Linker::func_new`]. TODO: implement methods
+    /// using [`Linker::func_wrap`] and [`Linker::func_new`].
     engine: Engine,
     /// Inner linker implementation details.
     inner: LinkerInner<T>,

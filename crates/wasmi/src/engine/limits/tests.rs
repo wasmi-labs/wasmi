@@ -122,7 +122,6 @@ fn max_tables_err() {
 }
 
 #[test]
-#[ignore] // TODO: remove once multi-memories are supported in Wasmi
 fn max_memories_ok() {
     let wasm = "
         (module
@@ -141,7 +140,6 @@ fn max_memories_ok() {
 }
 
 #[test]
-#[ignore] // TODO: remove once multi-memories are supported in Wasmi
 fn max_memories_err() {
     let wasm = "
         (module
