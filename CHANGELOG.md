@@ -26,7 +26,20 @@ This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/bl
 
 ### Removed
 
-- Remove all deprecated items from Wasmi's API. [#1634]
+- Remove all deprecated items from Wasmi's API: [#1634]
+  - Removed deprecated types:
+    - [`StackLimits`](https://docs.rs/wasmi/0.51.2/wasmi/struct.StackLimits.html)
+    - [`InstancePre`](https://docs.rs/wasmi/0.51.2/wasmi/struct.InstancePre.html)
+    - [`LinkerBuilder`](https://docs.rs/wasmi/0.51.2/wasmi/struct.LinkerBuilder.html)
+  - Removed deprecated methods and modules:
+    - [`Module::new_streaming`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Module.html#method.new_streaming)
+    - [`Module::new_streaming_unchecked`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Module.html#method.new_streaming_unchecked)
+    - [`Config::set_stack_limits`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Config.html#method.set_stack_limits)
+    - [`Config::set_cached_stack`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Config.html#method.set_cached_stacks)
+    - [`Linker::instantiate`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Linker.html#method.instantiate)
+    - [`wasmi_wasi::add_to_linker_builder`](https://docs.rs/wasmi_wasi/0.51.2/wasmi_wasi/sync/fn.add_to_linker_builder.html)
+    - [`wasmi::state`](https://docs.rs/wasmi/0.51.2/wasmi/state/index.html)
+    - [`wasmi::core`](https://docs.rs/wasmi/0.51.2/wasmi/core/index.html)
 
 ### Internal
 
