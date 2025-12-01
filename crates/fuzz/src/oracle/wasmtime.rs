@@ -37,13 +37,15 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // thus less likely will time-out the fuzzing process in some instances.
         config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
 
+        config.wasm_gc(true);
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
         config.relaxed_simd_deterministic(true);
         let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
-            .memory_size(1000 * 0x10000)
+            .memory_size(10_000_000)
+            .table_elements(10_000_000)
             .build();
         let mut store = Store::new(&engine, limiter);
         store.limiter(|lim| lim);

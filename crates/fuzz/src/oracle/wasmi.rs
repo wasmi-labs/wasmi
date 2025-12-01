@@ -69,7 +69,8 @@ impl DifferentialOracleMeta for WasmiOracle {
         let engine = Engine::new(&config);
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
-            .memory_size(1000 * 0x10000)
+            .memory_size(10_000_000)
+            .table_elements(10_000_000)
             .build();
         let mut store = Store::new(&engine, limiter);
         store.limiter(|lim| lim);
