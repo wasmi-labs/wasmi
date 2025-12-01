@@ -137,9 +137,8 @@ impl Table {
         let Some(desired) = self.size().checked_add(delta) else {
             return Err(TableError::GrowOutOfBounds);
         };
-        // We need to divide the `max_size` (in bytes) by 8 because each table element requires 8 bytes.
-        let max_size = self.ty.index_ty().max_size() / 8;
-        if u128::from(desired) > max_size {
+        let max_size = self.ty.index_ty().max_size();
+        if u128::from(desired) >= max_size {
             return Err(TableError::GrowOutOfBounds);
         }
         let current = self.elements.len();
