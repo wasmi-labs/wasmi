@@ -128,6 +128,9 @@ impl Table {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
+        if delta == 0 {
+            return Ok(self.size());
+        }
         let Ok(delta_size) = usize::try_from(delta) else {
             return Err(TableError::GrowOutOfBounds);
         };
