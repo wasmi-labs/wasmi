@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## `1.0.0` - 2025-12-01
+## `1.0.0` - 2025-12-03
 
 This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/blog/posts/wasmi-1.0/)
 
