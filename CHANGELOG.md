@@ -8,6 +8,63 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.0` - 2025-12-03
+
+This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/blog/posts/wasmi-1.0/)
+
+### Added
+
+- Added conversions between `TrapCode` and `u8`. [#1651]
+
+### Fixed
+
+- Fix SIMD usage in Wasmi's C-API. [#1676]
+
+### Changed
+
+- Adjust `table.grow` behavior to match Wasmtime's limits. [#1710]
+
+### Removed
+
+- Remove all deprecated items from Wasmi's API: [#1634]
+  - Removed deprecated types:
+    - [`StackLimits`](https://docs.rs/wasmi/0.51.2/wasmi/struct.StackLimits.html)
+    - [`InstancePre`](https://docs.rs/wasmi/0.51.2/wasmi/struct.InstancePre.html)
+    - [`LinkerBuilder`](https://docs.rs/wasmi/0.51.2/wasmi/struct.LinkerBuilder.html)
+  - Removed deprecated methods and modules:
+    - [`Module::new_streaming`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Module.html#method.new_streaming)
+    - [`Module::new_streaming_unchecked`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Module.html#method.new_streaming_unchecked)
+    - [`Config::set_stack_limits`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Config.html#method.set_stack_limits)
+    - [`Config::set_cached_stack`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Config.html#method.set_cached_stacks)
+    - [`Linker::instantiate`](https://docs.rs/wasmi/0.51.2/wasmi/struct.Linker.html#method.instantiate)
+    - [`wasmi_wasi::add_to_linker_builder`](https://docs.rs/wasmi_wasi/0.51.2/wasmi_wasi/sync/fn.add_to_linker_builder.html)
+    - [`wasmi::state`](https://docs.rs/wasmi/0.51.2/wasmi/state/index.html)
+    - [`wasmi::core`](https://docs.rs/wasmi/0.51.2/wasmi/core/index.html)
+
+### Internal
+
+- Enable `reference-types` in Wasmi's fuzzing infrastructure. [#1708]
+- Improve Wasmi's Wast runner:
+  - Improve NaN checks of Wasmi's Wast runner. [#1683]
+  - Improve error messages for value mismatches. [#1682]
+- Minor renamings to simplify integration of [Wasmi's new IR](https://github.com/wasmi-labs/wasmi/pull/1650).
+  - `Reg` -> `Slot` [#1653]
+  - `Instruction` -> `Op` [#1652]
+- Refactor `wasmi_ir` to reduce compile times. [#1640]
+- Allocate fewer function local constants during Wasm -> Wasmi translation. [#1638]
+
+[#1634]: https://github.com/wasmi-labs/wasmi/pull/1634
+[#1638]: https://github.com/wasmi-labs/wasmi/pull/1638
+[#1640]: https://github.com/wasmi-labs/wasmi/pull/1640
+[#1651]: https://github.com/wasmi-labs/wasmi/pull/1651
+[#1652]: https://github.com/wasmi-labs/wasmi/pull/1652
+[#1653]: https://github.com/wasmi-labs/wasmi/pull/1653
+[#1676]: https://github.com/wasmi-labs/wasmi/pull/1676
+[#1682]: https://github.com/wasmi-labs/wasmi/pull/1682
+[#1683]: https://github.com/wasmi-labs/wasmi/pull/1683
+[#1708]: https://github.com/wasmi-labs/wasmi/pull/1708
+[#1710]: https://github.com/wasmi-labs/wasmi/pull/1710
+
 ## `0.51.2` - 2025-11-18
 
 ### Fixed
