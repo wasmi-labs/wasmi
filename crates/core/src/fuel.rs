@@ -334,4 +334,20 @@ impl Fuel {
         self.consume_fuel_unchecked(f(&self.costs))?;
         Ok(())
     }
+
+    /// Traps if fuel is depleted and fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This does nothing if fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// - If fuel is 0 and fuel metering is enabled.
+    pub fn trap_if_out_of_fuel_if_enabled(&self) -> Result<(), FuelError> {
+        if self.enabled && self.remaining == 0 {
+            return Err(FuelError::out_of_fuel(0));
+        }
+        Ok(())
+    }
 }

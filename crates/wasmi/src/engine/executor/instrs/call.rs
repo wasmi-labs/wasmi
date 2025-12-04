@@ -447,7 +447,9 @@ impl Executor<'_> {
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
-                self.execute_host_func::<C>(store, results, func, host_func)
+                let res = self.execute_host_func::<C>(store, results, func, host_func)?;
+                store.inner_mut().fuel_mut().trap_if_out_of_fuel_if_enabled()?;
+                Ok(res)
             }
         }
     }
