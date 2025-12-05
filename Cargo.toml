@@ -7,7 +7,7 @@ members = [
     "crates/core",
     "crates/wasmi",
     "crates/wasi",
-    "crates/ir2",
+    "crates/ir",
     "crates/fuzz",
     "crates/wast",
     "fuzz",
@@ -33,7 +33,7 @@ exclude = ["tests"]
 wasmi = { version = "1.0.0", path = "crates/wasmi", default-features = false }
 wasmi_wasi = { version = "1.0.0", path = "crates/wasi", default-features = false }
 wasmi_core = { version = "1.0.0", path = "crates/core", default-features = false }
-wasmi_ir2 = { version = "1.0.0", path = "crates/ir2", default-features = false }
+wasmi_ir = { version = "1.0.0", path = "crates/ir", default-features = false }
 wasmi_collections = { version = "1.0.0", path = "crates/collections", default-features = false }
 wasmi_c_api_impl = { version = "1.0.0", path = "crates/c_api" }
 wasmi_c_api_macros = { version = "1.0.0", path = "crates/c_api/macro" }

@@ -6,4 +6,4 @@ coverage:
         threshold: 1%
 
 ignore:
-  - "crates/ir2/**"
+  - "crates/ir/**"

@@ -1,8 +1,8 @@
 [package]
-name = "wasmi_ir2"
+name = "wasmi_ir"
 version.workspace = true
 rust-version.workspace = true
-documentation = "https://docs.rs/wasmi_ir2/"
+documentation = "https://docs.rs/wasmi_ir/"
 description = "WebAssembly interpreter internal bytecode representation"
 authors.workspace = true
 repository.workspace = true
