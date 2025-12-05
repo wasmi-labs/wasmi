@@ -30,7 +30,7 @@ jobs:
         run: cargo build --workspace --locked --verbose
       - name: Build (all features)
         run: cargo build --workspace --locked --all-features --verbose
-      - name: Build (no_std)
+      - name: Build (no_std + !portable-dispatch + !indirect-dispatch)
         run: >-
             cargo build
             --package wasmi
@@ -38,6 +38,36 @@ jobs:
             --locked
             --lib
             --no-default-features
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + !portable-dispatch + indirect-dispatch)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features indirect-dispatch
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + portable-dispatch + !indirect-dispatch)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features portable-dispatch
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + portable-dispatch + indirect-dispatch)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features portable-dispatch,indirect-dispatch
             --target x86_64-unknown-none
             --verbose
       - name: Build (no_std + hash-collections)
