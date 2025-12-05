@@ -130,14 +130,18 @@ impl ByteBuffer {
     }
 
     /// Grow the byte buffer to the given `new_size` when backed by a [`Vec`].
-    fn grow_vec(&mut self, mut vec: Vec<u8>, new_size: usize) -> Result<(), MemoryError> {
+    fn grow_vec(
+        &mut self,
+        mut vec: ManuallyDrop<Vec<u8>>,
+        new_size: usize,
+    ) -> Result<(), MemoryError> {
         debug_assert!(vec.len() <= new_size);
         let additional = new_size - vec.len();
         if vec.try_reserve(additional).is_err() {
             return Err(MemoryError::OutOfSystemMemory);
         };
         vec.resize(new_size, 0x00_u8);
-        (self.ptr, self.len, self.capacity) = vec_into_raw_parts(vec);
+        (self.ptr, self.len, self.capacity) = vec_into_raw_parts(ManuallyDrop::into_inner(vec));
         Ok(())
     }
 
@@ -181,8 +185,10 @@ impl ByteBuffer {
     ///
     /// # Note
     ///
-    /// The returned `Vec` will free its memory and thus the memory of the [`ByteBuffer`] if dropped.
-    fn get_vec(&mut self) -> Option<Vec<u8>> {
+    /// - The returned `Vec` will free its memory and thus the memory of the [`ByteBuffer`] if dropped.
+    /// - The returned `Vec` is returned as [`ManuallyDrop`] to prevent its buffer from being freed
+    ///   automatically upon going out of scope.
+    fn get_vec(&mut self) -> Option<ManuallyDrop<Vec<u8>>> {
         if self.is_static {
             return None;
         }
@@ -190,7 +196,10 @@ impl ByteBuffer {
         //
         // - At this point we are guaranteed that the byte buffer is backed by a `Vec`
         //   so it is safe to reconstruct the `Vec` by its raw parts.
-        Some(unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) })
+        // - The returned `Vec` is returned as [`ManuallyDrop`] to prevent its buffer from being free
+        //   upon going out of scope.
+        let vec = unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) };
+        Some(ManuallyDrop::new(vec))
     }
 }
 
