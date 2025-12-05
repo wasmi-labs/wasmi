@@ -95,7 +95,7 @@ pub trait Integer: Sized + Unsigned {
     /// Signed shift-right `self` by `other`.
     fn shr_s(lhs: Self, rhs: Self) -> Self;
     /// Unsigned shift-right `self` by `other`.
-    fn shr_u(lhs: Self, rhs: Self) -> Self;
+    fn shr_u(lhs: Self::Uint, rhs: Self::Uint) -> Self::Uint;
     /// Get left bit rotation result.
     fn rotl(lhs: Self, rhs: Self) -> Self;
     /// Get right bit rotation result.
@@ -130,25 +130,14 @@ pub trait Integer: Sized + Unsigned {
 pub trait Unsigned {
     /// The unsigned type.
     type Uint;
-
-    /// Converts `self` losslessly to the unsigned type.
-    fn to_unsigned(self) -> Self::Uint;
 }
 
 impl Unsigned for i32 {
     type Uint = u32;
-    #[inline]
-    fn to_unsigned(self) -> Self::Uint {
-        self as _
-    }
 }
 
 impl Unsigned for i64 {
     type Uint = u64;
-    #[inline]
-    fn to_unsigned(self) -> Self::Uint {
-        self as _
-    }
 }
 
 /// Float-point value.
@@ -270,8 +259,8 @@ macro_rules! impl_integer {
                 lhs.wrapping_shr(rhs as u32)
             }
             #[inline]
-            fn shr_u(lhs: Self, rhs: Self) -> Self {
-                lhs.to_unsigned().wrapping_shr(rhs as u32) as _
+            fn shr_u(lhs: Self::Uint, rhs: Self::Uint) -> Self::Uint {
+                lhs.wrapping_shr(rhs as u32) as _
             }
             #[inline]
             fn rotl(lhs: Self, rhs: Self) -> Self {

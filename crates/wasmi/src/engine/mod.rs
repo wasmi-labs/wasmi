@@ -13,7 +13,7 @@ mod utils;
 
 pub(crate) use self::{
     block_type::BlockType,
-    executor::Stack,
+    executor::{Inst, Stack},
     func_types::DedupFuncType,
     translator::{
         FuncTranslationDriver,
@@ -37,7 +37,6 @@ pub use self::{
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
-        ResumableError,
         ResumableHostTrapError,
         ResumableOutOfFuelError,
         TypedResumableCall,
@@ -49,7 +48,6 @@ pub use self::{
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
-    func::FuncInOut,
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,
@@ -518,6 +516,34 @@ pub struct EngineStacks {
     config: StackConfig,
 }
 
+// # Safety
+//
+// The `EngineStacks` type does not automatically implement `Send` because
+// its internal `Stack` type used in `Vec<Stack>` does not implement `Send`.
+// The reason is that for execution performance reasons `Stack` uses raw pointers
+// internally.
+// However, those raw pointers never leak outside and are only point to memory
+// areas heap allocated for the `Stack`. The `Stack` itself is used via `Vec`
+// and no accesses to it are always going through a `&mut Store`.
+//
+// In summary it is safe to impl `Send` for the outer `EngineStack` since we
+// make sure not to break safety invariants that make `Stack` itself not `Send`.
+unsafe impl Send for EngineStacks {}
+
+// # Safety
+//
+// The `EngineStacks` type does not automatically implement `Sync` because
+// its internal `Stack` type used in `Vec<Stack>` does not implement `Sync`.
+// The reason is that for execution performance reasons `Stack` uses raw pointers
+// internally.
+// However, those raw pointers never leak outside and are only point to memory
+// areas heap allocated for the `Stack`. The `Stack` itself is used via `Vec`
+// and no accesses to it are always going through a `&mut Store`.
+//
+// In summary it is safe to impl `Sync` for the outer `EngineStack` since we
+// make sure not to break safety invariants that make `Stack` itself not `Sync`.
+unsafe impl Sync for EngineStacks {}
+
 impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackConfig`].
     pub fn new(config: &StackConfig) -> Self {
@@ -537,7 +563,7 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if stack.capacity() > 0 && self.stacks.len() < self.config.max_cached_stacks() {
+        if stack.bytes_allocated() > 0 && self.stacks.len() < self.config.max_cached_stacks() {
             self.stacks.push(stack);
         }
     }

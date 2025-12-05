@@ -140,9 +140,9 @@ mod core {
 #[doc(inline)]
 use wasmi_collections as collections;
 
-/// Definitions from the `wasmi_collections` crate.
+/// Definitions from the `wasmi_ir` crate.
 #[doc(inline)]
-use wasmi_ir as ir;
+use wasmi_ir2 as ir;
 
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {

@@ -1,13 +1,12 @@
 use crate::{
     core::{Typed, TypedVal, UntypedVal},
-    ir::{Const16, Op, Sign},
-    Error,
+    ir::Sign,
     ExternRef,
     Func,
     Ref,
     ValType,
 };
-use core::num::NonZero;
+use core::{convert::identity, num::NonZero};
 
 impl Typed for ExternRef {
     const TY: ValType = ValType::ExternRef;
@@ -46,17 +45,10 @@ impl_typed_for! {
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy
-    + Eq
-    + Typed
-    + From<TypedVal>
-    + Into<TypedVal>
-    + From<UntypedVal>
-    + Into<UntypedVal>
-    + TryInto<Const16<Self>>
+    Copy + Eq + Typed + From<TypedVal> + Into<TypedVal> + From<UntypedVal> + Into<UntypedVal>
 {
     /// The non-zero type of the [`WasmInteger`].
-    type NonZero: Copy + Into<Self> + TryInto<Const16<Self::NonZero>> + Into<UntypedVal>;
+    type NonZero: Copy + Into<Self> + Into<UntypedVal>;
 
     /// Returns `self` as [`Self::NonZero`] if possible.
     ///
@@ -65,9 +57,6 @@ pub trait WasmInteger:
 
     /// Returns `true` if `self` is equal to zero (0).
     fn is_zero(self) -> bool;
-
-    /// Returns the wrapped negated `self`.
-    fn wrapping_neg(self) -> Self;
 }
 
 macro_rules! impl_wasm_integer {
@@ -82,10 +71,6 @@ macro_rules! impl_wasm_integer {
 
                 fn is_zero(self) -> bool {
                     self == 0
-                }
-
-                fn wrapping_neg(self) -> Self {
-                    Self::wrapping_neg(self)
                 }
             }
         )*
@@ -155,106 +140,89 @@ impl_wrap_for! {
     u64 => u32,
 }
 
-/// Extension trait to bump the consumed fuel of [`Op::ConsumeFuel`].
-pub trait BumpFuelConsumption {
-    /// Increases the fuel consumption of the [`Op::ConsumeFuel`] instruction by `delta`.
-    ///
-    /// # Error
-    ///
-    /// - If `self` is not a [`Op::ConsumeFuel`] instruction.
-    /// - If the new fuel consumption overflows the internal `u64` value.
-    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
+/// Types that can be converted into bits.
+pub trait ToBits {
+    /// The output bits type of [`ToBits`].
+    type Out: Copy;
+
+    /// Converts `self` into a 32-bit `u32` value.
+    fn to_bits(self) -> Self::Out;
 }
 
-impl BumpFuelConsumption for Op {
-    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
-        match self {
-            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Error::from),
-            instr => panic!("expected `Op::ConsumeFuel` but found: {instr:?}"),
-        }
-    }
-}
-
-/// Extension trait to query if an [`Op`] is a parameter.
-pub trait IsInstructionParameter {
-    /// Returns `true` if `self` is a parameter to an [`Op`].
-    fn is_instruction_parameter(&self) -> bool;
-}
-
-impl IsInstructionParameter for Op {
-    #[rustfmt::skip]
-    fn is_instruction_parameter(&self) -> bool {
-        matches!(self,
-            | Self::TableIndex { .. }
-            | Self::MemoryIndex { .. }
-            | Self::DataIndex { .. }
-            | Self::ElemIndex { .. }
-            | Self::Const32 { .. }
-            | Self::I64Const32 { .. }
-            | Self::F64Const32 { .. }
-            | Self::BranchTableTarget { .. }
-            | Self::Imm16AndImm32 { .. }
-            | Self::SlotAndImm32 { .. }
-            | Self::SlotSpan { .. }
-            | Self::Slot { .. }
-            | Self::Slot2 { .. }
-            | Self::Slot3 { .. }
-            | Self::SlotList { .. }
-            | Self::CallIndirectParams { .. }
-            | Self::CallIndirectParamsImm16 { .. }
-        )
-    }
-}
-
-/// A reference to an encoded [`Op`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(u32);
-
-impl From<u32> for Instr {
-    fn from(index: u32) -> Self {
-        Self(index)
-    }
-}
-
-impl From<Instr> for u32 {
-    fn from(instr: Instr) -> Self {
-        instr.0
-    }
-}
-
-impl Instr {
-    /// Creates an [`Instr`] from the given `usize` value.
-    ///
-    /// # Note
-    ///
-    /// This intentionally is an API intended for test purposes only.
-    ///
-    /// # Panics
-    ///
-    /// If the `value` exceeds limitations for [`Instr`].
-    pub fn from_usize(value: usize) -> Self {
-        let Ok(index) = u32::try_from(value) else {
-            panic!("out of bounds index {value} for `Instr`")
-        };
-        Self(index)
-    }
-
-    /// Returns an `usize` representation of the instruction index.
-    pub fn into_usize(self) -> usize {
-        match usize::try_from(self.0) {
-            Ok(index) => index,
-            Err(error) => {
-                panic!("out of bound index {} for `Instr`: {error}", self.0)
+macro_rules! impl_to_bits {
+    ( $($ty:ty as $bits_ty:ty = $expr:expr),* $(,)? ) => {
+        $(
+            impl ToBits for $ty {
+                type Out = $bits_ty;
+                fn to_bits(self) -> Self::Out {
+                    $expr(self)
+                }
             }
-        }
-    }
-
-    /// Returns the absolute distance between `self` and `other`.
-    ///
-    /// - Returns `0` if `self == other`.
-    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
-    /// - etc..
-    pub fn distance(self, other: Self) -> u32 {
-        self.0.abs_diff(other.0)
-    }
+        )*
+    };
 }
+impl_to_bits! {
+    u8 as u8 = identity,
+    u16 as u16 = identity,
+    u32 as u32 = identity,
+    u64 as u64 = identity,
+
+    f32 as u32 = f32::to_bits,
+    f64 as u64 = f64::to_bits,
+
+    i8 as u8 = |v: i8| u8::from_ne_bytes(v.to_ne_bytes()),
+    i16 as u16 = |v: i16| u16::from_ne_bytes(v.to_ne_bytes()),
+    i32 as u32 = |v: i32| u32::from_ne_bytes(v.to_ne_bytes()),
+    i64 as u64 = |v: i64| u64::from_ne_bytes(v.to_ne_bytes()),
+}
+
+pub trait IntoShiftAmount {
+    /// The source type expected by the Wasm specification.
+    type ShiftSource: Copy;
+
+    /// The type denoting the shift amount in Wasmi bytecode.
+    ///
+    /// This is an unsigned integer ranging from `1..N` where `N` is the number of bits in `Self`.
+    type ShiftAmount: Copy;
+
+    /// Returns `self` wrapped into a proper shift amount for `Self`.
+    ///
+    /// Returns `None` if the resulting shift amount is 0, a.k.a. a no-op.
+    fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount>;
+}
+
+macro_rules! impl_into_shift_amount {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl IntoShiftAmount for $ty {
+                type ShiftSource = Self;
+                type ShiftAmount = u8;
+
+                fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount> {
+                    let len_bits = (::core::mem::size_of::<Self::ShiftSource>() * 8) as Self;
+                    let shamt = source.checked_rem_euclid(len_bits)?;
+                    Some(shamt as _)
+                }
+            }
+        )*
+    };
+}
+impl_into_shift_amount!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+
+macro_rules! impl_into_simd_shift_amount {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl IntoShiftAmount for $ty {
+                type ShiftSource = u32;
+                type ShiftAmount = u8;
+
+                fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount> {
+                    let len_bits = (::core::mem::size_of::<Self::ShiftSource>() * 8) as Self::ShiftSource;
+                    let shamt = source.checked_rem_euclid(len_bits)?;
+                    Some(shamt as _)
+                }
+            }
+        )*
+    };
+}
+impl_into_simd_shift_amount!([u8; 16], [u16; 8], [u32; 4], [u64; 2]);

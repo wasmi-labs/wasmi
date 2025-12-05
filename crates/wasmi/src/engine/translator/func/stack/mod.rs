@@ -1,3 +1,5 @@
+#![expect(unused)]
+
 mod control;
 mod locals;
 mod operand;
@@ -21,20 +23,17 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    operand::{ImmediateOperand, Operand, TempOperand},
+    operand::{ImmediateOperand, LocalOperand, Operand, TempOperand},
     operands::{OperandIdx, PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
     core::TypedVal,
     engine::{
-        translator::{
-            func::{stack::operands::PeekedOperands, LocalIdx},
-            labels::LabelRef,
-            utils::Instr,
-        },
+        translator::func::{labels::LabelRef, stack::operands::PeekedOperands, LocalIdx, Pos},
         BlockType,
     },
+    ir,
     Engine,
     Error,
     ValType,
@@ -158,7 +157,7 @@ impl Stack {
         &mut self,
         ty: BlockType,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
@@ -170,7 +169,7 @@ impl Stack {
     ///
     /// # Note
     ///
-    /// This inherits the `consume_fuel` [`Instr`] from the parent [`ControlFrame`].
+    /// This inherits the `consume_fuel` [`Pos<BlockFuel>`] from the parent [`ControlFrame`].
     ///
     /// # Errors
     ///
@@ -199,7 +198,7 @@ impl Stack {
         &mut self,
         ty: BlockType,
         label: LabelRef,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
@@ -228,7 +227,7 @@ impl Stack {
         ty: BlockType,
         label: LabelRef,
         reachability: IfReachability,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
@@ -260,7 +259,7 @@ impl Stack {
         &mut self,
         if_frame: IfControlFrame,
         is_end_of_then_reachable: bool,
-        consume_fuel: Option<Instr>,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         self.push_else_operands(&if_frame)?;
@@ -359,8 +358,8 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType, instr: Option<Instr>) -> Result<OperandIdx, Error> {
-        self.operands.push_temp(ty, instr)
+    pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
+        self.operands.push_temp(ty)
     }
 
     /// Pushes an immediate `value` on the [`Stack`].
@@ -472,6 +471,13 @@ impl Stack {
         buffer.reverse();
     }
 
+    /// Drops `len` operands form the stack.
+    pub fn drop_n(&mut self, len: usize) {
+        for _ in 0..len {
+            self.pop();
+        }
+    }
+
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
     ///
     /// This is done by converting those locals to [`Operand::Temp`] and yielding them.
@@ -521,7 +527,7 @@ impl Stack {
     ///
     /// Returns `None` otherwise.
     #[inline]
-    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+    pub fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
         self.controls.consume_fuel_instr()
     }
 }

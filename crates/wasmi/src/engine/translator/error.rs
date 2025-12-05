@@ -34,6 +34,8 @@ pub enum TranslationError {
     TooManyLocalVariables,
     /// The function failed to compiled lazily.
     LazyCompilationFailed,
+    /// Ran out of system memory during translation.
+    OutOfSystemMemory,
 }
 
 impl TranslationError {
@@ -52,64 +54,41 @@ impl Error for TranslationError {}
 
 impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        let message = match self {
             Self::UnsupportedBlockType(error) => {
-                write!(f, "encountered unsupported Wasm block type: {error:?}")
+                return write!(f, "encountered unsupported Wasm block type: {error:?}")
             }
             Self::UnsupportedValueType(error) => {
-                write!(f, "encountered unsupported Wasm value type: {error:?}")
+                return write!(f, "encountered unsupported Wasm value type: {error:?}")
             }
             Self::BranchTableTargetsOutOfBounds => {
-                write!(
-                    f,
-                    "branch table targets are out of bounds for wasmi bytecode"
-                )
+                "branch table targets are out of bounds for wasmi bytecode"
             }
-            Self::BranchOffsetOutOfBounds => {
-                write!(f, "branching offset is out of bounds for wasmi bytecode")
-            }
+            Self::BranchOffsetOutOfBounds => "branching offset is out of bounds for wasmi bytecode",
             Self::BlockFuelOutOfBounds => {
-                write!(
-                    f,
-                    "fuel required to execute a block is out of bounds for wasmi bytecode"
-                )
+                "fuel required to execute a block is out of bounds for wasmi bytecode"
             }
             Self::AllocatedTooManySlots => {
-                write!(
-                    f,
-                    "translation requires more registers for a function than available"
-                )
+                "translation requires more registers for a function than available"
             }
-            Self::SlotOutOfBounds => {
-                write!(f, "tried to access out of bounds register index")
-            }
+            Self::SlotOutOfBounds => "tried to access out of bounds register index",
             Self::EmulatedValueStackOverflow => {
-                write!(f, "function requires value stack with out of bounds depth")
+                "function requires value stack with out of bounds depth"
             }
             Self::ProviderSliceOverflow => {
-                write!(f, "tried to allocate too many or too large provider slices")
+                "tried to allocate too many or too large provider slices"
             }
             Self::TooManyFuncLocalConstValues => {
-                write!(
-                    f,
-                    "tried to allocate too many function local constant values"
-                )
+                "tried to allocate too many function local constant values"
             }
-            Self::TooManyFunctionResults => {
-                write!(f, "encountered function with too many function results")
-            }
-            Self::TooManyFunctionParams => {
-                write!(f, "encountered function with too many function parameters")
-            }
-            Self::TooManyLocalVariables => {
-                write!(f, "encountered function with too many local variables")
-            }
+            Self::TooManyFunctionResults => "encountered function with too many function results",
+            Self::TooManyFunctionParams => "encountered function with too many function parameters",
+            Self::TooManyLocalVariables => "encountered function with too many local variables",
             Self::LazyCompilationFailed => {
-                write!(
-                    f,
-                    "lazy function compilation encountered a Wasm validation or translation error"
-                )
+                "lazy function compilation encountered a Wasm validation or translation error"
             }
-        }
+            Self::OutOfSystemMemory => "ran out of system memory during translation",
+        };
+        f.write_str(message)
     }
 }

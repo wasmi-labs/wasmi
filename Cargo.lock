@@ -1742,7 +1742,7 @@ dependencies = [
  "spin",
  "wasmi_collections 1.0.0",
  "wasmi_core 1.0.0",
- "wasmi_ir 1.0.0",
+ "wasmi_ir2",
  "wasmparser 0.228.0",
  "wat",
 ]
