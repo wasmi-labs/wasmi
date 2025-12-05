@@ -371,8 +371,14 @@ jobs:
         run: cargo clippy --workspace --locked -- -D warnings
       - name: Clippy (all features)
         run: cargo clippy --workspace --locked --all-features -- -D warnings
-      - name: Clippy (no_std)
+      - name: Clippy (no_std + !portable-dispatch + !indirect-dispatch)
         run: cargo clippy --workspace --locked --no-default-features -- -D warnings
+      - name: Clippy (no_std + portable-dispatch + !indirect-dispatch)
+        run: cargo clippy --workspace --locked --no-default-features --features portable-dispatch -- -D warnings
+      - name: Clippy (no_std + !portable-dispatch + indirect-dispatch)
+        run: cargo clippy --workspace --locked --no-default-features --features indirect-dispatch -- -D warnings
+      - name: Clippy (no_std + portable-dispatch + indirect-dispatch)
+        run: cargo clippy --workspace --locked --no-default-features --features portable-dispatch,indirect-dispatch -- -D warnings
       - name: Clippy (tests)
         run: cargo clippy --workspace --locked --tests -- -D warnings
       - name: Clippy (benches)
