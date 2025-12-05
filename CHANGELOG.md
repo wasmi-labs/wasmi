@@ -8,6 +8,13 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.1` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits.
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
+
 ## `1.0.0` - 2025-12-03
 
 This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/blog/posts/wasmi-1.0/)
