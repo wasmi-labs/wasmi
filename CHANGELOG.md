@@ -8,6 +8,13 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.41.2`] - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits.
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
+
 ## [`0.41.1`] - 2025-03-11
 
 ### Fixed
