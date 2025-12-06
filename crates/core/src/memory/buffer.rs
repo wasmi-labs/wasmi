@@ -285,13 +285,13 @@ mod test {
             MemoryError::OutOfSystemMemory
         ));
         assert_eq!(buffer.len(), 0);
-        assert_eq!(buffer.data().get(0), None);
+        assert_eq!(buffer.data().first(), None);
         assert!(buffer.grow(1).is_ok());
         assert!(matches!(
             buffer.grow(usize::MAX).unwrap_err(),
             MemoryError::OutOfSystemMemory
         ));
         assert_eq!(buffer.len(), 1);
-        assert_eq!(buffer.data().get(0), Some(&0x00_u8));
+        assert_eq!(buffer.data().first(), Some(&0x00_u8));
     }
 }
