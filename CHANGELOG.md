@@ -12,22 +12,26 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- Fixed a bug that `Config::set_max_cached_stacks` set the recursion limit instead.
+- Fixed a bug that `Config::set_max_cached_stacks` set the recursion limit instead. [#1721]
   - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+[#1721]: https://github.com/wasmi-labs/wasmi/pull/1721
 
 ## `1.0.2` - 2025-12-06
 
 ### Fixed
 
-- Fixed a memory leak in `ByteBuffer` introduced in the last patch.
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
   - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
 
 ## `1.0.1` - 2025-12-05
 
 ### Fixed
 
-- Fixed a bug when trying to grow `Memory` beyond the system's memory limits.
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
   - Thanks to Robert T. Morris (RTM) for reporting this bug!
+
+[#1722]: https://github.com/wasmi-labs/wasmi/pull/1722
 
 ## `1.0.0` - 2025-12-03
 
