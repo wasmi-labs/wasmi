@@ -145,17 +145,21 @@ impl DoneReason {
 /// A thin-wrapper around a non-owned [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct Inst(NonNull<InstanceEntity>);
+pub struct Inst {
+    value: NonNull<InstanceEntity>,
+}
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
-        Self(entity.into())
+        Self {
+            value: entity.into(),
+        }
     }
 }
 
 impl PartialEq for Inst {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        self.value == other.value
     }
 }
 impl Eq for Inst {}
@@ -173,7 +177,7 @@ impl Inst {
     ///   mutably accessed for the entire duration of the returned
     ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { self.0.as_ref() }
+        unsafe { self.value.as_ref() }
     }
 }
 
