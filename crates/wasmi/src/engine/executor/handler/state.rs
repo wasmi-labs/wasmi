@@ -144,6 +144,7 @@ impl DoneReason {
 
 /// A thin-wrapper around a non-owned [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
 pub struct Inst(NonNull<InstanceEntity>);
 
 impl From<&'_ InstanceEntity> for Inst {
