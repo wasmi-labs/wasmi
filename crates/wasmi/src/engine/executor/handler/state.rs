@@ -293,7 +293,7 @@ impl Ip {
     ///
     /// # Note
     ///
-    /// This is equivalent to calling [`decode`] and discarding the decoded value,
+    /// This is equivalent to calling [`Self::decode`] and discarding the decoded value,
     /// and may be used when the value is not needed.
     ///
     /// # Safety
