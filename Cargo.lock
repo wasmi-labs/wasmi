@@ -702,7 +702,7 @@ dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "wasm-smith",
- "wasmi 1.0.1",
+ "wasmi 1.0.2",
  "wasmi_fuzz",
  "wasmprinter 0.228.0",
 ]
@@ -1735,14 +1735,14 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "assert_matches",
  "criterion",
  "spin",
- "wasmi_collections 1.0.1",
- "wasmi_core 1.0.1",
- "wasmi_ir 1.0.1",
+ "wasmi_collections 1.0.2",
+ "wasmi_core 1.0.2",
+ "wasmi_ir 1.0.2",
  "wasmparser 0.228.0",
  "wat",
 ]
@@ -1755,22 +1755,22 @@ checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
 name = "wasmi_c_api"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "wasmi_c_api_impl",
 ]
 
 [[package]]
 name = "wasmi_c_api_impl"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
- "wasmi 1.0.1",
+ "wasmi 1.0.2",
  "wasmi_c_api_macros",
 ]
 
 [[package]]
 name = "wasmi_c_api_macros"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1778,12 +1778,12 @@ dependencies = [
 
 [[package]]
 name = "wasmi_cli"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
- "wasmi 1.0.1",
+ "wasmi 1.0.2",
  "wasmi_wasi",
 ]
 
@@ -1798,7 +1798,7 @@ dependencies = [
 
 [[package]]
 name = "wasmi_collections"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "hashbrown 0.15.3",
  "string-interner",
@@ -1827,14 +1827,14 @@ dependencies = [
 
 [[package]]
 name = "wasmi_core"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "libm",
 ]
 
 [[package]]
 name = "wasmi_fuzz"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -1842,7 +1842,7 @@ dependencies = [
  "wasm-smith",
  "wasmi 0.31.2",
  "wasmi 0.49.1",
- "wasmi 1.0.1",
+ "wasmi 1.0.2",
  "wasmprinter 0.228.0",
  "wasmtime",
 ]
@@ -1858,33 +1858,33 @@ dependencies = [
 
 [[package]]
 name = "wasmi_ir"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
- "wasmi_core 1.0.1",
+ "wasmi_core 1.0.2",
 ]
 
 [[package]]
 name = "wasmi_ir2"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
- "wasmi_core 1.0.1",
+ "wasmi_core 1.0.2",
 ]
 
 [[package]]
 name = "wasmi_wasi"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "wasi-common",
- "wasmi 1.0.1",
+ "wasmi 1.0.2",
  "wiggle",
 ]
 
 [[package]]
 name = "wasmi_wast"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "anyhow",
- "wasmi 1.0.1",
+ "wasmi 1.0.2",
  "wast 228.0.0",
 ]
 
