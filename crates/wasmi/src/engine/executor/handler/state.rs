@@ -302,7 +302,7 @@ impl Ip {
                 let dst = buffer.as_mut_ptr();
                 let len = buffer.len();
                 unsafe { ptr::copy_nonoverlapping(src, dst, len) };
-                self.0 = unsafe { self.0.add(buffer.len()) };
+                self.0 = unsafe { self.0.add(len) };
                 Ok(())
             }
         }
