@@ -8,6 +8,13 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.3` - 2025-12-06
+
+### Fixed
+
+- Fixed a bug that `Config::set_max_cached_stacks` set the recursion limit instead.
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
 ## `1.0.2` - 2025-12-06
 
 ### Fixed
