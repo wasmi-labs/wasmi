@@ -147,6 +147,7 @@ impl DoneReason {
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Inst {
+    /// The underlying reference to the [`InstanceEntity`].
     value: NonNull<InstanceEntity>,
     /// Indicates to the compiler that this type is similar in behavior as
     /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
