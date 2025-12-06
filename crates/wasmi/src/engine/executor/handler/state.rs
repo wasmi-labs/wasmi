@@ -243,6 +243,25 @@ impl<'a> From<&'a [u8]> for Ip {
 }
 
 impl Ip {
+    /// Decodes a value of type `T` from the instruction stream at the [`Ip`].
+    ///
+    /// # Returns
+    ///
+    /// - This returns the advanced [`Ip`] together with the decoded value of type `T`.
+    /// - The returned [`Ip`] points to the first byte immediately following the decoded value.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that [`Ip`] points to the start of a valid
+    /// encoding of `T` and that the underlying instruction sequence remains
+    /// readable for the full duration of the decode, including any bytes consumed
+    /// by `T`.
+    ///
+    /// The behavior of this operation is undefined if:
+    ///
+    /// - The instruction sequence does not contain a valid encoding of `T` at [`Ip`].
+    /// - Decoding `T` would read past the end of the instruction sequence.
+    /// - The underlying memory is invalid, or no longer alive while decoding.
     #[inline]
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
         struct IpDecoder(Ip);
@@ -270,18 +289,56 @@ impl Ip {
         (ip.0, decoded)
     }
 
+    /// Advances [`Ip`] past a value of type `T` without decoding it.
+    ///
+    /// # Note
+    ///
+    /// This is equivalent to calling [`decode`] and discarding the decoded value,
+    /// and may be used when the value is not needed.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that offsetting [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
     #[inline]
     pub unsafe fn skip<T: ir::Decode>(self) -> Ip {
         let (ip, _) = unsafe { self.decode::<T>() };
         ip
     }
 
+    /// Returns a new [`Ip`] offset by `delta` bytes from this one.
+    ///
+    /// # Note
+    ///
+    /// - This method performs no bounds checking.
+    /// - A positive `delta` moves the pointer forward, a negative `delta` moves it backward.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that offsetting [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
     #[inline]
     pub unsafe fn offset(self, delta: isize) -> Self {
         let value = unsafe { self.value.byte_offset(delta) };
         Self { value }
     }
 
+    /// Returns a new [`Ip`] advanced by `delta` bytes.
+    ///
+    /// # Note
+    ///
+    /// This method performs no bounds checking.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that advancing [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
     #[inline]
     pub unsafe fn add(self, delta: usize) -> Self {
         let value = unsafe { self.value.byte_add(delta) };
