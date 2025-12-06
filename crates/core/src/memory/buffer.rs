@@ -205,7 +205,7 @@ impl ByteBuffer {
 
 impl Drop for ByteBuffer {
     fn drop(&mut self) {
-        self.get_vec();
+        self.get_vec().map(ManuallyDrop::into_inner);
     }
 }
 
