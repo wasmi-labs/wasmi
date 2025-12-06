@@ -205,7 +205,9 @@ impl ByteBuffer {
 
 impl Drop for ByteBuffer {
     fn drop(&mut self) {
-        self.get_vec();
+        if let Some(mut vec) = self.get_vec() {
+            unsafe { ManuallyDrop::drop(&mut vec); }
+        }
     }
 }
 
