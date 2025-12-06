@@ -210,16 +210,16 @@ impl Drop for ResumableCallCommon {
 
 // # Safety
 //
-// `ResumableCallCommon` is not `Sync` because of the following sequence of fields:
+// `ResumableCallCommon` is not automatically `Sync` because of the following fields:
 //
 // - `ResumableCallCommon`'s `Stack` is not `Sync`
 // - `Stack`'s `CallStack` is not `Sync`
 //     - `CallStack`'s `CallFrame` sequence is not `Sync`
-//     - `CallFrame`'s `InstructionPtr` is not `Sync`:
-//       Thi is because it is a raw pointer to an `Op` buffer owned by the [`Engine`].
+//     - `CallFrame`'s `Ip` is not `Sync`:
+//       This is because it is a raw pointer to an `Op` buffer owned by the [`Engine`].
 //
 // Since `Engine` is owned by `ResumableCallCommon` it cannot be outlived.
-// Also the `Op` buffers that are pointed to by the `InstructionPtr` are immutable.
+// Also the `Op` buffers that are pointed to by the `Ip` are immutable.
 //
 // Therefore `ResumableCallCommon` can safely be assumed to be `Sync`.
 unsafe impl Sync for ResumableCallCommon {}
