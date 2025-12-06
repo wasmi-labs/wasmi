@@ -333,6 +333,7 @@ impl Ip {
     /// not move it outside the valid bounds of the instruction sequence
     /// and that any subsequent use of the returned [`Ip`] only reads from valid,
     /// alive memory.
+    #[inline]
     pub unsafe fn skip<T: ir::Decode>(self) -> Ip {
         let (ip, _) = unsafe { self.decode::<T>() };
         ip
@@ -351,6 +352,7 @@ impl Ip {
     /// not move it outside the valid bounds of the instruction sequence
     /// and that any subsequent use of the returned [`Ip`] only reads from valid,
     /// alive memory.
+    #[inline]
     pub unsafe fn offset(self, delta: isize) -> Self {
         let value = unsafe { self.value.byte_offset(delta) };
         Self { value }
@@ -368,6 +370,7 @@ impl Ip {
     /// not move it outside the valid bounds of the instruction sequence
     /// and that any subsequent use of the returned [`Ip`] only reads from valid,
     /// alive memory.
+    #[inline]
     pub unsafe fn add(self, delta: usize) -> Self {
         let value = unsafe { self.value.byte_add(delta) };
         Self { value }
