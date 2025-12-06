@@ -130,14 +130,18 @@ impl ByteBuffer {
     }
 
     /// Grow the byte buffer to the given `new_size` when backed by a [`Vec`].
-    fn grow_vec(&mut self, mut vec: Vec<u8>, new_size: usize) -> Result<(), MemoryError> {
+    fn grow_vec(
+        &mut self,
+        mut vec: ManuallyDrop<Vec<u8>>,
+        new_size: usize,
+    ) -> Result<(), MemoryError> {
         debug_assert!(vec.len() <= new_size);
         let additional = new_size - vec.len();
         if vec.try_reserve(additional).is_err() {
             return Err(MemoryError::OutOfSystemMemory);
         };
         vec.resize(new_size, 0x00_u8);
-        (self.ptr, self.len, self.capacity) = vec_into_raw_parts(vec);
+        (self.ptr, self.len, self.capacity) = vec_into_raw_parts(ManuallyDrop::into_inner(vec));
         Ok(())
     }
 
@@ -181,8 +185,10 @@ impl ByteBuffer {
     ///
     /// # Note
     ///
-    /// The returned `Vec` will free its memory and thus the memory of the [`ByteBuffer`] if dropped.
-    fn get_vec(&mut self) -> Option<Vec<u8>> {
+    /// - The returned `Vec` will free its memory and thus the memory of the [`ByteBuffer`] if dropped.
+    /// - The returned `Vec` is returned as [`ManuallyDrop`] to prevent its buffer from being freed
+    ///   automatically upon going out of scope.
+    fn get_vec(&mut self) -> Option<ManuallyDrop<Vec<u8>>> {
         if self.is_static {
             return None;
         }
@@ -190,13 +196,16 @@ impl ByteBuffer {
         //
         // - At this point we are guaranteed that the byte buffer is backed by a `Vec`
         //   so it is safe to reconstruct the `Vec` by its raw parts.
-        Some(unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) })
+        // - The returned `Vec` is returned as [`ManuallyDrop`] to prevent its buffer from being free
+        //   upon going out of scope.
+        let vec = unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) };
+        Some(ManuallyDrop::new(vec))
     }
 }
 
 impl Drop for ByteBuffer {
     fn drop(&mut self) {
-        self.get_vec();
+        self.get_vec().map(ManuallyDrop::into_inner);
     }
 }
 
@@ -266,5 +275,23 @@ mod test {
         let buf = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
         let mut buffer = ByteBuffer::new_static(buf, 5).unwrap();
         assert!(buffer.grow(10).is_err());
+    }
+
+    #[test]
+    fn out_of_memory_works() {
+        let mut buffer = ByteBuffer::new(0).unwrap();
+        assert!(matches!(
+            buffer.grow(usize::MAX).unwrap_err(),
+            MemoryError::OutOfSystemMemory
+        ));
+        assert_eq!(buffer.len(), 0);
+        assert_eq!(buffer.data().first(), None);
+        assert!(buffer.grow(1).is_ok());
+        assert!(matches!(
+            buffer.grow(usize::MAX).unwrap_err(),
+            MemoryError::OutOfSystemMemory
+        ));
+        assert_eq!(buffer.len(), 1);
+        assert_eq!(buffer.data().first(), Some(&0x00_u8));
     }
 }
