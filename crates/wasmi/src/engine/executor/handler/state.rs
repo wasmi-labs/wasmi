@@ -298,7 +298,10 @@ impl Ip {
         struct IpDecoder(Ip);
         impl ir::Decoder for IpDecoder {
             fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
-                unsafe { ptr::copy_nonoverlapping(self.0.value, buffer.as_mut_ptr(), buffer.len()) };
+                let src = self.0.value;
+                let dst = buffer.as_mut_ptr();
+                let len = buffer.len();
+                unsafe { ptr::copy_nonoverlapping(src, dst, len) };
                 self.0 = unsafe { self.0.add(buffer.len()) };
                 Ok(())
             }
