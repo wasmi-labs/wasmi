@@ -187,6 +187,43 @@ impl Inst {
     }
 }
 
+/// # Safety
+///
+/// It is safe to send `Inst` to another thread because:
+/// - The `InstanceEntity` behind the pointer is itself `Send`.
+/// - `Inst` only allows shared (`&`) access to the `InstanceEntity` through its API.
+/// - There is no interior mutability that could cause data races.
+unsafe impl Send for Inst {}
+
+/// # Safety
+///
+/// It is safe to share `&Inst` across threads because:
+/// - All access to the `InstanceEntity` through `Inst` is immutable.
+/// - `InstanceEntity` is `Sync`.
+/// - The pointer will not be mutated, preventing data races.
+unsafe impl Sync for Inst {}
+
+mod tests {
+    // Note: the `Send` and `Sync` impl for `Inst` is only valid if
+    //       `InstanceEntity` is `Send` and `Sync`.
+    //
+    // Below are compile-time tests, thus they are not just run with
+    // `cargo test` but with any compilation of the `wasmi` crate.
+    // Compilation would fail if `InstanceEntity` no longer implements
+    // `Send` or `Sync`.
+    use super::*;
+
+    const _: fn() = || {
+        fn assert_send<T: Send>() {}
+        fn assert_sync<T: Sync>() {}
+
+        assert_send::<InstanceEntity>();
+        assert_sync::<InstanceEntity>();
+        assert_send::<Inst>();
+        assert_sync::<Inst>();
+    };
+}
+
 /// The data pointer to the default Wasm linear memory at index 0.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
