@@ -8,6 +8,13 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.41.3`] - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch.
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
 ## [`0.41.2`] - 2025-12-05
 
 ### Fixed
