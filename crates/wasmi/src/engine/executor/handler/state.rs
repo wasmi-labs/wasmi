@@ -392,6 +392,30 @@ impl Ip {
 /// could lead to unsynchronized mutation of the instructions.
 unsafe impl Send for Ip {}
 
+mod ip_tests {
+    use super::*;
+    const _: fn() = || {
+        // Note: this module contains type defs to assert that `Ip` is `Send`.
+        fn assert_send<T: Send>() {}
+        assert_send::<Ip>();
+    };
+
+    const _: fn() = || {
+        // Note: this module contains type defs to assert that `Ip` is not `Sync`.
+        // Blanket impl for all types.
+        trait AmbiguousIfSync<A> {
+            fn some_item() {}
+        }
+        impl<T: ?Sized> AmbiguousIfSync<()> for T {}
+        // Specialized impl that only exists for `Sync` types.
+        struct Invalid;
+        impl<T: ?Sized + Sync> AmbiguousIfSync<Invalid> for T {}
+
+        // This becomes ambiguous *iff* `Ip: Sync`.
+        let _ = <Ip as AmbiguousIfSync<_>>::some_item;
+    };
+}
+
 /// The stack pointer.
 ///
 /// # Note
