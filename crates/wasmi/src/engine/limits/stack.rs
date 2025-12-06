@@ -96,7 +96,7 @@ impl StackConfig {
     ///
     /// [`Engine`]: crate::Engine
     pub fn set_max_cached_stacks(&mut self, value: usize) {
-        self.max_recursion_depth = value;
+        self.max_cached_stacks = value;
     }
 
     /// Returns the maximum recursion depth.
