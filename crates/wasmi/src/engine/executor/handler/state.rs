@@ -270,16 +270,19 @@ impl Ip {
         (ip.0, decoded)
     }
 
+    #[inline]
     pub unsafe fn skip<T: ir::Decode>(self) -> Ip {
         let (ip, _) = unsafe { self.decode::<T>() };
         ip
     }
 
+    #[inline]
     pub unsafe fn offset(self, delta: isize) -> Self {
         let value = unsafe { self.value.byte_offset(delta) };
         Self { value }
     }
 
+    #[inline]
     pub unsafe fn add(self, delta: usize) -> Self {
         let value = unsafe { self.value.byte_add(delta) };
         Self { value }
