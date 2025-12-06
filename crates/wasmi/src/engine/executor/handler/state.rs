@@ -273,15 +273,6 @@ impl<'a> From<&'a [u8]> for Ip {
     }
 }
 
-struct IpDecoder(Ip);
-impl ir::Decoder for IpDecoder {
-    fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
-        unsafe { ptr::copy_nonoverlapping(self.0.value, buffer.as_mut_ptr(), buffer.len()) };
-        self.0 = unsafe { self.0.add(buffer.len()) };
-        Ok(())
-    }
-}
-
 impl Ip {
     /// Decodes a value of type `T` from the instruction stream at the [`Ip`].
     ///
@@ -304,6 +295,15 @@ impl Ip {
     /// - The underlying memory is invalid, or no longer alive while decoding.
     #[inline]
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
+        struct IpDecoder(Ip);
+        impl ir::Decoder for IpDecoder {
+            fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
+                unsafe { ptr::copy_nonoverlapping(self.0.value, buffer.as_mut_ptr(), buffer.len()) };
+                self.0 = unsafe { self.0.add(buffer.len()) };
+                Ok(())
+            }
+        }
+
         let mut ip = IpDecoder(self);
         let decoded = match <T as ir::Decode>::decode(&mut ip) {
             Ok(decoded) => decoded,
