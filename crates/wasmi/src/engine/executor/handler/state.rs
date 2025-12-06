@@ -150,6 +150,17 @@ impl PartialEq for Inst {
 impl Eq for Inst {}
 
 impl Inst {
+    /// Returns a shared reference to the referenced [`InstanceEntity`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that:
+    ///
+    /// - The [`Inst`] was constructed from a valid, properly aligned
+    ///   `InstanceEntity` pointer.
+    /// - The referenced [`InstanceEntity`] remains alive and is not
+    ///   mutably accessed for the entire duration of the returned
+    ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
         unsafe { self.value.as_ref() }
     }
