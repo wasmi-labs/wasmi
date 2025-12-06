@@ -203,7 +203,7 @@ unsafe impl Send for Inst {}
 /// - The pointer will not be mutated, preventing data races.
 unsafe impl Sync for Inst {}
 
-mod tests {
+mod inst_tests {
     // Note: the `Send` and `Sync` impl for `Inst` is only valid if
     //       `InstanceEntity` is `Send` and `Sync`.
     //
