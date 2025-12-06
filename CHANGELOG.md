@@ -493,6 +493,20 @@ The deprecations introduced in this version prepares Wasmi for its 1.0 release.
 [#1380]: https://github.com/wasmi-labs/wasmi/pull/1380
 [#1381]: https://github.com/wasmi-labs/wasmi/pull/1381
 
+## `0.41.3` - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+## `0.41.2` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
+
 ## `0.41.1` - 2025-03-11
 
 ### Fixed
