@@ -377,6 +377,21 @@ impl Ip {
     }
 }
 
+/// # Safety
+///
+/// [`Ip`] (instruction pointer) is a new-type thin wrapper to `*const u8`.
+///
+/// Moving the pointer to another thread does not by itself create aliasing or
+/// data races. All methods that dereference or advance the pointer are marked as
+/// `unsafe` and require the caller to guarantee that the underlying instruction
+/// sequence remains valid for the duration of use, including across threads.
+///
+/// # Note
+///
+/// [`Ip`] is not [`Sync`] because concurrent access to the same [`Ip`] value
+/// could lead to unsynchronized mutation of the instructions.
+unsafe impl Send for Ip {}
+
 /// The stack pointer.
 ///
 /// # Note
