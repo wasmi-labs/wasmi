@@ -297,6 +297,7 @@ impl Ip {
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
         struct IpDecoder(Ip);
         impl ir::Decoder for IpDecoder {
+            #[inline(always)]
             fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
                 let src = self.0.value;
                 let dst = buffer.as_mut_ptr();
