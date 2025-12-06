@@ -24,6 +24,7 @@ use crate::{
 use alloc::vec::Vec;
 use core::{
     cmp,
+    marker::PhantomData,
     mem,
     ptr::{self, NonNull},
     slice,
@@ -122,26 +123,85 @@ impl DoneReason {
     }
 }
 
+/// A thin-wrapper around a non-owned [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
-pub struct Inst(NonNull<InstanceEntity>);
+#[repr(transparent)]
+pub struct Inst {
+    /// The underlying reference to the [`InstanceEntity`].
+    value: NonNull<InstanceEntity>,
+    /// Indicates to the compiler that this type is similar in behavior as
+    /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
+    marker: PhantomData<*const InstanceEntity>,
+}
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
-        Self(entity.into())
+        Self {
+            value: entity.into(),
+            marker: PhantomData,
+        }
     }
 }
 
 impl PartialEq for Inst {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        self.value == other.value
     }
 }
 impl Eq for Inst {}
 
 impl Inst {
+    /// Returns a shared reference to the referenced [`InstanceEntity`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that:
+    ///
+    /// - The [`Inst`] was constructed from a valid, properly aligned
+    ///   `InstanceEntity` pointer.
+    /// - The referenced [`InstanceEntity`] remains alive and is not
+    ///   mutably accessed for the entire duration of the returned
+    ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { self.0.as_ref() }
+        unsafe { self.value.as_ref() }
     }
+}
+
+/// # Safety
+///
+/// It is safe to send `Inst` to another thread because:
+/// - The `InstanceEntity` behind the pointer is itself `Send`.
+/// - `Inst` only allows shared (`&`) access to the `InstanceEntity` through its API.
+/// - There is no interior mutability that could cause data races.
+unsafe impl Send for Inst {}
+
+/// # Safety
+///
+/// It is safe to share `&Inst` across threads because:
+/// - All access to the `InstanceEntity` through `Inst` is immutable.
+/// - `InstanceEntity` is `Sync`.
+/// - The pointer will not be mutated, preventing data races.
+unsafe impl Sync for Inst {}
+
+mod inst_tests {
+    // Note: the `Send` and `Sync` impl for `Inst` is only valid if
+    //       `InstanceEntity` is `Send` and `Sync`.
+    //
+    // Below are compile-time tests, thus they are not just run with
+    // `cargo test` but with any compilation of the `wasmi` crate.
+    // Compilation would fail if `InstanceEntity` no longer implements
+    // `Send` or `Sync`.
+    use super::*;
+
+    const _: fn() = || {
+        fn assert_send<T: Send>() {}
+        fn assert_sync<T: Sync>() {}
+
+        assert_send::<InstanceEntity>();
+        assert_sync::<InstanceEntity>();
+        assert_send::<Inst>();
+        assert_sync::<Inst>();
+    };
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -182,18 +242,41 @@ impl<'a> From<&'a [u8]> for Ip {
     }
 }
 
-struct IpDecoder(Ip);
-impl ir::Decoder for IpDecoder {
-    fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
-        unsafe { ptr::copy_nonoverlapping(self.0.value, buffer.as_mut_ptr(), buffer.len()) };
-        self.0 = unsafe { self.0.add(buffer.len()) };
-        Ok(())
-    }
-}
-
 impl Ip {
+    /// Decodes a value of type `T` from the instruction stream at the [`Ip`].
+    ///
+    /// # Returns
+    ///
+    /// - This returns the advanced [`Ip`] together with the decoded value of type `T`.
+    /// - The returned [`Ip`] points to the first byte immediately following the decoded value.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that [`Ip`] points to the start of a valid
+    /// encoding of `T` and that the underlying instruction sequence remains
+    /// readable for the full duration of the decode, including any bytes consumed
+    /// by `T`.
+    ///
+    /// The behavior of this operation is undefined if:
+    ///
+    /// - The instruction sequence does not contain a valid encoding of `T` at [`Ip`].
+    /// - Decoding `T` would read past the end of the instruction sequence.
+    /// - The underlying memory is invalid, or no longer alive while decoding.
     #[inline]
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
+        struct IpDecoder(Ip);
+        impl ir::Decoder for IpDecoder {
+            #[inline(always)]
+            fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ir::DecodeError> {
+                let src = self.0.value;
+                let dst = buffer.as_mut_ptr();
+                let len = buffer.len();
+                unsafe { ptr::copy_nonoverlapping(src, dst, len) };
+                self.0 = unsafe { self.0.add(len) };
+                Ok(())
+            }
+        }
+
         let mut ip = IpDecoder(self);
         let decoded = match <T as ir::Decode>::decode(&mut ip) {
             Ok(decoded) => decoded,
@@ -206,20 +289,100 @@ impl Ip {
         (ip.0, decoded)
     }
 
+    /// Advances [`Ip`] past a value of type `T` without decoding it.
+    ///
+    /// # Note
+    ///
+    /// This is equivalent to calling [`Self::decode`] and discarding the decoded value,
+    /// and may be used when the value is not needed.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that offsetting [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
+    #[inline]
     pub unsafe fn skip<T: ir::Decode>(self) -> Ip {
         let (ip, _) = unsafe { self.decode::<T>() };
         ip
     }
 
+    /// Returns a new [`Ip`] offset by `delta` bytes from this one.
+    ///
+    /// # Note
+    ///
+    /// - This method performs no bounds checking.
+    /// - A positive `delta` moves the pointer forward, a negative `delta` moves it backward.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that offsetting [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
+    #[inline]
     pub unsafe fn offset(self, delta: isize) -> Self {
         let value = unsafe { self.value.byte_offset(delta) };
         Self { value }
     }
 
+    /// Returns a new [`Ip`] advanced by `delta` bytes.
+    ///
+    /// # Note
+    ///
+    /// This method performs no bounds checking.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that advancing [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
+    #[inline]
     pub unsafe fn add(self, delta: usize) -> Self {
         let value = unsafe { self.value.byte_add(delta) };
         Self { value }
     }
+}
+
+/// # Safety
+///
+/// [`Ip`] (instruction pointer) is a new-type thin wrapper to `*const u8`.
+///
+/// Moving the pointer to another thread does not by itself create aliasing or
+/// data races. All methods that dereference or advance the pointer are marked as
+/// `unsafe` and require the caller to guarantee that the underlying instruction
+/// sequence remains valid for the duration of use, including across threads.
+///
+/// # Note
+///
+/// [`Ip`] is not [`Sync`] because concurrent access to the same [`Ip`] value
+/// could lead to unsynchronized mutation of the instructions.
+unsafe impl Send for Ip {}
+
+mod ip_tests {
+    use super::*;
+    const _: fn() = || {
+        // Note: this module contains type defs to assert that `Ip` is `Send`.
+        fn assert_send<T: Send>() {}
+        assert_send::<Ip>();
+    };
+
+    const _: fn() = || {
+        // Note: this module contains type defs to assert that `Ip` is not `Sync`.
+        // Blanket impl for all types.
+        trait AmbiguousIfSync<A> {
+            fn some_item() {}
+        }
+        impl<T: ?Sized> AmbiguousIfSync<()> for T {}
+        // Specialized impl that only exists for `Sync` types.
+        struct Invalid;
+        impl<T: ?Sized + Sync> AmbiguousIfSync<Invalid> for T {}
+
+        // This becomes ambiguous *iff* `Ip: Sync`.
+        let _ = <Ip as AmbiguousIfSync<_>>::some_item;
+    };
 }
 
 #[derive(Debug, Copy, Clone)]
