@@ -90,6 +90,28 @@ This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/bl
 [#1708]: https://github.com/wasmi-labs/wasmi/pull/1708
 [#1710]: https://github.com/wasmi-labs/wasmi/pull/1710
 
+## `0.51.5` - 2025-12-06
+
+### Fixed
+
+- Fixed a bug that `Config::set_max_cached_stacks` set the recursion limit instead. [#1721]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+
+## `0.51.4` - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+## `0.51.3` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
+
 ## `0.51.2` - 2025-11-18
 
 ### Fixed
