@@ -8,6 +8,31 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.3` - 2025-12-06
+
+### Fixed
+
+- Fixed a bug that `Config::set_max_cached_stacks` set the recursion limit instead. [#1721]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+[#1721]: https://github.com/wasmi-labs/wasmi/pull/1721
+
+## `1.0.2` - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+## `1.0.1` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
+
+[#1722]: https://github.com/wasmi-labs/wasmi/pull/1722
+
 ## `1.0.0` - 2025-12-03
 
 This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/blog/posts/wasmi-1.0/)
@@ -64,6 +89,28 @@ This release comes with a blog post: [Wasmi 1.0](https://wasmi-labs.github.io/bl
 [#1683]: https://github.com/wasmi-labs/wasmi/pull/1683
 [#1708]: https://github.com/wasmi-labs/wasmi/pull/1708
 [#1710]: https://github.com/wasmi-labs/wasmi/pull/1710
+
+## `0.51.5` - 2025-12-06
+
+### Fixed
+
+- Fixed a bug that `Config::set_max_cached_stacks` set the recursion limit instead. [#1721]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+
+## `0.51.4` - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+## `0.51.3` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
 
 ## `0.51.2` - 2025-11-18
 
@@ -246,6 +293,20 @@ The deprecations introduced in this version prepares Wasmi for its 1.0 release.
 [#1553]: https://github.com/wasmi-labs/wasmi/pull/1553
 [#1558]: https://github.com/wasmi-labs/wasmi/pull/1558
 [#1560]: https://github.com/wasmi-labs/wasmi/pull/1560
+
+## `0.47.2` - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+## `0.47.1` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
 
 ## `0.47.0` - 2025-05-30
 
@@ -431,6 +492,20 @@ The deprecations introduced in this version prepares Wasmi for its 1.0 release.
 [#1369]: https://github.com/wasmi-labs/wasmi/pull/1369
 [#1380]: https://github.com/wasmi-labs/wasmi/pull/1380
 [#1381]: https://github.com/wasmi-labs/wasmi/pull/1381
+
+## `0.41.3` - 2025-12-06
+
+### Fixed
+
+- Fixed a memory leak in `ByteBuffer` introduced in the last patch. [#1722]
+  - Thanks to [Robert MacWha](https://github.com/Robert-MacWha) for reporting the issue.
+
+## `0.41.2` - 2025-12-05
+
+### Fixed
+
+- Fixed a bug when trying to grow `Memory` beyond the system's memory limits. [#1722]
+  - Thanks to Robert T. Morris (RTM) for reporting this bug!
 
 ## `0.41.1` - 2025-03-11
 
