@@ -1,5 +1,5 @@
 use super::super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
-use crate::{Engine, Error, Extern, Instance};
+use crate::{engine::Inst, Engine, Error, Extern};
 
 /// Represents the caller’s context when creating a host function via [`Func::wrap`].
 ///
@@ -10,18 +10,20 @@ pub struct Caller<'a, T> {
     /// This is `Some` if the host function was called from a Wasm function
     /// since all Wasm function are associated to a module instance.
     /// This usually is `None` if the host function was called from the host side.
-    instance: Option<Instance>,
+    instance: Option<Inst>,
 }
 
 impl<'a, T> Caller<'a, T> {
     /// Creates a new [`Caller`] from the given store context and [`Instance`] handle.
-    pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<&Instance>) -> Self
+    ///
+    /// [`Instance`]: crate::Instance
+    pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<Inst>) -> Self
     where
         C: AsContextMut<Data = T>,
     {
         Self {
             ctx: ctx.as_context_mut(),
-            instance: instance.copied(),
+            instance,
         }
     }
 
@@ -29,9 +31,14 @@ impl<'a, T> Caller<'a, T> {
     ///
     /// Returns `None` if there is no associated [`Instance`] of the caller
     /// or if the caller does not provide an export under the name `name`.
+    ///
+    /// [`Instance`]: crate::Instance
     pub fn get_export(&self, name: &str) -> Option<Extern> {
-        self.instance
-            .and_then(|instance| instance.get_export(self, name))
+        let Some(instance) = &self.instance else {
+            return None;
+        };
+        let instance = unsafe { instance.as_ref() };
+        instance.get_export(name)
     }
 
     /// Returns a shared reference to the user provided host data.

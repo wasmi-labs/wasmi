@@ -8,7 +8,6 @@ members = [
     "crates/wasmi",
     "crates/wasi",
     "crates/ir",
-    "crates/ir2",
     "crates/fuzz",
     "crates/wast",
     "fuzz",
@@ -31,16 +30,15 @@ exclude = ["tests"]
 [workspace.dependencies]
 
 # Wasmi crates
-wasmi = { version = "1.0.1", path = "crates/wasmi", default-features = false }
-wasmi_wasi = { version = "1.0.1", path = "crates/wasi", default-features = false }
-wasmi_core = { version = "1.0.1", path = "crates/core", default-features = false }
-wasmi_ir = { version = "1.0.1", path = "crates/ir", default-features = false }
-wasmi_ir2 = { version = "1.0.1", path = "crates/ir2", default-features = false }
-wasmi_collections = { version = "1.0.1", path = "crates/collections", default-features = false }
-wasmi_c_api_impl = { version = "1.0.1", path = "crates/c_api" }
-wasmi_c_api_macros = { version = "1.0.1", path = "crates/c_api/macro" }
-wasmi_fuzz = { version = "1.0.1", path = "crates/fuzz" }
-wasmi_wast = { version = "1.0.1", path = "crates/wast" }
+wasmi = { version = "1.0.0", path = "crates/wasmi", default-features = false }
+wasmi_wasi = { version = "1.0.0", path = "crates/wasi", default-features = false }
+wasmi_core = { version = "1.0.0", path = "crates/core", default-features = false }
+wasmi_ir = { version = "1.0.0", path = "crates/ir", default-features = false }
+wasmi_collections = { version = "1.0.0", path = "crates/collections", default-features = false }
+wasmi_c_api_impl = { version = "1.0.0", path = "crates/c_api" }
+wasmi_c_api_macros = { version = "1.0.0", path = "crates/c_api/macro" }
+wasmi_fuzz = { version = "1.0.0", path = "crates/fuzz" }
+wasmi_wast = { version = "1.0.0", path = "crates/wast" }
 
 # wasm-tools dependencies
 wat = { version = "1.228.0", default-features = false }
@@ -61,3 +59,6 @@ codegen-units = 1
 [profile.miri]
 inherits = "dev"
 debug-assertions = false
+
+[profile.release]
+codegen-units = 1 # required to avoid stackoverflows when _not_ using `wasmi`'s `portable-dispatch` feature

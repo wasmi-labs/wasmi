@@ -1864,13 +1864,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmi_ir2"
-version = "1.0.1"
-dependencies = [
- "wasmi_core 1.0.1",
-]
-
-[[package]]
 name = "wasmi_wasi"
 version = "1.0.1"
 dependencies = [

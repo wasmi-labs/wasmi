@@ -53,6 +53,13 @@ prefer-btree-collections = [
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
 
+# Enables a portable dispatch scheme that avoids tail-call reliance.
+# Recommended for targets without stable or guaranteed tail-call support.
+portable-dispatch = []
+# Enables an indirect dispatch scheme using op-codes instead of
+# embedded function pointers for more compact bytecode.
+indirect-dispatch = []
+
 # Enables extra checks performed during Wasmi bytecode execution.
 #
 # These checks are unnecessary as long as Wasmi translation works as intended.

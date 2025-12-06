@@ -30,7 +30,7 @@ jobs:
         run: cargo build --workspace --locked --verbose
       - name: Build (all features)
         run: cargo build --workspace --locked --all-features --verbose
-      - name: Build (no_std)
+      - name: Build (no_std + !portable-dispatch + !indirect-dispatch)
         run: >-
             cargo build
             --package wasmi
@@ -38,6 +38,36 @@ jobs:
             --locked
             --lib
             --no-default-features
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + !portable-dispatch + indirect-dispatch)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features indirect-dispatch
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + portable-dispatch + !indirect-dispatch)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features portable-dispatch
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + portable-dispatch + indirect-dispatch)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features portable-dispatch,indirect-dispatch
             --target x86_64-unknown-none
             --verbose
       - name: Build (no_std + hash-collections)
@@ -341,8 +371,14 @@ jobs:
         run: cargo clippy --workspace --locked -- -D warnings
       - name: Clippy (all features)
         run: cargo clippy --workspace --locked --all-features -- -D warnings
-      - name: Clippy (no_std)
+      - name: Clippy (no_std + !portable-dispatch + !indirect-dispatch)
         run: cargo clippy --workspace --locked --no-default-features -- -D warnings
+      - name: Clippy (no_std + !portable-dispatch + indirect-dispatch)
+        run: cargo clippy --workspace --locked --no-default-features --features indirect-dispatch -- -D warnings
+      - name: Clippy (no_std + portable-dispatch + !indirect-dispatch)
+        run: cargo clippy --workspace --locked --no-default-features --features portable-dispatch -- -D warnings
+      - name: Clippy (no_std + portable-dispatch + indirect-dispatch)
+        run: cargo clippy --workspace --locked --no-default-features --features portable-dispatch,indirect-dispatch -- -D warnings
       - name: Clippy (tests)
         run: cargo clippy --workspace --locked --tests -- -D warnings
       - name: Clippy (benches)

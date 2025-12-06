@@ -5,22 +5,22 @@ use core::fmt;
 pub enum Error {
     /// Encountered when trying to create a [`Slot`](crate::Slot) from an out of bounds integer.
     StackSlotOutOfBounds,
-    /// Encountered when trying to create a [`BranchOffset`](crate::BranchOffset) from an out of bounds integer.
-    BranchOffsetOutOfBounds,
-    /// Encountered when trying to create a [`Comparator`](crate::Comparator) from an out of bounds integer.
-    ComparatorOutOfBounds,
     /// Encountered when trying to create a [`BlockFuel`](crate::BlockFuel) from an out of bounds integer.
     BlockFuelOutOfBounds,
+    /// Encountered when trying to create a [`Memory`] from an out of bounds integer.
+    ///
+    /// [`Memory`]: crate::index::Memory
+    MemoryIndexOutOfBounds,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::StackSlotOutOfBounds => write!(f, "stack slot index out of bounds"),
-            Self::BranchOffsetOutOfBounds => write!(f, "branch offset out of bounds"),
-            Self::ComparatorOutOfBounds => write!(f, "comparator out of bounds"),
-            Self::BlockFuelOutOfBounds => write!(f, "block fuel out of bounds"),
-        }
+        let s = match self {
+            Self::StackSlotOutOfBounds => "stack slot out of bounds",
+            Self::BlockFuelOutOfBounds => "block fuel out of bounds",
+            Self::MemoryIndexOutOfBounds => "memory index out of bounds",
+        };
+        f.write_str(s)
     }
 }
 

@@ -84,6 +84,15 @@ impl<const N: u16> FixedSlotSpan<N> {
         Ok(Self { span })
     }
 
+    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for making sure that `span` is valid for a length of `N`.
+    pub unsafe fn new_unchecked(span: SlotSpan) -> Self {
+        Self { span }
+    }
+
     /// Returns a [`SlotSpanIter`] yielding `N` [`Slot`]s.
     pub fn iter(&self) -> SlotSpanIter {
         self.span.iter(self.len())
@@ -108,13 +117,13 @@ impl<const N: u16> FixedSlotSpan<N> {
     }
 
     /// Returns `true` if the [`Slot`] is contained in `self`.
-    pub fn contains(self, slot: Slot) -> bool {
+    pub fn contains(self, reg: Slot) -> bool {
         if self.is_empty() {
             return false;
         }
         let min = self.span.head();
         let max = min.next_n(N);
-        min <= slot && slot < max
+        min <= reg && reg < max
     }
 
     /// Returns the number of [`Slot`]s in `self`.
@@ -227,7 +236,7 @@ pub struct SlotSpanIter {
 impl SlotSpanIter {
     /// Creates a [`SlotSpanIter`] from then given raw `start` and `end` [`Slot`].
     pub fn from_raw_parts(start: Slot, end: Slot) -> Self {
-        debug_assert!(i16::from(start) <= i16::from(end));
+        debug_assert!(u16::from(start) <= u16::from(end));
         Self {
             next: start,
             last: end,
@@ -254,7 +263,7 @@ impl SlotSpanIter {
         let next = start;
         let last = start
             .0
-            .checked_add_unsigned(len)
+            .checked_add(len)
             .map(Slot)
             .expect("overflowing register index for register span");
         Self::from_raw_parts(next, last)
