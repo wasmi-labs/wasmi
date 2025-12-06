@@ -24,6 +24,7 @@ use crate::{
 use alloc::vec::Vec;
 use core::{
     cmp,
+    marker::PhantomData,
     mem,
     ptr::{self, NonNull},
     slice,
@@ -147,12 +148,16 @@ impl DoneReason {
 #[repr(transparent)]
 pub struct Inst {
     value: NonNull<InstanceEntity>,
+    /// Indicates to the compiler that this type is similar in behavior as
+    /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
+    marker: PhantomData<*const InstanceEntity>,
 }
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
         Self {
             value: entity.into(),
+            marker: PhantomData,
         }
     }
 }
