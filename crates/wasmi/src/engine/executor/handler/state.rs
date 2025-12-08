@@ -322,6 +322,12 @@ impl Ip {
     }
 }
 
+/// The stack pointer.
+///
+/// # Note
+/// 
+/// This always points to the beginning of the stack area reserved for the
+/// currently executed function frame.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Sp {
@@ -329,17 +335,25 @@ pub struct Sp {
 }
 
 impl Sp {
+    /// Creates a new [`Sp`].
     #[inline]
     pub fn new(value: *mut UntypedVal) -> Self {
         Self { value }
     }
 
+    /// Creates a new dangling [`Sp`].
+    /// 
+    /// # Note
+    /// 
+    /// The [`Sp`] returned by this method must never be dereferenced.
+    /// This is used for cases where there are no frames on the call stack.
     pub fn dangling() -> Self {
         Self {
             value: ptr::dangling_mut(),
         }
     }
 
+    /// Returns a value of type `T` at `slot`.
     pub fn get<T>(self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
@@ -349,6 +363,7 @@ impl Sp {
         <UntypedVal as ReadAs<T>>::read_as(value)
     }
 
+    /// Writes a `value` of type `T` at `slot`.
     pub fn set<T>(self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
@@ -358,6 +373,7 @@ impl Sp {
         <UntypedVal as WriteAs<T>>::write_as(cell, value);
     }
 
+    /// Converts `self` to a slice of cells with length `len`.
     pub unsafe fn as_slice<'a>(self, len: usize) -> &'a [UntypedVal] {
         unsafe { core::slice::from_raw_parts(self.value, len) }
     }
