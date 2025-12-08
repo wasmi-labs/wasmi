@@ -176,6 +176,7 @@ impl Inst {
     }
 }
 
+/// The data pointer to the default Wasm linear memory at index 0.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Mem0Ptr(*mut u8);
@@ -186,6 +187,7 @@ impl From<*mut u8> for Mem0Ptr {
     }
 }
 
+/// The length in bytes of the default Wasm linear memory at index 0.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Mem0Len(usize);
@@ -196,6 +198,7 @@ impl From<usize> for Mem0Len {
     }
 }
 
+/// Construct the default linear memory slice of bytes from its raw parts.
 pub fn mem0_bytes<'a>(mem0: Mem0Ptr, mem0_len: Mem0Len) -> &'a mut [u8] {
     unsafe { slice::from_raw_parts_mut(mem0.0, mem0_len.0) }
 }
