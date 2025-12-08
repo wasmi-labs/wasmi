@@ -325,7 +325,7 @@ impl Ip {
 /// The stack pointer.
 ///
 /// # Note
-/// 
+///
 /// This always points to the beginning of the stack area reserved for the
 /// currently executed function frame.
 #[derive(Debug, Copy, Clone)]
@@ -342,9 +342,9 @@ impl Sp {
     }
 
     /// Creates a new dangling [`Sp`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The [`Sp`] returned by this method must never be dereferenced.
     /// This is used for cases where there are no frames on the call stack.
     pub fn dangling() -> Self {
