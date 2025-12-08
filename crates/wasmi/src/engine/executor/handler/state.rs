@@ -79,6 +79,14 @@ impl<'vm> VmState<'vm> {
     }
 }
 
+/// The reason why a Wasmi execution has halted.
+///
+/// # Note
+///
+/// This type lives in the [`VmState`] type and in case of a halt needs to be
+/// updated manually which is a bit costly which is why the most common reason
+/// which is a raised [`TrapCode`] is not included in this `enum` and was put
+/// into the return type of execution handlers directly, instead.
 #[derive(Debug)]
 pub enum DoneReason {
     /// The execution finished successfully with a result found at the [`Sp`].
@@ -92,24 +100,36 @@ pub enum DoneReason {
 }
 
 impl DoneReason {
+    /// The execution halted due to a generic [`Error`].
     #[cold]
     #[inline]
     pub fn error(error: Error) -> Self {
         Self::Error(error)
     }
 
+    /// The executed halted because a called host function yielded an error.
+    ///
+    /// # Note
+    ///
+    /// This needs special treatment due to resumable function calls.
     #[cold]
     #[inline]
     pub fn host_error(error: Error, func: Func, results: SlotSpan) -> Self {
         Self::Host(ResumableHostTrapError::new(error, func, results))
     }
 
+    /// The executed halted because the execution ran out of fuel.
+    ///
+    /// # Note
+    ///
+    /// This needs special treatment due to resumable function calls.
     #[cold]
     #[inline]
     pub fn out_of_fuel(required_fuel: u64) -> Self {
         Self::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
     }
 
+    /// Converts `self` into an [`ExecutionOutcome`].
     #[inline]
     pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
         let outcome = match self {
