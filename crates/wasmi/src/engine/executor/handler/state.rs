@@ -79,6 +79,14 @@ impl<'vm> VmState<'vm> {
     }
 }
 
+/// The reason why a Wasmi execution has halted.
+///
+/// # Note
+///
+/// This type lives in the [`VmState`] type and in case of a halt needs to be
+/// updated manually which is a bit costly which is why the most common reason
+/// which is a raised [`TrapCode`] is not included in this `enum` and was put
+/// into the return type of execution handlers directly, instead.
 #[derive(Debug)]
 pub enum DoneReason {
     /// The execution finished successfully with a result found at the [`Sp`].
@@ -92,24 +100,36 @@ pub enum DoneReason {
 }
 
 impl DoneReason {
+    /// The execution halted due to a generic [`Error`].
     #[cold]
     #[inline]
     pub fn error(error: Error) -> Self {
         Self::Error(error)
     }
 
+    /// The executed halted because a called host function yielded an error.
+    ///
+    /// # Note
+    ///
+    /// This needs special treatment due to resumable function calls.
     #[cold]
     #[inline]
     pub fn host_error(error: Error, func: Func, results: SlotSpan) -> Self {
         Self::Host(ResumableHostTrapError::new(error, func, results))
     }
 
+    /// The executed halted because the execution ran out of fuel.
+    ///
+    /// # Note
+    ///
+    /// This needs special treatment due to resumable function calls.
     #[cold]
     #[inline]
     pub fn out_of_fuel(required_fuel: u64) -> Self {
         Self::OutOfFuel(ResumableOutOfFuelError::new(required_fuel))
     }
 
+    /// Converts `self` into an [`ExecutionOutcome`].
     #[inline]
     pub fn into_execution_outcome(self) -> Result<Sp, ExecutionOutcome> {
         let outcome = match self {
@@ -122,6 +142,7 @@ impl DoneReason {
     }
 }
 
+/// A thin-wrapper around a non-owned [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
 pub struct Inst(NonNull<InstanceEntity>);
 
@@ -139,11 +160,23 @@ impl PartialEq for Inst {
 impl Eq for Inst {}
 
 impl Inst {
+    /// Returns a shared reference to the referenced [`InstanceEntity`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that:
+    ///
+    /// - The [`Inst`] was constructed from a valid, properly aligned
+    ///   `InstanceEntity` pointer.
+    /// - The referenced [`InstanceEntity`] remains alive and is not
+    ///   mutably accessed for the entire duration of the returned
+    ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
         unsafe { self.0.as_ref() }
     }
 }
 
+/// The data pointer to the default Wasm linear memory at index 0.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Mem0Ptr(*mut u8);
@@ -154,6 +187,7 @@ impl From<*mut u8> for Mem0Ptr {
     }
 }
 
+/// The length in bytes of the default Wasm linear memory at index 0.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Mem0Len(usize);
@@ -164,10 +198,19 @@ impl From<usize> for Mem0Len {
     }
 }
 
+/// Construct the default linear memory slice of bytes from its raw parts.
 pub fn mem0_bytes<'a>(mem0: Mem0Ptr, mem0_len: Mem0Len) -> &'a mut [u8] {
     unsafe { slice::from_raw_parts_mut(mem0.0, mem0_len.0) }
 }
 
+/// The instruction pointer.
+///
+/// This always points to the currently executed instruction (or operator).
+///
+/// # Note
+///
+/// The pointer points to a `u8` since [`Op`](crate::ir::Op)s in Wasmi are
+/// encoded and need to be decoded prior to execution.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Ip {
@@ -192,6 +235,25 @@ impl ir::Decoder for IpDecoder {
 }
 
 impl Ip {
+    /// Decodes a value of type `T` from the instruction stream at the [`Ip`].
+    ///
+    /// # Returns
+    ///
+    /// - This returns the advanced [`Ip`] together with the decoded value of type `T`.
+    /// - The returned [`Ip`] points to the first byte immediately following the decoded value.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that [`Ip`] points to the start of a valid
+    /// encoding of `T` and that the underlying instruction sequence remains
+    /// readable for the full duration of the decode, including any bytes consumed
+    /// by `T`.
+    ///
+    /// The behavior of this operation is undefined if:
+    ///
+    /// - The instruction sequence does not contain a valid encoding of `T` at [`Ip`].
+    /// - Decoding `T` would read past the end of the instruction sequence.
+    /// - The underlying memory is invalid, or no longer alive while decoding.
     #[inline]
     pub unsafe fn decode<T: ir::Decode>(self) -> (Ip, T) {
         let mut ip = IpDecoder(self);
@@ -206,22 +268,66 @@ impl Ip {
         (ip.0, decoded)
     }
 
+    /// Advances [`Ip`] past a value of type `T` without decoding it.
+    ///
+    /// # Note
+    ///
+    /// This is equivalent to calling [`Self::decode`] and discarding the decoded value,
+    /// and may be used when the value is not needed.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that offsetting [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
     pub unsafe fn skip<T: ir::Decode>(self) -> Ip {
         let (ip, _) = unsafe { self.decode::<T>() };
         ip
     }
 
+    /// Returns a new [`Ip`] offset by `delta` bytes from this one.
+    ///
+    /// # Note
+    ///
+    /// - This method performs no bounds checking.
+    /// - A positive `delta` moves the pointer forward, a negative `delta` moves it backward.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that offsetting [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
     pub unsafe fn offset(self, delta: isize) -> Self {
         let value = unsafe { self.value.byte_offset(delta) };
         Self { value }
     }
 
+    /// Returns a new [`Ip`] advanced by `delta` bytes.
+    ///
+    /// # Note
+    ///
+    /// This method performs no bounds checking.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that advancing [`Ip`] by `delta` bytes does
+    /// not move it outside the valid bounds of the instruction sequence
+    /// and that any subsequent use of the returned [`Ip`] only reads from valid,
+    /// alive memory.
     pub unsafe fn add(self, delta: usize) -> Self {
         let value = unsafe { self.value.byte_add(delta) };
         Self { value }
     }
 }
 
+/// The stack pointer.
+///
+/// # Note
+///
+/// This always points to the beginning of the stack area reserved for the
+/// currently executed function frame.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Sp {
@@ -229,17 +335,25 @@ pub struct Sp {
 }
 
 impl Sp {
+    /// Creates a new [`Sp`].
     #[inline]
     pub fn new(value: *mut UntypedVal) -> Self {
         Self { value }
     }
 
+    /// Creates a new dangling [`Sp`].
+    ///
+    /// # Note
+    ///
+    /// The [`Sp`] returned by this method must never be dereferenced.
+    /// This is used for cases where there are no frames on the call stack.
     pub fn dangling() -> Self {
         Self {
             value: ptr::dangling_mut(),
         }
     }
 
+    /// Returns a value of type `T` at `slot`.
     pub fn get<T>(self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
@@ -249,6 +363,7 @@ impl Sp {
         <UntypedVal as ReadAs<T>>::read_as(value)
     }
 
+    /// Writes a `value` of type `T` at `slot`.
     pub fn set<T>(self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
@@ -258,6 +373,7 @@ impl Sp {
         <UntypedVal as WriteAs<T>>::write_as(cell, value);
     }
 
+    /// Converts `self` to a slice of cells with length `len`.
     pub unsafe fn as_slice<'a>(self, len: usize) -> &'a [UntypedVal] {
         unsafe { core::slice::from_raw_parts(self.value, len) }
     }
