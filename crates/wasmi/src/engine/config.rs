@@ -122,8 +122,8 @@ impl Config {
     /// [`Engine`]: [`crate::Engine`]
     pub fn set_max_stack_height(&mut self, value: usize) -> &mut Self {
         if self.stack.set_max_stack_height(value).is_err() {
-            let max = self.stack.min_stack_height();
-            panic!("maximum stack height is lower than minimum: min={value}, max={max}");
+            let min = self.stack.min_stack_height();
+            panic!("maximum stack height is lower than minimum: min={min}, max={value}");
         }
         self
     }
