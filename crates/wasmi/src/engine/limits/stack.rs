@@ -85,7 +85,7 @@ impl StackConfig {
     ///
     /// If `value` is less than the current minimum (or initial) value stack heihgt.
     pub fn set_max_stack_height(&mut self, value: usize) -> Result<(), StackConfigError> {
-        if value < self.max_stack_height {
+        if value < self.min_stack_height {
             return Err(StackConfigError::MinStackHeightExceedsMax);
         }
         self.max_stack_height = value;
