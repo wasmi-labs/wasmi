@@ -448,7 +448,7 @@ impl Sp {
     }
 
     /// Returns a value of type `T` at `slot`.
-    pub fn get<T>(self, slot: Slot) -> T
+    pub unsafe fn get<T>(self, slot: Slot) -> T
     where
         UntypedVal: ReadAs<T>,
     {
@@ -458,7 +458,7 @@ impl Sp {
     }
 
     /// Writes a `value` of type `T` at `slot`.
-    pub fn set<T>(self, slot: Slot, value: T)
+    pub unsafe fn set<T>(self, slot: Slot, value: T)
     where
         UntypedVal: WriteAs<T>,
     {

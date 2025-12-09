@@ -167,7 +167,7 @@ where
     UntypedVal: ReadAs<T>,
 {
     fn get_value(src: Self, sp: Sp) -> T {
-        sp.get::<T>(src)
+        unsafe { sp.get::<T>(src) }
     }
 }
 
@@ -187,7 +187,7 @@ where
     UntypedVal: WriteAs<T>,
 {
     fn set_value(dst: Self, value: T, sp: Sp) {
-        sp.set::<T>(dst, value)
+        unsafe { sp.set::<T>(dst, value) }
     }
 }
 
