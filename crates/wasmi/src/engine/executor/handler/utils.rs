@@ -187,6 +187,10 @@ where
     }
 }
 
+/// Returns the value at `sp`:
+///
+/// - `sp[src]` if `src` is a value of type `Slot`
+/// - `src` if `src` is a primitive type, such as `i32`
 pub fn get_value<T, L>(src: T, sp: Sp) -> L
 where
     T: GetValue<L>,
@@ -223,6 +227,7 @@ where
     }
 }
 
+/// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = value`
 pub fn set_value<T, V>(sp: Sp, dst: T, value: V)
 where
     T: SetValue<V>,
