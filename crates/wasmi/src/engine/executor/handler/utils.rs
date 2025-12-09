@@ -167,6 +167,22 @@ where
     UntypedVal: ReadAs<T>,
 {
     fn get_value(src: Self, sp: Sp) -> T {
+        // # Safety
+        //
+        // This implementation's correctness relies on the caller's inputs.
+        //
+        // - The caller needs to make sure that the offset `sp` via `src` yields
+        //   a memory region that is alive and belonging to the same memory region
+        //   as `sp` itself.
+        // - This method (or trait) was not marked `unsafe` for ergonomic reasons
+        //   since practically any direct callers of this methods cannot enforce or
+        //   assert those invariants themselves.
+        // - In essence the use of this method relies on the correct `decode` implementation
+        //   and the correct use of `decode` implementation in all execution handlers and
+        //   their callers, e.g. the interpreter loop as well as the setup routine.
+        // - Marking all execution handlers as `unsafe` was another option that has been
+        //   ruled out because it would yield `unsafe` blocks way too large to be effective.
+        // - Therefore: this method not being marked `unsafe` was a design trade-off.
         unsafe { sp.get::<T>(src) }
     }
 }
@@ -187,6 +203,22 @@ where
     UntypedVal: WriteAs<T>,
 {
     fn set_value(dst: Self, value: T, sp: Sp) {
+        // # Safety
+        //
+        // This implementation's correctness relies on the caller's inputs.
+        //
+        // - The caller needs to make sure that the offset `sp` via `src` yields
+        //   a memory region that is alive and belonging to the same memory region
+        //   as `sp` itself.
+        // - This method (or trait) was not marked `unsafe` for ergonomic reasons
+        //   since practically any direct callers of this methods cannot enforce or
+        //   assert those invariants themselves.
+        // - In essence the use of this method relies on the correct `decode` implementation
+        //   and the correct use of `decode` implementation in all execution handlers and
+        //   their callers, e.g. the interpreter loop as well as the setup routine.
+        // - Marking all execution handlers as `unsafe` was another option that has been
+        //   ruled out because it would yield `unsafe` blocks way too large to be effective.
+        // - Therefore: this method not being marked `unsafe` was a design trade-off.
         unsafe { sp.set::<T>(dst, value) }
     }
 }
