@@ -515,8 +515,8 @@ impl Stack {
         // Note: we use saturating add since this API is only used to separate
         //       heap allocating from non-heap allocating instances.
         self.values
-            .bytes_allocates()
-            .saturating_add(self.frames.bytes_allocates())
+            .bytes_allocated()
+            .saturating_add(self.frames.bytes_allocated())
     }
 
     /// Synchronizes the [`Ip`] of the top-most function frame.
@@ -667,7 +667,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This is mostly used to separate instances with and without heap allocations for caching.
-    fn bytes_allocates(&self) -> usize {
+    fn bytes_allocated(&self) -> usize {
         let bytes_per_frame = mem::size_of::<UntypedVal>();
         self.cells.capacity() * bytes_per_frame
     }
@@ -896,7 +896,7 @@ impl CallStack {
     /// # Note
     ///
     /// This is mostly used to separate instances with and without heap allocations for caching.
-    fn bytes_allocates(&self) -> usize {
+    fn bytes_allocated(&self) -> usize {
         let bytes_per_frame = mem::size_of::<Frame>();
         self.frames.capacity() * bytes_per_frame
     }
