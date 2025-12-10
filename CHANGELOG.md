@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.4` - 2025-12-10
+
+### Fixed
+
+- Fix `Config::set_max_stack_height` check. [#1727]
+
+[#1727]: https://github.com/wasmi-labs/wasmi/pull/1727
+
 ## `1.0.3` - 2025-12-06
 
 ### Fixed
