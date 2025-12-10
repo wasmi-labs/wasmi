@@ -76,6 +76,11 @@ impl Error {
         &self.kind
     }
 
+    /// Returns a mutable reference to [`ErrorKind`] of the [`Error`].
+    pub fn kind_mut(&mut self) -> &mut ErrorKind {
+        &mut self.kind
+    }
+
     /// Returns a reference to [`TrapCode`] if [`Error`] is a [`TrapCode`].
     pub fn as_trap_code(&self) -> Option<TrapCode> {
         self.kind().as_trap_code()
@@ -242,6 +247,7 @@ impl ErrorKind {
     pub fn as_host(&self) -> Option<&dyn HostError> {
         match self {
             Self::Host(error) => Some(error.as_ref()),
+            Self::ResumableHostTrap(error) => error.as_error_ref().kind().as_host(),
             _ => None,
         }
     }
@@ -250,6 +256,7 @@ impl ErrorKind {
     pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
         match self {
             Self::Host(error) => Some(error.as_mut()),
+            Self::ResumableHostTrap(error) => error.as_error_mut().kind_mut().as_host_mut(),
             _ => None,
         }
     }
