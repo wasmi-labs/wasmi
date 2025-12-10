@@ -81,6 +81,18 @@ impl From<Error> for ExecutionOutcome {
     }
 }
 
+impl ExecutionOutcome {
+    /// Converts resumable [`ExecutionOutcome::Host`] and [`ExecutionOutcome::OutOfFuel`] into non-resumable errors.
+    #[inline]
+    pub fn into_non_resumable(self) -> Error {
+        match self {
+            Self::Host(error) => error.into_error(),
+            Self::OutOfFuel(_error) => Error::from(TrapCode::OutOfFuel),
+            Self::Error(error) => error,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum Break {
     UnreachableCodeReached = TrapCode::UnreachableCodeReached as _,
