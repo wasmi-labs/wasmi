@@ -1069,3 +1069,31 @@ pub struct Frame {
     /// Wasm instances and thus execution needs to change the currently used [`Inst`].
     instance: Option<Inst>,
 }
+
+/// The offset of an [`Sp`] of a [`Stack`].
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+pub struct SpOffset(usize);
+
+impl From<usize> for SpOffset {
+    #[inline]
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl SpOffset {
+    /// Return `self` offset by `delta` cells.
+    #[inline]
+    fn add(self, delta: usize) -> Result<Self, TrapCode> {
+        match self.0.checked_add(delta) {
+            Some(new_sp) => Ok(Self::from(new_sp)),
+            None => Err(TrapCode::StackOverflow),
+        }
+    }
+
+    /// Returns the underlying `usize` index.
+    #[inline]
+    fn into_inner(self) -> usize {
+        self.0
+    }
+}
