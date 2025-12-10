@@ -26,6 +26,7 @@ use core::{
     cmp,
     marker::PhantomData,
     mem,
+    ops,
     ptr::{self, NonNull},
     slice,
 };
@@ -869,7 +870,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If either `range` exceeds the end of the slice, or if the end of src is before the start.
-    fn cells_copy_within(&mut self, range: core::ops::Range<SpOffset>, dest: SpOffset) {
+    fn cells_copy_within(&mut self, range: ops::Range<SpOffset>, dest: SpOffset) {
         let start = range.start.into_inner();
         let end = range.end.into_inner();
         let dest = dest.into_inner();
