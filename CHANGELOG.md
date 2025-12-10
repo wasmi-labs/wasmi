@@ -13,6 +13,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Fixed
 
 - Fix `Config::set_max_stack_height` check. [#1727]
+  - Thanks to [gramseyer](https://github.com/gramseyer) for the fix!
 
 [#1727]: https://github.com/wasmi-labs/wasmi/pull/1727
 
