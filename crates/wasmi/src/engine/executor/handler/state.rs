@@ -673,27 +673,28 @@ impl ValueStack {
     }
 
     /// Returns an [`Sp`] pointing to the cell at the `start` index.
-    fn sp(&mut self, start: usize) -> Sp {
+    fn sp(&mut self, start: SpOffset) -> Sp {
+        let offset = start.into_inner();
         debug_assert!(
             // Note: it is fine to use <= here because for zero sized frames
             //       we sometimes end up with `start == cells.len()` which isn't
             //       bad since in those cases `Sp` is never used.
-            start <= self.cells.len(),
+            offset <= self.cells.len(),
             "start = {}, cells.len() = {}",
-            start,
+            offset,
             self.cells.len()
         );
-        let value = unsafe { self.cells.as_mut_ptr().add(start) };
+        let value = unsafe { self.cells.as_mut_ptr().add(offset) };
         Sp::new(value)
     }
 
     /// Returns an [`Sp`] pointing to the cell at the `start` index if `self` is non-empty.
     ///
     /// Otherwise returns a dangling [`Sp`] that must not be derefenced.
-    fn sp_or_dangling(&mut self, start: usize) -> Sp {
+    fn sp_or_dangling(&mut self, start: SpOffset) -> Sp {
         match self.cells.is_empty() {
             true => {
-                debug_assert_eq!(start, 0);
+                debug_assert_eq!(start.into_inner(), 0);
                 Sp::dangling()
             }
             false => self.sp(start),
@@ -708,7 +709,8 @@ impl ValueStack {
     ///
     /// - Returns [`TrapCode::OutOfSystemMemory`] if the machine ran out of memory.
     /// - Returns [`TrapCode::StackOverflow`] if this exceeds the stack's predefined limits.
-    fn grow_if_needed(&mut self, new_len: usize) -> Result<(), TrapCode> {
+    fn grow_if_needed(&mut self, new_len: SpOffset) -> Result<(), TrapCode> {
+        let new_len = new_len.into_inner();
         if new_len > self.max_height {
             return Err(TrapCode::StackOverflow);
         }
@@ -747,12 +749,12 @@ impl ValueStack {
     /// the caller's caller.
     fn return_prepare_host_frame<'a>(
         &'a mut self,
-        caller: Option<(Ip, usize, Inst)>,
-        callee_start: usize,
+        caller: Option<(Ip, SpOffset, Inst)>,
+        callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
     ) -> Result<(ReturnCallHost, FuncInOut<'a>), TrapCode> {
-        let caller_start = caller.map(|(_, start, _)| start).unwrap_or(0);
+        let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
@@ -769,20 +771,15 @@ impl ValueStack {
             };
             return Ok((control, inout));
         }
-        let Some(params_start) = callee_start.checked_add(params_offset) else {
-            return Err(TrapCode::StackOverflow);
-        };
-        let Some(params_end) = params_start.checked_add(params_len) else {
-            return Err(TrapCode::StackOverflow);
-        };
-        self.cells
-            .copy_within(params_start..params_end, callee_start);
-        let Some(callee_end) = callee_start.checked_add(callee_size) else {
-            return Err(TrapCode::StackOverflow);
-        };
+        let params_start = callee_start.add(params_offset)?;
+        let params_end = params_start.add(params_len)?;
+        self.cells_copy_within(params_start..params_end, callee_start);
+        let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let caller_sp = self.sp(caller_start);
-        let cells = &mut self.cells[callee_start..callee_end];
+        let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
+            unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
+        };
         let inout = FuncInOut::new(cells, params_len, results_len);
         let control = match caller {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
@@ -794,7 +791,7 @@ impl ValueStack {
     /// Prepares `self` for a host function call.
     fn prepare_host_frame<'a>(
         &'a mut self,
-        caller_start: usize,
+        caller_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
     ) -> Result<(Sp, FuncInOut<'a>), TrapCode> {
@@ -802,33 +799,29 @@ impl ValueStack {
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
         let callee_size = params_len.max(results_len);
-        let Some(callee_start) = caller_start.checked_add(params_offset) else {
-            return Err(TrapCode::StackOverflow);
-        };
-        let Some(callee_end) = callee_start.checked_add(callee_size) else {
-            return Err(TrapCode::StackOverflow);
-        };
+        let callee_start = caller_start.add(params_offset)?;
+        let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let sp = self.sp(caller_start);
-        let cells = &mut self.cells[callee_start..callee_end];
+        let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
+            unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
+        };
         let inout = FuncInOut::new(cells, params_len, results_len);
         Ok((sp, inout))
     }
 
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
-    fn push(&mut self, start: usize, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
+    fn push(&mut self, start: SpOffset, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
         let len_params = usize::from(len_params);
         debug_assert!(len_params <= len_slots);
         if len_slots == 0 {
             return Ok(Sp::dangling());
         }
-        let Some(end) = start.checked_add(len_slots) else {
-            return Err(TrapCode::StackOverflow);
-        };
+        let end = start.add(len_slots)?;
         self.grow_if_needed(end)?;
-        let start_locals = start.wrapping_add(len_params);
-        self.cells[start_locals..end].fill_with(UntypedVal::default);
+        let start_locals = start.into_inner().wrapping_add(len_params);
+        self.cells[start_locals..end.into_inner()].fill_with(UntypedVal::default);
         let sp = self.sp(start);
         Ok(sp)
     }
@@ -837,7 +830,7 @@ impl ValueStack {
     #[inline(always)]
     fn replace(
         &mut self,
-        callee_start: usize,
+        callee_start: SpOffset,
         callee_size: usize,
         callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
@@ -847,17 +840,40 @@ impl ValueStack {
         if callee_size == 0 {
             return Ok(Sp::dangling());
         }
-        let Some(callee_end) = callee_start.checked_add(callee_size) else {
-            return Err(TrapCode::StackOverflow);
-        };
+        let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
-        let Some(callee_cells) = self.cells.get_mut(callee_start..) else {
+        let Some(callee_cells) = self.cells_from(callee_start) else {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
         callee_cells.copy_within(params_start..params_end, 0);
         callee_cells[params_len..callee_size].fill_with(UntypedVal::default);
         let sp = self.sp(callee_start);
         Ok(sp)
+    }
+
+    /// Returns cells as slice: `cells[start..]`
+    fn cells_from(&mut self, start: SpOffset) -> Option<&mut [UntypedVal]> {
+        let start = start.into_inner();
+        self.cells.get_mut(start..)
+    }
+
+    /// Returns cells as slice: `cells[start..end]`
+    fn cells_from_to(&mut self, start: SpOffset, end: SpOffset) -> Option<&mut [UntypedVal]> {
+        let start = start.into_inner();
+        let end = end.into_inner();
+        self.cells.get_mut(start..end)
+    }
+
+    /// Copies cells from one part of the slice to another part of itself, using a `memmove`.
+    ///
+    /// # Panics
+    ///
+    /// If either `range` exceeds the end of the slice, or if the end of src is before the start.
+    fn cells_copy_within(&mut self, range: core::ops::Range<SpOffset>, dest: SpOffset) {
+        let start = range.start.into_inner();
+        let end = range.end.into_inner();
+        let dest = dest.into_inner();
+        self.cells.copy_within(start..end, dest);
     }
 }
 
@@ -915,8 +931,10 @@ impl CallStack {
     /// Returns the `start` index of the top-most function frame.
     ///
     /// Returns 0 if `self` is empty.
-    fn top_start(&self) -> usize {
-        let Some(top) = self.top() else { return 0 };
+    fn top_start(&self) -> SpOffset {
+        let Some(top) = self.top() else {
+            return SpOffset::default();
+        };
         top.start
     }
 
@@ -947,14 +965,14 @@ impl CallStack {
     /// # Note
     ///
     /// This is useful and required to resume a function execution that yielded back to the host.
-    fn restore_frame(&self) -> Option<(Ip, usize, Inst)> {
+    fn restore_frame(&self) -> Option<(Ip, SpOffset, Inst)> {
         let instance = self.instance?;
         let top = self.top()?;
         Some((top.ip, top.start, instance))
     }
 
     /// Prepares `self` for a host function call.
-    fn prepare_host_frame(&mut self, caller_ip: Option<Ip>) -> usize {
+    fn prepare_host_frame(&mut self, caller_ip: Option<Ip>) -> SpOffset {
         if let Some(caller_ip) = caller_ip {
             self.sync_ip(caller_ip);
         }
@@ -971,7 +989,7 @@ impl CallStack {
     pub fn return_prepare_host_frame(
         &mut self,
         callee_instance: Inst,
-    ) -> (usize, Option<(Ip, usize, Inst)>) {
+    ) -> (SpOffset, Option<(Ip, SpOffset, Inst)>) {
         let callee_start = self.top_start();
         let caller = match self.pop() {
             Some((ip, start, instance)) => {
@@ -991,7 +1009,7 @@ impl CallStack {
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         instance: Option<Inst>,
-    ) -> Result<usize, TrapCode> {
+    ) -> Result<SpOffset, TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
         }
@@ -1004,9 +1022,7 @@ impl CallStack {
             None => self.instance,
         };
         let params_offset = usize::from(u16::from(callee_params.span().head()));
-        let Some(start) = self.top_start().checked_add(params_offset) else {
-            return Err(TrapCode::StackOverflow);
-        };
+        let start = self.top_start().add(params_offset)?;
         self.frames.push(Frame {
             ip: callee_ip,
             start,
@@ -1016,7 +1032,7 @@ impl CallStack {
     }
 
     /// Adjusts `self` after returning from a function.
-    fn pop(&mut self) -> Option<(Ip, usize, Option<Inst>)> {
+    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
         };
@@ -1031,7 +1047,7 @@ impl CallStack {
 
     /// Adjusts `self` for a function tail call.
     #[inline(always)]
-    fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<usize, TrapCode> {
+    fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<SpOffset, TrapCode> {
         let Some(caller_frame) = self.frames.last_mut() else {
             unsafe { unreachable_unchecked!("missing caller frame on the call stack") }
         };
@@ -1060,7 +1076,7 @@ pub struct Frame {
     /// or yielding back to the host in for resumable calls.
     pub ip: Ip,
     /// The start index on the value stack for this function frame.
-    start: usize,
+    start: SpOffset,
     /// The [`Inst`] used if any.
     ///
     /// # Note
