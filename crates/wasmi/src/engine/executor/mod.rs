@@ -1,4 +1,4 @@
-pub use self::handler::{op_code_to_handler, Inst, Stack};
+pub(crate) use self::handler::{op_code_to_handler, Inst, Stack, Cell};
 use super::code_map::CodeMap;
 use crate::{
     engine::{
