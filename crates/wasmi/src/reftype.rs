@@ -1,6 +1,7 @@
 use crate::{
     collections::arena::ArenaIndex,
     core::{ReadAs, UntypedVal, WriteAs},
+    engine::{Cell, LoadAs, StoreAs},
     store::Stored,
     AsContextMut,
     Func,
@@ -174,6 +175,25 @@ fn funcref_null_to_zero() {
 macro_rules! impl_conversions {
     ( $( $reftype:ty ),* $(,)? ) => {
         $(
+            impl LoadAs<$reftype> for Cell {
+                #[inline]
+                fn load_as(&self) -> $reftype {
+                    let bits: u64 = self.load_as();
+                    unsafe { mem::transmute::<u64, $reftype>(bits) }
+                }
+            }
+
+            impl LoadAs<Ref<$reftype>> for Cell {
+                #[inline]
+                fn load_as(&self) -> Ref<$reftype> {
+                    let bits: u64 = self.load_as();
+                    if bits == 0 {
+                        return <Ref<$reftype>>::Null;
+                    }
+                    <Ref<$reftype>>::Val(<Self as LoadAs<$reftype>>::load_as(self))
+                }
+            }
+
             impl ReadAs<$reftype> for UntypedVal {
                 fn read_as(&self) -> $reftype {
                     let bits = u64::from(*self);
@@ -188,6 +208,24 @@ macro_rules! impl_conversions {
                         return <Ref<$reftype>>::Null;
                     }
                     <Ref<$reftype>>::Val(<Self as ReadAs<$reftype>>::read_as(self))
+                }
+            }
+
+            impl StoreAs<$reftype> for Cell {
+                #[inline]
+                fn store_as(&mut self, value: $reftype) {
+                    let bits = unsafe { mem::transmute::<$reftype, u64>(value) };
+                    self.store_as(bits)
+                }
+            }
+
+            impl StoreAs<Ref<$reftype>> for Cell {
+                #[inline]
+                fn store_as(&mut self, value: Ref<$reftype>) {
+                    match value {
+                        Ref::Null => self.store_as(0_u64),
+                        Ref::Val(value) => self.store_as(value),
+                    }
                 }
             }
 
