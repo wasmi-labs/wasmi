@@ -677,6 +677,21 @@ macro_rules! impl_load_store_int_for_cell {
 }
 impl_load_store_int_for_cell!(u8, u16, u32, u64, i8, i16, i32, i64);
 
+impl LoadAs<bool> for Cell {
+    #[inline]
+    fn load_as(&self) -> bool {
+        self.0 != 0
+    }
+}
+
+impl StoreAs<bool> for Cell {
+    #[inline]
+    #[allow(clippy::cast_lossless)]
+    fn store_as(&mut self, value: bool) {
+        self.0 = value as _;
+    }
+}
+
 macro_rules! impl_load_store_float_for_cell {
     ( $($float_ty:ty as $bits_ty:ty),* $(,)? ) => {
         $(
