@@ -668,6 +668,7 @@ macro_rules! impl_load_store_int_for_cell {
 
             impl StoreAs<$ty> for Cell {
                 #[inline]
+                #[allow(clippy::cast_lossless)]
                 fn store_as(&mut self, value: $ty) {
                     self.0 = value as _;
                 }
