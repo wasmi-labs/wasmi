@@ -1,6 +1,6 @@
 pub use self::{
-    handler::{op_code_to_handler, Cell, Inst, LoadAs, Stack, StoreAs},
-    inout::{write_cells, InOut, InOutError},
+    handler::{op_code_to_handler, read_cells, write_cells, Cell, Inst, LoadAs, Stack, StoreAs},
+    inout::{InOut, InOutError},
 };
 use super::code_map::CodeMap;
 use crate::{
