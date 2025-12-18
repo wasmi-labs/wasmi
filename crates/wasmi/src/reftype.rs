@@ -213,17 +213,17 @@ macro_rules! impl_conversions {
 
             impl StoreAs<$reftype> for Cell {
                 #[inline]
-                fn store_as(&mut self, value: $reftype) {
-                    let bits = unsafe { mem::transmute::<$reftype, u64>(value) };
-                    self.store_as(bits)
+                fn store_as(&mut self, value: &$reftype) {
+                    let bits = unsafe { mem::transmute::<$reftype, u64>(*value) };
+                    self.store_as(&bits)
                 }
             }
 
             impl StoreAs<Ref<$reftype>> for Cell {
                 #[inline]
-                fn store_as(&mut self, value: Ref<$reftype>) {
+                fn store_as(&mut self, value: &Ref<$reftype>) {
                     match value {
-                        Ref::Null => self.store_as(0_u64),
+                        Ref::Null => self.store_as(&0_u64),
                         Ref::Val(value) => self.store_as(value),
                     }
                 }

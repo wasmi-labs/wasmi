@@ -66,7 +66,7 @@ pub trait LoadAs<T> {
 
 /// Stores a value of type `T` to `self`.
 pub trait StoreAs<T> {
-    fn store_as(&mut self, value: T);
+    fn store_as(&mut self, value: &T);
 }
 
 macro_rules! impl_load_store_int_for_cell {
@@ -82,8 +82,8 @@ macro_rules! impl_load_store_int_for_cell {
             impl StoreAs<$ty> for Cell {
                 #[inline]
                 #[allow(clippy::cast_lossless)]
-                fn store_as(&mut self, value: $ty) {
-                    self.0 = value as _;
+                fn store_as(&mut self, value: &$ty) {
+                    self.0 = *value as _;
                 }
             }
         )*
@@ -101,8 +101,8 @@ impl LoadAs<bool> for Cell {
 impl StoreAs<bool> for Cell {
     #[inline]
     #[allow(clippy::cast_lossless)]
-    fn store_as(&mut self, value: bool) {
-        self.0 = value as _;
+    fn store_as(&mut self, value: &bool) {
+        self.0 = *value as _;
     }
 }
 
@@ -118,8 +118,8 @@ macro_rules! impl_load_store_float_for_cell {
 
             impl StoreAs<$float_ty> for Cell {
                 #[inline]
-                fn store_as(&mut self, value: $float_ty) {
-                    <Cell as StoreAs<$bits_ty>>::store_as(self, value.to_bits())
+                fn store_as(&mut self, value: &$float_ty) {
+                    <Cell as StoreAs<$bits_ty>>::store_as(self, &value.to_bits())
                 }
             }
         )*
@@ -171,7 +171,7 @@ impl<'a> CellsWriter<'a> {
     ///
     /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
     #[inline]
-    pub fn next_as<T: Copy>(&mut self, value: &T) -> Result<(), CellError>
+    pub fn next_as<T>(&mut self, value: &T) -> Result<(), CellError>
     where
         Cell: StoreAs<T>,
     {
@@ -181,7 +181,7 @@ impl<'a> CellsWriter<'a> {
             //       happens if `self.0`'s slice is empty to begin with.
             return Err(CellError::CellsOutOfBounds);
         };
-        cell.store_as(*value);
+        cell.store_as(value);
         self.0 = rest;
         Ok(())
     }
