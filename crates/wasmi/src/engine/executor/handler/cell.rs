@@ -134,10 +134,6 @@ impl_load_store_float_for_cell! {
 /// Errors raised in the encode and decode APIs of [`Cell`].
 #[derive(Debug, Copy, Clone)]
 pub enum CellError {
-    /// Raised in [`InOut::new`] when `cells`, `len_params` and `len_results` do not match.
-    CellsOutOfBounds,
-    /// Raised in [`InOut::results`] when `results` and `len_results` do not match.
-    LenResultsMismatch,
     /// Raised in [`init_params`] when there are not enough [`Cell`]s for the given amount of values.
     NotEnoughCells,
     /// Raised in [`init_params`] when there are not enough values for the given amount of [`Cell`]s.
@@ -177,7 +173,7 @@ impl<'a> CellsWriter<'a> {
         let Some((cell, rest)) = slice.split_first_mut() else {
             // Note: no need to sync `slice` back to `self.0` since this case only
             //       happens if `self.0`'s slice is empty to begin with.
-            return Err(CellError::CellsOutOfBounds);
+            return Err(CellError::NotEnoughCells);
         };
         value.store_to_cell(cell);
         self.0 = rest;
@@ -335,7 +331,7 @@ impl CellsReader<'_> {
     #[inline]
     pub fn next_as<T: LoadFromCell>(&mut self) -> Result<T, CellError> {
         let Some((cell, rest)) = self.0.split_first() else {
-            return Err(CellError::CellsOutOfBounds);
+            return Err(CellError::NotEnoughCells);
         };
         self.0 = rest;
         let value = <T as LoadFromCell>::load_from_cell(cell);
