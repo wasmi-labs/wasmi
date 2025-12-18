@@ -1,6 +1,56 @@
 use crate::{ExternRef, Func, Ref, Val, F32, F64, V128};
 use core::mem;
 
+macro_rules! gen_for_each_tuple {
+    (
+        $mac:ident,
+        len: $arity:expr,
+        $n_first:literal: { $snake_first:ident: $camel_first:ident },
+        $( $n:literal: { $snake:ident: $camel:ident }, )*
+    ) => {
+        $mac! {
+            len: $arity,
+            $n_first: { $snake_first: $camel_first },
+            $( $n: { $snake: $camel }, )*
+        }
+
+        gen_for_each_tuple! {
+            $mac,
+            len: ($arity - 1),
+            $( $n: { $snake: $camel }, )*
+        }
+    };
+    ( $mac:ident, len: $arity:expr, ) => {
+        $mac! {
+            len: $arity,
+        }
+    };
+}
+macro_rules! for_each_tuple {
+    ($mac:ident) => {
+        gen_for_each_tuple! {
+            $mac,
+            len: 15,
+            15: { t15: T15 },
+            14: { t14: T14 },
+            13: { t13: T13 },
+            12: { t12: T12 },
+            11: { t11: T11 },
+            10: { t10: T10 },
+            9: { t9: T9 },
+            8: { t8: T8 },
+            7: { t7: T7 },
+            6: { t6: T6 },
+            5: { t5: T5 },
+            4: { t4: T4 },
+            3: { t3: T3 },
+            2: { t2: T2 },
+            1: { t1: T1 },
+            0: { t0: T0 },
+        }
+    };
+}
+
 /// A single 64-bit cell of the [`ValueStack`].
 ///
 /// This stores values on the [`ValueStack`] in an untyped manner.
@@ -233,57 +283,6 @@ impl_write_cells_for_prim!(
     ExternRef,
     Ref<ExternRef>
 );
-
-macro_rules! gen_for_each_tuple {
-    (
-        $mac:ident,
-        len: $arity:expr,
-        $n_first:literal: { $snake_first:ident: $camel_first:ident },
-        $( $n:literal: { $snake:ident: $camel:ident }, )*
-    ) => {
-        $mac! {
-            len: $arity,
-            $n_first: { $snake_first: $camel_first },
-            $( $n: { $snake: $camel }, )*
-        }
-
-        gen_for_each_tuple! {
-            $mac,
-            len: ($arity - 1),
-            $( $n: { $snake: $camel }, )*
-        }
-    };
-    ( $mac:ident, len: $arity:expr, ) => {
-        $mac! {
-            len: $arity,
-        }
-    };
-}
-
-macro_rules! for_each_tuple {
-    ($mac:ident) => {
-        gen_for_each_tuple! {
-            $mac,
-            len: 15,
-            15: { t15: T15 },
-            14: { t14: T14 },
-            13: { t13: T13 },
-            12: { t12: T12 },
-            11: { t11: T11 },
-            10: { t10: T10 },
-            9: { t9: T9 },
-            8: { t8: T8 },
-            7: { t7: T7 },
-            6: { t6: T6 },
-            5: { t5: T5 },
-            4: { t4: T4 },
-            3: { t3: T3 },
-            2: { t2: T2 },
-            1: { t1: T1 },
-            0: { t0: T0 },
-        }
-    };
-}
 
 macro_rules! impl_write_cells_for_tuples {
     (
