@@ -97,7 +97,7 @@ pub enum CellError {
 /// # Errors
 ///
 /// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn write_cells<T>(value: T, cells: &mut [Cell]) -> Result<(), CellError>
+pub fn write_cells<T>(value: &T, cells: &mut [Cell]) -> Result<(), CellError>
 where
     T: WriteCells,
 {
@@ -115,11 +115,11 @@ pub trait WriteCells {
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn write_cells(self, cells: &mut [Cell]) -> Result<&mut [Cell], CellError>;
+    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError>;
 }
 
-impl WriteCells for &'_ [Val] {
-    fn write_cells(self, cells: &mut [Cell]) -> Result<&mut [Cell], CellError> {
+impl WriteCells for [Val] {
+    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
         let mut cells = cells;
         for val in self {
             cells = val.write_cells(cells)?;
@@ -128,9 +128,9 @@ impl WriteCells for &'_ [Val] {
     }
 }
 
-impl WriteCells for &'_ Val {
+impl WriteCells for Val {
     #[inline]
-    fn write_cells<'cells>(self, cells: &mut [Cell]) -> Result<&mut [Cell], CellError> {
+    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
         let cells = match self {
             Val::I32(value) => value.write_cells(cells)?,
             Val::I64(value) => value.write_cells(cells)?,
@@ -153,7 +153,7 @@ impl WriteCells for V128 {
     /// The [`V128`] value is destructured into its lower and upper 64-bit parts and then the
     /// low 64-bits are written before the high 64-bits in order.
     #[inline]
-    fn write_cells(self, cells: &mut [Cell]) -> Result<&mut [Cell], CellError> {
+    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
         let Some(([lo, hi], rest)) = cells.split_at_mut_checked(2) else {
             return Err(CellError::CellsOutOfBounds);
         };
@@ -171,11 +171,11 @@ macro_rules! impl_write_cells_for_prim {
         $(
             impl WriteCells for $ty {
                 #[inline]
-                fn write_cells(self, cells: &mut [Cell]) -> Result<&mut [Cell], CellError> {
+                fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
                     let Some((cell, rest)) = cells.split_first_mut() else {
                         return Err(CellError::CellsOutOfBounds)
                     };
-                    cell.store_as(self);
+                    cell.store_as(*self);
                     Ok(rest)
                 }
             }
@@ -258,7 +258,7 @@ macro_rules! impl_write_cells_for_tuples {
             )*
         {
             #[inline]
-            fn write_cells(self, cells: &mut [Cell]) -> Result<&mut [Cell], CellError> {
+            fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
                 #[allow(unused_mut)]
                 let mut cells = cells;
                 let ($($snake,)*) = self;
