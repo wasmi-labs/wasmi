@@ -281,11 +281,35 @@ pub fn read_cells<T>(cells: &[Cell], out: &mut T) -> Result<(), CellError>
 where
     T: ReadCells,
 {
-    let remaining_cells = T::read_cells(out, cells)?;
-    if !remaining_cells.is_empty() {
+    let mut cells = CellsReader(cells);
+    <T as ReadCells>::read_cells(out, &mut cells)?;
+    if !cells.is_empty() {
         return Err(CellError::NotEnoughValues);
     }
     Ok(())
+}
+
+/// Thin-wrapper around `&[Cell]` which allows reading contiguous [`Cell`]s.
+#[derive(Debug)]
+pub struct CellsReader<'a>(&'a [Cell]);
+
+impl CellsReader<'_> {
+    #[inline]
+    pub fn next_as<T>(&mut self) -> Result<T, CellError>
+    where
+        Cell: LoadAs<T>,
+    {
+        let Some((cell, rest)) = self.0.split_first() else {
+            return Err(CellError::CellsOutOfBounds);
+        };
+        self.0 = rest;
+        let value = <Cell as LoadAs<T>>::load_as(cell);
+        Ok(value)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 /// Trait implemented by types that can be decoded from a slice of [`Cell`]s.
@@ -295,7 +319,7 @@ pub trait ReadCells {
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError>;
+    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError>;
 }
 
 macro_rules! impl_read_cells_for_prim {
@@ -303,12 +327,9 @@ macro_rules! impl_read_cells_for_prim {
         $(
             impl ReadCells for $ty {
                 #[inline]
-                fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
-                    let Some((cell, rest)) = cells.split_first() else {
-                        return Err(CellError::CellsOutOfBounds)
-                    };
-                    *self = cell.load_as();
-                    Ok(rest)
+                fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+                    *self = cells.next_as::<$ty>()?;
+                    Ok(())
                 }
             }
         )*
@@ -328,59 +349,52 @@ impl_read_cells_for_prim!(
 );
 
 impl ReadCells for F32 {
-    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
-        let mut bits = 0;
-        let remaining_cells = <u32 as ReadCells>::read_cells(&mut bits, cells)?;
+    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+        let bits: u32 = cells.next_as()?;
         *self = F32::from_bits(bits);
-        Ok(remaining_cells)
+        Ok(())
     }
 }
 
 impl ReadCells for F64 {
-    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
-        let mut bits = 0;
-        let remaining_cells = <u64 as ReadCells>::read_cells(&mut bits, cells)?;
+    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+        let bits: u64 = cells.next_as()?;
         *self = F64::from_bits(bits);
-        Ok(remaining_cells)
+        Ok(())
     }
 }
 
 impl ReadCells for V128 {
-    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
-        let mut lo = 0;
-        let mut hi = 0;
-        let mut cells = cells;
-        cells = <u64 as ReadCells>::read_cells(&mut lo, cells)?;
-        cells = <u64 as ReadCells>::read_cells(&mut hi, cells)?;
+    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+        let lo: u64 = cells.next_as()?;
+        let hi: u64 = cells.next_as()?;
         let value = V128::from((u128::from(hi) << 64) | u128::from(lo));
         *self = value;
-        Ok(cells)
+        Ok(())
     }
 }
 
 impl ReadCells for [Val] {
-    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
-        let mut cells = cells;
+    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
         for val in self {
-            cells = <Val as ReadCells>::read_cells(val, cells)?;
+            val.read_cells(cells)?;
         }
-        Ok(cells)
+        Ok(())
     }
 }
 
 impl ReadCells for Val {
     #[inline]
-    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
-        let remaining_cells = match self {
-            Val::I32(value) => <i32 as ReadCells>::read_cells(value, cells)?,
-            Val::I64(value) => <i64 as ReadCells>::read_cells(value, cells)?,
-            Val::F32(value) => <F32 as ReadCells>::read_cells(value, cells)?,
-            Val::F64(value) => <F64 as ReadCells>::read_cells(value, cells)?,
-            Val::V128(value) => <V128 as ReadCells>::read_cells(value, cells)?,
-            Val::FuncRef(value) => <Ref<Func> as ReadCells>::read_cells(value, cells)?,
-            Val::ExternRef(value) => <Ref<ExternRef> as ReadCells>::read_cells(value, cells)?,
-        };
-        Ok(remaining_cells)
+    fn read_cells<'a>(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+        match self {
+            Val::I32(value) => value.read_cells(cells),
+            Val::I64(value) => value.read_cells(cells),
+            Val::F32(value) => value.read_cells(cells),
+            Val::F64(value) => value.read_cells(cells),
+            Val::V128(value) => value.read_cells(cells),
+            Val::FuncRef(value) => value.read_cells(cells),
+            Val::ExternRef(value) => value.read_cells(cells),
+        }
     }
 }
 
@@ -396,14 +410,13 @@ macro_rules! impl_read_cells_for_tuples {
             )*
         {
             #[inline]
-            fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
+            fn read_cells<'a>(&mut self, _cells: &mut CellsReader) -> Result<(), CellError> {
                 #[allow(unused_mut)]
-                let mut cells = cells;
                 let ($($snake,)*) = self;
                 $(
-                    cells = <$camel as ReadCells>::read_cells($snake, cells)?;
+                    <$camel as ReadCells>::read_cells($snake, _cells)?;
                 )*
-                Ok(cells)
+                Ok(())
             }
         }
     };
