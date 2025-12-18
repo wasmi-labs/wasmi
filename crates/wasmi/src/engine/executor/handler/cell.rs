@@ -281,7 +281,7 @@ pub fn read_cells<T>(cells: &[Cell], out: &mut T) -> Result<(), CellError>
 where
     T: ReadCells,
 {
-    let remaining_cells = T::read_cells(cells, out)?;
+    let remaining_cells = T::read_cells(out, cells)?;
     if !remaining_cells.is_empty() {
         return Err(CellError::NotEnoughValues);
     }
@@ -295,7 +295,7 @@ pub trait ReadCells {
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn read_cells<'a>(cells: &'a [Cell], out: &mut Self) -> Result<&'a [Cell], CellError>;
+    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError>;
 }
 
 macro_rules! impl_read_cells_for_prim {
@@ -303,11 +303,11 @@ macro_rules! impl_read_cells_for_prim {
         $(
             impl ReadCells for $ty {
                 #[inline]
-                fn read_cells<'a>(cells: &'a [Cell], out: &mut Self) -> Result<&'a [Cell], CellError> {
+                fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
                     let Some((cell, rest)) = cells.split_first() else {
                         return Err(CellError::CellsOutOfBounds)
                     };
-                    *out = cell.load_as();
+                    *self = cell.load_as();
                     Ok(rest)
                 }
             }
@@ -328,41 +328,41 @@ impl_read_cells_for_prim!(
 );
 
 impl ReadCells for F32 {
-    fn read_cells<'a>(cells: &'a [Cell], out: &mut Self) -> Result<&'a [Cell], CellError> {
+    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
         let mut bits = 0;
-        let remaining_cells = <u32 as ReadCells>::read_cells(cells, &mut bits)?;
-        *out = F32::from_bits(bits);
+        let remaining_cells = <u32 as ReadCells>::read_cells(&mut bits, cells)?;
+        *self = F32::from_bits(bits);
         Ok(remaining_cells)
     }
 }
 
 impl ReadCells for F64 {
-    fn read_cells<'a>(cells: &'a [Cell], out: &mut Self) -> Result<&'a [Cell], CellError> {
+    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
         let mut bits = 0;
-        let remaining_cells = <u64 as ReadCells>::read_cells(cells, &mut bits)?;
-        *out = F64::from_bits(bits);
+        let remaining_cells = <u64 as ReadCells>::read_cells(&mut bits, cells)?;
+        *self = F64::from_bits(bits);
         Ok(remaining_cells)
     }
 }
 
 impl ReadCells for V128 {
-    fn read_cells<'a>(cells: &'a [Cell], out: &mut Self) -> Result<&'a [Cell], CellError> {
+    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
         let mut lo = 0;
         let mut hi = 0;
         let mut cells = cells;
-        cells = <u64 as ReadCells>::read_cells(cells, &mut lo)?;
-        cells = <u64 as ReadCells>::read_cells(cells, &mut hi)?;
+        cells = <u64 as ReadCells>::read_cells(&mut lo, cells)?;
+        cells = <u64 as ReadCells>::read_cells(&mut hi, cells)?;
         let value = V128::from((u128::from(hi) << 64) | u128::from(lo));
-        *out = value;
+        *self = value;
         Ok(cells)
     }
 }
 
 impl ReadCells for [Val] {
-    fn read_cells<'a>(cells: &'a [Cell], out: &mut [Val]) -> Result<&'a [Cell], CellError> {
+    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
         let mut cells = cells;
-        for val in out {
-            cells = <Val as ReadCells>::read_cells(cells, val)?;
+        for val in self {
+            cells = <Val as ReadCells>::read_cells(val, cells)?;
         }
         Ok(cells)
     }
@@ -370,15 +370,15 @@ impl ReadCells for [Val] {
 
 impl ReadCells for Val {
     #[inline]
-    fn read_cells<'a>(cells: &'a [Cell], out: &mut Val) -> Result<&'a [Cell], CellError> {
-        let remaining_cells = match out {
-            Val::I32(value) => <i32 as ReadCells>::read_cells(cells, value)?,
-            Val::I64(value) => <i64 as ReadCells>::read_cells(cells, value)?,
-            Val::F32(value) => <F32 as ReadCells>::read_cells(cells, value)?,
-            Val::F64(value) => <F64 as ReadCells>::read_cells(cells, value)?,
-            Val::V128(value) => <V128 as ReadCells>::read_cells(cells, value)?,
-            Val::FuncRef(value) => <Ref<Func> as ReadCells>::read_cells(cells, value)?,
-            Val::ExternRef(value) => <Ref<ExternRef> as ReadCells>::read_cells(cells, value)?,
+    fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
+        let remaining_cells = match self {
+            Val::I32(value) => <i32 as ReadCells>::read_cells(value, cells)?,
+            Val::I64(value) => <i64 as ReadCells>::read_cells(value, cells)?,
+            Val::F32(value) => <F32 as ReadCells>::read_cells(value, cells)?,
+            Val::F64(value) => <F64 as ReadCells>::read_cells(value, cells)?,
+            Val::V128(value) => <V128 as ReadCells>::read_cells(value, cells)?,
+            Val::FuncRef(value) => <Ref<Func> as ReadCells>::read_cells(value, cells)?,
+            Val::ExternRef(value) => <Ref<ExternRef> as ReadCells>::read_cells(value, cells)?,
         };
         Ok(remaining_cells)
     }
@@ -396,12 +396,12 @@ macro_rules! impl_read_cells_for_tuples {
             )*
         {
             #[inline]
-            fn read_cells<'a>(cells: &'a [Cell], out: &mut Self) -> Result<&'a [Cell], CellError> {
+            fn read_cells<'a>(&mut self, cells: &'a [Cell]) -> Result<&'a [Cell], CellError> {
                 #[allow(unused_mut)]
                 let mut cells = cells;
-                let ($($snake,)*) = out;
+                let ($($snake,)*) = self;
                 $(
-                    cells = <$camel as ReadCells>::read_cells(cells, $snake)?;
+                    cells = <$camel as ReadCells>::read_cells($snake, cells)?;
                 )*
                 Ok(cells)
             }
