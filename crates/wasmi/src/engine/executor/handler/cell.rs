@@ -294,6 +294,11 @@ where
 pub struct CellsReader<'a>(&'a [Cell]);
 
 impl CellsReader<'_> {
+    /// Returns the `T` and advances `self`.
+    ///
+    /// # Errors
+    ///
+    /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
     #[inline]
     pub fn next_as<T>(&mut self) -> Result<T, CellError>
     where
@@ -307,6 +312,7 @@ impl CellsReader<'_> {
         Ok(value)
     }
 
+    /// Returns `true` if `self` is empty.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
