@@ -1,13 +1,13 @@
 pub use self::{
     handler::{
+        load_from_cells,
         op_code_to_handler,
-        read_cells,
-        write_cells,
+        store_to_cells,
         Cell,
         Inst,
-        ReadCell,
+        LoadFromCell,
         Stack,
-        WriteCell,
+        StoreToCell,
     },
     inout::{InOut, InOutError},
 };

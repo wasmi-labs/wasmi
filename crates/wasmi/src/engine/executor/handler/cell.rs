@@ -60,30 +60,30 @@ macro_rules! for_each_tuple {
 pub struct Cell(u64);
 
 /// Loads a value of type `Self` from `cell`.
-pub trait ReadCell {
+pub trait LoadFromCell {
     /// Loads a value of type `Self` from `cell`.
-    fn read_cell(cell: &Cell) -> Self;
+    fn load_from_cell(cell: &Cell) -> Self;
 }
 
 /// Stores a value of type `Self` to `cell`.
-pub trait WriteCell {
-    fn write_cell(&self, cell: &mut Cell);
+pub trait StoreToCell {
+    fn store_to_cell(&self, cell: &mut Cell);
 }
 
 macro_rules! impl_load_store_int_for_cell {
     ( $($ty:ty),* $(,)? ) => {
         $(
-            impl ReadCell for $ty {
+            impl LoadFromCell for $ty {
                 #[inline]
-                fn read_cell(cell: &Cell) -> $ty {
+                fn load_from_cell(cell: &Cell) -> $ty {
                     cell.0 as _
                 }
             }
 
-            impl WriteCell for $ty {
+            impl StoreToCell for $ty {
                 #[inline]
                 #[allow(clippy::cast_lossless)]
-                fn write_cell(&self, cell: &mut Cell) {
+                fn store_to_cell(&self, cell: &mut Cell) {
                     cell.0 = *self as _;
                 }
             }
@@ -92,17 +92,17 @@ macro_rules! impl_load_store_int_for_cell {
 }
 impl_load_store_int_for_cell!(u8, u16, u32, u64, i8, i16, i32, i64);
 
-impl ReadCell for bool {
+impl LoadFromCell for bool {
     #[inline]
-    fn read_cell(cell: &Cell) -> bool {
+    fn load_from_cell(cell: &Cell) -> bool {
         cell.0 != 0
     }
 }
 
-impl WriteCell for bool {
+impl StoreToCell for bool {
     #[inline]
     #[allow(clippy::cast_lossless)]
-    fn write_cell(&self, cell: &mut Cell) {
+    fn store_to_cell(&self, cell: &mut Cell) {
         cell.0 = *self as _;
     }
 }
@@ -110,17 +110,17 @@ impl WriteCell for bool {
 macro_rules! impl_load_store_float_for_cell {
     ( $($float_ty:ty as $bits_ty:ty),* $(,)? ) => {
         $(
-            impl ReadCell for $float_ty {
+            impl LoadFromCell for $float_ty {
                 #[inline]
-                fn read_cell(cell: &Cell) -> $float_ty {
-                    <$float_ty>::from_bits(ReadCell::read_cell(cell))
+                fn load_from_cell(cell: &Cell) -> $float_ty {
+                    <$float_ty>::from_bits(LoadFromCell::load_from_cell(cell))
                 }
             }
 
-            impl WriteCell for $float_ty {
+            impl StoreToCell for $float_ty {
                 #[inline]
-                fn write_cell(&self, cell: &mut Cell) {
-                    self.to_bits().write_cell(cell)
+                fn store_to_cell(&self, cell: &mut Cell) {
+                    self.to_bits().store_to_cell(cell)
                 }
             }
         )*
@@ -149,12 +149,12 @@ pub enum CellError {
 /// # Errors
 ///
 /// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn write_cells<T>(value: &T, cells: &mut [Cell]) -> Result<(), CellError>
+pub fn store_to_cells<T>(value: &T, cells: &mut [Cell]) -> Result<(), CellError>
 where
-    T: WriteCells,
+    T: StoreToCells,
 {
     let mut cells = CellsWriter(cells);
-    value.write_cells(&mut cells)?;
+    value.store_to_cells(&mut cells)?;
     if !cells.is_empty() {
         return Err(CellError::NotEnoughValues);
     }
@@ -172,14 +172,14 @@ impl<'a> CellsWriter<'a> {
     ///
     /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
     #[inline]
-    pub fn next_as<T: WriteCell>(&mut self, value: &T) -> Result<(), CellError> {
+    pub fn next_as<T: StoreToCell>(&mut self, value: &T) -> Result<(), CellError> {
         let slice = mem::take(&mut self.0);
         let Some((cell, rest)) = slice.split_first_mut() else {
             // Note: no need to sync `slice` back to `self.0` since this case only
             //       happens if `self.0`'s slice is empty to begin with.
             return Err(CellError::CellsOutOfBounds);
         };
-        value.write_cell(cell);
+        value.store_to_cell(cell);
         self.0 = rest;
         Ok(())
     }
@@ -191,85 +191,85 @@ impl<'a> CellsWriter<'a> {
 }
 
 /// Trait implemented by types that can be encoded onto a slice of [`Cell`]s.
-pub trait WriteCells {
+pub trait StoreToCells {
     /// Encodes `self` to `cells`.
     ///
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError>;
+    fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError>;
 }
 
-impl WriteCells for [Val] {
-    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+impl StoreToCells for [Val] {
+    fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
         for val in self {
-            val.write_cells(cells)?;
+            val.store_to_cells(cells)?;
         }
         Ok(())
     }
 }
 
-impl WriteCells for Val {
+impl StoreToCells for Val {
     #[inline]
-    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+    fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
         match self {
-            Val::I32(value) => value.write_cells(cells),
-            Val::I64(value) => value.write_cells(cells),
-            Val::F32(value) => value.write_cells(cells),
-            Val::F64(value) => value.write_cells(cells),
-            Val::V128(value) => value.write_cells(cells),
-            Val::FuncRef(value) => value.write_cells(cells),
-            Val::ExternRef(value) => value.write_cells(cells),
+            Val::I32(value) => value.store_to_cells(cells),
+            Val::I64(value) => value.store_to_cells(cells),
+            Val::F32(value) => value.store_to_cells(cells),
+            Val::F64(value) => value.store_to_cells(cells),
+            Val::V128(value) => value.store_to_cells(cells),
+            Val::FuncRef(value) => value.store_to_cells(cells),
+            Val::ExternRef(value) => value.store_to_cells(cells),
         }
     }
 }
 
-impl WriteCells for F32 {
+impl StoreToCells for F32 {
     #[inline]
-    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
-        self.to_bits().write_cells(cells)
+    fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+        self.to_bits().store_to_cells(cells)
     }
 }
 
-impl WriteCells for F64 {
+impl StoreToCells for F64 {
     #[inline]
-    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
-        self.to_bits().write_cells(cells)
+    fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+        self.to_bits().store_to_cells(cells)
     }
 }
 
-impl WriteCells for V128 {
+impl StoreToCells for V128 {
     /// # Note
     ///
-    /// This implementation of [`WriteCells`] is a bit special as values of type [`V128`] require
+    /// This implementation of [`StoreToCells`] is a bit special as values of type [`V128`] require
     /// two [`Cell`]s to be properly encoded compared to all other primitives that map 1-to-1.
     ///
     /// The [`V128`] value is destructured into its lower and upper 64-bit parts and then the
     /// low 64-bits are written before the high 64-bits in order.
     #[inline]
-    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+    fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
         let value = self.as_u128();
         let value_lo = (value & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let value_hi = (value >> 64) as u64;
-        value_lo.write_cells(cells)?;
-        value_hi.write_cells(cells)?;
+        value_lo.store_to_cells(cells)?;
+        value_hi.store_to_cells(cells)?;
         Ok(())
     }
 }
 
-macro_rules! impl_write_cells_for_prim {
+macro_rules! impl_store_to_cells_for_prim {
     ( $($ty:ty),* $(,)? ) => {
         $(
-            impl WriteCells for $ty {
+            impl StoreToCells for $ty {
                 #[inline]
-                fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+                fn store_to_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
                     cells.next_as(self)
                 }
             }
         )*
     };
 }
-impl_write_cells_for_prim!(
+impl_store_to_cells_for_prim!(
     i32,
     i64,
     u32,
@@ -282,40 +282,40 @@ impl_write_cells_for_prim!(
     Ref<ExternRef>
 );
 
-macro_rules! impl_write_cells_for_tuples {
+macro_rules! impl_store_to_cells_for_tuples {
     (
         len: $arity:expr,
         $( $n:literal: { $snake:ident: $camel:ident } ),* $(,)?
     ) => {
-        impl<$($camel),*> WriteCells for ($($camel,)*)
+        impl<$($camel),*> StoreToCells for ($($camel,)*)
         where
-            $( $camel: WriteCells, )*
+            $( $camel: StoreToCells, )*
         {
             #[inline]
-            fn write_cells(&self, _cells: &mut CellsWriter) -> Result<(), CellError> {
+            fn store_to_cells(&self, _cells: &mut CellsWriter) -> Result<(), CellError> {
                 #[allow(unused_mut)]
                 let ($($snake,)*) = self;
                 $(
-                    $snake.write_cells(_cells)?;
+                    $snake.store_to_cells(_cells)?;
                 )*
                 Ok(())
             }
         }
     };
 }
-for_each_tuple!(impl_write_cells_for_tuples);
+for_each_tuple!(impl_store_to_cells_for_tuples);
 
 /// Reads `value` from `cells`.
 ///
 /// # Errors
 ///
 /// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn read_cells<T>(cells: &[Cell], out: &mut T) -> Result<(), CellError>
+pub fn load_from_cells<T>(cells: &[Cell], out: &mut T) -> Result<(), CellError>
 where
-    T: ReadCells,
+    T: LoadFromCells,
 {
     let mut cells = CellsReader(cells);
-    <T as ReadCells>::read_cells(out, &mut cells)?;
+    <T as LoadFromCells>::load_from_cells(out, &mut cells)?;
     if !cells.is_empty() {
         return Err(CellError::NotEnoughValues);
     }
@@ -333,12 +333,12 @@ impl CellsReader<'_> {
     ///
     /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
     #[inline]
-    pub fn next_as<T: ReadCell>(&mut self) -> Result<T, CellError> {
+    pub fn next_as<T: LoadFromCell>(&mut self) -> Result<T, CellError> {
         let Some((cell, rest)) = self.0.split_first() else {
             return Err(CellError::CellsOutOfBounds);
         };
         self.0 = rest;
-        let value = <T as ReadCell>::read_cell(cell);
+        let value = <T as LoadFromCell>::load_from_cell(cell);
         Ok(value)
     }
 
@@ -349,21 +349,21 @@ impl CellsReader<'_> {
 }
 
 /// Trait implemented by types that can be decoded from a slice of [`Cell`]s.
-pub trait ReadCells {
+pub trait LoadFromCells {
     /// Decodes `self` from `cells`.
     ///
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError>;
+    fn load_from_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError>;
 }
 
-macro_rules! impl_read_cells_for_prim {
+macro_rules! impl_load_from_cells_for_prim {
     ( $($ty:ty),* $(,)? ) => {
         $(
-            impl ReadCells for $ty {
+            impl LoadFromCells for $ty {
                 #[inline]
-                fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+                fn load_from_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
                     *self = cells.next_as::<$ty>()?;
                     Ok(())
                 }
@@ -371,7 +371,7 @@ macro_rules! impl_read_cells_for_prim {
         )*
     };
 }
-impl_read_cells_for_prim!(
+impl_load_from_cells_for_prim!(
     i32,
     i64,
     u32,
@@ -384,24 +384,24 @@ impl_read_cells_for_prim!(
     Ref<ExternRef>
 );
 
-impl ReadCells for F32 {
-    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+impl LoadFromCells for F32 {
+    fn load_from_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
         let bits: u32 = cells.next_as()?;
         *self = F32::from_bits(bits);
         Ok(())
     }
 }
 
-impl ReadCells for F64 {
-    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+impl LoadFromCells for F64 {
+    fn load_from_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
         let bits: u64 = cells.next_as()?;
         *self = F64::from_bits(bits);
         Ok(())
     }
 }
 
-impl ReadCells for V128 {
-    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+impl LoadFromCells for V128 {
+    fn load_from_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
         let lo: u64 = cells.next_as()?;
         let hi: u64 = cells.next_as()?;
         let value = V128::from((u128::from(hi) << 64) | u128::from(lo));
@@ -410,49 +410,49 @@ impl ReadCells for V128 {
     }
 }
 
-impl ReadCells for [Val] {
-    fn read_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+impl LoadFromCells for [Val] {
+    fn load_from_cells(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
         for val in self {
-            val.read_cells(cells)?;
+            val.load_from_cells(cells)?;
         }
         Ok(())
     }
 }
 
-impl ReadCells for Val {
+impl LoadFromCells for Val {
     #[inline]
-    fn read_cells<'a>(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
+    fn load_from_cells<'a>(&mut self, cells: &mut CellsReader) -> Result<(), CellError> {
         match self {
-            Val::I32(value) => value.read_cells(cells),
-            Val::I64(value) => value.read_cells(cells),
-            Val::F32(value) => value.read_cells(cells),
-            Val::F64(value) => value.read_cells(cells),
-            Val::V128(value) => value.read_cells(cells),
-            Val::FuncRef(value) => value.read_cells(cells),
-            Val::ExternRef(value) => value.read_cells(cells),
+            Val::I32(value) => value.load_from_cells(cells),
+            Val::I64(value) => value.load_from_cells(cells),
+            Val::F32(value) => value.load_from_cells(cells),
+            Val::F64(value) => value.load_from_cells(cells),
+            Val::V128(value) => value.load_from_cells(cells),
+            Val::FuncRef(value) => value.load_from_cells(cells),
+            Val::ExternRef(value) => value.load_from_cells(cells),
         }
     }
 }
 
-macro_rules! impl_read_cells_for_tuples {
+macro_rules! impl_load_from_cells_for_tuples {
     (
         len: $arity:expr,
         $( $n:literal: { $snake:ident: $camel:ident } ),* $(,)?
     ) => {
-        impl<$($camel),*> ReadCells for ($($camel,)*)
+        impl<$($camel),*> LoadFromCells for ($($camel,)*)
         where
-            $( $camel: ReadCells, )*
+            $( $camel: LoadFromCells, )*
         {
             #[inline]
-            fn read_cells<'a>(&mut self, _cells: &mut CellsReader) -> Result<(), CellError> {
+            fn load_from_cells<'a>(&mut self, _cells: &mut CellsReader) -> Result<(), CellError> {
                 #[allow(unused_mut)]
                 let ($($snake,)*) = self;
                 $(
-                    <$camel as ReadCells>::read_cells($snake, _cells)?;
+                    <$camel as LoadFromCells>::load_from_cells($snake, _cells)?;
                 )*
                 Ok(())
             }
         }
     };
 }
-for_each_tuple!(impl_read_cells_for_tuples);
+for_each_tuple!(impl_load_from_cells_for_tuples);

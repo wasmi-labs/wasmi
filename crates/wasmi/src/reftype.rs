@@ -1,7 +1,7 @@
 use crate::{
     collections::arena::ArenaIndex,
     core::{ReadAs, UntypedVal, WriteAs},
-    engine::{Cell, ReadCell, WriteCell},
+    engine::{Cell, LoadFromCell, StoreToCell},
     store::Stored,
     AsContextMut,
     Func,
@@ -175,22 +175,22 @@ fn funcref_null_to_zero() {
 macro_rules! impl_conversions {
     ( $( $reftype:ty ),* $(,)? ) => {
         $(
-            impl ReadCell for $reftype {
+            impl LoadFromCell for $reftype {
                 #[inline]
-                fn read_cell(cell: &Cell) -> Self {
-                    let bits: u64 = <u64 as ReadCell>::read_cell(cell);
+                fn load_from_cell(cell: &Cell) -> Self {
+                    let bits: u64 = <u64 as LoadFromCell>::load_from_cell(cell);
                     unsafe { mem::transmute::<u64, $reftype>(bits) }
                 }
             }
 
-            impl ReadCell for Ref<$reftype> {
+            impl LoadFromCell for Ref<$reftype> {
                 #[inline]
-                fn read_cell(cell: &Cell) -> Self {
-                    let bits: u64 = <u64 as ReadCell>::read_cell(cell);
+                fn load_from_cell(cell: &Cell) -> Self {
+                    let bits: u64 = <u64 as LoadFromCell>::load_from_cell(cell);
                     if bits == 0 {
                         return Self::Null;
                     }
-                    Self::Val(<$reftype as ReadCell>::read_cell(cell))
+                    Self::Val(<$reftype as LoadFromCell>::load_from_cell(cell))
                 }
             }
 
@@ -211,20 +211,20 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl WriteCell for $reftype {
+            impl StoreToCell for $reftype {
                 #[inline]
-                fn write_cell(&self, cell: &mut Cell) {
+                fn store_to_cell(&self, cell: &mut Cell) {
                     let bits = unsafe { mem::transmute::<$reftype, u64>(*self) };
-                    bits.write_cell(cell)
+                    bits.store_to_cell(cell)
                 }
             }
 
-            impl WriteCell for Ref<$reftype> {
+            impl StoreToCell for Ref<$reftype> {
                 #[inline]
-                fn write_cell(&self, cell: &mut Cell) {
+                fn store_to_cell(&self, cell: &mut Cell) {
                     match self {
-                        Ref::Null => 0_u64.write_cell(cell),
-                        Ref::Val(value) => value.write_cell(cell),
+                        Ref::Null => 0_u64.store_to_cell(cell),
+                        Ref::Val(value) => value.store_to_cell(cell),
                     }
                 }
             }
