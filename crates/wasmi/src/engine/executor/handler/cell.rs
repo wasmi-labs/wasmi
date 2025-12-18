@@ -1,4 +1,5 @@
 use crate::{ExternRef, Func, Ref, Val, F32, F64, V128};
+use core::mem;
 
 /// A single 64-bit cell of the [`ValueStack`].
 ///
@@ -101,11 +102,44 @@ pub fn write_cells<T>(value: &T, cells: &mut [Cell]) -> Result<(), CellError>
 where
     T: WriteCells,
 {
-    let remaining_cells = value.write_cells(cells)?;
-    if !remaining_cells.is_empty() {
+    let mut cells = CellsWriter(cells);
+    value.write_cells(&mut cells)?;
+    if !cells.is_empty() {
         return Err(CellError::NotEnoughValues);
     }
     Ok(())
+}
+
+/// Thin-wrapper around `&mut [Cell]` which allows writing contiguous [`Cell`]s.
+#[derive(Debug)]
+pub struct CellsWriter<'a>(&'a mut [Cell]);
+
+impl<'a> CellsWriter<'a> {
+    /// Writes the `T` to `self` and advances `self`.
+    ///
+    /// # Errors
+    ///
+    /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
+    #[inline]
+    pub fn next_as<T: Copy>(&mut self, value: &T) -> Result<(), CellError>
+    where
+        Cell: StoreAs<T>,
+    {
+        let slice = mem::take(&mut self.0);
+        let Some((cell, rest)) = slice.split_first_mut() else {
+            // Note: no need to sync `slice` back to `self.0` since this case only
+            //       happens if `self.0`'s slice is empty to begin with.
+            return Err(CellError::CellsOutOfBounds);
+        };
+        cell.store_as(*value);
+        self.0 = rest;
+        Ok(())
+    }
+
+    /// Returns `true` if `self` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 /// Trait implemented by types that can be encoded onto a slice of [`Cell`]s.
@@ -115,32 +149,44 @@ pub trait WriteCells {
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError>;
+    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError>;
 }
 
 impl WriteCells for [Val] {
-    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
-        let mut cells = cells;
+    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
         for val in self {
-            cells = val.write_cells(cells)?;
+            val.write_cells(cells)?;
         }
-        Ok(cells)
+        Ok(())
     }
 }
 
 impl WriteCells for Val {
     #[inline]
-    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
-        let cells = match self {
-            Val::I32(value) => value.write_cells(cells)?,
-            Val::I64(value) => value.write_cells(cells)?,
-            Val::F32(value) => f32::from(*value).write_cells(cells)?,
-            Val::F64(value) => f64::from(*value).write_cells(cells)?,
-            Val::V128(value) => value.write_cells(cells)?,
-            Val::FuncRef(value) => value.write_cells(cells)?,
-            Val::ExternRef(value) => value.write_cells(cells)?,
-        };
-        Ok(cells)
+    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+        match self {
+            Val::I32(value) => value.write_cells(cells),
+            Val::I64(value) => value.write_cells(cells),
+            Val::F32(value) => value.write_cells(cells),
+            Val::F64(value) => value.write_cells(cells),
+            Val::V128(value) => value.write_cells(cells),
+            Val::FuncRef(value) => value.write_cells(cells),
+            Val::ExternRef(value) => value.write_cells(cells),
+        }
+    }
+}
+
+impl WriteCells for F32 {
+    #[inline]
+    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+        self.to_bits().write_cells(cells)
+    }
+}
+
+impl WriteCells for F64 {
+    #[inline]
+    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+        self.to_bits().write_cells(cells)
     }
 }
 
@@ -153,16 +199,13 @@ impl WriteCells for V128 {
     /// The [`V128`] value is destructured into its lower and upper 64-bit parts and then the
     /// low 64-bits are written before the high 64-bits in order.
     #[inline]
-    fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
-        let Some(([lo, hi], rest)) = cells.split_at_mut_checked(2) else {
-            return Err(CellError::CellsOutOfBounds);
-        };
+    fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
         let value = self.as_u128();
         let value_lo = (value & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let value_hi = (value >> 64) as u64;
-        lo.store_as(value_lo);
-        hi.store_as(value_hi);
-        Ok(rest)
+        cells.next_as(&value_lo)?;
+        cells.next_as(&value_hi)?;
+        Ok(())
     }
 }
 
@@ -171,12 +214,8 @@ macro_rules! impl_write_cells_for_prim {
         $(
             impl WriteCells for $ty {
                 #[inline]
-                fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
-                    let Some((cell, rest)) = cells.split_first_mut() else {
-                        return Err(CellError::CellsOutOfBounds)
-                    };
-                    cell.store_as(*self);
-                    Ok(rest)
+                fn write_cells(&self, cells: &mut CellsWriter) -> Result<(), CellError> {
+                    cells.next_as(self)
                 }
             }
         )*
@@ -258,14 +297,13 @@ macro_rules! impl_write_cells_for_tuples {
             )*
         {
             #[inline]
-            fn write_cells<'a>(&self, cells: &'a mut [Cell]) -> Result<&'a mut [Cell], CellError> {
+            fn write_cells(&self, _cells: &mut CellsWriter) -> Result<(), CellError> {
                 #[allow(unused_mut)]
-                let mut cells = cells;
                 let ($($snake,)*) = self;
                 $(
-                    cells = $snake.write_cells(cells)?;
+                    $snake.write_cells(_cells)?;
                 )*
-                Ok(cells)
+                Ok(())
             }
         }
     };
