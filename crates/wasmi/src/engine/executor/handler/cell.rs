@@ -51,10 +51,10 @@ macro_rules! for_each_tuple {
     };
 }
 
-/// A single 64-bit cell of the [`ValueStack`].
+/// A single 64-bit cell of the value stack.
 ///
-/// This stores values on the [`ValueStack`] in an untyped manner.
-/// For values of type [`V128`](crate::V128) two consecutive 64-bit [`Cell`]s are used.
+/// This stores values on the value stack in an untyped manner.
+/// For values of type [`V128`] two consecutive 64-bit [`Cell`]s are used.
 #[derive(Debug, Default, Copy, Clone)]
 #[repr(transparent)]
 pub struct Cell(u64);
