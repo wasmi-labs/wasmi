@@ -291,9 +291,7 @@ macro_rules! impl_write_cells_for_tuples {
     ) => {
         impl<$($camel),*> WriteCells for ($($camel,)*)
         where
-            $(
-                $camel: WriteCells,
-            )*
+            $( $camel: WriteCells, )*
         {
             #[inline]
             fn write_cells(&self, _cells: &mut CellsWriter) -> Result<(), CellError> {
@@ -448,9 +446,7 @@ macro_rules! impl_read_cells_for_tuples {
     ) => {
         impl<$($camel),*> ReadCells for ($($camel,)*)
         where
-            $(
-                $camel: ReadCells,
-            )*
+            $( $camel: ReadCells, )*
         {
             #[inline]
             fn read_cells<'a>(&mut self, _cells: &mut CellsReader) -> Result<(), CellError> {
