@@ -1,7 +1,7 @@
 use crate::{
     collections::arena::ArenaIndex,
     core::{ReadAs, UntypedVal, WriteAs},
-    engine::{Cell, LoadAs, StoreAs},
+    engine::{Cell, ReadCell, WriteCell},
     store::Stored,
     AsContextMut,
     Func,
@@ -175,22 +175,22 @@ fn funcref_null_to_zero() {
 macro_rules! impl_conversions {
     ( $( $reftype:ty ),* $(,)? ) => {
         $(
-            impl LoadAs<$reftype> for Cell {
+            impl ReadCell for $reftype {
                 #[inline]
-                fn load_as(&self) -> $reftype {
-                    let bits: u64 = self.load_as();
+                fn read_cell(cell: &Cell) -> Self {
+                    let bits: u64 = <u64 as ReadCell>::read_cell(cell);
                     unsafe { mem::transmute::<u64, $reftype>(bits) }
                 }
             }
 
-            impl LoadAs<Ref<$reftype>> for Cell {
+            impl ReadCell for Ref<$reftype> {
                 #[inline]
-                fn load_as(&self) -> Ref<$reftype> {
-                    let bits: u64 = self.load_as();
+                fn read_cell(cell: &Cell) -> Self {
+                    let bits: u64 = <u64 as ReadCell>::read_cell(cell);
                     if bits == 0 {
-                        return <Ref<$reftype>>::Null;
+                        return Self::Null;
                     }
-                    <Ref<$reftype>>::Val(<Self as LoadAs<$reftype>>::load_as(self))
+                    Self::Val(<$reftype as ReadCell>::read_cell(cell))
                 }
             }
 
@@ -211,20 +211,20 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl StoreAs<$reftype> for Cell {
+            impl WriteCell for $reftype {
                 #[inline]
-                fn store_as(&mut self, value: &$reftype) {
-                    let bits = unsafe { mem::transmute::<$reftype, u64>(*value) };
-                    self.store_as(&bits)
+                fn write_cell(&self, cell: &mut Cell) {
+                    let bits = unsafe { mem::transmute::<$reftype, u64>(*self) };
+                    bits.write_cell(cell)
                 }
             }
 
-            impl StoreAs<Ref<$reftype>> for Cell {
+            impl WriteCell for Ref<$reftype> {
                 #[inline]
-                fn store_as(&mut self, value: &Ref<$reftype>) {
-                    match value {
-                        Ref::Null => self.store_as(&0_u64),
-                        Ref::Val(value) => self.store_as(value),
+                fn write_cell(&self, cell: &mut Cell) {
+                    match self {
+                        Ref::Null => 0_u64.write_cell(cell),
+                        Ref::Val(value) => value.write_cell(cell),
                     }
                 }
             }

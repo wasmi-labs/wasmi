@@ -59,31 +59,32 @@ macro_rules! for_each_tuple {
 #[repr(transparent)]
 pub struct Cell(u64);
 
-/// Loads a value of type `T` from `self`.
-pub trait LoadAs<T> {
-    fn load_as(&self) -> T;
+/// Loads a value of type `Self` from `cell`.
+pub trait ReadCell {
+    /// Loads a value of type `Self` from `cell`.
+    fn read_cell(cell: &Cell) -> Self;
 }
 
-/// Stores a value of type `T` to `self`.
-pub trait StoreAs<T> {
-    fn store_as(&mut self, value: &T);
+/// Stores a value of type `Self` to `cell`.
+pub trait WriteCell {
+    fn write_cell(&self, cell: &mut Cell);
 }
 
 macro_rules! impl_load_store_int_for_cell {
     ( $($ty:ty),* $(,)? ) => {
         $(
-            impl LoadAs<$ty> for Cell {
+            impl ReadCell for $ty {
                 #[inline]
-                fn load_as(&self) -> $ty {
-                    self.0 as _
+                fn read_cell(cell: &Cell) -> $ty {
+                    cell.0 as _
                 }
             }
 
-            impl StoreAs<$ty> for Cell {
+            impl WriteCell for $ty {
                 #[inline]
                 #[allow(clippy::cast_lossless)]
-                fn store_as(&mut self, value: &$ty) {
-                    self.0 = *value as _;
+                fn write_cell(&self, cell: &mut Cell) {
+                    cell.0 = *self as _;
                 }
             }
         )*
@@ -91,35 +92,35 @@ macro_rules! impl_load_store_int_for_cell {
 }
 impl_load_store_int_for_cell!(u8, u16, u32, u64, i8, i16, i32, i64);
 
-impl LoadAs<bool> for Cell {
+impl ReadCell for bool {
     #[inline]
-    fn load_as(&self) -> bool {
-        self.0 != 0
+    fn read_cell(cell: &Cell) -> bool {
+        cell.0 != 0
     }
 }
 
-impl StoreAs<bool> for Cell {
+impl WriteCell for bool {
     #[inline]
     #[allow(clippy::cast_lossless)]
-    fn store_as(&mut self, value: &bool) {
-        self.0 = *value as _;
+    fn write_cell(&self, cell: &mut Cell) {
+        cell.0 = *self as _;
     }
 }
 
 macro_rules! impl_load_store_float_for_cell {
     ( $($float_ty:ty as $bits_ty:ty),* $(,)? ) => {
         $(
-            impl LoadAs<$float_ty> for Cell {
+            impl ReadCell for $float_ty {
                 #[inline]
-                fn load_as(&self) -> $float_ty {
-                    <$float_ty>::from_bits(<Cell as LoadAs<$bits_ty>>::load_as(self))
+                fn read_cell(cell: &Cell) -> $float_ty {
+                    <$float_ty>::from_bits(ReadCell::read_cell(cell))
                 }
             }
 
-            impl StoreAs<$float_ty> for Cell {
+            impl WriteCell for $float_ty {
                 #[inline]
-                fn store_as(&mut self, value: &$float_ty) {
-                    <Cell as StoreAs<$bits_ty>>::store_as(self, &value.to_bits())
+                fn write_cell(&self, cell: &mut Cell) {
+                    self.to_bits().write_cell(cell)
                 }
             }
         )*
@@ -171,17 +172,14 @@ impl<'a> CellsWriter<'a> {
     ///
     /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
     #[inline]
-    pub fn next_as<T>(&mut self, value: &T) -> Result<(), CellError>
-    where
-        Cell: StoreAs<T>,
-    {
+    pub fn next_as<T: WriteCell>(&mut self, value: &T) -> Result<(), CellError> {
         let slice = mem::take(&mut self.0);
         let Some((cell, rest)) = slice.split_first_mut() else {
             // Note: no need to sync `slice` back to `self.0` since this case only
             //       happens if `self.0`'s slice is empty to begin with.
             return Err(CellError::CellsOutOfBounds);
         };
-        cell.store_as(value);
+        value.write_cell(cell);
         self.0 = rest;
         Ok(())
     }
@@ -335,15 +333,12 @@ impl CellsReader<'_> {
     ///
     /// If not enough [`Cell`]s remain in `self` to return a value of `T`.
     #[inline]
-    pub fn next_as<T>(&mut self) -> Result<T, CellError>
-    where
-        Cell: LoadAs<T>,
-    {
+    pub fn next_as<T: ReadCell>(&mut self) -> Result<T, CellError> {
         let Some((cell, rest)) = self.0.split_first() else {
             return Err(CellError::CellsOutOfBounds);
         };
         self.0 = rest;
-        let value = <Cell as LoadAs<T>>::load_as(cell);
+        let value = <T as ReadCell>::read_cell(cell);
         Ok(value)
     }
 

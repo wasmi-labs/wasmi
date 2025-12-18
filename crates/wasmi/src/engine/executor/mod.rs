@@ -1,5 +1,14 @@
 pub use self::{
-    handler::{op_code_to_handler, read_cells, write_cells, Cell, Inst, LoadAs, Stack, StoreAs},
+    handler::{
+        op_code_to_handler,
+        read_cells,
+        write_cells,
+        Cell,
+        Inst,
+        ReadCell,
+        Stack,
+        WriteCell,
+    },
     inout::{InOut, InOutError},
 };
 use super::code_map::CodeMap;
