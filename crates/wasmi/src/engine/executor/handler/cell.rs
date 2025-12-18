@@ -253,8 +253,8 @@ impl WriteCells for V128 {
         let value = self.as_u128();
         let value_lo = (value & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let value_hi = (value >> 64) as u64;
-        cells.next_as(&value_lo)?;
-        cells.next_as(&value_hi)?;
+        value_lo.write_cells(cells)?;
+        value_hi.write_cells(cells)?;
         Ok(())
     }
 }
