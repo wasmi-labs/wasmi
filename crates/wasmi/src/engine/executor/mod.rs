@@ -1,4 +1,7 @@
-pub use self::handler::{op_code_to_handler, Cell, Inst, LoadAs, Stack, StoreAs};
+pub use self::{
+    handler::{op_code_to_handler, Cell, Inst, LoadAs, Stack, StoreAs},
+    inout::{write_cells, InOut, InOutError},
+};
 use super::code_map::CodeMap;
 use crate::{
     engine::{
@@ -24,6 +27,7 @@ use crate::{
 };
 
 mod handler;
+mod inout;
 
 impl EngineInner {
     /// Executes the given [`Func`] with the given `params` and returns the `results`.
