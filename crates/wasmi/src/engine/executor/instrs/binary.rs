@@ -208,8 +208,7 @@ impl DivRemExt for i32 {
     }
 
     fn rem_s(self, rhs: Self::NonZeroS) -> Result<Self, Error> {
-        self.checked_rem(rhs.get())
-            .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
+        wasm::i32_rem_s(self, rhs.get()).map_err(Error::from)
     }
 
     fn rem_u(self, rhs: Self::NonZeroU) -> Self {
@@ -231,8 +230,7 @@ impl DivRemExt for i64 {
     }
 
     fn rem_s(self, rhs: Self::NonZeroS) -> Result<Self, Error> {
-        self.checked_rem(rhs.get())
-            .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
+        wasm::i64_rem_s(self, rhs.get()).map_err(Error::from)
     }
 
     fn rem_u(self, rhs: Self::NonZeroU) -> Self {
