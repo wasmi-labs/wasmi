@@ -8,6 +8,16 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.5` - 2025-12-19
+
+### Fixed
+
+- Fix a bug in the execution of `i{32,64}.rem_s(MAX, -1)`. [rev-1c3682f]
+  - The Wasm spec demanded to return `0` while Wasmi trapped with `integer-overflow`.
+  - Thanks to [davnavr](https://github.com/davnavr) for the detailed bug report.
+
+[rev-1c3682f]: https://github.com/wasmi-labs/wasmi/commit/1c3682fb8e6bc5ceb4a272199782de7400fe7e88
+
 ## `1.0.4` - 2025-12-10
 
 ### Fixed
