@@ -412,7 +412,7 @@ jobs:
           use_oidc: true
           fail_ci_if_error: true
       - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: code-coverage-report
           path: cobertura.xml
