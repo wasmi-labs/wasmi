@@ -145,10 +145,10 @@ pub enum CellError {
 /// # Errors
 ///
 /// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn store_to_cells<T>(value: &T, cells: &mut [Cell]) -> Result<(), CellError>
-where
-    T: StoreToCells,
-{
+pub fn store_to_cells<T: ?Sized + StoreToCells>(
+    value: &T,
+    cells: &mut [Cell],
+) -> Result<(), CellError> {
     let mut cells = CellsWriter(cells);
     value.store_to_cells(&mut cells)?;
     if !cells.is_empty() {
@@ -306,10 +306,10 @@ for_each_tuple!(impl_store_to_cells_for_tuples);
 /// # Errors
 ///
 /// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn load_from_cells<T>(cells: &[Cell], out: &mut T) -> Result<(), CellError>
-where
-    T: LoadFromCells,
-{
+pub fn load_from_cells<T: ?Sized + LoadFromCells>(
+    cells: &[Cell],
+    out: &mut T,
+) -> Result<(), CellError> {
     let mut cells = CellsReader(cells);
     <T as LoadFromCells>::load_from_cells(out, &mut cells)?;
     if !cells.is_empty() {
