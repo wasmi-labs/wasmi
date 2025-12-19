@@ -389,6 +389,9 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     container:
       image: xd009642/tarpaulin:develop-nightly
       options: --security-opt seccomp=unconfined
@@ -409,12 +412,10 @@ jobs:
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v5.5.0
         with:
-          token: ${{secrets.CODECOV_TOKEN}}
+          use_oidc: true
           fail_ci_if_error: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: code-coverage-report
           path: cobertura.xml
