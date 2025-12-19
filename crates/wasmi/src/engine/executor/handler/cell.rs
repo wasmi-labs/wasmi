@@ -452,3 +452,102 @@ macro_rules! impl_load_from_cells_for_tuples {
     };
 }
 for_each_tuple!(impl_load_from_cells_for_tuples);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tuple_works() {
+        let mut cells = [Cell::default(); 7];
+        assert!(matches!(
+            store_and_load_tuple(&mut cells[..5]),
+            Err(CellError::NotEnoughCells)
+        ));
+        assert!(matches!(store_and_load_tuple(&mut cells[..6]), Ok(true)));
+        assert!(matches!(
+            store_and_load_tuple(&mut cells[..7]),
+            Err(CellError::NotEnoughValues)
+        ));
+    }
+
+    fn store_and_load_tuple(cells: &mut [Cell]) -> Result<bool, CellError> {
+        let values = (1_i32, 2_i64, 3_f32, 4_f64, V128::from(5_u128));
+        let mut expected = (0_i32, 0_i64, 0_f32, 0_f64, V128::from(0_u128));
+        store_to_cells(&values, cells)?;
+        load_from_cells(cells, &mut expected)?;
+        Ok(values == expected)
+    }
+
+    #[test]
+    fn val_slice_works() {
+        let mut cells = [Cell::default(); 7];
+        assert!(matches!(
+            store_and_load_val_slice(&mut cells[..5]),
+            Err(CellError::NotEnoughCells)
+        ));
+        assert!(matches!(
+            store_and_load_val_slice(&mut cells[..6]),
+            Ok(true)
+        ));
+        assert!(matches!(
+            store_and_load_val_slice(&mut cells[..7]),
+            Err(CellError::NotEnoughValues)
+        ));
+    }
+
+    fn store_and_load_val_slice(cells: &mut [Cell]) -> Result<bool, CellError> {
+        let values = [
+            Val::I32(1_i32),
+            Val::I64(2_i64),
+            Val::F32(3_f32.into()),
+            Val::F64(4_f64.into()),
+            Val::V128(V128::from(5_u128)),
+        ];
+        let mut expected = values.clone();
+        store_to_cells(&values[..], cells)?;
+        load_from_cells(cells, &mut expected[..])?;
+        let is_eq = is_val_slice_eq(&values[..], &expected[..]);
+        Ok(is_eq)
+    }
+
+    /// Panics if `lhs` and `rhs` have mismatching [`Val`] items.
+    fn is_val_slice_eq(lhs: &[Val], rhs: &[Val]) -> bool {
+        for (value, expected) in lhs.iter().zip(rhs.iter()) {
+            let is_eq = match (value, expected) {
+                (Val::I32(lhs), Val::I32(rhs)) => lhs == rhs,
+                (Val::I64(lhs), Val::I64(rhs)) => lhs == rhs,
+                (Val::F32(lhs), Val::F32(rhs)) => lhs == rhs,
+                (Val::F64(lhs), Val::F64(rhs)) => lhs == rhs,
+                (Val::V128(lhs), Val::V128(rhs)) => lhs == rhs,
+                _ => false,
+            };
+            if !is_eq {
+                return false;
+            }
+        }
+        true
+    }
+
+    #[test]
+    fn v128_works() {
+        let mut cells = [Cell::default(); 3];
+        assert!(matches!(
+            store_and_load_v128(&mut cells[..1]),
+            Err(CellError::NotEnoughCells)
+        ));
+        assert!(matches!(store_and_load_v128(&mut cells[..2]), Ok(_)));
+        assert!(matches!(
+            store_and_load_v128(&mut cells[..3]),
+            Err(CellError::NotEnoughValues)
+        ));
+    }
+
+    fn store_and_load_v128(cells: &mut [Cell]) -> Result<V128, CellError> {
+        let values = (V128::from(42_u128),);
+        store_to_cells(&values, cells)?;
+        let mut loaded = (V128::from(0_u128),);
+        load_from_cells(cells, &mut loaded)?;
+        Ok(loaded.0)
+    }
+}
