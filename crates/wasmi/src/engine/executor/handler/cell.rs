@@ -51,6 +51,70 @@ macro_rules! for_each_tuple {
     };
 }
 
+/// Trait implemented by types that require a fixed amount of [`Cell`]s to be loaded from or stored to.
+pub trait FixedCellCodec: Sized + LoadFromCells + StoreToCells {
+    /// The fixed number of [`Cell`]s required to store or load a value of type `Self`.
+    const LEN_CELLS: usize;
+}
+
+macro_rules! impl_fixed_cell_codec {
+    ( $($ty:ty => $len:expr),* $(,)? ) => {
+        $(
+            impl FixedCellCodec for $ty {
+                const LEN_CELLS: usize = $len;
+            }
+        )*
+    };
+}
+impl_fixed_cell_codec! {
+    bool => 1,
+    u8 => 1,
+    u16 => 1,
+    u32 => 1,
+    u64 => 1,
+    i8 => 1,
+    i16 => 1,
+    i32 => 1,
+    i64 => 1,
+    f32 => 1,
+    f64 => 1,
+    F32 => 1,
+    F64 => 1,
+    Func => 1,
+    ExternRef => 1,
+    Ref<Func> => 1,
+    Ref<ExternRef> => 1,
+    V128 => 2,
+}
+
+/// A const-fn way to sum `array` items.
+const fn sum_array<const N: usize>(array: [usize; N]) -> usize {
+    let mut i = 0;
+    let mut sum = 0;
+    while i < N {
+        sum += array[i];
+        i += 1;
+    }
+    sum
+}
+
+macro_rules! impl_fixed_cell_codec_for_tuples {
+    (
+        len: $arity:expr,
+        $( $n:literal: { $snake:ident: $camel:ident } ),* $(,)?
+    ) => {
+        impl<$($camel),*> FixedCellCodec for ($($camel,)*)
+        where
+            $( $camel: FixedCellCodec, )*
+        {
+            const LEN_CELLS: usize = sum_array([
+                $( <$camel as FixedCellCodec>::LEN_CELLS ),*
+            ]);
+        }
+    };
+}
+for_each_tuple!(impl_fixed_cell_codec_for_tuples);
+
 /// A single 64-bit cell of the value stack.
 ///
 /// This stores values on the value stack in an untyped manner.
