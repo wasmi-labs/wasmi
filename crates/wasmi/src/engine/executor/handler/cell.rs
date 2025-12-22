@@ -423,12 +423,12 @@ macro_rules! impl_store_to_cells_for_tuples {
 }
 for_each_tuple!(impl_store_to_cells_for_tuples);
 
-/// Reads `value` from `cells`.
+/// Reads `value` from `cells` into `out`.
 ///
 /// # Errors
 ///
 /// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn load_from_cells<T: ?Sized + LoadFromCells>(
+pub fn load_from_cells_into<T: ?Sized + LoadFromCells>(
     cells: &[Cell],
     out: &mut T,
 ) -> Result<(), CellError> {
