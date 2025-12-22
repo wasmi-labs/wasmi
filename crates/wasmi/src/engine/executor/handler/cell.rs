@@ -51,6 +51,59 @@ macro_rules! for_each_tuple {
     };
 }
 
+/// Trait implemented by types that have a valid unloaded value state prior to loading from [`Cell`].
+pub trait Unloaded {
+    /// Returns the unloaded value state of `Self`.
+    fn unloaded() -> Self;
+}
+
+macro_rules! impl_unloaded {
+    ( $($ty:ty => $unloaded:expr),* $(,)? ) => {
+        $(
+            impl Unloaded for $ty {
+                fn unloaded() -> Self {
+                    $unloaded
+                }
+            }
+        )*
+    };
+}
+impl_unloaded! {
+    bool => false,
+    u8 => 0,
+    u16 => 0,
+    u32 => 0,
+    u64 => 0,
+    i8 => 0,
+    i16 => 0,
+    i32 => 0,
+    i64 => 0,
+    f32 => f32::from_bits(0),
+    f64 => f64::from_bits(0),
+    F32 => F32::from_bits(0),
+    F64 => F64::from_bits(0),
+    Ref<Func> => Ref::Null,
+    Ref<ExternRef> => Ref::Null,
+    V128 => V128::from(0_u128),
+}
+
+macro_rules! impl_unloaded_for_tuple {
+    (
+        len: $arity:expr,
+        $( $n:literal: { $snake:ident: $camel:ident } ),* $(,)?
+    ) => {
+        impl<$($camel),*> Unloaded for ($($camel,)*)
+        where
+            $( $camel: Unloaded, )*
+        {
+            fn unloaded() -> Self {
+                ( $(<$camel as Unloaded>::unloaded(),)* )
+            }
+        }
+    };
+}
+for_each_tuple!(impl_unloaded_for_tuple);
+
 /// Trait implemented by types that require a fixed amount of [`Cell`]s to be loaded from or stored to.
 pub trait FixedCellCodec: Sized + LoadFromCells + StoreToCells {
     /// The fixed number of [`Cell`]s required to store or load a value of type `Self`.
