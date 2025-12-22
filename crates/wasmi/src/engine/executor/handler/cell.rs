@@ -440,6 +440,17 @@ pub fn load_from_cells_into<T: ?Sized + LoadFromCells>(
     Ok(())
 }
 
+/// Returns `value` from `cells`.
+///
+/// # Errors
+///
+/// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
+pub fn load_from_cells<T: LoadFromCells + Unloaded>(cells: &[Cell]) -> Result<T, CellError> {
+    let mut out = <T as Unloaded>::unloaded();
+    load_from_cells_into(cells, &mut out)?;
+    Ok(out)
+}
+
 /// Thin-wrapper around `&[Cell]` which allows reading contiguous [`Cell`]s.
 #[derive(Debug)]
 pub struct CellsReader<'a>(&'a [Cell]);
