@@ -611,9 +611,8 @@ mod tests {
 
     fn store_and_load_tuple(cells: &mut [Cell]) -> Result<bool, CellError> {
         let values = (1_i32, 2_i64, 3_f32, 4_f64, V128::from(5_u128));
-        let mut expected = (0_i32, 0_i64, 0_f32, 0_f64, V128::from(0_u128));
         store_to_cells(&values, cells)?;
-        load_from_cells(cells, &mut expected)?;
+        let expected = load_from_cells(cells)?;
         Ok(values == expected)
     }
 
@@ -644,7 +643,7 @@ mod tests {
         ];
         let mut expected = values.clone();
         store_to_cells(&values[..], cells)?;
-        load_from_cells(cells, &mut expected[..])?;
+        load_from_cells_into(cells, &mut expected[..])?;
         let is_eq = is_val_slice_eq(&values[..], &expected[..]);
         Ok(is_eq)
     }
@@ -682,10 +681,9 @@ mod tests {
     }
 
     fn store_and_load_v128(cells: &mut [Cell]) -> Result<V128, CellError> {
-        let values = (V128::from(42_u128),);
+        let values = V128::from(42_u128);
         store_to_cells(&values, cells)?;
-        let mut loaded = (V128::from(0_u128),);
-        load_from_cells(cells, &mut loaded)?;
-        Ok(loaded.0)
+        let loaded = load_from_cells(cells)?;
+        Ok(loaded)
     }
 }
