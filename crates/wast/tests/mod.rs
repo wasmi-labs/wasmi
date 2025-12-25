@@ -188,6 +188,7 @@ macro_rules! foreach_test {
             fn wasmi_fibonacci("wasmi/tests/fibonacci");
             fn wasmi_wide_arithmetic("wasmi/tests/wide-arithmetic");
             fn wasmi_replace_result("wasmi/tests/replace-result");
+            fn wasmi_local_set("wasmi/tests/local-set");
             fn wasmi_local_tee("wasmi/tests/local-tee");
             fn wasmi_if("wasmi/tests/if");
             fn wasmi_fuse_cmp("wasmi/tests/fuse-cmp");
