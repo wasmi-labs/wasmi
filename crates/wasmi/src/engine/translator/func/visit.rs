@@ -119,6 +119,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::Loop)?;
             return Ok(());
         }
+        self.preserve_all_locals()?;
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(&self.engine);
         let continue_label = self.instrs.new_label();
