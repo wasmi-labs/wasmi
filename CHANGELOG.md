@@ -8,6 +8,15 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.6` - 2025-12-25
+
+### Fixed
+
+- Fixed a bug that local preservation of Wasm `loop`s was missing. [#1748]
+  - Thanks to [davnavr](https://github.com/davnavr) for reporting the bug.
+
+[#1748]: https://github.com/wasmi-labs/wasmi/issues/1748
+
 ## `1.0.5` - 2025-12-19
 
 ### Fixed
