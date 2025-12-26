@@ -50,6 +50,15 @@ impl ValType {
     }
 }
 
+impl From<RefType> for ValType {
+    fn from(ty: RefType) -> Self {
+        match ty {
+            RefType::Func => Self::FuncRef,
+            RefType::Extern => Self::ExternRef,
+        }
+    }
+}
+
 /// Convert one type to another by rounding to the nearest integer towards zero.
 ///
 /// # Errors
