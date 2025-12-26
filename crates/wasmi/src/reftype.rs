@@ -129,6 +129,15 @@ impl<T> From<T> for Nullable<T> {
     }
 }
 
+impl<T> From<Nullable<T>> for Option<T> {
+    fn from(nullable: Nullable<T>) -> Self {
+        match nullable {
+            Nullable::Val(value) => Some(value),
+            Nullable::Null => None,
+        }
+    }
+}
+
 /// A raw index to an external entity.
 pub type ExternRefIdx = RefId<ExternRef>;
 
