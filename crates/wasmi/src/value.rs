@@ -82,6 +82,7 @@ pub enum Val {
 impl Val {
     /// Creates new default value of given type.
     #[inline]
+    #[deprecated(note = "use `Val::default_for_ty` instead")]
     pub fn default(ty: ValType) -> Self {
         Self::default_for_ty(ty)
     }
