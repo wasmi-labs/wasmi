@@ -3,6 +3,15 @@ use crate::{IndexType, TableError, ValType};
 #[cfg(doc)]
 use crate::Table;
 
+/// A Wasm reference type.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RefType {
+    /// A Wasm `funcref` reference type.
+    Func,
+    /// A Wasm `externref` reference type.
+    Extern,
+}
+
 /// A Wasm table descriptor.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {

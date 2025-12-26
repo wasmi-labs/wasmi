@@ -4,6 +4,7 @@ use crate::{
     store::Stored,
     AsContextMut,
     Func,
+    RefType,
     StoreContext,
 };
 use alloc::boxed::Box;
@@ -136,15 +137,6 @@ impl<T> From<Nullable<T>> for Option<T> {
             Nullable::Null => None,
         }
     }
-}
-
-/// A Wasm reference type.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum RefType {
-    /// A Wasm `funcref` reference type.
-    Func,
-    /// A Wasm `externref` reference type.
-    Extern,
 }
 
 /// A Wasm reference.
