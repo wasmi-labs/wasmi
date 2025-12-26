@@ -5,7 +5,7 @@ mod ty;
 pub use self::{
     element::{ElementSegment, ElementSegmentRef},
     error::TableError,
-    ty::TableType,
+    ty::{RefType, TableType},
 };
 use crate::{Fuel, FuelError, ResourceLimiterRef, TypedVal, UntypedVal};
 use alloc::vec::Vec;
