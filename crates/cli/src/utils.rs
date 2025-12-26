@@ -6,7 +6,11 @@ use wasmi::{FuncType, Val, ValType, F32, F64, V128};
 ///
 /// The returned buffer can be used as function results for [`Func::call`](`wasmi::Func::call`).
 pub fn prepare_func_results(ty: &FuncType) -> Box<[Val]> {
-    ty.results().iter().copied().map(Val::default).collect()
+    ty.results()
+        .iter()
+        .copied()
+        .map(Val::default_for_ty)
+        .collect()
 }
 
 /// Decode the given `args` for the [`FuncType`] `ty`.
