@@ -417,27 +417,15 @@ macro_rules! impl_conversions {
 
             impl From<UntypedVal> for Nullable<$reftype> {
                 fn from(untyped: UntypedVal) -> Self {
-                    if u64::from(untyped) == 0 {
-                        return Self::Null;
-                    }
-                    // Safety: This operation is safe since there are no invalid
-                    //         bit patterns for [`ExternRef`] instances. Therefore
-                    //         this operation cannot produce invalid [`ExternRef`]
-                    //         instances even though the input [`UntypedVal`]
-                    //         was modified arbitrarily.
-                    unsafe { mem::transmute::<u64, Self>(untyped.into()) }
+                    <UntypedVal as ReadAs<Nullable<$reftype>>>::read_as(&untyped)
                 }
             }
 
             impl From<$reftype> for UntypedVal {
                 fn from(reftype: $reftype) -> Self {
-                    // Safety: This operation is safe since there are no invalid
-                    //         bit patterns for [`UntypedVal`] instances. Therefore
-                    //         this operation cannot produce invalid [`UntypedVal`]
-                    //         instances even if it was possible to arbitrarily modify
-                    //         the input `$reftype` instance.
-                    let bits = unsafe { mem::transmute::<$reftype, u64>(reftype) };
-                    UntypedVal::from(bits)
+                    let mut val = UntypedVal::from(0_u64);
+                    val.write_as(reftype);
+                    val
                 }
             }
 
