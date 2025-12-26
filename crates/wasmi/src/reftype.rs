@@ -109,16 +109,16 @@ impl<T> Nullable<T> {
     /// Otherwise returns `None`.
     pub fn val(&self) -> Option<&T> {
         match self {
-            Nullable::Val(val) => Some(val),
-            Nullable::Null => None,
+            Self::Val(val) => Some(val),
+            Self::Null => None,
         }
     }
 
     /// Converts from `&Ref<T>` to `Ref<&T>`.
     pub fn as_ref(&self) -> Nullable<&T> {
         match self {
-            Nullable::Val(val) => Nullable::Val(val),
-            Nullable::Null => Nullable::Null,
+            Self::Val(val) => Nullable::Val(val),
+            Self::Null => Nullable::Null,
         }
     }
 }
