@@ -199,7 +199,7 @@ pub use self::{
         ModuleImportsIter,
         Read,
     },
-    reftype::{ExternRef, Nullable},
+    reftype::{ExternRef, Nullable, Ref, RefType},
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Val,

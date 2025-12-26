@@ -138,6 +138,140 @@ impl<T> From<Nullable<T>> for Option<T> {
     }
 }
 
+/// A Wasm reference type.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RefType {
+    /// A Wasm `funcref` reference type.
+    Func,
+    /// A Wasm `externref` reference type.
+    Extern,
+}
+
+/// A Wasm reference.
+#[derive(Debug, Copy, Clone)]
+pub enum Ref {
+    /// A Wasm `funcref`.
+    Func(Nullable<Func>),
+    /// A Wasm `externref`.
+    Extern(Nullable<ExternRef>),
+}
+
+impl WriteAs<Ref> for UntypedVal {
+    fn write_as(&mut self, value: Ref) {
+        match value {
+            Ref::Func(nullable) => self.write_as(nullable),
+            Ref::Extern(nullable) => self.write_as(nullable),
+        }
+    }
+}
+
+impl From<Nullable<Func>> for Ref {
+    fn from(value: Nullable<Func>) -> Self {
+        Self::Func(value)
+    }
+}
+
+impl From<Nullable<ExternRef>> for Ref {
+    fn from(value: Nullable<ExternRef>) -> Self {
+        Self::Extern(value)
+    }
+}
+
+impl Ref {
+    /// Creates new default value of given type.
+    #[inline]
+    pub fn default_for_ty(ty: RefType) -> Self {
+        match ty {
+            RefType::Func => Self::from(<Nullable<Func>>::Null),
+            RefType::Extern => Self::from(<Nullable<ExternRef>>::Null),
+        }
+    }
+
+    /// Returns `true` if `self` is a `null` rerefence.
+    #[inline]
+    pub fn is_null(&self) -> bool {
+        match self {
+            Self::Func(nullable) => nullable.is_null(),
+            Self::Extern(nullable) => nullable.is_null(),
+        }
+    }
+
+    /// Returns `true` if `self` is a `null` rerefence.
+    #[inline]
+    pub fn is_non_null(&self) -> bool {
+        !self.is_null()
+    }
+
+    /// Creates a new `null` reference of type `ty`.
+    #[inline]
+    pub fn null(ty: RefType) -> Self {
+        match ty {
+            RefType::Extern => Self::Extern(Nullable::Null),
+            RefType::Func => Self::Func(Nullable::Null),
+        }
+    }
+
+    /// Returns the [`RefType`] of `self`.
+    #[inline]
+    pub fn ty(&self) -> RefType {
+        match self {
+            Self::Func(_) => RefType::Func,
+            Self::Extern(_) => RefType::Extern,
+        }
+    }
+
+    /// Returns `true` if `self` is a `funcref`.
+    #[inline]
+    pub fn is_func(&self) -> bool {
+        matches!(self, Self::Func(_))
+    }
+
+    /// Returns `true` if `self` is a `externref`.
+    #[inline]
+    pub fn is_extern(&self) -> bool {
+        matches!(self, Self::Extern(_))
+    }
+
+    /// Returns `Some` if `self` is a `funcref`.
+    ///
+    /// Otherwise returns `None`.
+    #[inline]
+    pub fn as_func(&self) -> Option<Nullable<&Func>> {
+        if let Self::Func(nullable) = self {
+            return Some(nullable.as_ref());
+        }
+        None
+    }
+
+    /// Returns `Some` if `self` is a `externref`.
+    ///
+    /// Otherwise returns `None`.
+    #[inline]
+    pub fn as_extern(&self) -> Option<Nullable<&ExternRef>> {
+        if let Self::Extern(nullable) = self {
+            return Some(nullable.as_ref());
+        }
+        None
+    }
+
+    /// Get the underlying [`Func`] reference.
+    ///
+    /// # Note
+    ///
+    /// - Returns `None` if this `Ref` is a null `func` reference.
+    /// - Returns `Some(_)` if this `Ref` is a non-null `func` reference.
+    ///
+    /// # Panics
+    ///
+    /// If `self` is another kind of reference.
+    #[inline]
+    pub fn unwrap_func(&self) -> Option<&Func> {
+        self.as_func()
+            .expect("`Ref::unwrap_func` on non-func reference")
+            .into()
+    }
+}
+
 /// A raw index to an external entity.
 pub type ExternRefIdx = RefId<ExternRef>;
 
