@@ -11,7 +11,9 @@ use core::{any, any::Any, cmp, fmt, marker::PhantomData, mem, num::NonZero};
 
 /// The typed base type for all reference type identifiers.
 pub struct RefId<T> {
+    /// The underlying non-zero identifier.
     id: NonZero<u32>,
+    /// Marker for the compiler to differentiate reference types.
     marker: PhantomData<fn() -> T>,
 }
 
