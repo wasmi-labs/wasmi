@@ -91,11 +91,11 @@ impl<T> ArenaIndex for RefId<T> {
 /// A nullable reference type.
 #[derive(Debug, Default, Copy, Clone)]
 pub enum Nullable<T> {
-    /// The [`Ref`] is a non-`null` value.
-    Val(T),
     /// The [`Ref`] is `null`.
     #[default]
     Null,
+    /// The [`Ref`] is a non-`null` value.
+    Val(T),
 }
 
 impl<T> Nullable<T> {
