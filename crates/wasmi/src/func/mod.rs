@@ -218,8 +218,8 @@ impl<T> HostFuncTrampolineEntity<T> {
         // computations within the closure implementation. We put both parameters
         // and results into a single buffer which we can split to minimize the
         // amount of allocations per trampoline invocation.
-        let params_iter = ty.params().iter().copied().map(Val::default);
-        let results_iter = ty.results().iter().copied().map(Val::default);
+        let params_iter = ty.params().iter().copied().map(Val::default_for_ty);
+        let results_iter = ty.results().iter().copied().map(Val::default_for_ty);
         let len_params = ty.params().len();
         let params_results: Box<[Val]> = params_iter.chain(results_iter).collect();
         let trampoline = <TrampolineEntity<T>>::new(move |caller, args| {

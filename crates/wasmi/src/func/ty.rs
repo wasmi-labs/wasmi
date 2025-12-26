@@ -131,7 +131,7 @@ impl FuncType {
             return Err(FuncError::MismatchingResultLen);
         }
         for (output, result_ty) in outputs.iter_mut().zip(self.results()) {
-            *output = Val::default(*result_ty);
+            *output = Val::default_for_ty(*result_ty);
         }
         Ok(())
     }
