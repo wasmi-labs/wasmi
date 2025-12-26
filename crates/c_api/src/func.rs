@@ -8,7 +8,7 @@ use crate::{
 };
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 use core::{any::Any, ffi::c_void, hint, iter, ptr, str};
-use wasmi::{Error, Extern, Func, Ref, Val};
+use wasmi::{Error, Extern, Func, Nullable, Val};
 
 #[cfg(feature = "std")]
 use core::panic::AssertUnwindSafe;
@@ -171,7 +171,10 @@ fn prepare_params_and_results(
     let len_params = params.len();
     dst.reserve(len_params + len_results);
     dst.extend(params);
-    dst.extend(iter::repeat_n(Val::FuncRef(<Ref<Func>>::Null), len_results));
+    dst.extend(iter::repeat_n(
+        Val::FuncRef(<Nullable<Func>>::Null),
+        len_results,
+    ));
     let (params, results) = dst.split_at_mut(len_params);
     (params, results)
 }

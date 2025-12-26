@@ -1,7 +1,7 @@
 use crate::{wasm_extern_t, wasm_ref_t, wasm_store_t, wasm_tabletype_t, WasmRef};
 use alloc::boxed::Box;
 use core::hint;
-use wasmi::{Extern, ExternRef, Func, Ref, Table, TableType};
+use wasmi::{Extern, ExternRef, Func, Nullable, Table, TableType};
 
 /// A Wasm table.
 ///
@@ -47,8 +47,8 @@ impl wasm_table_t {
 fn option_wasm_ref_t_to_ref(r: Option<&wasm_ref_t>, table_ty: &TableType) -> WasmRef {
     r.map(|r| r.inner.clone())
         .unwrap_or_else(|| match table_ty.element() {
-            wasmi::ValType::FuncRef => WasmRef::Func(<Ref<Func>>::Null),
-            wasmi::ValType::ExternRef => WasmRef::Extern(<Ref<ExternRef>>::Null),
+            wasmi::ValType::FuncRef => WasmRef::Func(<Nullable<Func>>::Null),
+            wasmi::ValType::ExternRef => WasmRef::Extern(<Nullable<ExternRef>>::Null),
             invalid => panic!("encountered invalid table type: {invalid:?}"),
         })
 }

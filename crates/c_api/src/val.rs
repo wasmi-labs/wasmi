@@ -9,7 +9,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
-use wasmi::{Func, Ref, Val, ValType, F32, F64};
+use wasmi::{Func, Nullable, Val, ValType, F32, F64};
 
 /// A Wasm value.
 ///
@@ -133,7 +133,7 @@ impl wasm_val_t {
             wasm_valkind_t::WASM_F32 => Val::from(F32::from(unsafe { self.of.f32 })),
             wasm_valkind_t::WASM_F64 => Val::from(F64::from(unsafe { self.of.f64 })),
             wasm_valkind_t::WASM_FUNCREF => match unsafe { self.of.ref_ }.is_null() {
-                true => Val::FuncRef(<Ref<Func>>::Null),
+                true => Val::FuncRef(<Nullable<Func>>::Null),
                 false => ref_to_val(unsafe { &*self.of.ref_ }),
             },
             wasm_valkind_t::WASM_EXTERNREF => {

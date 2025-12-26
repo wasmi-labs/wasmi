@@ -12,7 +12,7 @@ use wasmi::{
     MemoryType,
     Module,
     Mutability,
-    Ref,
+    Nullable,
     ResumableCall,
     Store,
     Table,
@@ -165,7 +165,7 @@ impl WastRunner {
 
     /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
     fn value(&mut self, value: &WastArgCore) -> Option<Val> {
-        use wasmi::{ExternRef, Func, Ref};
+        use wasmi::{ExternRef, Func, Nullable};
         use wast::core::{AbstractHeapType, HeapType};
         Some(match value {
             WastArgCore::I32(arg) => Val::I32(*arg),
@@ -179,11 +179,11 @@ impl WastRunner {
             WastArgCore::RefNull(HeapType::Abstract {
                 ty: AbstractHeapType::Func,
                 ..
-            }) => Val::FuncRef(<Ref<Func>>::Null),
+            }) => Val::FuncRef(<Nullable<Func>>::Null),
             WastArgCore::RefNull(HeapType::Abstract {
                 ty: AbstractHeapType::Extern,
                 ..
-            }) => Val::ExternRef(<Ref<ExternRef>>::Null),
+            }) => Val::ExternRef(<Nullable<ExternRef>>::Null),
             WastArgCore::RefExtern(value) => Val::from(ExternRef::new(&mut self.store, *value)),
             _ => return None,
         })
@@ -436,7 +436,7 @@ impl WastRunner {
                 })),
             ) => externref.is_null(),
             (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
-                let Ref::Val(value) = externref else {
+                let Nullable::Val(value) = externref else {
                     bail!("unexpected null element: {externref:?}");
                 };
                 let Some(value) = value.data(&self.store).downcast_ref::<u32>() else {

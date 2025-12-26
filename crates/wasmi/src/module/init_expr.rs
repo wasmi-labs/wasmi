@@ -11,7 +11,7 @@ use crate::{
     core::{wasm, UntypedVal},
     ExternRef,
     Func,
-    Ref,
+    Nullable,
     Val,
     F32,
     F64,
@@ -36,7 +36,7 @@ pub trait EvalContext {
     /// Returns the [`Val`] of the global value at `index` if any.
     fn get_global(&self, index: u32) -> Option<Val>;
     /// Returns the [`Ref`] of the [`Func`] at `index` if any.
-    fn get_func(&self, index: u32) -> Option<Ref<Func>>;
+    fn get_func(&self, index: u32) -> Option<Nullable<Func>>;
 }
 
 /// An empty evaluation context.
@@ -47,7 +47,7 @@ impl EvalContext for EmptyEvalContext {
         None
     }
 
-    fn get_func(&self, _index: u32) -> Option<Ref<Func>> {
+    fn get_func(&self, _index: u32) -> Option<Nullable<Func>> {
         None
     }
 }
@@ -318,11 +318,11 @@ impl ConstExpr {
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Func,
-                        } => Val::from(<Ref<Func>>::Null),
+                        } => Val::from(<Nullable<Func>>::Null),
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Extern,
-                        } => Val::from(<Ref<ExternRef>>::Null),
+                        } => Val::from(<Nullable<ExternRef>>::Null),
                         invalid => {
                             panic!("invalid heap type for `ref.null`: {invalid:?}")
                         }
@@ -393,7 +393,7 @@ impl ConstExpr {
     pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<UntypedVal>
     where
         G: Fn(u32) -> Val,
-        F: Fn(u32) -> Ref<Func>,
+        F: Fn(u32) -> Nullable<Func>,
     {
         /// Context that wraps closures representing partial evaluation contexts.
         struct WrappedEvalContext<G, F> {
@@ -405,13 +405,13 @@ impl ConstExpr {
         impl<G, F> EvalContext for WrappedEvalContext<G, F>
         where
             G: Fn(u32) -> Val,
-            F: Fn(u32) -> Ref<Func>,
+            F: Fn(u32) -> Nullable<Func>,
         {
             fn get_global(&self, index: u32) -> Option<Val> {
                 Some((self.global_get)(index))
             }
 
-            fn get_func(&self, index: u32) -> Option<Ref<Func>> {
+            fn get_func(&self, index: u32) -> Option<Nullable<Func>> {
                 Some((self.func_get)(index))
             }
         }

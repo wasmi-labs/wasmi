@@ -25,7 +25,7 @@ use crate::{
     InstanceEntity,
     InstanceEntityBuilder,
     Memory,
-    Ref,
+    Nullable,
     Table,
     Val,
 };
@@ -291,7 +291,7 @@ impl Module {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),
-                |func_index| <Ref<Func>>::from(builder.get_func(func_index)),
+                |func_index| <Nullable<Func>>::from(builder.get_func(func_index)),
             )
             .expect("must evaluate to proper value")
     }
