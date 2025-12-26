@@ -7,7 +7,84 @@ use crate::{
     StoreContext,
 };
 use alloc::boxed::Box;
-use core::{any::Any, mem, num::NonZeroU32};
+use core::{any, any::Any, cmp, fmt, marker::PhantomData, mem, num::NonZero};
+
+/// The typed base type for all reference type identifiers.
+pub struct RefId<T> {
+    id: NonZero<u32>,
+    marker: PhantomData<fn() -> T>,
+}
+
+impl<T> fmt::Debug for RefId<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RawRefId")
+            .field("id", &self.id)
+            .field("marker", &any::type_name::<T>())
+            .finish()
+    }
+}
+
+impl<T> Copy for RefId<T> {}
+
+impl<T> Clone for RefId<T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> PartialEq for RefId<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+impl<T> Eq for RefId<T> {}
+
+impl<T> PartialOrd for RefId<T> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T> Ord for RefId<T> {
+    #[inline]
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl<T> RefId<T> {
+    /// Creates a new [`RawRefId`] from the given `id`.
+    pub fn new(id: NonZero<u32>) -> Self {
+        Self {
+            id,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> ArenaIndex for RefId<T> {
+    fn into_usize(self) -> usize {
+        u32::from(self.id).wrapping_sub(1) as usize
+    }
+
+    fn from_usize(index: usize) -> Self {
+        index
+            .try_into()
+            .ok()
+            .map(|index: u32| index.wrapping_add(1))
+            .and_then(<NonZero<u32>>::new)
+            .map(Self::new)
+            .unwrap_or_else(|| {
+                panic!(
+                    "out of bounds ID for `RawRefId<{}>`: {index}",
+                    any::type_name::<T>()
+                )
+            })
+    }
+}
 
 /// A nullable reference type.
 #[derive(Debug, Default, Copy, Clone)]
@@ -51,24 +128,7 @@ impl<T> From<T> for Nullable<T> {
 }
 
 /// A raw index to an external entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ExternRefIdx(NonZeroU32);
-
-impl ArenaIndex for ExternRefIdx {
-    fn into_usize(self) -> usize {
-        self.0.get().wrapping_sub(1) as usize
-    }
-
-    fn from_usize(index: usize) -> Self {
-        index
-            .try_into()
-            .ok()
-            .map(|index: u32| index.wrapping_add(1))
-            .and_then(NonZeroU32::new)
-            .map(Self)
-            .unwrap_or_else(|| panic!("out of bounds extern object index {index}"))
-    }
-}
+pub type ExternRefIdx = RefId<ExternRef>;
 
 /// An externally defined object.
 #[derive(Debug)]

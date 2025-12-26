@@ -26,32 +26,16 @@ use super::{
 use crate::{
     collections::arena::ArenaIndex,
     engine::{Inst, ResumableCall},
+    reftype::RefId,
     Engine,
     Error,
     Val,
 };
 use alloc::{boxed::Box, sync::Arc};
-use core::{fmt, fmt::Debug, num::NonZeroU32};
+use core::{fmt, fmt::Debug};
 
 /// A raw index to a function entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct FuncIdx(NonZeroU32);
-
-impl ArenaIndex for FuncIdx {
-    fn into_usize(self) -> usize {
-        self.0.get().wrapping_sub(1) as usize
-    }
-
-    fn from_usize(index: usize) -> Self {
-        index
-            .try_into()
-            .ok()
-            .map(|index: u32| index.wrapping_add(1))
-            .and_then(NonZeroU32::new)
-            .map(Self)
-            .unwrap_or_else(|| panic!("out of bounds func index {index}"))
-    }
-}
+pub type FuncIdx = RefId<Func>;
 
 /// A raw index to a host function trampoline entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
