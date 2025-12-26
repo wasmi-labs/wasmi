@@ -11,7 +11,7 @@ use core::{any::Any, mem, num::NonZeroU32};
 
 /// A nullable reference type.
 #[derive(Debug, Default, Copy, Clone)]
-pub enum Ref<T> {
+pub enum Nullable<T> {
     /// The [`Ref`] is a non-`null` value.
     Val(T),
     /// The [`Ref`] is `null`.
@@ -19,7 +19,7 @@ pub enum Ref<T> {
     Null,
 }
 
-impl<T> Ref<T> {
+impl<T> Nullable<T> {
     /// Returns `true` is `self` is null.
     pub fn is_null(&self) -> bool {
         matches!(self, Self::Null)
@@ -30,21 +30,21 @@ impl<T> Ref<T> {
     /// Otherwise returns `None`.
     pub fn val(&self) -> Option<&T> {
         match self {
-            Ref::Val(val) => Some(val),
-            Ref::Null => None,
+            Nullable::Val(val) => Some(val),
+            Nullable::Null => None,
         }
     }
 
     /// Converts from `&Ref<T>` to `Ref<&T>`.
-    pub fn as_ref(&self) -> Ref<&T> {
+    pub fn as_ref(&self) -> Nullable<&T> {
         match self {
-            Ref::Val(val) => Ref::Val(val),
-            Ref::Null => Ref::Null,
+            Nullable::Val(val) => Nullable::Val(val),
+            Nullable::Null => Nullable::Null,
         }
     }
 }
 
-impl<T> From<T> for Ref<T> {
+impl<T> From<T> for Nullable<T> {
     fn from(value: T) -> Self {
         Self::Val(value)
     }
@@ -145,10 +145,10 @@ fn externref_sizeof() {
 #[test]
 fn externref_null_to_zero() {
     assert_eq!(
-        UntypedVal::from(<Ref<ExternRef>>::Null),
+        UntypedVal::from(<Nullable<ExternRef>>::Null),
         UntypedVal::from(0)
     );
-    assert!(<Ref<ExternRef>>::from(UntypedVal::from(0)).is_null());
+    assert!(<Nullable<ExternRef>>::from(UntypedVal::from(0)).is_null());
 }
 
 #[test]
@@ -161,14 +161,17 @@ fn funcref_sizeof() {
     use crate::Func;
     use core::mem::size_of;
     assert_eq!(size_of::<Func>(), size_of::<u64>());
-    assert_eq!(size_of::<Func>(), size_of::<Ref<Func>>());
+    assert_eq!(size_of::<Func>(), size_of::<Nullable<Func>>());
 }
 
 #[test]
 fn funcref_null_to_zero() {
     use crate::Func;
-    assert_eq!(UntypedVal::from(<Ref<Func>>::Null), UntypedVal::from(0));
-    assert!(<Ref<Func>>::from(UntypedVal::from(0)).is_null());
+    assert_eq!(
+        UntypedVal::from(<Nullable<Func>>::Null),
+        UntypedVal::from(0)
+    );
+    assert!(<Nullable<Func>>::from(UntypedVal::from(0)).is_null());
 }
 
 macro_rules! impl_conversions {
@@ -181,13 +184,13 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl ReadAs<Ref<$reftype>> for UntypedVal {
-                fn read_as(&self) -> Ref<$reftype> {
+            impl ReadAs<Nullable<$reftype>> for UntypedVal {
+                fn read_as(&self) -> Nullable<$reftype> {
                     let bits = u64::from(*self);
                     if bits == 0 {
-                        return <Ref<$reftype>>::Null;
+                        return <Nullable<$reftype>>::Null;
                     }
-                    <Ref<$reftype>>::Val(<Self as ReadAs<$reftype>>::read_as(self))
+                    <Nullable<$reftype>>::Val(<Self as ReadAs<$reftype>>::read_as(self))
                 }
             }
 
@@ -198,19 +201,19 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl WriteAs<Ref<$reftype>> for UntypedVal {
-                fn write_as(&mut self, value: Ref<$reftype>) {
+            impl WriteAs<Nullable<$reftype>> for UntypedVal {
+                fn write_as(&mut self, value: Nullable<$reftype>) {
                     match value {
-                        Ref::Null => self.write_as(0_u64),
-                        Ref::Val(value) => self.write_as(value),
+                        Nullable::Null => self.write_as(0_u64),
+                        Nullable::Val(value) => self.write_as(value),
                     }
                 }
             }
 
-            impl From<UntypedVal> for Ref<$reftype> {
+            impl From<UntypedVal> for Nullable<$reftype> {
                 fn from(untyped: UntypedVal) -> Self {
                     if u64::from(untyped) == 0 {
-                        return <Ref<$reftype>>::Null;
+                        return Self::Null;
                     }
                     // Safety: This operation is safe since there are no invalid
                     //         bit patterns for [`ExternRef`] instances. Therefore
@@ -233,11 +236,11 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<Ref<$reftype>> for UntypedVal {
-                fn from(reftype: Ref<$reftype>) -> Self {
+            impl From<Nullable<$reftype>> for UntypedVal {
+                fn from(reftype: Nullable<$reftype>) -> Self {
                     match reftype {
-                        Ref::Val(reftype) => UntypedVal::from(reftype),
-                        Ref::Null => UntypedVal::from(0_u64),
+                        Nullable::Val(reftype) => UntypedVal::from(reftype),
+                        Nullable::Null => UntypedVal::from(0_u64),
                     }
                 }
             }

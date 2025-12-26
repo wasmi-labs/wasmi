@@ -9,7 +9,7 @@ use crate::{
     ExternRef,
     Func,
     FuncType,
-    Ref,
+    Nullable,
     ValType,
     F32,
     F64,
@@ -195,8 +195,8 @@ impl_wasm_type! {
     type f64 = F64;
     #[cfg(feature = "simd")]
     type V128 = V128;
-    type Ref<Func> = FuncRef;
-    type Ref<ExternRef> = ExternRef;
+    type Nullable<Func> = FuncRef;
+    type Nullable<ExternRef> = ExternRef;
 }
 
 /// A list of [`WasmTy`] types.

@@ -20,7 +20,7 @@ use crate::{
     Global,
     Instance,
     Memory,
-    Ref,
+    Nullable,
     Table,
     TrapCode,
     V128,
@@ -409,7 +409,7 @@ pub fn resolve_indirect_func(
     let table = resolve_table(state.store, &table);
     let funcref = table
         .get_untyped(index)
-        .map(<Ref<Func>>::from)
+        .map(<Nullable<Func>>::from)
         .ok_or(TrapCode::TableOutOfBounds)?;
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
     let actual_fnty = resolve_func(state.store, func).ty_dedup();

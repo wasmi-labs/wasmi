@@ -59,7 +59,7 @@ use crate::{
     ir::{self, index, Slot, SlotSpan},
     store::StoreError,
     Func,
-    Ref,
+    Nullable,
     TrapCode,
 };
 use core::cmp;
@@ -961,7 +961,7 @@ pub fn ref_func(
 ) -> Done {
     let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let funcref = <Ref<Func>>::from(func);
+    let funcref = <Nullable<Func>>::from(func);
     set_value(sp, result, funcref);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }

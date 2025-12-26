@@ -8,7 +8,7 @@ use crate::{
     Func,
     MemoryType,
     Mutability,
-    Ref,
+    Nullable,
     Store,
     TableType,
     TrapCode,
@@ -92,7 +92,7 @@ fn instantiate_with_imports_and_start() {
     let t = Table::new(
         &mut store,
         TableType::new(ValType::FuncRef, 1, None),
-        Val::from(<Ref<Func>>::Null),
+        Val::from(<Nullable<Func>>::Null),
     )
     .unwrap();
     let f = Func::wrap(&mut store, |mut caller: Caller<i32>, a: i32| {
@@ -174,7 +174,7 @@ fn instantiate_with_invalid_table_import() {
     let t = Table::new(
         &mut store,
         TableType::new(ValType::ExternRef, 1, None),
-        Val::from(<Ref<ExternRef>>::Null),
+        Val::from(<Nullable<ExternRef>>::Null),
     )
     .unwrap();
     let externals = [Extern::from(t)].map(Extern::from);
