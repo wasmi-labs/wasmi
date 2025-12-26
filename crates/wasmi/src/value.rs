@@ -82,8 +82,14 @@ pub enum Val {
 impl Val {
     /// Creates new default value of given type.
     #[inline]
-    pub fn default(value_type: ValType) -> Self {
-        match value_type {
+    pub fn default(ty: ValType) -> Self {
+        Self::default_for_ty(ty)
+    }
+
+    /// Creates new default value of given type.
+    #[inline]
+    pub fn default_for_ty(ty: ValType) -> Self {
+        match ty {
             ValType::I32 => Self::I32(0),
             ValType::I64 => Self::I64(0),
             ValType::F32 => Self::F32(0f32.into()),
