@@ -1,11 +1,13 @@
 mod element;
 mod error;
 mod ty;
+mod untyped;
 
 pub use self::{
     element::{ElementSegment, ElementSegmentRef},
     error::TableError,
     ty::{RefType, TableType},
+    untyped::UntypedRef,
 };
 use crate::{Fuel, FuelError, ResourceLimiterRef, TypedVal, UntypedVal};
 use alloc::vec::Vec;

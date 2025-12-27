@@ -44,7 +44,7 @@ pub use self::{
     index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
-    table::{ElementSegment, ElementSegmentRef, RefType, Table, TableError, TableType},
+    table::{ElementSegment, ElementSegmentRef, RefType, Table, TableError, TableType, UntypedRef},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},
