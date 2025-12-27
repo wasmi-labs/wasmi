@@ -33,7 +33,7 @@ pub struct wasm_ref_t {
 wasmi_c_api_macros::declare_own!(wasm_ref_t);
 
 impl wasm_ref_t {
-    /// Creates a new boxed [`wasm_ref_t`] from the given [`WasmRef`].
+    /// Creates a new boxed [`wasm_ref_t`] from the given [`Ref`].
     pub(crate) fn new(r: Ref) -> Option<Box<wasm_ref_t>> {
         if r.is_null() || !r.is_func() {
             None

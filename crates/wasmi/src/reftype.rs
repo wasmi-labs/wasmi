@@ -59,7 +59,7 @@ impl<T> Ord for RefId<T> {
 }
 
 impl<T> RefId<T> {
-    /// Creates a new [`RawRefId`] from the given `id`.
+    /// Creates a new [`RefId`] from the given `id`.
     pub fn new(id: NonZero<u32>) -> Self {
         Self {
             id,

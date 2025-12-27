@@ -56,13 +56,13 @@ impl From<TypedRef> for UntypedRef {
     }
 }
 
-/// An [`UntypedVal`] with its assumed [`ValType`].
+/// An [`UntypedVal`] with its assumed [`RefType`].
 ///
 /// # Note
 ///
 /// We explicitly do not make use of the existing [`Val`]
 /// abstraction since [`Val`] is optimized towards being a
-/// user facing type whereas [`TypedVal`] is focusing on
+/// user facing type whereas [`RefType`] is focusing on
 /// performance and efficiency in computations.
 ///
 /// [`Val`]: [`crate::core::Value`]
