@@ -93,7 +93,7 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`TypedVal`].
+    /// The newly added elements are initialized to the `init` [`TypedRef`].
     ///
     /// # Errors
     ///
@@ -118,7 +118,7 @@ impl Table {
     ///
     /// This is an internal API that exists for efficiency purposes.
     ///
-    /// The newly added elements are initialized to the `init` [`TypedVal`].
+    /// The newly added elements are initialized to the `init` [`UntypedRef`].
     ///
     /// # Errors
     ///
@@ -209,7 +209,7 @@ impl Table {
         self.elements.get(index).copied()
     }
 
-    /// Sets the [`TypedVal`] of this [`Table`] at `index`.
+    /// Sets the [`TypedRef`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
@@ -220,7 +220,7 @@ impl Table {
         self.set_untyped(index, value.into())
     }
 
-    /// Returns the [`UntypedVal`] of the [`Table`] at `index`.
+    /// Returns the [`UntypedRef`] of the [`Table`] at `index`.
     ///
     /// # Errors
     ///

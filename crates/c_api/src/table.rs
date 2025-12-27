@@ -41,9 +41,9 @@ impl wasm_table_t {
     }
 }
 
-/// Returns the [`WasmRef`] respective to the optional [`wasm_ref_t`].
+/// Returns the [`Ref`] respective to the optional [`wasm_ref_t`].
 ///
-/// Returns a `null` [`WasmRef`] if [`wasm_ref_t`] is `None`.
+/// Returns a `null` [`Ref`] if [`wasm_ref_t`] is `None`.
 fn option_wasm_ref_t_to_ref(r: Option<&wasm_ref_t>, table_ty: &TableType) -> Ref {
     r.map(|r| r.inner)
         .unwrap_or_else(|| match table_ty.element() {

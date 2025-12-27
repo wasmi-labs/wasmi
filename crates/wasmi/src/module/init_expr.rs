@@ -35,7 +35,7 @@ pub trait Eval {
 pub trait EvalContext {
     /// Returns the [`Val`] of the global value at `index` if any.
     fn get_global(&self, index: u32) -> Option<Val>;
-    /// Returns the [`Ref`] of the [`Func`] at `index` if any.
+    /// Returns the [`Func`] reference at `index` if any.
     fn get_func(&self, index: u32) -> Option<Nullable<Func>>;
 }
 

@@ -84,7 +84,7 @@ impl TableType {
         self.index_ty
     }
 
-    /// Returns the [`ValType`] of elements stored in the table.
+    /// Returns the [`RefType`] of elements stored in the table.
     pub fn element(&self) -> RefType {
         self.element
     }
