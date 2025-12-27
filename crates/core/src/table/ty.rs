@@ -1,4 +1,4 @@
-use crate::{IndexType, TableError, ValType};
+use crate::{IndexType, TableError};
 
 #[cfg(doc)]
 use crate::Table;
@@ -16,7 +16,7 @@ pub enum RefType {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The type of values stored in the [`Table`].
-    element: ValType,
+    element: RefType,
     /// The minimum number of elements the [`Table`] must have.
     min: u64,
     /// The optional maximum number of elements the [`Table`] can have.
@@ -33,7 +33,7 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new(element: ValType, min: u32, max: Option<u32>) -> Self {
+    pub fn new(element: RefType, min: u32, max: Option<u32>) -> Self {
         Self::new_impl(element, IndexType::I32, u64::from(min), max.map(u64::from))
     }
 
@@ -48,13 +48,13 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new64(element: ValType, min: u64, max: Option<u64>) -> Self {
+    pub fn new64(element: RefType, min: u64, max: Option<u64>) -> Self {
         Self::new_impl(element, IndexType::I64, min, max)
     }
 
     /// Convenience constructor to create a new [`TableType`].
     pub(crate) fn new_impl(
-        element: ValType,
+        element: RefType,
         index_ty: IndexType,
         min: u64,
         max: Option<u64>,
@@ -85,7 +85,7 @@ impl TableType {
     }
 
     /// Returns the [`ValType`] of elements stored in the table.
-    pub fn element(&self) -> ValType {
+    pub fn element(&self) -> RefType {
         self.element
     }
 
@@ -106,7 +106,7 @@ impl TableType {
     /// # Errors
     ///
     /// Returns a [`TableError::ElementTypeMismatch`] otherwise.
-    pub(crate) fn ensure_element_type_matches(&self, ty: ValType) -> Result<(), TableError> {
+    pub(crate) fn ensure_element_type_matches(&self, ty: RefType) -> Result<(), TableError> {
         if self.element() != ty {
             return Err(TableError::ElementTypeMismatch);
         }

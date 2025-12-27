@@ -1,4 +1,4 @@
-use crate::{ReadAs, UntypedVal, WriteAs};
+use crate::{ReadAs, RefType, UntypedVal, WriteAs};
 
 /// An untyped reference value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -47,5 +47,46 @@ impl WriteAs<UntypedRef> for UntypedVal {
     #[inline]
     fn write_as(&mut self, value: UntypedRef) {
         self.write_as(value.bits)
+    }
+}
+
+impl From<TypedRef> for UntypedRef {
+    fn from(typed_ref: TypedRef) -> Self {
+        typed_ref.value
+    }
+}
+
+/// An [`UntypedVal`] with its assumed [`ValType`].
+///
+/// # Note
+///
+/// We explicitly do not make use of the existing [`Val`]
+/// abstraction since [`Val`] is optimized towards being a
+/// user facing type whereas [`TypedVal`] is focusing on
+/// performance and efficiency in computations.
+///
+/// [`Val`]: [`crate::core::Value`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct TypedRef {
+    /// The type of the value.
+    ty: RefType,
+    /// The underlying raw reference.
+    value: UntypedRef,
+}
+
+impl TypedRef {
+    /// Create a new [`TypedRef`].
+    pub fn new(ty: RefType, value: UntypedRef) -> Self {
+        Self { ty, value }
+    }
+
+    /// Returns the [`RefType`] of the [`TypedRef`].
+    pub fn ty(&self) -> RefType {
+        self.ty
+    }
+
+    /// Returns the [`UntypedRef`] of the [`TypedRef`].
+    pub fn untyped(&self) -> UntypedRef {
+        self.value
     }
 }
