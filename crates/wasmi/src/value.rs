@@ -3,6 +3,7 @@ use crate::{
     ExternRef,
     Func,
     Nullable,
+    Ref,
     ValType,
     F32,
     F64,
@@ -189,6 +190,15 @@ impl From<F64> for Val {
     #[inline]
     fn from(val: F64) -> Self {
         Self::F64(val)
+    }
+}
+
+impl From<Ref> for Val {
+    fn from(value: Ref) -> Self {
+        match value {
+            Ref::Func(nullable) => Self::FuncRef(nullable),
+            Ref::Extern(nullable) => Self::ExternRef(nullable),
+        }
     }
 }
 

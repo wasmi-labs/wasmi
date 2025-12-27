@@ -11,7 +11,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{ffi::c_void, ptr, unimplemented};
-use wasmi::{ExternRef, Func, Nullable, Val};
+use wasmi::Ref;
 
 /// `*mut wasm_ref_t` is a reference type (`externref` or `funcref`) for the C API.
 ///
@@ -27,61 +27,19 @@ use wasmi::{ExternRef, Func, Nullable, Val};
 /// regular, non-`repr(C)` `enum` to define `WasmRef`.
 #[derive(Clone)]
 pub struct wasm_ref_t {
-    pub(crate) inner: WasmRef,
+    pub(crate) inner: Ref,
 }
 
 wasmi_c_api_macros::declare_own!(wasm_ref_t);
 
-#[derive(Clone)]
-pub(crate) enum WasmRef {
-    Func(Nullable<Func>),
-    Extern(Nullable<ExternRef>),
-}
-
-impl From<WasmRef> for Val {
-    fn from(value: WasmRef) -> Self {
-        match value {
-            WasmRef::Func(r) => Self::FuncRef(r),
-            WasmRef::Extern(r) => Self::ExternRef(r),
-        }
-    }
-}
-
-impl WasmRef {
-    /// Returns `true` if `self` is a Wasm function reference.
-    pub fn is_func(&self) -> bool {
-        matches!(self, Self::Func(_))
-    }
-
-    /// Returns `true` if `self` is a `null` reference.
-    pub fn is_null(&self) -> bool {
-        match self {
-            WasmRef::Func(r) => r.is_null(),
-            WasmRef::Extern(r) => r.is_null(),
-        }
-    }
-}
-
 impl wasm_ref_t {
     /// Creates a new boxed [`wasm_ref_t`] from the given [`WasmRef`].
-    pub(crate) fn new(r: WasmRef) -> Option<Box<wasm_ref_t>> {
+    pub(crate) fn new(r: Ref) -> Option<Box<wasm_ref_t>> {
         if r.is_null() || !r.is_func() {
             None
         } else {
             Some(Box::new(wasm_ref_t { inner: r }))
         }
-    }
-}
-
-/// Converts the [`wasm_ref_t`] into a Wasmi [`Val`].
-///
-/// # Note
-///
-/// This clones the [`wasm_ref_t`] if necessary and does not consume it.
-pub(crate) fn ref_to_val(r: &wasm_ref_t) -> Val {
-    match r.inner {
-        WasmRef::Func(r) => Val::FuncRef(r),
-        WasmRef::Extern(r) => Val::ExternRef(r),
     }
 }
 

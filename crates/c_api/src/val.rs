@@ -1,15 +1,7 @@
-use crate::{
-    from_valtype,
-    into_valtype,
-    r#ref::ref_to_val,
-    utils,
-    wasm_ref_t,
-    wasm_valkind_t,
-    WasmRef,
-};
+use crate::{from_valtype, into_valtype, utils, wasm_ref_t, wasm_valkind_t};
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
-use wasmi::{Func, Nullable, Val, ValType, F32, F64};
+use wasmi::{Func, Nullable, Ref, Val, ValType, F32, F64};
 
 /// A Wasm value.
 ///
@@ -107,7 +99,7 @@ impl From<Val> for wasm_val_t {
                         match funcref.is_null() {
                             true => ptr::null_mut(),
                             false => Box::into_raw(Box::new(wasm_ref_t {
-                                inner: WasmRef::Func(funcref),
+                                inner: Ref::Func(funcref),
                             })),
                         }
                     },
@@ -134,7 +126,7 @@ impl wasm_val_t {
             wasm_valkind_t::WASM_F64 => Val::from(F64::from(unsafe { self.of.f64 })),
             wasm_valkind_t::WASM_FUNCREF => match unsafe { self.of.ref_ }.is_null() {
                 true => Val::FuncRef(<Nullable<Func>>::Null),
-                false => ref_to_val(unsafe { &*self.of.ref_ }),
+                false => Val::from((unsafe { &*self.of.ref_ }).inner),
             },
             wasm_valkind_t::WASM_EXTERNREF => {
                 core::unreachable!("`wasm_val_t`: cannot contain non-function reference values")

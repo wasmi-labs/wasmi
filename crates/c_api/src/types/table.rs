@@ -53,7 +53,9 @@ impl CTableType {
     pub(crate) fn new(ty: TableType) -> CTableType {
         CTableType {
             ty,
-            element: wasm_valtype_t { ty: ty.element() },
+            element: wasm_valtype_t {
+                ty: ty.element().into(),
+            },
             limits: wasm_limits_t {
                 min: u32::try_from(ty.minimum()).unwrap(),
                 max: ty
@@ -75,7 +77,7 @@ pub extern "C" fn wasm_tabletype_new(
     limits: &wasm_limits_t,
 ) -> Option<Box<wasm_tabletype_t>> {
     Some(Box::new(wasm_tabletype_t::new(TableType::new(
-        ty.ty,
+        ty.ty.as_ref()?,
         limits.min,
         limits.max(),
     ))))
