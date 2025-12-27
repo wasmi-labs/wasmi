@@ -1,13 +1,13 @@
-use crate::{UntypedVal, ValType};
+use crate::{RefType, UntypedRef};
 use alloc::boxed::Box;
 
 /// A Wasm [`ElementSegment`].
 #[derive(Debug)]
 pub struct ElementSegment {
-    /// The [`ValType`] of elements of this [`ElementSegment`].
-    ty: ValType,
+    /// The [`RefType`] of elements of this [`ElementSegment`].
+    ty: RefType,
     /// Pre-resolved items of the Wasm element segment.
-    items: Box<[UntypedVal]>,
+    items: Box<[UntypedRef]>,
 }
 
 impl ElementSegment {
@@ -16,11 +16,11 @@ impl ElementSegment {
     /// # Panics
     ///
     /// If the length of `items` exceeds `u32`.
-    pub fn new<I>(ty: ValType, items: I) -> Self
+    pub fn new<I>(ty: RefType, items: I) -> Self
     where
-        I: IntoIterator<Item = UntypedVal>,
+        I: IntoIterator<Item = UntypedRef>,
     {
-        let items: Box<[UntypedVal]> = items.into_iter().collect();
+        let items: Box<[UntypedRef]> = items.into_iter().collect();
         assert!(
             u32::try_from(items.len()).is_ok(),
             "element segment has too many items: {}",
@@ -34,13 +34,13 @@ impl ElementSegment {
         ElementSegmentRef::from(self)
     }
 
-    /// Returns the [`ValType`] of elements in the [`ElementSegment`].
-    pub fn ty(&self) -> ValType {
+    /// Returns the [`RefType`] of elements in the [`ElementSegment`].
+    pub fn ty(&self) -> RefType {
         self.ty
     }
 
     /// Returns the items of the [`ElementSegment`].
-    pub fn items(&self) -> &[UntypedVal] {
+    pub fn items(&self) -> &[UntypedRef] {
         &self.items[..]
     }
 
@@ -58,10 +58,10 @@ impl ElementSegment {
 /// A shared reference to a Wasm [`ElementSegment`].
 #[derive(Debug, Copy, Clone)]
 pub struct ElementSegmentRef<'a> {
-    /// The [`ValType`] of elements of this [`ElementSegment`].
-    ty: ValType,
+    /// The [`RefType`] of elements of this [`ElementSegment`].
+    ty: RefType,
     /// The items of the Wasm element segment.
-    items: &'a [UntypedVal],
+    items: &'a [UntypedRef],
 }
 
 impl<'a> From<&'a ElementSegment> for ElementSegmentRef<'a> {
@@ -74,13 +74,13 @@ impl<'a> From<&'a ElementSegment> for ElementSegmentRef<'a> {
 }
 
 impl<'a> ElementSegmentRef<'a> {
-    /// Returns the [`ValType`] of elements in the [`ElementSegment`].
-    pub fn ty(self) -> ValType {
+    /// Returns the [`RefType`] of elements in the [`ElementSegment`].
+    pub fn ty(self) -> RefType {
         self.ty
     }
 
     /// Returns the items of the [`ElementSegment`].
-    pub fn items(self) -> &'a [UntypedVal] {
+    pub fn items(self) -> &'a [UntypedRef] {
         self.items
     }
 

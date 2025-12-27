@@ -7,9 +7,9 @@ pub use self::{
     element::{ElementSegment, ElementSegmentRef},
     error::TableError,
     ty::{RefType, TableType},
-    untyped::UntypedRef,
+    untyped::{TypedRef, UntypedRef},
 };
-use crate::{Fuel, FuelError, ResourceLimiterRef, TypedVal, UntypedVal};
+use crate::{Fuel, FuelError, ResourceLimiterRef};
 use alloc::vec::Vec;
 use core::{cmp, iter};
 
@@ -20,7 +20,7 @@ mod tests;
 #[derive(Debug)]
 pub struct Table {
     ty: TableType,
-    elements: Vec<UntypedVal>,
+    elements: Vec<UntypedRef>,
 }
 
 impl Table {
@@ -31,7 +31,7 @@ impl Table {
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(
         ty: TableType,
-        init: TypedVal,
+        init: TypedRef,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
         ty.ensure_element_type_matches(init.ty())?;
@@ -54,7 +54,7 @@ impl Table {
             }
             return Err(error);
         };
-        elements.extend(iter::repeat_n::<UntypedVal>(init.into(), min_size));
+        elements.extend(iter::repeat_n::<UntypedRef>(init.into(), min_size));
         Ok(Self { ty, elements })
     }
 
@@ -102,7 +102,7 @@ impl Table {
     pub fn grow(
         &mut self,
         delta: u64,
-        init: TypedVal,
+        init: TypedRef,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
@@ -126,7 +126,7 @@ impl Table {
     pub fn grow_untyped(
         &mut self,
         delta: u64,
-        init: UntypedVal,
+        init: UntypedRef,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
@@ -190,9 +190,9 @@ impl Table {
     /// Returns the [`Table`] element value at `index`.
     ///
     /// Returns `None` if `index` is out of bounds.
-    pub fn get(&self, index: u64) -> Option<TypedVal> {
+    pub fn get(&self, index: u64) -> Option<TypedRef> {
         let untyped = self.get_untyped(index)?;
-        let value = TypedVal::new(self.ty().element(), untyped);
+        let value = TypedRef::new(self.ty().element(), untyped);
         Some(value)
     }
 
@@ -204,7 +204,7 @@ impl Table {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_untyped(&self, index: u64) -> Option<UntypedVal> {
+    pub fn get_untyped(&self, index: u64) -> Option<UntypedRef> {
         let index = usize::try_from(index).ok()?;
         self.elements.get(index).copied()
     }
@@ -215,7 +215,7 @@ impl Table {
     ///
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
-    pub fn set(&mut self, index: u64, value: TypedVal) -> Result<(), TableError> {
+    pub fn set(&mut self, index: u64, value: TypedRef) -> Result<(), TableError> {
         self.ty().ensure_element_type_matches(value.ty())?;
         self.set_untyped(index, value.into())
     }
@@ -225,7 +225,7 @@ impl Table {
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set_untyped(&mut self, index: u64, value: UntypedVal) -> Result<(), TableError> {
+    pub fn set_untyped(&mut self, index: u64, value: UntypedRef) -> Result<(), TableError> {
         let Some(untyped) = self.elements.get_mut(index as usize) else {
             return Err(TableError::SetOutOfBounds);
         };
@@ -251,11 +251,6 @@ impl Table {
         len: u32,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        let table_type = self.ty();
-        assert!(
-            table_type.element().is_ref(),
-            "table.init currently only works on reftypes"
-        );
         self.ty().ensure_element_type_matches(element.ty())?;
         // Convert parameters to indices.
         let Ok(dst_index) = usize::try_from(dst_index) else {
@@ -392,7 +387,7 @@ impl Table {
     pub fn fill(
         &mut self,
         dst: u64,
-        val: TypedVal,
+        val: TypedRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
@@ -418,7 +413,7 @@ impl Table {
     pub fn fill_untyped(
         &mut self,
         dst: u64,
-        val: UntypedVal,
+        val: UntypedRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
