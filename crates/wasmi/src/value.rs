@@ -2,6 +2,7 @@ use crate::{
     core::{TypedVal, UntypedVal},
     ExternRef,
     Func,
+    Nullable,
     Ref,
     ValType,
     F32,
@@ -74,23 +75,30 @@ pub enum Val {
     /// 128-bit Wasm `simd` proposal vector.
     V128(V128),
     /// A nullable [`Func`] reference.
-    FuncRef(Ref<Func>),
+    FuncRef(Nullable<Func>),
     /// A nullable [`ExternRef`] reference.
-    ExternRef(Ref<ExternRef>),
+    ExternRef(Nullable<ExternRef>),
 }
 
 impl Val {
     /// Creates new default value of given type.
     #[inline]
-    pub fn default(value_type: ValType) -> Self {
-        match value_type {
+    #[deprecated(note = "use `Val::default_for_ty` instead")]
+    pub fn default(ty: ValType) -> Self {
+        Self::default_for_ty(ty)
+    }
+
+    /// Creates new default value of given type.
+    #[inline]
+    pub fn default_for_ty(ty: ValType) -> Self {
+        match ty {
             ValType::I32 => Self::I32(0),
             ValType::I64 => Self::I64(0),
             ValType::F32 => Self::F32(0f32.into()),
             ValType::F64 => Self::F64(0f64.into()),
             ValType::V128 => Self::V128(V128::from(0_u128)),
-            ValType::FuncRef => Self::from(<Ref<Func>>::Null),
-            ValType::ExternRef => Self::from(<Ref<ExternRef>>::Null),
+            ValType::FuncRef => Self::from(<Nullable<Func>>::Null),
+            ValType::ExternRef => Self::from(<Nullable<ExternRef>>::Null),
         }
     }
 
@@ -141,7 +149,7 @@ impl Val {
     }
 
     /// Returns the underlying `funcref` if the type matches otherwise returns `None`.
-    pub fn funcref(&self) -> Option<Ref<&Func>> {
+    pub fn funcref(&self) -> Option<Nullable<&Func>> {
         match self {
             Self::FuncRef(value) => Some(value.as_ref()),
             _ => None,
@@ -149,7 +157,7 @@ impl Val {
     }
 
     /// Returns the underlying `externref` if the type matches otherwise returns `None`.
-    pub fn externref(&self) -> Option<Ref<&ExternRef>> {
+    pub fn externref(&self) -> Option<Nullable<&ExternRef>> {
         match self {
             Self::ExternRef(value) => Some(value.as_ref()),
             _ => None,
@@ -185,30 +193,39 @@ impl From<F64> for Val {
     }
 }
 
+impl From<Ref> for Val {
+    fn from(value: Ref) -> Self {
+        match value {
+            Ref::Func(nullable) => Self::FuncRef(nullable),
+            Ref::Extern(nullable) => Self::ExternRef(nullable),
+        }
+    }
+}
+
 impl From<Func> for Val {
     #[inline]
     fn from(func: Func) -> Self {
-        Self::FuncRef(Ref::Val(func))
+        Self::FuncRef(Nullable::Val(func))
     }
 }
 
 impl From<ExternRef> for Val {
     #[inline]
     fn from(externref: ExternRef) -> Self {
-        Self::ExternRef(Ref::Val(externref))
+        Self::ExternRef(Nullable::Val(externref))
     }
 }
 
-impl From<Ref<Func>> for Val {
+impl From<Nullable<Func>> for Val {
     #[inline]
-    fn from(funcref: Ref<Func>) -> Self {
+    fn from(funcref: Nullable<Func>) -> Self {
         Self::FuncRef(funcref)
     }
 }
 
-impl From<Ref<ExternRef>> for Val {
+impl From<Nullable<ExternRef>> for Val {
     #[inline]
-    fn from(externref: Ref<ExternRef>) -> Self {
+    fn from(externref: Nullable<ExternRef>) -> Self {
         Self::ExternRef(externref)
     }
 }

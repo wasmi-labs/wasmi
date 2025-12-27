@@ -1,4 +1,4 @@
-use crate::{FuncType, GlobalType, MemoryType, Mutability, TableType, ValType};
+use crate::{FuncType, GlobalType, MemoryType, Mutability, RefType, TableType, ValType};
 use wasmparser::AbstractHeapType;
 
 /// Types that can be created from `wasmparser` definitions.
@@ -19,7 +19,7 @@ impl FromWasmparser<wasmparser::TableType> for TableType {
     /// We do not use the `From` trait here so that this conversion
     /// routine does not become part of the public API of [`TableType`].
     fn from_wasmparser(table_type: wasmparser::TableType) -> Self {
-        let element = WasmiValueType::from(table_type.element_type).into_inner();
+        let element = WasmiRefType::from(table_type.element_type).into_inner();
         let minimum: u64 = table_type.initial;
         let maximum: Option<u64> = table_type.maximum;
         match table_type.table64 {
@@ -103,6 +103,54 @@ impl FromWasmparser<&wasmparser::FuncType> for FuncType {
     }
 }
 
+/// A Wasmi [`RefType`].
+///
+/// # Note
+///
+/// This new-type wrapper exists so that we can implement the `From` trait.
+pub struct WasmiRefType {
+    inner: RefType,
+}
+
+impl WasmiRefType {
+    /// Returns the inner [`RefType`].
+    pub fn into_inner(self) -> RefType {
+        self.inner
+    }
+}
+
+impl From<RefType> for WasmiRefType {
+    fn from(inner: RefType) -> Self {
+        Self { inner }
+    }
+}
+
+impl From<wasmparser::HeapType> for WasmiRefType {
+    fn from(heap_type: wasmparser::HeapType) -> Self {
+        match heap_type {
+            wasmparser::HeapType::Abstract {
+                shared: false,
+                ty: AbstractHeapType::Func,
+            } => Self::from(RefType::Func),
+            wasmparser::HeapType::Abstract {
+                shared: false,
+                ty: AbstractHeapType::Extern,
+            } => Self::from(RefType::Extern),
+            unsupported => panic!("encountered unsupported heap type: {unsupported:?}"),
+        }
+    }
+}
+
+impl From<wasmparser::RefType> for WasmiRefType {
+    fn from(ref_type: wasmparser::RefType) -> Self {
+        match ref_type {
+            wasmparser::RefType::FUNCREF => Self::from(RefType::Func),
+            wasmparser::RefType::EXTERNREF => Self::from(RefType::Extern),
+            unsupported => panic!("encountered unsupported reference type: {unsupported:?}"),
+        }
+    }
+}
+
 /// A Wasmi [`ValType`].
 ///
 /// # Note
@@ -127,27 +175,13 @@ impl From<ValType> for WasmiValueType {
 
 impl From<wasmparser::HeapType> for WasmiValueType {
     fn from(heap_type: wasmparser::HeapType) -> Self {
-        match heap_type {
-            wasmparser::HeapType::Abstract {
-                shared: false,
-                ty: AbstractHeapType::Func,
-            } => Self::from(ValType::FuncRef),
-            wasmparser::HeapType::Abstract {
-                shared: false,
-                ty: AbstractHeapType::Extern,
-            } => Self::from(ValType::ExternRef),
-            unsupported => panic!("encountered unsupported heap type: {unsupported:?}"),
-        }
+        Self::from(ValType::from(WasmiRefType::from(heap_type).into_inner()))
     }
 }
 
 impl From<wasmparser::RefType> for WasmiValueType {
     fn from(ref_type: wasmparser::RefType) -> Self {
-        match ref_type {
-            wasmparser::RefType::FUNCREF => Self::from(ValType::FuncRef),
-            wasmparser::RefType::EXTERNREF => Self::from(ValType::ExternRef),
-            unsupported => panic!("encountered unsupported reference type: {unsupported:?}"),
-        }
+        Self::from(ValType::from(WasmiRefType::from(ref_type).into_inner()))
     }
 }
 
@@ -159,7 +193,7 @@ impl From<wasmparser::ValType> for WasmiValueType {
             wasmparser::ValType::F32 => Self::from(ValType::F32),
             wasmparser::ValType::F64 => Self::from(ValType::F64),
             wasmparser::ValType::V128 => Self::from(ValType::V128),
-            wasmparser::ValType::Ref(ref_type) => WasmiValueType::from(ref_type),
+            wasmparser::ValType::Ref(ref_type) => Self::from(ref_type),
         }
     }
 }

@@ -928,28 +928,29 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
     c.bench_function("overhead/call/untyped/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance.get_func(&store, "bare_call/16").unwrap();
-        let params = &[
-            Val::default(ValType::I32),
-            Val::default(ValType::I64),
-            Val::default(ValType::F32),
-            Val::default(ValType::F64),
-            Val::default(ValType::I32),
-            Val::default(ValType::I64),
-            Val::default(ValType::F32),
-            Val::default(ValType::F64),
-            Val::default(ValType::I32),
-            Val::default(ValType::I64),
-            Val::default(ValType::F32),
-            Val::default(ValType::F64),
-            Val::default(ValType::I32),
-            Val::default(ValType::I64),
-            Val::default(ValType::F32),
-            Val::default(ValType::F64),
-        ];
+        let params = [
+            ValType::I32,
+            ValType::I64,
+            ValType::F32,
+            ValType::F64,
+            ValType::I32,
+            ValType::I64,
+            ValType::F32,
+            ValType::F64,
+            ValType::I32,
+            ValType::I64,
+            ValType::F32,
+            ValType::F64,
+            ValType::I32,
+            ValType::I64,
+            ValType::F32,
+            ValType::F64,
+        ]
+        .map(Val::default_for_ty);
         let results = &mut [0; 16].map(Val::I32);
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                bare_call.call(&mut store, params, results).unwrap();
+                bare_call.call(&mut store, &params, results).unwrap();
             }
         })
     });

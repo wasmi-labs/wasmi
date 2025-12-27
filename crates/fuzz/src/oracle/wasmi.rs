@@ -104,7 +104,7 @@ impl DifferentialOracle for WasmiOracle {
         self.results.clear();
         self.params.extend(params.iter().cloned().map(Val::from));
         self.results
-            .extend(ty.results().iter().copied().map(Val::default));
+            .extend(ty.results().iter().copied().map(Val::default_for_ty));
         func.call(&mut self.store, &self.params[..], &mut self.results[..])
             .map_err(FuzzError::from)?;
         let results = self.results.iter().cloned().map(FuzzVal::from).collect();

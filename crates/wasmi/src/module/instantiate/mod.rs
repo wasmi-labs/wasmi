@@ -25,9 +25,9 @@ use crate::{
     InstanceEntity,
     InstanceEntityBuilder,
     Memory,
+    Nullable,
     Ref,
     Table,
-    Val,
 };
 
 impl Module {
@@ -222,7 +222,7 @@ impl Module {
             return Err(InstantiationError::TooManyTables);
         }
         for table_type in self.internal_tables().copied() {
-            let init = Val::default(table_type.element());
+            let init = Ref::default_for_ty(table_type.element());
             let table =
                 Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
                     let error = match error.kind() {
@@ -291,7 +291,7 @@ impl Module {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),
-                |func_index| <Ref<Func>>::from(builder.get_func(func_index)),
+                |func_index| <Nullable<Func>>::from(builder.get_func(func_index)),
             )
             .expect("must evaluate to proper value")
     }

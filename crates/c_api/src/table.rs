@@ -1,7 +1,7 @@
-use crate::{wasm_extern_t, wasm_ref_t, wasm_store_t, wasm_tabletype_t, WasmRef};
+use crate::{wasm_extern_t, wasm_ref_t, wasm_store_t, wasm_tabletype_t};
 use alloc::boxed::Box;
 use core::hint;
-use wasmi::{Extern, ExternRef, Func, Ref, Table, TableType};
+use wasmi::{Extern, ExternRef, Func, Nullable, Ref, Table, TableType};
 
 /// A Wasm table.
 ///
@@ -41,15 +41,14 @@ impl wasm_table_t {
     }
 }
 
-/// Returns the [`WasmRef`] respective to the optional [`wasm_ref_t`].
+/// Returns the [`Ref`] respective to the optional [`wasm_ref_t`].
 ///
-/// Returns a `null` [`WasmRef`] if [`wasm_ref_t`] is `None`.
-fn option_wasm_ref_t_to_ref(r: Option<&wasm_ref_t>, table_ty: &TableType) -> WasmRef {
-    r.map(|r| r.inner.clone())
+/// Returns a `null` [`Ref`] if [`wasm_ref_t`] is `None`.
+fn option_wasm_ref_t_to_ref(r: Option<&wasm_ref_t>, table_ty: &TableType) -> Ref {
+    r.map(|r| r.inner)
         .unwrap_or_else(|| match table_ty.element() {
-            wasmi::ValType::FuncRef => WasmRef::Func(<Ref<Func>>::Null),
-            wasmi::ValType::ExternRef => WasmRef::Extern(<Ref<ExternRef>>::Null),
-            invalid => panic!("encountered invalid table type: {invalid:?}"),
+            wasmi::RefType::Func => Ref::Func(<Nullable<Func>>::Null),
+            wasmi::RefType::Extern => Ref::Extern(<Nullable<ExternRef>>::Null),
         })
 }
 
@@ -70,7 +69,7 @@ pub unsafe extern "C" fn wasm_table_new(
 ) -> Option<Box<wasm_table_t>> {
     let tt = tt.ty().ty;
     let init = option_wasm_ref_t_to_ref(init, &tt);
-    let table = Table::new(store.inner.context_mut(), tt, init.into()).ok()?;
+    let table = Table::new(store.inner.context_mut(), tt, init).ok()?;
     Some(Box::new(wasm_table_t {
         inner: wasm_extern_t {
             store: store.inner.clone(),
@@ -111,12 +110,7 @@ pub unsafe extern "C" fn wasm_table_get(
 ) -> Option<Box<wasm_ref_t>> {
     let table = t.table();
     let value = table.get(t.inner.store.context_mut(), u64::from(index))?;
-    let wasm_ref = match value {
-        wasmi::Val::FuncRef(r) => WasmRef::Func(r),
-        wasmi::Val::ExternRef(r) => WasmRef::Extern(r),
-        invalid => panic!("encountered invalid value in table at {index}: {invalid:?}"),
-    };
-    wasm_ref_t::new(wasm_ref)
+    wasm_ref_t::new(value)
 }
 
 /// Sets the value of the element at `index` of [`wasm_table_t`] to `new_value`.
@@ -137,11 +131,7 @@ pub unsafe extern "C" fn wasm_table_set(
     let table = t.table();
     let new_value = option_wasm_ref_t_to_ref(new_value, &table.ty(t.inner.store.context()));
     table
-        .set(
-            t.inner.store.context_mut(),
-            u64::from(index),
-            new_value.into(),
-        )
+        .set(t.inner.store.context_mut(), u64::from(index), new_value)
         .is_ok()
 }
 
@@ -181,7 +171,7 @@ pub unsafe extern "C" fn wasm_table_grow(
     let table = t.table();
     let init = option_wasm_ref_t_to_ref(init, &table.ty(t.inner.store.context()));
     table
-        .grow(t.inner.store.context_mut(), u64::from(delta), init.into())
+        .grow(t.inner.store.context_mut(), u64::from(delta), init)
         .is_ok()
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     core::{CoreTableType, IndexType},
-    ValType,
+    RefType,
 };
 
 /// A Wasm table descriptor.
@@ -15,7 +15,7 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new(element: ValType, min: u32, max: Option<u32>) -> Self {
+    pub fn new(element: RefType, min: u32, max: Option<u32>) -> Self {
         let core = CoreTableType::new(element, min, max);
         Self { core }
     }
@@ -31,7 +31,7 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new64(element: ValType, min: u64, max: Option<u64>) -> Self {
+    pub fn new64(element: RefType, min: u64, max: Option<u64>) -> Self {
         let core = CoreTableType::new64(element, min, max);
         Self { core }
     }
@@ -48,8 +48,8 @@ impl TableType {
         self.core.index_ty()
     }
 
-    /// Returns the [`ValType`] of elements stored in the table.
-    pub fn element(&self) -> ValType {
+    /// Returns the [`RefType`] of elements stored in the table.
+    pub fn element(&self) -> RefType {
         self.core.element()
     }
 

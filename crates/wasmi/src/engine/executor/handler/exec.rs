@@ -14,7 +14,7 @@ use super::{
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
-    core::{wasm, CoreTable, UntypedVal},
+    core::{wasm, CoreTable, UntypedRef, UntypedVal},
     engine::{
         executor::handler::{
             dispatch::Break,
@@ -59,7 +59,7 @@ use crate::{
     ir::{self, index, Slot, SlotSpan},
     store::StoreError,
     Func,
-    Ref,
+    Nullable,
     TrapCode,
 };
 use core::cmp;
@@ -813,7 +813,7 @@ pub fn table_fill(
     ) = unsafe { decode_op(ip) };
     let dst: u64 = get_value(dst, sp);
     let len: u64 = get_value(len, sp);
-    let value: UntypedVal = get_value(value, sp);
+    let value: UntypedRef = get_value(value, sp);
     let table = fetch_table(instance, table);
     let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
     if let Err(error) = table.fill_untyped(dst, value, len, Some(fuel)) {
@@ -935,7 +935,7 @@ macro_rules! impl_table_set {
                 let table = resolve_table_mut(state.store, &table);
                 let index = $ext(get_value(index, sp));
                 let value: u64 = get_value(value, sp);
-                if let Err(TableError::SetOutOfBounds) = table.set_untyped(index, UntypedVal::from(value)) {
+                if let Err(TableError::SetOutOfBounds) = table.set_untyped(index, UntypedRef::from(value)) {
                     trap!(TrapCode::TableOutOfBounds)
                 };
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
@@ -961,7 +961,7 @@ pub fn ref_func(
 ) -> Done {
     let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let funcref = <Ref<Func>>::from(func);
+    let funcref = <Nullable<Func>>::from(func);
     set_value(sp, result, funcref);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }

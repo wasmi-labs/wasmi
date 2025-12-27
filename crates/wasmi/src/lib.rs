@@ -129,8 +129,10 @@ mod core {
         Table as CoreTable,
         TableType as CoreTableType,
         Typed,
+        TypedRef,
         TypedVal,
         UntypedError,
+        UntypedRef,
         UntypedVal,
         WriteAs,
     };
@@ -199,7 +201,7 @@ pub use self::{
         ModuleImportsIter,
         Read,
     },
-    reftype::{ExternRef, Ref},
+    reftype::{ExternRef, Nullable, Ref},
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Val,
@@ -212,4 +214,14 @@ use self::{
     store::Stored,
     table::{ElementSegment, ElementSegmentIdx, TableIdx},
 };
-pub use wasmi_core::{GlobalType, Mutability, ResourceLimiter, TrapCode, ValType, F32, F64, V128};
+pub use wasmi_core::{
+    GlobalType,
+    Mutability,
+    RefType,
+    ResourceLimiter,
+    TrapCode,
+    ValType,
+    F32,
+    F64,
+    V128,
+};
