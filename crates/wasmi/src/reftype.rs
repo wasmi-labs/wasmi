@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::{ReadAs, UntypedVal, WriteAs},
+    core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
     store::Stored,
     AsContextMut,
     Func,
@@ -148,6 +148,25 @@ pub enum Ref {
     Extern(Nullable<ExternRef>),
 }
 
+impl From<TypedRef> for Ref {
+    fn from(value: TypedRef) -> Self {
+        let untyped = value.untyped();
+        match value.ty() {
+            RefType::Func => Self::Func(untyped.into()),
+            RefType::Extern => Self::Extern(untyped.into()),
+        }
+    }
+}
+
+impl From<Ref> for TypedRef {
+    fn from(value: Ref) -> Self {
+        match value {
+            Ref::Func(nullable) => nullable.into(),
+            Ref::Extern(nullable) => nullable.into(),
+        }
+    }
+}
+
 impl WriteAs<Ref> for UntypedVal {
     fn write_as(&mut self, value: Ref) {
         match value {
@@ -257,10 +276,9 @@ impl Ref {
     ///
     /// If `self` is another kind of reference.
     #[inline]
-    pub fn unwrap_func(&self) -> Option<&Func> {
+    pub fn unwrap_func(&self) -> Nullable<&Func> {
         self.as_func()
             .expect("`Ref::unwrap_func` on non-func reference")
-            .into()
     }
 }
 
@@ -372,7 +390,7 @@ fn funcref_null_to_zero() {
 }
 
 macro_rules! impl_conversions {
-    ( $( $reftype:ty ),* $(,)? ) => {
+    ( $( $reftype:ty: $ty:ident ),* $(,)? ) => {
         $(
             impl ReadAs<$reftype> for UntypedVal {
                 fn read_as(&self) -> $reftype {
@@ -413,28 +431,60 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<$reftype> for UntypedVal {
-                fn from(reftype: $reftype) -> Self {
-                    let mut val = UntypedVal::from(0_u64);
-                    val.write_as(reftype);
-                    val
+            impl From<Nullable<$reftype>> for UntypedVal {
+                fn from(reftype: Nullable<$reftype>) -> Self {
+                    UntypedRef::from(reftype).into()
                 }
             }
 
-            impl From<Nullable<$reftype>> for UntypedVal {
+            impl From<UntypedRef> for Nullable<$reftype> {
+                fn from(value: UntypedRef) -> Self {
+                    let bits = u64::from(value);
+                    if bits == 0 {
+                        return <Nullable<$reftype>>::Null;
+                    }
+                    let value = unsafe { mem::transmute::<u64, $reftype>(bits) };
+                    Nullable::Val(value)
+                }
+            }
+
+            impl From<$reftype> for UntypedRef {
+                fn from(reftype: $reftype) -> Self {
+                    let bits = unsafe { mem::transmute::<$reftype, u64>(reftype) };
+                    Self::from(bits)
+                }
+            }
+
+            impl From<Nullable<$reftype>> for UntypedRef {
                 fn from(reftype: Nullable<$reftype>) -> Self {
                     match reftype {
-                        Nullable::Val(reftype) => UntypedVal::from(reftype),
-                        Nullable::Null => UntypedVal::from(0_u64),
+                        Nullable::Val(reftype) => UntypedRef::from(reftype),
+                        Nullable::Null => UntypedRef::from(0_u64),
                     }
+                }
+            }
+
+            impl From<$reftype> for TypedRef {
+                fn from(value: $reftype) -> Self {
+                    let ty = RefType::$ty;
+                    let value = UntypedRef::from(value);
+                    TypedRef::new(ty, value)
+                }
+            }
+
+            impl From<Nullable<$reftype>> for TypedRef {
+                fn from(value: Nullable<$reftype>) -> Self {
+                    let ty = RefType::$ty;
+                    let value = UntypedRef::from(value);
+                    TypedRef::new(ty, value)
                 }
             }
         )*
     };
 }
 impl_conversions! {
-    ExternRef,
-    Func,
+    ExternRef: Extern,
+    Func: Func,
 }
 
 #[cfg(test)]

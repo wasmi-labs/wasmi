@@ -26,8 +26,8 @@ use crate::{
     InstanceEntityBuilder,
     Memory,
     Nullable,
+    Ref,
     Table,
-    Val,
 };
 
 impl Module {
@@ -222,7 +222,7 @@ impl Module {
             return Err(InstantiationError::TooManyTables);
         }
         for table_type in self.internal_tables().copied() {
-            let init = Val::default_for_ty(table_type.element());
+            let init = Ref::default_for_ty(table_type.element());
             let table =
                 Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
                     let error = match error.kind() {
