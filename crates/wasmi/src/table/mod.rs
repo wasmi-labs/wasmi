@@ -3,7 +3,7 @@ pub use self::{
     ty::TableType,
 };
 use super::{AsContext, AsContextMut, Stored};
-use crate::{collections::arena::ArenaIndex, core::CoreTable, errors::TableError, Error, Val};
+use crate::{collections::arena::ArenaIndex, core::CoreTable, errors::TableError, Error, Ref};
 
 mod element;
 mod ty;
@@ -46,7 +46,7 @@ impl Table {
     /// # Errors
     ///
     /// If `init` does not match the [`TableType`] element type.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Val) -> Result<Self, Error> {
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, Error> {
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
@@ -101,7 +101,7 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`Val`].
+    /// The newly added elements are initialized to the `init` [`Ref`].
     ///
     /// # Errors
     ///
@@ -115,7 +115,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         delta: u64,
-        init: Val,
+        init: Ref,
     ) -> Result<u64, TableError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
@@ -132,16 +132,16 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn get(&self, ctx: impl AsContext, index: u64) -> Option<Val> {
+    pub fn get(&self, ctx: impl AsContext, index: u64) -> Option<Ref> {
         ctx.as_context()
             .store
             .inner
             .resolve_table(self)
             .get(index)
-            .map(Val::from)
+            .map(Ref::from)
     }
 
-    /// Sets the [`Val`] of this [`Table`] at `index`.
+    /// Sets the [`Ref`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
@@ -155,7 +155,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         index: u64,
-        value: Val,
+        value: Ref,
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
@@ -235,7 +235,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         dst: u64,
-        val: Val,
+        val: Ref,
         len: u64,
     ) -> Result<(), TableError> {
         ctx.as_context_mut()

@@ -1878,7 +1878,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index_ty = table_type.index_ty();
         let index = self.make_index32_or_copy(index, index_ty)?;
         self.push_instr_with_result(
-            item_ty,
+            item_ty.into(),
             |result| match index {
                 Input::Slot(index) => Op::table_get_ss(result, index, table),
                 Input::Immediate(index) => Op::table_get_si(result, index, table),

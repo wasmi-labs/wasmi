@@ -129,8 +129,10 @@ mod core {
         Table as CoreTable,
         TableType as CoreTableType,
         Typed,
+        TypedRef,
         TypedVal,
         UntypedError,
+        UntypedRef,
         UntypedVal,
         WriteAs,
     };

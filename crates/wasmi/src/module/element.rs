@@ -1,5 +1,5 @@
 use super::{ConstExpr, TableIdx};
-use crate::ValType;
+use crate::RefType;
 use alloc::boxed::Box;
 
 /// A table element segment within a [`Module`].
@@ -10,7 +10,7 @@ pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
     /// The type of elements of the [`ElementSegment`].
-    ty: ValType,
+    ty: RefType,
     /// The items of the [`ElementSegment`].
     items: Box<[ConstExpr]>,
 }
@@ -79,12 +79,12 @@ impl From<wasmparser::Element<'_>> for ElementSegment {
                     })
                     .map(ConstExpr::new_funcref)
                     .collect::<Box<[_]>>();
-                (items, ValType::FuncRef)
+                (items, RefType::Func)
             }
             wasmparser::ElementItems::Expressions(ref_ty, items) => {
                 let ty = match ref_ty {
-                    ty if ty.is_func_ref() => ValType::FuncRef,
-                    ty if ty.is_extern_ref() => ValType::ExternRef,
+                    ty if ty.is_func_ref() => RefType::Func,
+                    ty if ty.is_extern_ref() => RefType::Extern,
                     _ => panic!("unsupported Wasm reference type"),
                 };
                 let items = items
@@ -107,8 +107,8 @@ impl ElementSegment {
         &self.kind
     }
 
-    /// Returns the [`ValType`] of the [`ElementSegment`].
-    pub fn ty(&self) -> ValType {
+    /// Returns the [`RefType`] of the [`ElementSegment`].
+    pub fn ty(&self) -> RefType {
         self.ty
     }
 

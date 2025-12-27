@@ -9,11 +9,12 @@ use crate::{
     MemoryType,
     Mutability,
     Nullable,
+    Ref,
+    RefType,
     Store,
     TableType,
     TrapCode,
     Val,
-    ValType,
 };
 
 #[test]
@@ -91,8 +92,8 @@ fn instantiate_with_imports_and_start() {
     let m = Memory::new(&mut store, MemoryType::new(1, None)).unwrap();
     let t = Table::new(
         &mut store,
-        TableType::new(ValType::FuncRef, 1, None),
-        Val::from(<Nullable<Func>>::Null),
+        TableType::new(RefType::Func, 1, None),
+        Ref::from(<Nullable<Func>>::Null),
     )
     .unwrap();
     let f = Func::wrap(&mut store, |mut caller: Caller<i32>, a: i32| {
@@ -109,7 +110,7 @@ fn instantiate_with_imports_and_start() {
     let _instance = Instance::new(&mut store, &module, &externals).unwrap();
     assert_eq!(g.get(&store).i32(), Some(1));
     assert_eq!(m.data(&store)[0], 0x01_u8);
-    assert!(!t.get(&store, 0).unwrap().funcref().unwrap().is_null());
+    assert!(!t.get(&store, 0).unwrap().unwrap_func().is_null());
     assert_eq!(store.data(), &1);
 }
 
@@ -173,8 +174,8 @@ fn instantiate_with_invalid_table_import() {
     let mut store = Store::new(&engine, ());
     let t = Table::new(
         &mut store,
-        TableType::new(ValType::ExternRef, 1, None),
-        Val::from(<Nullable<ExternRef>>::Null),
+        TableType::new(RefType::Extern, 1, None),
+        Ref::from(<Nullable<ExternRef>>::Null),
     )
     .unwrap();
     let externals = [Extern::from(t)].map(Extern::from);
