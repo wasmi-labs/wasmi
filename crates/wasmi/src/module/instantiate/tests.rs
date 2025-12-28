@@ -16,11 +16,11 @@ use crate::{
     Memory,
     MemoryType,
     Module,
+    Ref,
+    RefType,
     Store,
     Table,
     TableType,
-    Val,
-    ValType,
 };
 
 fn try_instantiate_from_wat(wasm: &str) -> Result<(Store<()>, Instance), Error> {
@@ -33,8 +33,8 @@ fn try_instantiate_from_wat(wasm: &str) -> Result<(Store<()>, Instance), Error> 
     let memory = Memory::new(&mut store, memory_type)?;
     linker.define("env", "memory", memory)?;
     // Define one table that can be used by the tests as import.
-    let table_type = TableType::new(ValType::FuncRef, 4, None);
-    let init = Val::default(table_type.element());
+    let table_type = TableType::new(RefType::Func, 4, None);
+    let init = Ref::default_for_ty(table_type.element());
     let table = Table::new(&mut store, table_type, init)?;
     linker.define("env", "table", table)?;
     let instance = linker.instantiate_and_start(&mut store, &module)?;

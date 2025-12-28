@@ -1,4 +1,4 @@
-use crate::{hint::unlikely, TrapCode};
+use crate::{hint::unlikely, RefType, TrapCode};
 
 /// Type of a value.
 ///
@@ -37,6 +37,25 @@ impl ValType {
     /// This is `true` for [`ValType::FuncRef`] and [`ValType::ExternRef`].
     pub fn is_ref(&self) -> bool {
         matches!(self, Self::ExternRef | Self::FuncRef)
+    }
+
+    /// Returns the underlying [`RefType`], if `self` is a reference type.
+    pub fn as_ref(&self) -> Option<RefType> {
+        let ty = match self {
+            ValType::FuncRef => RefType::Func,
+            ValType::ExternRef => RefType::Extern,
+            _ => return None,
+        };
+        Some(ty)
+    }
+}
+
+impl From<RefType> for ValType {
+    fn from(ty: RefType) -> Self {
+        match ty {
+            RefType::Func => Self::FuncRef,
+            RefType::Extern => Self::ExternRef,
+        }
     }
 }
 

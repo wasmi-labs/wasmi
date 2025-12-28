@@ -18,7 +18,7 @@ use crate::{
     Func,
     FuncType,
     Mutability,
-    Ref,
+    Nullable,
     TrapCode,
     ValType,
     F32,
@@ -1803,8 +1803,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
-            ValType::FuncRef => TypedVal::from(<Ref<Func>>::Null),
-            ValType::ExternRef => TypedVal::from(<Ref<ExternRef>>::Null),
+            ValType::FuncRef => TypedVal::from(<Nullable<Func>>::Null),
+            ValType::ExternRef => TypedVal::from(<Nullable<ExternRef>>::Null),
             ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
         };
         self.stack.push_immediate(null)?;
@@ -1832,8 +1832,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Operand::Immediate(input) => {
                 let untyped = input.val().untyped();
                 let is_null = match input.ty() {
-                    ValType::FuncRef => <Ref<Func>>::from(untyped).is_null(),
-                    ValType::ExternRef => <Ref<ExternRef>>::from(untyped).is_null(),
+                    ValType::FuncRef => <Nullable<Func>>::from(untyped).is_null(),
+                    ValType::ExternRef => <Nullable<ExternRef>>::from(untyped).is_null(),
                     invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
                 };
                 self.stack.push_immediate(i32::from(is_null))?;
@@ -1878,7 +1878,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index_ty = table_type.index_ty();
         let index = self.make_index32_or_copy(index, index_ty)?;
         self.push_instr_with_result(
-            item_ty,
+            item_ty.into(),
             |result| match index {
                 Input::Slot(index) => Op::table_get_ss(result, index, table),
                 Input::Immediate(index) => Op::table_get_si(result, index, table),

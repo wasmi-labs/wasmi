@@ -3,7 +3,7 @@ use crate::{
     ir::Sign,
     ExternRef,
     Func,
-    Ref,
+    Nullable,
     ValType,
 };
 use core::{convert::identity, num::NonZero};
@@ -35,8 +35,8 @@ macro_rules! impl_typed_for {
     };
 }
 impl_typed_for! {
-    Ref<Func> as FuncRef,
-    Ref<ExternRef> as ExternRef,
+    Nullable<Func> as FuncRef,
+    Nullable<ExternRef> as ExternRef,
 }
 
 /// A WebAssembly integer. Either `i32` or `i64`.

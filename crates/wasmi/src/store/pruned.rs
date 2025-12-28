@@ -1,6 +1,6 @@
 use super::{typeid, CallHooks, FuncInOut, StoreInner};
 use crate::{
-    core::{hint, UntypedVal},
+    core::{hint, UntypedRef},
     engine::Inst,
     errors::{MemoryError, TableError},
     func::Trampoline,
@@ -46,7 +46,7 @@ pub struct PrunedStoreVTable {
         &mut PrunedStore,
         table: &Table,
         delta: u64,
-        init: UntypedVal,
+        init: UntypedRef,
     ) -> Result<u64, StoreError<TableError>>,
 }
 impl PrunedStoreVTable {
@@ -86,7 +86,7 @@ impl PrunedStoreVTable {
             grow_table: |pruned: &mut PrunedStore,
                          table: &Table,
                          delta: u64,
-                         init: UntypedVal|
+                         init: UntypedRef|
              -> Result<u64, StoreError<TableError>> {
                 let store: &mut Store<T> = pruned.restore()?;
                 let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
@@ -127,7 +127,7 @@ impl PrunedStoreVTable {
         pruned: &mut PrunedStore,
         table: &Table,
         delta: u64,
-        init: UntypedVal,
+        init: UntypedRef,
     ) -> Result<u64, StoreError<TableError>> {
         (self.grow_table)(pruned, table, delta, init)
     }
@@ -226,7 +226,7 @@ impl PrunedStore {
         &mut self,
         table: &Table,
         delta: u64,
-        init: UntypedVal,
+        init: UntypedRef,
     ) -> Result<u64, StoreError<TableError>> {
         self.pruned
             .restore_pruned
