@@ -201,6 +201,7 @@ macro_rules! foreach_test {
             fn wasmi_call_indirect("wasmi/tests/call-indirect");
             fn wasmi_return_call("wasmi/tests/return-call");
             fn wasmi_return_call_indirect("wasmi/tests/return-call-indirect");
+            fn wasmi_global_set("wasmi/tests/global-set");
             // Wasmi: binary operators
             fn wasmi_i32_add("wasmi/tests/op/i32-add");
             fn wasmi_i32_sub("wasmi/tests/op/i32-sub");
