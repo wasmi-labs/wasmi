@@ -434,7 +434,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::I64 => Op::global_set64(u64::from(value), global),
             ValType::F32 => Op::global_set32(global, f32::from(value).to_bits()),
             ValType::F64 => Op::global_set64(f64::from(value).to_bits(), global),
-            ValType::FuncRef | ValType::ExternRef => Op::global_set64(u64::from(value.untyped()), global),
+            ValType::FuncRef | ValType::ExternRef => {
+                Op::global_set64(u64::from(value.untyped()), global)
+            }
             ValType::V128 => {
                 let consume_fuel = self.stack.consume_fuel_instr();
                 let temp = self.copy_operand_to_temp(input, consume_fuel)?;
