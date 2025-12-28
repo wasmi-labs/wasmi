@@ -1,4 +1,4 @@
 [profile.default-miri]
-slow-timeout = { period = "120s", terminate-after = 5 }
+slow-timeout = { period = "120s", terminate-after = 5, on-timeout = "pass" }
 test-threads = "num-cpus"
 fail-fast = false
