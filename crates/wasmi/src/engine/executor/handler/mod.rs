@@ -2,6 +2,7 @@
 mod dispatch;
 #[macro_use]
 mod utils;
+mod cell;
 mod eval;
 mod exec;
 mod func;
