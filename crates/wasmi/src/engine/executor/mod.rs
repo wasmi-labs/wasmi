@@ -1,12 +1,22 @@
 pub use self::handler::{op_code_to_handler, Inst, Stack};
 use super::code_map::CodeMap;
+#[expect(unused_imports)] // TODO: remove
 use crate::{
     engine::{
         executor::handler::{
             init_host_func_call,
             init_wasm_func_call,
+            load_from_cells,
+            load_from_cells_into,
             resume_wasm_func_call,
+            store_to_cells,
+            Cell,
+            CellError,
+            CellsReader,
+            CellsWriter,
             ExecutionOutcome,
+            LoadFromCells,
+            StoreToCells,
         },
         CallParams,
         CallResults,
