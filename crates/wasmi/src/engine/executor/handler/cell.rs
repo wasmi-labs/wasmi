@@ -1,4 +1,4 @@
-#![allow(dead_code)] // TODO: remove
+#![expect(dead_code)] // TODO: remove
 
 use crate::{core::UntypedRef, ExternRef, Func, Nullable, Val, F32, F64, V128};
 use core::{convert::identity, mem};
