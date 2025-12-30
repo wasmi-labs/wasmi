@@ -1,6 +1,6 @@
 #![expect(dead_code)] // TODO: remove
 
-use crate::core::UntypedVal;
+use crate::engine::executor::Cell;
 use core::{cmp::max, marker::PhantomData};
 
 /// Type states of [`InOut`].
@@ -15,16 +15,16 @@ pub mod state {
 #[derive(Debug, Copy, Clone)]
 pub enum InOutError {
     /// Raised in [`InOut::new`] when `cells`, `len_params` and `len_results` do not match.
-    UntypedValsOutOfBounds,
+    CellsOutOfBounds,
     /// Raised in [`InOut::results`] when `results` and `len_results` do not match.
     LenResultsMismatch,
 }
 
-/// Wrapper around a slice of [`UntypedVal`]s to manage reading parameters and writing results of a function call.
+/// Wrapper around a slice of [`Cell`]s to manage reading parameters and writing results of a function call.
 #[derive(Debug)]
 pub struct InOut<'cells, State> {
     /// The underlying slice of cells used for both parameters and results.
-    cells: &'cells mut [UntypedVal],
+    cells: &'cells mut [Cell],
     /// The number of cells used for parameters.
     ///
     /// # Note
@@ -48,12 +48,12 @@ impl<'cells> InOut<'cells, state::GetParams> {
     ///
     /// If max(len_params, len_results) is not equal to `cells.len()`.
     pub fn new(
-        cells: &'cells mut [UntypedVal],
+        cells: &'cells mut [Cell],
         len_params: usize,
         len_results: usize,
     ) -> Result<Self, InOutError> {
         if max(len_params, len_results) != cells.len() {
-            return Err(InOutError::UntypedValsOutOfBounds);
+            return Err(InOutError::CellsOutOfBounds);
         }
         Ok(Self {
             cells,
@@ -63,8 +63,8 @@ impl<'cells> InOut<'cells, state::GetParams> {
         })
     }
 
-    /// Returns the slice of [`UntypedVal`] parameters.
-    pub fn params(&self) -> &[UntypedVal] {
+    /// Returns the slice of [`Cell`] parameters.
+    pub fn params(&self) -> &[Cell] {
         &self.cells[..self.len_params]
     }
 
@@ -75,7 +75,7 @@ impl<'cells> InOut<'cells, state::GetParams> {
     /// If the number of items in `results` does not match the expected number.
     pub fn set_results(
         self,
-        results: &[UntypedVal],
+        results: &[Cell],
     ) -> Result<InOut<'cells, state::GetResults>, InOutError> {
         if results.len() != self.len_results {
             return Err(InOutError::LenResultsMismatch);
@@ -91,8 +91,8 @@ impl<'cells> InOut<'cells, state::GetParams> {
 }
 
 impl<'cells> InOut<'cells, state::GetResults> {
-    /// Returns the slice of [`UntypedVal`] results.
-    pub fn results(&self) -> &[UntypedVal] {
+    /// Returns the slice of [`Cell`] results.
+    pub fn results(&self) -> &[Cell] {
         &self.cells[..self.len_results]
     }
 }
