@@ -24,6 +24,7 @@ use crate::{
 };
 
 mod handler;
+mod inout;
 
 impl EngineInner {
     /// Executes the given [`Func`] with the given `params` and returns the `results`.
