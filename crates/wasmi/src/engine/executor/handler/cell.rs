@@ -92,9 +92,9 @@ impl_into_for_cell! {
 /// Errors raised in the encode and decode APIs of [`Cell`].
 #[derive(Debug, Copy, Clone)]
 pub enum CellError {
-    /// Raised in [`init_params`] when there are not enough [`Cell`]s for the given amount of values.
+    /// Raised when there are not enough [`Cell`]s for the given amount of values.
     NotEnoughCells,
-    /// Raised in [`init_params`] when there are not enough values for the given amount of [`Cell`]s.
+    /// Raised when there are not enough values for the given amount of [`Cell`]s.
     NotEnoughValues,
 }
 

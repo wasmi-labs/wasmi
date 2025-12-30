@@ -5,9 +5,9 @@ use core::{cmp::max, marker::PhantomData};
 
 /// Type states of [`InOut`].
 pub mod state {
-    /// State that allows to query the [`InOut`] parameters.
+    /// State that allows to query the [`InOut`](super::InOut) parameters.
     pub enum GetParams {}
-    /// State that allows to query the [`InOut`] results.
+    /// State that allows to query the [`InOut`](super::InOut) results.
     pub enum GetResults {}
 }
 
