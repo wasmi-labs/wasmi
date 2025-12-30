@@ -1,4 +1,4 @@
-#![allow(dead_code)] // TODO: remove
+#![expect(dead_code)] // TODO: remove
 
 use crate::core::UntypedVal;
 use core::{cmp::max, marker::PhantomData};
