@@ -46,7 +46,7 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
 
 mod state {
     use super::Sp;
-    use crate::func::{FuncInOut, Trampoline};
+    use crate::{engine::InOutParams, func::Trampoline};
     use core::marker::PhantomData;
 
     pub type Uninit = PhantomData<marker::Uninit>;
@@ -61,13 +61,13 @@ mod state {
 
     pub struct UninitHost<'a> {
         pub sp: Sp,
-        pub inout: FuncInOut<'a>,
+        pub inout: InOutParams<'a>,
         pub trampoline: Trampoline,
     }
 
     pub struct InitHost<'a> {
         pub sp: Sp,
-        pub inout: FuncInOut<'a>,
+        pub inout: InOutParams<'a>,
         pub trampoline: Trampoline,
     }
 
