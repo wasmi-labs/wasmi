@@ -52,6 +52,7 @@ impl_from_for_cell! {
     ExternRef = ref_to_u64!(ExternRef),
     Nullable<Func> = ref_to_u64!(Nullable<Func>),
     Nullable<ExternRef> = ref_to_u64!(Nullable<ExternRef>),
+    UntypedRef = u64::from,
 }
 
 macro_rules! u64_to_ref {
@@ -87,6 +88,7 @@ impl_into_for_cell! {
     F64 = F64::from_bits,
     Nullable<Func> = u64_to_ref!(Nullable<Func>),
     Nullable<ExternRef> = u64_to_ref!(Nullable<ExternRef>),
+    UntypedRef = UntypedRef::from,
 }
 
 /// Errors raised in the encode and decode APIs of [`Cell`].
@@ -221,7 +223,8 @@ impl_store_to_cells_for_prim!(
     Func,
     Nullable<Func>,
     ExternRef,
-    Nullable<ExternRef>
+    Nullable<ExternRef>,
+    UntypedRef,
 );
 
 macro_rules! impl_store_to_cells_for_tuples {
@@ -334,7 +337,8 @@ impl_load_from_cells_for_prim!(
     F32,
     F64,
     Nullable<Func>,
-    Nullable<ExternRef>
+    Nullable<ExternRef>,
+    UntypedRef,
 );
 
 impl LoadFromCells for V128 {
@@ -431,6 +435,7 @@ impl_unloaded! {
     F64 => F64::from_bits(0),
     Nullable<Func> => Nullable::Null,
     Nullable<ExternRef> => Nullable::Null,
+    UntypedRef => UntypedRef::from(0_u64),
     V128 => V128::from(0_u128),
 }
 
