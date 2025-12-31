@@ -1,28 +1,11 @@
 #![expect(dead_code)] // TODO: remove
 
-use crate::engine::executor::Cell;
-use core::{cmp::max, marker::PhantomData};
-
-/// Type states of [`InOut`].
-pub mod state {
-    /// State that allows to query the [`InOut`](super::InOut) parameters.
-    pub enum GetParams {}
-    /// State that allows to query the [`InOut`](super::InOut) results.
-    pub enum GetResults {}
-}
-
-/// Errors raised in the API of [`InOut`].
-#[derive(Debug, Copy, Clone)]
-pub enum InOutError {
-    /// Raised in [`InOut::new`] when `cells`, `len_params` and `len_results` do not match.
-    CellsOutOfBounds,
-    /// Raised in [`InOut::results`] when `results` and `len_results` do not match.
-    LenResultsMismatch,
-}
+use crate::engine::executor::{Cell, CellError, LoadFromCells, StoreToCells};
+use core::cmp::max;
 
 /// Wrapper around a slice of [`Cell`]s to manage reading parameters and writing results of a function call.
 #[derive(Debug)]
-pub struct InOut<'cells, State> {
+pub struct InOutParams<'cells> {
     /// The underlying slice of cells used for both parameters and results.
     cells: &'cells mut [Cell],
     /// The number of cells used for parameters.
@@ -37,12 +20,10 @@ pub struct InOut<'cells, State> {
     ///
     /// Must be less than or equal to the length of `cells`.
     len_results: usize,
-    /// The type state of [`InOut`].
-    state: PhantomData<fn() -> State>,
 }
 
-impl<'cells> InOut<'cells, state::GetParams> {
-    /// Creates a new [`InOut`] from the given parts.
+impl<'cells> InOutParams<'cells> {
+    /// Creates a new [`InOutParams`] from the given parts.
     ///
     /// # Errors
     ///
@@ -51,15 +32,18 @@ impl<'cells> InOut<'cells, state::GetParams> {
         cells: &'cells mut [Cell],
         len_params: usize,
         len_results: usize,
-    ) -> Result<Self, InOutError> {
-        if max(len_params, len_results) != cells.len() {
-            return Err(InOutError::CellsOutOfBounds);
+    ) -> Result<Self, CellError> {
+        let required_cells = max(len_params, len_results);
+        if required_cells < cells.len() {
+            return Err(CellError::NotEnoughValues);
+        }
+        if required_cells > cells.len() {
+            return Err(CellError::NotEnoughCells);
         }
         Ok(Self {
             cells,
             len_params,
             len_results,
-            state: PhantomData,
         })
     }
 
@@ -68,31 +52,39 @@ impl<'cells> InOut<'cells, state::GetParams> {
         &self.cells[..self.len_params]
     }
 
-    /// Sets results of [`InOut`] to `results`.
+    /// Decodes the parameter slice of [`Cell`]s into `T` if possible.
     ///
-    /// # Errors
+    /// Returns a [`CellError`], otherwise.
+    pub fn decode_params<T>(&self, out: &mut T) -> Result<(), CellError>
+    where
+        T: LoadFromCells,
+    {
+        out.load_from_cells(&mut self.params())
+    }
+
+    /// Encodes the `results` of type `T` into the result [`Cell`]s if possible.
     ///
-    /// If the number of items in `results` does not match the expected number.
-    pub fn set_results(
-        self,
-        results: &[Cell],
-    ) -> Result<InOut<'cells, state::GetResults>, InOutError> {
-        if results.len() != self.len_results {
-            return Err(InOutError::LenResultsMismatch);
-        }
-        self.cells[..self.len_results].copy_from_slice(results);
-        Ok(InOut {
-            cells: self.cells,
-            len_params: self.len_params,
-            len_results: self.len_results,
-            state: PhantomData,
-        })
+    /// Returns a [`CellError`], otherwise.
+    pub fn encode_results<T>(self, results: T) -> Result<InOutResults<'cells>, CellError>
+    where
+        T: StoreToCells,
+    {
+        let mut cells = &mut self.cells[..self.len_results];
+        results.store_to_cells(&mut cells)?;
+        Ok(InOutResults { cells })
     }
 }
 
-impl<'cells> InOut<'cells, state::GetResults> {
+/// The result [`Cell`]s of a (host) function invocation.
+#[derive(Debug)]
+pub struct InOutResults<'cells> {
+    /// The underlying [`Cell`]s representing the encoded results.
+    cells: &'cells mut [Cell],
+}
+
+impl<'cells> InOutResults<'cells> {
     /// Returns the slice of [`Cell`] results.
     pub fn results(&self) -> &[Cell] {
-        &self.cells[..self.len_results]
+        self.cells
     }
 }
