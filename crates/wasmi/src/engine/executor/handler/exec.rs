@@ -420,7 +420,7 @@ pub fn $handler(
     };
 }
 handler_return! {
-    fn return_slot(ReturnSlot) = identity::<UntypedVal>;
+    fn return_slot(ReturnSlot) = identity::<u64>;
     fn return32(Return32) = identity::<u32>;
     fn return64(Return64) = identity::<u64>;
 }
@@ -1508,7 +1508,7 @@ macro_rules! handler_select {
                     true => val_true,
                     false => val_false,
                 };
-                let src: UntypedVal = get_value(src, sp);
+                let src: u64 = get_value(src, sp);
                 set_value(sp, result, src);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }
