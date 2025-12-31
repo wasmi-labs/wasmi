@@ -23,6 +23,7 @@ pub(crate) use self::{
         LoadFromCells,
         Stack,
         StoreToCells,
+        ZeroInit,
     },
     func_types::DedupFuncType,
     translator::{
