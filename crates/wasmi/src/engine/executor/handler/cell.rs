@@ -100,23 +100,6 @@ pub enum CellError {
     NotEnoughValues,
 }
 
-/// Writes `value` to `cells`.
-///
-/// # Errors
-///
-/// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn store_to_cells<T: ?Sized + StoreToCells>(
-    value: &T,
-    cells: &mut [Cell],
-) -> Result<(), CellError> {
-    let mut cells = cells;
-    value.store_to_cells(&mut cells)?;
-    if !cells.is_empty() {
-        return Err(CellError::NotEnoughValues);
-    }
-    Ok(())
-}
-
 /// Trait implemented by types that can be encoded onto a slice of [`Cell`]s.
 pub trait StoreToCells {
     /// Encodes `self` to `cells`.
@@ -249,34 +232,6 @@ macro_rules! impl_store_to_cells_for_tuples {
     };
 }
 for_each_tuple!(impl_store_to_cells_for_tuples);
-
-/// Reads `value` from `cells` into `out`.
-///
-/// # Errors
-///
-/// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn load_from_cells_into<T: ?Sized + LoadFromCells>(
-    cells: &[Cell],
-    out: &mut T,
-) -> Result<(), CellError> {
-    let mut cells = cells;
-    <T as LoadFromCells>::load_from_cells(out, &mut cells)?;
-    if !cells.is_empty() {
-        return Err(CellError::NotEnoughValues);
-    }
-    Ok(())
-}
-
-/// Returns `value` from `cells`.
-///
-/// # Errors
-///
-/// If the number of [`Cell`]s that `value` requires for its encoding does not match `cells.len()`.
-pub fn load_from_cells<T: LoadFromCells + ZeroInit>(cells: &[Cell]) -> Result<T, CellError> {
-    let mut out = <T as ZeroInit>::zero_init();
-    load_from_cells_into(cells, &mut out)?;
-    Ok(out)
-}
 
 /// Trait implemented by types that can be decoded from a slice of [`Cell`]s.
 pub trait LoadFromCells {
