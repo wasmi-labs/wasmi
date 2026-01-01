@@ -1,10 +1,7 @@
 pub use self::{
     handler::{
-        load_from_cells,
-        load_from_cells_into,
         op_code_to_handler,
         resume_wasm_func_call,
-        store_to_cells,
         Cell,
         CellError,
         CellsReader,
