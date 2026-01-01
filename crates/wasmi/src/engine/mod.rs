@@ -291,13 +291,17 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     #[inline]
-    pub(crate) fn execute_func<T>(
+    pub(crate) fn execute_func<T, Params, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &(impl StoreToCells + ?Sized),
-        results: &mut (impl LoadFromCells + ?Sized),
-    ) -> Result<(), Error> {
+        params: &Params,
+        results: &mut Results,
+    ) -> Result<(), Error>
+    where
+        Params: StoreToCells + ?Sized,
+        Results: LoadFromCells + ?Sized,
+    {
         self.inner.execute_func(ctx, func, params, results)
     }
 
@@ -324,13 +328,17 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     #[inline]
-    pub(crate) fn execute_func_resumable<T>(
+    pub(crate) fn execute_func_resumable<T, Params, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &impl StoreToCells,
-        results: &mut impl LoadFromCells,
-    ) -> Result<ResumableCallBase<()>, Error> {
+        params: &Params,
+        results: &mut Results,
+    ) -> Result<ResumableCallBase<()>, Error>
+    where
+        Params: StoreToCells + ?Sized,
+        Results: LoadFromCells + ?Sized,
+    {
         self.inner
             .execute_func_resumable(ctx, func, params, results)
     }
@@ -358,13 +366,17 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     #[inline]
-    pub(crate) fn resume_func_host_trap<T>(
+    pub(crate) fn resume_func_host_trap<T, Params, Results>(
         &self,
         ctx: StoreContextMut<T>,
         invocation: ResumableCallHostTrap,
-        params: &(impl StoreToCells + ?Sized),
-        results: &mut (impl LoadFromCells + ?Sized),
-    ) -> Result<ResumableCallBase<()>, Error> {
+        params: &Params,
+        results: &mut Results,
+    ) -> Result<ResumableCallBase<()>, Error>
+    where
+        Params: StoreToCells + ?Sized,
+        Results: LoadFromCells + ?Sized,
+    {
         self.inner
             .resume_func_host_trap(ctx, invocation, params, results)
     }
@@ -392,12 +404,15 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     #[inline]
-    pub(crate) fn resume_func_out_of_fuel<T>(
+    pub(crate) fn resume_func_out_of_fuel<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         invocation: ResumableCallOutOfFuel,
-        results: &mut (impl LoadFromCells + ?Sized),
-    ) -> Result<ResumableCallBase<()>, Error> {
+        results: &mut Results,
+    ) -> Result<ResumableCallBase<()>, Error>
+    where
+        Results: LoadFromCells + ?Sized,
+    {
         self.inner.resume_func_out_of_fuel(ctx, invocation, results)
     }
 
