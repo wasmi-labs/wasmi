@@ -94,10 +94,10 @@ mod state {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
-    pub fn write_params(
-        self,
-        params: &(impl StoreToCells + ?Sized),
-    ) -> WasmFuncCall<'a, T, state::Init> {
+    pub fn write_params<Params>(self, params: &Params) -> WasmFuncCall<'a, T, state::Init>
+    where
+        Params: StoreToCells + ?Sized,
+    {
         let mut sp = self.callee_sp;
         let Ok(_) = params.store_to_cells(&mut sp) else {
             panic!("TODO")
@@ -131,11 +131,14 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
-    pub fn provide_host_results(
+    pub fn provide_host_results<Params>(
         self,
-        params: &(impl StoreToCells + ?Sized),
+        params: &Params,
         slots: SlotSpan,
-    ) -> WasmFuncCall<'a, T, state::Init> {
+    ) -> WasmFuncCall<'a, T, state::Init>
+    where
+        Params: StoreToCells + ?Sized,
+    {
         let mut sp = self.callee_sp.offset(slots.head());
         let Ok(_) = params.store_to_cells(&mut sp) else {
             panic!("TODO")
@@ -145,12 +148,12 @@ impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Done> {
-    pub fn write_results<R>(self, results: &mut R)
+    pub fn write_results<Results>(self, results: &mut Results)
     where
-        R: LoadFromCells + ?Sized,
+        Results: LoadFromCells + ?Sized,
     {
         let mut sp = self.state.sp;
-        let Ok(_) = <R as LoadFromCells>::load_from_cells(results, &mut sp) else {
+        let Ok(_) = results.load_from_cells(&mut sp) else {
             panic!("TODO")
         };
     }
@@ -230,10 +233,10 @@ pub struct HostFuncCall<'a, T, State> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
-    pub fn write_params(
-        self,
-        params: &(impl StoreToCells + ?Sized),
-    ) -> HostFuncCall<'a, T, state::InitHost<'a>> {
+    pub fn write_params<Params>(self, params: &Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
+    where
+        Params: StoreToCells + ?Sized,
+    {
         let state::UninitHost {
             sp,
             inout,
@@ -279,9 +282,9 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::Done> {
-    pub fn write_results<R>(self, results: &mut R)
+    pub fn write_results<Results>(self, results: &mut Results)
     where
-        R: LoadFromCells + ?Sized,
+        Results: LoadFromCells + ?Sized,
     {
         let mut sp = self.state.sp;
         let Ok(_) = results.load_from_cells(&mut sp) else {
