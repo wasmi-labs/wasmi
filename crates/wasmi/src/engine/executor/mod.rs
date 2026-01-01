@@ -53,8 +53,8 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &impl StoreToCells,
-        results: &mut impl LoadFromCells,
+        params: &(impl StoreToCells + ?Sized),
+        results: &mut (impl LoadFromCells + ?Sized),
     ) -> Result<(), Error> {
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&self.code_map, &mut stack)
@@ -126,8 +126,8 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallHostTrap,
-        params: &impl StoreToCells,
-        results: &mut impl LoadFromCells,
+        params: &(impl StoreToCells + ?Sized),
+        results: &mut (impl LoadFromCells + ?Sized),
     ) -> Result<ResumableCallBase<()>, Error> {
         let caller_results = invocation.caller_results();
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
@@ -165,7 +165,7 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallOutOfFuel,
-        results: &mut impl LoadFromCells,
+        results: &mut (impl LoadFromCells + ?Sized),
     ) -> Result<ResumableCallBase<()>, Error> {
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
         let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
@@ -220,8 +220,8 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func: &Func,
-        params: &impl StoreToCells,
-        results: &mut impl LoadFromCells,
+        params: &(impl StoreToCells + ?Sized),
+        results: &mut (impl LoadFromCells + ?Sized),
     ) -> Result<(), ExecutionOutcome> {
         self.stack.reset();
         let results = match store.inner.resolve_func(func) {
@@ -258,9 +258,9 @@ impl<'engine> EngineExecutor<'engine> {
     fn resume_func_host_trap<T>(
         &mut self,
         store: &mut Store<T>,
-        params: &impl StoreToCells,
+        params: &(impl StoreToCells + ?Sized),
         params_slots: SlotSpan,
-        results: &mut impl LoadFromCells,
+        results: &mut (impl LoadFromCells + ?Sized),
     ) -> Result<(), ExecutionOutcome> {
         resume_wasm_func_call(store, self.code_map, self.stack)?
             .provide_host_results(params, params_slots)
@@ -280,7 +280,7 @@ impl<'engine> EngineExecutor<'engine> {
     fn resume_func_out_of_fuel<T>(
         &mut self,
         store: &mut Store<T>,
-        results: &mut impl LoadFromCells,
+        results: &mut (impl LoadFromCells + ?Sized),
     ) -> Result<(), ExecutionOutcome> {
         resume_wasm_func_call(store, self.code_map, self.stack)?
             .execute()?
