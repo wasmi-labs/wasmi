@@ -57,18 +57,18 @@ impl EngineInner {
         ctx: StoreContextMut<T>,
         func: &Func,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<(), Error>
+        results: Results,
+    ) -> Result<Results::Value, Error>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&self.code_map, &mut stack)
+        let value = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(ctx.store, func, params, results)
             .map_err(ExecutionOutcome::into_non_resumable)?;
         self.stacks.lock().recycle(stack);
-        Ok(results)
+        Ok(value)
     }
 
     /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
@@ -83,18 +83,18 @@ impl EngineInner {
         ctx: StoreContextMut<T>,
         func: &Func,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<ResumableCallBase<()>, Error>
+        results: Results,
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         let store = ctx.store;
         let mut stack = self.stacks.lock().reuse_or_new();
         let outcome = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(store, func, params, results);
-        match outcome {
-            Ok(()) => (),
+        let value = match outcome {
+            Ok(value) => value,
             Err(ExecutionOutcome::Host(error)) => {
                 let host_func = *error.host_func();
                 let caller_results = *error.caller_results();
@@ -123,7 +123,7 @@ impl EngineInner {
             }
         };
         self.stacks.lock().recycle(stack);
-        Ok(ResumableCallBase::Finished(()))
+        Ok(ResumableCallBase::Finished(value))
     }
 
     /// Resumes the given [`Func`] with the given `params` and returns the `results`.
@@ -138,11 +138,11 @@ impl EngineInner {
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallHostTrap,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<ResumableCallBase<()>, Error>
+        results: Results,
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         let caller_results = invocation.caller_results();
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
@@ -180,10 +180,10 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallOutOfFuel,
-        results: &mut Results,
-    ) -> Result<ResumableCallBase<()>, Error>
+        results: Results,
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
         let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
@@ -239,11 +239,11 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         func: &Func,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<(), ExecutionOutcome>
+        results: Results,
+    ) -> Result<Results::Value, ExecutionOutcome>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         self.stack.reset();
         let results = match store.inner.resolve_func(func) {
@@ -282,17 +282,17 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         params: &Params,
         params_slots: SlotSpan,
-        results: &mut Results,
-    ) -> Result<(), ExecutionOutcome>
+        results: Results,
+    ) -> Result<Results::Value, ExecutionOutcome>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
-        resume_wasm_func_call(store, self.code_map, self.stack)?
+        let value = resume_wasm_func_call(store, self.code_map, self.stack)?
             .provide_host_results(params, params_slots)
             .execute()?
             .write_results(results);
-        Ok(())
+        Ok(value)
     }
 
     /// Resumes the execution of the given [`Func`] using `params` after running out of fuel.
@@ -306,14 +306,14 @@ impl<'engine> EngineExecutor<'engine> {
     fn resume_func_out_of_fuel<T, Results>(
         &mut self,
         store: &mut Store<T>,
-        results: &mut Results,
-    ) -> Result<(), ExecutionOutcome>
+        results: Results,
+    ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
-        resume_wasm_func_call(store, self.code_map, self.stack)?
+        let value = resume_wasm_func_call(store, self.code_map, self.stack)?
             .execute()?
             .write_results(results);
-        Ok(())
+        Ok(value)
     }
 }

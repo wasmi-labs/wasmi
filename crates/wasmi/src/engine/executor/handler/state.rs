@@ -15,9 +15,8 @@ use crate::{
             CellsWriter,
             CodeMap,
             InOutParams,
-            LoadFromCells,
+            LoadFromCellsByValue,
             StoreToCells,
-            ZeroInit,
         },
         utils::unreachable_unchecked,
     },
@@ -487,15 +486,14 @@ impl Sp {
     /// Returns a value of type `T` at `slot`.
     pub unsafe fn get<T>(self, slot: Slot) -> T
     where
-        T: LoadFromCells<Value = ()> + ZeroInit,
+        T: LoadFromCellsByValue,
     {
         let mut sp = self.offset(slot);
-        let mut uninit = <T as ZeroInit>::zero_init();
-        let Ok(_) = <T as LoadFromCells>::load_from_cells(&mut uninit, &mut sp) else {
+        let Ok(value) = <T as LoadFromCellsByValue>::load_from_cells_by_value(&mut sp) else {
             // SAFETY: todo
             unsafe { unreachable_unchecked!() }
         };
-        uninit
+        value
     }
 
     /// Writes a `value` of type `T` at `slot`.

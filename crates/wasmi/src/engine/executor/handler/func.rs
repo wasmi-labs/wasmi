@@ -148,14 +148,15 @@ impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Done> {
-    pub fn write_results<Results>(self, results: &mut Results)
+    pub fn write_results<Results>(self, results: Results) -> Results::Value
     where
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         let mut sp = self.state.sp;
-        let Ok(_) = results.load_from_cells(&mut sp) else {
+        let Ok(value) = results.load_from_cells(&mut sp) else {
             panic!("TODO")
         };
+        value
     }
 }
 
@@ -282,13 +283,14 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::Done> {
-    pub fn write_results<Results>(self, results: &mut Results)
+    pub fn write_results<Results>(self, results: Results) -> Results::Value
     where
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         let mut sp = self.state.sp;
-        let Ok(_) = results.load_from_cells(&mut sp) else {
+        let Ok(value) = results.load_from_cells(&mut sp) else {
             panic!("TODO")
         };
+        value
     }
 }

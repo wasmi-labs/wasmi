@@ -6,9 +6,8 @@ use crate::{
     engine::{
         executor::{
             handler::{Break, Control, Done, DoneReason},
-            LoadFromCells,
+            LoadFromCellsByValue,
             StoreToCells,
-            ZeroInit,
         },
         utils::unreachable_unchecked,
         DedupFuncType,
@@ -181,7 +180,7 @@ impl_get_value!([ImmLaneIdx<32>; 16]);
 
 impl<T> GetValue<T> for Slot
 where
-    T: LoadFromCells<Value = ()> + ZeroInit,
+    T: LoadFromCellsByValue,
 {
     fn get_value(src: Self, sp: Sp) -> T {
         // # Safety
