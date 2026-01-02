@@ -181,7 +181,7 @@ impl_get_value!([ImmLaneIdx<32>; 16]);
 
 impl<T> GetValue<T> for Slot
 where
-    T: LoadFromCells + ZeroInit,
+    T: LoadFromCells<Value = ()> + ZeroInit,
 {
     fn get_value(src: Self, sp: Sp) -> T {
         // # Safety

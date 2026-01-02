@@ -55,7 +55,7 @@ impl<'cells> InOutParams<'cells> {
     /// Decodes the parameter slice of [`Cell`]s into `T` if possible.
     ///
     /// Returns a [`CellError`], otherwise.
-    pub fn decode_params<T>(&self, out: &mut T) -> Result<(), CellError>
+    pub fn decode_params<T>(&self, out: &mut T) -> Result<T::Value, CellError>
     where
         T: LoadFromCells + ?Sized,
     {

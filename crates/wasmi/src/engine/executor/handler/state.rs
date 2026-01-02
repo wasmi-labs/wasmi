@@ -487,7 +487,7 @@ impl Sp {
     /// Returns a value of type `T` at `slot`.
     pub unsafe fn get<T>(self, slot: Slot) -> T
     where
-        T: LoadFromCells + ZeroInit,
+        T: LoadFromCells<Value = ()> + ZeroInit,
     {
         let mut sp = self.offset(slot);
         let mut uninit = <T as ZeroInit>::zero_init();
