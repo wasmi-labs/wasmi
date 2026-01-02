@@ -1,5 +1,7 @@
 use super::{Func, into_func::WasmTyList};
 use crate::{
+    core::UntypedVal,
+    engine::{CallParams, CallResults, LoadFromCells, StoreToCells},
     AsContext,
     AsContextMut,
     Error,
@@ -194,9 +196,9 @@ where
 }
 
 /// The typed parameters of a [`TypedFunc`].
-pub trait WasmParams: WasmTyList {}
-impl<T> WasmParams for T where T: WasmTyList {}
+pub trait WasmParams: WasmTyList + StoreToCells {}
+impl<T> WasmParams for T where T: WasmTyList + StoreToCells {}
 
 /// The typed results of a [`TypedFunc`].
-pub trait WasmResults: WasmTyList {}
-impl<T> WasmResults for T where T: WasmTyList {}
+pub trait WasmResults: WasmTyList + LoadFromCells {}
+impl<T> WasmResults for T where T: WasmTyList + LoadFromCells {}
