@@ -357,7 +357,7 @@ for_each_tuple!(impl_load_from_cells_for_tuples);
 ///
 /// # Note
 ///
-/// This is useful for loading types via [`load_from_cells_into`].
+/// This is useful for loading types via [`LoadFromCells`].
 pub trait ZeroInit {
     /// Returns a zero initialized value of type `Self`.
     fn zero_init() -> Self;
