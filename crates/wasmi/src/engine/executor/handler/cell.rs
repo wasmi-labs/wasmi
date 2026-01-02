@@ -411,64 +411,6 @@ macro_rules! impl_load_from_cells_for_tuples {
 }
 for_each_tuple!(impl_load_from_cells_for_tuples);
 
-/// Trait implemented by types that can be zero initialized.
-///
-/// # Note
-///
-/// This is useful for loading types via [`LoadFromCells`].
-pub trait ZeroInit {
-    /// Returns a zero initialized value of type `Self`.
-    fn zero_init() -> Self;
-}
-
-macro_rules! impl_unloaded {
-    ( $($ty:ty => $zeroed:expr),* $(,)? ) => {
-        $(
-            impl ZeroInit for $ty {
-                fn zero_init() -> Self {
-                    $zeroed
-                }
-            }
-        )*
-    };
-}
-impl_unloaded! {
-    bool => false,
-    u8 => 0,
-    u16 => 0,
-    u32 => 0,
-    u64 => 0,
-    i8 => 0,
-    i16 => 0,
-    i32 => 0,
-    i64 => 0,
-    f32 => f32::from_bits(0),
-    f64 => f64::from_bits(0),
-    F32 => F32::from_bits(0),
-    F64 => F64::from_bits(0),
-    Nullable<Func> => Nullable::Null,
-    Nullable<ExternRef> => Nullable::Null,
-    UntypedRef => UntypedRef::from(0_u64),
-    V128 => V128::from(0_u128),
-}
-
-macro_rules! impl_unloaded_for_tuple {
-    (
-        $arity:literal $( $camel:ident )*
-    ) => {
-        impl<$($camel),*> ZeroInit for ($($camel,)*)
-        where
-            $( $camel: ZeroInit, )*
-        {
-            fn zero_init() -> Self {
-                #[allow(clippy::unused_unit)]
-                ( $(<$camel as ZeroInit>::zero_init(),)* )
-            }
-        }
-    };
-}
-for_each_tuple!(impl_unloaded_for_tuple);
-
 #[cfg(test)]
 mod tests {
     use super::*;
