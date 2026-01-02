@@ -1,6 +1,6 @@
 #![expect(dead_code)] // TODO: remove
 
-use crate::engine::executor::{Cell, CellError, LoadFromCells, StoreToCells};
+use crate::engine::executor::{Cell, CellError, LoadFromCells, LoadFromCellsByValue, StoreToCells};
 use core::cmp::max;
 
 /// Wrapper around a slice of [`Cell`]s to manage reading parameters and writing results of a function call.
@@ -55,11 +55,21 @@ impl<'cells> InOutParams<'cells> {
     /// Decodes the parameter slice of [`Cell`]s into `T` if possible.
     ///
     /// Returns a [`CellError`], otherwise.
-    pub fn decode_params<T>(&self, out: &mut T) -> Result<T::Value, CellError>
+    pub fn decode_params_into<T>(&self, out: T) -> Result<(), CellError>
     where
-        T: LoadFromCells + ?Sized,
+        T: LoadFromCells<Value = ()>,
     {
         out.load_from_cells(&mut self.params())
+    }
+
+    /// Decodes the parameter slice of [`Cell`]s into `T` if possible.
+    ///
+    /// Returns a [`CellError`], otherwise.
+    pub fn decode_params<T>(&self) -> Result<T, CellError>
+    where
+        T: LoadFromCellsByValue,
+    {
+        <T as LoadFromCellsByValue>::load_from_cells_by_value(&mut self.params())
     }
 
     /// Encodes the `results` of type `T` into the result [`Cell`]s if possible.
