@@ -263,6 +263,12 @@ impl CellsReader for &'_ [Cell] {
     }
 }
 
+impl CellsReader for &'_ mut [Cell] {
+    fn next(&mut self) -> Result<Cell, CellError> {
+        <&'_ [Cell] as CellsReader>::next(&mut &self[..])
+    }
+}
+
 macro_rules! impl_load_from_cells_for_prim {
     ( $($ty:ty),* $(,)? ) => {
         $(
