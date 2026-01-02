@@ -239,7 +239,15 @@ pub struct LoadByVal<T> {
     marker: PhantomData<fn() -> T>,
 }
 
-/// Trait implemented by types that can be decoded from a slice of [`Cell`]s.
+impl<T> Default for LoadByVal<T> {
+    fn default() -> Self {
+        Self {
+            marker: Default::default(),
+        }
+    }
+}
+
+/// Trait implemented by types that can be decoded from a [`CellsReader`].
 pub trait LoadFromCells {
     /// The value loaded.
     ///
@@ -252,8 +260,18 @@ pub trait LoadFromCells {
     ///
     /// # Errors
     ///
-    /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn load_from_cells(&mut self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError>;
+    /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
+    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError>;
+}
+
+/// Trait implemented by types that can be decoded by value from a [`CellsReader`].
+pub trait LoadFromCellsByValue: Sized {
+    /// Decodes a value of type `Self` from `cells`.
+    ///
+    /// # Errors
+    ///
+    /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
+    fn load_from_cells_by_value(cells: &mut impl CellsReader) -> Result<Self, CellError>;
 }
 
 /// Types that allow reading from a contiguous slice of [`Cell`]s.
@@ -285,14 +303,12 @@ impl CellsReader for &'_ mut [Cell] {
 macro_rules! impl_load_from_cells_for_prim {
     ( $($ty:ty),* $(,)? ) => {
         $(
-            impl LoadFromCells for $ty {
-                type Value = ();
-
+            impl LoadFromCellsByValue for $ty {
                 #[inline]
-                fn load_from_cells(&mut self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
+                fn load_from_cells_by_value(cells: &mut impl CellsReader) -> Result<Self, CellError> {
                     let cell = cells.next()?;
-                    *self = <$ty as From<Cell>>::from(cell);
-                    Ok(())
+                    let loaded = <$ty as From<Cell>>::from(cell);
+                    Ok(loaded)
                 }
             }
         )*
@@ -317,22 +333,43 @@ impl_load_from_cells_for_prim!(
     UntypedRef,
 );
 
-impl LoadFromCells for V128 {
-    type Value = ();
-
-    fn load_from_cells(&mut self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
+impl LoadFromCellsByValue for V128 {
+    fn load_from_cells_by_value(cells: &mut impl CellsReader) -> Result<Self, CellError> {
         let lo: u64 = cells.next()?.into();
         let hi: u64 = cells.next()?.into();
         let value = V128::from((u128::from(hi) << 64) | u128::from(lo));
-        *self = value;
+        Ok(value)
+    }
+}
+
+impl<T> LoadFromCells for LoadByVal<T>
+where
+    T: LoadFromCellsByValue,
+{
+    type Value = T;
+
+    #[inline]
+    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
+        <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)
+    }
+}
+
+impl<T> LoadFromCells for &'_ mut T
+where
+    T: LoadFromCellsByValue,
+{
+    type Value = ();
+
+    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
+        *self = <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
         Ok(())
     }
 }
 
-impl LoadFromCells for [Val] {
+impl LoadFromCells for &'_ mut [Val] {
     type Value = ();
 
-    fn load_from_cells(&mut self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
+    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
         for val in self {
             val.load_from_cells(cells)?;
         }
@@ -340,14 +377,11 @@ impl LoadFromCells for [Val] {
     }
 }
 
-impl LoadFromCells for Val {
+impl LoadFromCells for &'_ mut Val {
     type Value = ();
 
     #[inline]
-    fn load_from_cells<'a>(
-        &mut self,
-        cells: &mut impl CellsReader,
-    ) -> Result<Self::Value, CellError> {
+    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
         match self {
             Val::I32(value) => value.load_from_cells(cells),
             Val::I64(value) => value.load_from_cells(cells),
@@ -364,21 +398,13 @@ macro_rules! impl_load_from_cells_for_tuples {
     (
         $arity:literal $( $camel:ident )*
     ) => {
-        impl<$($camel),*> LoadFromCells for ($($camel,)*)
+        impl<$($camel),*> LoadFromCellsByValue for ($($camel,)*)
         where
-            $( $camel: LoadFromCells, )*
+            $( $camel: LoadFromCellsByValue, )*
         {
-            type Value = ();
-
             #[inline]
-            #[allow(non_snake_case)]
-            fn load_from_cells<'a>(&mut self, _cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-                #[allow(unused_mut)]
-                let ($($camel,)*) = self;
-                $(
-                    <$camel as LoadFromCells>::load_from_cells($camel, _cells)?;
-                )*
-                Ok(())
+            fn load_from_cells_by_value(_cells: &mut impl CellsReader) -> Result<Self, CellError> {
+                Ok( ($( <$camel as LoadFromCellsByValue>::load_from_cells_by_value(_cells)?, )*) )
             }
         }
     };
