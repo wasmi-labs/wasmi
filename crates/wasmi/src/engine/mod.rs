@@ -13,7 +13,15 @@ mod utils;
 
 pub(crate) use self::{
     block_type::BlockType,
-    executor::{InOutParams, InOutResults, Inst, LoadFromCells, Stack, StoreToCells, ZeroInit},
+    executor::{
+        InOutParams,
+        InOutResults,
+        Inst,
+        LoadFromCells,
+        LoadFromCellsByValue,
+        Stack,
+        StoreToCells,
+    },
     func_types::DedupFuncType,
     translator::{
         FuncTranslationDriver,
