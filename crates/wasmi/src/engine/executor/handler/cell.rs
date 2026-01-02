@@ -473,15 +473,6 @@ for_each_tuple!(impl_unloaded_for_tuple);
 mod tests {
     use super::*;
 
-    fn load_from_cells<T>(cells: &mut impl CellsReader) -> Result<T, CellError>
-    where
-        T: LoadFromCells + ZeroInit,
-    {
-        let mut out = <T as ZeroInit>::zero_init();
-        out.load_from_cells(cells)?;
-        Ok(out)
-    }
-
     #[test]
     fn tuple_works() {
         let mut cells = [Cell::default(); 7];
@@ -500,7 +491,7 @@ mod tests {
         let mut cells = cells;
         let values = (1_i32, 2_i64, 3_f32, 4_f64, V128::from(5_u128));
         values.store_to_cells(&mut cells)?;
-        let expected = load_from_cells(&mut cells)?;
+        let expected = <_ as LoadFromCellsByValue>::load_from_cells_by_value(&mut cells)?;
         Ok(values == expected)
     }
 
@@ -573,7 +564,7 @@ mod tests {
         let mut cells = cells;
         let values = V128::from(42_u128);
         values.store_to_cells(&mut cells)?;
-        let loaded = load_from_cells(&mut cells)?;
+        let loaded = <V128 as LoadFromCellsByValue>::load_from_cells_by_value(&mut cells)?;
         Ok(loaded)
     }
 }
