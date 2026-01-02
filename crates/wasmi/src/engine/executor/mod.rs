@@ -9,9 +9,9 @@ pub use self::{
         ExecutionOutcome,
         Inst,
         LoadFromCells,
+        LoadFromCellsByValue,
         Stack,
         StoreToCells,
-        ZeroInit,
     },
     inout::{InOutParams, InOutResults},
 };
