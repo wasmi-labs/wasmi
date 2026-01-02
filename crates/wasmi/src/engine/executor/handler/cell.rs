@@ -421,6 +421,15 @@ for_each_tuple!(impl_unloaded_for_tuple);
 mod tests {
     use super::*;
 
+    fn load_from_cells<T>(cells: &mut impl CellsReader) -> Result<T, CellError>
+    where
+        T: LoadFromCells + ZeroInit,
+    {
+        let mut out = <T as ZeroInit>::zero_init();
+        out.load_from_cells(cells)?;
+        Ok(out)
+    }
+
     #[test]
     fn tuple_works() {
         let mut cells = [Cell::default(); 7];
@@ -436,9 +445,10 @@ mod tests {
     }
 
     fn store_and_load_tuple(cells: &mut [Cell]) -> Result<bool, CellError> {
+        let mut cells = cells;
         let values = (1_i32, 2_i64, 3_f32, 4_f64, V128::from(5_u128));
-        store_to_cells(&values, cells)?;
-        let expected = load_from_cells(cells)?;
+        values.store_to_cells(&mut cells)?;
+        let expected = load_from_cells(&mut cells)?;
         Ok(values == expected)
     }
 
@@ -460,6 +470,7 @@ mod tests {
     }
 
     fn store_and_load_val_slice(cells: &mut [Cell]) -> Result<bool, CellError> {
+        let mut cells = cells;
         let values = [
             Val::I32(1_i32),
             Val::I64(2_i64),
@@ -468,8 +479,8 @@ mod tests {
             Val::V128(V128::from(5_u128)),
         ];
         let mut expected = values.clone();
-        store_to_cells(&values[..], cells)?;
-        load_from_cells_into(cells, &mut expected[..])?;
+        values.store_to_cells(&mut cells)?;
+        expected.load_from_cells(&mut cells)?;
         let is_eq = is_val_slice_eq(&values[..], &expected[..]);
         Ok(is_eq)
     }
@@ -507,9 +518,10 @@ mod tests {
     }
 
     fn store_and_load_v128(cells: &mut [Cell]) -> Result<V128, CellError> {
+        let mut cells = cells;
         let values = V128::from(42_u128);
-        store_to_cells(&values, cells)?;
-        let loaded = load_from_cells(cells)?;
+        values.store_to_cells(&mut cells)?;
+        let loaded = load_from_cells(&mut cells)?;
         Ok(loaded)
     }
 }
