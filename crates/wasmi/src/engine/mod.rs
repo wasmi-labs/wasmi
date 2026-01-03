@@ -304,11 +304,11 @@ impl Engine {
         ctx: StoreContextMut<T>,
         func: &Func,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<(), Error>
+        results: Results,
+    ) -> Result<Results::Value, Error>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         self.inner.execute_func(ctx, func, params, results)
     }
@@ -341,11 +341,11 @@ impl Engine {
         ctx: StoreContextMut<T>,
         func: &Func,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<ResumableCallBase<()>, Error>
+        results: Results,
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         self.inner
             .execute_func_resumable(ctx, func, params, results)
@@ -379,11 +379,11 @@ impl Engine {
         ctx: StoreContextMut<T>,
         invocation: ResumableCallHostTrap,
         params: &Params,
-        results: &mut Results,
-    ) -> Result<ResumableCallBase<()>, Error>
+        results: Results,
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
         Params: StoreToCells + ?Sized,
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         self.inner
             .resume_func_host_trap(ctx, invocation, params, results)
@@ -416,10 +416,10 @@ impl Engine {
         &self,
         ctx: StoreContextMut<T>,
         invocation: ResumableCallOutOfFuel,
-        results: &mut Results,
-    ) -> Result<ResumableCallBase<()>, Error>
+        results: Results,
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: LoadFromCells + ?Sized,
+        Results: LoadFromCells,
     {
         self.inner.resume_func_out_of_fuel(ctx, invocation, results)
     }
