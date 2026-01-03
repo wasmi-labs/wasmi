@@ -1,5 +1,3 @@
-#![expect(dead_code)] // TODO: remove
-
 use crate::engine::executor::{Cell, CellError, LoadFromCells, LoadFromCellsByValue, StoreToCells};
 use core::cmp::max;
 
