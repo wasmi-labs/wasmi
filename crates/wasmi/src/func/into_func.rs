@@ -1,8 +1,7 @@
-use super::{
-    TrampolineEntity,
-    func_inout::{FuncFinished, FuncInOut, FuncResults},
-};
+use super::TrampolineEntity;
 use crate::{
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal},
+    engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
     Caller,
     Error,
     ExternRef,
@@ -81,11 +80,12 @@ macro_rules! impl_into_func {
                     <Self::Results as WasmTyList>::types(),
                 );
                 let trampoline = TrampolineEntity::new(
-                    move |caller: Caller<T>, params_results: FuncInOut| -> Result<FuncFinished, Error> {
-                        let (($($tuple,)*), func_results): (Self::Params, FuncResults) = params_results.decode_params();
+                    move |caller: Caller<T>, inout: InOutParams| -> Result<InOutResults, Error> {
+                        let ($($tuple,)*) = inout.decode_params().unwrap(); // TODO: replace `unwrap`
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
-                        Ok(func_results.encode_results(results))
+                        let inout = inout.encode_results(&results).unwrap(); // TODO: replace `unwrap`
+                        Ok(inout)
                     },
                 );
                 (func_type, trampoline)
@@ -162,7 +162,9 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmTy: From<UntypedVal> + Into<UntypedVal> + Send {
+pub trait WasmTy:
+    From<UntypedVal> + Into<UntypedVal> + Send + LoadFromCellsByValue + StoreToCells
+{
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
     fn ty() -> ValType;
@@ -209,7 +211,9 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTyList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
+pub trait WasmTyList:
+    DecodeUntypedSlice + EncodeUntypedSlice + LoadFromCellsByValue + StoreToCells + Sized + Send
+{
     /// The number of Wasm types in the list.
     #[doc(hidden)]
     const LEN: usize;
