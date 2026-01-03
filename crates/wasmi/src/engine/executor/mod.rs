@@ -8,6 +8,7 @@ pub use self::{
         CellsWriter,
         ExecutionOutcome,
         Inst,
+        LoadByVal,
         LoadFromCells,
         LoadFromCellsByValue,
         Stack,
