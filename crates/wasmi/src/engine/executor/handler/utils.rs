@@ -1,10 +1,16 @@
+use wasmi_core::WriteAs;
+
 use super::state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, UntypedVal},
     engine::{
-        executor::handler::{Break, Control, Done, DoneReason},
+        executor::{
+            handler::{Break, Control, Done, DoneReason},
+            LoadFromCellsByValue,
+            StoreToCells,
+        },
         utils::unreachable_unchecked,
         DedupFuncType,
         EngineFunc,
@@ -163,8 +169,7 @@ impl_get_value!([ImmLaneIdx<32>; 16]);
 
 impl<T> GetValue<T> for Slot
 where
-    T: Copy,
-    UntypedVal: ReadAs<T>,
+    T: LoadFromCellsByValue,
 {
     fn get_value(src: Self, sp: Sp) -> T {
         // # Safety
@@ -204,7 +209,7 @@ pub trait SetValue<T> {
 
 impl<T> SetValue<T> for Slot
 where
-    UntypedVal: WriteAs<T>,
+    T: StoreToCells,
 {
     fn set_value(dst: Self, value: T, sp: Sp) {
         // # Safety
@@ -264,7 +269,7 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src.into_iter()) {
-        let value: UntypedVal = get_value(src, sp);
+        let value: u64 = get_value(src, sp);
         set_value(sp, dst, value);
     }
 }
@@ -274,7 +279,7 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src.into_iter()).rev() {
-        let value: UntypedVal = get_value(src, sp);
+        let value: u64 = get_value(src, sp);
         set_value(sp, dst, value);
     }
 }
@@ -420,12 +425,15 @@ pub fn resolve_indirect_func(
     Ok(*func)
 }
 
-pub fn set_global(global: index::Global, value: UntypedVal, state: &mut VmState, instance: Inst) {
+pub fn set_global<V>(global: index::Global, value: V, state: &mut VmState, instance: Inst)
+where
+    UntypedVal: WriteAs<V>,
+{
     let global = fetch_global(instance, global);
     let global = resolve_global_mut(state.store, &global);
     let mut value_ptr = global.get_untyped_ptr();
     let global_ref = unsafe { value_ptr.as_mut() };
-    *global_ref = value;
+    global_ref.write_as(value);
 }
 
 pub fn update_instance(
@@ -482,13 +490,13 @@ pub fn call_host(
 ) -> Control<Sp, Break> {
     debug_assert_eq!(params.len(), host_func.len_params());
     let trampoline = *host_func.trampoline();
-    let (sp, params_results) = state
+    let (sp, inout) = state
         .stack
         .prepare_host_frame(caller_ip, params, host_func.len_results())
         .into_control()?;
     match state
         .store
-        .call_host_func(trampoline, instance, params_results, call_hooks)
+        .call_host_func(trampoline, instance, inout, call_hooks)
     {
         Ok(()) => {}
         Err(StoreError::External(error)) => {
@@ -512,13 +520,13 @@ pub fn return_call_host(
 ) -> Control<(Ip, Sp, Inst), Break> {
     debug_assert_eq!(params.len(), host_func.len_params());
     let trampoline = *host_func.trampoline();
-    let (control, params_results) = state
+    let (control, inout) = state
         .stack
         .return_prepare_host_frame(params, host_func.len_results(), instance)
         .into_control()?;
     match state
         .store
-        .call_host_func(trampoline, Some(instance), params_results, CallHooks::Call)
+        .call_host_func(trampoline, Some(instance), inout, CallHooks::Call)
     {
         Ok(()) => {}
         Err(StoreError::External(error)) => {
