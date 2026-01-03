@@ -402,9 +402,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // Case: The `global.get` instruction accesses a mutable or imported
         //       global variable and thus cannot be optimized away.
         let global_idx = ir::index::Global::from(global_index);
+        let make_op = match global_type.content() {
+            ValType::V128 => Op::global_get128,
+            _ => Op::global_get64,
+        };
         self.push_instr_with_result(
             content,
-            |result| Op::global_get(global_idx, result),
+            |result| make_op(global_idx, result),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -414,33 +418,38 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let global = index::Global::from(global_index);
-        let input = self.stack.pop();
-        let value = match input {
-            Operand::Immediate(input) => input.val(),
-            input => {
-                // Case: `global.set` with simple register input.
-                let input = self.layout.operand_to_slot(input)?;
-                self.push_instr(Op::global_set(global, input), FuelCostsProvider::instance)?;
-                return Ok(());
-            }
-        };
         // Note: at this point we handle the different immediate `global.set` instructions.
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
+        let input = self.stack.pop();
+        let value = match input {
+            Operand::Immediate(input) => input.val(),
+            input => {
+                // Case: `global.set64` or `global.set128` with simple register input.
+                debug_assert_eq!(global_type.content(), input.ty());
+                let make_op = match global_type.content() {
+                    ValType::V128 => Op::global_set128_s,
+                    _ => Op::global_set64_s,
+                };
+                let input = self.layout.operand_to_slot(input)?;
+                self.push_instr(make_op(global, input), FuelCostsProvider::instance)?;
+                return Ok(());
+            }
+        };
         debug_assert_eq!(global_type.content(), value.ty());
         let global_set_instr = match global_type.content() {
-            ValType::I32 => Op::global_set32(global, u32::from(value)),
-            ValType::I64 => Op::global_set64(u64::from(value), global),
-            ValType::F32 => Op::global_set32(global, f32::from(value).to_bits()),
-            ValType::F64 => Op::global_set64(f64::from(value).to_bits(), global),
+            ValType::I32 => Op::global_set32_i(global, u32::from(value)),
+            ValType::I64 => Op::global_set64_i(u64::from(value), global),
+            ValType::F32 => Op::global_set32_i(global, f32::from(value).to_bits()),
+            ValType::F64 => Op::global_set64_i(f64::from(value).to_bits(), global),
             ValType::FuncRef | ValType::ExternRef => {
-                Op::global_set64(u64::from(value.untyped()), global)
+                Op::global_set64_i(u64::from(value.untyped()), global)
             }
             ValType::V128 => {
                 let consume_fuel = self.stack.consume_fuel_instr();
                 let temp = self.copy_operand_to_temp(input, consume_fuel)?;
-                Op::global_set(global, temp)
+                Op::global_set128_s(global, temp)
             }
         };
         // Note: at this point we have to allocate a function local constant.

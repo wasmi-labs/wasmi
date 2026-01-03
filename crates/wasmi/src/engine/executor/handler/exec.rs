@@ -14,10 +14,7 @@ use super::{
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
-    Func,
-    Nullable,
-    TrapCode,
-    core::{CoreTable, UntypedRef, UntypedVal, wasm},
+    core::{wasm, CoreTable, ReadAs, UntypedRef, UntypedVal},
     engine::{
         EngineFunc,
         executor::handler::{
@@ -61,6 +58,10 @@ use crate::{
     func::FuncEntity,
     ir::{self, Slot, SlotSpan, index},
     store::StoreError,
+    Func,
+    Nullable,
+    TrapCode,
+    V128,
 };
 use core::cmp;
 
@@ -167,7 +168,7 @@ pub fn branch(
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_get(
+pub fn global_get64(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -175,16 +176,16 @@ pub fn global_get(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { decode_op(ip) };
+    let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
     let global = resolve_global(state.store, &global);
-    let value = *global.get_untyped();
+    let value: u64 = global.get_untyped().read_as();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set(
+pub fn global_get128(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -192,14 +193,31 @@ pub fn global_set(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet { global, value }) = unsafe { decode_op(ip) };
-    let value: UntypedVal = get_value(value, sp);
+    let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
+    let global = fetch_global(instance, global);
+    let global = resolve_global(state.store, &global);
+    let value: V128 = global.get_untyped().read_as();
+    set_value(sp, result, value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn global_set64_s(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet64S { global, value }) = unsafe { decode_op(ip) };
+    let value: u64 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set32(
+pub fn global_set128_s(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -207,14 +225,14 @@ pub fn global_set32(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet32 { global, value }) = unsafe { decode_op(ip) };
-    let value: UntypedVal = get_value(value, sp).into();
+    let (ip, crate::ir::decode::GlobalSet128S { global, value }) = unsafe { decode_op(ip) };
+    let value: V128 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set64(
+pub fn global_set32_i(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -222,8 +240,23 @@ pub fn global_set64(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet64 { global, value }) = unsafe { decode_op(ip) };
-    let value: UntypedVal = get_value(value, sp).into();
+    let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
+    let value: u32 = get_value(value, sp).into();
+    set_global(global, value, state, instance);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn global_set64_i(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
+    let value: u64 = get_value(value, sp).into();
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
