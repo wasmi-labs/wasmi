@@ -5,12 +5,9 @@ mod into_func;
 mod ty;
 mod typed_func;
 
-use self::func_inout::FuncFinished;
-pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    func_inout::FuncInOut,
     into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
     ty::FuncType,
     typed_func::{TypedFunc, WasmParams, WasmResults},
@@ -24,6 +21,9 @@ use super::{
     engine::{DedupFuncType, EngineFunc},
 };
 use crate::{
+    collections::arena::ArenaIndex,
+    engine::{InOutParams, InOutResults, Inst, ResumableCall},
+    reftype::RefId,
     Engine,
     Error,
     Val,
@@ -222,16 +222,17 @@ impl<T> HostFuncTrampolineEntity<T> {
         let results_iter = ty.results().iter().copied().map(Val::default_for_ty);
         let len_params = ty.params().len();
         let params_results: Box<[Val]> = params_iter.chain(results_iter).collect();
-        let trampoline = <TrampolineEntity<T>>::new(move |caller, args| {
+        let trampoline = <TrampolineEntity<T>>::new(move |caller, inout| {
             // We are required to clone the buffer because we are operating within a `Fn`.
             // This way the trampoline closure only has to own a single slice buffer.
             // Note: An alternative solution is to use interior mutability but that solution
             //       comes with its own downsides.
-            let mut params_results = params_results.clone();
+            let mut params_results = params_results.clone(); // TODO: try to move instead of clone
             let (params, results) = params_results.split_at_mut(len_params);
-            let func_results = args.decode_params_into_slice(params).unwrap();
+            inout.decode_params_into(&mut params[..]).unwrap(); // TODO: replace `unwrap` with explicit `panic`
             func(caller, params, results)?;
-            Ok(func_results.encode_results_from_slice(results).unwrap())
+            let results = inout.encode_results(results).unwrap(); // TODO: replace `unwrap` with explicit `panic`
+            Ok(results)
         });
         Self { ty, trampoline }
     }
@@ -239,7 +240,6 @@ impl<T> HostFuncTrampolineEntity<T> {
     /// Creates a new host function trampoline from the given statically typed closure.
     pub fn wrap<Params, Results>(func: impl IntoFunc<T, Params, Results>) -> Self {
         let (ty, trampoline) = func.into_func();
-        // let ty = engine.alloc_func_type(signature);
         Self { ty, trampoline }
     }
 
@@ -254,8 +254,10 @@ impl<T> HostFuncTrampolineEntity<T> {
     }
 }
 
-type TrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncInOut) -> Result<FuncFinished, Error> + Send + Sync + 'static;
+type TrampolineFn<T> = dyn for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
+    + Send
+    + Sync
+    + 'static;
 
 pub struct TrampolineEntity<T> {
     closure: Arc<TrampolineFn<T>>,
@@ -271,7 +273,10 @@ impl<T> TrampolineEntity<T> {
     /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncInOut) -> Result<FuncFinished, Error> + Send + Sync + 'static,
+        F: for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
+            + Send
+            + Sync
+            + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -281,12 +286,12 @@ impl<T> TrampolineEntity<T> {
     /// Calls the host function trampoline with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
-    pub fn call(
+    pub fn call<'a>(
         &self,
         mut ctx: impl AsContextMut<Data = T>,
         instance: Option<Inst>,
-        params: FuncInOut,
-    ) -> Result<FuncFinished, Error> {
+        params: InOutParams<'a>,
+    ) -> Result<InOutResults<'a>, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.closure)(caller, params)
     }
