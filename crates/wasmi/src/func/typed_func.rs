@@ -1,7 +1,7 @@
 use super::{into_func::WasmTyList, Func};
 use crate::{
     core::UntypedVal,
-    engine::{CallParams, CallResults, LoadFromCells, StoreToCells},
+    engine::{CallParams, CallResults, LoadByVal, LoadFromCellsByValue, StoreToCells},
     AsContext,
     AsContextMut,
     Error,
@@ -98,8 +98,8 @@ where
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
             &self.func,
-            params,
-            <CallResultsTuple<Results>>::default(),
+            &params,
+            <LoadByVal<Results>>::default(),
         )
     }
 
@@ -131,8 +131,8 @@ where
             .execute_func_resumable(
                 ctx.as_context_mut(),
                 &self.func,
-                params,
-                <CallResultsTuple<Results>>::default(),
+                &params,
+                <LoadByVal<Results>>::default(),
             )
             .map(TypedResumableCall::new)
     }
@@ -198,5 +198,5 @@ pub trait WasmParams: WasmTyList + StoreToCells {}
 impl<T> WasmParams for T where T: WasmTyList + StoreToCells {}
 
 /// The typed results of a [`TypedFunc`].
-pub trait WasmResults: WasmTyList + LoadFromCells {}
-impl<T> WasmResults for T where T: WasmTyList + LoadFromCells {}
+pub trait WasmResults: WasmTyList + LoadFromCellsByValue {}
+impl<T> WasmResults for T where T: WasmTyList + LoadFromCellsByValue {}
