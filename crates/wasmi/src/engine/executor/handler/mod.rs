@@ -14,6 +14,7 @@ pub use self::{
         CellError,
         CellsReader,
         CellsWriter,
+        LoadByVal,
         LoadFromCells,
         LoadFromCellsByValue,
         StoreToCells,

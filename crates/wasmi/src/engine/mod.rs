@@ -17,6 +17,7 @@ pub(crate) use self::{
         InOutParams,
         InOutResults,
         Inst,
+        LoadByVal,
         LoadFromCells,
         LoadFromCellsByValue,
         Stack,
