@@ -507,11 +507,6 @@ impl Sp {
             unsafe { unreachable_unchecked!() }
         };
     }
-
-    /// Converts `self` to a slice of cells with length `len`.
-    pub unsafe fn as_slice<'a>(self, len: usize) -> &'a [Cell] {
-        unsafe { core::slice::from_raw_parts(self.value, len) }
-    }
 }
 
 /// The Wasmi stack.
