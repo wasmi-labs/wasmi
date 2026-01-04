@@ -7,7 +7,6 @@ mod executor;
 mod func_types;
 mod limits;
 mod resumable;
-mod traits;
 mod translator;
 mod utils;
 
@@ -52,7 +51,6 @@ pub use self::{
         TypedResumableCallHostTrap,
         TypedResumableCallOutOfFuel,
     },
-    traits::{CallParams, CallResults},
     translator::TranslationError,
 };
 use crate::{

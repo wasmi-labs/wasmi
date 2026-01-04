@@ -131,7 +131,6 @@ mod core {
         Typed,
         TypedRef,
         TypedVal,
-        UntypedError,
         UntypedRef,
         UntypedVal,
         WriteAs,
