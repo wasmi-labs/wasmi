@@ -241,7 +241,7 @@ pub fn global_set32_i(
     instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
-    let value: u32 = get_value(value, sp).into();
+    let value: u32 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -256,7 +256,7 @@ pub fn global_set64_i(
     instance: Inst,
 ) -> Done {
     let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
-    let value: u64 = get_value(value, sp).into();
+    let value: u64 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
