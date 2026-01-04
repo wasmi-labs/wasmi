@@ -1,7 +1,6 @@
 use super::{Func, into_func::WasmTyList};
 use crate::{
-    core::UntypedVal,
-    engine::{CallParams, CallResults, LoadByVal, LoadFromCellsByValue, StoreToCells},
+    engine::{LoadByVal, LoadFromCellsByValue, StoreToCells},
     AsContext,
     AsContextMut,
     Error,
@@ -137,61 +136,6 @@ where
                 <LoadByVal<Results>>::default(),
             )
             .map(TypedResumableCall::new)
-    }
-}
-
-impl<Params> CallParams for Params
-where
-    Params: WasmParams,
-{
-    type Params = <Params as WasmTyList>::ValuesIter;
-
-    #[inline]
-    fn call_params(self) -> Self::Params {
-        <Params as WasmTyList>::values(self).into_iter()
-    }
-}
-
-/// Wrapper around the result tuple types of a [`TypedFunc`].
-///
-/// # Note
-///
-/// This type is a utility in order to provide an efficient implementation
-/// of the [`CallResults`] trait required for executing the [`TypedFunc`]
-/// via the [`Engine`].
-///
-/// [`Engine`]: [`crate::Engine`].
-pub struct CallResultsTuple<Results> {
-    _marker: PhantomData<fn() -> Results>,
-}
-
-impl<Results> Default for CallResultsTuple<Results> {
-    fn default() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-impl<Results> Copy for CallResultsTuple<Results> {}
-impl<Results> Clone for CallResultsTuple<Results> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<Results> CallResults for CallResultsTuple<Results>
-where
-    Results: WasmResults,
-{
-    type Results = Results;
-
-    fn len_results(&self) -> usize {
-        <Results as WasmTyList>::LEN
-    }
-
-    fn call_results(self, results: &[UntypedVal]) -> Self::Results {
-        <Results as WasmTyList>::from_values(results)
-            .expect("unable to construct typed results from call results")
     }
 }
 

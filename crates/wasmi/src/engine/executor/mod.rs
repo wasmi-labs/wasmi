@@ -17,7 +17,6 @@ pub use self::{
     inout::{InOutParams, InOutResults},
 };
 use super::code_map::CodeMap;
-#[expect(unused_imports)] // TODO: remove
 use crate::{
     Error,
     Func,
@@ -26,8 +25,6 @@ use crate::{
     StoreContextMut,
     engine::{
         executor::handler::{init_host_func_call, init_wasm_func_call},
-        CallParams,
-        CallResults,
         EngineInner,
         ResumableCallBase,
         ResumableCallHostTrap,

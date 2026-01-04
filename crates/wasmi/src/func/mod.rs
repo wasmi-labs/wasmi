@@ -1,6 +1,5 @@
 mod caller;
 mod error;
-mod func_inout;
 mod into_func;
 mod ty;
 mod typed_func;
