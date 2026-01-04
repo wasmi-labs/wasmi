@@ -240,7 +240,7 @@ pub struct LoadByVal<T> {
 impl<T> Default for LoadByVal<T> {
     fn default() -> Self {
         Self {
-            marker: Default::default(),
+            marker: PhantomData,
         }
     }
 }
