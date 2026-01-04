@@ -458,20 +458,42 @@ impl FuncTranslator {
     ) -> Result<Option<Op>, Error> {
         let instr = match value {
             Operand::Temp(value) => {
+                let ty = value.ty();
                 let value = layout.temp_to_slot(value)?;
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Op::copy(result, value)
+                match ty {
+                    ValType::V128 => {
+                        let results = SlotSpan::new(result);
+                        let values = SlotSpan::new(value);
+                        let Some(op) = Self::make_copy_span(results, values, 2) else {
+                            return Ok(None);
+                        };
+                        op
+                    }
+                    _ => Op::copy(result, value),
+                }
             }
             Operand::Local(value) => {
+                let ty = value.ty();
                 let value = layout.local_to_slot(value)?;
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Op::copy(result, value)
+                match ty {
+                    ValType::V128 => {
+                        let results = SlotSpan::new(result);
+                        let values = SlotSpan::new(value);
+                        let Some(op) = Self::make_copy_span(results, values, 2) else {
+                            return Ok(None);
+                        };
+                        op
+                    }
+                    _ => Op::copy(result, value),
+                }
             }
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
         };
@@ -513,20 +535,30 @@ impl FuncTranslator {
         len: u16,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        if results == values {
+        let Some(op) = Self::make_copy_span(results, values, len) else {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
+        };
+        self.instrs
+            .encode(op, consume_fuel_instr, |costs: &FuelCostsProvider| {
+                costs.fuel_for_copying_values(u64::from(len))
+            })?;
+        Ok(())
+    }
+
+    /// Returns an [`Op::copy_span_asc`] or [`Op::copy_span_des`] depending on inputs.
+    ///
+    /// Returns `None` if the `copy_span` operation is a no-op.
+    fn make_copy_span(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
+        if results == values {
+            // Case: results and values are equal and therefore the copy is a no-op
+            return None;
         }
         let copy_span = match results.head() > values.head() {
             true => Op::copy_span_des,
             false => Op::copy_span_asc,
         };
-        self.instrs.encode(
-            copy_span(results, values, len),
-            consume_fuel_instr,
-            |costs: &FuelCostsProvider| costs.fuel_for_copying_values(u64::from(len)),
-        )?;
-        Ok(())
+        Some(copy_span(results, values, len))
     }
 
     /// Encode a copy instruction that copies many values.
