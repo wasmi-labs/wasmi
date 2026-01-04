@@ -185,6 +185,7 @@ pub fn global_get64(
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
+#[cfg(feature = "simd")]
 pub fn global_get128(
     state: &mut VmState,
     ip: Ip,
@@ -217,6 +218,7 @@ pub fn global_set64_s(
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
+#[cfg(feature = "simd")]
 pub fn global_set128_s(
     state: &mut VmState,
     ip: Ip,
