@@ -14,7 +14,7 @@ use super::{
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
-    core::{wasm, CoreTable, ReadAs, UntypedRef, UntypedVal},
+    core::{wasm, CoreTable, ReadAs, UntypedRef},
     engine::{
         EngineFunc,
         executor::handler::{
@@ -1119,7 +1119,7 @@ pub fn branch_table_span(
 
 handler_unary! {
     // copy
-    fn copy(Copy) = identity::<UntypedVal>;
+    fn copy(Copy) = identity::<u64>;
     fn copy32(Copy32) = identity::<u32>;
     fn copy64(Copy64) = identity::<u64>;
     // i32
