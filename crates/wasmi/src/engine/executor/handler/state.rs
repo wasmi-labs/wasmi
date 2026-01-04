@@ -438,7 +438,7 @@ impl CellsWriter for Sp {
         // SAFETY: todo
         unsafe {
             ptr::write(self.value, value);
-            self.value.add(1);
+            self.value = self.value.add(1);
         };
         Ok(())
     }
@@ -450,7 +450,7 @@ impl CellsReader for Sp {
         // SAFETY: todo
         let value = unsafe {
             let value = ptr::read(self.value);
-            self.value.add(1);
+            self.value = self.value.add(1);
             value
         };
         Ok(value)
