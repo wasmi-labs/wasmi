@@ -461,10 +461,10 @@ mod tests {
         values.store_to_cells(&mut &mut cells[..])?;
         let cells = &mut &cells[..];
         expected.load_from_cells(cells)?;
-        let is_eq = is_val_slice_eq(&values[..], &expected[..]);
         if !cells.is_empty() {
             return Err(CellError::NotEnoughValues);
         }
+        let is_eq = is_val_slice_eq(&values[..], &expected[..]);
         Ok(is_eq)
     }
 
