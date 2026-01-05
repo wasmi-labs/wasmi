@@ -414,7 +414,7 @@ mod tests {
             store_and_load_tuple(&mut cells[..5]),
             Err(CellError::NotEnoughCells)
         ));
-        assert!(matches!(store_and_load_tuple(&mut cells[..6]), Ok(true)));
+        assert_eq!(store_and_load_tuple(&mut cells[..6]).unwrap(), true);
         assert!(matches!(
             store_and_load_tuple(&mut cells[..7]),
             Err(CellError::NotEnoughValues)
@@ -422,10 +422,13 @@ mod tests {
     }
 
     fn store_and_load_tuple(cells: &mut [Cell]) -> Result<bool, CellError> {
-        let mut cells = cells;
         let values = (1_i32, 2_i64, 3_f32, 4_f64, V128::from(5_u128));
-        values.store_to_cells(&mut cells)?;
-        let expected = <_ as LoadFromCellsByValue>::load_from_cells_by_value(&mut cells)?;
+        values.store_to_cells(&mut &mut cells[..])?;
+        let cells = &mut &cells[..];
+        let expected = <_ as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
+        if !cells.is_empty() {
+            return Err(CellError::NotEnoughValues);
+        }
         Ok(values == expected)
     }
 
@@ -447,7 +450,6 @@ mod tests {
     }
 
     fn store_and_load_val_slice(cells: &mut [Cell]) -> Result<bool, CellError> {
-        let mut cells = cells;
         let values = [
             Val::I32(1_i32),
             Val::I64(2_i64),
@@ -456,9 +458,13 @@ mod tests {
             Val::V128(V128::from(5_u128)),
         ];
         let mut expected = values.clone();
-        values.store_to_cells(&mut cells)?;
-        expected.load_from_cells(&mut cells)?;
+        values.store_to_cells(&mut &mut cells[..])?;
+        let cells = &mut &cells[..];
+        expected.load_from_cells(cells)?;
         let is_eq = is_val_slice_eq(&values[..], &expected[..]);
+        if !cells.is_empty() {
+            return Err(CellError::NotEnoughValues);
+        }
         Ok(is_eq)
     }
 
@@ -495,10 +501,13 @@ mod tests {
     }
 
     fn store_and_load_v128(cells: &mut [Cell]) -> Result<V128, CellError> {
-        let mut cells = cells;
         let values = V128::from(42_u128);
-        values.store_to_cells(&mut cells)?;
-        let loaded = <V128 as LoadFromCellsByValue>::load_from_cells_by_value(&mut cells)?;
+        values.store_to_cells(&mut &mut cells[..])?;
+        let cells = &mut &cells[..];
+        let loaded = <V128 as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
+        if !cells.is_empty() {
+            return Err(CellError::NotEnoughValues);
+        }
         Ok(loaded)
     }
 }
