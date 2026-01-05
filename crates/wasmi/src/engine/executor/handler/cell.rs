@@ -414,7 +414,7 @@ mod tests {
             store_and_load_tuple(&mut cells[..5]),
             Err(CellError::NotEnoughCells)
         ));
-        assert_eq!(store_and_load_tuple(&mut cells[..6]).unwrap(), true);
+        assert!(store_and_load_tuple(&mut cells[..6]).unwrap());
         assert!(matches!(
             store_and_load_tuple(&mut cells[..7]),
             Err(CellError::NotEnoughValues)
@@ -493,21 +493,21 @@ mod tests {
             store_and_load_v128(&mut cells[..1]),
             Err(CellError::NotEnoughCells)
         ));
-        assert!(matches!(store_and_load_v128(&mut cells[..2]), Ok(_)));
+        assert!(store_and_load_v128(&mut cells[..2]).unwrap());
         assert!(matches!(
             store_and_load_v128(&mut cells[..3]),
             Err(CellError::NotEnoughValues)
         ));
     }
 
-    fn store_and_load_v128(cells: &mut [Cell]) -> Result<V128, CellError> {
-        let values = V128::from(42_u128);
-        values.store_to_cells(&mut &mut cells[..])?;
+    fn store_and_load_v128(cells: &mut [Cell]) -> Result<bool, CellError> {
+        let value = V128::from(42_u128);
+        value.store_to_cells(&mut &mut cells[..])?;
         let cells = &mut &cells[..];
         let loaded = <V128 as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
         if !cells.is_empty() {
             return Err(CellError::NotEnoughValues);
         }
-        Ok(loaded)
+        Ok(value == loaded)
     }
 }
