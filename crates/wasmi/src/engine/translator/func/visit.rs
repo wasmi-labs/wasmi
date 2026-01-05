@@ -403,6 +403,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         //       global variable and thus cannot be optimized away.
         let global_idx = ir::index::Global::from(global_index);
         let make_op = match global_type.content() {
+            #[cfg(feature = "simd")]
             ValType::V128 => Op::global_get128,
             _ => Op::global_get64,
         };
@@ -429,6 +430,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Case: `global.set64` or `global.set128` with simple register input.
                 debug_assert_eq!(global_type.content(), input.ty());
                 let make_op = match global_type.content() {
+                    #[cfg(feature = "simd")]
                     ValType::V128 => Op::global_set128_s,
                     _ => Op::global_set64_s,
                 };
@@ -446,11 +448,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::FuncRef | ValType::ExternRef => {
                 Op::global_set64_i(u64::from(value.untyped()), global)
             }
+            #[cfg(feature = "simd")]
             ValType::V128 => {
                 let consume_fuel = self.stack.consume_fuel_instr();
                 let temp = self.copy_operand_to_temp(input, consume_fuel)?;
                 Op::global_set128_s(global, temp)
             }
+            #[cfg(not(feature = "simd"))]
+            unexpected => panic!("unexpected value type found: {unexpected:?}"),
         };
         // Note: at this point we have to allocate a function local constant.
         self.push_instr(global_set_instr, FuelCostsProvider::instance)?;
