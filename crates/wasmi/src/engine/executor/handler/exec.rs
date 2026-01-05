@@ -13,6 +13,8 @@ use super::{
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
+#[cfg(feature = "simd")]
+use crate::V128;
 use crate::{
     core::{wasm, CoreTable, ReadAs, UntypedRef},
     engine::{
@@ -61,7 +63,6 @@ use crate::{
     Func,
     Nullable,
     TrapCode,
-    V128,
 };
 use core::cmp;
 
