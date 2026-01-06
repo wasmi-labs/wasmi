@@ -205,12 +205,7 @@ impl_wasm_type! {
 ///
 /// # Note
 ///
-/// This is a convenience trait that allows to:
-///
-/// - Read host function parameters from a region of the value stack.
-/// - Write host function results into a region of the value stack.
-/// - Iterate over the value types of the Wasm type sequence
-///     - This is useful to construct host function signatures.
+/// This is a convenience trait that allows to construct [`ValType`] sequences.
 pub trait WasmTyList: LoadFromCellsByValue + StoreToCells + Sized + Send {
     /// The number of Wasm types in the list.
     #[doc(hidden)]
@@ -228,33 +223,9 @@ pub trait WasmTyList: LoadFromCellsByValue + StoreToCells + Sized + Send {
     #[doc(hidden)]
     type TypesIter: ExactSizeIterator<Item = ValType> + DoubleEndedIterator + FusedIterator;
 
-    /// The [`UntypedVal`] sequence as array.
-    #[doc(hidden)]
-    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedVal>
-        + AsRef<[UntypedVal]>
-        + AsMut<[UntypedVal]>
-        + Copy
-        + Clone;
-
-    /// The iterator type of the sequence of [`Val`].
-    ///
-    /// [`Val`]: [`crate::core::Value`]
-    #[doc(hidden)]
-    type ValuesIter: ExactSizeIterator<Item = UntypedVal> + DoubleEndedIterator + FusedIterator;
-
     /// Returns an array representing the [`ValType`] sequence of `Self`.
     #[doc(hidden)]
     fn types() -> Self::Types;
-
-    /// Returns an array representing the [`UntypedVal`] sequence of `self`.
-    #[doc(hidden)]
-    fn values(self) -> Self::Values;
-
-    /// Consumes the [`UntypedVal`] iterator and creates `Self` if possible.
-    ///
-    /// Returns `None` if construction of `Self` is impossible.
-    #[doc(hidden)]
-    fn from_values(values: &[UntypedVal]) -> Option<Self>;
 }
 
 impl<T1> WasmTyList for T1
@@ -265,25 +236,10 @@ where
 
     type Types = [ValType; 1];
     type TypesIter = array::IntoIter<ValType, 1>;
-    type Values = [UntypedVal; 1];
-    type ValuesIter = array::IntoIter<UntypedVal, 1>;
 
     #[inline]
     fn types() -> Self::Types {
         [<T1 as WasmTy>::ty()]
-    }
-
-    #[inline]
-    fn values(self) -> Self::Values {
-        [<T1 as Into<UntypedVal>>::into(self)]
-    }
-
-    #[inline]
-    fn from_values(values: &[UntypedVal]) -> Option<Self> {
-        if let [value] = *values {
-            return Some(value.into());
-        }
-        None
     }
 }
 
@@ -299,34 +255,12 @@ macro_rules! impl_wasm_type_list {
 
             type Types = [ValType; $n];
             type TypesIter = array::IntoIter<ValType, $n>;
-            type Values = [UntypedVal; $n];
-            type ValuesIter = array::IntoIter<UntypedVal, $n>;
 
             #[inline]
             fn types() -> Self::Types {
                 [$(
                     <$tuple as WasmTy>::ty()
                 ),*]
-            }
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn values(self) -> Self::Values {
-                let ($($tuple,)*) = self;
-                [$(
-                    <$tuple as Into<UntypedVal>>::into($tuple)
-                ),*]
-            }
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn from_values(values: &[UntypedVal]) -> Option<Self> {
-                if let [$($tuple),*] = *values {
-                    return Some(
-                        ( $( Into::into($tuple), )* )
-                    )
-                }
-                None
             }
         }
     };
