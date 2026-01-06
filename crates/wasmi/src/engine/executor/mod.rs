@@ -48,11 +48,11 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<Results::Value, Error>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         let mut stack = self.stacks.lock().reuse_or_new();
@@ -74,11 +74,11 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         let store = ctx.store;
@@ -129,11 +129,11 @@ impl EngineInner {
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallHostTrap,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         let caller_results = invocation.caller_results();
@@ -230,11 +230,11 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func: &Func,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         self.stack.reset();
@@ -272,12 +272,12 @@ impl<'engine> EngineExecutor<'engine> {
     fn resume_func_host_trap<T, Params, Results>(
         &mut self,
         store: &mut Store<T>,
-        params: &Params,
+        params: Params,
         params_slots: SlotSpan,
         results: Results,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         let value = resume_wasm_func_call(store, self.code_map, self.stack)?

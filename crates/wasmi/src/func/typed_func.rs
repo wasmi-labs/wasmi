@@ -97,7 +97,7 @@ where
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
             &self.func,
-            &params,
+            params,
             <LoadByVal<Results>>::default(),
         )
     }
@@ -130,7 +130,7 @@ where
             .execute_func_resumable(
                 ctx.as_context_mut(),
                 &self.func,
-                &params,
+                params,
                 <LoadByVal<Results>>::default(),
             )
             .map(TypedResumableCall::new)

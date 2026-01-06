@@ -73,9 +73,9 @@ impl<'cells> InOutParams<'cells> {
     /// Encodes the `results` of type `T` into the result [`Cell`]s if possible.
     ///
     /// Returns a [`CellError`], otherwise.
-    pub fn encode_results<T>(self, results: &T) -> Result<InOutResults<'cells>, CellError>
+    pub fn encode_results<T>(self, results: T) -> Result<InOutResults<'cells>, CellError>
     where
-        T: StoreToCells + ?Sized,
+        T: StoreToCells,
     {
         let mut cells = &mut self.cells[..self.len_results];
         results.store_to_cells(&mut cells)?;
