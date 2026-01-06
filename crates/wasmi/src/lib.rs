@@ -110,9 +110,9 @@ mod core {
     #[cfg(feature = "simd")]
     pub use wasmi_core::simd;
     pub use wasmi_core::{
-        DecodeUntypedSlice,
+        hint,
+        wasm,
         ElementSegment as CoreElementSegment,
-        EncodeUntypedSlice,
         Fuel,
         FuelCostsProvider,
         FuncType as CoreFuncType,

@@ -1,6 +1,6 @@
 use super::TrampolineEntity;
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal},
+    core::UntypedVal,
     engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
     Caller,
     Error,
@@ -211,9 +211,7 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTyList:
-    DecodeUntypedSlice + EncodeUntypedSlice + LoadFromCellsByValue + StoreToCells + Sized + Send
-{
+pub trait WasmTyList: LoadFromCellsByValue + StoreToCells + Sized + Send {
     /// The number of Wasm types in the list.
     #[doc(hidden)]
     const LEN: usize;
