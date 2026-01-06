@@ -94,9 +94,9 @@ mod state {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
-    pub fn write_params<Params>(self, params: &Params) -> WasmFuncCall<'a, T, state::Init>
+    pub fn write_params<Params>(self, params: Params) -> WasmFuncCall<'a, T, state::Init>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
     {
         let mut sp = self.callee_sp;
         let Ok(_) = params.store_to_cells(&mut sp) else {
@@ -133,11 +133,11 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
 impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
     pub fn provide_host_results<Params>(
         self,
-        params: &Params,
+        params: Params,
         slots: SlotSpan,
     ) -> WasmFuncCall<'a, T, state::Init>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
     {
         let mut sp = self.callee_sp.offset(slots.head());
         let Ok(_) = params.store_to_cells(&mut sp) else {
@@ -234,9 +234,9 @@ pub struct HostFuncCall<'a, T, State> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
-    pub fn write_params<Params>(self, params: &Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
+    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
     {
         let state::UninitHost {
             sp,

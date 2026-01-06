@@ -105,7 +105,7 @@ pub trait StoreToCells {
     /// # Errors
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
-    fn store_to_cells(&self, cells: &mut impl CellsWriter) -> Result<(), CellError>;
+    fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError>;
 }
 
 /// Types that allow writing to a contiguous slice of [`Cell`]s.
@@ -132,8 +132,8 @@ impl CellsWriter for &'_ mut [Cell] {
     }
 }
 
-impl StoreToCells for [Val] {
-    fn store_to_cells(&self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
+impl StoreToCells for &'_ [Val] {
+    fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
         for val in self {
             val.store_to_cells(cells)?;
         }
@@ -141,9 +141,9 @@ impl StoreToCells for [Val] {
     }
 }
 
-impl StoreToCells for Val {
+impl StoreToCells for &'_ Val {
     #[inline]
-    fn store_to_cells(&self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
+    fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
         match self {
             Val::I32(value) => value.store_to_cells(cells),
             Val::I64(value) => value.store_to_cells(cells),
@@ -165,7 +165,7 @@ impl StoreToCells for V128 {
     /// The [`V128`] value is destructured into its lower and upper 64-bit parts and then the
     /// low 64-bits are written before the high 64-bits in order.
     #[inline]
-    fn store_to_cells(&self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
+    fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
         let value = self.as_u128();
         let value_lo = (value & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let value_hi = (value >> 64) as u64;
@@ -180,8 +180,8 @@ macro_rules! impl_store_to_cells_for_prim {
         $(
             impl StoreToCells for $ty {
                 #[inline]
-                fn store_to_cells(&self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
-                    cells.next(Cell::from(*self))
+                fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
+                    cells.next(Cell::from(self))
                 }
             }
         )*
@@ -218,7 +218,7 @@ macro_rules! impl_store_to_cells_for_tuples {
         {
             #[inline]
             #[allow(non_snake_case)]
-            fn store_to_cells(&self, _cells: &mut impl CellsWriter) -> Result<(), CellError> {
+            fn store_to_cells(self, _cells: &mut impl CellsWriter) -> Result<(), CellError> {
                 #[allow(unused_mut)]
                 let ($($camel,)*) = self;
                 $(

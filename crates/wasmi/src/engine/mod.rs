@@ -302,11 +302,11 @@ impl Engine {
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<Results::Value, Error>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         self.inner.execute_func(ctx, func, params, results)
@@ -339,11 +339,11 @@ impl Engine {
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         self.inner
@@ -377,11 +377,11 @@ impl Engine {
         &self,
         ctx: StoreContextMut<T>,
         invocation: ResumableCallHostTrap,
-        params: &Params,
+        params: Params,
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells + ?Sized,
+        Params: StoreToCells,
         Results: LoadFromCells,
     {
         self.inner

@@ -230,7 +230,7 @@ impl<T> HostFuncTrampolineEntity<T> {
             let (params, results) = params_results.split_at_mut(len_params);
             inout.decode_params_into(&mut params[..]).unwrap(); // TODO: replace `unwrap` with explicit `panic`
             func(caller, params, results)?;
-            let results = inout.encode_results(results).unwrap(); // TODO: replace `unwrap` with explicit `panic`
+            let results = inout.encode_results(&results[..]).unwrap(); // TODO: replace `unwrap` with explicit `panic`
             Ok(results)
         });
         Self { ty, trampoline }

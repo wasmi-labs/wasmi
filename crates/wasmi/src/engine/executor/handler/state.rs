@@ -502,7 +502,7 @@ impl Sp {
         T: StoreToCells,
     {
         let mut sp = self.offset(slot);
-        let Ok(_) = <T as StoreToCells>::store_to_cells(&value, &mut sp) else {
+        let Ok(_) = <T as StoreToCells>::store_to_cells(value, &mut sp) else {
             // SAFETY: todo
             unsafe { unreachable_unchecked!() }
         };

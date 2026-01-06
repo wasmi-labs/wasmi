@@ -84,7 +84,7 @@ macro_rules! impl_into_func {
                         let ($($tuple,)*) = inout.decode_params().unwrap(); // TODO: replace `unwrap`
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
-                        let inout = inout.encode_results(&results).unwrap(); // TODO: replace `unwrap`
+                        let inout = inout.encode_results(results).unwrap(); // TODO: replace `unwrap`
                         Ok(inout)
                     },
                 );
