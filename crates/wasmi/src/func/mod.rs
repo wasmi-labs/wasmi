@@ -226,7 +226,7 @@ impl<T> HostFuncTrampolineEntity<T> {
             // This way the trampoline closure only has to own a single slice buffer.
             // Note: An alternative solution is to use interior mutability but that solution
             //       comes with its own downsides.
-            let mut params_results = params_results.clone(); // TODO: try to move instead of clone
+            let mut params_results = params_results.clone();
             let (params, results) = params_results.split_at_mut(len_params);
             inout.decode_params_into(&mut params[..]).unwrap(); // TODO: replace `unwrap` with explicit `panic`
             func(caller, params, results)?;
