@@ -134,6 +134,7 @@ define_ident!(
     BranchTable: branch_table,
     BranchTableSpan: branch_table_span,
     Select: select,
+    Select128: select128,
     Store8: store8,
     Store16: store16,
     Store32: store32,
