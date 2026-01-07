@@ -1958,20 +1958,21 @@ impl FuncTranslator {
                     true => true_val,
                     false => false_val,
                 };
-                if let Operand::Temp(selected) = selected {
+                if let Operand::Temp(_) = selected {
                     // Case: the selected operand is a temporary which needs to be copied
                     //       if it was the `false_val` since it changed its index. This is
                     //       not the case for the `true_val` since `true_val` is the first
                     //       value popped from the stack.
-                    if !condition {
-                        let selected = self.layout.temp_to_slot(selected)?;
-                        self.push_instr_with_result(
-                            ty,
-                            |result| Op::copy(result, selected),
-                            FuelCostsProvider::base,
-                        )?;
+                    let consume_fuel_instr = self.stack.consume_fuel_instr();
+                    let result = self.layout.temp_to_slot(self.stack.push_temp(ty)?)?;
+                    let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
+                    else {
                         return Ok(());
-                    }
+                    };
+                    debug_assert!(op.result_ref().is_some());
+                    self.instrs
+                        .stage(op, consume_fuel_instr, FuelCostsProvider::base)?;
+                    return Ok(());
                 }
                 self.stack.push_operand(selected)?;
                 return Ok(());
@@ -1981,6 +1982,17 @@ impl FuncTranslator {
         };
         let true_val = self.copy_if_immediate(true_val)?;
         let false_val = self.copy_if_immediate(false_val)?;
+        #[cfg(feature = "simd")]
+        if matches!(ty, ValType::V128) {
+            // Case: for `v128` values the `select128` instruction must be used.
+            // Unlike normal `select` instructions the `select128` cannot be fused.
+            self.push_instr_with_result(
+                ty,
+                |result| Op::select128(result, condition, false_val, true_val),
+                FuelCostsProvider::base,
+            )?;
+            return Ok(());
+        }
         if !self.try_fuse_select(ty, condition, true_val, false_val)? {
             self.push_instr_with_result(
                 ty,

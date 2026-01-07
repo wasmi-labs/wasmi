@@ -768,6 +768,15 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Result, FieldTy::Slot),
         ],
     )));
+    isa.push_op(Op::from(GenericOp::new(
+        Ident::Select128,
+        [
+            Field::new(Ident::Result, FieldTy::Slot),
+            Field::new(Ident::Selector, FieldTy::Slot),
+            Field::new(Ident::ValTrue, FieldTy::Slot),
+            Field::new(Ident::ValFalse, FieldTy::Slot),
+        ],
+    )));
     add_simd_splat_ops(isa);
     add_simd_extract_lane_ops(isa);
     add_simd_replace_lane_ops(isa);
