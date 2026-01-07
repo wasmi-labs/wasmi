@@ -986,7 +986,7 @@ impl FuncTranslator {
                         ValType::V128 => {
                             let value = self.stack.peek(0);
                             let temp_slot = self.copy_operand_to_temp(value, consume_fuel)?;
-                            Op::return_slot(temp_slot)
+                            Op::return_span(BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2))
                         }
                     }
                 }
