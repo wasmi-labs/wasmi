@@ -4,7 +4,7 @@ use crate::{
     FuzzSmithConfig,
     FuzzVal,
 };
-use wasmi_stack::{
+use wasmi_v0::{
     Config,
     Engine,
     Error,
@@ -21,14 +21,14 @@ use wasmi_stack::{
 
 /// Differential fuzzing backend for the stack-machine Wasmi.
 #[derive(Debug)]
-pub struct WasmiStackOracle {
+pub struct WasmiV0Oracle {
     store: Store<StoreLimits>,
     instance: Instance,
     params: Vec<Value>,
     results: Vec<Value>,
 }
 
-impl DifferentialOracleMeta for WasmiStackOracle {
+impl DifferentialOracleMeta for WasmiV0Oracle {
     fn configure(config: &mut FuzzSmithConfig) {
         config.disable_multi_memory();
         config.disable_custom_page_sizes();
@@ -69,7 +69,7 @@ impl DifferentialOracleMeta for WasmiStackOracle {
     }
 }
 
-impl DifferentialOracle for WasmiStackOracle {
+impl DifferentialOracle for WasmiV0Oracle {
     fn name(&self) -> &'static str {
         "Wasmi v0.31"
     }
@@ -150,7 +150,7 @@ impl From<FuzzVal> for Value {
 
 impl From<Error> for FuzzError {
     fn from(error: Error) -> Self {
-        use wasmi_stack::core::TrapCode;
+        use wasmi_v0::core::TrapCode;
         let Error::Trap(trap) = error else {
             return FuzzError::Other;
         };
