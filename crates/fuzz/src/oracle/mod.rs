@@ -8,7 +8,7 @@ use arbitrary::{Arbitrary, Unstructured};
 #[cfg(feature = "wasmi-v0")]
 pub use self::wasmi_stack::WasmiStackOracle;
 #[cfg(feature = "wasmi-v1")]
-pub use self::wasmi_v049::WasmiV048Oracle;
+pub use self::wasmi_v1::WasmiV1Oracle;
 #[cfg(feature = "wasmtime")]
 pub use self::wasmtime::WasmtimeOracle;
 
@@ -18,7 +18,7 @@ mod wasmi;
 #[cfg(feature = "wasmi-v0")]
 mod wasmi_stack;
 #[cfg(feature = "wasmi-v1")]
-mod wasmi_v049;
+mod wasmi_v1;
 #[cfg(feature = "wasmtime")]
 mod wasmtime;
 
@@ -56,7 +56,7 @@ pub enum ChosenOracle {
     /// The Wasmi v0.48.0 oracle.
     #[cfg(feature = "wasmi-v1")]
     #[cfg_attr(all(feature = "wasmi-v1", not(feature = "wasmi-v0")), default)]
-    WasmiV048,
+    WasmiV1,
     /// The Wasmtime oracle.
     #[cfg(feature = "wasmtime")]
     #[cfg_attr(
@@ -75,7 +75,7 @@ impl Arbitrary<'_> for ChosenOracle {
             #[cfg(feature = "wasmi-v0")]
             ChosenOracle::WasmiStack,
             #[cfg(feature = "wasmi-v1")]
-            ChosenOracle::WasmiV048,
+            ChosenOracle::WasmiV1,
             #[cfg(feature = "wasmtime")]
             ChosenOracle::Wasmtime,
         ];
@@ -96,7 +96,7 @@ impl ChosenOracle {
             #[cfg(feature = "wasmi-v0")]
             ChosenOracle::WasmiStack => WasmiStackOracle::configure(fuzz_config),
             #[cfg(feature = "wasmi-v1")]
-            ChosenOracle::WasmiV048 => WasmiV048Oracle::configure(fuzz_config),
+            ChosenOracle::WasmiV1 => WasmiV1Oracle::configure(fuzz_config),
             #[cfg(feature = "wasmtime")]
             ChosenOracle::Wasmtime => WasmtimeOracle::configure(fuzz_config),
         }
@@ -108,7 +108,7 @@ impl ChosenOracle {
             #[cfg(feature = "wasmi-v0")]
             ChosenOracle::WasmiStack => Box::new(WasmiStackOracle::setup(wasm)?),
             #[cfg(feature = "wasmi-v1")]
-            ChosenOracle::WasmiV048 => Box::new(WasmiV048Oracle::setup(wasm)?),
+            ChosenOracle::WasmiV1 => Box::new(WasmiV1Oracle::setup(wasm)?),
             #[cfg(feature = "wasmtime")]
             ChosenOracle::Wasmtime => Box::new(WasmtimeOracle::setup(wasm)?),
         };

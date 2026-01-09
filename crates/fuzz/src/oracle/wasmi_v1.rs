@@ -4,8 +4,7 @@ use crate::{
     FuzzSmithConfig,
     FuzzVal,
 };
-use wasmi_v049::{
-    core::{TrapCode, V128},
+use wasmi_v1::{
     Config,
     Engine,
     Error,
@@ -15,23 +14,24 @@ use wasmi_v049::{
     Linker,
     Module,
     Ref,
-    StackLimits,
     Store,
     StoreLimits,
     StoreLimitsBuilder,
+    TrapCode,
     Val,
+    V128,
 };
 
 /// Differential fuzzing backend for the register-machine Wasmi v0.48.0.
 #[derive(Debug)]
-pub struct WasmiV048Oracle {
+pub struct WasmiV1Oracle {
     store: Store<StoreLimits>,
     instance: Instance,
     params: Vec<Val>,
     results: Vec<Val>,
 }
 
-impl DifferentialOracleMeta for WasmiV048Oracle {
+impl DifferentialOracleMeta for WasmiV1Oracle {
     fn configure(_config: &mut FuzzSmithConfig) {}
 
     fn setup(wasm: &[u8]) -> Option<Self>
@@ -46,14 +46,9 @@ impl DifferentialOracleMeta for WasmiV048Oracle {
         //
         // We increase the maximum stack space for Wasmi (register) to avoid
         // common stack overflows in certain generated fuzz test cases this way.
-        config.set_stack_limits(
-            StackLimits::new(
-                1024,             // 1 kiB
-                1024 * 1024 * 10, // 10 MiB
-                1024,
-            )
-            .unwrap(),
-        );
+        config.set_max_recursion_depth(1024);
+        config.set_min_stack_height(1024); //  1 kiB
+        config.set_max_stack_height(1024 * 1024 * 10); // 10 MiB
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
         let engine = Engine::new(&config);
@@ -77,7 +72,7 @@ impl DifferentialOracleMeta for WasmiV048Oracle {
     }
 }
 
-impl DifferentialOracle for WasmiV048Oracle {
+impl DifferentialOracle for WasmiV1Oracle {
     fn name(&self) -> &'static str {
         "Wasmi"
     }
