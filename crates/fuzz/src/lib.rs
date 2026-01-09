@@ -2,9 +2,22 @@ pub mod config;
 mod crash_inputs;
 mod error;
 mod module;
-#[cfg(feature = "differential")]
-pub mod oracle;
 mod value;
+
+#[cfg(all(
+    feature = "differential",
+    any(feature = "wasmi-v0", feature = "wasmi-v1", feature = "wasmtime",)
+))]
+pub mod oracle;
+#[cfg(all(
+    feature = "differential",
+    not(any(feature = "wasmi-v0", feature = "wasmi-v1", feature = "wasmtime",))
+))]
+const _: () = {
+    compile_error!(
+        "differntial fuzzing: must have `wasmi-v0`, `wasmi-v1` or `wasmtime` crate feature enabled"
+    );
+};
 
 pub use self::{
     config::{FuzzSmithConfig, FuzzWasmiConfig},

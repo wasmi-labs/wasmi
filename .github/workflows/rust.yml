@@ -281,7 +281,7 @@ jobs:
         run: |
           FEATURES=""
           if [ "${{ matrix.fuzz_target }}" == "differential" ]; then
-            FEATURES="--features differential"
+            FEATURES="--features differential,wasmi-v0,wasmi-v1"
           fi
           echo "FEATURES=$FEATURES" >> $GITHUB_ENV
       - name: Check Fuzzing Target
@@ -291,7 +291,7 @@ jobs:
       - name: Run Fuzzing Target
         # - Use 4 jobs since GitHub hosted runners provide 4 CPUs.
         # - Always enable debug-assertions for all modes to catch more bugs.
-        # - Run fuzzing for 120s (2 minutes) in total.
+        # - Run fuzzing for 180s (3 minutes) in total.
         run: >-
           cargo fuzz run ${{ matrix.fuzz_target }}
           --jobs 4
@@ -299,7 +299,7 @@ jobs:
           --debug-assertions
           $FEATURES
           --
-          -max_total_time=120
+          -max_total_time=180
 
   miri:
     name: Miri

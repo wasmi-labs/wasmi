@@ -21,6 +21,9 @@ wasmprinter = { workspace = true, optional = true }
 [features]
 default = []
 differential = ["wasmi_fuzz/differential", "dep:wasmprinter"]
+wasmi-v0 = ["wasmi_fuzz/wasmi-v0"]
+wasmi-v1 = ["wasmi_fuzz/wasmi-v1"]
+wasmtime = ["wasmi_fuzz/wasmtime"]
 
 [[bin]]
 name = "translate"

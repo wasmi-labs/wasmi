@@ -1,17 +1,25 @@
 pub use self::{
     exports::{ModuleExports, StringSequenceIter},
     wasmi::WasmiOracle,
-    wasmi_stack::WasmiStackOracle,
-    wasmi_v049::WasmiV048Oracle,
-    wasmtime::WasmtimeOracle,
 };
 use crate::{FuzzError, FuzzSmithConfig, FuzzVal};
 use arbitrary::{Arbitrary, Unstructured};
 
+#[cfg(feature = "wasmi-v0")]
+pub use self::wasmi_v0::WasmiV0Oracle;
+#[cfg(feature = "wasmi-v1")]
+pub use self::wasmi_v1::WasmiV1Oracle;
+#[cfg(feature = "wasmtime")]
+pub use self::wasmtime::WasmtimeOracle;
+
 mod exports;
 mod wasmi;
-mod wasmi_stack;
-mod wasmi_v049;
+
+#[cfg(feature = "wasmi-v0")]
+mod wasmi_v0;
+#[cfg(feature = "wasmi-v1")]
+mod wasmi_v1;
+#[cfg(feature = "wasmtime")]
 mod wasmtime;
 
 /// Trait implemented by differential fuzzing oracles.
@@ -42,23 +50,38 @@ pub trait DifferentialOracleMeta: Sized {
 #[derive(Debug, Default, Copy, Clone)]
 pub enum ChosenOracle {
     /// The legacy Wasmi v0.31 oracle.
-    #[default]
-    WasmiStack,
+    #[cfg(feature = "wasmi-v0")]
+    #[cfg_attr(feature = "wasmi-v0", default)]
+    WasmiV0,
     /// The Wasmi v0.48.0 oracle.
-    WasmiV048,
+    #[cfg(feature = "wasmi-v1")]
+    #[cfg_attr(all(feature = "wasmi-v1", not(feature = "wasmi-v0")), default)]
+    WasmiV1,
     /// The Wasmtime oracle.
+    #[cfg(feature = "wasmtime")]
+    #[cfg_attr(
+        all(
+            feature = "wasmtime",
+            not(any(feature = "wasmi-v0", feature = "wasmi-v1"))
+        ),
+        default
+    )]
     Wasmtime,
 }
 
 impl Arbitrary<'_> for ChosenOracle {
     fn arbitrary(u: &mut Unstructured) -> arbitrary::Result<Self> {
+        let options = [
+            #[cfg(feature = "wasmi-v0")]
+            ChosenOracle::WasmiV0,
+            #[cfg(feature = "wasmi-v1")]
+            ChosenOracle::WasmiV1,
+            #[cfg(feature = "wasmtime")]
+            ChosenOracle::Wasmtime,
+        ];
         let index = u8::arbitrary(u).unwrap_or_default();
-        let chosen = match index {
-            0 => Self::Wasmtime,
-            1 => Self::WasmiV048,
-            _ => Self::WasmiStack,
-        };
-        Ok(chosen)
+        let _chosen = options.get(usize::from(index)).copied().unwrap_or_default();
+        Ok(_chosen)
     }
 }
 
@@ -70,8 +93,11 @@ impl ChosenOracle {
         // differential fuzzer. Therefore we disable it.
         fuzz_config.disable_relaxed_simd();
         match self {
-            ChosenOracle::WasmiStack => WasmiStackOracle::configure(fuzz_config),
-            ChosenOracle::WasmiV048 => WasmiV048Oracle::configure(fuzz_config),
+            #[cfg(feature = "wasmi-v0")]
+            ChosenOracle::WasmiV0 => WasmiV0Oracle::configure(fuzz_config),
+            #[cfg(feature = "wasmi-v1")]
+            ChosenOracle::WasmiV1 => WasmiV1Oracle::configure(fuzz_config),
+            #[cfg(feature = "wasmtime")]
             ChosenOracle::Wasmtime => WasmtimeOracle::configure(fuzz_config),
         }
     }
@@ -79,8 +105,11 @@ impl ChosenOracle {
     /// Sets up the chosen differential fuzzing oracle.
     pub fn setup(&self, wasm: &[u8]) -> Option<Box<dyn DifferentialOracle>> {
         let oracle: Box<dyn DifferentialOracle> = match self {
-            ChosenOracle::WasmiStack => Box::new(WasmiStackOracle::setup(wasm)?),
-            ChosenOracle::WasmiV048 => Box::new(WasmiV048Oracle::setup(wasm)?),
+            #[cfg(feature = "wasmi-v0")]
+            ChosenOracle::WasmiV0 => Box::new(WasmiV0Oracle::setup(wasm)?),
+            #[cfg(feature = "wasmi-v1")]
+            ChosenOracle::WasmiV1 => Box::new(WasmiV1Oracle::setup(wasm)?),
+            #[cfg(feature = "wasmtime")]
             ChosenOracle::Wasmtime => Box::new(WasmtimeOracle::setup(wasm)?),
         };
         Some(oracle)
