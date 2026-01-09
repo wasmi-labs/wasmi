@@ -33,8 +33,8 @@ anyhow = "1.0.91"
 
 [features]
 default = []
-differential = [
-    "dep:wasmi-stack",
-    "dep:wasmi-v049",
-    "dep:wasmtime",
-]
+# This needs at least one of the `wasmi-v0`, `wasmi-v1` or `wasmtime` crate features enabled to compile.
+differential = []
+wasmi-v0 = ["dep:wasmi-stack"]
+wasmi-v1 = ["dep:wasmi-v049"]
+wasmtime = ["dep:wasmtime"]
