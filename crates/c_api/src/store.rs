@@ -97,7 +97,7 @@ pub struct WasmiStoreData {
 /// - The returned [`wasm_store_t`] must be freed using [`wasm_store_delete`].
 ///
 /// Wraps [`<wasmi::Store<()>>::new`](wasmi::Store::new).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wasmi_store_new(
     engine: &wasm_engine_t,
     data: *mut ffi::c_void,
@@ -120,7 +120,7 @@ pub extern "C" fn wasmi_store_new(
 /// # Safety
 ///
 /// It is the callers responsibility to provide a valid `self`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wasmi_store_context(
     store: &mut wasmi_store_t,
 ) -> StoreContextMut<'_, WasmiStoreData> {
@@ -128,7 +128,7 @@ pub extern "C" fn wasmi_store_context(
 }
 
 /// Returns a pointer to the foreign data of the Wasmi store context.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wasmi_context_get_data(
     store: StoreContext<'_, WasmiStoreData>,
 ) -> *mut ffi::c_void {
@@ -136,7 +136,7 @@ pub extern "C" fn wasmi_context_get_data(
 }
 
 /// Sets the foreign data of the Wasmi store context.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wasmi_context_set_data(
     mut store: StoreContextMut<'_, WasmiStoreData>,
     data: *mut ffi::c_void,
@@ -151,7 +151,7 @@ pub extern "C" fn wasmi_context_set_data(
 /// # Errors
 ///
 /// If [`Store::get_fuel`] errors.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wasmi_context_get_fuel(
     store: StoreContext<'_, WasmiStoreData>,
     fuel: &mut u64,
@@ -168,7 +168,7 @@ pub extern "C" fn wasmi_context_get_fuel(
 /// # Errors
 ///
 /// If [`Store::set_fuel`] errors.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wasmi_context_set_fuel(
     mut store: StoreContextMut<'_, WasmiStoreData>,
     fuel: u64,

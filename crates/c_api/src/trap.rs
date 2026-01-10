@@ -62,7 +62,7 @@ pub extern "C" fn wasm_trap_new(
 /// # Safety
 ///
 /// The caller is responsible to provide a valid `message` and `len` pair.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wasmi_trap_new(message: *const u8, len: usize) -> Box<wasm_trap_t> {
     let bytes = crate::slice_from_raw_parts(message, len);
     let message = String::from_utf8_lossy(bytes);
