@@ -70,7 +70,7 @@ impl CTableType {
 /// Creates a new [`wasm_tabletype_t`] with the element `ty` and `limits`.
 ///
 /// Wraps [`TableType::new`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_new(
     ty: Box<wasm_valtype_t>,
@@ -84,21 +84,21 @@ pub extern "C" fn wasm_tabletype_new(
 }
 
 /// Returns a shared reference to the element type of the [`wasm_tabletype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_element(tt: &wasm_tabletype_t) -> &wasm_valtype_t {
     &tt.ty().element
 }
 
 /// Returns a shared reference to the table limits of the [`wasm_tabletype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_limits(tt: &wasm_tabletype_t) -> &wasm_limits_t {
     &tt.ty().limits
 }
 
 /// Returns a mutable reference to the element type of [`wasm_tabletype_t`] as [`wasm_externtype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_as_externtype(
     ty: &mut wasm_tabletype_t,
@@ -107,7 +107,7 @@ pub extern "C" fn wasm_tabletype_as_externtype(
 }
 
 /// Returns a shared reference to the element type of [`wasm_tabletype_t`] as [`wasm_externtype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_as_externtype_const(ty: &wasm_tabletype_t) -> &wasm_externtype_t {
     &ty.ext

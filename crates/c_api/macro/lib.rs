@@ -26,7 +26,7 @@ pub fn declare_own(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     (quote! {
         #[doc = #docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #delete(_: ::alloc::boxed::Box<#ty>) {}
     })
@@ -49,7 +49,7 @@ pub fn declare_ty(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         ::wasmi_c_api_macros::declare_own!(#ty);
 
         #[doc = #docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #copy(src: &#ty) -> ::alloc::boxed::Box<#ty> {
             ::alloc::boxed::Box::new(src.clone())
@@ -98,7 +98,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         ::wasmi_c_api_macros::declare_ty!(#ty);
 
         #[doc = #same_docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #same(_a: &#ty, _b: &#ty) -> ::core::primitive::bool {
             #[cfg(feature = "std")]
@@ -107,14 +107,14 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
 
         #[doc = #get_host_info_docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #get_host_info(a: &#ty) -> *mut ::core::ffi::c_void {
             ::core::ptr::null_mut()
         }
 
         #[doc = #set_host_info_docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #set_host_info(a: &#ty, info: *mut ::core::ffi::c_void) {
             #[cfg(feature = "std")]
@@ -123,7 +123,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
 
         #[doc = #set_host_info_final_docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #set_host_info_final(
             a: &#ty,
@@ -136,7 +136,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
 
         #[doc = #as_ref_docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #as_ref(a: &#ty) -> ::alloc::boxed::Box<crate::wasm_ref_t> {
             #[cfg(feature = "std")]
@@ -145,7 +145,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
 
         #[doc = #as_ref_const_docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #as_ref_const(a: &#ty) -> ::alloc::boxed::Box<crate::wasm_ref_t> {
             #[cfg(feature = "std")]
@@ -196,7 +196,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
         bail!("err(prefix_symbol): attributes must be empty")
     }
     let mut stream = input.clone().into_iter();
-    let fn_token = stream.find(|tt| matches!(tt, TokenTree::Ident(ref ident) if *ident == "fn"));
+    let fn_token = stream.find(|tt| matches!(tt, TokenTree::Ident(ident) if *ident == "fn"));
     if fn_token.is_none() {
         bail!("can only apply on `fn` items")
     }
@@ -210,7 +210,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
     }
     let prefixed_fn_name = format!("wasmi_{fn_name}");
     Ok(quote! {
-        #[export_name = #prefixed_fn_name]
+        #[unsafe(export_name = #prefixed_fn_name)]
         #input
     })
 }

@@ -122,7 +122,7 @@ unsafe fn create_function(
 ///
 /// It is the caller's responsibility not to alias the [`wasm_functype_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_new(
     store: &mut wasm_store_t,
@@ -143,7 +143,7 @@ pub unsafe extern "C" fn wasm_func_new(
 ///
 /// It is the caller's responsibility not to alias the [`wasm_functype_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_new_with_env(
     store: &mut wasm_store_t,
@@ -190,7 +190,7 @@ fn prepare_params_and_results(
 ///
 /// It is the caller's responsibility not to alias the [`wasm_func_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_call(
     func: &mut wasm_func_t,
@@ -255,7 +255,7 @@ fn error_from_panic(panic: Box<dyn Any + Send>) -> Error {
 ///
 /// It is the caller's responsibility not to alias the [`wasm_func_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_type(f: &wasm_func_t) -> Box<wasm_functype_t> {
     Box::new(wasm_functype_t::new(f.func().ty(f.inner.store.context())))
@@ -271,7 +271,7 @@ pub unsafe extern "C" fn wasm_func_type(f: &wasm_func_t) -> Box<wasm_functype_t>
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 ///
 /// [`FuncType::params`]: wasmi::FuncType::params
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize {
     f.func().ty(f.inner.store.context()).params().len()
@@ -287,21 +287,21 @@ pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize {
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 ///
 /// [`FuncType::results`]: wasmi::FuncType::results
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_result_arity(f: &wasm_func_t) -> usize {
     f.func().ty(f.inner.store.context()).results().len()
 }
 
 /// Returns the [`wasm_func_t`] as mutable reference to [`wasm_extern_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_func_as_extern(f: &mut wasm_func_t) -> &mut wasm_extern_t {
     &mut f.inner
 }
 
 /// Returns the [`wasm_func_t`] as shared reference to [`wasm_extern_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_func_as_extern_const(f: &wasm_func_t) -> &wasm_extern_t {
     &f.inner

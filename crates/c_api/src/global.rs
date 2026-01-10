@@ -48,7 +48,7 @@ impl wasm_global_t {
 ///
 /// It is the caller's responsibility not to alias the [`wasm_global_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_global_new(
     store: &mut wasm_store_t,
@@ -70,14 +70,14 @@ pub unsafe extern "C" fn wasm_global_new(
 }
 
 /// Returns the [`wasm_global_t`] as mutable reference to [`wasm_extern_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_global_as_extern(g: &mut wasm_global_t) -> &mut wasm_extern_t {
     &mut g.inner
 }
 
 /// Returns the [`wasm_global_t`] as shared reference to [`wasm_extern_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_global_as_extern_const(g: &wasm_global_t) -> &wasm_extern_t {
     &g.inner
@@ -91,7 +91,7 @@ pub extern "C" fn wasm_global_as_extern_const(g: &wasm_global_t) -> &wasm_extern
 ///
 /// It is the caller's responsibility not to alias the [`wasm_global_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_global_type(g: &wasm_global_t) -> Box<wasm_globaltype_t> {
     let globaltype = g.global().ty(g.inner.store.context());
@@ -106,7 +106,7 @@ pub unsafe extern "C" fn wasm_global_type(g: &wasm_global_t) -> Box<wasm_globalt
 ///
 /// It is the caller's responsibility not to alias the [`wasm_global_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_global_get(g: &mut wasm_global_t, out: &mut MaybeUninit<wasm_val_t>) {
     let global = g.global();
@@ -125,7 +125,7 @@ pub unsafe extern "C" fn wasm_global_get(g: &mut wasm_global_t, out: &mut MaybeU
 /// - It is the caller's responsibility that `val` matches the type of `g`.
 /// - It is the caller's responsibility not to alias the [`wasm_global_t`]
 ///   with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_global_set(g: &mut wasm_global_t, val: &wasm_val_t) {
     let global = g.global();

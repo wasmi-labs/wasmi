@@ -61,7 +61,7 @@ wasmi_c_api_macros::declare_own!(wasm_store_t);
 /// The returned [`wasm_store_t`] must be freed using [`wasm_store_delete`].
 ///
 /// Wraps [`<wasmi::Store<()>>::new`](wasmi::Store::new).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[allow(clippy::arc_with_non_send_sync)]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_store_new(engine: &wasm_engine_t) -> Box<wasm_store_t> {
