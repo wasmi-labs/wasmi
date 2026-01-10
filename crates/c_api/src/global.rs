@@ -54,20 +54,22 @@ pub unsafe extern "C" fn wasm_global_new(
     store: &mut wasm_store_t,
     ty: &wasm_globaltype_t,
     val: &wasm_val_t,
-) -> Option<Box<wasm_global_t>> { unsafe {
-    let val = val.to_val();
-    let ty = ty.ty().ty;
-    if val.ty() != ty.content() {
-        return None;
+) -> Option<Box<wasm_global_t>> {
+    unsafe {
+        let val = val.to_val();
+        let ty = ty.ty().ty;
+        if val.ty() != ty.content() {
+            return None;
+        }
+        let global = Global::new(store.inner.context_mut(), val, ty.mutability());
+        Some(Box::new(wasm_global_t {
+            inner: wasm_extern_t {
+                store: store.inner.clone(),
+                which: global.into(),
+            },
+        }))
     }
-    let global = Global::new(store.inner.context_mut(), val, ty.mutability());
-    Some(Box::new(wasm_global_t {
-        inner: wasm_extern_t {
-            store: store.inner.clone(),
-            which: global.into(),
-        },
-    }))
-}}
+}
 
 /// Returns the [`wasm_global_t`] as mutable reference to [`wasm_extern_t`].
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
@@ -93,10 +95,12 @@ pub extern "C" fn wasm_global_as_extern_const(g: &wasm_global_t) -> &wasm_extern
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_global_type(g: &wasm_global_t) -> Box<wasm_globaltype_t> { unsafe {
-    let globaltype = g.global().ty(g.inner.store.context());
-    Box::new(wasm_globaltype_t::new(globaltype))
-}}
+pub unsafe extern "C" fn wasm_global_type(g: &wasm_global_t) -> Box<wasm_globaltype_t> {
+    unsafe {
+        let globaltype = g.global().ty(g.inner.store.context());
+        Box::new(wasm_globaltype_t::new(globaltype))
+    }
+}
 
 /// Returns the current value of the [`wasm_global_t`].
 ///
@@ -108,13 +112,15 @@ pub unsafe extern "C" fn wasm_global_type(g: &wasm_global_t) -> Box<wasm_globalt
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_global_get(g: &mut wasm_global_t, out: &mut MaybeUninit<wasm_val_t>) { unsafe {
-    let global = g.global();
-    crate::initialize(
-        out,
-        wasm_val_t::from(global.get(g.inner.store.context_mut())),
-    );
-}}
+pub unsafe extern "C" fn wasm_global_get(g: &mut wasm_global_t, out: &mut MaybeUninit<wasm_val_t>) {
+    unsafe {
+        let global = g.global();
+        crate::initialize(
+            out,
+            wasm_val_t::from(global.get(g.inner.store.context_mut())),
+        );
+    }
+}
 
 /// Sets the current value of the [`wasm_global_t`].
 ///
@@ -127,7 +133,9 @@ pub unsafe extern "C" fn wasm_global_get(g: &mut wasm_global_t, out: &mut MaybeU
 ///   with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_global_set(g: &mut wasm_global_t, val: &wasm_val_t) { unsafe {
-    let global = g.global();
-    drop(global.set(g.inner.store.context_mut(), val.to_val()));
-}}
+pub unsafe extern "C" fn wasm_global_set(g: &mut wasm_global_t, val: &wasm_val_t) {
+    unsafe {
+        let global = g.global();
+        drop(global.set(g.inner.store.context_mut(), val.to_val()));
+    }
+}

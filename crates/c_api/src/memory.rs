@@ -54,15 +54,17 @@ impl wasm_memory_t {
 pub unsafe extern "C" fn wasm_memory_new(
     store: &mut wasm_store_t,
     mt: &wasm_memorytype_t,
-) -> Option<Box<wasm_memory_t>> { unsafe {
-    let memory = Memory::new(store.inner.context_mut(), mt.ty().ty).ok()?;
-    Some(Box::new(wasm_memory_t {
-        inner: wasm_extern_t {
-            store: store.inner.clone(),
-            which: memory.into(),
-        },
-    }))
-}}
+) -> Option<Box<wasm_memory_t>> {
+    unsafe {
+        let memory = Memory::new(store.inner.context_mut(), mt.ty().ty).ok()?;
+        Some(Box::new(wasm_memory_t {
+            inner: wasm_extern_t {
+                store: store.inner.clone(),
+                which: memory.into(),
+            },
+        }))
+    }
+}
 
 /// Returns the [`wasm_memory_t`] as mutable reference to [`wasm_extern_t`].
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
@@ -88,10 +90,12 @@ pub extern "C" fn wasm_memory_as_extern_const(m: &wasm_memory_t) -> &wasm_extern
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_memory_type(m: &wasm_memory_t) -> Box<wasm_memorytype_t> { unsafe {
-    let ty = m.memory().ty(m.inner.store.context());
-    Box::new(wasm_memorytype_t::new(ty))
-}}
+pub unsafe extern "C" fn wasm_memory_type(m: &wasm_memory_t) -> Box<wasm_memorytype_t> {
+    unsafe {
+        let ty = m.memory().ty(m.inner.store.context());
+        Box::new(wasm_memorytype_t::new(ty))
+    }
+}
 
 /// Returns the underlying data pointer of the [`wasm_memory_t`].
 ///
@@ -103,9 +107,9 @@ pub unsafe extern "C" fn wasm_memory_type(m: &wasm_memory_t) -> Box<wasm_memoryt
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_memory_data(m: &wasm_memory_t) -> *mut u8 { unsafe {
-    m.memory().data_ptr(m.inner.store.context())
-}}
+pub unsafe extern "C" fn wasm_memory_data(m: &wasm_memory_t) -> *mut u8 {
+    unsafe { m.memory().data_ptr(m.inner.store.context()) }
+}
 
 /// Returns the data buffer size of the [`wasm_memory_t`].
 ///
@@ -117,9 +121,9 @@ pub unsafe extern "C" fn wasm_memory_data(m: &wasm_memory_t) -> *mut u8 { unsafe
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize { unsafe {
-    m.memory().data_size(m.inner.store.context())
-}}
+pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize {
+    unsafe { m.memory().data_size(m.inner.store.context()) }
+}
 
 /// Returns the current number of Wasm pages of the [`wasm_memory_t`].
 ///
@@ -131,13 +135,15 @@ pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize { uns
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_pages_t { unsafe {
-    let size = m.memory().size(m.inner.store.context());
-    let Ok(size32) = u32::try_from(size) else {
-        panic!("linear memory pages out of bounds: {size}")
-    };
-    size32
-}}
+pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_pages_t {
+    unsafe {
+        let size = m.memory().size(m.inner.store.context());
+        let Ok(size32) = u32::try_from(size) else {
+            panic!("linear memory pages out of bounds: {size}")
+        };
+        size32
+    }
+}
 
 /// Grows the [`wasm_memory_t`] by `delta` Wasm pages.
 ///
@@ -154,8 +160,10 @@ pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_page
 pub unsafe extern "C" fn wasm_memory_grow(
     m: &mut wasm_memory_t,
     delta: wasm_memory_pages_t,
-) -> bool { unsafe {
-    let memory = m.memory();
-    let mut store = m.inner.store.context_mut();
-    memory.grow(&mut store, u64::from(delta)).is_ok()
-}}
+) -> bool {
+    unsafe {
+        let memory = m.memory();
+        let mut store = m.inner.store.context_mut();
+        memory.grow(&mut store, u64::from(delta)).is_ok()
+    }
+}

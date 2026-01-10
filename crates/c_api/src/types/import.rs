@@ -1,4 +1,4 @@
-use crate::{wasm_externtype_t, wasm_name_t, CExternType};
+use crate::{CExternType, wasm_externtype_t, wasm_name_t};
 use alloc::{boxed::Box, string::String};
 
 /// A Wasm import type.

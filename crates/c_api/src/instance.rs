@@ -1,10 +1,10 @@
 use crate::{
+    WasmStoreRef,
     wasm_extern_t,
     wasm_extern_vec_t,
     wasm_module_t,
     wasm_store_t,
     wasm_trap_t,
-    WasmStoreRef,
 };
 use alloc::boxed::Box;
 use wasmi::Instance;
@@ -50,25 +50,27 @@ pub unsafe extern "C" fn wasm_instance_new(
     wasm_module: &wasm_module_t,
     imports: *const wasm_extern_vec_t,
     result: Option<&mut *mut wasm_trap_t>,
-) -> Option<Box<wasm_instance_t>> { unsafe {
-    let imports = (*imports)
-        .as_slice()
-        .iter()
-        .filter_map(|import| import.as_ref().map(|i| i.which))
-        .collect::<Box<[_]>>();
-    match Instance::new(store.inner.context_mut(), &wasm_module.inner, &imports) {
-        Ok(instance) => Some(Box::new(wasm_instance_t::new(
-            store.inner.clone(),
-            instance,
-        ))),
-        Err(e) => {
-            if let Some(ptr) = result {
-                *ptr = Box::into_raw(Box::new(wasm_trap_t::new(e)));
+) -> Option<Box<wasm_instance_t>> {
+    unsafe {
+        let imports = (*imports)
+            .as_slice()
+            .iter()
+            .filter_map(|import| import.as_ref().map(|i| i.which))
+            .collect::<Box<[_]>>();
+        match Instance::new(store.inner.context_mut(), &wasm_module.inner, &imports) {
+            Ok(instance) => Some(Box::new(wasm_instance_t::new(
+                store.inner.clone(),
+                instance,
+            ))),
+            Err(e) => {
+                if let Some(ptr) = result {
+                    *ptr = Box::into_raw(Box::new(wasm_trap_t::new(e)));
+                }
+                None
             }
-            None
         }
     }
-}}
+}
 
 /// Returns the exports of the [`wasm_instance_t`].
 ///
@@ -85,18 +87,20 @@ pub unsafe extern "C" fn wasm_instance_new(
 pub unsafe extern "C" fn wasm_instance_exports(
     instance: &mut wasm_instance_t,
     out: &mut wasm_extern_vec_t,
-) { unsafe {
-    let store = instance.store.clone();
-    out.set_buffer(
-        instance
-            .inner
-            .exports(&mut instance.store.context_mut())
-            .map(|e| {
-                Some(Box::new(wasm_extern_t {
-                    which: e.into_extern(),
-                    store: store.clone(),
-                }))
-            })
-            .collect(),
-    );
-}}
+) {
+    unsafe {
+        let store = instance.store.clone();
+        out.set_buffer(
+            instance
+                .inner
+                .exports(&mut instance.store.context_mut())
+                .map(|e| {
+                    Some(Box::new(wasm_extern_t {
+                        which: e.into_extern(),
+                        store: store.clone(),
+                    }))
+                })
+                .collect(),
+        );
+    }
+}
