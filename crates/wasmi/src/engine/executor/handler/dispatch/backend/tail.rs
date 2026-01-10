@@ -1,6 +1,6 @@
 use crate::{
     engine::executor::handler::{
-        dispatch::{decode_handler, decode_op_code, Break, Control, ExecutionOutcome},
+        dispatch::{Break, Control, ExecutionOutcome, decode_handler, decode_op_code},
         exec,
         state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     },

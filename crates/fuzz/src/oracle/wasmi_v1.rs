@@ -1,8 +1,8 @@
 use crate::{
-    oracle::{DifferentialOracle, DifferentialOracleMeta},
     FuzzError,
     FuzzSmithConfig,
     FuzzVal,
+    oracle::{DifferentialOracle, DifferentialOracleMeta},
 };
 use wasmi_v1::{
     Config,
@@ -18,8 +18,8 @@ use wasmi_v1::{
     StoreLimits,
     StoreLimitsBuilder,
     TrapCode,
-    Val,
     V128,
+    Val,
 };
 
 /// Differential fuzzing backend for the register-machine Wasmi v0.48.0.

@@ -46,7 +46,7 @@ impl Display for MemoryError {
                 "the maximum size of the memory type overflows the system index type"
             }
             Self::OutOfFuel { required_fuel } => {
-                return write!(f, "not enough fuel. required={required_fuel}")
+                return write!(f, "not enough fuel. required={required_fuel}");
             }
         };
         write!(f, "{message}")

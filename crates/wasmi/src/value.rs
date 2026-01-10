@@ -1,13 +1,13 @@
 use crate::{
-    core::{TypedVal, UntypedVal},
     ExternRef,
+    F32,
+    F64,
     Func,
     Nullable,
     Ref,
-    ValType,
-    F32,
-    F64,
     V128,
+    ValType,
+    core::{TypedVal, UntypedVal},
 };
 
 /// Untyped instances that allow to be typed.

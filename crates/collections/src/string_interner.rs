@@ -7,7 +7,7 @@
 mod detail {
     use super::{GetOrInternWithHint, Sym};
     use crate::hash;
-    use string_interner::{backend::BufferBackend, StringInterner, Symbol};
+    use string_interner::{StringInterner, Symbol, backend::BufferBackend};
 
     pub type StringInternerImpl = StringInterner<BufferBackend<Sym>, hash::RandomState>;
 

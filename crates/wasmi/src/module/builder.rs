@@ -1,7 +1,4 @@
 use super::{
-    data::DataSegmentsBuilder,
-    export::ExternIdx,
-    import::FuncTypeIdx,
     ConstExpr,
     CustomSectionsBuilder,
     DataSegments,
@@ -17,16 +14,19 @@ use super::{
     ModuleHeaderInner,
     ModuleImports,
     ModuleInner,
+    data::DataSegmentsBuilder,
+    export::ExternIdx,
+    import::FuncTypeIdx,
 };
 use crate::{
-    collections::Map,
-    engine::{DedupFuncType, EngineFuncSpan},
     Engine,
     Error,
     FuncType,
     GlobalType,
     MemoryType,
     TableType,
+    collections::Map,
+    engine::{DedupFuncType, EngineFuncSpan},
 };
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 

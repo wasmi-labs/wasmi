@@ -1,5 +1,5 @@
 use super::{Arena, ArenaIndex, Iter, IterMut};
-use crate::{map, Map};
+use crate::{Map, map};
 use core::{
     hash::Hash,
     ops::{Index, IndexMut},

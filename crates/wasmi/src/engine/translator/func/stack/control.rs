@@ -1,11 +1,11 @@
 use super::{Operand, Reset};
 use crate::{
+    Engine,
     engine::{
-        translator::func::{labels::LabelRef, Pos},
         BlockType,
+        translator::func::{Pos, labels::LabelRef},
     },
     ir,
-    Engine,
 };
 use alloc::vec::{Drain, Vec};
 
@@ -492,7 +492,9 @@ impl ControlFrameBase for ControlFrame {
             ControlFrame::If(frame) => frame.len_branch_params(engine),
             ControlFrame::Else(frame) => frame.len_branch_params(engine),
             ControlFrame::Unreachable(_) => {
-                panic!("invalid query for unreachable control frame: `ControlFrame::len_branch_params`")
+                panic!(
+                    "invalid query for unreachable control frame: `ControlFrame::len_branch_params`"
+                )
             }
         }
     }
@@ -504,7 +506,9 @@ impl ControlFrameBase for ControlFrame {
             ControlFrame::If(frame) => frame.consume_fuel_instr(),
             ControlFrame::Else(frame) => frame.consume_fuel_instr(),
             ControlFrame::Unreachable(_) => {
-                panic!("invalid query for unreachable control frame: `ControlFrame::consume_fuel_instr`")
+                panic!(
+                    "invalid query for unreachable control frame: `ControlFrame::consume_fuel_instr`"
+                )
             }
         }
     }

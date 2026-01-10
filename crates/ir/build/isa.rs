@@ -1,4 +1,6 @@
 use crate::build::{
+    Config,
+    Op,
     ident::Ident,
     op::{
         BinaryOp,
@@ -28,8 +30,6 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    Config,
-    Op,
 };
 
 #[derive(Default)]

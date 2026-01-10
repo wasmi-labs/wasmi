@@ -110,8 +110,6 @@ mod core {
     #[cfg(feature = "simd")]
     pub use wasmi_core::simd;
     pub use wasmi_core::{
-        hint,
-        wasm,
         DecodeUntypedSlice,
         ElementSegment as CoreElementSegment,
         EncodeUntypedSlice,
@@ -135,6 +133,8 @@ mod core {
         UntypedRef,
         UntypedVal,
         WriteAs,
+        hint,
+        wasm,
     };
 }
 
@@ -215,13 +215,13 @@ use self::{
     table::{ElementSegment, ElementSegmentIdx, TableIdx},
 };
 pub use wasmi_core::{
+    F32,
+    F64,
     GlobalType,
     Mutability,
     RefType,
     ResourceLimiter,
     TrapCode,
-    ValType,
-    F32,
-    F64,
     V128,
+    ValType,
 };

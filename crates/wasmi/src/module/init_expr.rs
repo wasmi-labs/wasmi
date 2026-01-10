@@ -8,13 +8,13 @@
 
 use super::FuncIdx;
 use crate::{
-    core::{wasm, UntypedVal},
     ExternRef,
+    F32,
+    F64,
     Func,
     Nullable,
     Val,
-    F32,
-    F64,
+    core::{UntypedVal, wasm},
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};

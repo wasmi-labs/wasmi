@@ -1,10 +1,10 @@
 use super::IntoLaneIdx;
 use crate::{
-    core::{simd, Typed},
-    engine::translator::{func::op::LoadOperator, utils::ToBits},
-    ir::{index::Memory, Offset16, Op, Slot},
-    ValType,
     V128,
+    ValType,
+    core::{Typed, simd},
+    engine::translator::{func::op::LoadOperator, utils::ToBits},
+    ir::{Offset16, Op, Slot, index::Memory},
 };
 
 pub trait SimdReplaceLane {

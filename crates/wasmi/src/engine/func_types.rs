@@ -1,7 +1,7 @@
 use super::{EngineIdx, Guarded};
 use crate::{
-    collections::arena::{ArenaIndex, DedupArena, GuardedEntity},
     FuncType,
+    collections::arena::{ArenaIndex, DedupArena, GuardedEntity},
 };
 
 /// A raw index to a function signature entity.

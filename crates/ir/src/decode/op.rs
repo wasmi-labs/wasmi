@@ -1,14 +1,14 @@
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
-    decode::DecodeError,
-    index::{Memory, Table},
     Address,
     BranchOffset,
     Decode,
     Decoder,
     Offset16,
     Slot,
+    decode::DecodeError,
+    index::{Memory, Table},
 };
 
 #[derive(Copy, Clone)]

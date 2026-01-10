@@ -1,8 +1,8 @@
 use crate::{
+    AsContextMut,
     collections::arena::ArenaIndex,
     module::{self, PassiveDataSegmentBytes},
     store::Stored,
-    AsContextMut,
 };
 use core::convert::AsRef;
 

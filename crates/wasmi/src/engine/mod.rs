@@ -47,12 +47,12 @@ pub use self::{
     translator::TranslationError,
 };
 use crate::{
-    collections::arena::{ArenaIndex, GuardedEntity},
-    module::{FuncIdx, ModuleHeader},
     Error,
     Func,
     FuncType,
     StoreContextMut,
+    collections::arena::{ArenaIndex, GuardedEntity},
+    module::{FuncIdx, ModuleHeader},
 };
 use alloc::{
     sync::{Arc, Weak},

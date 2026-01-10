@@ -61,7 +61,7 @@ impl fmt::Display for InternalStoreError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match &self.kind {
             InternalStoreErrorKind::RestoreTypeMismatch(error) => {
-                return fmt::Display::fmt(error, f)
+                return fmt::Display::fmt(error, f);
             }
             InternalStoreErrorKind::StoreMismatch => "store owner mismatch",
             InternalStoreErrorKind::EntityNotFound => "entity not found",

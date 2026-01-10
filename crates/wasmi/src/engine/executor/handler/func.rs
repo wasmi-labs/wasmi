@@ -1,22 +1,22 @@
 use crate::{
-    engine::{
-        executor::handler::{
-            dispatch::{execute_until_done, ExecutionOutcome},
-            state::{Inst, Ip, Sp, Stack, VmState},
-            utils::{self, resolve_instance, set_value},
-        },
-        CallParams,
-        CallResults,
-        CodeMap,
-        EngineFunc,
-    },
-    func::HostFuncEntity,
-    ir::{BoundedSlotSpan, Slot, SlotSpan},
-    store::{CallHooks, StoreError},
     CallHook,
     Error,
     Instance,
     Store,
+    engine::{
+        CallParams,
+        CallResults,
+        CodeMap,
+        EngineFunc,
+        executor::handler::{
+            dispatch::{ExecutionOutcome, execute_until_done},
+            state::{Inst, Ip, Sp, Stack, VmState},
+            utils::{self, resolve_instance, set_value},
+        },
+    },
+    func::HostFuncEntity,
+    ir::{BoundedSlotSpan, Slot, SlotSpan},
+    store::{CallHooks, StoreError},
 };
 use core::marker::PhantomData;
 

@@ -1,8 +1,8 @@
 use crate::build::{
     display::{
+        Indent,
         ident::DisplayIdent,
         utils::{DisplayConcat, DisplaySequence},
-        Indent,
     },
     isa::Isa,
     op::{

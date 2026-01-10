@@ -1,6 +1,6 @@
 use wasi_common::sync::WasiCtxBuilder;
 use wasmi::{Config, Engine, Extern, Instance, Linker, Module, Store};
-use wasmi_wasi::{add_to_linker, WasiCtx};
+use wasmi_wasi::{WasiCtx, add_to_linker};
 
 pub fn load_instance_from_wat(wasm: &[u8]) -> (Store<WasiCtx>, wasmi::Instance) {
     let config = Config::default();

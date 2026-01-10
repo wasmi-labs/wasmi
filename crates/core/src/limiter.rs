@@ -27,7 +27,7 @@ impl Display for LimiterError {
             LimiterError::OutOfBoundsGrowth => "out of bounds growth",
             LimiterError::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
             LimiterError::OutOfFuel { required_fuel } => {
-                return write!(f, "not enough fuel. required={required_fuel}")
+                return write!(f, "not enough fuel. required={required_fuel}");
             }
         };
         write!(f, "{message}")

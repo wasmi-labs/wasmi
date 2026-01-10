@@ -1,4 +1,4 @@
-use crate::{core::CoreFuncType, errors::FuncError, Val, ValType};
+use crate::{Val, ValType, core::CoreFuncType, errors::FuncError};
 
 /// Types that are dynamically typed, such as [`ValType`].
 pub trait DynamicallyTyped {

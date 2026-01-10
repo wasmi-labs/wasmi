@@ -14,12 +14,18 @@ use super::{
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 use crate::{
-    core::{wasm, CoreTable, UntypedRef, UntypedVal},
+    Func,
+    Nullable,
+    TrapCode,
+    core::{CoreTable, UntypedRef, UntypedVal, wasm},
     engine::{
+        EngineFunc,
         executor::handler::{
+            Control,
             dispatch::Break,
             state::DoneReason,
             utils::{
+                IntoControl as _,
                 call_wasm,
                 call_wasm_or_host,
                 exec_copy_span,
@@ -47,20 +53,14 @@ use crate::{
                 return_call_wasm,
                 set_global,
                 update_instance,
-                IntoControl as _,
             },
-            Control,
         },
         utils::unreachable_unchecked,
-        EngineFunc,
     },
     errors::{FuelError, MemoryError, TableError},
     func::FuncEntity,
-    ir::{self, index, Slot, SlotSpan},
+    ir::{self, Slot, SlotSpan, index},
     store::StoreError,
-    Func,
-    Nullable,
-    TrapCode,
 };
 use core::cmp;
 

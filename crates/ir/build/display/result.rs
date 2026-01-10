@@ -1,5 +1,5 @@
 use crate::build::{
-    display::{ident::DisplayIdent, utils::DisplaySequence, Indent},
+    display::{Indent, ident::DisplayIdent, utils::DisplaySequence},
     isa::Isa,
     op::Op,
 };

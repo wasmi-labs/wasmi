@@ -3,7 +3,7 @@ pub use self::{
     ty::TableType,
 };
 use super::{AsContext, AsContextMut, Stored};
-use crate::{collections::arena::ArenaIndex, core::CoreTable, errors::TableError, Error, Ref};
+use crate::{Error, Ref, collections::arena::ArenaIndex, core::CoreTable, errors::TableError};
 
 mod element;
 mod ty;

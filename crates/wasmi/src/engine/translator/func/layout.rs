@@ -1,11 +1,11 @@
 use super::{LocalIdx, Operand, OperandIdx, Reset};
 use crate::{
+    Error,
     engine::{
-        translator::func::{LocalOperand, TempOperand},
         TranslationError,
+        translator::func::{LocalOperand, TempOperand},
     },
     ir::Slot,
-    Error,
 };
 
 #[cfg(doc)]

@@ -1,10 +1,12 @@
-use anyhow::{bail, Context as _, Result};
+use anyhow::{Context as _, Result, bail};
 use core::array;
 use std::collections::HashMap;
 use wasmi::{
     Config,
     Engine,
     Extern,
+    F32,
+    F64,
     Global,
     Instance,
     Linker,
@@ -19,22 +21,20 @@ use wasmi::{
     Store,
     Table,
     TableType,
-    Val,
-    F32,
-    F64,
     V128,
+    Val,
 };
 use wast::{
-    core::{AbstractHeapType, HeapType, NanPattern, V128Pattern, WastArgCore, WastRetCore},
-    lexer::Lexer,
-    parser::ParseBuffer,
-    token::Id,
     QuoteWat,
     WastArg,
     WastDirective,
     WastExecute,
     WastRet,
     Wat,
+    core::{AbstractHeapType, HeapType, NanPattern, V128Pattern, WastArgCore, WastRetCore},
+    lexer::Lexer,
+    parser::ParseBuffer,
+    token::Id,
 };
 
 /// The context of a single Wasm test spec suite run.
@@ -273,7 +273,9 @@ impl WastRunner {
                 span: _,
             } => {
                 if self.module_definition(module).is_ok() {
-                    bail!("module succeeded to compile and validate but should have failed with: {message}");
+                    bail!(
+                        "module succeeded to compile and validate but should have failed with: {message}"
+                    );
                 }
             }
             WastDirective::AssertMalformed {
@@ -404,23 +406,23 @@ impl WastRunner {
                 .any(|result| result.is_ok()),
             (Val::I32(result), WastRetCore::I32(expected)) => {
                 return i32_matches_or_err(result, expected)
-                    .map_err(|error| error.context("evaluation mismatch of `i32` values"))
+                    .map_err(|error| error.context("evaluation mismatch of `i32` values"));
             }
             (Val::I64(result), WastRetCore::I64(expected)) => {
                 return i64_matches_or_err(result, expected)
-                    .map_err(|error| error.context("evaluation mismatch of `i64` values"))
+                    .map_err(|error| error.context("evaluation mismatch of `i64` values"));
             }
             (Val::F32(result), WastRetCore::F32(expected)) => {
                 return f32_matches_or_err(result, expected)
-                    .map_err(|error| error.context("evaluation mismatch of `f32` values"))
+                    .map_err(|error| error.context("evaluation mismatch of `f32` values"));
             }
             (Val::F64(result), WastRetCore::F64(expected)) => {
                 return f64_matches_or_err(result, expected)
-                    .map_err(|error| error.context("evaluation mismatch of `f64` values"))
+                    .map_err(|error| error.context("evaluation mismatch of `f64` values"));
             }
             (Val::V128(result), WastRetCore::V128(expected)) => {
                 return v128_matches_or_err(result, expected)
-                    .map_err(|error| error.context("evaluation mismatch of `v128` values"))
+                    .map_err(|error| error.context("evaluation mismatch of `v128` values"));
             }
             (
                 Val::FuncRef(funcref),
@@ -713,14 +715,18 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
             let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
             let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
             if !(is_nan && is_quiet) {
-                bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:08X}).")
+                bail!(
+                    "expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:08X})."
+                )
             }
         }
         NanPattern::Value(expected) => {
             if actual_bits != expected.bits {
                 let expected_value = f32::from_bits(expected.bits);
                 let expected_bits = expected.bits;
-                bail!("expected {expected_value:?} (bits = 0x{expected_bits:08X}) but found {actual_value:?} (bits = 0x{actual_bits:08X}).")
+                bail!(
+                    "expected {expected_value:?} (bits = 0x{expected_bits:08X}) but found {actual_value:?} (bits = 0x{actual_bits:08X})."
+                )
             }
         }
     }
@@ -744,7 +750,9 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
             const CANONICAL_NAN: u64 = 0x7ff8_0000_0000_0000;
             let is_canonical_nan = (actual_bits & 0x7fff_ffff_ffff_ffff) == CANONICAL_NAN;
             if !is_canonical_nan {
-                bail!("expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
+                bail!(
+                    "expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:016X})."
+                )
             }
         }
         NanPattern::ArithmeticNan => {
@@ -759,14 +767,18 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
             let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
             let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
             if !(is_nan && is_quiet) {
-                bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
+                bail!(
+                    "expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:016X})."
+                )
             }
         }
         NanPattern::Value(expected) => {
             if actual.to_bits() != expected.bits {
                 let expected_value = f64::from_bits(expected.bits);
                 let expected_bits = expected.bits;
-                bail!("expected {expected_value:?} (bits = 0x{expected_bits:016X}) but found {actual_value:?} (bits = 0x{actual_bits:016X}).")
+                bail!(
+                    "expected {expected_value:?} (bits = 0x{expected_bits:016X}) but found {actual_value:?} (bits = 0x{actual_bits:016X})."
+                )
             }
         }
     }

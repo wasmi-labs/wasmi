@@ -1,6 +1,6 @@
 use crate::{
-    engine::{code_map::CompiledFuncEntity, WasmTranslator},
     Error,
+    engine::{WasmTranslator, code_map::CompiledFuncEntity},
 };
 use wasmparser::{BinaryReader, FunctionBody};
 

@@ -3,7 +3,7 @@ use std::{
     pin::Pin,
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
-use wasi_common::{snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1, Error};
+use wasi_common::{Error, snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1};
 use wasmi::{Caller, Extern, Linker};
 
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s

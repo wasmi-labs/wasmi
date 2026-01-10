@@ -1,21 +1,21 @@
 use super::{Reset, ReusableAllocations};
 use crate::{
+    Engine,
+    Error,
     core::FuelCostsProvider,
     engine::{
+        TranslationError,
         executor::op_code_to_handler,
         translator::{
             comparator::UpdateBranchOffset,
             func::{
-                labels::{Label, ResolvedLabelUser},
                 LabelRef,
                 LabelRegistry,
+                labels::{Label, ResolvedLabelUser},
             },
         },
-        TranslationError,
     },
     ir::{self, BlockFuel, BranchOffset, Encode as _, Op, OpCode},
-    Engine,
-    Error,
 };
 use alloc::vec::Vec;
 use core::{cmp, fmt, marker::PhantomData, mem};

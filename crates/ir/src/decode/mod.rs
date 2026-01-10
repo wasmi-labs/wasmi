@@ -8,31 +8,29 @@ use self::op::{
     BinaryOp,
     CmpBranchOp,
     CmpSelectOp,
-    LoadOpMem0Offset16_Ss,
     LoadOp_Si,
     LoadOp_Ss,
-    StoreOpMem0Offset16_S,
+    LoadOpMem0Offset16_Ss,
     StoreOp_I,
     StoreOp_S,
+    StoreOpMem0Offset16_S,
     TableGet,
     TableSet,
     UnaryOp,
 };
 #[cfg(feature = "simd")]
 use self::op::{
-    StoreLaneOpMem0Offset16_S,
     StoreLaneOp_S,
+    StoreLaneOpMem0Offset16_S,
     TernaryOp,
     V128ExtractLaneOp,
-    V128LoadLaneOpMem0Offset16_Ss,
     V128LoadLaneOp_Ss,
+    V128LoadLaneOpMem0Offset16_Ss,
     V128ReplaceLaneOp,
 };
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
-    core::TrapCode,
-    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
     Address,
     BlockFuel,
     BoundedSlotSpan,
@@ -44,6 +42,8 @@ use crate::{
     Sign,
     Slot,
     SlotSpan,
+    core::TrapCode,
+    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::{
     error::Error as CoreError,

@@ -3,12 +3,12 @@
 #[macro_use]
 pub mod backend;
 
-pub use self::backend::{execute_until_done, op_code_to_handler, Done, Handler};
+pub use self::backend::{Done, Handler, execute_until_done, op_code_to_handler};
 use super::state::Ip;
 use crate::{
-    engine::{ResumableHostTrapError, ResumableOutOfFuelError},
     Error,
     TrapCode,
+    engine::{ResumableHostTrapError, ResumableOutOfFuelError},
 };
 use core::ops::ControlFlow;
 

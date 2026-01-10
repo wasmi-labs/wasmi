@@ -1,7 +1,5 @@
 use super::*;
 use crate::{
-    error::ErrorKind,
-    module::InstantiationError,
     Caller,
     Engine,
     ExternRef,
@@ -15,6 +13,8 @@ use crate::{
     TableType,
     TrapCode,
     Val,
+    error::ErrorKind,
+    module::InstantiationError,
 };
 
 #[test]

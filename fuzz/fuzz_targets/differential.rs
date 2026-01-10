@@ -4,6 +4,10 @@ use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use wasmi::ValType;
 use wasmi_fuzz::{
+    FuzzError,
+    FuzzModule,
+    FuzzVal,
+    FuzzValType,
     config::FuzzSmithConfig,
     oracle::{
         ChosenOracle,
@@ -12,10 +16,6 @@ use wasmi_fuzz::{
         ModuleExports,
         WasmiOracle,
     },
-    FuzzError,
-    FuzzModule,
-    FuzzVal,
-    FuzzValType,
 };
 
 /// Fuzzing input for differential fuzzing.

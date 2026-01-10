@@ -11,12 +11,12 @@ use assert_matches::assert_matches;
 use bench::bench_config;
 use core::time::Duration;
 use criterion::{
-    criterion_group,
-    criterion_main,
-    measurement::WallTime,
     Bencher,
     BenchmarkGroup,
     Criterion,
+    criterion_group,
+    criterion_main,
+    measurement::WallTime,
 };
 use std::{
     fmt::{self, Display},
@@ -25,6 +25,8 @@ use std::{
 use wasmi::{
     CompilationMode,
     Engine,
+    F32,
+    F64,
     Func,
     FuncType,
     Instance,
@@ -36,8 +38,6 @@ use wasmi::{
     TypedFunc,
     Val,
     ValType,
-    F32,
-    F64,
 };
 
 criterion_group!(
@@ -1280,9 +1280,11 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
             run.call(&mut store, (ptr as i32, len as i32, value as i32))
                 .unwrap();
         });
-        assert!(mem.data(&store)[ptr..(ptr + len)]
-            .iter()
-            .all(|byte| *byte == value));
+        assert!(
+            mem.data(&store)[ptr..(ptr + len)]
+                .iter()
+                .all(|byte| *byte == value)
+        );
     });
 }
 

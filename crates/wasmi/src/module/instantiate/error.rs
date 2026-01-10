@@ -1,5 +1,4 @@
 use crate::{
-    errors::{MemoryError, TableError},
     Extern,
     ExternType,
     FuncType,
@@ -7,6 +6,7 @@ use crate::{
     MemoryType,
     Table,
     TableType,
+    errors::{MemoryError, TableError},
 };
 use core::{
     error::Error,
@@ -99,10 +99,22 @@ impl Display for InstantiationError {
                 f,
                 "expected {expected:?} external for import but found {actual:?}",
             ),
-            Self::GlobalTypeMismatch { expected, actual } => write!(f, "imported global type mismatch. expected {expected:?} but found {actual:?}"),
-            Self::FuncTypeMismatch { expected, actual } => write!(f, "imported function type mismatch. expected {expected:?} but found {actual:?}"),
-            Self::TableTypeMismatch { expected, actual } => write!(f, "imported table type mismatch. expected {expected:?} but found {actual:?}"),
-            Self::MemoryTypeMismatch { expected, actual } => write!(f, "imported memory type mismatch. expected {expected:?} but found {actual:?}"),
+            Self::GlobalTypeMismatch { expected, actual } => write!(
+                f,
+                "imported global type mismatch. expected {expected:?} but found {actual:?}"
+            ),
+            Self::FuncTypeMismatch { expected, actual } => write!(
+                f,
+                "imported function type mismatch. expected {expected:?} but found {actual:?}"
+            ),
+            Self::TableTypeMismatch { expected, actual } => write!(
+                f,
+                "imported table type mismatch. expected {expected:?} but found {actual:?}"
+            ),
+            Self::MemoryTypeMismatch { expected, actual } => write!(
+                f,
+                "imported memory type mismatch. expected {expected:?} but found {actual:?}"
+            ),
             Self::ElementSegmentDoesNotFit {
                 table,
                 table_index: offset,
@@ -117,8 +129,12 @@ impl Display for InstantiationError {
             Self::TooManyInstances => write!(f, "tried to instantiate too many instances"),
             Self::TooManyTables => write!(f, "tried to instantiate too many tables"),
             Self::TooManyMemories => write!(f, "tried to instantiate too many linear memories"),
-            Self::FailedToInstantiateMemory(error) => write!(f, "failed to instantiate memory: {error}"),
-            Self::FailedToInstantiateTable(error) => write!(f, "failed to instantiate table: {error}"),
+            Self::FailedToInstantiateMemory(error) => {
+                write!(f, "failed to instantiate memory: {error}")
+            }
+            Self::FailedToInstantiateTable(error) => {
+                write!(f, "failed to instantiate table: {error}")
+            }
         }
     }
 }

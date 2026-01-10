@@ -1,20 +1,7 @@
-use super::state::{mem0_bytes, Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState};
+use super::state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
-    engine::{
-        executor::handler::{Break, Control, Done, DoneReason},
-        utils::unreachable_unchecked,
-        DedupFuncType,
-        EngineFunc,
-    },
-    func::{FuncEntity, HostFuncEntity},
-    instance::InstanceEntity,
-    ir::{index, Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan},
-    memory::{DataSegment, DataSegmentEntity},
-    store::{CallHooks, PrunedStore, StoreError, StoreInner},
-    table::ElementSegment,
     Error,
     Func,
     Global,
@@ -24,6 +11,19 @@ use crate::{
     Table,
     TrapCode,
     V128,
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, ReadAs, UntypedVal, WriteAs},
+    engine::{
+        DedupFuncType,
+        EngineFunc,
+        executor::handler::{Break, Control, Done, DoneReason},
+        utils::unreachable_unchecked,
+    },
+    func::{FuncEntity, HostFuncEntity},
+    instance::InstanceEntity,
+    ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan, index},
+    memory::{DataSegment, DataSegmentEntity},
+    store::{CallHooks, PrunedStore, StoreError, StoreInner},
+    table::ElementSegment,
 };
 use core::num::NonZero;
 

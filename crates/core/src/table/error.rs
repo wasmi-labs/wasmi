@@ -52,7 +52,7 @@ impl Display for TableError {
             Self::SetOutOfBounds => "out of bounds table access: `table.set`",
             Self::ElementTypeMismatch => "encountered mismatching table element type",
             Self::OutOfFuel { required_fuel } => {
-                return write!(f, "not enough fuel: required={required_fuel}")
+                return write!(f, "not enough fuel: required={required_fuel}");
             }
         };
         write!(f, "{message}")

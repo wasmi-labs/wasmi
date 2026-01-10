@@ -1,6 +1,6 @@
 use crate::{
-    ir::{self, BranchOffset, Op, Slot},
     Error,
+    ir::{self, BranchOffset, Op, Slot},
 };
 
 /// Extension trait to return [`Slot`] result of compare [`Op`]s.

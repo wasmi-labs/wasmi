@@ -1,11 +1,11 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
-    collections::arena::ArenaIndex,
-    core::CoreGlobal,
-    errors::GlobalError,
     GlobalType,
     Mutability,
     Val,
+    collections::arena::ArenaIndex,
+    core::CoreGlobal,
+    errors::GlobalError,
 };
 
 /// A raw index to a global variable entity.

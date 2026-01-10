@@ -1,8 +1,8 @@
 use crate::{
+    ValType,
     core::Typed,
     engine::translator::utils::{ToBits, Wrap},
-    ir::{index::Memory, Address, Offset16, Op, Slot},
-    ValType,
+    ir::{Address, Offset16, Op, Slot, index::Memory},
 };
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.

@@ -1,9 +1,9 @@
 use crate::{
-    engine::DedupFuncType,
-    module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
     Engine,
     FuncType,
     ValType,
+    engine::DedupFuncType,
+    module::{FuncTypeIdx, ModuleHeader, utils::WasmiValueType},
 };
 
 /// The type of a Wasm control flow block.

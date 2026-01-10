@@ -56,10 +56,10 @@ impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
             Self::UnsupportedBlockType(error) => {
-                return write!(f, "encountered unsupported Wasm block type: {error:?}")
+                return write!(f, "encountered unsupported Wasm block type: {error:?}");
             }
             Self::UnsupportedValueType(error) => {
-                return write!(f, "encountered unsupported Wasm value type: {error:?}")
+                return write!(f, "encountered unsupported Wasm value type: {error:?}");
             }
             Self::BranchTableTargetsOutOfBounds => {
                 "branch table targets are out of bounds for wasmi bytecode"

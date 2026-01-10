@@ -3,7 +3,7 @@
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use wasmi::{Config, Engine, Module};
-use wasmi_fuzz::{config::ValidationMode, FuzzModule, FuzzWasmiConfig};
+use wasmi_fuzz::{FuzzModule, FuzzWasmiConfig, config::ValidationMode};
 
 #[derive(Debug)]
 pub struct FuzzInput {

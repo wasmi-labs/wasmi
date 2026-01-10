@@ -7,15 +7,15 @@
 
 use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
-    collections::arena::{Arena, ArenaIndex},
-    core::{Fuel, FuelCostsProvider},
-    engine::{utils::unreachable_unchecked, ResumableOutOfFuelError},
-    errors::FuelError,
-    ir::index::InternalFunc,
-    module::{FuncIdx, ModuleHeader},
     Config,
     Error,
     TrapCode,
+    collections::arena::{Arena, ArenaIndex},
+    core::{Fuel, FuelCostsProvider},
+    engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
+    errors::FuelError,
+    ir::index::InternalFunc,
+    module::{FuncIdx, ModuleHeader},
 };
 use alloc::boxed::Box;
 use core::{
@@ -418,7 +418,7 @@ impl CodeMap {
                     return Ok(self.adjust_cref_lifetime(cref));
                 }
                 FuncEntity::FailedToCompile => {
-                    return Err(Error::from(TranslationError::LazyCompilationFailed))
+                    return Err(Error::from(TranslationError::LazyCompilationFailed));
                 }
                 FuncEntity::Uncompiled(_) | FuncEntity::Uninit => {
                     panic!("unexpected function state: {entity:?}")
@@ -660,7 +660,7 @@ impl UncompiledFuncEntity {
         if let Some(fuel) = fuel {
             match fuel.consume_fuel(compilation_fuel) {
                 Err(FuelError::OutOfFuel { required_fuel }) => {
-                    return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)))
+                    return Err(Error::from(ResumableOutOfFuelError::new(required_fuel)));
                 }
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
             }

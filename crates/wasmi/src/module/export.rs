@@ -1,5 +1,5 @@
 use super::GlobalIdx;
-use crate::{collections::map::Iter as MapIter, Error, ExternType, Module};
+use crate::{Error, ExternType, Module, collections::map::Iter as MapIter};
 use alloc::boxed::Box;
 
 /// The index of a function declaration within a [`Module`].

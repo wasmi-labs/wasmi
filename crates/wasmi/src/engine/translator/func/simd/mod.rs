@@ -4,20 +4,20 @@ mod op;
 mod visit;
 
 use crate::{
-    core::{simd::IntoLaneIdx, FuelCostsProvider, Typed, TypedVal},
+    Error,
+    V128,
+    ValType,
+    core::{FuelCostsProvider, Typed, TypedVal, simd::IntoLaneIdx},
     engine::translator::{
-        func::{utils::Input, Operand},
+        func::{Operand, utils::Input},
         utils::{IntoShiftAmount, ToBits, Wrap},
     },
     ir::{
-        index::{self, Memory},
         Offset16,
         Op,
         Slot,
+        index::{self, Memory},
     },
-    Error,
-    ValType,
-    V128,
 };
 use wasmparser::MemArg;
 

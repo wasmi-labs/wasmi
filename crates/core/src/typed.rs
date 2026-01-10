@@ -1,4 +1,4 @@
-use crate::{UntypedVal, ValType, F32, F64, V128};
+use crate::{F32, F64, UntypedVal, V128, ValType};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {

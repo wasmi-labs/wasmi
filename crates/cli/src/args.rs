@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
-use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
+use wasmi_wasi::{Dir, TcpListener, WasiCtx, WasiCtxBuilder, ambient_authority};
 
 /// A CLI flag value key-value argument.
 #[derive(Debug, Clone)]

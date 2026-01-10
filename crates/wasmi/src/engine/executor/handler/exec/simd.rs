@@ -1,15 +1,15 @@
 use crate::{
+    V128,
     core::{
         simd,
-        simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8},
+        simd::{ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8, ImmLaneIdx16},
     },
     engine::executor::handler::{
         dispatch::Done,
         exec::decode_op,
         state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
-        utils::{get_value, set_value, IntoControl as _},
+        utils::{IntoControl as _, get_value, set_value},
     },
-    V128,
 };
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
@@ -235,9 +235,7 @@ handler_binary! {
 }
 
 macro_rules! wrap_shift {
-    ($f:expr) => {{
-        |v128: V128, rhs: u8| -> V128 { $f(v128, u32::from(rhs)) }
-    }};
+    ($f:expr) => {{ |v128: V128, rhs: u8| -> V128 { $f(v128, u32::from(rhs)) } }};
 }
 handler_binary! {
     fn i8x16_shl_sss(I8x16Shl_Sss) = wrap_shift!(simd::i8x16_shl);

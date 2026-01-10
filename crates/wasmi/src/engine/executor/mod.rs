@@ -1,26 +1,26 @@
-pub use self::handler::{op_code_to_handler, Inst, Stack};
+pub use self::handler::{Inst, Stack, op_code_to_handler};
 use super::code_map::CodeMap;
 use crate::{
+    Error,
+    Func,
+    FuncEntity,
+    Store,
+    StoreContextMut,
     engine::{
-        executor::handler::{
-            init_host_func_call,
-            init_wasm_func_call,
-            resume_wasm_func_call,
-            ExecutionOutcome,
-        },
         CallParams,
         CallResults,
         EngineInner,
         ResumableCallBase,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
+        executor::handler::{
+            ExecutionOutcome,
+            init_host_func_call,
+            init_wasm_func_call,
+            resume_wasm_func_call,
+        },
     },
     ir::SlotSpan,
-    Error,
-    Func,
-    FuncEntity,
-    Store,
-    StoreContextMut,
 };
 
 mod handler;

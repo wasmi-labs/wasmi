@@ -1,25 +1,25 @@
 use crate::{
+    Error,
+    Func,
+    TrapCode,
     core::{ReadAs, UntypedVal, WriteAs},
     engine::{
+        ResumableHostTrapError,
+        ResumableOutOfFuelError,
+        StackConfig,
         executor::{
+            CodeMap,
             handler::{
                 dispatch::{Control, ExecutionOutcome},
                 utils::extract_mem0,
             },
-            CodeMap,
         },
         utils::unreachable_unchecked,
-        ResumableHostTrapError,
-        ResumableOutOfFuelError,
-        StackConfig,
     },
     func::FuncInOut,
     instance::InstanceEntity,
     ir::{self, BoundedSlotSpan, Slot, SlotSpan},
     store::PrunedStore,
-    Error,
-    Func,
-    TrapCode,
 };
 use alloc::vec::Vec;
 use core::{

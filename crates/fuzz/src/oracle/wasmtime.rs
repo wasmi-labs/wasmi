@@ -1,9 +1,9 @@
 use crate::{
-    oracle::{DifferentialOracle, DifferentialOracleMeta},
     FuzzError,
     FuzzVal,
+    oracle::{DifferentialOracle, DifferentialOracleMeta},
 };
-use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, Val, V128};
+use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, V128, Val};
 
 /// Differential fuzzing backend for Wasmtime.
 pub struct WasmtimeOracle {
