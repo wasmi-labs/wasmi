@@ -1,4 +1,15 @@
-use crate::ir::{Op, Slot};
+use crate::{
+    ir::{Op, Slot},
+    ValType,
+};
+
+/// The number of Wasmi engine cells a value of type `ty` requires to be stored.
+pub fn required_cells_of_type(ty: ValType) -> u8 {
+    match ty {
+        ValType::V128 => 2,
+        _ => 1,
+    }
+}
 
 /// Bail out early in case the current code is unreachable.
 ///

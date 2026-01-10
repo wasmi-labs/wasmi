@@ -2,11 +2,15 @@ use super::{LocalIdx, Operand, Reset, StackPos};
 use crate::{
     Error,
     engine::{
+        translator::func::{utils::required_cells_of_type, LocalOperand, TempOperand},
         TranslationError,
         translator::func::{LocalOperand, TempOperand},
     },
     ir::Slot,
+    Error,
+    ValType,
 };
+use alloc::vec::Vec;
 
 #[cfg(doc)]
 use super::Stack;
@@ -76,24 +80,53 @@ impl IntoStackPos for &'_ TempOperand {
 /// The layout of the [`Stack`].
 #[derive(Debug, Default)]
 pub struct StackLayout {
-    /// The number of locals registered to the function.
-    len_locals: usize,
+    /// The cell offsets of each local variable of the function.
+    local_offsets: Vec<u16>,
+    /// The minimum cell offset for temporary operands.
+    ///
+    /// # Note
+    ///
+    /// This offset is always the smallest offset greater than all local offsets.
+    min_temp_offset: u16,
 }
 
 impl Reset for StackLayout {
     fn reset(&mut self) {
-        self.len_locals = 0;
+        self.local_offsets.clear();
+        self.min_temp_offset = 0;
     }
 }
 
 impl StackLayout {
+    /// Returns the number of locals registers to `self`.
+    fn len_locals(&self) -> usize {
+        self.local_offsets.len()
+    }
+
+    /// Returns the minimum cell offset for temporary operands.
+    fn min_temp_offset(&self) -> u16 {
+        self.min_temp_offset
+    }
+
     /// Slot `amount` local variables of common type `ty`.
     ///
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
-        self.len_locals += amount;
+    pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
+        let cells_per_local = required_cells_of_type(ty);
+        let err_too_many_slots = || Error::from(TranslationError::AllocatedTooManySlots);
+        let delta_offset = amount
+            .checked_mul(usize::from(cells_per_local))
+            .ok_or_else(err_too_many_slots)?;
+        usize::from(self.min_temp_offset)
+            .checked_add(delta_offset)
+            .filter(|&new_max| new_max <= usize::from(u16::MAX))
+            .ok_or_else(err_too_many_slots)?;
+        for _ in 0..amount {
+            self.local_offsets.push(self.min_temp_offset);
+            self.min_temp_offset += u16::from(cells_per_local);
+        }
         Ok(())
     }
 
@@ -103,7 +136,7 @@ impl StackLayout {
     #[must_use]
     pub fn stack_space(&self, slot: Slot) -> StackSpace {
         let index = u16::from(slot);
-        if usize::from(index) < self.len_locals {
+        if index < self.min_temp_offset {
             return StackSpace::Local;
         }
         StackSpace::Temp
@@ -146,13 +179,14 @@ impl StackLayout {
     pub fn local_to_slot(&self, item: impl IntoLocalIdx) -> Result<Slot, Error> {
         let index = item.into_local_idx();
         debug_assert!(
-            (u32::from(index) as usize) < self.len_locals,
+            (u32::from(index) as usize) < self.len_locals(),
             "out of bounds local operand index: {index:?}"
         );
         let Ok(index) = u16::try_from(u32::from(index)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
-        Ok(Slot::from(index))
+        let offset = self.local_offsets[usize::from(index)];
+        Ok(Slot::from(offset))
     }
 
     /// Converts the operand `index` into the associated [`Slot`].
@@ -162,9 +196,9 @@ impl StackLayout {
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
     pub fn temp_to_slot(&self, item: impl IntoStackPos) -> Result<Slot, Error> {
-        let index = item.into_operand_idx();
-        let index = usize::from(index);
-        let Some(index) = index.checked_add(self.len_locals) else {
+        let index = usize::from(item.into_operand_idx());
+        let base_offset = usize::from(self.min_temp_offset());
+        let Some(index) = base_offset.checked_add(index) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         let Ok(index) = u16::try_from(index) else {
