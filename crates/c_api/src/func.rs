@@ -79,7 +79,7 @@ unsafe fn create_function(
         + Send
         + Sync
         + 'static,
-) -> Box<wasm_func_t> {
+) -> Box<wasm_func_t> { unsafe {
     let ty = ty.ty().ty.clone();
     let func = Func::new(
         store.inner.context_mut(),
@@ -110,7 +110,7 @@ unsafe fn create_function(
             which: func.into(),
         },
     })
-}
+}}
 
 /// Creates a new [`wasm_func_t`] of type [`wasm_functype_t`] for the [`wasm_store_t`].
 ///
@@ -128,9 +128,9 @@ pub unsafe extern "C" fn wasm_func_new(
     store: &mut wasm_store_t,
     ty: &wasm_functype_t,
     callback: wasm_func_callback_t,
-) -> Box<wasm_func_t> {
+) -> Box<wasm_func_t> { unsafe {
     create_function(store, ty, move |params, results| callback(params, results))
-}
+}}
 
 /// Creates a new [`wasm_func_t`] of type [`wasm_functype_t`] for the [`wasm_store_t`].
 ///
@@ -151,13 +151,13 @@ pub unsafe extern "C" fn wasm_func_new_with_env(
     callback: wasm_func_callback_with_env_t,
     data: *mut c_void,
     finalizer: Option<extern "C" fn(arg1: *mut c_void)>,
-) -> Box<wasm_func_t> {
+) -> Box<wasm_func_t> { unsafe {
     let finalizer = crate::ForeignData { data, finalizer };
     create_function(store, ty, move |params, results| {
         let _ = &finalizer; // move entire finalizer into this closure
         callback(finalizer.data, params, results)
     })
-}
+}}
 
 /// Prepares `dst` to be populated with `params` and reserve space for `len_results`.
 ///
@@ -196,7 +196,7 @@ pub unsafe extern "C" fn wasm_func_call(
     func: &mut wasm_func_t,
     params: *const wasm_val_vec_t,
     results: *mut wasm_val_vec_t,
-) -> *mut wasm_trap_t {
+) -> *mut wasm_trap_t { unsafe {
     let f = func.func();
     let results = (*results).as_uninit_slice();
     let params = (*params).as_slice();
@@ -234,7 +234,7 @@ pub unsafe extern "C" fn wasm_func_call(
             Box::into_raw(trap)
         }
     }
-}
+}}
 
 /// Converts the panic data to a Wasmi [`Error`] as a best-effort basis.
 fn error_from_panic(panic: Box<dyn Any + Send>) -> Error {
@@ -257,9 +257,9 @@ fn error_from_panic(panic: Box<dyn Any + Send>) -> Error {
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_func_type(f: &wasm_func_t) -> Box<wasm_functype_t> {
+pub unsafe extern "C" fn wasm_func_type(f: &wasm_func_t) -> Box<wasm_functype_t> { unsafe {
     Box::new(wasm_functype_t::new(f.func().ty(f.inner.store.context())))
-}
+}}
 
 /// Returns the number of parameter types of the [`wasm_func_t`].
 ///
@@ -273,9 +273,9 @@ pub unsafe extern "C" fn wasm_func_type(f: &wasm_func_t) -> Box<wasm_functype_t>
 /// [`FuncType::params`]: wasmi::FuncType::params
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize {
+pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize { unsafe {
     f.func().ty(f.inner.store.context()).params().len()
-}
+}}
 
 /// Returns the number of result types of the [`wasm_func_t`].
 ///
@@ -289,9 +289,9 @@ pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize {
 /// [`FuncType::results`]: wasmi::FuncType::results
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_func_result_arity(f: &wasm_func_t) -> usize {
+pub unsafe extern "C" fn wasm_func_result_arity(f: &wasm_func_t) -> usize { unsafe {
     f.func().ty(f.inner.store.context()).results().len()
-}
+}}
 
 /// Returns the [`wasm_func_t`] as mutable reference to [`wasm_extern_t`].
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]

@@ -50,7 +50,7 @@ pub unsafe extern "C" fn wasm_instance_new(
     wasm_module: &wasm_module_t,
     imports: *const wasm_extern_vec_t,
     result: Option<&mut *mut wasm_trap_t>,
-) -> Option<Box<wasm_instance_t>> {
+) -> Option<Box<wasm_instance_t>> { unsafe {
     let imports = (*imports)
         .as_slice()
         .iter()
@@ -68,7 +68,7 @@ pub unsafe extern "C" fn wasm_instance_new(
             None
         }
     }
-}
+}}
 
 /// Returns the exports of the [`wasm_instance_t`].
 ///
@@ -85,7 +85,7 @@ pub unsafe extern "C" fn wasm_instance_new(
 pub unsafe extern "C" fn wasm_instance_exports(
     instance: &mut wasm_instance_t,
     out: &mut wasm_extern_vec_t,
-) {
+) { unsafe {
     let store = instance.store.clone();
     out.set_buffer(
         instance
@@ -99,4 +99,4 @@ pub unsafe extern "C" fn wasm_instance_exports(
             })
             .collect(),
     );
-}
+}}

@@ -27,9 +27,9 @@ impl WasmStoreRef {
     /// # Safety
     ///
     /// It is the callers responsibility to provide a valid `self`.
-    pub unsafe fn context(&self) -> StoreContext<'_, ()> {
+    pub unsafe fn context(&self) -> StoreContext<'_, ()> { unsafe {
         (*self.inner.get()).as_context()
-    }
+    }}
 
     /// Returns mutable access to the store context of the [`WasmStoreRef`].
     ///
@@ -38,9 +38,9 @@ impl WasmStoreRef {
     /// # Safety
     ///
     /// It is the callers responsibility to provide a valid `self`.
-    pub unsafe fn context_mut(&mut self) -> StoreContextMut<'_, ()> {
+    pub unsafe fn context_mut(&mut self) -> StoreContextMut<'_, ()> { unsafe {
         (*self.inner.get()).as_context_mut()
-    }
+    }}
 }
 
 /// The Wasm store.

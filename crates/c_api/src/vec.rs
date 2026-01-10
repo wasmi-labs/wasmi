@@ -168,10 +168,10 @@ macro_rules! declare_vecs {
             out: &mut $name $(<$lt>)?,
             size: usize,
             ptr: *const $elem_ty,
-        ) {
+        ) { unsafe {
             let vec = (0..size).map(|i| ptr.add(i).read()).collect();
             out.set_buffer(vec);
-        }
+        }}
 
         #[doc = concat!("Copies the [`", stringify!($name),"`] in `src`.")]
         #[doc = ""]

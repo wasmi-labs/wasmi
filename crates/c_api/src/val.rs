@@ -154,6 +154,6 @@ pub unsafe extern "C" fn wasm_val_copy(out: &mut MaybeUninit<wasm_val_t>, source
 /// The same [`wasm_val_t`] must not be deleted more than once.
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub unsafe extern "C" fn wasm_val_delete(val: *mut wasm_val_t) {
+pub unsafe extern "C" fn wasm_val_delete(val: *mut wasm_val_t) { unsafe {
     ptr::drop_in_place(val);
-}
+}}

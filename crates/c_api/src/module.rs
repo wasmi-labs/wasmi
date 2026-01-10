@@ -54,12 +54,12 @@ wasmi_c_api_macros::declare_own!(wasm_shared_module_t);
 pub unsafe extern "C" fn wasm_module_new(
     store: &mut wasm_store_t,
     binary: &wasm_byte_vec_t,
-) -> Option<Box<wasm_module_t>> {
+) -> Option<Box<wasm_module_t>> { unsafe {
     match Module::new(store.inner.context().engine(), binary.as_slice()) {
         Ok(module) => Some(Box::new(wasm_module_t::new(module))),
         Err(_) => None,
     }
-}
+}}
 
 /// Returns `true` if the Wasm `binary` successfully validates.
 ///
@@ -74,9 +74,9 @@ pub unsafe extern "C" fn wasm_module_new(
 pub unsafe extern "C" fn wasm_module_validate(
     store: &mut wasm_store_t,
     binary: &wasm_byte_vec_t,
-) -> bool {
+) -> bool { unsafe {
     Module::validate(store.inner.context().engine(), binary.as_slice()).is_ok()
-}
+}}
 
 /// Fills `out` with the exports of the [`Module`].
 fn fill_exports(module: &Module, out: &mut wasm_exporttype_vec_t) {
@@ -158,14 +158,14 @@ pub extern "C" fn wasm_module_share(module: &wasm_module_t) -> Box<wasm_shared_m
 pub unsafe extern "C" fn wasm_module_obtain(
     store: &mut wasm_store_t,
     shared_module: &wasm_shared_module_t,
-) -> Option<Box<wasm_module_t>> {
+) -> Option<Box<wasm_module_t>> { unsafe {
     let module = shared_module.inner.clone();
     if Engine::same(store.inner.context().engine(), module.engine()) {
         Some(Box::new(wasm_module_t::new(module)))
     } else {
         None
     }
-}
+}}
 
 /// Serializes the [`wasm_module_t`] into a binary.
 ///
