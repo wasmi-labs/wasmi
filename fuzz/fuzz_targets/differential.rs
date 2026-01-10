@@ -97,15 +97,15 @@ impl<'a> FuzzState<'a> {
             // Note: If either of the oracles returns a non-deterministic error we skip the
             //       entire fuzz run since following function executions could be affected by
             //       this non-determinism due to shared global state, such as global variables.
-            if let Err(wasmi_err) = &result_wasmi {
-                if wasmi_err.is_non_deterministic() {
-                    return;
-                }
+            if let Err(wasmi_err) = &result_wasmi
+                && wasmi_err.is_non_deterministic()
+            {
+                return;
             }
-            if let Err(oracle_err) = &result_oracle {
-                if oracle_err.is_non_deterministic() {
-                    return;
-                }
+            if let Err(oracle_err) = &result_oracle
+                && oracle_err.is_non_deterministic()
+            {
+                return;
             }
             match (result_wasmi, result_oracle) {
                 (Ok(wasmi_results), Ok(oracle_results)) => {
