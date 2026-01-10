@@ -28,9 +28,9 @@ use self::{
         LocalOperand,
         LoopControlFrame,
         Operand,
-        OperandIdx,
         Stack,
         StackAllocations,
+        StackPos,
         TempOperand,
     },
     utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
@@ -746,7 +746,7 @@ impl FuncTranslator {
             return Ok(None);
         }
         let height = frame.height();
-        let start = layout.temp_to_slot(OperandIdx::from(height))?;
+        let start = layout.temp_to_slot(StackPos::from(height))?;
         let span = SlotSpan::new(start);
         Ok(Some(span))
     }
@@ -1478,7 +1478,7 @@ impl FuncTranslator {
             self.copy_operand_to_temp(operand, fuel_pos)?;
         }
         let height = self.stack.height();
-        let start = self.layout.temp_to_slot(OperandIdx::from(height))?;
+        let start = self.layout.temp_to_slot(StackPos::from(height))?;
         let params = BoundedSlotSpan::new(SlotSpan::new(start), len_params);
         for result in ty.results() {
             self.stack.push_temp(*result)?;

@@ -16,8 +16,8 @@ pub enum Operand {
 }
 
 impl Operand {
-    /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`OperandIdx`].
-    pub(super) fn new(index: OperandIdx, operand: StackOperand) -> Self {
+    /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`StackPos`].
+    pub(super) fn new(index: StackPos, operand: StackOperand) -> Self {
         match operand {
             StackOperand::Local {
                 local_index, ty, ..
@@ -38,7 +38,7 @@ impl Operand {
     }
 
     /// Creates a local [`Operand`].
-    pub(super) fn local(operand_index: OperandIdx, local_index: LocalIdx, ty: ValType) -> Self {
+    pub(super) fn local(operand_index: StackPos, local_index: LocalIdx, ty: ValType) -> Self {
         Self::Local(LocalOperand {
             operand_index,
             local_index,
@@ -47,12 +47,12 @@ impl Operand {
     }
 
     /// Creates a temporary [`Operand`].
-    pub(super) fn temp(operand_index: OperandIdx, ty: ValType) -> Self {
+    pub(super) fn temp(operand_index: StackPos, ty: ValType) -> Self {
         Self::Temp(TempOperand { operand_index, ty })
     }
 
     /// Creates an immediate [`Operand`].
-    pub(super) fn immediate(operand_index: OperandIdx, val: TypedVal) -> Self {
+    pub(super) fn immediate(operand_index: StackPos, val: TypedVal) -> Self {
         Self::Immediate(ImmediateOperand { operand_index, val })
     }
 
@@ -61,8 +61,8 @@ impl Operand {
         matches!(self, Self::Temp(_))
     }
 
-    /// Returns the [`OperandIdx`] of the [`Operand`].
-    pub fn index(&self) -> OperandIdx {
+    /// Returns the [`StackPos`] of the [`Operand`].
+    pub fn index(&self) -> StackPos {
         match self {
             Operand::Local(operand) => operand.operand_index(),
             Operand::Temp(operand) => operand.operand_index(),
@@ -84,7 +84,7 @@ impl Operand {
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
     /// The index of the operand.
-    operand_index: OperandIdx,
+    operand_index: StackPos,
     /// The index of the local variable.
     local_index: LocalIdx,
     /// The type of the local variable.
@@ -99,7 +99,7 @@ impl From<LocalOperand> for Operand {
 
 impl LocalOperand {
     /// Returns the operand index of the [`LocalOperand`].
-    pub fn operand_index(&self) -> OperandIdx {
+    pub fn operand_index(&self) -> StackPos {
         self.operand_index
     }
 
@@ -118,7 +118,7 @@ impl LocalOperand {
 #[derive(Debug, Copy, Clone)]
 pub struct TempOperand {
     /// The index of the operand.
-    operand_index: OperandIdx,
+    operand_index: StackPos,
     /// The type of the temporary.
     ty: ValType,
 }
@@ -131,7 +131,7 @@ impl From<TempOperand> for Operand {
 
 impl TempOperand {
     /// Returns the operand index of the [`TempOperand`].
-    pub fn operand_index(&self) -> OperandIdx {
+    pub fn operand_index(&self) -> StackPos {
         self.operand_index
     }
 
@@ -145,7 +145,7 @@ impl TempOperand {
 #[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
     /// The index of the operand.
-    operand_index: OperandIdx,
+    operand_index: StackPos,
     /// The value and type of the immediate value.
     val: TypedVal,
 }
@@ -158,7 +158,7 @@ impl From<ImmediateOperand> for Operand {
 
 impl ImmediateOperand {
     /// Returns the operand index of the [`ImmediateOperand`].
-    pub fn operand_index(&self) -> OperandIdx {
+    pub fn operand_index(&self) -> StackPos {
         self.operand_index
     }
 

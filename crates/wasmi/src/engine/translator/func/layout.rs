@@ -1,4 +1,4 @@
-use super::{LocalIdx, Operand, OperandIdx, Reset};
+use super::{LocalIdx, Operand, Reset, StackPos};
 use crate::{
     Error,
     engine::{
@@ -42,33 +42,33 @@ impl IntoLocalIdx for &'_ LocalOperand {
     }
 }
 
-/// Allows conversion from `Self` to [`OperandIdx`].
+/// Allows conversion from `Self` to [`StackPos`].
 ///
 /// # Note
 ///
 /// This allows to use [`StackLayout::temp_to_slot`] with [`LocalIdx`] and [`TempOperand`].
-pub trait IntoOperandIdx {
-    /// Converts `self` into [`OperandIdx`].
-    fn into_operand_idx(self) -> OperandIdx;
+pub trait IntoStackPos {
+    /// Converts `self` into [`StackPos`].
+    fn into_operand_idx(self) -> StackPos;
 }
 
-impl IntoOperandIdx for OperandIdx {
+impl IntoStackPos for StackPos {
     #[inline]
-    fn into_operand_idx(self) -> OperandIdx {
+    fn into_operand_idx(self) -> StackPos {
         self
     }
 }
 
-impl IntoOperandIdx for TempOperand {
+impl IntoStackPos for TempOperand {
     #[inline]
-    fn into_operand_idx(self) -> OperandIdx {
+    fn into_operand_idx(self) -> StackPos {
         self.operand_index()
     }
 }
 
-impl IntoOperandIdx for &'_ TempOperand {
+impl IntoStackPos for &'_ TempOperand {
     #[inline]
-    fn into_operand_idx(self) -> OperandIdx {
+    fn into_operand_idx(self) -> StackPos {
         self.operand_index()
     }
 }
@@ -161,7 +161,7 @@ impl StackLayout {
     ///
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
-    pub fn temp_to_slot(&self, item: impl IntoOperandIdx) -> Result<Slot, Error> {
+    pub fn temp_to_slot(&self, item: impl IntoStackPos) -> Result<Slot, Error> {
         let index = item.into_operand_idx();
         let index = usize::from(index);
         let Some(index) = index.checked_add(self.len_locals) else {

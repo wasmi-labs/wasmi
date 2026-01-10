@@ -3,20 +3,20 @@ use crate::{Error, ValType, core::TypedVal};
 use alloc::vec::Vec;
 use core::{num::NonZero, slice};
 
-/// A [`StackOperand`] or [`Operand`] index on the [`OperandStack`].
+/// A [`StackOperand`] or [`Operand`] position on the [`OperandStack`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct OperandIdx(NonZero<usize>);
+pub struct StackPos(NonZero<usize>);
 
-impl From<OperandIdx> for usize {
-    fn from(value: OperandIdx) -> Self {
+impl From<StackPos> for usize {
+    fn from(value: StackPos) -> Self {
         value.0.get().wrapping_sub(1)
     }
 }
 
-impl From<usize> for OperandIdx {
+impl From<usize> for StackPos {
     fn from(value: usize) -> Self {
         let Some(operand_idx) = NonZero::new(value.wrapping_add(1)) else {
-            panic!("out of bounds `OperandIdx`: {value}")
+            panic!("out of bounds `StackPos`: {value}")
         };
         Self(operand_idx)
     }
@@ -39,9 +39,9 @@ pub enum StackOperand {
         /// operators with local operand inputs.
         ty: ValType,
         /// The previous [`StackOperand::Local`] on the [`OperandStack`].
-        prev_local: Option<OperandIdx>,
+        prev_local: Option<StackPos>,
         /// The next [`StackOperand::Local`] on the [`OperandStack`].
-        next_local: Option<OperandIdx>,
+        next_local: Option<StackPos>,
     },
     /// A temporary value on the [`OperandStack`].
     Temp {
@@ -124,25 +124,25 @@ impl OperandStack {
         self.max_height = core::cmp::max(self.max_height, self.height());
     }
 
-    /// Returns the [`OperandIdx`] of the next pushed operand.
-    fn next_index(&self) -> OperandIdx {
-        OperandIdx::from(self.operands.len())
+    /// Returns the [`StackPos`] of the next pushed operand.
+    fn next_index(&self) -> StackPos {
+        StackPos::from(self.operands.len())
     }
 
-    /// Returns the [`OperandIdx`] of the operand at `depth`.
-    fn depth_to_index(&self, depth: usize) -> OperandIdx {
-        OperandIdx::from(self.height() - depth - 1)
+    /// Returns the [`StackPos`] of the operand at `depth`.
+    fn depth_to_index(&self, depth: usize) -> StackPos {
+        StackPos::from(self.height() - depth - 1)
     }
 
     /// Pushes the [`Operand`] back to the [`OperandStack`].
     ///
-    /// Returns the new [`OperandIdx`].
+    /// Returns the new [`StackPos`].
     ///
     /// # Errors
     ///
     /// - If too many operands have been pushed onto the [`OperandStack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_operand(&mut self, operand: Operand) -> Result<OperandIdx, Error> {
+    pub fn push_operand(&mut self, operand: Operand) -> Result<StackPos, Error> {
         match operand {
             Operand::Local(operand) => self.push_local(operand.local_index(), operand.ty()),
             Operand::Temp(operand) => self.push_temp(operand.ty()),
@@ -156,7 +156,7 @@ impl OperandStack {
     ///
     /// - If too many operands have been pushed onto the [`OperandStack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<OperandIdx, Error> {
+    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<StackPos, Error> {
         let operand_index = self.next_index();
         let next_local = self
             .local_heads
@@ -181,7 +181,7 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
+    pub fn push_temp(&mut self, ty: ValType) -> Result<StackPos, Error> {
         let idx = self.next_index();
         self.operands.push(StackOperand::Temp { ty });
         self.update_max_stack_height();
@@ -194,7 +194,7 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
+    pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<StackPos, Error> {
         let idx = self.next_index();
         self.operands
             .push(StackOperand::Immediate { val: value.into() });
@@ -252,7 +252,7 @@ impl OperandStack {
     ///
     /// If `index` is out of bounds for `self`.
     #[inline]
-    fn get_at(&self, index: OperandIdx) -> StackOperand {
+    fn get_at(&self, index: StackPos) -> StackOperand {
         self.operands[usize::from(index)]
     }
 
@@ -284,7 +284,7 @@ impl OperandStack {
     ///
     /// If `index` is out of bounds for `self`.
     #[must_use]
-    fn operand_to_temp_at(&mut self, index: OperandIdx) -> StackOperand {
+    fn operand_to_temp_at(&mut self, index: StackPos) -> StackOperand {
         let operand = self.get_at(index);
         let ty = operand.ty();
         self.try_unlink_local(operand);
@@ -351,8 +351,8 @@ impl OperandStack {
     fn unlink_local(
         &mut self,
         local_index: LocalIdx,
-        prev_local: Option<OperandIdx>,
-        next_local: Option<OperandIdx>,
+        prev_local: Option<StackPos>,
+        next_local: Option<StackPos>,
     ) {
         if let Some(prev_local) = prev_local {
             self.update_next_local(prev_local, next_local);
@@ -371,7 +371,7 @@ impl OperandStack {
     ///
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
-    fn update_prev_local(&mut self, local_index: OperandIdx, prev_index: Option<OperandIdx>) {
+    fn update_prev_local(&mut self, local_index: StackPos, prev_index: Option<StackPos>) {
         match self.operands.get_mut(usize::from(local_index)) {
             Some(StackOperand::Local { prev_local, .. }) => {
                 *prev_local = prev_index;
@@ -386,7 +386,7 @@ impl OperandStack {
     ///
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
-    fn update_next_local(&mut self, local_index: OperandIdx, next_index: Option<OperandIdx>) {
+    fn update_next_local(&mut self, local_index: StackPos, next_index: Option<StackPos>) {
         match self.operands.get_mut(usize::from(local_index)) {
             Some(StackOperand::Local { next_local, .. }) => {
                 *next_local = next_index;
@@ -447,7 +447,7 @@ impl Iterator for PreservedAllLocalsIter<'_> {
             return None;
         }
         self.index = self.find_next_local()?;
-        let index = OperandIdx::from(self.index);
+        let index = StackPos::from(self.index);
         let operand = self.operands.operand_to_temp_at(index);
         debug_assert!(matches!(operand, StackOperand::Local { .. }));
         Some(Operand::new(index, operand))
@@ -460,11 +460,11 @@ pub struct PreservedLocalsIter<'stack> {
     /// The underlying operand stack.
     operands: &'stack mut OperandStack,
     /// The current operand index of the next preserved local if any.
-    index: Option<OperandIdx>,
+    index: Option<StackPos>,
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
-    type Item = OperandIdx;
+    type Item = StackPos;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index?;
@@ -501,7 +501,7 @@ impl Iterator for PeekedOperands<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let operand = self.operands.next().copied()?;
-        let index = OperandIdx::from(self.index);
+        let index = StackPos::from(self.index);
         self.index += 1;
         Some(Operand::new(index, operand))
     }
