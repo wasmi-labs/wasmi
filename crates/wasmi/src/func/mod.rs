@@ -16,20 +16,20 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, EngineFunc},
     AsContext,
     AsContextMut,
     Instance,
     StoreContext,
     Stored,
+    engine::{DedupFuncType, EngineFunc},
 };
 use crate::{
-    collections::arena::ArenaIndex,
-    engine::{Inst, ResumableCall},
-    reftype::RefId,
     Engine,
     Error,
     Val,
+    collections::arena::ArenaIndex,
+    engine::{Inst, ResumableCall},
+    reftype::RefId,
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug};

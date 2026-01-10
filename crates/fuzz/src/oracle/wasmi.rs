@@ -1,9 +1,9 @@
 use crate::{
-    oracle::{DifferentialOracle, DifferentialOracleMeta},
     FuzzError,
     FuzzSmithConfig,
     FuzzVal,
     FuzzValType,
+    oracle::{DifferentialOracle, DifferentialOracleMeta},
 };
 use wasmi::{
     Config,

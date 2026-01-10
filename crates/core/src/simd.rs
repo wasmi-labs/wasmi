@@ -1,12 +1,12 @@
 //! Defines the entire Wasm `simd` proposal API.
 
 use crate::{
+    TrapCode,
+    V128,
     memory::{self, ExtendInto},
     simd,
     value::Float,
     wasm,
-    TrapCode,
-    V128,
 };
 use core::{
     array,
@@ -151,7 +151,7 @@ trait Lanes {
 
     /// Apply `f` for all pairs of lane items in `self` and `other`.
     fn lanewise_binary(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> Self::Item)
-        -> Self;
+    -> Self;
 
     /// Apply `f` for all triplets of lane items in `self` and `other`.
     fn lanewise_ternary(
@@ -830,20 +830,12 @@ macro_rules! avgr {
 
 /// Wasm SIMD `pmin` (pseudo-min) definition.
 fn pmin<T: PartialOrd>(lhs: T, rhs: T) -> T {
-    if rhs < lhs {
-        rhs
-    } else {
-        lhs
-    }
+    if rhs < lhs { rhs } else { lhs }
 }
 
 /// Wasm SIMD `pmax` (pseudo-max) definition.
 fn pmax<T: PartialOrd>(lhs: T, rhs: T) -> T {
-    if lhs < rhs {
-        rhs
-    } else {
-        lhs
-    }
+    if lhs < rhs { rhs } else { lhs }
 }
 
 macro_rules! impl_binary_for {
@@ -1233,9 +1225,7 @@ impl_narrowing_low_high_ops! {
 }
 
 macro_rules! all_true {
-    ($ty:ty) => {{
-        |v: $ty, acc: bool| acc & (v != 0)
-    }};
+    ($ty:ty) => {{ |v: $ty, acc: bool| acc & (v != 0) }};
 }
 macro_rules! impl_all_true_ops {
     (
@@ -1257,9 +1247,7 @@ impl_all_true_ops! {
 }
 
 macro_rules! bitmask {
-    ($ty:ty) => {{
-        |n: u8, v: $ty, acc| acc | (i32::from(v < 0).wrapping_shl(u32::from(n)))
-    }};
+    ($ty:ty) => {{ |n: u8, v: $ty, acc| acc | (i32::from(v < 0).wrapping_shl(u32::from(n))) }};
 }
 macro_rules! impl_bitmask_ops {
     (

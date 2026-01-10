@@ -1,13 +1,13 @@
 //! Execution helpers for Wasm or Wasmi instructions.
 
 use crate::{
-    memory,
     Float,
     Integer,
     SignExtendFrom,
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
+    memory,
 };
 use core::ops::Neg;
 

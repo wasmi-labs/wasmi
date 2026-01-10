@@ -16,9 +16,9 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
+    Error,
     engine::EngineFunc,
     module::{FuncIdx, ModuleHeader},
-    Error,
 };
 use core::{fmt, mem};
 use wasmparser::{

@@ -28,15 +28,15 @@ pub use self::{
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
-    core::TypedVal,
-    engine::{
-        translator::func::{labels::LabelRef, stack::operands::PeekedOperands, LocalIdx, Pos},
-        BlockType,
-    },
-    ir,
     Engine,
     Error,
     ValType,
+    core::TypedVal,
+    engine::{
+        BlockType,
+        translator::func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+    },
+    ir,
 };
 use alloc::vec::Vec;
 
@@ -204,10 +204,11 @@ impl Stack {
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
-        debug_assert!(self
-            .operands
-            .peek(len_params)
-            .all(|operand| operand.is_temp()));
+        debug_assert!(
+            self.operands
+                .peek(len_params)
+                .all(|operand| operand.is_temp())
+        );
         self.controls
             .push_loop(ty, block_height, label, consume_fuel);
         Ok(())

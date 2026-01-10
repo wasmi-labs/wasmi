@@ -1,4 +1,4 @@
-use crate::{wasm_externtype_t, wasm_valtype_t, CExternType};
+use crate::{CExternType, wasm_externtype_t, wasm_valtype_t};
 use alloc::boxed::Box;
 use wasmi::GlobalType;
 
@@ -70,7 +70,7 @@ impl CGlobalType {
 /// Creates a new [`wasm_globaltype_t`] with the given content type and mutability.
 ///
 /// Wraps [`GlobalType::new`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_globaltype_new(
     ty: Box<wasm_valtype_t>,
@@ -85,14 +85,14 @@ pub extern "C" fn wasm_globaltype_new(
 }
 
 /// Returns a shared reference to the content type of the [`wasm_globaltype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_globaltype_content(gt: &wasm_globaltype_t) -> &wasm_valtype_t {
     &gt.ty().content
 }
 
 /// Returns the mutability of the [`wasm_globaltype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_globaltype_mutability(gt: &wasm_globaltype_t) -> wasm_mutability_t {
     match gt.ty().ty.mutability() {
@@ -102,7 +102,7 @@ pub extern "C" fn wasm_globaltype_mutability(gt: &wasm_globaltype_t) -> wasm_mut
 }
 
 /// Returns a mutable reference to the element type of [`wasm_globaltype_t`] as [`wasm_externtype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_globaltype_as_externtype(
     ty: &mut wasm_globaltype_t,
@@ -111,7 +111,7 @@ pub extern "C" fn wasm_globaltype_as_externtype(
 }
 
 /// Returns a shared reference to the element type of [`wasm_globaltype_t`] as [`wasm_externtype_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_globaltype_as_externtype_const(
     ty: &wasm_globaltype_t,

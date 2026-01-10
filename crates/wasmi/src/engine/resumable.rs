@@ -1,14 +1,14 @@
 use super::Func;
 use crate::{
-    engine::Stack,
-    func::{CallResultsTuple, FuncError},
-    ir::SlotSpan,
     AsContext,
     AsContextMut,
     Engine,
     Error,
     Val,
     WasmResults,
+    engine::Stack,
+    func::{CallResultsTuple, FuncError},
+    ir::SlotSpan,
 };
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
 

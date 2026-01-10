@@ -1,12 +1,12 @@
 use crate::{
-    collections::arena::ArenaIndex,
-    core::{CoreElementSegment, UntypedRef},
-    module,
-    store::Stored,
     AsContext,
     AsContextMut,
     Func,
     Global,
+    collections::arena::ArenaIndex,
+    core::{CoreElementSegment, UntypedRef},
+    module,
+    store::Stored,
 };
 use alloc::boxed::Box;
 

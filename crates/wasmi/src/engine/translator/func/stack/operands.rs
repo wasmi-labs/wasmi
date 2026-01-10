@@ -1,5 +1,5 @@
 use super::{LocalIdx, LocalsHead, Operand, Reset};
-use crate::{core::TypedVal, engine::translator::func::encoder::BytePos, Error, ValType};
+use crate::{Error, ValType, core::TypedVal, engine::translator::func::encoder::BytePos};
 use alloc::vec::Vec;
 use core::{num::NonZero, slice};
 

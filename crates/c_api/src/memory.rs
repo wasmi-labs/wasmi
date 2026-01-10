@@ -49,30 +49,32 @@ impl wasm_memory_t {
 ///
 /// It is the caller's responsibility not to alias the [`wasm_memory_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_new(
     store: &mut wasm_store_t,
     mt: &wasm_memorytype_t,
 ) -> Option<Box<wasm_memory_t>> {
-    let memory = Memory::new(store.inner.context_mut(), mt.ty().ty).ok()?;
-    Some(Box::new(wasm_memory_t {
-        inner: wasm_extern_t {
-            store: store.inner.clone(),
-            which: memory.into(),
-        },
-    }))
+    unsafe {
+        let memory = Memory::new(store.inner.context_mut(), mt.ty().ty).ok()?;
+        Some(Box::new(wasm_memory_t {
+            inner: wasm_extern_t {
+                store: store.inner.clone(),
+                which: memory.into(),
+            },
+        }))
+    }
 }
 
 /// Returns the [`wasm_memory_t`] as mutable reference to [`wasm_extern_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memory_as_extern(m: &mut wasm_memory_t) -> &mut wasm_extern_t {
     &mut m.inner
 }
 
 /// Returns the [`wasm_memory_t`] as shared reference to [`wasm_extern_t`].
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memory_as_extern_const(m: &wasm_memory_t) -> &wasm_extern_t {
     &m.inner
@@ -86,11 +88,13 @@ pub extern "C" fn wasm_memory_as_extern_const(m: &wasm_memory_t) -> &wasm_extern
 ///
 /// It is the caller's responsibility not to alias the [`wasm_memory_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_type(m: &wasm_memory_t) -> Box<wasm_memorytype_t> {
-    let ty = m.memory().ty(m.inner.store.context());
-    Box::new(wasm_memorytype_t::new(ty))
+    unsafe {
+        let ty = m.memory().ty(m.inner.store.context());
+        Box::new(wasm_memorytype_t::new(ty))
+    }
 }
 
 /// Returns the underlying data pointer of the [`wasm_memory_t`].
@@ -101,10 +105,10 @@ pub unsafe extern "C" fn wasm_memory_type(m: &wasm_memory_t) -> Box<wasm_memoryt
 ///
 /// It is the caller's responsibility not to alias the [`wasm_memory_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_data(m: &wasm_memory_t) -> *mut u8 {
-    m.memory().data_ptr(m.inner.store.context())
+    unsafe { m.memory().data_ptr(m.inner.store.context()) }
 }
 
 /// Returns the data buffer size of the [`wasm_memory_t`].
@@ -115,10 +119,10 @@ pub unsafe extern "C" fn wasm_memory_data(m: &wasm_memory_t) -> *mut u8 {
 ///
 /// It is the caller's responsibility not to alias the [`wasm_memory_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize {
-    m.memory().data_size(m.inner.store.context())
+    unsafe { m.memory().data_size(m.inner.store.context()) }
 }
 
 /// Returns the current number of Wasm pages of the [`wasm_memory_t`].
@@ -129,14 +133,16 @@ pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize {
 ///
 /// It is the caller's responsibility not to alias the [`wasm_memory_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_pages_t {
-    let size = m.memory().size(m.inner.store.context());
-    let Ok(size32) = u32::try_from(size) else {
-        panic!("linear memory pages out of bounds: {size}")
-    };
-    size32
+    unsafe {
+        let size = m.memory().size(m.inner.store.context());
+        let Ok(size32) = u32::try_from(size) else {
+            panic!("linear memory pages out of bounds: {size}")
+        };
+        size32
+    }
 }
 
 /// Grows the [`wasm_memory_t`] by `delta` Wasm pages.
@@ -149,13 +155,15 @@ pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_page
 ///
 /// It is the caller's responsibility not to alias the [`wasm_memory_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_grow(
     m: &mut wasm_memory_t,
     delta: wasm_memory_pages_t,
 ) -> bool {
-    let memory = m.memory();
-    let mut store = m.inner.store.context_mut();
-    memory.grow(&mut store, u64::from(delta)).is_ok()
+    unsafe {
+        let memory = m.memory();
+        let mut store = m.inner.store.context_mut();
+        memory.grow(&mut store, u64::from(delta)).is_ok()
+    }
 }

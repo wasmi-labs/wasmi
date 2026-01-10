@@ -1,7 +1,7 @@
 use super::{GetOrInternWithHint, InternHint, Sym};
 use alloc::{
     borrow::Borrow,
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{BTreeMap, btree_map::Entry},
     sync::Arc,
     vec::Vec,
 };

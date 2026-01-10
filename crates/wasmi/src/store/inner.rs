@@ -1,10 +1,4 @@
 use crate::{
-    collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
-    engine::DedupFuncType,
-    memory::DataSegment,
-    reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
-    store::error::InternalStoreError,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -24,6 +18,12 @@ use crate::{
     MemoryIdx,
     Table,
     TableIdx,
+    collections::arena::{Arena, ArenaIndex, GuardedEntity},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
+    engine::DedupFuncType,
+    memory::DataSegment,
+    reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
+    store::error::InternalStoreError,
 };
 use core::{
     fmt::Debug,

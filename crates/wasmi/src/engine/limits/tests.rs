@@ -1,6 +1,6 @@
 use self::engine::AvgBytesPerFunctionLimit;
 use super::*;
-use crate::{error::ErrorKind, Config, Engine, Error, Module};
+use crate::{Config, Engine, Error, Module, error::ErrorKind};
 
 /// Parses and returns the Wasm module `wasm` with the given [`EnforcedLimits`] `limits`.
 fn parse_with(wasm: &str, limits: EnforcedLimits) -> Result<Module, Error> {

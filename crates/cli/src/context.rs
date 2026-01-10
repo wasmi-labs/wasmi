@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use std::{fs, path::Path};
 use wasmi::{CompilationMode, Config, ExternType, Func, FuncType, Instance, Module, Store};
 use wasmi_wasi::WasiCtx;

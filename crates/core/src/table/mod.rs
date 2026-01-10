@@ -175,7 +175,7 @@ impl Table {
             match fuel.consume_fuel(|costs| costs.fuel_for_copying_values(delta)) {
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
                 Err(FuelError::OutOfFuel { required_fuel }) => {
-                    return notify_limiter(limiter, TableError::OutOfFuel { required_fuel })
+                    return notify_limiter(limiter, TableError::OutOfFuel { required_fuel });
                 }
             }
         }

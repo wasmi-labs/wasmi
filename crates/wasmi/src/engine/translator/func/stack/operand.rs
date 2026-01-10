@@ -1,5 +1,5 @@
 use super::{LocalIdx, OperandIdx, StackOperand};
-use crate::{core::TypedVal, engine::translator::func::encoder::BytePos, ValType};
+use crate::{ValType, core::TypedVal, engine::translator::func::encoder::BytePos};
 
 #[cfg(doc)]
 use super::Stack;

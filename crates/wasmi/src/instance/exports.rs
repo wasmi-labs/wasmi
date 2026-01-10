@@ -1,5 +1,4 @@
 use crate::{
-    collections::map::Iter as MapIter,
     AsContext,
     Func,
     FuncType,
@@ -9,6 +8,7 @@ use crate::{
     MemoryType,
     Table,
     TableType,
+    collections::map::Iter as MapIter,
 };
 use alloc::boxed::Box;
 use core::iter::FusedIterator;

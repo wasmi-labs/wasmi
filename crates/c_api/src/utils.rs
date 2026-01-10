@@ -23,9 +23,11 @@ impl Drop for ForeignData {
 ///
 /// Returns an empty Rust slice if `len` is 0 disregarding `ptr`.
 pub unsafe fn slice_from_raw_parts<'a, T>(ptr: *const T, len: usize) -> &'a [T] {
-    match len {
-        0 => &[],
-        _ => slice::from_raw_parts(ptr, len),
+    unsafe {
+        match len {
+            0 => &[],
+            _ => slice::from_raw_parts(ptr, len),
+        }
     }
 }
 

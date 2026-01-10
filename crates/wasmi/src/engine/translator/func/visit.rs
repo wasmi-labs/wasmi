@@ -1,28 +1,28 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
-    core::{wasm, FuelCostsProvider, IndexType, TypedVal},
-    engine::{
-        translator::func::{
-            op,
-            stack::{AcquiredTarget, IfReachability},
-            ControlFrameBase,
-            Input,
-            Operand,
-        },
-        BlockType,
-    },
-    ir::{self, index, Op},
-    module::{self, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
+    F32,
+    F64,
     Func,
     FuncType,
     Mutability,
     Nullable,
     TrapCode,
     ValType,
-    F32,
-    F64,
+    core::{FuelCostsProvider, IndexType, TypedVal, wasm},
+    engine::{
+        BlockType,
+        translator::func::{
+            ControlFrameBase,
+            Input,
+            Operand,
+            op,
+            stack::{AcquiredTarget, IfReachability},
+        },
+    },
+    ir::{self, Op, index},
+    module::{self, MemoryIdx, TableIdx, WasmiValueType},
 };
 use wasmparser::VisitOperator;
 

@@ -9,11 +9,11 @@ mod val;
 
 pub use self::{
     export::*,
+    r#extern::*,
     func::*,
     global::*,
     import::*,
     memory::*,
-    r#extern::*,
     table::*,
     val::*,
 };

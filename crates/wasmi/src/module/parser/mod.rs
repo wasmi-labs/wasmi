@@ -1,22 +1,22 @@
 use super::{
-    builder::ModuleHeaderBuilder,
-    export::ExternIdx,
-    global::Global,
-    import::{FuncTypeIdx, Import},
-    utils::FromWasmparser as _,
     CustomSectionsBuilder,
     ElementSegment,
     FuncIdx,
     ModuleBuilder,
     ModuleHeader,
+    builder::ModuleHeaderBuilder,
+    export::ExternIdx,
+    global::Global,
+    import::{FuncTypeIdx, Import},
+    utils::FromWasmparser as _,
 };
 use crate::{
-    engine::{EnforcedLimitsError, EngineFunc},
     Engine,
     Error,
     FuncType,
     MemoryType,
     TableType,
+    engine::{EnforcedLimitsError, EngineFunc},
 };
 use alloc::boxed::Box;
 use core::ops::Range;

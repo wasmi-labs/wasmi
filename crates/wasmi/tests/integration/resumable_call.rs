@@ -2,7 +2,6 @@
 
 use core::slice;
 use wasmi::{
-    errors::ErrorKind,
     AsContext,
     AsContextMut,
     Caller,
@@ -22,6 +21,7 @@ use wasmi::{
     TypedResumableCallHostTrap,
     Val,
     ValType,
+    errors::ErrorKind,
 };
 
 fn test_setup(remaining: u32) -> (Store<TestData>, Linker<TestData>) {
@@ -80,10 +80,14 @@ impl<Results> ResumableExt for Result<TypedResumableCall<Results>, Error> {
                 assert!(check_results(results));
             }
             TypedResumableCall::HostTrap(_) => {
-                panic!("expected `TypedResumableCall::Finished` but found: `TypedResumableCall::HostTrap`")
+                panic!(
+                    "expected `TypedResumableCall::Finished` but found: `TypedResumableCall::HostTrap`"
+                )
             }
             TypedResumableCall::OutOfFuel(_) => {
-                panic!("expected `TypedResumableCall::Finished` but found: `TypedResumableCall::OutOfFuel`")
+                panic!(
+                    "expected `TypedResumableCall::Finished` but found: `TypedResumableCall::OutOfFuel`"
+                )
             }
         }
     }

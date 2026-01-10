@@ -1,15 +1,15 @@
 use super::FuncTranslator;
 use crate::{
+    Error,
+    V128,
+    ValType,
     core::{
-        simd::{self, ImmLaneIdx},
         FuelCostsProvider,
         TypedVal,
+        simd::{self, ImmLaneIdx},
     },
-    engine::translator::func::{op, simd::op as simd_op, Operand},
+    engine::translator::func::{Operand, op, simd::op as simd_op},
     ir::{Op, Slot},
-    Error,
-    ValType,
-    V128,
 };
 use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};

@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 use core::{
-    any::{type_name, Any},
+    any::{Any, type_name},
     fmt::{Debug, Display},
 };
 

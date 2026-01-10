@@ -11,12 +11,12 @@ use assert_matches::assert_matches;
 use bench::bench_config;
 use core::time::Duration;
 use criterion::{
-    criterion_group,
-    criterion_main,
-    measurement::WallTime,
     Bencher,
     BenchmarkGroup,
     Criterion,
+    criterion_group,
+    criterion_main,
+    measurement::WallTime,
 };
 use std::{
     fmt::{self, Display},
@@ -25,6 +25,8 @@ use std::{
 use wasmi::{
     CompilationMode,
     Engine,
+    F32,
+    F64,
     Func,
     FuncType,
     Instance,
@@ -36,8 +38,6 @@ use wasmi::{
     TypedFunc,
     Val,
     ValType,
-    F32,
-    F64,
 };
 
 criterion_group!(
@@ -324,7 +324,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
     c.bench_function("translate/case/best", |b| {
         static WASM: OnceLock<Vec<u8>> = OnceLock::new();
         let wasm = WASM.get_or_init(|| {
-            let gen = Generator(1_000_000);
+            let mul_adds = Generator(1_000_000);
             let wat = format!(
                 "\
                 (module
@@ -337,7 +337,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
                         (local.set $b (i64.const 2))
                         (local.set $c (i64.const 3))
                         (local.set $d (i64.const 4))
-                        {gen}
+                        {mul_adds}
                         (local.get $a)
                     )
                 )
@@ -386,7 +386,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
     c.bench_function(&id, |b| {
         static WASM: OnceLock<Vec<u8>> = OnceLock::new();
         let wasm = WASM.get_or_init(|| {
-            let gen = WasmCompileStackBomb {
+            let func_body = WasmCompileStackBomb {
                 locals,
                 repetitions: 2_500_000,
             };
@@ -394,7 +394,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
                 "\
                 (module
                     (func (export \"test\")
-                        {gen}
+                        {func_body}
                     )
                 )
             "
@@ -416,7 +416,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
     c.bench_function(&id, |b| {
         static WASM: OnceLock<Vec<u8>> = OnceLock::new();
         let wasm = WASM.get_or_init(|| {
-            let gen = WasmCompileStackBomb {
+            let func_body = WasmCompileStackBomb {
                 locals,
                 repetitions: 2_000_000,
             };
@@ -424,7 +424,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
                 "\
                 (module
                     (func (export \"test\")
-                        {gen}
+                        {func_body}
                     )
                 )
             "
@@ -1280,9 +1280,11 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
             run.call(&mut store, (ptr as i32, len as i32, value as i32))
                 .unwrap();
         });
-        assert!(mem.data(&store)[ptr..(ptr + len)]
-            .iter()
-            .all(|byte| *byte == value));
+        assert!(
+            mem.data(&store)[ptr..(ptr + len)]
+                .iter()
+                .all(|byte| *byte == value)
+        );
     });
 }
 

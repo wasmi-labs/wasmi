@@ -1,10 +1,10 @@
 use crate::{
-    core::{Typed, TypedVal, UntypedVal},
-    ir::Sign,
     ExternRef,
     Func,
     Nullable,
     ValType,
+    core::{Typed, TypedVal, UntypedVal},
+    ir::Sign,
 };
 use core::{convert::identity, num::NonZero};
 

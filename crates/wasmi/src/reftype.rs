@@ -1,11 +1,11 @@
 use crate::{
-    collections::arena::ArenaIndex,
-    core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
-    store::Stored,
     AsContextMut,
     Func,
     RefType,
     StoreContext,
+    collections::arena::ArenaIndex,
+    core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
+    store::Stored,
 };
 use alloc::boxed::Box;
 use core::{any, any::Any, cmp, fmt, marker::PhantomData, mem, num::NonZero};

@@ -1,6 +1,6 @@
 use crate::{
-    core::{CoreTableType, IndexType},
     RefType,
+    core::{CoreTableType, IndexType},
 };
 
 /// A Wasm table descriptor.

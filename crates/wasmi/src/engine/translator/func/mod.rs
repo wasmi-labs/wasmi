@@ -38,9 +38,18 @@ use self::{
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
+    Engine,
+    Error,
+    FuncType,
+    TrapCode,
+    ValType,
     core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
     engine::{
+        BlockType,
+        CompiledFuncEntity,
+        TranslationError,
         translator::{
+            WasmTranslator,
             comparator::{
                 CmpSelectFusion,
                 LogicalizeCmpInstr,
@@ -50,15 +59,10 @@ use crate::{
                 UpdateBranchOffset as _,
             },
             utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
-            WasmTranslator,
         },
-        BlockType,
-        CompiledFuncEntity,
-        TranslationError,
     },
     ir::{
         self,
-        index,
         Address,
         BoundedSlotSpan,
         BranchOffset,
@@ -68,13 +72,9 @@ use crate::{
         Sign,
         Slot,
         SlotSpan,
+        index,
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
-    Engine,
-    Error,
-    FuncType,
-    TrapCode,
-    ValType,
 };
 use alloc::vec::Vec;
 use core::convert::identity;
@@ -1032,7 +1032,9 @@ impl FuncTranslator {
         }
         self.move_operands_to_temp(len, consume_fuel_instr)?;
         let Some(span) = self.try_form_regspan(len)? else {
-            unreachable!("the top-most `len` operands are now temporaries thus `SlotSpan` forming should succeed")
+            unreachable!(
+                "the top-most `len` operands are now temporaries thus `SlotSpan` forming should succeed"
+            )
         };
         Ok(span)
     }
@@ -2175,7 +2177,7 @@ impl FuncTranslator {
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
             Operand::Temp(ptr) => self.layout.temp_to_slot(ptr)?,
             Operand::Immediate(ptr) => {
-                return self.encode_store_ix::<T>(ptr, offset, memory, value)
+                return self.encode_store_ix::<T>(ptr, offset, memory, value);
             }
         };
         if self.encode_store_mem0_offset16::<T>(ptr, offset, memory, value)? {

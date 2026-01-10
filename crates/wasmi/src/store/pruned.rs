@@ -1,15 +1,15 @@
-use super::{typeid, CallHooks, FuncInOut, StoreInner};
+use super::{CallHooks, FuncInOut, StoreInner, typeid};
 use crate::{
-    core::{hint, UntypedRef},
-    engine::Inst,
-    errors::{MemoryError, TableError},
-    func::Trampoline,
-    store::error::{InternalStoreError, StoreError},
     CallHook,
     Error,
     Memory,
     Store,
     Table,
+    core::{UntypedRef, hint},
+    engine::Inst,
+    errors::{MemoryError, TableError},
+    func::Trampoline,
+    store::error::{InternalStoreError, StoreError},
 };
 use core::{
     fmt::{self, Debug},

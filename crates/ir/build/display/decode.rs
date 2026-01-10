@@ -1,8 +1,9 @@
 use crate::build::{
+    Isa,
     display::{
+        Indent,
         ident::DisplayIdent,
         utils::{DisplayConcat, DisplaySequence, IntoDisplayMaybe as _},
-        Indent,
     },
     ident::{CamelCase, Ident, SnakeCase},
     op::{
@@ -22,7 +23,6 @@ use crate::build::{
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
-    Isa,
 };
 use core::fmt::{self, Display};
 

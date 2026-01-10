@@ -229,7 +229,7 @@ mod test {
         data[4] = 4; // test we can write to the data and it is not UB
         let data = buffer.data(); // test we can take a new reference to the data
         assert_eq!(data, &[0, 0, 0, 0, 4, 0, 0, 0, 0, 0]); // test we can read the data
-                                                           // test drop is okay
+        // test drop is okay
     }
 
     #[test]

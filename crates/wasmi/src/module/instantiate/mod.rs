@@ -4,15 +4,8 @@ mod error;
 mod tests;
 
 pub use self::error::InstantiationError;
-use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
+use super::{ConstExpr, InitDataSegment, Module, element::ElementSegmentKind, export};
 use crate::{
-    core::UntypedVal,
-    error::ErrorKind,
-    errors::MemoryError,
-    func::WasmFuncEntity,
-    memory::DataSegment,
-    module::FuncIdx,
-    value::WithType,
     AsContext,
     AsContextMut,
     ElementSegment,
@@ -28,6 +21,13 @@ use crate::{
     Nullable,
     Ref,
     Table,
+    core::UntypedVal,
+    error::ErrorKind,
+    errors::MemoryError,
+    func::WasmFuncEntity,
+    memory::DataSegment,
+    module::FuncIdx,
+    value::WithType,
 };
 
 impl Module {

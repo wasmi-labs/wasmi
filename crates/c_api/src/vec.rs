@@ -134,7 +134,7 @@ macro_rules! declare_vecs {
         #[doc = "# Note"]
         #[doc = ""]
         #[doc = concat!("Returns the resulting [`", stringify!($name), "`] in `out`.")]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $empty(out: &mut $name) {
             out.size = 0;
@@ -146,7 +146,7 @@ macro_rules! declare_vecs {
         #[doc = "# Note"]
         #[doc = ""]
         #[doc = concat!("Returns the resulting [`", stringify!($name), "`] in `out`.")]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $uninit(out: &mut $name, size: usize) {
             out.set_buffer(vec![Default::default(); size].into());
@@ -162,23 +162,23 @@ macro_rules! declare_vecs {
         #[doc = "# Safety"]
         #[doc = ""]
         #[doc = "It is the callers responsibility to provide a valid pair of `ptr` and `size`."]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub unsafe extern "C" fn $new $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
             size: usize,
             ptr: *const $elem_ty,
-        ) {
+        ) { unsafe {
             let vec = (0..size).map(|i| ptr.add(i).read()).collect();
             out.set_buffer(vec);
-        }
+        }}
 
         #[doc = concat!("Copies the [`", stringify!($name),"`] in `src`.")]
         #[doc = ""]
         #[doc = "# Note"]
         #[doc = ""]
         #[doc = concat!("- Returns the resulting [`", stringify!($name), "`] in `out`.")]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $copy $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
@@ -188,7 +188,7 @@ macro_rules! declare_vecs {
         }
 
         #[doc = concat!("Frees memory associated to the [`", stringify!($name),"`].")]
-        #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
         #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $delete $(<$lt>)? (out: &mut $name $(<$lt>)?) {
             out.take();

@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, value::WithType, Val};
+use crate::{Val, core::UntypedVal, value::WithType};
 use core::{iter, slice};
 
 /// Types implementing this trait may be used as parameters for function execution.

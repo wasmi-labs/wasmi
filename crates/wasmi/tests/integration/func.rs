@@ -3,14 +3,14 @@
 use assert_matches::assert_matches;
 use core::slice;
 use wasmi::{
-    errors::{ErrorKind, FuncError},
     Engine,
     Func,
     FuncType,
     Store,
     Val,
+    errors::{ErrorKind, FuncError},
 };
-use wasmi_core::{ValType, F32, F64};
+use wasmi_core::{F32, F64, ValType};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();

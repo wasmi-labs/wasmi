@@ -34,8 +34,6 @@ pub(crate) use self::{
     utils::WasmiValueType,
 };
 use crate::{
-    collections::Map,
-    engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
     Engine,
     Error,
     ExternType,
@@ -43,6 +41,8 @@ use crate::{
     GlobalType,
     MemoryType,
     TableType,
+    collections::Map,
+    engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};

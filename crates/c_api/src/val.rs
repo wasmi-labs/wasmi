@@ -1,7 +1,7 @@
 use crate::{from_valtype, into_valtype, utils, wasm_ref_t, wasm_valkind_t};
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
-use wasmi::{Func, Nullable, Ref, Val, ValType, F32, F64};
+use wasmi::{F32, F64, Func, Nullable, Ref, Val, ValType};
 
 /// A Wasm value.
 ///
@@ -140,7 +140,7 @@ impl wasm_val_t {
 /// # Safety
 ///
 /// The caller is responsible to provide a valid [`wasm_val_t`] that can safely be copied.
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_val_copy(out: &mut MaybeUninit<wasm_val_t>, source: &wasm_val_t) {
     utils::initialize(out, source.clone());
@@ -152,8 +152,10 @@ pub unsafe extern "C" fn wasm_val_copy(out: &mut MaybeUninit<wasm_val_t>, source
 ///
 /// The caller is responsible to provide a valid [`wasm_val_t`] that can safely be deleted.
 /// The same [`wasm_val_t`] must not be deleted more than once.
-#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_val_delete(val: *mut wasm_val_t) {
-    ptr::drop_in_place(val);
+    unsafe {
+        ptr::drop_in_place(val);
+    }
 }

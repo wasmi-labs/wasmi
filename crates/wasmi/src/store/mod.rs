@@ -12,18 +12,18 @@ pub use self::{
     pruned::PrunedStore,
 };
 use crate::{
-    collections::arena::Arena,
-    core::{CoreMemory, ResourceLimiterRef},
-    engine::Inst,
-    func::{FuncInOut, Trampoline, TrampolineEntity, TrampolineIdx},
     Engine,
     Error,
     Memory,
     ResourceLimiter,
+    collections::arena::Arena,
+    core::{CoreMemory, ResourceLimiterRef},
+    engine::Inst,
+    func::{FuncInOut, Trampoline, TrampolineEntity, TrampolineIdx},
 };
 use alloc::boxed::Box;
 use core::{
-    any::{type_name, TypeId},
+    any::{TypeId, type_name},
     fmt::{self, Debug},
 };
 

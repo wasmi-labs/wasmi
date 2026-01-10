@@ -1,10 +1,4 @@
 use crate::{
-    collections::{
-        string_interner::{InternHint, Sym as Symbol},
-        StringInterner,
-    },
-    func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
-    module::{ImportName, ImportType},
     AsContext,
     AsContextMut,
     Caller,
@@ -18,9 +12,15 @@ use crate::{
     IntoFunc,
     Module,
     Val,
+    collections::{
+        StringInterner,
+        string_interner::{InternHint, Sym as Symbol},
+    },
+    func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
+    module::{ImportName, ImportType},
 };
 use alloc::{
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{BTreeMap, btree_map::Entry},
     vec::Vec,
 };
 use core::fmt::{self, Debug, Display};
@@ -92,7 +92,10 @@ impl Display for LinkerError {
                 expected,
                 found,
             } => {
-                write!(f, "found definition for import {name} with type {expected:?} but found type {found:?}")
+                write!(
+                    f,
+                    "found definition for import {name} with type {expected:?} but found type {found:?}"
+                )
             }
         }
     }
