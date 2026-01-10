@@ -324,7 +324,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
     c.bench_function("translate/case/best", |b| {
         static WASM: OnceLock<Vec<u8>> = OnceLock::new();
         let wasm = WASM.get_or_init(|| {
-            let gen = Generator(1_000_000);
+            let mul_adds = Generator(1_000_000);
             let wat = format!(
                 "\
                 (module
@@ -337,7 +337,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
                         (local.set $b (i64.const 2))
                         (local.set $c (i64.const 3))
                         (local.set $d (i64.const 4))
-                        {gen}
+                        {mul_adds}
                         (local.get $a)
                     )
                 )
@@ -386,7 +386,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
     c.bench_function(&id, |b| {
         static WASM: OnceLock<Vec<u8>> = OnceLock::new();
         let wasm = WASM.get_or_init(|| {
-            let gen = WasmCompileStackBomb {
+            let func_body = WasmCompileStackBomb {
                 locals,
                 repetitions: 2_500_000,
             };
@@ -394,7 +394,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
                 "\
                 (module
                     (func (export \"test\")
-                        {gen}
+                        {func_body}
                     )
                 )
             "
@@ -416,7 +416,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
     c.bench_function(&id, |b| {
         static WASM: OnceLock<Vec<u8>> = OnceLock::new();
         let wasm = WASM.get_or_init(|| {
-            let gen = WasmCompileStackBomb {
+            let func_body = WasmCompileStackBomb {
                 locals,
                 repetitions: 2_000_000,
             };
@@ -424,7 +424,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
                 "\
                 (module
                     (func (export \"test\")
-                        {gen}
+                        {func_body}
                     )
                 )
             "
