@@ -77,7 +77,7 @@ impl IntoStackPos for &'_ TempOperand {
     }
 }
 
-/// The layout of the [`Stack`].
+/// The layout of the [`Stack`] for local operands.
 #[derive(Debug, Default)]
 pub struct StackLayout {
     /// The cell offsets of each local variable of the function.
