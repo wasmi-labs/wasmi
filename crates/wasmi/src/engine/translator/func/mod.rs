@@ -279,7 +279,7 @@ impl FuncTranslator {
         };
         self.locals.register(amount, ty)?;
         self.stack.register_locals(amount)?;
-        self.layout.register_locals(amount)?;
+        self.layout.register_locals(amount, ty)?;
         Ok(())
     }
 
