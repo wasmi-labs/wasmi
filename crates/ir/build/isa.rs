@@ -542,28 +542,28 @@ fn add_call_ops(isa: &mut Isa) {
 fn add_global_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(
-            Ident::GlobalGet,
+            Ident::GlobalGet64,
             [
                 Field::new(Ident::Global, FieldTy::Global),
                 Field::new(Ident::Result, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::GlobalSet,
-            [
-                Field::new(Ident::Global, FieldTy::Global),
-                Field::new(Ident::Value, FieldTy::Slot),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::GlobalSet32,
+            Ident::GlobalSet32I,
             [
                 Field::new(Ident::Global, FieldTy::Global),
                 Field::new(Ident::Value, FieldTy::U32),
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::GlobalSet64,
+            Ident::GlobalSet64S,
+            [
+                Field::new(Ident::Global, FieldTy::Global),
+                Field::new(Ident::Value, FieldTy::Slot),
+            ],
+        )),
+        Op::from(GenericOp::new(
+            Ident::GlobalSet64I,
             [
                 Field::new(Ident::Value, FieldTy::U64),
                 Field::new(Ident::Global, FieldTy::Global),
@@ -754,6 +754,29 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Selector, FieldTy::Array16ImmLaneIdx32),
         ],
     ));
+    isa.push_op(Op::from(GenericOp::new(
+        Ident::GlobalSet128S,
+        [
+            Field::new(Ident::Global, FieldTy::Global),
+            Field::new(Ident::Value, FieldTy::Slot),
+        ],
+    )));
+    isa.push_op(Op::from(GenericOp::new(
+        Ident::GlobalGet128,
+        [
+            Field::new(Ident::Global, FieldTy::Global),
+            Field::new(Ident::Result, FieldTy::Slot),
+        ],
+    )));
+    isa.push_op(Op::from(GenericOp::new(
+        Ident::Select128,
+        [
+            Field::new(Ident::Result, FieldTy::Slot),
+            Field::new(Ident::Selector, FieldTy::Slot),
+            Field::new(Ident::ValTrue, FieldTy::Slot),
+            Field::new(Ident::ValFalse, FieldTy::Slot),
+        ],
+    )));
     add_simd_splat_ops(isa);
     add_simd_extract_lane_ops(isa);
     add_simd_replace_lane_ops(isa);

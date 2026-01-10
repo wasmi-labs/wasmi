@@ -28,9 +28,9 @@ use self::{
         LocalOperand,
         LoopControlFrame,
         Operand,
-        OperandIdx,
         Stack,
         StackAllocations,
+        StackPos,
         TempOperand,
     },
     utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
@@ -279,7 +279,7 @@ impl FuncTranslator {
         };
         self.locals.register(amount, ty)?;
         self.stack.register_locals(amount)?;
-        self.layout.register_locals(amount)?;
+        self.layout.register_locals(amount, ty)?;
         Ok(())
     }
 
@@ -458,20 +458,42 @@ impl FuncTranslator {
     ) -> Result<Option<Op>, Error> {
         let instr = match value {
             Operand::Temp(value) => {
+                let ty = value.ty();
                 let value = layout.temp_to_slot(value)?;
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Op::copy(result, value)
+                match ty {
+                    ValType::V128 => {
+                        let results = SlotSpan::new(result);
+                        let values = SlotSpan::new(value);
+                        let Some(op) = Self::make_copy_span(results, values, 2) else {
+                            return Ok(None);
+                        };
+                        op
+                    }
+                    _ => Op::copy(result, value),
+                }
             }
             Operand::Local(value) => {
+                let ty = value.ty();
                 let value = layout.local_to_slot(value)?;
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Op::copy(result, value)
+                match ty {
+                    ValType::V128 => {
+                        let results = SlotSpan::new(result);
+                        let values = SlotSpan::new(value);
+                        let Some(op) = Self::make_copy_span(results, values, 2) else {
+                            return Ok(None);
+                        };
+                        op
+                    }
+                    _ => Op::copy(result, value),
+                }
             }
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
         };
@@ -513,20 +535,30 @@ impl FuncTranslator {
         len: u16,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        if results == values {
+        let Some(op) = Self::make_copy_span(results, values, len) else {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
+        };
+        self.instrs
+            .encode(op, consume_fuel_instr, |costs: &FuelCostsProvider| {
+                costs.fuel_for_copying_values(u64::from(len))
+            })?;
+        Ok(())
+    }
+
+    /// Returns an [`Op::copy_span_asc`] or [`Op::copy_span_des`] depending on inputs.
+    ///
+    /// Returns `None` if the `copy_span` operation is a no-op.
+    fn make_copy_span(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
+        if results == values {
+            // Case: results and values are equal and therefore the copy is a no-op
+            return None;
         }
         let copy_span = match results.head() > values.head() {
             true => Op::copy_span_des,
             false => Op::copy_span_asc,
         };
-        self.instrs.encode(
-            copy_span(results, values, len),
-            consume_fuel_instr,
-            |costs: &FuelCostsProvider| costs.fuel_for_copying_values(u64::from(len)),
-        )?;
-        Ok(())
+        Some(copy_span(results, values, len))
     }
 
     /// Encode a copy instruction that copies many values.
@@ -714,7 +746,7 @@ impl FuncTranslator {
             return Ok(None);
         }
         let height = frame.height();
-        let start = layout.temp_to_slot(OperandIdx::from(height))?;
+        let start = layout.temp_to_slot(StackPos::from(height))?;
         let span = SlotSpan::new(start);
         Ok(Some(span))
     }
@@ -954,7 +986,7 @@ impl FuncTranslator {
                         ValType::V128 => {
                             let value = self.stack.peek(0);
                             let temp_slot = self.copy_operand_to_temp(value, consume_fuel)?;
-                            Op::return_slot(temp_slot)
+                            Op::return_span(BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2))
                         }
                     }
                 }
@@ -1444,7 +1476,7 @@ impl FuncTranslator {
             self.copy_operand_to_temp(operand, fuel_pos)?;
         }
         let height = self.stack.height();
-        let start = self.layout.temp_to_slot(OperandIdx::from(height))?;
+        let start = self.layout.temp_to_slot(StackPos::from(height))?;
         let params = BoundedSlotSpan::new(SlotSpan::new(start), len_params);
         for result in ty.results() {
             self.stack.push_temp(*result)?;
@@ -1924,20 +1956,21 @@ impl FuncTranslator {
                     true => true_val,
                     false => false_val,
                 };
-                if let Operand::Temp(selected) = selected {
+                if let Operand::Temp(_) = selected {
                     // Case: the selected operand is a temporary which needs to be copied
                     //       if it was the `false_val` since it changed its index. This is
                     //       not the case for the `true_val` since `true_val` is the first
                     //       value popped from the stack.
-                    if !condition {
-                        let selected = self.layout.temp_to_slot(selected)?;
-                        self.push_instr_with_result(
-                            ty,
-                            |result| Op::copy(result, selected),
-                            FuelCostsProvider::base,
-                        )?;
+                    let consume_fuel_instr = self.stack.consume_fuel_instr();
+                    let result = self.layout.temp_to_slot(self.stack.push_temp(ty)?)?;
+                    let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
+                    else {
                         return Ok(());
-                    }
+                    };
+                    debug_assert!(op.result_ref().is_some());
+                    self.instrs
+                        .stage(op, consume_fuel_instr, FuelCostsProvider::base)?;
+                    return Ok(());
                 }
                 self.stack.push_operand(selected)?;
                 return Ok(());
@@ -1947,6 +1980,17 @@ impl FuncTranslator {
         };
         let true_val = self.copy_if_immediate(true_val)?;
         let false_val = self.copy_if_immediate(false_val)?;
+        #[cfg(feature = "simd")]
+        if matches!(ty, ValType::V128) {
+            // Case: for `v128` values the `select128` instruction must be used.
+            // Unlike normal `select` instructions the `select128` cannot be fused.
+            self.push_instr_with_result(
+                ty,
+                |result| Op::select128(result, condition, false_val, true_val),
+                FuelCostsProvider::base,
+            )?;
+            return Ok(());
+        }
         if !self.try_fuse_select(ty, condition, true_val, false_val)? {
             self.push_instr_with_result(
                 ty,

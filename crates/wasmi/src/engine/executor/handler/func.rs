@@ -3,12 +3,12 @@ use crate::{
         executor::handler::{
             dispatch::{execute_until_done, ExecutionOutcome},
             state::{Inst, Ip, Sp, Stack, VmState},
-            utils::{self, resolve_instance, set_value},
+            utils::{self, resolve_instance},
         },
-        CallParams,
-        CallResults,
         CodeMap,
         EngineFunc,
+        LoadFromCells,
+        StoreToCells,
     },
     func::HostFuncEntity,
     ir::{BoundedSlotSpan, Slot, SlotSpan},
@@ -46,7 +46,7 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
 
 mod state {
     use super::Sp;
-    use crate::func::{FuncInOut, Trampoline};
+    use crate::{engine::InOutParams, func::Trampoline};
     use core::marker::PhantomData;
 
     pub type Uninit = PhantomData<marker::Uninit>;
@@ -61,13 +61,13 @@ mod state {
 
     pub struct UninitHost<'a> {
         pub sp: Sp,
-        pub inout: FuncInOut<'a>,
+        pub inout: InOutParams<'a>,
         pub trampoline: Trampoline,
     }
 
     pub struct InitHost<'a> {
         pub sp: Sp,
-        pub inout: FuncInOut<'a>,
+        pub inout: InOutParams<'a>,
         pub trampoline: Trampoline,
     }
 
@@ -80,12 +80,14 @@ mod state {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
-    pub fn write_params(self, params: impl CallParams) -> WasmFuncCall<'a, T, state::Init> {
-        let mut param_slot = Slot::from(0);
-        for param_value in params.call_params() {
-            set_value(self.callee_sp, param_slot, param_value);
-            param_slot = param_slot.next();
-        }
+    pub fn write_params<Params>(self, params: Params) -> WasmFuncCall<'a, T, state::Init>
+    where
+        Params: StoreToCells,
+    {
+        let mut sp = self.callee_sp;
+        let Ok(_) = params.store_to_cells(&mut sp) else {
+            panic!("TODO")
+        };
         self.new_state(PhantomData)
     }
 }
@@ -115,26 +117,32 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
-    pub fn provide_host_results(
+    pub fn provide_host_results<Params>(
         self,
-        params: impl CallParams,
+        params: Params,
         slots: SlotSpan,
-    ) -> WasmFuncCall<'a, T, state::Init> {
-        let mut param_slot = slots.head();
-        for param_value in params.call_params() {
-            set_value(self.callee_sp, param_slot, param_value);
-            param_slot = param_slot.next();
-        }
+    ) -> WasmFuncCall<'a, T, state::Init>
+    where
+        Params: StoreToCells,
+    {
+        let mut sp = self.callee_sp.offset(slots.head());
+        let Ok(_) = params.store_to_cells(&mut sp) else {
+            panic!("TODO")
+        };
         self.new_state(PhantomData)
     }
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Done> {
-    pub fn write_results<R: CallResults>(self, results: R) -> <R as CallResults>::Results {
-        let len_results = results.len_results();
-        let sp = self.state.sp;
-        let slice = unsafe { sp.as_slice(len_results) };
-        results.call_results(slice)
+    pub fn write_results<Results>(self, results: Results) -> Results::Value
+    where
+        Results: LoadFromCells,
+    {
+        let mut sp = self.state.sp;
+        let Ok(value) = results.load_from_cells(&mut sp) else {
+            panic!("TODO")
+        };
+        value
     }
 }
 
@@ -212,17 +220,19 @@ pub struct HostFuncCall<'a, T, State> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
-    pub fn write_params(self, params: impl CallParams) -> HostFuncCall<'a, T, state::InitHost<'a>> {
+    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
+    where
+        Params: StoreToCells,
+    {
         let state::UninitHost {
             sp,
             inout,
             trampoline,
         } = self.state;
-        let mut param_slot = Slot::from(0);
-        for param_value in params.call_params() {
-            set_value(sp, param_slot, param_value);
-            param_slot = param_slot.next();
-        }
+        let mut sp = sp;
+        let Ok(_) = params.store_to_cells(&mut sp) else {
+            panic!("TODO")
+        };
         HostFuncCall {
             store: self.store,
             state: state::InitHost {
@@ -259,10 +269,14 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::Done> {
-    pub fn write_results<R: CallResults>(self, results: R) -> <R as CallResults>::Results {
-        let len_results = results.len_results();
-        let sp = self.state.sp;
-        let slice = unsafe { sp.as_slice(len_results) };
-        results.call_results(slice)
+    pub fn write_results<Results>(self, results: Results) -> Results::Value
+    where
+        Results: LoadFromCells,
+    {
+        let mut sp = self.state.sp;
+        let Ok(value) = results.load_from_cells(&mut sp) else {
+            panic!("TODO")
+        };
+        value
     }
 }

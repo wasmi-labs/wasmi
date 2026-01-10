@@ -112,9 +112,7 @@ mod core {
     pub use wasmi_core::{
         hint,
         wasm,
-        DecodeUntypedSlice,
         ElementSegment as CoreElementSegment,
-        EncodeUntypedSlice,
         Fuel,
         FuelCostsProvider,
         FuncType as CoreFuncType,
@@ -131,7 +129,6 @@ mod core {
         Typed,
         TypedRef,
         TypedVal,
-        UntypedError,
         UntypedRef,
         UntypedVal,
         WriteAs,

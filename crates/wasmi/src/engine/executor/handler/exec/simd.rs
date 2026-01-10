@@ -36,6 +36,34 @@ pub fn copy128(
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn select128(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (
+        ip,
+        crate::ir::decode::Select128 {
+            result,
+            selector,
+            val_true,
+            val_false,
+        },
+    ) = unsafe { decode_op(ip) };
+    let selector: bool = get_value(selector, sp);
+    let selected = match selector {
+        true => val_true,
+        false => val_false,
+    };
+    let selected: V128 = get_value(selected, sp);
+    set_value(sp, result, selected);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
 macro_rules! impl_splat_bytes {
     ( $(fn $name:ident(value: $ty:ty) -> V128 = $splat:expr; )* ) => {
         $(
