@@ -962,16 +962,20 @@ impl FuncTranslator {
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
+        let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
+            ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
+            _ => Op::return_slot(slot),
+        };
         let instr = match len_results {
             0 => Op::Return {},
             1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_slot(operand)?;
-                    Op::return_slot(value)
+                    return_slot_for_ty(operand.ty(), value)
                 }
                 Operand::Temp(operand) => {
                     let value = self.layout.temp_to_slot(operand)?;
-                    Op::return_slot(value)
+                    return_slot_for_ty(operand.ty(), value)
                 }
                 Operand::Immediate(operand) => {
                     let val = operand.val();
