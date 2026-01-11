@@ -1,7 +1,5 @@
 use super::TrampolineEntity;
 use crate::{
-    core::UntypedVal,
-    engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
     Caller,
     Error,
     ExternRef,
@@ -11,7 +9,8 @@ use crate::{
     FuncType,
     Nullable,
     ValType,
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal},
+    core::UntypedVal,
+    engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
 };
 use core::{array, iter::FusedIterator};
 

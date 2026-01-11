@@ -1,7 +1,5 @@
 pub use self::{
     handler::{
-        op_code_to_handler,
-        resume_wasm_func_call,
         Cell,
         CellError,
         CellsReader,
@@ -13,6 +11,8 @@ pub use self::{
         LoadFromCellsByValue,
         Stack,
         StoreToCells,
+        op_code_to_handler,
+        resume_wasm_func_call,
     },
     inout::{InOutParams, InOutResults},
 };
@@ -24,17 +24,11 @@ use crate::{
     Store,
     StoreContextMut,
     engine::{
-        executor::handler::{init_host_func_call, init_wasm_func_call},
         EngineInner,
         ResumableCallBase,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
-        executor::handler::{
-            ExecutionOutcome,
-            init_host_func_call,
-            init_wasm_func_call,
-            resume_wasm_func_call,
-        },
+        executor::handler::{init_host_func_call, init_wasm_func_call},
     },
     ir::SlotSpan,
 };

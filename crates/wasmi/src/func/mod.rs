@@ -20,14 +20,11 @@ use super::{
     engine::{DedupFuncType, EngineFunc},
 };
 use crate::{
-    collections::arena::ArenaIndex,
-    engine::{InOutParams, InOutResults, Inst, ResumableCall},
-    reftype::RefId,
     Engine,
     Error,
     Val,
     collections::arena::ArenaIndex,
-    engine::{Inst, ResumableCall},
+    engine::{InOutParams, InOutResults, Inst, ResumableCall},
     reftype::RefId,
 };
 use alloc::{boxed::Box, sync::Arc};

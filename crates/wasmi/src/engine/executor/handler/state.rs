@@ -1,14 +1,12 @@
 use crate::{
+    Error,
+    Func,
+    TrapCode,
     engine::{
         ResumableHostTrapError,
         ResumableOutOfFuelError,
         StackConfig,
         executor::{
-            CodeMap,
-            handler::{
-                dispatch::{Control, ExecutionOutcome},
-                utils::extract_mem0,
-            },
             Cell,
             CellError,
             CellsReader,
@@ -17,6 +15,10 @@ use crate::{
             InOutParams,
             LoadFromCellsByValue,
             StoreToCells,
+            handler::{
+                dispatch::{Control, ExecutionOutcome},
+                utils::extract_mem0,
+            },
         },
         utils::unreachable_unchecked,
     },

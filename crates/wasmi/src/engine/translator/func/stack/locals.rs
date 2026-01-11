@@ -1,5 +1,5 @@
 use super::{Reset, StackPos};
-use crate::{engine::translator::func::LocalIdx, Error};
+use crate::{Error, engine::translator::func::LocalIdx};
 use alloc::vec::Vec;
 use core::iter;
 

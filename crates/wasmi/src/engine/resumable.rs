@@ -1,13 +1,13 @@
 use super::Func;
 use crate::{
-    engine::{LoadByVal, LoadFromCellsByValue, Stack},
-    func::FuncError,
-    ir::SlotSpan,
     AsContext,
     AsContextMut,
     Engine,
     Error,
     Val,
+    engine::{LoadByVal, LoadFromCellsByValue, Stack},
+    func::FuncError,
+    ir::SlotSpan,
 };
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
 

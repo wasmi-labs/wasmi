@@ -1,12 +1,10 @@
 use super::{Func, into_func::WasmTyList};
 use crate::{
-    engine::{LoadByVal, LoadFromCellsByValue, StoreToCells},
     AsContext,
     AsContextMut,
     Error,
     TypedResumableCall,
-    core::UntypedVal,
-    engine::{CallParams, CallResults},
+    engine::{LoadByVal, LoadFromCellsByValue, StoreToCells},
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
 

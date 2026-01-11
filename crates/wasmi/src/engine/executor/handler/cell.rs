@@ -1,4 +1,4 @@
-use crate::{core::UntypedRef, ExternRef, Func, Nullable, Val, F32, F64, V128};
+use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::UntypedRef};
 use core::{convert::identity, marker::PhantomData, mem};
 
 /// A single 64-bit cell of the value stack.

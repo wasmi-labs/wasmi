@@ -16,7 +16,10 @@ use super::{
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
-    core::{wasm, CoreTable, ReadAs, UntypedRef},
+    Func,
+    Nullable,
+    TrapCode,
+    core::{CoreTable, ReadAs, UntypedRef, wasm},
     engine::{
         EngineFunc,
         executor::handler::{
@@ -60,9 +63,6 @@ use crate::{
     func::FuncEntity,
     ir::{self, Slot, SlotSpan, index},
     store::StoreError,
-    Func,
-    Nullable,
-    TrapCode,
 };
 use core::cmp;
 

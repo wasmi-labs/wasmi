@@ -110,8 +110,6 @@ mod core {
     #[cfg(feature = "simd")]
     pub use wasmi_core::simd;
     pub use wasmi_core::{
-        hint,
-        wasm,
         ElementSegment as CoreElementSegment,
         Fuel,
         FuelCostsProvider,

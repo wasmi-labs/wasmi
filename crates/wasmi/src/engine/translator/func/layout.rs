@@ -1,14 +1,12 @@
 use super::{LocalIdx, Operand, Reset, StackPos};
 use crate::{
     Error,
+    ValType,
     engine::{
-        translator::func::{utils::required_cells_of_type, LocalOperand, TempOperand},
         TranslationError,
-        translator::func::{LocalOperand, TempOperand},
+        translator::func::{LocalOperand, TempOperand, utils::required_cells_of_type},
     },
     ir::Slot,
-    Error,
-    ValType,
 };
 use alloc::vec::Vec;
 

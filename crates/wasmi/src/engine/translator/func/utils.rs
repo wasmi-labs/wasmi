@@ -1,6 +1,6 @@
 use crate::{
-    ir::{Op, Slot},
     ValType,
+    ir::{Op, Slot},
 };
 
 /// The number of Wasmi engine cells a value of type `ty` requires to be stored.

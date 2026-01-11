@@ -1,17 +1,12 @@
-use super::{typeid, CallHooks, StoreInner};
+use super::{CallHooks, StoreInner, typeid};
 use crate::{
-    core::{hint, UntypedRef},
-    engine::{InOutParams, Inst},
-    errors::{MemoryError, TableError},
-    func::Trampoline,
-    store::error::{InternalStoreError, StoreError},
     CallHook,
     Error,
     Memory,
     Store,
     Table,
     core::{UntypedRef, hint},
-    engine::Inst,
+    engine::{InOutParams, Inst},
     errors::{MemoryError, TableError},
     func::Trampoline,
     store::error::{InternalStoreError, StoreError},
