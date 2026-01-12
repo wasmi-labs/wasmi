@@ -17,13 +17,15 @@ pub enum Operand {
 
 impl Operand {
     /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`StackPos`].
-    pub(super) fn new(index: StackPos, operand: StackOperand) -> Self {
+    pub(super) fn new(stack_pos: StackPos, operand: StackOperand) -> Self {
         match operand {
             StackOperand::Local {
                 local_index, ty, ..
-            } => Self::local(index, local_index, ty),
-            StackOperand::Temp { ty } => Self::temp(index, ty),
-            StackOperand::Immediate { ty, val } => Self::immediate(index, TypedVal::new(ty, val)),
+            } => Self::local(stack_pos, local_index, ty),
+            StackOperand::Temp { ty } => Self::temp(stack_pos, ty),
+            StackOperand::Immediate { ty, val } => {
+                Self::immediate(stack_pos, TypedVal::new(ty, val))
+            }
         }
     }
 
