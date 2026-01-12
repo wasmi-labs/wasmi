@@ -112,13 +112,13 @@ impl Stack {
         self.operands.height()
     }
 
-    /// Returns the maximum height of the [`Stack`].
+    /// Returns the maximum stack offset of the [`Stack`].
     ///
     /// # Note
     ///
-    /// The height is equal to the number of [`Operand`]s on the [`Stack`].
-    pub fn max_height(&self) -> usize {
-        self.operands.max_height()
+    /// This value is equal to the maximum number of cells a function requires to operate.
+    pub fn max_stack_offset(&self) -> usize {
+        self.operands.max_stack_offset()
     }
 
     /// Truncates `self` to the target `height`.

@@ -81,8 +81,6 @@ pub struct OperandStack {
     operands: Vec<StackOperand>,
     /// Stores the first occurrences of every local variable on the [`OperandStack`] if any.
     local_heads: LocalsHead,
-    /// The maximum height of the [`OperandStack`].
-    max_height: usize,
     /// The current number of local operands on the `operands` stack.
     ///
     /// This field is required to optimize [`OperandStack::preserve_all_locals`].
@@ -94,15 +92,17 @@ pub struct OperandStack {
     /// - This is used and advanced for the next operand pushed to the stack.
     /// - Upon popping an operand this offset is decreased.
     temp_offset: usize,
+    /// The maximum recorded temporary stack offset.
+    max_offset: usize,
 }
 
 impl Reset for OperandStack {
     fn reset(&mut self) {
         self.operands.clear();
         self.local_heads.reset();
-        self.max_height = 0;
         self.len_locals = 0;
         self.temp_offset = 0;
+        self.max_offset = 0;
     }
 }
 
@@ -134,6 +134,7 @@ impl OperandStack {
         self.temp_offset = old_offset
             .checked_add(delta)
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
+        self.max_offset = self.max_offset.max(self.temp_offset);
         Ok(old_offset)
     }
 
@@ -160,18 +161,13 @@ impl OperandStack {
         self.operands.len()
     }
 
-    /// Returns the maximum height of `self`.
+    /// Returns the maximum stack offset of `self`.
     ///
     /// # Note
     ///
-    /// The height is equal to the number of [`Operand`]s on `self`.
-    pub fn max_height(&self) -> usize {
-        self.max_height
-    }
-
-    /// Updates the maximum stack height if needed.
-    fn update_max_stack_height(&mut self) {
-        self.max_height = core::cmp::max(self.max_height, self.height());
+    /// This value is equal to the maximum number of cells a function requires to operate.
+    pub fn max_stack_offset(&self) -> usize {
+        self.max_offset
     }
 
     /// Returns the [`StackPos`] of the next pushed operand.
@@ -218,7 +214,6 @@ impl OperandStack {
             prev_local: None,
             next_local,
         });
-        self.update_max_stack_height();
         self.len_locals += 1;
         Ok(stack_pos)
     }
@@ -232,7 +227,6 @@ impl OperandStack {
     pub fn push_temp(&mut self, ty: ValType) -> Result<StackPos, Error> {
         let stack_pos = self.next_stack_pos();
         self.operands.push(StackOperand::Temp { ty });
-        self.update_max_stack_height();
         Ok(stack_pos)
     }
 
@@ -248,7 +242,6 @@ impl OperandStack {
         let ty = value.ty();
         let val = value.untyped();
         self.operands.push(StackOperand::Immediate { ty, val });
-        self.update_max_stack_height();
         Ok(stack_pos)
     }
 
