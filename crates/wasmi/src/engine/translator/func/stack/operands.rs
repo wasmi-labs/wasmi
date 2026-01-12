@@ -175,12 +175,12 @@ impl OperandStack {
     }
 
     /// Returns the [`StackPos`] of the next pushed operand.
-    fn next_index(&self) -> StackPos {
+    fn next_stack_pos(&self) -> StackPos {
         StackPos::from(self.operands.len())
     }
 
     /// Returns the [`StackPos`] of the operand at `depth`.
-    fn depth_to_index(&self, depth: usize) -> StackPos {
+    fn depth_to_stack_pos(&self, depth: usize) -> StackPos {
         StackPos::from(self.height() - depth - 1)
     }
 
@@ -207,12 +207,10 @@ impl OperandStack {
     /// - If too many operands have been pushed onto the [`OperandStack`].
     /// - If the local with `local_idx` does not exist.
     pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<StackPos, Error> {
-        let operand_index = self.next_index();
-        let next_local = self
-            .local_heads
-            .replace_first(local_index, Some(operand_index));
+        let stack_pos = self.next_stack_pos();
+        let next_local = self.local_heads.replace_first(local_index, Some(stack_pos));
         if let Some(next_local) = next_local {
-            self.update_prev_local(next_local, Some(operand_index));
+            self.update_prev_local(next_local, Some(stack_pos));
         }
         self.operands.push(StackOperand::Local {
             local_index,
@@ -222,7 +220,7 @@ impl OperandStack {
         });
         self.update_max_stack_height();
         self.len_locals += 1;
-        Ok(operand_index)
+        Ok(stack_pos)
     }
 
     /// Pushes a temporary with type `ty` on the [`OperandStack`].
@@ -232,10 +230,10 @@ impl OperandStack {
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
     pub fn push_temp(&mut self, ty: ValType) -> Result<StackPos, Error> {
-        let idx = self.next_index();
+        let stack_pos = self.next_stack_pos();
         self.operands.push(StackOperand::Temp { ty });
         self.update_max_stack_height();
-        Ok(idx)
+        Ok(stack_pos)
     }
 
     /// Pushes an immediate `value` on the [`OperandStack`].
@@ -245,13 +243,13 @@ impl OperandStack {
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<StackPos, Error> {
-        let idx = self.next_index();
+        let stack_pos = self.next_stack_pos();
         let value = value.into();
         let ty = value.ty();
         let val = value.untyped();
         self.operands.push(StackOperand::Immediate { ty, val });
         self.update_max_stack_height();
-        Ok(idx)
+        Ok(stack_pos)
     }
 
     /// Returns an iterator that yields the last `n` [`Operand`]s.
@@ -266,7 +264,7 @@ impl OperandStack {
             return PeekedOperands::empty();
         };
         PeekedOperands {
-            index: first_index,
+            stack_pos: first_index,
             operands: operands.iter(),
         }
     }
@@ -281,7 +279,7 @@ impl OperandStack {
         let Some(operand) = self.operands.pop() else {
             panic!("tried to pop operand from empty stack");
         };
-        let index = self.next_index();
+        let index = self.next_stack_pos();
         self.try_unlink_local(operand);
         Operand::new(index, operand)
     }
@@ -293,9 +291,9 @@ impl OperandStack {
     /// If `depth` is out of bounds for `self`.
     #[inline]
     pub fn get(&self, depth: usize) -> Operand {
-        let index = self.depth_to_index(depth);
-        let operand = self.get_at(index);
-        Operand::new(index, operand)
+        let stack_pos = self.depth_to_stack_pos(depth);
+        let operand = self.get_at(stack_pos);
+        Operand::new(stack_pos, operand)
     }
 
     /// Returns the [`StackOperand`] at `index`.
@@ -304,8 +302,8 @@ impl OperandStack {
     ///
     /// If `index` is out of bounds for `self`.
     #[inline]
-    fn get_at(&self, index: StackPos) -> StackOperand {
-        self.operands[usize::from(index)]
+    fn get_at(&self, pos: StackPos) -> StackOperand {
+        self.operands[usize::from(pos)]
     }
 
     /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].
@@ -320,9 +318,9 @@ impl OperandStack {
     /// If `depth` is out of bounds for the [`OperandStack`] of operands.
     #[must_use]
     pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
-        let index = self.depth_to_index(depth);
-        let operand = self.operand_to_temp_at(index);
-        Operand::new(index, operand)
+        let stack_pos = self.depth_to_stack_pos(depth);
+        let operand = self.operand_to_temp_at(stack_pos);
+        Operand::new(stack_pos, operand)
     }
 
     /// Converts and returns the [`StackOperand`] at `index` into a [`StackOperand::Temp`].
@@ -358,10 +356,10 @@ impl OperandStack {
     /// If the local at `local_index` is out of bounds.
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
-        let index = self.local_heads.replace_first(local_index, None);
+        let stack_pos = self.local_heads.replace_first(local_index, None);
         PreservedLocalsIter {
             operands: self,
-            index,
+            stack_pos,
         }
     }
 
@@ -378,7 +376,7 @@ impl OperandStack {
         let index = self.operands.len();
         PreservedAllLocalsIter {
             operands: self,
-            index,
+            stack_pos: index,
         }
     }
 
@@ -423,10 +421,10 @@ impl OperandStack {
     ///
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
-    fn update_prev_local(&mut self, local_index: StackPos, prev_index: Option<StackPos>) {
-        match self.operands.get_mut(usize::from(local_index)) {
+    fn update_prev_local(&mut self, local_pos: StackPos, prev_pos: Option<StackPos>) {
+        match self.operands.get_mut(usize::from(local_pos)) {
             Some(StackOperand::Local { prev_local, .. }) => {
-                *prev_local = prev_index;
+                *prev_local = prev_pos;
             }
             entry => panic!("expected `StackOperand::Local` but found: {entry:?}"),
         }
@@ -438,10 +436,10 @@ impl OperandStack {
     ///
     /// - If `local_index` does not refer to a [`StackOperand::Local`].
     /// - If `local_index` is out of bounds of the operand stack.
-    fn update_next_local(&mut self, local_index: StackPos, next_index: Option<StackPos>) {
-        match self.operands.get_mut(usize::from(local_index)) {
+    fn update_next_local(&mut self, local_pos: StackPos, next_pos: Option<StackPos>) {
+        match self.operands.get_mut(usize::from(local_pos)) {
             Some(StackOperand::Local { next_local, .. }) => {
-                *next_local = next_index;
+                *next_local = next_pos;
             }
             entry => panic!("expected `StackOperand::Local` but found: {entry:?}"),
         }
@@ -466,8 +464,8 @@ impl OperandStack {
 pub struct PreservedAllLocalsIter<'stack> {
     /// The underlying operand stack.
     operands: &'stack mut OperandStack,
-    /// The current operand index of the next preserved local if any.
-    index: usize,
+    /// The current operand stack position of the next preserved local if any.
+    stack_pos: usize,
 }
 
 impl PreservedAllLocalsIter<'_> {
@@ -480,12 +478,12 @@ impl PreservedAllLocalsIter<'_> {
     ///
     /// Returns `None` if there are no more local operands on the stack.
     fn find_next_local(&mut self) -> Option<usize> {
-        let mut index = self.index;
+        let mut stack_pos = self.stack_pos;
         loop {
-            index -= 1;
-            let opd = self.operands.operands.get(index)?;
+            stack_pos -= 1;
+            let opd = self.operands.operands.get(stack_pos)?;
             if let StackOperand::Local { .. } = opd {
-                return Some(index);
+                return Some(stack_pos);
             }
         }
     }
@@ -498,11 +496,11 @@ impl Iterator for PreservedAllLocalsIter<'_> {
         if !self.has_remaining_locals() {
             return None;
         }
-        self.index = self.find_next_local()?;
-        let index = StackPos::from(self.index);
-        let operand = self.operands.operand_to_temp_at(index);
+        self.stack_pos = self.find_next_local()?;
+        let stack_pos = StackPos::from(self.stack_pos);
+        let operand = self.operands.operand_to_temp_at(stack_pos);
         debug_assert!(matches!(operand, StackOperand::Local { .. }));
-        Some(Operand::new(index, operand))
+        Some(Operand::new(stack_pos, operand))
     }
 }
 
@@ -511,17 +509,17 @@ impl Iterator for PreservedAllLocalsIter<'_> {
 pub struct PreservedLocalsIter<'stack> {
     /// The underlying operand stack.
     operands: &'stack mut OperandStack,
-    /// The current operand index of the next preserved local if any.
-    index: Option<StackPos>,
+    /// The current operand stack position of the next preserved local if any.
+    stack_pos: Option<StackPos>,
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
     type Item = StackPos;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.index?;
+        let index = self.stack_pos?;
         let operand = self.operands.operand_to_temp_at(index);
-        self.index = match operand {
+        self.stack_pos = match operand {
             StackOperand::Local { next_local, .. } => next_local,
             op => panic!("expected `StackOperand::Local` but found: {op:?}"),
         };
@@ -532,8 +530,8 @@ impl Iterator for PreservedLocalsIter<'_> {
 /// Iterator yielding peeked stack operators.
 #[derive(Debug)]
 pub struct PeekedOperands<'stack> {
-    /// The index of the next yielded operand.
-    index: usize,
+    /// The stack position of the next yielded operand.
+    stack_pos: usize,
     /// The iterator of peeked stack operands.
     operands: slice::Iter<'stack, StackOperand>,
 }
@@ -542,7 +540,7 @@ impl<'stack> PeekedOperands<'stack> {
     /// Creates a [`PeekedOperands`] iterator that yields no operands.
     pub fn empty() -> Self {
         Self {
-            index: 0,
+            stack_pos: 0,
             operands: [].iter(),
         }
     }
@@ -553,9 +551,9 @@ impl Iterator for PeekedOperands<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let operand = self.operands.next().copied()?;
-        let index = StackPos::from(self.index);
-        self.index += 1;
-        Some(Operand::new(index, operand))
+        let stack_pos = StackPos::from(self.stack_pos);
+        self.stack_pos += 1;
+        Some(Operand::new(stack_pos, operand))
     }
 }
 
