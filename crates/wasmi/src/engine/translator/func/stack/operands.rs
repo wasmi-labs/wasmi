@@ -102,6 +102,7 @@ impl Reset for OperandStack {
         self.local_heads.reset();
         self.max_height = 0;
         self.len_locals = 0;
+        self.temp_offset = 0;
     }
 }
 
