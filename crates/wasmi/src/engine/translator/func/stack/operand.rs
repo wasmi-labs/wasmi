@@ -1,5 +1,9 @@
-use super::{LocalIdx, StackPos, StackOperand};
-use crate::{ValType, core::TypedVal, ir::Slot};
+use super::{LocalIdx, StackOperand, StackPos};
+use crate::{
+    ValType,
+    core::{TypedVal, UntypedVal},
+    ir::Slot,
+};
 
 #[cfg(doc)]
 use super::Stack;
@@ -28,7 +32,7 @@ impl Operand {
             StackOperand::Temp { ty, temp_slot, .. } => Self::temp(stack_pos, temp_slot, ty),
             StackOperand::Immediate {
                 ty, temp_slot, val, ..
-            } => Self::immediate(stack_pos, temp_slot, TypedVal::new(ty, val)),
+            } => Self::immediate(stack_pos, temp_slot, ty, val),
         }
     }
 
@@ -67,10 +71,16 @@ impl Operand {
     }
 
     /// Creates an immediate [`Operand`].
-    pub(super) fn immediate(stack_pos: StackPos, temp_slot: Slot, val: TypedVal) -> Self {
+    pub(super) fn immediate(
+        stack_pos: StackPos,
+        temp_slot: Slot,
+        ty: ValType,
+        val: UntypedVal,
+    ) -> Self {
         Self::Immediate(ImmediateOperand {
             stack_pos,
             temp_slot,
+            ty,
             val,
         })
     }
@@ -190,8 +200,10 @@ pub struct ImmediateOperand {
     stack_pos: StackPos,
     /// The temporary [`Slot`] of the local operand.
     temp_slot: Slot,
-    /// The value and type of the immediate value.
-    val: TypedVal,
+    /// The type of the immediate value.
+    ty: ValType,
+    /// The value of the immediate value.
+    val: UntypedVal,
 }
 
 impl From<ImmediateOperand> for Operand {
@@ -213,12 +225,12 @@ impl ImmediateOperand {
 
     /// Returns the immediate value (and its type) of the [`ImmediateOperand`].
     pub fn val(&self) -> TypedVal {
-        self.val
+        TypedVal::new(self.ty, self.val)
     }
 
     /// Returns the type of the [`ImmediateOperand`].
     pub fn ty(&self) -> ValType {
-        self.val.ty()
+        self.ty
     }
 }
 
