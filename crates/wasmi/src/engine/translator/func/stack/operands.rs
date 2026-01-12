@@ -7,6 +7,7 @@ use crate::{
         TranslationError,
         translator::func::{encoder::BytePos, utils::required_cells_of_type},
     },
+    ir::Slot,
 };
 use alloc::vec::Vec;
 use core::{num::NonZero, slice};
@@ -39,7 +40,7 @@ pub enum StackOperand {
     /// A local variable.
     Local {
         /// The temporary stack offset of the operand.
-        temp_slot: usize,
+        temp_slot: Slot,
         /// The type of the local operand.
         ///
         /// This does not have to be the type of the associated local but
@@ -56,14 +57,14 @@ pub enum StackOperand {
     /// A temporary value on the [`OperandStack`].
     Temp {
         /// The temporary stack offset of the operand.
-        temp_slot: usize,
+        temp_slot: Slot,
         /// The type of the temporary operand.
         ty: ValType,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
         /// The temporary stack offset of the operand.
-        temp_slot: usize,
+        temp_slot: Slot,
         /// The type of the immediate operand.
         ty: ValType,
         /// The value of the immediate operand.
@@ -79,8 +80,8 @@ impl StackOperand {
         }
     }
 
-    /// Returns the temporary slot of the [`StackOperand`].
-    pub fn temp_slot(&self) -> usize {
+    /// Returns the temporary [`Slot`] of the [`StackOperand`].
+    pub fn temp_slot(&self) -> Slot {
         match self {
             | Self::Temp { temp_slot, .. }
             | Self::Immediate { temp_slot, .. }
@@ -106,9 +107,9 @@ pub struct OperandStack {
     ///
     /// - This is used and advanced for the next operand pushed to the stack.
     /// - Upon popping an operand this offset is decreased.
-    temp_offset: usize,
+    temp_offset: u16,
     /// The maximum recorded temporary stack offset.
-    max_offset: usize,
+    max_offset: u16,
 }
 
 impl Reset for OperandStack {
@@ -144,13 +145,16 @@ impl OperandStack {
     /// # Errors
     ///
     /// Returns an error if the new temporary offset is out of bounds.
-    fn push_temp_offset(&mut self, delta: usize) -> Result<usize, Error> {
+    fn push_temp_offset(&mut self, delta: usize) -> Result<Slot, Error> {
+        let Ok(delta) = u16::try_from(delta) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
+        };
         let old_offset = self.temp_offset;
         self.temp_offset = old_offset
             .checked_add(delta)
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
         self.max_offset = self.max_offset.max(self.temp_offset);
-        Ok(old_offset)
+        Ok(Slot::from(old_offset))
     }
 
     /// Pops the offset for temporary operands by `delta`.
@@ -158,13 +162,17 @@ impl OperandStack {
     /// # Panics
     ///
     /// If the temporary offset would drop below zero.
-    fn pop_temp_offset(&mut self, delta: usize) {
+    fn pop_temp_offset(&mut self, delta: usize) -> Result<(), Error> {
+        let Ok(delta) = u16::try_from(delta) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
+        };
         self.temp_offset = self.temp_offset.checked_sub(delta).unwrap_or_else(|| {
             panic!(
                 "underflow in `pop_temp_offset`: temp_offset = {}, delta = {delta}",
                 self.temp_offset
             )
         });
+        Ok(())
     }
 
     /// Returns the current height of `self`
@@ -182,7 +190,7 @@ impl OperandStack {
     ///
     /// This value is equal to the maximum number of cells a function requires to operate.
     pub fn max_stack_offset(&self) -> usize {
-        self.max_offset
+        usize::from(self.max_offset)
     }
 
     /// Returns the [`StackPos`] of the next pushed operand.
@@ -292,7 +300,8 @@ impl OperandStack {
         let Some(operand) = self.operands.pop() else {
             panic!("tried to pop operand from empty stack");
         };
-        self.pop_temp_offset(usize::from(required_cells_of_type(operand.ty())));
+        self.pop_temp_offset(usize::from(required_cells_of_type(operand.ty())))
+            .unwrap_or_else(|error| panic!("failed to pop temporary offset: {error}"));
         let stack_pos = self.next_stack_pos();
         self.try_unlink_local(operand);
         Operand::new(stack_pos, operand)
