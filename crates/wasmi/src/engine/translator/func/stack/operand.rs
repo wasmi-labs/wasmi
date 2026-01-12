@@ -93,10 +93,10 @@ impl Operand {
 pub struct LocalOperand {
     /// The position of the operand on the operand stack.
     stack_pos: StackPos,
-    /// The index of the local variable.
-    local_index: LocalIdx,
     /// The type of the local variable.
     ty: ValType,
+    /// The index of the local variable.
+    local_index: LocalIdx,
 }
 
 impl From<LocalOperand> for Operand {
