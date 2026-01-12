@@ -1,5 +1,13 @@
 use super::{LocalIdx, LocalsHead, Operand, Reset};
-use crate::{Error, ValType, core::TypedVal};
+use crate::{
+    Error,
+    ValType,
+    core::TypedVal,
+    engine::{
+        TranslationError,
+        translator::func::{encoder::BytePos, utils::required_cells_of_type},
+    },
+};
 use alloc::vec::Vec;
 use core::{num::NonZero, slice};
 
@@ -79,6 +87,13 @@ pub struct OperandStack {
     ///
     /// This field is required to optimize [`OperandStack::preserve_all_locals`].
     len_locals: usize,
+    /// The current top-most temporary stack offset.
+    ///
+    /// # Note
+    ///
+    /// - This is used and advanced for the next operand pushed to the stack.
+    /// - Upon popping an operand this offset is decreased.
+    temp_offset: usize,
 }
 
 impl Reset for OperandStack {
@@ -96,9 +111,43 @@ impl OperandStack {
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
+    pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
         self.local_heads.register(amount)?;
+        let cells_per_item = required_cells_of_type(ty);
+        let required_cells = amount
+            .checked_mul(usize::from(cells_per_item))
+            .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
+        self.push_temp_offset(required_cells)?;
         Ok(())
+    }
+
+    /// Pushes the offset for temporary operands by `delta`.
+    ///
+    /// Returns the temporary offset before this operation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the new temporary offset is out of bounds.
+    fn push_temp_offset(&mut self, delta: usize) -> Result<usize, Error> {
+        let old_offset = self.temp_offset;
+        self.temp_offset = old_offset
+            .checked_add(delta)
+            .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
+        Ok(old_offset)
+    }
+
+    /// Pops the offset for temporary operands by `delta`.
+    ///
+    /// # Panics
+    ///
+    /// If the temporary offset would drop below zero.
+    fn pop_temp_offset(&mut self, delta: usize) {
+        self.temp_offset = self.temp_offset.checked_sub(delta).unwrap_or_else(|| {
+            panic!(
+                "underflow in `pop_temp_offset`: temp_offset = {}, delta = {delta}",
+                self.temp_offset
+            )
+        });
     }
 
     /// Returns the current height of `self`

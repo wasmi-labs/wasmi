@@ -94,8 +94,8 @@ impl Stack {
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
-        self.operands.register_locals(amount)
+    pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
+        self.operands.register_locals(amount, ty)
     }
 
     /// Returns `true` if the control stack is empty.
