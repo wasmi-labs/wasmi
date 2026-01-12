@@ -31,7 +31,7 @@ impl Operand {
     pub fn is_same(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Local(lhs), Self::Local(rhs)) => lhs.local_index() == rhs.local_index(),
-            (Self::Temp(lhs), Self::Temp(rhs)) => lhs.operand_index() == rhs.operand_index(),
+            (Self::Temp(lhs), Self::Temp(rhs)) => lhs.stack_pos() == rhs.stack_pos(),
             (Self::Immediate(lhs), Self::Immediate(rhs)) => lhs.val() == rhs.val(),
             _ => false,
         }
@@ -40,7 +40,7 @@ impl Operand {
     /// Creates a local [`Operand`].
     pub(super) fn local(operand_index: StackPos, local_index: LocalIdx, ty: ValType) -> Self {
         Self::Local(LocalOperand {
-            operand_index,
+            stack_pos: operand_index,
             local_index,
             ty,
         })
@@ -48,12 +48,18 @@ impl Operand {
 
     /// Creates a temporary [`Operand`].
     pub(super) fn temp(operand_index: StackPos, ty: ValType) -> Self {
-        Self::Temp(TempOperand { operand_index, ty })
+        Self::Temp(TempOperand {
+            stack_pos: operand_index,
+            ty,
+        })
     }
 
     /// Creates an immediate [`Operand`].
     pub(super) fn immediate(operand_index: StackPos, val: TypedVal) -> Self {
-        Self::Immediate(ImmediateOperand { operand_index, val })
+        Self::Immediate(ImmediateOperand {
+            stack_pos: operand_index,
+            val,
+        })
     }
 
     /// Returns `true` if `self` is an [`Operand::Temp`].
@@ -62,11 +68,11 @@ impl Operand {
     }
 
     /// Returns the [`StackPos`] of the [`Operand`].
-    pub fn index(&self) -> StackPos {
+    pub fn stack_pos(&self) -> StackPos {
         match self {
-            Self::Local(operand) => operand.operand_index(),
-            Self::Temp(operand) => operand.operand_index(),
-            Self::Immediate(operand) => operand.operand_index(),
+            Self::Local(operand) => operand.stack_pos(),
+            Self::Temp(operand) => operand.stack_pos(),
+            Self::Immediate(operand) => operand.stack_pos(),
         }
     }
 
@@ -83,8 +89,8 @@ impl Operand {
 /// A local variable on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
-    /// The index of the operand.
-    operand_index: StackPos,
+    /// The position of the operand on the operand stack.
+    stack_pos: StackPos,
     /// The index of the local variable.
     local_index: LocalIdx,
     /// The type of the local variable.
@@ -98,9 +104,9 @@ impl From<LocalOperand> for Operand {
 }
 
 impl LocalOperand {
-    /// Returns the operand index of the [`LocalOperand`].
-    pub fn operand_index(&self) -> StackPos {
-        self.operand_index
+    /// Returns the stack position of the [`LocalOperand`].
+    pub fn stack_pos(&self) -> StackPos {
+        self.stack_pos
     }
 
     /// Returns the index of the [`LocalOperand`].
@@ -117,8 +123,8 @@ impl LocalOperand {
 /// A temporary on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct TempOperand {
-    /// The index of the operand.
-    operand_index: StackPos,
+    /// The position of the operand on the operand stack.
+    stack_pos: StackPos,
     /// The type of the temporary.
     ty: ValType,
 }
@@ -130,9 +136,9 @@ impl From<TempOperand> for Operand {
 }
 
 impl TempOperand {
-    /// Returns the operand index of the [`TempOperand`].
-    pub fn operand_index(&self) -> StackPos {
-        self.operand_index
+    /// Returns the stack position of the [`TempOperand`].
+    pub fn stack_pos(&self) -> StackPos {
+        self.stack_pos
     }
 
     /// Returns the type of the [`TempOperand`].
@@ -144,8 +150,8 @@ impl TempOperand {
 /// An immediate value on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
-    /// The index of the operand.
-    operand_index: StackPos,
+    /// The position of the operand on the operand stack.
+    stack_pos: StackPos,
     /// The value and type of the immediate value.
     val: TypedVal,
 }
@@ -157,9 +163,9 @@ impl From<ImmediateOperand> for Operand {
 }
 
 impl ImmediateOperand {
-    /// Returns the operand index of the [`ImmediateOperand`].
-    pub fn operand_index(&self) -> StackPos {
-        self.operand_index
+    /// Returns the stack position of the [`ImmediateOperand`].
+    pub fn stack_pos(&self) -> StackPos {
+        self.stack_pos
     }
 
     /// Returns the immediate value (and its type) of the [`ImmediateOperand`].

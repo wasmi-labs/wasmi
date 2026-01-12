@@ -51,27 +51,27 @@ impl IntoLocalIdx for &'_ LocalOperand {
 /// This allows to use [`StackLayout::temp_to_slot`] with [`LocalIdx`] and [`TempOperand`].
 pub trait IntoStackPos {
     /// Converts `self` into [`StackPos`].
-    fn into_operand_idx(self) -> StackPos;
+    fn into_stack_pos(self) -> StackPos;
 }
 
 impl IntoStackPos for StackPos {
     #[inline]
-    fn into_operand_idx(self) -> StackPos {
+    fn into_stack_pos(self) -> StackPos {
         self
     }
 }
 
 impl IntoStackPos for TempOperand {
     #[inline]
-    fn into_operand_idx(self) -> StackPos {
-        self.operand_index()
+    fn into_stack_pos(self) -> StackPos {
+        self.stack_pos()
     }
 }
 
 impl IntoStackPos for &'_ TempOperand {
     #[inline]
-    fn into_operand_idx(self) -> StackPos {
-        self.operand_index()
+    fn into_stack_pos(self) -> StackPos {
+        self.stack_pos()
     }
 }
 
@@ -194,7 +194,7 @@ impl StackLayout {
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
     pub fn temp_to_slot(&self, item: impl IntoStackPos) -> Result<Slot, Error> {
-        let index = usize::from(item.into_operand_idx());
+        let index = usize::from(item.into_stack_pos());
         let base_offset = usize::from(self.min_temp_offset());
         let Some(index) = base_offset.checked_add(index) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
