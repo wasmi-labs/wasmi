@@ -22,8 +22,8 @@ impl Operand {
             StackOperand::Local {
                 local_index, ty, ..
             } => Self::local(stack_pos, local_index, ty),
-            StackOperand::Temp { ty } => Self::temp(stack_pos, ty),
-            StackOperand::Immediate { ty, val } => {
+            StackOperand::Temp { ty, .. } => Self::temp(stack_pos, ty),
+            StackOperand::Immediate { ty, val, .. } => {
                 Self::immediate(stack_pos, TypedVal::new(ty, val))
             }
         }
