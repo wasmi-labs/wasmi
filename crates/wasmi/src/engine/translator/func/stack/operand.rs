@@ -30,9 +30,9 @@ impl Operand {
     /// Returns `true` if `self` and `other` evaluate to the same value.
     pub fn is_same(&self, other: &Self) -> bool {
         match (self, other) {
-            (Operand::Local(lhs), Operand::Local(rhs)) => lhs.local_index() == rhs.local_index(),
-            (Operand::Temp(lhs), Operand::Temp(rhs)) => lhs.operand_index() == rhs.operand_index(),
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => lhs.val() == rhs.val(),
+            (Self::Local(lhs), Self::Local(rhs)) => lhs.local_index() == rhs.local_index(),
+            (Self::Temp(lhs), Self::Temp(rhs)) => lhs.operand_index() == rhs.operand_index(),
+            (Self::Immediate(lhs), Self::Immediate(rhs)) => lhs.val() == rhs.val(),
             _ => false,
         }
     }
@@ -64,9 +64,9 @@ impl Operand {
     /// Returns the [`StackPos`] of the [`Operand`].
     pub fn index(&self) -> StackPos {
         match self {
-            Operand::Local(operand) => operand.operand_index(),
-            Operand::Temp(operand) => operand.operand_index(),
-            Operand::Immediate(operand) => operand.operand_index(),
+            Self::Local(operand) => operand.operand_index(),
+            Self::Temp(operand) => operand.operand_index(),
+            Self::Immediate(operand) => operand.operand_index(),
         }
     }
 
