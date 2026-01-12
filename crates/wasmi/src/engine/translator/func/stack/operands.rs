@@ -2,7 +2,7 @@ use super::{LocalIdx, LocalsHead, Operand, Reset};
 use crate::{
     Error,
     ValType,
-    core::TypedVal,
+    core::{TypedVal, UntypedVal},
     engine::{
         TranslationError,
         translator::func::{encoder::BytePos, utils::required_cells_of_type},
@@ -38,14 +38,14 @@ impl From<usize> for StackPos {
 pub enum StackOperand {
     /// A local variable.
     Local {
-        /// The index of the local variable.
-        local_index: LocalIdx,
         /// The type of the local operand.
         ///
         /// This does not have to be the type of the associated local but
         /// might be a type overwrite. This is useful for Wasm `reinterpret`
         /// operators with local operand inputs.
         ty: ValType,
+        /// The index of the local variable.
+        local_index: LocalIdx,
         /// The previous [`StackOperand::Local`] on the [`OperandStack`].
         prev_local: Option<StackPos>,
         /// The next [`StackOperand::Local`] on the [`OperandStack`].
@@ -53,13 +53,15 @@ pub enum StackOperand {
     },
     /// A temporary value on the [`OperandStack`].
     Temp {
-        /// The type of the temporary value.
+        /// The type of the temporary operand.
         ty: ValType,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
-        /// The value (and type) of the immediate value.
-        val: TypedVal,
+        /// The type of the immediate operand.
+        ty: ValType,
+        /// The value of the immediate operand.
+        val: UntypedVal,
     },
 }
 
@@ -67,9 +69,7 @@ impl StackOperand {
     /// Returns the [`ValType`] of the [`StackOperand`].
     pub fn ty(&self) -> ValType {
         match self {
-            StackOperand::Temp { ty, .. } => *ty,
-            StackOperand::Immediate { val } => val.ty(),
-            StackOperand::Local { ty, .. } => *ty,
+            Self::Temp { ty, .. } | Self::Immediate { ty, .. } | Self::Local { ty, .. } => *ty,
         }
     }
 }
@@ -246,8 +246,10 @@ impl OperandStack {
     #[inline]
     pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<StackPos, Error> {
         let idx = self.next_index();
-        self.operands
-            .push(StackOperand::Immediate { val: value.into() });
+        let value = value.into();
+        let ty = value.ty();
+        let val = value.untyped();
+        self.operands.push(StackOperand::Immediate { ty, val });
         self.update_max_stack_height();
         Ok(idx)
     }

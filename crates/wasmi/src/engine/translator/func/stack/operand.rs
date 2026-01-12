@@ -23,7 +23,7 @@ impl Operand {
                 local_index, ty, ..
             } => Self::local(index, local_index, ty),
             StackOperand::Temp { ty } => Self::temp(index, ty),
-            StackOperand::Immediate { val } => Self::immediate(index, val),
+            StackOperand::Immediate { ty, val } => Self::immediate(index, TypedVal::new(ty, val)),
         }
     }
 
