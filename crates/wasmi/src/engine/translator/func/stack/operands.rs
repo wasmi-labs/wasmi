@@ -30,9 +30,6 @@ impl From<usize> for StackPos {
     }
 }
 
-// TODO: use opaque type (e.g. `Slot`) later.
-pub type TempOffset = usize;
-
 /// An [`Operand`] on the [`OperandStack`].
 ///
 /// This is the internal version of [`Operand`] with information that shall remain
@@ -42,7 +39,7 @@ pub enum StackOperand {
     /// A local variable.
     Local {
         /// The temporary stack offset of the operand.
-        temp_offset: TempOffset,
+        temp_slot: usize,
         /// The type of the local operand.
         ///
         /// This does not have to be the type of the associated local but
@@ -59,14 +56,14 @@ pub enum StackOperand {
     /// A temporary value on the [`OperandStack`].
     Temp {
         /// The temporary stack offset of the operand.
-        temp_offset: TempOffset,
+        temp_slot: usize,
         /// The type of the temporary operand.
         ty: ValType,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
         /// The temporary stack offset of the operand.
-        temp_offset: TempOffset,
+        temp_slot: usize,
         /// The type of the immediate operand.
         ty: ValType,
         /// The value of the immediate operand.
@@ -82,12 +79,12 @@ impl StackOperand {
         }
     }
 
-    /// Returns the temporary offset of the [`StackOperand`].
-    pub fn temp_offset(&self) -> TempOffset {
+    /// Returns the temporary slot of the [`StackOperand`].
+    pub fn temp_slot(&self) -> usize {
         match self {
-            | Self::Temp { temp_offset, .. }
-            | Self::Immediate { temp_offset, .. }
-            | Self::Local { temp_offset, .. } => *temp_offset,
+            | Self::Temp { temp_slot, .. }
+            | Self::Immediate { temp_slot, .. }
+            | Self::Local { temp_slot, .. } => *temp_slot,
         }
     }
 }
@@ -226,9 +223,9 @@ impl OperandStack {
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(stack_pos));
         }
-        let temp_offset = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
+        let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
         self.operands.push(StackOperand::Local {
-            temp_offset,
+            temp_slot,
             ty,
             local_index,
             prev_local: None,
@@ -246,8 +243,8 @@ impl OperandStack {
     #[inline]
     pub fn push_temp(&mut self, ty: ValType) -> Result<StackPos, Error> {
         let stack_pos = self.next_stack_pos();
-        let temp_offset = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
-        self.operands.push(StackOperand::Temp { temp_offset, ty });
+        let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
+        self.operands.push(StackOperand::Temp { temp_slot, ty });
         Ok(stack_pos)
     }
 
@@ -262,12 +259,9 @@ impl OperandStack {
         let value = value.into();
         let ty = value.ty();
         let val = value.untyped();
-        let temp_offset = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
-        self.operands.push(StackOperand::Immediate {
-            temp_offset,
-            ty,
-            val,
-        });
+        let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
+        self.operands
+            .push(StackOperand::Immediate { temp_slot, ty, val });
         Ok(stack_pos)
     }
 
@@ -299,9 +293,9 @@ impl OperandStack {
             panic!("tried to pop operand from empty stack");
         };
         self.pop_temp_offset(usize::from(required_cells_of_type(operand.ty())));
-        let index = self.next_stack_pos();
+        let stack_pos = self.next_stack_pos();
         self.try_unlink_local(operand);
-        Operand::new(index, operand)
+        Operand::new(stack_pos, operand)
     }
 
     /// Returns the [`Operand`] at `depth`.
@@ -356,10 +350,10 @@ impl OperandStack {
     #[must_use]
     fn operand_to_temp_at(&mut self, index: StackPos) -> StackOperand {
         let operand = self.get_at(index);
-        let temp_offset = operand.temp_offset();
+        let temp_slot = operand.temp_slot();
         let ty = operand.ty();
         self.try_unlink_local(operand);
-        self.operands[usize::from(index)] = StackOperand::Temp { temp_offset, ty };
+        self.operands[usize::from(index)] = StackOperand::Temp { temp_slot, ty };
         operand
     }
 
