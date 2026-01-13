@@ -100,6 +100,10 @@ impl Operand {
     }
 
     /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`Operand`].
+    /// 
+    /// # Note
+    /// 
+    /// This is required to copy an operand to its temporary [`Slot`].
     pub fn temp_slot(&self) -> Slot {
         match self {
             Self::Local(operand) => operand.temp_slot(),
