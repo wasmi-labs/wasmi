@@ -541,13 +541,13 @@ impl Iterator for PreservedLocalsIter<'_> {
     type Item = StackPos;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.stack_pos?;
-        let operand = self.operands.operand_to_temp_at(index);
+        let stack_pos = self.stack_pos?;
+        let operand = self.operands.operand_to_temp_at(stack_pos);
         self.stack_pos = match operand {
             StackOperand::Local { next_local, .. } => next_local,
             op => panic!("expected `StackOperand::Local` but found: {op:?}"),
         };
-        Some(index)
+        Some(stack_pos)
     }
 }
 
