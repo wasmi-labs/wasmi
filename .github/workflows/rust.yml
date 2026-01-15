@@ -234,6 +234,22 @@ jobs:
       - name: Check Audit
         run: cargo audit
 
+  deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-deny
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install --locked cargo-deny || true
+      - name: Check Deny
+        run: cargo deny check sources bans advisories
+
   udeps:
     name: uDeps
     runs-on: ubuntu-latest
