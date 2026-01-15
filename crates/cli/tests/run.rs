@@ -1,4 +1,4 @@
-use assert_cmd::Command;
+use assert_cmd::cargo;
 use std::path::PathBuf;
 
 #[test]
@@ -49,5 +49,5 @@ fn get_bin_path(name: &str) -> PathBuf {
 }
 
 fn get_cmd() -> assert_cmd::Command {
-    Command::cargo_bin("wasmi_cli").expect("could not create wasmi_cli command")
+    cargo::cargo_bin_cmd!("wasmi_cli")
 }
