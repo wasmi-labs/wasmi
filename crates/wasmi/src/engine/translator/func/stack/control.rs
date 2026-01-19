@@ -398,10 +398,10 @@ impl From<ControlFrameKind> for ControlFrame {
 
 /// Trait implemented by control frame types that share a common API.
 pub trait ControlFrameBase {
-    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
+    /// Returns the [`BlockType`] of the control frame.
     fn ty(&self) -> BlockType;
 
-    /// Returns the height of the [`BlockControlFrame`].
+    /// Returns the height of the control frame.
     fn height(&self) -> usize;
 
     /// Returns the branch label of `self`.
