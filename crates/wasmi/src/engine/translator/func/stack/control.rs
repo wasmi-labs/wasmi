@@ -167,6 +167,7 @@ impl ControlStack {
     }
 
     /// Pushes a new Wasm `if` onto the [`ControlStack`].
+    #[expect(clippy::too_many_arguments)]
     pub fn push_if(
         &mut self,
         ty: BlockType,
