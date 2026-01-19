@@ -1223,7 +1223,7 @@ impl FuncTranslator {
         let local_idx = LocalIdx::from(local_index);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
-            let result = self.layout.temp_to_slot(preserved)?; // TODO: `Stack::preserve_locals` need to return `temp_slot`
+            let result = preserved.temp_slot();
             let value = self.layout.local_to_slot(local_idx)?;
             self.instrs.encode(
                 Op::copy(result, value),

@@ -543,7 +543,7 @@ pub struct PreservedLocalsIter<'stack> {
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
-    type Item = StackPos;
+    type Item = Operand;
 
     fn next(&mut self) -> Option<Self::Item> {
         let stack_pos = self.stack_pos?;
@@ -552,7 +552,7 @@ impl Iterator for PreservedLocalsIter<'_> {
             StackOperand::Local { next_local, .. } => next_local,
             op => panic!("expected `StackOperand::Local` but found: {op:?}"),
         };
-        Some(stack_pos)
+        Some(Operand::new(stack_pos, operand))
     }
 }
 
