@@ -2,7 +2,8 @@ use super::{LocalIdx, StackOperand, StackPos};
 use crate::{
     ValType,
     core::{TypedVal, UntypedVal},
-    ir::Slot,
+    engine::translator::func::{utils::required_cells_of_type},
+    ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -112,6 +113,19 @@ impl Operand {
         }
     }
 
+    /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`Operand`].
+    ///
+    /// # Note
+    ///
+    /// This is required to copy an operand to its temporary [`Slot`].
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
+        match self {
+            Self::Local(operand) => operand.temp_slots(),
+            Self::Temp(operand) => operand.temp_slots(),
+            Self::Immediate(operand) => operand.temp_slots(),
+        }
+    }
+
     /// Returns the type of the [`Operand`].
     pub fn ty(&self) -> ValType {
         match self {
@@ -150,6 +164,13 @@ impl LocalOperand {
     /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`LocalOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
+    }
+
+    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`LocalOperand`].
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
+        let len = u16::from(required_cells_of_type(self.ty()));
+        let head = self.temp_slot();
+        BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
 
     /// Returns the index of the [`LocalOperand`].
@@ -191,6 +212,13 @@ impl TempOperand {
         self.temp_slot
     }
 
+    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`TempOperand`].
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
+        let len = u16::from(required_cells_of_type(self.ty()));
+        let head = self.temp_slot();
+        BoundedSlotSpan::new(SlotSpan::new(head), len)
+    }
+
     /// Returns the type of the [`TempOperand`].
     pub fn ty(&self) -> ValType {
         self.ty
@@ -225,6 +253,13 @@ impl ImmediateOperand {
     /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`ImmediateOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
+    }
+
+    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`ImmediateOperand`].
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
+        let len = u16::from(required_cells_of_type(self.ty()));
+        let head = self.temp_slot();
+        BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
 
     /// Returns the immediate value (and its type) of the [`ImmediateOperand`].
