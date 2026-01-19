@@ -35,6 +35,7 @@ use crate::{
         translator::func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
     },
     ir,
+    ir::{Slot, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -140,6 +141,15 @@ impl Stack {
         self.engine.config().get_consume_fuel()
     }
 
+    /// Returns the branch slots for the control frame with `len_params` operand parameters.
+    fn branch_slots(&self, len_params: usize) -> SlotSpan {
+        let temp_slot = match len_params {
+            0 => self.operands.next_temp_slot(),
+            _ => self.operands.get(len_params - 1).temp_slot(),
+        };
+        SlotSpan::new(temp_slot)
+    }
+
     /// Pushes the function enclosing Wasm `block` onto the [`Stack`].
     ///
     /// # Note
@@ -158,7 +168,9 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        self.controls.push_block(ty, 0, label, consume_fuel);
+        let branch_slots = SlotSpan::new(Slot::from(0));
+        self.controls
+            .push_block(ty, 0, branch_slots, label, consume_fuel);
         Ok(())
     }
 
@@ -175,9 +187,10 @@ impl Stack {
         debug_assert!(!self.controls.is_empty());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
+        let branch_slots = self.branch_slots(len_params);
         let consume_fuel = self.consume_fuel_instr();
         self.controls
-            .push_block(ty, block_height, label, consume_fuel);
+            .push_block(ty, block_height, branch_slots, label, consume_fuel);
         Ok(())
     }
 
@@ -206,8 +219,9 @@ impl Stack {
                 .peek(len_params)
                 .all(|operand| operand.is_temp())
         );
+        let branch_slots = self.branch_slots(len_params);
         self.controls
-            .push_loop(ty, block_height, label, consume_fuel);
+            .push_loop(ty, block_height, branch_slots, label, consume_fuel);
         Ok(())
     }
 
@@ -233,9 +247,11 @@ impl Stack {
         let block_height = self.height() - len_params;
         let else_operands = self.operands.peek(len_params);
         debug_assert!(len_params == else_operands.len());
+        let branch_slots = self.branch_slots(len_params);
         self.controls.push_if(
             ty,
             block_height,
+            branch_slots,
             label,
             consume_fuel,
             reachability,

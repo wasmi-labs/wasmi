@@ -184,6 +184,11 @@ impl OperandStack {
         self.operands.len()
     }
 
+    /// Returns the temporary [`Slot`] allocated for the next pushed operand.
+    pub fn next_temp_slot(&self) -> Slot {
+        Slot::from(self.temp_offset)
+    }
+
     /// Returns the maximum stack offset of `self`.
     ///
     /// # Note
