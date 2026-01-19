@@ -226,7 +226,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 frame.branch_to();
                 let label = frame.label();
                 let len_params = frame.len_branch_params(&self.engine);
-                let branch_results = Self::frame_results_impl(&frame, &self.engine, &self.layout)?;
+                let branch_results = Self::frame_results_impl(&frame, &self.engine)?;
                 if let Some(branch_results) = branch_results {
                     self.encode_copies(branch_results, len_params, consume_fuel_instr)?;
                 }
@@ -254,7 +254,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let mut frame = self.stack.peek_control_mut(depth).control_frame();
         frame.branch_to();
         let len_branch_params = frame.len_branch_params(&self.engine);
-        let branch_results = Self::frame_results_impl(&frame, &self.engine, &self.layout)?;
+        let branch_results = Self::frame_results_impl(&frame, &self.engine)?;
         let label = frame.label();
         if len_branch_params == 0 {
             // Case: no branch values are required to be copied

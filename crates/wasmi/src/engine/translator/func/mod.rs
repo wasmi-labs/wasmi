@@ -738,21 +738,19 @@ impl FuncTranslator {
 
     /// Returns the results [`SlotSpan`] of the `frame` if any.
     fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<SlotSpan>, Error> {
-        Self::frame_results_impl(frame, &self.engine, &self.layout)
+        Self::frame_results_impl(frame, &self.engine)
     }
 
     /// Returns the results [`SlotSpan`] of the `frame` if any.
     fn frame_results_impl(
         frame: &impl ControlFrameBase,
         engine: &Engine,
-        layout: &StackLayout,
     ) -> Result<Option<SlotSpan>, Error> {
+        // TODO: we could merge `len_branch_params` and `branch_slots` eventually into returning `Option<SlotSpan>`.`
         if frame.len_branch_params(engine) == 0 {
             return Ok(None);
         }
-        let height = frame.height(); // TODO: we probably need a `frame.slot_offset` method here
-        let start = layout.temp_to_slot(StackPos::from(height))?;
-        let span = SlotSpan::new(start);
+        let span = frame.branch_slots();
         Ok(Some(span))
     }
 
@@ -947,8 +945,7 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
-            else {
+            let Some(results) = Self::frame_results_impl(&frame, &self.engine)? else {
                 panic!("must have frame results since `br_table` requires to copy values");
             };
             self.instrs.encode_branch(
@@ -1063,7 +1060,8 @@ impl FuncTranslator {
         &mut self,
         len: usize,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<SlotSpan, Error> { // TODO: must return `BoundedSlotSpan`
+    ) -> Result<SlotSpan, Error> {
+        // TODO: must return `BoundedSlotSpan`
         if let Some(span) = self.try_form_regspan(len)? {
             return Ok(span);
         }
