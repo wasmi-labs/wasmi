@@ -100,7 +100,7 @@ impl Operand {
         }
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`Operand`].
+    /// Returns the temporary [`Slot`] of the [`Operand`].
     ///
     /// # Note
     ///
@@ -113,7 +113,7 @@ impl Operand {
         }
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`Operand`].
+    /// Returns the temporary [`BoundedSlotSpan`] of the [`Operand`].
     ///
     /// # Note
     ///
@@ -161,12 +161,12 @@ impl LocalOperand {
         self.stack_pos
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`LocalOperand`].
+    /// Returns the temporary [`Slot`] of the [`LocalOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`LocalOperand`].
+    /// Returns the temporary [`BoundedSlotSpan`] of the [`LocalOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         let len = u16::from(required_cells_of_type(self.ty()));
         let head = self.temp_slot();
@@ -207,12 +207,12 @@ impl TempOperand {
         self.stack_pos
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`TempOperand`].
+    /// Returns the temporary [`Slot`] of the [`TempOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`TempOperand`].
+    /// Returns the temporary [`BoundedSlotSpan`] of the [`TempOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         let len = u16::from(required_cells_of_type(self.ty()));
         let head = self.temp_slot();
@@ -250,7 +250,7 @@ impl ImmediateOperand {
         self.stack_pos
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`ImmediateOperand`].
+    /// Returns the temporary [`Slot`] of the [`ImmediateOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
     }

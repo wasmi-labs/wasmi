@@ -108,10 +108,8 @@ impl StackLayout {
     ///
     /// # Note
     ///
-    /// Forwards to one of
+    /// Forwards to [`StackLayout::local_to_slot`] if possible.
     ///
-    /// - [`StackLayout::local_to_slot`]
-    /// - [`StackLayout::temp_to_slot`]
     ///
     /// # Errors
     ///
