@@ -30,8 +30,6 @@ use self::{
         Operand,
         Stack,
         StackAllocations,
-        StackPos,
-        TempOperand,
     },
     utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
 };
