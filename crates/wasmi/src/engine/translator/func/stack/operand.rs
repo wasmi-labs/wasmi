@@ -113,11 +113,11 @@ impl Operand {
         }
     }
 
-    /// Returns the temporary [`Slot`](crate::ir::Slot) of the [`Operand`].
+    /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`Operand`].
     ///
     /// # Note
     ///
-    /// This is required to copy an operand to its temporary [`Slot`].
+    /// This is required to copy an span of operand to its temporary [`BoundedSlotSpan`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         match self {
             Self::Local(operand) => operand.temp_slots(),
