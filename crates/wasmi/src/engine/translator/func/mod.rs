@@ -1480,6 +1480,7 @@ impl FuncTranslator {
         let len_params = ty.len_params();
         for _ in 0..len_params {
             let operand = self.stack.pop();
+            // TODO: compute number of parameter cells
             self.copy_operand_to_temp(operand, fuel_pos)?;
         }
         let height = self.stack.height();
