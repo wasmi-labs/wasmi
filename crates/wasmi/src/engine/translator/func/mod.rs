@@ -1468,23 +1468,25 @@ impl FuncTranslator {
 
     /// Adjusts the stack for a call to a function with type `ty`.
     ///
-    /// Returns a bounded [`SlotSpan`] to the start of the call
-    /// parameters and results.
+    /// Returns a bounded [`SlotSpan`] to the start of the call parameters and results
+    /// with the length equal to the number of cells storing the call parameters.
     fn adjust_stack_for_call(
         &mut self,
         ty: &FuncType,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
-        let len_params = ty.len_params();
-        for _ in 0..len_params {
+        let mut params_start = SlotSpan::new(Slot::from(0));
+        let mut params_len: u16 = 0;
+        for _ in 0..ty.len_params() {
             let operand = self.stack.pop();
-            // TODO: compute number of parameter cells
+            let slots = operand.temp_slots();
+            params_start = slots.span();
+            params_len = params_len
+                .checked_add(slots.len())
+                .ok_or(TranslationError::AllocatedTooManySlots)?;
             self.copy_operand_to_temp(operand, fuel_pos)?;
         }
-        let height = self.stack.height();
-        let start = self.layout.temp_to_slot(StackPos::from(height))?;
-        // TODO: `len_params` is not necessarily the correct length of the `BoundedSlotSpan`
-        let params = BoundedSlotSpan::new(SlotSpan::new(start), len_params);
+        let params = BoundedSlotSpan::new(params_start, params_len);
         for result in ty.results() {
             self.stack.push_temp(*result)?;
         }
