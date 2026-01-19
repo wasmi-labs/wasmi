@@ -1063,7 +1063,7 @@ impl FuncTranslator {
         &mut self,
         len: usize,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<SlotSpan, Error> {
+    ) -> Result<SlotSpan, Error> { // TODO: must return `BoundedSlotSpan`
         if let Some(span) = self.try_form_regspan(len)? {
             return Ok(span);
         }
