@@ -29,11 +29,11 @@ impl Operand {
                 ty,
                 temp_slot,
                 ..
-            } => Self::local(stack_pos, temp_slot, local_index, ty),
+            } => Self::local(temp_slot, local_index, ty),
             StackOperand::Temp { ty, temp_slot, .. } => Self::temp(stack_pos, temp_slot, ty),
             StackOperand::Immediate {
                 ty, temp_slot, val, ..
-            } => Self::immediate(stack_pos, temp_slot, ty, val),
+            } => Self::immediate(temp_slot, ty, val),
         }
     }
 
@@ -48,14 +48,8 @@ impl Operand {
     }
 
     /// Creates a local [`Operand`].
-    pub(super) fn local(
-        stack_pos: StackPos,
-        temp_slot: Slot,
-        local_index: LocalIdx,
-        ty: ValType,
-    ) -> Self {
+    fn local(temp_slot: Slot, local_index: LocalIdx, ty: ValType) -> Self {
         Self::Local(LocalOperand {
-            stack_pos,
             temp_slot,
             ty,
             local_index,
@@ -63,7 +57,7 @@ impl Operand {
     }
 
     /// Creates a temporary [`Operand`].
-    pub(super) fn temp(stack_pos: StackPos, temp_slot: Slot, ty: ValType) -> Self {
+    fn temp(stack_pos: StackPos, temp_slot: Slot, ty: ValType) -> Self {
         Self::Temp(TempOperand {
             stack_pos,
             temp_slot,
@@ -72,32 +66,13 @@ impl Operand {
     }
 
     /// Creates an immediate [`Operand`].
-    pub(super) fn immediate(
-        stack_pos: StackPos,
-        temp_slot: Slot,
-        ty: ValType,
-        val: UntypedVal,
-    ) -> Self {
-        Self::Immediate(ImmediateOperand {
-            stack_pos,
-            temp_slot,
-            ty,
-            val,
-        })
+    fn immediate(temp_slot: Slot, ty: ValType, val: UntypedVal) -> Self {
+        Self::Immediate(ImmediateOperand { temp_slot, ty, val })
     }
 
     /// Returns `true` if `self` is an [`Operand::Temp`].
     pub fn is_temp(&self) -> bool {
         matches!(self, Self::Temp(_))
-    }
-
-    /// Returns the [`StackPos`] of the [`Operand`].
-    pub fn stack_pos(&self) -> StackPos {
-        match self {
-            Self::Local(operand) => operand.stack_pos(),
-            Self::Temp(operand) => operand.stack_pos(),
-            Self::Immediate(operand) => operand.stack_pos(),
-        }
     }
 
     /// Returns the temporary [`Slot`] of the [`Operand`].
@@ -139,8 +114,6 @@ impl Operand {
 /// A local variable on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
-    /// The position of the operand on the operand stack.
-    stack_pos: StackPos,
     /// The temporary [`Slot`] of the local operand.
     temp_slot: Slot,
     /// The type of the local variable.
@@ -156,11 +129,6 @@ impl From<LocalOperand> for Operand {
 }
 
 impl LocalOperand {
-    /// Returns the stack position of the [`LocalOperand`].
-    pub fn stack_pos(&self) -> StackPos {
-        self.stack_pos
-    }
-
     /// Returns the temporary [`Slot`] of the [`LocalOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
@@ -228,8 +196,6 @@ impl TempOperand {
 /// An immediate value on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
-    /// The position of the operand on the operand stack.
-    stack_pos: StackPos,
     /// The temporary [`Slot`] of the local operand.
     temp_slot: Slot,
     /// The type of the immediate value.
@@ -245,11 +211,6 @@ impl From<ImmediateOperand> for Operand {
 }
 
 impl ImmediateOperand {
-    /// Returns the stack position of the [`ImmediateOperand`].
-    pub fn stack_pos(&self) -> StackPos {
-        self.stack_pos
-    }
-
     /// Returns the temporary [`Slot`] of the [`ImmediateOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
