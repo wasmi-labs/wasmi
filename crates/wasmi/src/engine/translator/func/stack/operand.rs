@@ -2,7 +2,7 @@ use super::{LocalIdx, StackOperand, StackPos};
 use crate::{
     ValType,
     core::{TypedVal, UntypedVal},
-    engine::translator::func::{utils::required_cells_of_type},
+    engine::translator::func::utils::required_cells_of_type,
     ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
 

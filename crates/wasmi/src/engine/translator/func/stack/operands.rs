@@ -3,10 +3,7 @@ use crate::{
     Error,
     ValType,
     core::{TypedVal, UntypedVal},
-    engine::{
-        TranslationError,
-        translator::func::{encoder::BytePos, utils::required_cells_of_type},
-    },
+    engine::{TranslationError, translator::func::utils::required_cells_of_type},
     ir::Slot,
 };
 use alloc::vec::Vec;

@@ -470,7 +470,7 @@ impl ControlFrameBase for ControlFrame {
             ControlFrame::Loop(frame) => frame.branch_slots(),
             ControlFrame::If(frame) => frame.branch_slots(),
             ControlFrame::Else(frame) => frame.branch_slots(),
-            ControlFrame::Unreachable(frame) => {
+            ControlFrame::Unreachable(_) => {
                 panic!(
                     "invalid query for unreachable control frame: `ControlFrameBase::branch_slots`"
                 )
