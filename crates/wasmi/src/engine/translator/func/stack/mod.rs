@@ -1,5 +1,3 @@
-#![expect(unused)]
-
 mod control;
 mod locals;
 mod operand;
@@ -38,7 +36,6 @@ use crate::{
     },
     ir,
 };
-use alloc::vec::Vec;
 
 #[cfg(doc)]
 use crate::ir::Op;
@@ -387,30 +384,6 @@ impl Stack {
         self.operands.get(depth)
     }
 
-    /// Peeks the 2 top-most [`Operand`]s.
-    ///
-    /// # Panics
-    ///
-    /// If there aren't at least 2 [`Operand`]s on the [`Stack`].
-    #[inline]
-    pub fn peek2(&self) -> (Operand, Operand) {
-        let v0 = self.peek(1);
-        let v1 = self.peek(0);
-        (v0, v1)
-    }
-
-    /// Peeks the 3 top-most [`Operand`]s.
-    ///
-    /// # Panics
-    ///
-    /// If there aren't at least 2 [`Operand`]s on the [`Stack`].
-    pub fn peek3(&self) -> (Operand, Operand, Operand) {
-        let v0 = self.peek(2);
-        let v1 = self.peek(1);
-        let v2 = self.peek(0);
-        (v0, v1, v2)
-    }
-
     /// Returns an iterator yielding the top-most `len` operands from the stack.
     ///
     /// Operands are yieleded in insertion order.
@@ -458,25 +431,6 @@ impl Stack {
         let o2 = self.pop();
         let o1 = self.pop();
         (o1, o2, o3)
-    }
-
-    /// Pops `len` operands from the stack and store them into `buffer`.
-    ///
-    /// Operands stored into the buffer are placed in order.
-    pub fn pop_n(&mut self, len: usize, buffer: &mut Vec<Operand>) {
-        buffer.clear();
-        for _ in 0..len {
-            let operand = self.pop();
-            buffer.push(operand);
-        }
-        buffer.reverse();
-    }
-
-    /// Drops `len` operands form the stack.
-    pub fn drop_n(&mut self, len: usize) {
-        for _ in 0..len {
-            self.pop();
-        }
     }
 
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
