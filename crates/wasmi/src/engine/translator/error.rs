@@ -18,6 +18,8 @@ pub enum TranslationError {
     BlockFuelOutOfBounds,
     /// Tried to allocate more registers than possible.
     AllocatedTooManySlots,
+    /// Tried to access a slot that is out of bounds.
+    SlotAccessOutOfBounds,
     /// Tried to use an out of bounds register index.
     SlotOutOfBounds,
     /// Pushed too many values on the emulated value stack during translation.
@@ -71,6 +73,7 @@ impl Display for TranslationError {
             Self::AllocatedTooManySlots => {
                 "translation requires more registers for a function than available"
             }
+            Self::SlotAccessOutOfBounds => "tried to access a slot that is out of bounds",
             Self::SlotOutOfBounds => "tried to access out of bounds register index",
             Self::EmulatedValueStackOverflow => {
                 "function requires value stack with out of bounds depth"
