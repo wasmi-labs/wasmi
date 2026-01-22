@@ -6,7 +6,7 @@ use crate::{
         TranslationError,
         translator::func::{LocalOperand, utils::required_cells_of_type},
     },
-    ir::Slot,
+    ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
 use alloc::vec::Vec;
 
@@ -18,7 +18,7 @@ use super::Stack;
 /// # Note
 ///
 /// This allows to use [`StackLayout::local_to_slot`] with [`LocalIdx`] and [`LocalOperand`].
-pub trait IntoLocalIdx {
+pub trait IntoLocalIdx: Copy {
     /// Converts `self` into [`LocalIdx`].
     fn into_local_idx(self) -> LocalIdx;
 }
@@ -41,6 +41,22 @@ impl IntoLocalIdx for &'_ LocalOperand {
     #[inline]
     fn into_local_idx(self) -> LocalIdx {
         self.local_index()
+    }
+}
+
+pub trait LocalValType {
+    fn ty(self) -> ValType;
+}
+
+impl LocalValType for LocalOperand {
+    fn ty(self) -> ValType {
+        LocalOperand::ty(&self)
+    }
+}
+
+impl LocalValType for &'_ LocalOperand {
+    fn ty(self) -> ValType {
+        LocalOperand::ty(self)
     }
 }
 
@@ -147,6 +163,21 @@ impl StackLayout {
         };
         let offset = self.local_offsets[usize::from(index)];
         Ok(Slot::from(offset))
+    }
+
+    /// Converts the local `index` into the associated [`Slot`].
+    ///
+    /// # Errors
+    ///
+    /// If `index` cannot be converted into a [`Slot`].
+    #[inline]
+    pub fn local_to_slots<L>(&self, item: L) -> Result<BoundedSlotSpan, Error>
+    where
+        L: IntoLocalIdx + LocalValType,
+    {
+        let head = self.local_to_slot(item)?;
+        let len = u16::from(required_cells_of_type(item.ty()));
+        Ok(BoundedSlotSpan::new(SlotSpan::new(Slot::from(head)), len))
     }
 }
 
