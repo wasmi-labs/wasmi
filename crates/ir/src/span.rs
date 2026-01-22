@@ -195,6 +195,11 @@ impl BoundedSlotSpan {
         min <= reg && reg < max
     }
 
+    /// Returns the head (or first) [`Slot`] of `self`.
+    pub fn head(&self) -> Slot {
+        self.span.head()
+    }
+
     /// Returns the number of [`Slot`] in `self`.
     pub fn len(&self) -> u16 {
         self.len
