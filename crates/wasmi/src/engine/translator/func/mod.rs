@@ -56,6 +56,7 @@ use crate::{
                 TryIntoCmpSelectInstr as _,
                 UpdateBranchOffset as _,
             },
+            func::stack::TempOperand,
             utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
         },
     },
@@ -601,8 +602,8 @@ impl FuncTranslator {
             _values => {}
         }
         debug_assert!(!values.is_empty());
-        if let Some(values) = Self::try_form_regspan_of(values, &self.layout)? {
-            return self.encode_copy_span(results, values, len, consume_fuel_instr);
+        if let Some(values) = Self::try_form_slot_span_of(values, &self.layout)? {
+            return self.encode_copy_span(results, values.span(), values.len(), consume_fuel_instr);
         }
         let values = Self::copy_operands_to_temp(
             values,
@@ -934,7 +935,7 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
         self.push_instr(
-            Op::branch_table_span(table.len() + 1, index, values, len_values),
+            Op::branch_table_span(table.len() + 1, index, values.span(), values.len()),
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
@@ -1013,20 +1014,20 @@ impl FuncTranslator {
         self.operands.extend(self.stack.peek_n(len));
     }
 
-    /// Tries to form a [`SlotSpan`] from the top-most `n` operands on the [`Stack`].
+    /// Tries to form a [`BoundedSlotSpan`] from the top-most `n` operands on the [`Stack`].
     ///
-    /// Returns `None` if forming a [`SlotSpan`] was not possible.
-    fn try_form_regspan(&self, len: usize) -> Result<Option<SlotSpan>, Error> {
-        Self::try_form_regspan_of(self.stack.peek_n(len), &self.layout)
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_slot_span(&self, len: usize) -> Result<Option<BoundedSlotSpan>, Error> {
+        Self::try_form_slot_span_of(self.stack.peek_n(len), &self.layout)
     }
 
-    /// Tries to form a [`SlotSpan`] from the `values` slice of [`Operand`]s.
+    /// Tries to form a [`BoundedSlotSpan`] from the `values` [`Operand`]s.
     ///
-    /// Returns `None` if forming a [`SlotSpan`] was not possible.
-    fn try_form_regspan_of<T>(
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_slot_span_of<T>(
         values: impl IntoIterator<Item = T>,
         layout: &StackLayout,
-    ) -> Result<Option<SlotSpan>, Error>
+    ) -> Result<Option<BoundedSlotSpan>, Error>
     where
         T: AsRef<Operand>,
     {
@@ -1034,24 +1035,78 @@ impl FuncTranslator {
         let Some(head) = values.next() else {
             return Ok(None);
         };
-        let mut head = match head.as_ref() {
-            Operand::Local(start) => layout.local_to_slot(start)?,
-            Operand::Temp(start) => start.temp_slot(),
+        match head.as_ref() {
+            Operand::Local(operand) => Self::try_form_span_of_locals(operand, values, layout),
+            Operand::Temp(operand) => Self::try_form_span_of_temps(operand, values),
             Operand::Immediate(_) => return Ok(None),
-        };
-        let start = head;
-        for value in values {
-            let cur = match value.as_ref() {
-                Operand::Immediate(_) => return Ok(None),
-                Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slot(),
-            };
-            if head != cur.prev() {
-                return Ok(None);
-            }
-            head = cur;
         }
-        Ok(Some(SlotSpan::new(start)))
+    }
+
+    /// Tries to form a [`BoundedSlotSpan`] from the local [`Operand`]s in `head` and `values`.
+    ///
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_span_of_locals<T>(
+        head: &LocalOperand,
+        values: impl IntoIterator<Item = T>,
+        layout: &StackLayout,
+    ) -> Result<Option<BoundedSlotSpan>, Error>
+    where
+        T: AsRef<Operand>,
+    {
+        let head_slots = layout.local_to_slots(head)?;
+        let start = head_slots.span().head();
+        let mut len = head_slots.len();
+        let mut next = start.next_n(len);
+        for value in values {
+            match value.as_ref() {
+                Operand::Local(operand) => {
+                    let slots = layout.local_to_slots(operand)?;
+                    if slots.head() != next {
+                        // Note: the operands do not form a contiguous span of slots.
+                        return Ok(None);
+                    }
+                    len = len
+                        .checked_add(slots.len())
+                        .ok_or_else(|| TranslationError::SlotAccessOutOfBounds)?;
+                    next = next.next_n(slots.len());
+                }
+                _ => return Ok(None),
+            }
+        }
+        Ok(Some(BoundedSlotSpan::new(SlotSpan::new(start), len)))
+    }
+
+    /// Tries to form a [`BoundedSlotSpan`] from the temporary [`Operand`]s in `head` and `values`.
+    ///
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_span_of_temps<T>(
+        head: &TempOperand,
+        values: impl IntoIterator<Item = T>,
+    ) -> Result<Option<BoundedSlotSpan>, Error>
+    where
+        T: AsRef<Operand>,
+    {
+        let head_slots = head.temp_slots();
+        let start = head_slots.span().head();
+        let mut len = head_slots.len();
+        let mut next = start.next_n(len);
+        for value in values {
+            match value.as_ref() {
+                Operand::Temp(operand) => {
+                    let slots = operand.temp_slots();
+                    if slots.head() != next {
+                        // Note: the operands do not form a contiguous span of slots.
+                        return Ok(None);
+                    }
+                    len = len
+                        .checked_add(slots.len())
+                        .ok_or_else(|| TranslationError::SlotAccessOutOfBounds)?;
+                    next = next.next_n(slots.len());
+                }
+                _ => return Ok(None),
+            }
+        }
+        Ok(Some(BoundedSlotSpan::new(SlotSpan::new(start), len)))
     }
 
     /// Tries to form a [`SlotSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
@@ -1061,18 +1116,11 @@ impl FuncTranslator {
         &mut self,
         len: usize,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<SlotSpan, Error> {
-        // TODO: must return `BoundedSlotSpan`
-        if let Some(span) = self.try_form_regspan(len)? {
+    ) -> Result<BoundedSlotSpan, Error> {
+        if let Some(span) = self.try_form_slot_span(len)? {
             return Ok(span);
         }
-        self.move_operands_to_temp(len, consume_fuel_instr)?;
-        let Some(span) = self.try_form_regspan(len)? else {
-            unreachable!(
-                "the top-most `len` operands are now temporaries thus `SlotSpan` forming should succeed"
-            )
-        };
-        Ok(span)
+        self.move_operands_to_temp(len, consume_fuel_instr)
     }
 
     /// Translates the end of a Wasm `block` control frame.
