@@ -21,7 +21,7 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    operand::{ImmediateOperand, LocalOperand, Operand},
+    operand::{ImmediateOperand, LocalOperand, Operand, TempOperand},
     operands::{PreservedAllLocalsIter, PreservedLocalsIter, StackPos},
 };
 use super::{Reset, ReusableAllocations};
@@ -352,7 +352,7 @@ impl Stack {
     ///
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_operand(&mut self, operand: Operand) -> Result<StackPos, Error> {
+    pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         self.operands.push_operand(operand)
     }
 
@@ -362,7 +362,11 @@ impl Stack {
     ///
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<StackPos, Error> {
+    pub fn push_local(
+        &mut self,
+        local_index: LocalIdx,
+        ty: ValType,
+    ) -> Result<LocalOperand, Error> {
         self.operands.push_local(local_index, ty)
     }
 
@@ -372,7 +376,7 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType) -> Result<StackPos, Error> {
+    pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         self.operands.push_temp(ty)
     }
 
@@ -382,7 +386,10 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<StackPos, Error> {
+    pub fn push_immediate(
+        &mut self,
+        value: impl Into<TypedVal>,
+    ) -> Result<ImmediateOperand, Error> {
         self.operands.push_immediate(value)
     }
 

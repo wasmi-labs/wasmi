@@ -48,7 +48,7 @@ impl Operand {
     }
 
     /// Creates a local [`Operand`].
-    fn local(temp_slot: Slot, local_index: LocalIdx, ty: ValType) -> Self {
+    pub(super) fn local(temp_slot: Slot, local_index: LocalIdx, ty: ValType) -> Self {
         Self::Local(LocalOperand {
             temp_slot,
             ty,
@@ -57,7 +57,7 @@ impl Operand {
     }
 
     /// Creates a temporary [`Operand`].
-    fn temp(stack_pos: StackPos, temp_slot: Slot, ty: ValType) -> Self {
+    pub(super) fn temp(stack_pos: StackPos, temp_slot: Slot, ty: ValType) -> Self {
         Self::Temp(TempOperand {
             stack_pos,
             temp_slot,
@@ -66,7 +66,7 @@ impl Operand {
     }
 
     /// Creates an immediate [`Operand`].
-    fn immediate(temp_slot: Slot, ty: ValType, val: UntypedVal) -> Self {
+    pub(super) fn immediate(temp_slot: Slot, ty: ValType, val: UntypedVal) -> Self {
         Self::Immediate(ImmediateOperand { temp_slot, ty, val })
     }
 
@@ -129,6 +129,15 @@ impl From<LocalOperand> for Operand {
 }
 
 impl LocalOperand {
+    /// Creates a new [`LocalOperand`] from its parts.
+    pub(super) fn new(temp_slot: Slot, ty: ValType, local_index: LocalIdx) -> Self {
+        Self {
+            temp_slot,
+            ty,
+            local_index,
+        }
+    }
+
     /// Returns the temporary [`Slot`] of the [`LocalOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot
@@ -170,6 +179,15 @@ impl From<TempOperand> for Operand {
 }
 
 impl TempOperand {
+    /// Creates a new [`TempOperand`] from its parts.
+    pub(super) fn new(temp_slot: Slot, ty: ValType, stack_pos: StackPos) -> Self {
+        Self {
+            stack_pos,
+            temp_slot,
+            ty,
+        }
+    }
+
     /// Returns the stack position of the [`TempOperand`].
     pub fn stack_pos(&self) -> StackPos {
         self.stack_pos
@@ -211,6 +229,11 @@ impl From<ImmediateOperand> for Operand {
 }
 
 impl ImmediateOperand {
+    /// Creates a new [`ImmediateOperand`] from its parts.
+    pub(super) fn new(temp_slot: Slot, ty: ValType, val: UntypedVal) -> Self {
+        Self { temp_slot, ty, val }
+    }
+
     /// Returns the temporary [`Slot`] of the [`ImmediateOperand`].
     pub fn temp_slot(&self) -> Slot {
         self.temp_slot

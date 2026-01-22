@@ -1,4 +1,4 @@
-use super::{LocalIdx, LocalsHead, Operand, Reset};
+use super::{ImmediateOperand, LocalIdx, LocalOperand, LocalsHead, Operand, Reset, TempOperand};
 use crate::{
     Error,
     ValType,
@@ -213,11 +213,14 @@ impl OperandStack {
     ///
     /// - If too many operands have been pushed onto the [`OperandStack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_operand(&mut self, operand: Operand) -> Result<StackPos, Error> {
+    #[inline]
+    pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         match operand {
-            Operand::Local(operand) => self.push_local(operand.local_index(), operand.ty()),
-            Operand::Temp(operand) => self.push_temp(operand.ty()),
-            Operand::Immediate(operand) => self.push_immediate(operand.val()),
+            Operand::Local(op) => self
+                .push_local(op.local_index(), op.ty())
+                .map(Operand::from),
+            Operand::Temp(op) => self.push_temp(op.ty()).map(Operand::from),
+            Operand::Immediate(op) => self.push_immediate(op.val()).map(Operand::from),
         }
     }
 
@@ -227,7 +230,12 @@ impl OperandStack {
     ///
     /// - If too many operands have been pushed onto the [`OperandStack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<StackPos, Error> {
+    #[inline]
+    pub fn push_local(
+        &mut self,
+        local_index: LocalIdx,
+        ty: ValType,
+    ) -> Result<LocalOperand, Error> {
         let stack_pos = self.next_stack_pos();
         let next_local = self.local_heads.replace_first(local_index, Some(stack_pos));
         if let Some(next_local) = next_local {
@@ -242,7 +250,7 @@ impl OperandStack {
             next_local,
         });
         self.len_locals += 1;
-        Ok(stack_pos)
+        Ok(LocalOperand::new(temp_slot, ty, local_index))
     }
 
     /// Pushes a temporary with type `ty` on the [`OperandStack`].
@@ -251,11 +259,11 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType) -> Result<StackPos, Error> {
+    pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
         let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
         self.operands.push(StackOperand::Temp { temp_slot, ty });
-        Ok(stack_pos)
+        Ok(TempOperand::new(temp_slot, ty, stack_pos))
     }
 
     /// Pushes an immediate `value` on the [`OperandStack`].
@@ -264,15 +272,17 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<StackPos, Error> {
-        let stack_pos = self.next_stack_pos();
+    pub fn push_immediate(
+        &mut self,
+        value: impl Into<TypedVal>,
+    ) -> Result<ImmediateOperand, Error> {
         let value = value.into();
         let ty = value.ty();
         let val = value.untyped();
         let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
         self.operands
             .push(StackOperand::Immediate { temp_slot, ty, val });
-        Ok(stack_pos)
+        Ok(ImmediateOperand::new(temp_slot, ty, val))
     }
 
     /// Returns an iterator that yields the last `n` [`Operand`]s.
