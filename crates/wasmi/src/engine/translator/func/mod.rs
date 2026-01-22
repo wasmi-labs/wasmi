@@ -846,8 +846,7 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        self.stack.push_temp(result_ty)?;
-        let result = self.stack.peek(0).temp_slot(); // TODO: maybe also return `temp_slot` in `Stack::push_temp`
+        let result = self.stack.push_temp(result_ty)?.temp_slot();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
         self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
@@ -1969,8 +1968,7 @@ impl FuncTranslator {
                     //       not the case for the `true_val` since `true_val` is the first
                     //       value popped from the stack.
                     let consume_fuel_instr = self.stack.consume_fuel_instr();
-                    self.stack.push_temp(ty)?; // TODO: it might be nice to also return `temp_slot` here
-                    let result = self.stack.peek(0).temp_slot();
+                    let result = self.stack.push_temp(ty)?.temp_slot();
                     let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
                     else {
                         return Ok(());
@@ -2042,8 +2040,7 @@ impl FuncTranslator {
         }
         let CmpSelectFusion::Applied(fused_select) =
             staged.try_into_cmp_select_instr(true_val, false_val, || {
-                self.stack.push_temp(ty)?; // TODO: it might be nice to also return `temp_slot` here
-                let select_result = self.stack.peek(0).temp_slot();
+                let select_result = self.stack.push_temp(ty)?.temp_slot();
                 Ok(select_result)
             })?
         else {
@@ -2119,10 +2116,9 @@ impl FuncTranslator {
         };
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        self.stack.push_temp(ValType::I32)?; // TODO: it might be nice to also return `temp_slot` here
+        let new_result = self.stack.push_temp(ValType::I32)?.temp_slot();
         // Need to replace `cmp` instruction result register since it might
         // have been misaligned if `lhs` originally referred to the zero operand.
-        let new_result = self.stack.peek(0).temp_slot();
         let Some(negated) = negated.update_result_slot(new_result) else {
             unreachable!("`negated` has been asserted as `cmp` instruction");
         };
@@ -2407,10 +2403,8 @@ impl FuncTranslator {
         let rhs_hi = self.copy_if_immediate(rhs_hi)?;
         let lhs_lo = self.copy_if_immediate(lhs_lo)?;
         let lhs_hi = self.copy_if_immediate(lhs_hi)?;
-        self.stack.push_temp(ValType::I64)?; // TODO: it would be nice to also return `temp_slot`
-        self.stack.push_temp(ValType::I64)?; // TODO: it would be nice to also return `temp_slot`
-        let result_lo = self.stack.peek(1).temp_slot();
-        let result_hi = self.stack.peek(0).temp_slot();
+        let result_lo = self.stack.push_temp(ValType::I64)?.temp_slot();
+        let result_hi = self.stack.push_temp(ValType::I64)?.temp_slot();
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
@@ -2462,9 +2456,8 @@ impl FuncTranslator {
                 (lhs, rhs)
             }
         };
-        self.stack.push_temp(ValType::I64)?; // TODO: it would be nice to also return `temp_slot` here
+        let result0 = self.stack.push_temp(ValType::I64)?.temp_slot();
         self.stack.push_temp(ValType::I64)?;
-        let result0 = self.stack.peek(1).temp_slot();
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
@@ -2492,8 +2485,7 @@ impl FuncTranslator {
         if rhs == 1 && !signed {
             // Case: `mul(x, 1)` or `mul(1, x)` always evaluates to just `x`.
             // This is only valid if `x` is not a singed (negative) value.
-            self.stack.push_operand(lhs)?; // lo-bits
-            let result = self.stack.peek(0); // TODO: it would be nice if `push_operand` would also return `temp_slot`
+            let result = self.stack.push_operand(lhs)?; // lo-bits
             if matches!(lhs, Operand::Temp(_)) {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
                 let consume_fuel_instr = self.stack.consume_fuel_instr();
