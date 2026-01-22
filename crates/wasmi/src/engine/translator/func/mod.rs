@@ -336,17 +336,20 @@ impl FuncTranslator {
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
     fn move_operands_to_temp(
         &mut self,
-        len: usize, // TODO: the `SlotSpan`'s length might be different from `len`
+        len: usize,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<SlotSpan, Error> {
-        // TODO: should return `BoundedSlotSpan`
+    ) -> Result<BoundedSlotSpan, Error> {
         debug_assert!(len > 0);
+        let mut copied_cells: u16 = 0;
         for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
+            copied_cells = copied_cells
+                .checked_add(operand.temp_slots().len())
+                .ok_or_else(|| TranslationError::SlotAccessOutOfBounds)?;
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
         let first = self.stack.peek(len - 1).temp_slot();
-        Ok(SlotSpan::new(first))
+        Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
     /// Convert all branch params up to `depth` to [`Operand::Temp`].
@@ -993,8 +996,9 @@ impl FuncTranslator {
                 }
             },
             _ => {
-                let results = self.move_operands_to_temp(usize::from(len_results), consume_fuel)?;
-                Op::return_span(BoundedSlotSpan::new(results, len_results))
+                let len_results = usize::from(len_results);
+                let results = self.move_operands_to_temp(len_results, consume_fuel)?;
+                Op::return_span(results)
             }
         };
         let instr = self
