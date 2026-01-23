@@ -585,7 +585,6 @@ impl FuncTranslator {
         let values = &self.operands[..];
         let (results, values) = Self::copy_many_strip_noop_start(results, values, &self.layout)?;
         let values = Self::copy_many_strip_noop_end(results, values, &self.layout)?;
-        let len = values.len() as u16;
         debug_assert!(!Self::has_overlapping_copies(
             results,
             values,
@@ -611,25 +610,32 @@ impl FuncTranslator {
             &mut self.layout,
             &mut self.instrs,
         )?;
-        self.encode_copy_span(results, values, len, consume_fuel_instr)
+        self.encode_copy_span(results, values.span(), values.len(), consume_fuel_instr)
     }
 
     /// Copy `values` to temporary stack [`Slot`]s without changing the translation stack.
+    ///
+    /// Returns a [`BoundedSlotSpan`] to the cells where `values` have been copied to.
     fn copy_operands_to_temp(
-        values: &[Operand], // TODO: the returned `SlotSpan`'s length might be different from `values.len`.
+        values: &[Operand],
         pos_fuel: Option<Pos<ir::BlockFuel>>,
         layout: &mut StackLayout,
         instrs: &mut OpEncoder,
-    ) -> Result<SlotSpan, Error> {
+    ) -> Result<BoundedSlotSpan, Error> {
         debug_assert!(!values.is_empty());
+        let mut copied_slots: u16 = 0;
         for value in values {
-            let result = value.temp_slot();
+            let results = value.temp_slots();
+            let result = results.head();
             let value = *value;
             Self::encode_copy_impl(result, value, pos_fuel, layout, instrs)?;
+            copied_slots = copied_slots
+                .checked_add(results.len())
+                .ok_or(TranslationError::SlotOutOfBounds)?;
         }
-        let first = values[0].temp_slot();
-        let span = SlotSpan::new(first);
-        Ok(span)
+        let head = values[0].temp_slot();
+        let span = SlotSpan::new(head);
+        Ok(BoundedSlotSpan::new(span, copied_slots))
     }
 
     /// Tries to strip noop copies from the start of the `copy_many`.
