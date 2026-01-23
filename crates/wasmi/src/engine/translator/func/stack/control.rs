@@ -431,6 +431,7 @@ pub trait ControlFrameBase {
     fn branch_to(&mut self);
 
     /// Returns the number of operands required for branching to `self`.
+    // TODO: `len_branch_params` currently does not reflect number of cells/slots but number of values
     fn len_branch_params(&self, engine: &Engine) -> u16;
 
     /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
