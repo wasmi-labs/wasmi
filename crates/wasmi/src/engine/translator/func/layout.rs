@@ -177,7 +177,7 @@ impl StackLayout {
     {
         let head = self.local_to_slot(item)?;
         let len = u16::from(required_cells_of_type(item.ty()));
-        Ok(BoundedSlotSpan::new(SlotSpan::new(Slot::from(head)), len))
+        Ok(BoundedSlotSpan::new(SlotSpan::new(head), len))
     }
 }
 

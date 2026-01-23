@@ -346,7 +346,7 @@ impl FuncTranslator {
             let operand = self.stack.operand_to_temp(n);
             copied_cells = copied_cells
                 .checked_add(operand.temp_slots().len())
-                .ok_or_else(|| TranslationError::SlotAccessOutOfBounds)?;
+                .ok_or(TranslationError::SlotAccessOutOfBounds)?;
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
         let first = self.stack.peek(len - 1).temp_slot();
@@ -1038,7 +1038,7 @@ impl FuncTranslator {
         match head.as_ref() {
             Operand::Local(operand) => Self::try_form_span_of_locals(operand, values, layout),
             Operand::Temp(operand) => Self::try_form_span_of_temps(operand, values),
-            Operand::Immediate(_) => return Ok(None),
+            Operand::Immediate(_) => Ok(None),
         }
     }
 
@@ -1067,7 +1067,7 @@ impl FuncTranslator {
                     }
                     len = len
                         .checked_add(slots.len())
-                        .ok_or_else(|| TranslationError::SlotAccessOutOfBounds)?;
+                        .ok_or(TranslationError::SlotAccessOutOfBounds)?;
                     next = next.next_n(slots.len());
                 }
                 _ => return Ok(None),
@@ -1100,7 +1100,7 @@ impl FuncTranslator {
                     }
                     len = len
                         .checked_add(slots.len())
-                        .ok_or_else(|| TranslationError::SlotAccessOutOfBounds)?;
+                        .ok_or(TranslationError::SlotAccessOutOfBounds)?;
                     next = next.next_n(slots.len());
                 }
                 _ => return Ok(None),
