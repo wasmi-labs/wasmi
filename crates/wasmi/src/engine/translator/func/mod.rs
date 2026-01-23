@@ -933,7 +933,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
+        let values = self.try_form_slot_span_or_move(usize::from(len_values), consume_fuel_instr)?;
         self.push_instr(
             Op::branch_table_span(table.len() + 1, index, values.span(), values.len()),
             FuelCostsProvider::base,
@@ -1112,7 +1112,7 @@ impl FuncTranslator {
     /// Tries to form a [`SlotSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
     ///
     /// Returns `None` if forming a [`SlotSpan`] was not possible.
-    fn try_form_regspan_or_move(
+    fn try_form_slot_span_or_move(
         &mut self,
         len: usize,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
