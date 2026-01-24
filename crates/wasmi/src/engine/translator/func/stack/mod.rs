@@ -32,10 +32,12 @@ use crate::{
     core::TypedVal,
     engine::{
         BlockType,
-        translator::func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+        translator::{
+            func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+            utils::required_cells_for_tys,
+        },
     },
-    ir,
-    ir::{Slot, SlotSpan},
+    ir::{self, BoundedSlotSpan, Slot, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -168,7 +170,10 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        let branch_slots = SlotSpan::new(Slot::from(0));
+        let branch_slots_head = SlotSpan::new(Slot::from(0));
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls
             .push_block(ty, 0, branch_slots, label, consume_fuel);
         Ok(())
@@ -187,7 +192,10 @@ impl Stack {
         debug_assert!(!self.controls.is_empty());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
-        let branch_slots = self.branch_slots(len_params);
+        let branch_slots_head = self.branch_slots(len_params);
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         let consume_fuel = self.consume_fuel_instr();
         self.controls
             .push_block(ty, block_height, branch_slots, label, consume_fuel);
@@ -219,7 +227,10 @@ impl Stack {
                 .peek(len_params)
                 .all(|operand| operand.is_temp())
         );
-        let branch_slots = self.branch_slots(len_params);
+        let branch_slots_head = self.branch_slots(len_params);
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls
             .push_loop(ty, block_height, branch_slots, label, consume_fuel);
         Ok(())
@@ -247,7 +258,10 @@ impl Stack {
         let block_height = self.height() - len_params;
         let else_operands = self.operands.peek(len_params);
         debug_assert!(len_params == else_operands.len());
-        let branch_slots = self.branch_slots(len_params);
+        let branch_slots_head = self.branch_slots(len_params);
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls.push_if(
             ty,
             block_height,
