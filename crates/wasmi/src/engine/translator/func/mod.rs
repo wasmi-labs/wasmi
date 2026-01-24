@@ -368,7 +368,7 @@ impl FuncTranslator {
         let Some(branch_results) = self.frame_results(target)? else {
             return Ok(());
         };
-        self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
+        self.encode_copies(branch_results.span(), len_branch_params, consume_fuel_instr)?;
         Ok(())
     }
 
@@ -745,21 +745,20 @@ impl FuncTranslator {
     }
 
     /// Returns the results [`SlotSpan`] of the `frame` if any.
-    fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<SlotSpan>, Error> {
+    fn frame_results(
+        &self,
+        frame: &impl ControlFrameBase,
+    ) -> Result<Option<BoundedSlotSpan>, Error> {
         Self::frame_results_impl(frame, &self.engine)
     }
 
     /// Returns the results [`SlotSpan`] of the `frame` if any.
     fn frame_results_impl(
         frame: &impl ControlFrameBase,
-        engine: &Engine,
-    ) -> Result<Option<SlotSpan>, Error> {
-        // TODO: we could merge `len_branch_params` and `branch_slots` eventually into returning `Option<SlotSpan>`.`
-        if frame.len_branch_params(engine) == 0 {
-            return Ok(None);
-        }
-        let span = frame.branch_slots();
-        Ok(Some(span))
+        _engine: &Engine,
+    ) -> Result<Option<BoundedSlotSpan>, Error> {
+        // TODO: remove this method as it is a simple forwarder
+        Ok(frame.branch_slots_v2())
     }
 
     /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
@@ -958,7 +957,7 @@ impl FuncTranslator {
             };
             self.instrs.encode_branch(
                 frame.label(),
-                |offset| ir::BranchTableTarget::new(results, offset),
+                |offset| ir::BranchTableTarget::new(results.span(), offset),
                 fuel_pos,
                 0,
             )?;

@@ -228,7 +228,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let len_params = frame.len_branch_params(&self.engine);
                 let branch_results = Self::frame_results_impl(&frame, &self.engine)?;
                 if let Some(branch_results) = branch_results {
-                    self.encode_copies(branch_results, len_params, consume_fuel_instr)?;
+                    self.encode_copies(branch_results.span(), len_params, consume_fuel_instr)?;
                 }
                 self.encode_br(label)?;
                 self.reachable = false;
@@ -271,7 +271,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let skip_label = self.instrs.new_label();
         self.encode_br_eqz(condition, skip_label)?;
         if let Some(branch_results) = branch_results {
-            self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
+            self.encode_copies(branch_results.span(), len_branch_params, consume_fuel_instr)?;
         }
         self.encode_br(label)?;
         self.instrs.pin_label(skip_label)?;
