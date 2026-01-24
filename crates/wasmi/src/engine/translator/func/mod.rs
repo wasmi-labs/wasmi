@@ -758,7 +758,7 @@ impl FuncTranslator {
         _engine: &Engine,
     ) -> Result<Option<BoundedSlotSpan>, Error> {
         // TODO: remove this method as it is a simple forwarder
-        Ok(frame.branch_slots_v2())
+        Ok(frame.branch_slots())
     }
 
     /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.

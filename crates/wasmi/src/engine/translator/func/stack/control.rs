@@ -300,8 +300,8 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
         self.0.height()
     }
 
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan> {
-        self.0.branch_slots_v2()
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        self.0.branch_slots()
     }
 
     fn label(&self) -> LabelRef {
@@ -422,7 +422,7 @@ pub trait ControlFrameBase {
     /// Returns the branch slots of the control frame as [`BoundedSlotSpan`].
     ///
     /// Returns `None` if no values need to be copied for branching.
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan>;
+    fn branch_slots(&self) -> Option<BoundedSlotSpan>;
 
     /// Returns the branch label of `self`.
     fn label(&self) -> LabelRef;
@@ -468,12 +468,12 @@ impl ControlFrameBase for ControlFrame {
         }
     }
 
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan> {
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
         match self {
-            ControlFrame::Block(frame) => frame.branch_slots_v2(),
-            ControlFrame::Loop(frame) => frame.branch_slots_v2(),
-            ControlFrame::If(frame) => frame.branch_slots_v2(),
-            ControlFrame::Else(frame) => frame.branch_slots_v2(),
+            ControlFrame::Block(frame) => frame.branch_slots(),
+            ControlFrame::Loop(frame) => frame.branch_slots(),
+            ControlFrame::If(frame) => frame.branch_slots(),
+            ControlFrame::Else(frame) => frame.branch_slots(),
             ControlFrame::Unreachable(_) => {
                 panic!(
                     "invalid query for unreachable control frame: `ControlFrameBase::branch_slots`"
@@ -580,7 +580,7 @@ impl ControlFrameBase for BlockControlFrame {
         self.height.into()
     }
 
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan> {
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
         if self.branch_slots.is_empty() {
             return None;
         }
@@ -639,7 +639,7 @@ impl ControlFrameBase for LoopControlFrame {
         self.height.into()
     }
 
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan> {
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
         if self.branch_slots.is_empty() {
             return None;
         }
@@ -719,7 +719,7 @@ impl ControlFrameBase for IfControlFrame {
         self.height.into()
     }
 
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan> {
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
         if self.branch_slots.is_empty() {
             return None;
         }
@@ -864,7 +864,7 @@ impl ControlFrameBase for ElseControlFrame {
         self.height.into()
     }
 
-    fn branch_slots_v2(&self) -> Option<BoundedSlotSpan> {
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
         if self.branch_slots.is_empty() {
             return None;
         }
