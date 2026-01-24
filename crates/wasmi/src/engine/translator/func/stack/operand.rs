@@ -2,7 +2,7 @@ use super::{LocalIdx, StackOperand, StackPos};
 use crate::{
     ValType,
     core::{TypedVal, UntypedVal},
-    engine::translator::func::utils::required_cells_of_type,
+    engine::translator::utils::required_cells_for_ty,
     ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
 
@@ -145,7 +145,7 @@ impl LocalOperand {
 
     /// Returns the temporary [`BoundedSlotSpan`] of the [`LocalOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
-        let len = u16::from(required_cells_of_type(self.ty()));
+        let len = u16::from(required_cells_for_ty(self.ty()));
         let head = self.temp_slot();
         BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
@@ -200,7 +200,7 @@ impl TempOperand {
 
     /// Returns the temporary [`BoundedSlotSpan`] of the [`TempOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
-        let len = u16::from(required_cells_of_type(self.ty()));
+        let len = u16::from(required_cells_for_ty(self.ty()));
         let head = self.temp_slot();
         BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
@@ -241,7 +241,7 @@ impl ImmediateOperand {
 
     /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`ImmediateOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
-        let len = u16::from(required_cells_of_type(self.ty()));
+        let len = u16::from(required_cells_for_ty(self.ty()));
         let head = self.temp_slot();
         BoundedSlotSpan::new(SlotSpan::new(head), len)
     }

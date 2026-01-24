@@ -4,7 +4,7 @@ use crate::{
     ValType,
     engine::{
         TranslationError,
-        translator::func::{LocalOperand, utils::required_cells_of_type},
+        translator::{func::LocalOperand, utils::required_cells_for_ty},
     },
     ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
@@ -92,7 +92,7 @@ impl StackLayout {
     ///
     /// If too many local variables are being registered.
     pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
-        let cells_per_local = required_cells_of_type(ty);
+        let cells_per_local = required_cells_for_ty(ty);
         let err_too_many_slots = || Error::from(TranslationError::AllocatedTooManySlots);
         let delta_offset = amount
             .checked_mul(usize::from(cells_per_local))
@@ -176,7 +176,7 @@ impl StackLayout {
         L: IntoLocalIdx + LocalValType,
     {
         let head = self.local_to_slot(item)?;
-        let len = u16::from(required_cells_of_type(item.ty()));
+        let len = u16::from(required_cells_for_ty(item.ty()));
         Ok(BoundedSlotSpan::new(SlotSpan::new(head), len))
     }
 }

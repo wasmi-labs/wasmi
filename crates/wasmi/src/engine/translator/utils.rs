@@ -8,6 +8,14 @@ use crate::{
 };
 use core::{convert::identity, num::NonZero};
 
+/// Returns the number of Wasmi engine cell slots required to represent a [`ValType`] `ty`.
+pub fn required_cells_for_ty(ty: ValType) -> u8 {
+    match ty {
+        ValType::V128 => 2,
+        _ => 1,
+    }
+}
+
 impl Typed for ExternRef {
     const TY: ValType = ValType::ExternRef;
 }

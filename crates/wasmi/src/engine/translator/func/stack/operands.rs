@@ -3,7 +3,7 @@ use crate::{
     Error,
     ValType,
     core::{TypedVal, UntypedVal},
-    engine::{TranslationError, translator::func::utils::required_cells_of_type},
+    engine::{TranslationError, translator::utils::required_cells_for_ty},
     ir::Slot,
 };
 use alloc::vec::Vec;
@@ -127,7 +127,7 @@ impl OperandStack {
     /// If too many local variables are being registered.
     pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
         self.local_heads.register(amount)?;
-        let cells_per_item = required_cells_of_type(ty);
+        let cells_per_item = required_cells_for_ty(ty);
         let required_cells = amount
             .checked_mul(usize::from(cells_per_item))
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
@@ -241,7 +241,7 @@ impl OperandStack {
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(stack_pos));
         }
-        let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
+        let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
         self.operands.push(StackOperand::Local {
             temp_slot,
             ty,
@@ -262,6 +262,7 @@ impl OperandStack {
     pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
         let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
+        let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
         self.operands.push(StackOperand::Temp { temp_slot, ty });
         Ok(TempOperand::new(temp_slot, ty, stack_pos))
     }
@@ -279,7 +280,7 @@ impl OperandStack {
         let value = value.into();
         let ty = value.ty();
         let val = value.untyped();
-        let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
+        let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
         self.operands
             .push(StackOperand::Immediate { temp_slot, ty, val });
         Ok(ImmediateOperand::new(temp_slot, ty, val))
@@ -312,7 +313,7 @@ impl OperandStack {
         let Some(operand) = self.operands.pop() else {
             panic!("tried to pop operand from empty stack");
         };
-        self.pop_temp_offset(usize::from(required_cells_of_type(operand.ty())))
+        self.pop_temp_offset(usize::from(required_cells_for_ty(operand.ty())))
             .unwrap_or_else(|error| panic!("failed to pop temporary offset: {error}"));
         let stack_pos = self.next_stack_pos();
         self.try_unlink_local(operand);
