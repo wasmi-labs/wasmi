@@ -261,7 +261,6 @@ impl OperandStack {
     #[inline]
     pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
-        let temp_slot = self.push_temp_offset(usize::from(required_cells_of_type(ty)))?;
         let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
         self.operands.push(StackOperand::Temp { temp_slot, ty });
         Ok(TempOperand::new(temp_slot, ty, stack_pos))
