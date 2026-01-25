@@ -365,10 +365,10 @@ impl FuncTranslator {
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         let len_branch_params = target.len_branch_params(&self.engine);
-        let Some(branch_results) = self.frame_results(target)? else {
+        let Some(branch_slots) = target.branch_slots() else {
             return Ok(());
         };
-        self.encode_copies(branch_results.span(), len_branch_params, consume_fuel_instr)?;
+        self.encode_copies(branch_slots.span(), len_branch_params, consume_fuel_instr)?;
         Ok(())
     }
 
@@ -744,23 +744,6 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    /// Returns the results [`SlotSpan`] of the `frame` if any.
-    fn frame_results(
-        &self,
-        frame: &impl ControlFrameBase,
-    ) -> Result<Option<BoundedSlotSpan>, Error> {
-        Self::frame_results_impl(frame, &self.engine)
-    }
-
-    /// Returns the results [`SlotSpan`] of the `frame` if any.
-    fn frame_results_impl(
-        frame: &impl ControlFrameBase,
-        _engine: &Engine,
-    ) -> Result<Option<BoundedSlotSpan>, Error> {
-        // TODO: remove this method as it is a simple forwarder
-        Ok(frame.branch_slots())
-    }
-
     /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
     ///
     /// # Note
@@ -952,7 +935,7 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(results) = Self::frame_results_impl(&frame, &self.engine)? else {
+            let Some(results) = frame.branch_slots() else {
                 panic!("must have frame results since `br_table` requires to copy values");
             };
             self.instrs.encode_branch(
