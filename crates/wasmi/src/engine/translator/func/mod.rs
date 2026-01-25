@@ -168,6 +168,10 @@ impl WasmTranslator<'_> for FuncTranslator {
     }
 
     fn finish_translate_locals(&mut self) -> Result<(), Error> {
+        // Note: must initialize function body `block` after registering all
+        //       function parameters and locals so that the function `block`
+        //       has proper knowledge of its position within the operands stack.
+        self.init_func_body_block()?;
         Ok(())
     }
 
@@ -245,7 +249,6 @@ impl FuncTranslator {
             operands,
             immediates,
         };
-        translator.init_func_body_block()?;
         translator.init_func_params()?;
         Ok(translator)
     }
