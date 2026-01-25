@@ -253,17 +253,6 @@ impl FuncTranslator {
         Ok(translator)
     }
 
-    /// Initializes the function body enclosing control block.
-    fn init_func_body_block(&mut self) -> Result<(), Error> {
-        let func_ty = self.module.get_type_of_func(self.func);
-        let block_ty = BlockType::func_type(func_ty);
-        let end_label = self.instrs.new_label();
-        let consume_fuel = self.instrs.encode_consume_fuel()?;
-        self.stack
-            .push_func_block(block_ty, end_label, consume_fuel)?;
-        Ok(())
-    }
-
     /// Initializes the function's parameters.
     fn init_func_params(&mut self) -> Result<(), Error> {
         for ty in self.func_type().params() {
@@ -282,6 +271,17 @@ impl FuncTranslator {
         self.locals.register(amount, ty)?;
         self.stack.register_locals(amount, ty)?;
         self.layout.register_locals(amount, ty)?;
+        Ok(())
+    }
+
+    /// Initializes the function body enclosing control block.
+    fn init_func_body_block(&mut self) -> Result<(), Error> {
+        let func_ty = self.module.get_type_of_func(self.func);
+        let block_ty = BlockType::func_type(func_ty);
+        let end_label = self.instrs.new_label();
+        let consume_fuel = self.instrs.encode_consume_fuel()?;
+        self.stack
+            .push_func_block(block_ty, end_label, consume_fuel)?;
         Ok(())
     }
 
