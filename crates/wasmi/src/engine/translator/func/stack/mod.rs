@@ -37,7 +37,7 @@ use crate::{
             utils::required_cells_for_tys,
         },
     },
-    ir::{self, BoundedSlotSpan, SlotSpan},
+    ir::{self, BoundedSlotSpan, Slot, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -122,6 +122,11 @@ impl Stack {
     /// This value is equal to the maximum number of cells a function requires to operate.
     pub fn max_stack_offset(&self) -> usize {
         self.operands.max_stack_offset()
+    }
+
+    /// Returns the next temporary [`Slot`] if an operand was pushed to `self`.
+    pub fn next_temp_slot(&self) -> Slot {
+        self.operands.next_temp_slot()
     }
 
     /// Truncates `self` to the target `height`.
