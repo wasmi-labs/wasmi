@@ -37,7 +37,7 @@ use crate::{
             utils::required_cells_for_tys,
         },
     },
-    ir::{self, BoundedSlotSpan, Slot, SlotSpan},
+    ir::{self, BoundedSlotSpan, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -170,7 +170,7 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        let branch_slots_head = SlotSpan::new(Slot::from(0));
+        let branch_slots_head = SlotSpan::new(self.operands.next_temp_slot());
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
