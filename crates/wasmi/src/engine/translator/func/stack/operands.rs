@@ -128,8 +128,11 @@ impl OperandStack {
     pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
         self.local_heads.register(amount)?;
         let cells_per_item = required_cells_for_ty(ty);
+        let Ok(amount) = u16::try_from(amount) else {
+            return Err(Error::from(TranslationError::TooManyLocalVariables));
+        };
         let required_cells = amount
-            .checked_mul(usize::from(cells_per_item))
+            .checked_mul(cells_per_item)
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
         self.push_temp_offset(required_cells)?;
         Ok(())
@@ -142,10 +145,7 @@ impl OperandStack {
     /// # Errors
     ///
     /// Returns an error if the new temporary offset is out of bounds.
-    fn push_temp_offset(&mut self, delta: usize) -> Result<Slot, Error> {
-        let Ok(delta) = u16::try_from(delta) else {
-            return Err(Error::from(TranslationError::AllocatedTooManySlots));
-        };
+    fn push_temp_offset(&mut self, delta: u16) -> Result<Slot, Error> {
         let old_offset = self.temp_offset;
         self.temp_offset = old_offset
             .checked_add(delta)
@@ -241,7 +241,7 @@ impl OperandStack {
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(stack_pos));
         }
-        let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
+        let temp_slot = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands.push(StackOperand::Local {
             temp_slot,
             ty,
@@ -261,7 +261,7 @@ impl OperandStack {
     #[inline]
     pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
-        let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
+        let temp_slot = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands.push(StackOperand::Temp { temp_slot, ty });
         Ok(TempOperand::new(temp_slot, ty, stack_pos))
     }
@@ -279,7 +279,7 @@ impl OperandStack {
         let value = value.into();
         let ty = value.ty();
         let val = value.untyped();
-        let temp_slot = self.push_temp_offset(usize::from(required_cells_for_ty(ty)))?;
+        let temp_slot = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands
             .push(StackOperand::Immediate { temp_slot, ty, val });
         Ok(ImmediateOperand::new(temp_slot, ty, val))
