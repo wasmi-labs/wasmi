@@ -98,7 +98,7 @@ impl FuncTranslator {
             Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
         })?;
         self.push_instr_with_result(
-            <T::Item as Typed>::TY,
+            ValType::V128,
             |result| match value {
                 Input::Slot(value) => T::replace_lane_sss(result, input, lane, value),
                 Input::Immediate(value) => T::replace_lane_ssi(result, input, lane, value),
