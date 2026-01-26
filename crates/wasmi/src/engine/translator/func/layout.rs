@@ -103,7 +103,7 @@ impl StackLayout {
             .ok_or_else(err_too_many_slots)?;
         for _ in 0..amount {
             self.local_offsets.push(self.min_temp_offset);
-            self.min_temp_offset += u16::from(cells_per_local);
+            self.min_temp_offset += cells_per_local;
         }
         Ok(())
     }
@@ -176,7 +176,7 @@ impl StackLayout {
         L: IntoLocalIdx + LocalValType,
     {
         let head = self.local_to_slot(item)?;
-        let len = u16::from(required_cells_for_ty(item.ty()));
+        let len = required_cells_for_ty(item.ty());
         Ok(BoundedSlotSpan::new(SlotSpan::new(head), len))
     }
 }

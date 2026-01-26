@@ -12,7 +12,7 @@ use core::{convert::identity, num::NonZero};
 
 /// Returns the number of Wasmi engine cell slots required to represent a [`ValType`] `ty`.
 #[inline]
-pub fn required_cells_for_ty(ty: ValType) -> u8 {
+pub fn required_cells_for_ty(ty: ValType) -> u16 {
     match ty {
         #[cfg(feature = "simd")]
         ValType::V128 => 2,
