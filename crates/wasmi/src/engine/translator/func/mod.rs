@@ -792,7 +792,7 @@ impl FuncTranslator {
             Operand::Temp(operand) => Ok(operand.temp_slot()),
             Operand::Immediate(operand) => {
                 let value = operand.val();
-                let result = operand.temp_slot();
+                let result = operand.temp_slot(); // TODO: replace with `temp_slots` to return `BoundedSlotSpan`
                 let copy_instr = Self::make_copy_imm_instr(result, value)?;
                 let consume_fuel = self.stack.consume_fuel_instr();
                 self.instrs
