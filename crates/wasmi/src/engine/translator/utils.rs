@@ -12,6 +12,7 @@ use core::{convert::identity, num::NonZero};
 
 /// Returns the number of Wasmi engine cell slots required to represent a [`ValType`] `ty`.
 pub fn required_cells_for_ty(ty: ValType) -> u8 {
+    // TODO: use more optimized version when `simd` is disabled
     match ty {
         ValType::V128 => 2,
         _ => 1,
@@ -20,6 +21,7 @@ pub fn required_cells_for_ty(ty: ValType) -> u8 {
 
 /// Returns the number of Wasmi engine cell slots required to represent a slice of [`ValType`] `tys`.
 pub fn required_cells_for_tys(tys: &[ValType]) -> Result<u16, Error> {
+    // TODO: use more optimized version when `simd` is disabled
     let len_cells: usize = tys
         .iter()
         .copied()
