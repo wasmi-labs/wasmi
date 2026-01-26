@@ -258,7 +258,7 @@ impl FuncTranslator {
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_instr_with_result(
-                    <T as Typed>::TY,
+                    ValType::V128,
                     |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
                     FuelCostsProvider::load,
                 )?;
@@ -266,7 +266,7 @@ impl FuncTranslator {
             }
         }
         self.push_instr_with_result(
-            <T as Typed>::TY,
+            ValType::V128,
             |result| load_lane(result, ptr, offset, memory, v128, lane),
             FuelCostsProvider::load,
         )?;
