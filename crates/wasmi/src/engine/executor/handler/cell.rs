@@ -10,8 +10,8 @@ use core::{convert::identity, marker::PhantomData, mem};
 pub struct Cell(u64);
 
 macro_rules! iN_to_u64 {
-    ($ty:ty) => {
-        |value: $ty| -> u64 { i64::from(value) as u64 }
+    ($ty:ty, $unsigned:ty) => {
+        |value: $ty| -> u64 { u64::from(value as $unsigned) }
     };
 }
 
@@ -38,10 +38,10 @@ impl_from_for_cell! {
     u16 = u64::from,
     u32 = u64::from,
     u64 = identity,
-    i8 = iN_to_u64!(i8),
-    i16 = iN_to_u64!(i16),
-    i32 = iN_to_u64!(i32),
-    i64 = iN_to_u64!(i64),
+    i8 = iN_to_u64!(i8, u8),
+    i16 = iN_to_u64!(i16, u16),
+    i32 = iN_to_u64!(i32, u32),
+    i64 = iN_to_u64!(i64, u64),
     f32 = |v| u64::from(f32::to_bits(v)),
     F32 = |v| u64::from(F32::to_bits(v)),
     f64 = f64::to_bits,
