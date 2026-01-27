@@ -231,8 +231,8 @@ impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
             inout,
             trampoline,
         } = self.state;
-        let mut sp = sp;
-        let Ok(_) = params.store_to_cells(&mut sp) else {
+        let mut sp_writer = sp;
+        let Ok(_) = params.store_to_cells(&mut sp_writer) else {
             panic!("TODO")
         };
         HostFuncCall {
