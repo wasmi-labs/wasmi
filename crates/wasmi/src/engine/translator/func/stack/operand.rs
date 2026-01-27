@@ -81,6 +81,7 @@ impl Operand {
     ///
     /// This is required to copy an operand to its temporary [`Slot`].
     pub fn temp_slot(&self) -> Slot {
+        // TODO: replace uses of this method with `temp_slots`
         match self {
             Self::Local(operand) => operand.temp_slot(),
             Self::Temp(operand) => operand.temp_slot(),
@@ -140,6 +141,7 @@ impl LocalOperand {
 
     /// Returns the temporary [`Slot`] of the [`LocalOperand`].
     pub fn temp_slot(&self) -> Slot {
+        // TODO: replace uses of this method with `temp_slots`
         self.temp_slot
     }
 
@@ -195,6 +197,7 @@ impl TempOperand {
 
     /// Returns the temporary [`Slot`] of the [`TempOperand`].
     pub fn temp_slot(&self) -> Slot {
+        // TODO: replace uses of this method with `temp_slots`
         self.temp_slot
     }
 
@@ -236,6 +239,7 @@ impl ImmediateOperand {
 
     /// Returns the temporary [`Slot`] of the [`ImmediateOperand`].
     pub fn temp_slot(&self) -> Slot {
+        // TODO: replace uses of this method with `temp_slots`
         self.temp_slot
     }
 
