@@ -6,7 +6,7 @@ mod operands;
 use self::{
     control::ControlStack,
     locals::LocalsHead,
-    operands::{OperandStack, StackOperand},
+    operands::{OperandStack, StackOperand, StackPos},
 };
 pub use self::{
     control::{
@@ -22,7 +22,7 @@ pub use self::{
         LoopControlFrame,
     },
     operand::{ImmediateOperand, LocalOperand, Operand, TempOperand},
-    operands::{PreservedAllLocalsIter, PreservedLocalsIter, StackPos},
+    operands::{PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
