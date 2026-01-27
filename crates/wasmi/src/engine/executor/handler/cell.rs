@@ -1,5 +1,5 @@
 use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::UntypedRef};
-use core::{convert::identity, marker::PhantomData, mem};
+use core::{convert::identity, fmt, marker::PhantomData, mem};
 
 /// A single 64-bit cell of the value stack.
 ///
@@ -96,6 +96,16 @@ pub enum CellError {
     NotEnoughCells,
     /// Raised when there are not enough values for the given amount of [`Cell`]s.
     NotEnoughValues,
+}
+
+impl fmt::Display for CellError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            CellError::NotEnoughCells => "not enough cells",
+            CellError::NotEnoughValues => "not enough values",
+        };
+        f.write_str(s)
+    }
 }
 
 /// Trait implemented by types that can be encoded onto a slice of [`Cell`]s.
