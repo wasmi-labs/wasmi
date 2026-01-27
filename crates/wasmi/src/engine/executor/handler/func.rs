@@ -86,7 +86,7 @@ impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
     {
         let mut sp = self.callee_sp;
         let Ok(_) = params.store_to_cells(&mut sp) else {
-            panic!("TODO")
+            panic!("failed to write parameter values to cells")
         };
         self.new_state(PhantomData)
     }
@@ -127,7 +127,7 @@ impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
     {
         let mut sp = self.callee_sp.offset(slots.head());
         let Ok(_) = params.store_to_cells(&mut sp) else {
-            panic!("TODO")
+            panic!("failed to store provided host results to cells")
         };
         self.new_state(PhantomData)
     }
@@ -140,7 +140,7 @@ impl<'a, T> WasmFuncCall<'a, T, state::Done> {
     {
         let mut sp = self.state.sp;
         let Ok(value) = results.load_from_cells(&mut sp) else {
-            panic!("TODO")
+            panic!("failed to load result values from cells")
         };
         value
     }
@@ -233,7 +233,7 @@ impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
         } = self.state;
         let mut sp_writer = sp;
         let Ok(_) = params.store_to_cells(&mut sp_writer) else {
-            panic!("TODO")
+            panic!("failed to store parameter values to cells")
         };
         HostFuncCall {
             store: self.store,
@@ -277,7 +277,7 @@ impl<'a, T> HostFuncCall<'a, T, state::Done> {
     {
         let mut sp = self.state.sp;
         let Ok(value) = results.load_from_cells(&mut sp) else {
-            panic!("TODO")
+            panic!("failed to load result value from cells")
         };
         value
     }
