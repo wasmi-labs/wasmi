@@ -139,7 +139,7 @@ impl StackLayout {
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.local_to_slot(operand),
-            Operand::Temp(operand) => Ok(operand.temp_slot()),
+            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
             Operand::Immediate(operand) => {
                 panic!("cannot convert `ImmediateOperand` to stack `Slot` but got: {operand:?}")
             }

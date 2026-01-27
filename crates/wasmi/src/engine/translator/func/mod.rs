@@ -352,7 +352,7 @@ impl FuncTranslator {
                 .ok_or(TranslationError::SlotAccessOutOfBounds)?;
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
-        let first = self.stack.peek(len - 1).temp_slot();
+        let first = self.stack.peek(len - 1).temp_slots().head();
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
@@ -469,7 +469,7 @@ impl FuncTranslator {
         let instr = match value {
             Operand::Temp(value) => {
                 let ty = value.ty();
-                let value = value.temp_slot();
+                let value = value.temp_slots().head();
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
@@ -636,7 +636,7 @@ impl FuncTranslator {
                 .checked_add(results.len())
                 .ok_or(TranslationError::SlotOutOfBounds)?;
         }
-        let head = values[0].temp_slot();
+        let head = values[0].temp_slots().head();
         let span = SlotSpan::new(head);
         Ok(BoundedSlotSpan::new(span, copied_slots))
     }
@@ -654,7 +654,7 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_first() {
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slot(),
+                Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
                     // Immediate values will never yield no-op copies.
                     break;
@@ -686,7 +686,7 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_last() {
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slot(),
+                Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
                     // Immediate values will never yield no-op copies.
                     break;
@@ -729,7 +729,7 @@ impl FuncTranslator {
             //       copies can never overlap.
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slot(),
+                Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
                     // Immediates are allocated as function local constants
                     // which can not collide with the result registers.
@@ -774,7 +774,7 @@ impl FuncTranslator {
         operand: Operand,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Slot, Error> {
-        let result = operand.temp_slot();
+        let result = operand.temp_slots().head();
         self.encode_copy(result, operand, consume_fuel)?;
         Ok(result)
     }
@@ -790,10 +790,10 @@ impl FuncTranslator {
     fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand),
-            Operand::Temp(operand) => Ok(operand.temp_slot()),
+            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
             Operand::Immediate(operand) => {
                 let value = operand.val();
-                let result = operand.temp_slot();
+                let result = operand.temp_slots().head();
                 let copy_instr = Self::make_copy_imm_instr(result, value)?;
                 let consume_fuel = self.stack.consume_fuel_instr();
                 self.instrs
@@ -812,7 +812,7 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for local in self.stack.preserve_all_locals() {
             debug_assert!(matches!(local, Operand::Local(_)));
-            let result = local.temp_slot();
+            let result = local.temp_slots().head();
             let Some(copy_instr) = Self::make_copy_instr(result, local, &mut self.layout)? else {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
@@ -842,7 +842,7 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let result = self.stack.push_temp(result_ty)?.temp_slot();
+        let result = self.stack.push_temp(result_ty)?.temp_slots().head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
         self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
@@ -970,7 +970,9 @@ impl FuncTranslator {
                     let value = self.layout.local_to_slot(operand)?;
                     return_slot_for_ty(operand.ty(), value)
                 }
-                Operand::Temp(operand) => return_slot_for_ty(operand.ty(), operand.temp_slot()),
+                Operand::Temp(operand) => {
+                    return_slot_for_ty(operand.ty(), operand.temp_slots().head())
+                }
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
@@ -1265,7 +1267,7 @@ impl FuncTranslator {
         let local_idx = LocalIdx::from(local_index);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
-            let result = preserved.temp_slot();
+            let result = preserved.temp_slots().head();
             let value = self.layout.local_to_slot(local_idx)?;
             self.instrs.encode(
                 Op::copy(result, value),
@@ -1316,7 +1318,7 @@ impl FuncTranslator {
             StackSpace::Local
         ));
         let old_result = match old_result {
-            Operand::Temp(old_result) => old_result.temp_slot(),
+            Operand::Temp(old_result) => old_result.temp_slots().head(),
             Operand::Local(_) | Operand::Immediate(_) => {
                 // Case immediate: cannot replace immediate value result.
                 // Case     local: cannot replace local with another local due to observable behavior.
@@ -1368,7 +1370,7 @@ impl FuncTranslator {
         }
         let condition = match condition {
             Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => condition.temp_slot(),
+            Operand::Temp(condition) => condition.temp_slots().head(),
             Operand::Immediate(condition) => {
                 let condition = i32::from(condition.val());
                 let take_branch = match branch_eqz {
@@ -1424,7 +1426,7 @@ impl FuncTranslator {
             // Note: local variable results have observable behavior which must not change.
             return Ok(false);
         }
-        let br_condition = condition.temp_slot();
+        let br_condition = condition.temp_slots().head();
         if cmp_result != br_condition {
             // Note: cannot fuse cmp instruction with a result that differs
             //       from the branch condition operand.
@@ -1628,7 +1630,7 @@ impl FuncTranslator {
     ) -> Result<Input<R>, Error> {
         let reg = match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand)?,
-            Operand::Temp(operand) => operand.temp_slot(),
+            Operand::Temp(operand) => operand.temp_slots().head(),
             Operand::Immediate(operand) => return f(self, operand.val()),
         };
         Ok(Input::Slot(reg))
@@ -1653,7 +1655,7 @@ impl FuncTranslator {
             }
             Operand::Temp(value) => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = value.temp_slot();
+                let reg = value.temp_slots().head();
                 return Ok(Input::Slot(reg));
             }
         };
@@ -2013,7 +2015,7 @@ impl FuncTranslator {
                     //       not the case for the `true_val` since `true_val` is the first
                     //       value popped from the stack.
                     let consume_fuel_instr = self.stack.consume_fuel_instr();
-                    let result = self.stack.push_temp(ty)?.temp_slot();
+                    let result = self.stack.push_temp(ty)?.temp_slots().head();
                     let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
                     else {
                         return Ok(());
@@ -2027,7 +2029,7 @@ impl FuncTranslator {
                 return Ok(());
             }
             Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => condition.temp_slot(),
+            Operand::Temp(condition) => condition.temp_slots().head(),
         };
         let true_val = self.copy_if_immediate(true_val)?;
         let false_val = self.copy_if_immediate(false_val)?;
@@ -2085,7 +2087,7 @@ impl FuncTranslator {
         }
         let CmpSelectFusion::Applied(fused_select) =
             staged.try_into_cmp_select_instr(true_val, false_val, || {
-                let select_result = self.stack.push_temp(ty)?.temp_slot();
+                let select_result = self.stack.push_temp(ty)?.temp_slots().head();
                 Ok(select_result)
             })?
         else {
@@ -2146,7 +2148,7 @@ impl FuncTranslator {
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        let lhs_reg = lhs.temp_slot();
+        let lhs_reg = lhs.temp_slots().head();
         let Some(result) = staged.result_ref().copied() else {
             // Case: cannot fuse non-cmp instructions
             return Ok(false);
@@ -2161,7 +2163,7 @@ impl FuncTranslator {
         };
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        let new_result = self.stack.push_temp(ValType::I32)?.temp_slot();
+        let new_result = self.stack.push_temp(ValType::I32)?.temp_slots().head();
         // Need to replace `cmp` instruction result register since it might
         // have been misaligned if `lhs` originally referred to the zero operand.
         let Some(negated) = negated.update_result_slot(new_result) else {
@@ -2191,7 +2193,7 @@ impl FuncTranslator {
         let ptr = self.stack.pop();
         let ptr = match ptr {
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
-            Operand::Temp(ptr) => ptr.temp_slot(),
+            Operand::Temp(ptr) => ptr.temp_slots().head(),
             Operand::Immediate(ptr) => {
                 let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
@@ -2266,7 +2268,7 @@ impl FuncTranslator {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = match ptr {
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
-            Operand::Temp(ptr) => ptr.temp_slot(),
+            Operand::Temp(ptr) => ptr.temp_slots().head(),
             Operand::Immediate(ptr) => {
                 return self.encode_store_ix::<T>(ptr, offset, memory, value);
             }
@@ -2280,7 +2282,7 @@ impl FuncTranslator {
                 T::store_ss(ptr, offset, value, memory)
             }
             Operand::Temp(value) => {
-                let value = value.temp_slot();
+                let value = value.temp_slots().head();
                 T::store_ss(ptr, offset, value, memory)
             }
             Operand::Immediate(value) => {
@@ -2314,7 +2316,7 @@ impl FuncTranslator {
                 T::store_is(address, value, memory)
             }
             Operand::Temp(value) => {
-                let value = value.temp_slot();
+                let value = value.temp_slots().head();
                 T::store_is(address, value, memory)
             }
             Operand::Immediate(value) => {
@@ -2357,7 +2359,7 @@ impl FuncTranslator {
                 T::store_mem0_offset16_ss(ptr, offset16, value)
             }
             Operand::Temp(value) => {
-                let value = value.temp_slot();
+                let value = value.temp_slots().head();
                 T::store_mem0_offset16_ss(ptr, offset16, value)
             }
             Operand::Immediate(value) => {
@@ -2448,8 +2450,8 @@ impl FuncTranslator {
         let rhs_hi = self.copy_if_immediate(rhs_hi)?;
         let lhs_lo = self.copy_if_immediate(lhs_lo)?;
         let lhs_hi = self.copy_if_immediate(lhs_hi)?;
-        let result_lo = self.stack.push_temp(ValType::I64)?.temp_slot();
-        let result_hi = self.stack.push_temp(ValType::I64)?.temp_slot();
+        let result_lo = self.stack.push_temp(ValType::I64)?.temp_slots().head();
+        let result_hi = self.stack.push_temp(ValType::I64)?.temp_slots().head();
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
@@ -2501,7 +2503,7 @@ impl FuncTranslator {
                 (lhs, rhs)
             }
         };
-        let result0 = self.stack.push_temp(ValType::I64)?.temp_slot();
+        let result0 = self.stack.push_temp(ValType::I64)?.temp_slots().head();
         self.stack.push_temp(ValType::I64)?;
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
@@ -2534,7 +2536,7 @@ impl FuncTranslator {
             if matches!(lhs, Operand::Temp(_)) {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
                 let consume_fuel_instr = self.stack.consume_fuel_instr();
-                let result = result.temp_slot();
+                let result = result.temp_slots().head();
                 self.encode_copy(result, lhs, consume_fuel_instr)?;
             }
             self.stack.push_immediate(0_i64)?; // hi-bits

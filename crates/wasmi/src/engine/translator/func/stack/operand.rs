@@ -75,20 +75,6 @@ impl Operand {
         matches!(self, Self::Temp(_))
     }
 
-    /// Returns the temporary [`Slot`] of the [`Operand`].
-    ///
-    /// # Note
-    ///
-    /// This is required to copy an operand to its temporary [`Slot`].
-    pub fn temp_slot(&self) -> Slot {
-        // TODO: replace uses of this method with `temp_slots`
-        match self {
-            Self::Local(operand) => operand.temp_slot(),
-            Self::Temp(operand) => operand.temp_slot(),
-            Self::Immediate(operand) => operand.temp_slot(),
-        }
-    }
-
     /// Returns the temporary [`BoundedSlotSpan`] of the [`Operand`].
     ///
     /// # Note
@@ -116,6 +102,7 @@ impl Operand {
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
     /// The temporary [`Slot`] of the local operand.
+    // TODO: rename to `temp_slots` and type as `SlotSpan`
     temp_slot: Slot,
     /// The type of the local variable.
     ty: ValType,
@@ -139,16 +126,10 @@ impl LocalOperand {
         }
     }
 
-    /// Returns the temporary [`Slot`] of the [`LocalOperand`].
-    pub fn temp_slot(&self) -> Slot {
-        // TODO: replace uses of this method with `temp_slots`
-        self.temp_slot
-    }
-
     /// Returns the temporary [`BoundedSlotSpan`] of the [`LocalOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         let len = required_cells_for_ty(self.ty());
-        let head = self.temp_slot();
+        let head = self.temp_slot;
         BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
 
@@ -166,12 +147,13 @@ impl LocalOperand {
 /// A temporary on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct TempOperand {
-    /// The position of the operand on the operand stack.
-    stack_pos: StackPos,
     /// The temporary [`Slot`] of the local operand.
+    // TODO: rename to `temp_slots` and type as `SlotSpan`
     temp_slot: Slot,
     /// The type of the temporary.
     ty: ValType,
+    /// The position of the operand on the operand stack.
+    stack_pos: StackPos,
 }
 
 impl From<TempOperand> for Operand {
@@ -195,16 +177,10 @@ impl TempOperand {
         self.stack_pos
     }
 
-    /// Returns the temporary [`Slot`] of the [`TempOperand`].
-    pub fn temp_slot(&self) -> Slot {
-        // TODO: replace uses of this method with `temp_slots`
-        self.temp_slot
-    }
-
     /// Returns the temporary [`BoundedSlotSpan`] of the [`TempOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         let len = required_cells_for_ty(self.ty());
-        let head = self.temp_slot();
+        let head = self.temp_slot;
         BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
 
@@ -218,6 +194,7 @@ impl TempOperand {
 #[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
     /// The temporary [`Slot`] of the local operand.
+    // TODO: rename to `temp_slots` and type as `SlotSpan`
     temp_slot: Slot,
     /// The type of the immediate value.
     ty: ValType,
@@ -237,16 +214,10 @@ impl ImmediateOperand {
         Self { temp_slot, ty, val }
     }
 
-    /// Returns the temporary [`Slot`] of the [`ImmediateOperand`].
-    pub fn temp_slot(&self) -> Slot {
-        // TODO: replace uses of this method with `temp_slots`
-        self.temp_slot
-    }
-
     /// Returns the temporary [`Slot`](crate::ir::BoundedSlotSpan) of the [`ImmediateOperand`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         let len = required_cells_for_ty(self.ty());
-        let head = self.temp_slot();
+        let head = self.temp_slot;
         BoundedSlotSpan::new(SlotSpan::new(head), len)
     }
 
