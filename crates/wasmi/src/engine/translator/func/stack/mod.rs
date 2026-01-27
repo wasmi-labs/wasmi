@@ -37,7 +37,7 @@ use crate::{
             utils::required_cells_for_tys,
         },
     },
-    ir::{self, BoundedSlotSpan, Slot, SlotSpan},
+    ir::{self, BoundedSlotSpan, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -125,8 +125,8 @@ impl Stack {
     }
 
     /// Returns the next temporary [`Slot`] if an operand was pushed to `self`.
-    pub fn next_temp_slot(&self) -> Slot {
-        self.operands.next_temp_slot()
+    pub fn next_temp_slots(&self) -> SlotSpan {
+        self.operands.next_temp_slots()
     }
 
     /// Truncates `self` to the target `height`.
@@ -150,11 +150,10 @@ impl Stack {
 
     /// Returns the branch slots for the control frame with `len_params` operand parameters.
     fn branch_slots(&self, len_params: usize) -> SlotSpan {
-        let temp_slot = match len_params {
-            0 => self.operands.next_temp_slot(),
-            _ => self.operands.get(len_params - 1).temp_slot(),
-        };
-        SlotSpan::new(temp_slot)
+        match len_params {
+            0 => self.operands.next_temp_slots(),
+            _ => self.operands.get(len_params - 1).temp_slots().span(),
+        }
     }
 
     /// Pushes the function enclosing Wasm `block` onto the [`Stack`].
@@ -175,7 +174,7 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        let branch_slots_head = SlotSpan::new(self.operands.next_temp_slot());
+        let branch_slots_head = self.operands.next_temp_slots();
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);

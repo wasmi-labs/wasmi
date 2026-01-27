@@ -4,7 +4,7 @@ use crate::{
     ValType,
     core::{TypedVal, UntypedVal},
     engine::{TranslationError, translator::utils::required_cells_for_ty},
-    ir::Slot,
+    ir::{Slot, SlotSpan},
 };
 use alloc::vec::Vec;
 use core::{num::NonZero, slice};
@@ -182,8 +182,8 @@ impl OperandStack {
     }
 
     /// Returns the temporary [`Slot`] allocated for the next pushed operand.
-    pub fn next_temp_slot(&self) -> Slot {
-        Slot::from(self.temp_offset)
+    pub fn next_temp_slots(&self) -> SlotSpan {
+        SlotSpan::new(Slot::from(self.temp_offset))
     }
 
     /// Returns the maximum stack offset of `self`.

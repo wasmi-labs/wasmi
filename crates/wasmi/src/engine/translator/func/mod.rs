@@ -1517,7 +1517,7 @@ impl FuncTranslator {
         ty: &FuncType,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
-        let mut params_start = SlotSpan::new(self.stack.next_temp_slot());
+        let mut params_start = self.stack.next_temp_slots();
         let mut params_len: u16 = 0;
         for _ in 0..ty.len_params() {
             let operand = self.stack.pop();
