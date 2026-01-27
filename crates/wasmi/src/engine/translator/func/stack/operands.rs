@@ -37,7 +37,7 @@ pub enum StackOperand {
     /// A local variable.
     Local {
         /// The temporary stack offset of the operand.
-        temp_slot: Slot,
+        temp_slots: SlotSpan,
         /// The type of the local operand.
         ///
         /// This does not have to be the type of the associated local but
@@ -54,14 +54,14 @@ pub enum StackOperand {
     /// A temporary value on the [`OperandStack`].
     Temp {
         /// The temporary stack offset of the operand.
-        temp_slot: Slot,
+        temp_slots: SlotSpan,
         /// The type of the temporary operand.
         ty: ValType,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
         /// The temporary stack offset of the operand.
-        temp_slot: Slot,
+        temp_slots: SlotSpan,
         /// The type of the immediate operand.
         ty: ValType,
         /// The value of the immediate operand.
@@ -77,12 +77,12 @@ impl StackOperand {
         }
     }
 
-    /// Returns the temporary [`Slot`] of the [`StackOperand`].
-    pub fn temp_slot(&self) -> Slot {
+    /// Returns the temporary [`SlotSpan`] of the [`StackOperand`].
+    pub fn temp_slots(&self) -> SlotSpan {
         match self {
-            | Self::Temp { temp_slot, .. }
-            | Self::Immediate { temp_slot, .. }
-            | Self::Local { temp_slot, .. } => *temp_slot,
+            | Self::Temp { temp_slots, .. }
+            | Self::Immediate { temp_slots, .. }
+            | Self::Local { temp_slots, .. } => *temp_slots,
         }
     }
 }
@@ -145,13 +145,13 @@ impl OperandStack {
     /// # Errors
     ///
     /// Returns an error if the new temporary offset is out of bounds.
-    fn push_temp_offset(&mut self, delta: u16) -> Result<Slot, Error> {
+    fn push_temp_offset(&mut self, delta: u16) -> Result<SlotSpan, Error> {
         let old_offset = self.temp_offset;
         self.temp_offset = old_offset
             .checked_add(delta)
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
         self.max_offset = self.max_offset.max(self.temp_offset);
-        Ok(Slot::from(old_offset))
+        Ok(SlotSpan::new(Slot::from(old_offset)))
     }
 
     /// Pops the offset for temporary operands by `delta`.
@@ -241,16 +241,16 @@ impl OperandStack {
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(stack_pos));
         }
-        let temp_slot = self.push_temp_offset(required_cells_for_ty(ty))?;
+        let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands.push(StackOperand::Local {
-            temp_slot,
+            temp_slots,
             ty,
             local_index,
             prev_local: None,
             next_local,
         });
         self.len_locals += 1;
-        Ok(LocalOperand::new(temp_slot, ty, local_index))
+        Ok(LocalOperand::new(temp_slots, ty, local_index))
     }
 
     /// Pushes a temporary with type `ty` on the [`OperandStack`].
@@ -261,9 +261,9 @@ impl OperandStack {
     #[inline]
     pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
-        let temp_slot = self.push_temp_offset(required_cells_for_ty(ty))?;
-        self.operands.push(StackOperand::Temp { temp_slot, ty });
-        Ok(TempOperand::new(temp_slot, ty, stack_pos))
+        let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
+        self.operands.push(StackOperand::Temp { temp_slots, ty });
+        Ok(TempOperand::new(temp_slots, ty, stack_pos))
     }
 
     /// Pushes an immediate `value` on the [`OperandStack`].
@@ -279,10 +279,13 @@ impl OperandStack {
         let value = value.into();
         let ty = value.ty();
         let val = value.untyped();
-        let temp_slot = self.push_temp_offset(required_cells_for_ty(ty))?;
-        self.operands
-            .push(StackOperand::Immediate { temp_slot, ty, val });
-        Ok(ImmediateOperand::new(temp_slot, ty, val))
+        let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
+        self.operands.push(StackOperand::Immediate {
+            temp_slots,
+            ty,
+            val,
+        });
+        Ok(ImmediateOperand::new(temp_slots, ty, val))
     }
 
     /// Returns an iterator that yields the last `n` [`Operand`]s.
@@ -371,10 +374,10 @@ impl OperandStack {
     #[must_use]
     fn operand_to_temp_at(&mut self, index: StackPos) -> StackOperand {
         let operand = self.get_at(index);
-        let temp_slot = operand.temp_slot();
+        let temp_slots = operand.temp_slots();
         let ty = operand.ty();
         self.try_unlink_local(operand);
-        self.operands[usize::from(index)] = StackOperand::Temp { temp_slot, ty };
+        self.operands[usize::from(index)] = StackOperand::Temp { temp_slots, ty };
         operand
     }
 
