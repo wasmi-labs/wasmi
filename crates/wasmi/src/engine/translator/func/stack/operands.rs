@@ -529,6 +529,7 @@ impl PreservedAllLocalsIter<'_> {
 }
 
 impl Iterator for PreservedAllLocalsIter<'_> {
+    // TODO: return `LocalOperand` instead
     type Item = Operand;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -553,6 +554,7 @@ pub struct PreservedLocalsIter<'stack> {
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
+    // TODO: return `LocalOperand` instead
     type Item = Operand;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -153,6 +153,7 @@ impl StackLayout {
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
     pub fn local_to_slot(&self, item: impl IntoLocalIdx) -> Result<Slot, Error> {
+        // TODO: replace usage with `local_to_slots` method
         let index = item.into_local_idx();
         debug_assert!(
             (u32::from(index) as usize) < self.len_locals(),
