@@ -80,10 +80,14 @@ macro_rules! impl_into_func {
                 );
                 let trampoline = TrampolineEntity::new(
                     move |caller: Caller<T>, inout: InOutParams| -> Result<InOutResults, Error> {
-                        let ($($tuple,)*) = inout.decode_params().unwrap(); // TODO: replace `unwrap`
+                        let ($($tuple,)*) = inout.decode_params().unwrap_or_else(|error| {
+                            panic!("failed to decode call parameters from cells: {error}")
+                        });
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
-                        let inout = inout.encode_results(results).unwrap(); // TODO: replace `unwrap`
+                        let inout = inout.encode_results(results).unwrap_or_else(|error| {
+                            panic!("failed to encode call results into cells: {error}")
+                        });
                         Ok(inout)
                     },
                 );

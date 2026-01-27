@@ -232,9 +232,15 @@ impl<T> HostFuncTrampolineEntity<T> {
             //       comes with its own downsides.
             let mut params_results = params_results.clone();
             let (params, results) = params_results.split_at_mut(len_params);
-            inout.decode_params_into(&mut params[..]).unwrap(); // TODO: replace `unwrap` with explicit `panic`
+            inout
+                .decode_params_into(&mut params[..])
+                .unwrap_or_else(|error| {
+                    panic!("failed to decode host function parameters: {error}")
+                });
             func(caller, params, results)?;
-            let results = inout.encode_results(&results[..]).unwrap(); // TODO: replace `unwrap` with explicit `panic`
+            let results = inout
+                .encode_results(&results[..])
+                .unwrap_or_else(|error| panic!("failed to encode host function results: {error}"));
             Ok(results)
         });
         Self { ty, trampoline }
