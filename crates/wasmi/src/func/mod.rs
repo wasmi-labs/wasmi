@@ -214,7 +214,6 @@ impl<T> Debug for HostFuncTrampolineEntity<T> {
 impl<T> HostFuncTrampolineEntity<T> {
     /// Creates a new host function trampoline from the given dynamically typed closure.
     pub fn new(
-        // engine: &Engine,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Self {
