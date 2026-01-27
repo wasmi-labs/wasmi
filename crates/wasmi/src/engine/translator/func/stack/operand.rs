@@ -59,9 +59,9 @@ impl Operand {
     /// Creates a temporary [`Operand`].
     pub(super) fn temp(stack_pos: StackPos, temp_slot: Slot, ty: ValType) -> Self {
         Self::Temp(TempOperand {
-            stack_pos,
             temp_slot,
             ty,
+            stack_pos,
         })
     }
 
@@ -166,9 +166,9 @@ impl TempOperand {
     /// Creates a new [`TempOperand`] from its parts.
     pub(super) fn new(temp_slot: Slot, ty: ValType, stack_pos: StackPos) -> Self {
         Self {
-            stack_pos,
             temp_slot,
             ty,
+            stack_pos,
         }
     }
 
