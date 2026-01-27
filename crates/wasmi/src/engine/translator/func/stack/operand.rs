@@ -108,7 +108,7 @@ impl Operand {
 /// A local variable on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
-    /// The temporary [`Slot`] of the local operand.
+    /// The temporary [`SlotSpan`] of the local operand.
     temp_slots: SlotSpan,
     /// The type of the local variable.
     ty: ValType,
@@ -152,7 +152,7 @@ impl LocalOperand {
 /// A temporary on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct TempOperand {
-    /// The temporary [`Slot`] of the local operand.
+    /// The temporary [`SlotSpan`] of the local operand.
     temp_slots: SlotSpan,
     /// The type of the temporary.
     ty: ValType,
@@ -196,7 +196,7 @@ impl TempOperand {
 /// An immediate value on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct ImmediateOperand {
-    /// The temporary [`Slot`] of the local operand.
+    /// The temporary [`SlotSpan`] of the local operand.
     temp_slots: SlotSpan,
     /// The type of the immediate value.
     ty: ValType,

@@ -124,7 +124,7 @@ impl Stack {
         self.operands.max_stack_offset()
     }
 
-    /// Returns the next temporary [`Slot`] if an operand was pushed to `self`.
+    /// Returns the next temporary [`SlotSpan`] if an operand was pushed to `self`.
     pub fn next_temp_slots(&self) -> SlotSpan {
         self.operands.next_temp_slots()
     }
