@@ -786,13 +786,14 @@ impl FuncTranslator {
     /// # Note
     ///
     /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
+    // TODO: return `BoundedSlotSpan` instead of just `Slot`
     fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand),
             Operand::Temp(operand) => Ok(operand.temp_slot()),
             Operand::Immediate(operand) => {
                 let value = operand.val();
-                let result = operand.temp_slot(); // TODO: replace with `temp_slots` to return `BoundedSlotSpan`
+                let result = operand.temp_slot();
                 let copy_instr = Self::make_copy_imm_instr(result, value)?;
                 let consume_fuel = self.stack.consume_fuel_instr();
                 self.instrs
