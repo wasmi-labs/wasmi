@@ -156,8 +156,10 @@ pub fn init_wasm_func_call<'a, T>(
     let compiled_func = code.get(Some(store.inner.fuel_mut()), engine_func)?;
     let callee_ip = Ip::from(compiled_func.ops());
     let frame_size = compiled_func.len_stack_slots();
-    // TODO: somehow unimportant but we might want to use a proper span length here that
-    //       properly denotes the number of parameter cell slots.
+    // Note: using a length of 0 for `callee_params` simply has the effect that all frame
+    //       cells are initialized to zero which is a safe default. There currently is not
+    //       an easy and efficient way to get the number of parameter cells at this point
+    //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
     let instance = resolve_instance(store.prune(), &instance).into();
     let callee_sp = stack.push_frame(
