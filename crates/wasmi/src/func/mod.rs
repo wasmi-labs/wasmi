@@ -24,7 +24,7 @@ use crate::{
     Error,
     Val,
     collections::arena::ArenaIndex,
-    engine::{InOutParams, InOutResults, Inst, ResumableCall},
+    engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
     reftype::RefId,
 };
 use alloc::{boxed::Box, sync::Arc};
@@ -88,10 +88,10 @@ impl From<HostFuncEntity> for FuncEntity {
 /// A host function reference and its function type.
 #[derive(Debug, Copy, Clone)]
 pub struct HostFuncEntity {
-    /// The number of parameters of the [`HostFuncEntity`].
-    len_params: u16,
-    /// The number of results of the [`HostFuncEntity`].
-    len_results: u16,
+    /// The number of cells required to represent the parameters of the [`HostFuncEntity`].
+    len_param_cells: u16,
+    /// The number of cells required to represent the results of the [`HostFuncEntity`].
+    len_result_cells: u16,
     /// The function type of the host function.
     ty: DedupFuncType,
     /// A reference to the trampoline of the host function.
@@ -101,25 +101,33 @@ pub struct HostFuncEntity {
 impl HostFuncEntity {
     /// Creates a new [`HostFuncEntity`].
     pub fn new(engine: &Engine, ty: &FuncType, func: Trampoline) -> Self {
-        let len_params = ty.len_params();
-        let len_results = ty.len_results();
+        let Ok(len_param_cells) = required_cells_for_tys(ty.params()) else {
+            // Note: we panic instead of returning an error since function types may
+            //       at most have 1000 parameters which should always fit.
+            panic!("host function requires too many cells for its parameters: {ty:?}")
+        };
+        let Ok(len_result_cells) = required_cells_for_tys(ty.results()) else {
+            // Note: we panic instead of returning an error since function types may
+            //       at most have 1000 results which should always fit.
+            panic!("host function requires too many cells for its results: {ty:?}")
+        };
         let ty = engine.alloc_func_type(ty.clone());
         Self {
-            len_params,
-            len_results,
+            len_param_cells,
+            len_result_cells,
             ty,
             func,
         }
     }
 
-    /// Returns the number of parameters of the [`HostFuncEntity`].
-    pub fn len_params(&self) -> u16 {
-        self.len_params
+    /// Returns the number of cells required to represent the parameters of the [`HostFuncEntity`].
+    pub fn len_param_cells(&self) -> u16 {
+        self.len_param_cells
     }
 
-    /// Returns the number of results of the [`HostFuncEntity`].
-    pub fn len_results(&self) -> u16 {
-        self.len_results
+    /// Returns the number of cells required to represent the results of the [`HostFuncEntity`].
+    pub fn len_result_cells(&self) -> u16 {
+        self.len_result_cells
     }
 
     /// Returns the signature of the host function.

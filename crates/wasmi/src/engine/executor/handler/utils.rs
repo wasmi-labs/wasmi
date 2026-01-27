@@ -488,11 +488,11 @@ pub fn call_host(
     instance: Option<Inst>,
     call_hooks: CallHooks,
 ) -> Control<Sp, Break> {
-    debug_assert_eq!(params.len(), host_func.len_params());
+    debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
     let (sp, inout) = state
         .stack
-        .prepare_host_frame(caller_ip, params, host_func.len_results())
+        .prepare_host_frame(caller_ip, params, host_func.len_result_cells())
         .into_control()?;
     match state
         .store
@@ -518,11 +518,11 @@ pub fn return_call_host(
     params: BoundedSlotSpan,
     instance: Inst,
 ) -> Control<(Ip, Sp, Inst), Break> {
-    debug_assert_eq!(params.len(), host_func.len_params());
+    debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
     let (control, inout) = state
         .stack
-        .return_prepare_host_frame(params, host_func.len_results(), instance)
+        .return_prepare_host_frame(params, host_func.len_result_cells(), instance)
         .into_control()?;
     match state
         .store

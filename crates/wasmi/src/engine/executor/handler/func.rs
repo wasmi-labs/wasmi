@@ -200,8 +200,8 @@ pub fn init_host_func_call<'a, T>(
     stack: &'a mut Stack,
     func: HostFuncEntity,
 ) -> Result<HostFuncCall<'a, T, state::UninitHost<'a>>, Error> {
-    let len_params = func.len_params();
-    let len_results = func.len_results();
+    let len_params = func.len_param_cells();
+    let len_results = func.len_result_cells();
     let trampoline = *func.trampoline();
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), len_params);
     let (sp, inout) = stack.prepare_host_frame(None, callee_params, len_results)?;
