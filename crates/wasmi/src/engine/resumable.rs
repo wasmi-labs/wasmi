@@ -5,9 +5,8 @@ use crate::{
     Engine,
     Error,
     Val,
-    WasmResults,
-    engine::Stack,
-    func::{CallResultsTuple, FuncError},
+    engine::{LoadByVal, LoadFromCellsByValue, Stack},
+    func::FuncError,
     ir::SlotSpan,
 };
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
@@ -518,7 +517,7 @@ impl<Results> TypedResumableCallHostTrap<Results> {
         inputs: &[Val],
     ) -> Result<TypedResumableCall<Results>, Error>
     where
-        Results: WasmResults,
+        Results: LoadFromCellsByValue,
     {
         self.invocation.validate_inputs(ctx.as_context(), inputs)?;
         self.common
@@ -528,7 +527,7 @@ impl<Results> TypedResumableCallHostTrap<Results> {
                 ctx.as_context_mut(),
                 self.invocation,
                 inputs,
-                <CallResultsTuple<Results>>::default(),
+                <LoadByVal<Results>>::default(),
             )
             .map(TypedResumableCall::new)
     }
@@ -587,7 +586,7 @@ impl<Results> TypedResumableCallOutOfFuel<Results> {
         mut ctx: impl AsContextMut<Data = T>,
     ) -> Result<TypedResumableCall<Results>, Error>
     where
-        Results: WasmResults,
+        Results: LoadFromCellsByValue,
     {
         self.common
             .engine
@@ -595,7 +594,7 @@ impl<Results> TypedResumableCallOutOfFuel<Results> {
             .resume_func_out_of_fuel(
                 ctx.as_context_mut(),
                 self.invocation,
-                <CallResultsTuple<Results>>::default(),
+                <LoadByVal<Results>>::default(),
             )
             .map(TypedResumableCall::new)
     }

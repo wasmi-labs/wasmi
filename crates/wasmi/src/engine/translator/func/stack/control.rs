@@ -6,6 +6,7 @@ use crate::{
         translator::func::{Pos, labels::LabelRef},
     },
     ir,
+    ir::BoundedSlotSpan,
 };
 use alloc::vec::{Drain, Vec};
 
@@ -128,6 +129,7 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
+        branch_slots: BoundedSlotSpan,
         label: LabelRef,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) {
@@ -135,6 +137,7 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(BlockControlFrame {
             ty,
             height: StackHeight::from(height),
+            branch_slots,
             is_branched_to: false,
             consume_fuel,
             label,
@@ -147,6 +150,7 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
+        branch_slots: BoundedSlotSpan,
         label: LabelRef,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) {
@@ -154,6 +158,7 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(LoopControlFrame {
             ty,
             height: StackHeight::from(height),
+            branch_slots,
             is_branched_to: false,
             consume_fuel,
             label,
@@ -162,10 +167,12 @@ impl ControlStack {
     }
 
     /// Pushes a new Wasm `if` onto the [`ControlStack`].
+    #[expect(clippy::too_many_arguments)]
     pub fn push_if(
         &mut self,
         ty: BlockType,
         height: usize,
+        branch_slots: BoundedSlotSpan,
         label: LabelRef,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
         reachability: IfReachability,
@@ -175,6 +182,7 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
             height: StackHeight::from(height),
+            branch_slots,
             is_branched_to: false,
             consume_fuel,
             label,
@@ -198,6 +206,7 @@ impl ControlStack {
         debug_assert!(!self.orphaned_else_operands);
         let ty = if_frame.ty();
         let height = if_frame.height();
+        let branch_slots = if_frame.branch_slots;
         let label = if_frame.label();
         let is_branched_to = if_frame.is_branched_to();
         let reachability = match if_frame.reachability {
@@ -212,6 +221,7 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height: StackHeight::from(height),
+            branch_slots,
             is_branched_to,
             consume_fuel,
             label,
@@ -290,6 +300,10 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
         self.0.height()
     }
 
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        self.0.branch_slots()
+    }
+
     fn label(&self) -> LabelRef {
         self.0.label()
     }
@@ -303,6 +317,7 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
+        // TODO: remove in favor of `branch_slots`
         self.0.len_branch_params(engine)
     }
 
@@ -398,11 +413,16 @@ impl From<ControlFrameKind> for ControlFrame {
 
 /// Trait implemented by control frame types that share a common API.
 pub trait ControlFrameBase {
-    /// Returns the [`BlockType`] of the [`BlockControlFrame`].
+    /// Returns the [`BlockType`] of the control frame.
     fn ty(&self) -> BlockType;
 
-    /// Returns the height of the [`BlockControlFrame`].
+    /// Returns the height of the control frame.
     fn height(&self) -> usize;
+
+    /// Returns the branch slots of the control frame as [`BoundedSlotSpan`].
+    ///
+    /// Returns `None` if no values need to be copied for branching.
+    fn branch_slots(&self) -> Option<BoundedSlotSpan>;
 
     /// Returns the branch label of `self`.
     fn label(&self) -> LabelRef;
@@ -414,6 +434,7 @@ pub trait ControlFrameBase {
     fn branch_to(&mut self);
 
     /// Returns the number of operands required for branching to `self`.
+    // TODO: remove in favor of `branch_slots`
     fn len_branch_params(&self, engine: &Engine) -> u16;
 
     /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
@@ -443,6 +464,20 @@ impl ControlFrameBase for ControlFrame {
             ControlFrame::Else(frame) => frame.height(),
             ControlFrame::Unreachable(_) => {
                 panic!("invalid query for unreachable control frame: `ControlFrameBase::height`")
+            }
+        }
+    }
+
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        match self {
+            ControlFrame::Block(frame) => frame.branch_slots(),
+            ControlFrame::Loop(frame) => frame.branch_slots(),
+            ControlFrame::If(frame) => frame.branch_slots(),
+            ControlFrame::Else(frame) => frame.branch_slots(),
+            ControlFrame::Unreachable(_) => {
+                panic!(
+                    "invalid query for unreachable control frame: `ControlFrameBase::branch_slots`"
+                )
             }
         }
     }
@@ -486,6 +521,7 @@ impl ControlFrameBase for ControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
+        // TODO: remove in favor of `branch_slots`
         match self {
             ControlFrame::Block(frame) => frame.len_branch_params(engine),
             ControlFrame::Loop(frame) => frame.len_branch_params(engine),
@@ -521,6 +557,8 @@ pub struct BlockControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
     height: StackHeight,
+    /// The [`BoundedSlotSpan`] referring to the results of the [`BlockControlFrame`].
+    branch_slots: BoundedSlotSpan,
     /// This is `true` if there is at least one branch to this [`BlockControlFrame`].
     is_branched_to: bool,
     /// The [`BlockControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -542,6 +580,13 @@ impl ControlFrameBase for BlockControlFrame {
         self.height.into()
     }
 
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        if self.branch_slots.is_empty() {
+            return None;
+        }
+        Some(self.branch_slots)
+    }
+
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -555,6 +600,7 @@ impl ControlFrameBase for BlockControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_results(engine)
     }
 
@@ -570,6 +616,8 @@ pub struct LoopControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
     height: StackHeight,
+    /// The [`BoundedSlotSpan`] referring to the results of the [`LoopControlFrame`].
+    branch_slots: BoundedSlotSpan,
     /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -591,6 +639,13 @@ impl ControlFrameBase for LoopControlFrame {
         self.height.into()
     }
 
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        if self.branch_slots.is_empty() {
+            return None;
+        }
+        Some(self.branch_slots)
+    }
+
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -604,6 +659,7 @@ impl ControlFrameBase for LoopControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_params(engine)
     }
 
@@ -619,6 +675,8 @@ pub struct IfControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
     height: StackHeight,
+    /// The [`BoundedSlotSpan`] referring to the results of the [`IfControlFrame`].
+    branch_slots: BoundedSlotSpan,
     /// This is `true` if there is at least one branch to this [`IfControlFrame`].
     is_branched_to: bool,
     /// The [`IfControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -661,6 +719,13 @@ impl ControlFrameBase for IfControlFrame {
         self.height.into()
     }
 
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        if self.branch_slots.is_empty() {
+            return None;
+        }
+        Some(self.branch_slots)
+    }
+
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -674,6 +739,7 @@ impl ControlFrameBase for IfControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_results(engine)
     }
 
@@ -714,6 +780,8 @@ pub struct ElseControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`ElseControlFrame`].
     height: StackHeight,
+    /// The [`BoundedSlotSpan`] referring to the results of the [`ElseControlFrame`].
+    branch_slots: BoundedSlotSpan,
     /// This is `true` if there is at least one branch to this [`ElseControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -796,6 +864,13 @@ impl ControlFrameBase for ElseControlFrame {
         self.height.into()
     }
 
+    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+        if self.branch_slots.is_empty() {
+            return None;
+        }
+        Some(self.branch_slots)
+    }
+
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -809,6 +884,7 @@ impl ControlFrameBase for ElseControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_results(engine)
     }
 

@@ -6,7 +6,7 @@ mod operands;
 use self::{
     control::ControlStack,
     locals::LocalsHead,
-    operands::{OperandStack, StackOperand},
+    operands::{OperandStack, StackOperand, StackPos},
 };
 pub use self::{
     control::{
@@ -22,7 +22,7 @@ pub use self::{
         LoopControlFrame,
     },
     operand::{ImmediateOperand, LocalOperand, Operand, TempOperand},
-    operands::{OperandIdx, PreservedAllLocalsIter, PreservedLocalsIter},
+    operands::{PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
@@ -32,9 +32,12 @@ use crate::{
     core::TypedVal,
     engine::{
         BlockType,
-        translator::func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+        translator::{
+            func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+            utils::required_cells_for_tys,
+        },
     },
-    ir,
+    ir::{self, BoundedSlotSpan, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -94,8 +97,8 @@ impl Stack {
     /// # Errors
     ///
     /// If too many local variables are being registered.
-    pub fn register_locals(&mut self, amount: usize) -> Result<(), Error> {
-        self.operands.register_locals(amount)
+    pub fn register_locals(&mut self, amount: usize, ty: ValType) -> Result<(), Error> {
+        self.operands.register_locals(amount, ty)
     }
 
     /// Returns `true` if the control stack is empty.
@@ -112,13 +115,18 @@ impl Stack {
         self.operands.height()
     }
 
-    /// Returns the maximum height of the [`Stack`].
+    /// Returns the maximum stack offset of the [`Stack`].
     ///
     /// # Note
     ///
-    /// The height is equal to the number of [`Operand`]s on the [`Stack`].
-    pub fn max_height(&self) -> usize {
-        self.operands.max_height()
+    /// This value is equal to the maximum number of cells a function requires to operate.
+    pub fn max_stack_offset(&self) -> usize {
+        self.operands.max_stack_offset()
+    }
+
+    /// Returns the next temporary [`SlotSpan`] if an operand was pushed to `self`.
+    pub fn next_temp_slots(&self) -> SlotSpan {
+        self.operands.next_temp_slots()
     }
 
     /// Truncates `self` to the target `height`.
@@ -140,6 +148,14 @@ impl Stack {
         self.engine.config().get_consume_fuel()
     }
 
+    /// Returns the branch slots for the control frame with `len_params` operand parameters.
+    fn branch_slots(&self, len_params: usize) -> SlotSpan {
+        match len_params {
+            0 => self.operands.next_temp_slots(),
+            _ => self.operands.get(len_params - 1).temp_slots().span(),
+        }
+    }
+
     /// Pushes the function enclosing Wasm `block` onto the [`Stack`].
     ///
     /// # Note
@@ -158,7 +174,12 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
-        self.controls.push_block(ty, 0, label, consume_fuel);
+        let branch_slots_head = self.operands.next_temp_slots();
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
+        self.controls
+            .push_block(ty, 0, branch_slots, label, consume_fuel);
         Ok(())
     }
 
@@ -175,9 +196,13 @@ impl Stack {
         debug_assert!(!self.controls.is_empty());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
+        let branch_slots_head = self.branch_slots(len_params);
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         let consume_fuel = self.consume_fuel_instr();
         self.controls
-            .push_block(ty, block_height, label, consume_fuel);
+            .push_block(ty, block_height, branch_slots, label, consume_fuel);
         Ok(())
     }
 
@@ -206,8 +231,12 @@ impl Stack {
                 .peek(len_params)
                 .all(|operand| operand.is_temp())
         );
+        let branch_slots_head = self.branch_slots(len_params);
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls
-            .push_loop(ty, block_height, label, consume_fuel);
+            .push_loop(ty, block_height, branch_slots, label, consume_fuel);
         Ok(())
     }
 
@@ -233,9 +262,14 @@ impl Stack {
         let block_height = self.height() - len_params;
         let else_operands = self.operands.peek(len_params);
         debug_assert!(len_params == else_operands.len());
+        let branch_slots_head = self.branch_slots(len_params);
+        let branch_slots_len =
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls.push_if(
             ty,
             block_height,
+            branch_slots,
             label,
             consume_fuel,
             reachability,
@@ -330,13 +364,13 @@ impl Stack {
 
     /// Pushes the [`Operand`] back to the [`Stack`].
     ///
-    /// Returns the new [`OperandIdx`].
+    /// Returns the new [`StackPos`].
     ///
     /// # Errors
     ///
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_operand(&mut self, operand: Operand) -> Result<OperandIdx, Error> {
+    pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         self.operands.push_operand(operand)
     }
 
@@ -346,7 +380,11 @@ impl Stack {
     ///
     /// - If too many operands have been pushed onto the [`Stack`].
     /// - If the local with `local_idx` does not exist.
-    pub fn push_local(&mut self, local_index: LocalIdx, ty: ValType) -> Result<OperandIdx, Error> {
+    pub fn push_local(
+        &mut self,
+        local_index: LocalIdx,
+        ty: ValType,
+    ) -> Result<LocalOperand, Error> {
         self.operands.push_local(local_index, ty)
     }
 
@@ -356,7 +394,7 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType) -> Result<OperandIdx, Error> {
+    pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
         self.operands.push_temp(ty)
     }
 
@@ -366,7 +404,10 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_immediate(&mut self, value: impl Into<TypedVal>) -> Result<OperandIdx, Error> {
+    pub fn push_immediate(
+        &mut self,
+        value: impl Into<TypedVal>,
+    ) -> Result<ImmediateOperand, Error> {
         self.operands.push_immediate(value)
     }
 

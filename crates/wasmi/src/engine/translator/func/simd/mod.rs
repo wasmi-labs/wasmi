@@ -98,7 +98,7 @@ impl FuncTranslator {
             Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
         })?;
         self.push_instr_with_result(
-            <T::Item as Typed>::TY,
+            ValType::V128,
             |result| match value {
                 Input::Slot(value) => T::replace_lane_sss(result, input, lane, value),
                 Input::Immediate(value) => T::replace_lane_ssi(result, input, lane, value),
@@ -258,7 +258,7 @@ impl FuncTranslator {
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_instr_with_result(
-                    <T as Typed>::TY,
+                    ValType::V128,
                     |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
                     FuelCostsProvider::load,
                 )?;
@@ -266,7 +266,7 @@ impl FuncTranslator {
             }
         }
         self.push_instr_with_result(
-            <T as Typed>::TY,
+            ValType::V128,
             |result| load_lane(result, ptr, offset, memory, v128, lane),
             FuelCostsProvider::load,
         )?;
@@ -305,7 +305,7 @@ impl FuncTranslator {
                 return translate_imm(self, memarg, ptr, lane, V128::from(v128.val()));
             }
             Operand::Local(v128) => self.layout.local_to_slot(v128)?,
-            Operand::Temp(v128) => self.layout.temp_to_slot(v128)?,
+            Operand::Temp(v128) => v128.temp_slots().head(),
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.copy_if_immediate(ptr)?;

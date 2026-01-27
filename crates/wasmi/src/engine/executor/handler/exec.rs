@@ -13,11 +13,13 @@ use super::{
     state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
+#[cfg(feature = "simd")]
+use crate::V128;
 use crate::{
     Func,
     Nullable,
     TrapCode,
-    core::{CoreTable, UntypedRef, UntypedVal, wasm},
+    core::{CoreTable, ReadAs, UntypedRef, wasm},
     engine::{
         EngineFunc,
         executor::handler::{
@@ -167,7 +169,7 @@ pub fn branch(
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_get(
+pub fn global_get64(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -175,16 +177,17 @@ pub fn global_get(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalGet { result, global }) = unsafe { decode_op(ip) };
+    let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
     let global = resolve_global(state.store, &global);
-    let value = *global.get_untyped();
+    let value: u64 = global.get_untyped().read_as();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set(
+#[cfg(feature = "simd")]
+pub fn global_get128(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -192,14 +195,32 @@ pub fn global_set(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet { global, value }) = unsafe { decode_op(ip) };
-    let value: UntypedVal = get_value(value, sp);
+    let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
+    let global = fetch_global(instance, global);
+    let global = resolve_global(state.store, &global);
+    let value: V128 = global.get_untyped().read_as();
+    set_value(sp, result, value);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn global_set64_s(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet64S { global, value }) = unsafe { decode_op(ip) };
+    let value: u64 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set32(
+#[cfg(feature = "simd")]
+pub fn global_set128_s(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -207,14 +228,14 @@ pub fn global_set32(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet32 { global, value }) = unsafe { decode_op(ip) };
-    let value: UntypedVal = get_value(value, sp).into();
+    let (ip, crate::ir::decode::GlobalSet128S { global, value }) = unsafe { decode_op(ip) };
+    let value: V128 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
 #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set64(
+pub fn global_set32_i(
     state: &mut VmState,
     ip: Ip,
     sp: Sp,
@@ -222,8 +243,23 @@ pub fn global_set64(
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Done {
-    let (ip, crate::ir::decode::GlobalSet64 { global, value }) = unsafe { decode_op(ip) };
-    let value: UntypedVal = get_value(value, sp).into();
+    let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
+    let value: u32 = get_value(value, sp);
+    set_global(global, value, state, instance);
+    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+}
+
+#[cfg_attr(feature = "portable-dispatch", inline(always))]
+pub fn global_set64_i(
+    state: &mut VmState,
+    ip: Ip,
+    sp: Sp,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Done {
+    let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
+    let value: u64 = get_value(value, sp);
     set_global(global, value, state, instance);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -420,7 +456,7 @@ pub fn $handler(
     };
 }
 handler_return! {
-    fn return_slot(ReturnSlot) = identity::<UntypedVal>;
+    fn return_slot(ReturnSlot) = identity::<u64>;
     fn return32(Return32) = identity::<u32>;
     fn return64(Return64) = identity::<u64>;
 }
@@ -1086,7 +1122,7 @@ pub fn branch_table_span(
 
 handler_unary! {
     // copy
-    fn copy(Copy) = identity::<UntypedVal>;
+    fn copy(Copy) = identity::<u64>;
     fn copy32(Copy32) = identity::<u32>;
     fn copy64(Copy64) = identity::<u64>;
     // i32
@@ -1508,7 +1544,7 @@ macro_rules! handler_select {
                     true => val_true,
                     false => val_false,
                 };
-                let src: UntypedVal = get_value(src, sp);
+                let src: u64 = get_value(src, sp);
                 set_value(sp, result, src);
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)
             }

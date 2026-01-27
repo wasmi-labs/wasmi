@@ -4,14 +4,14 @@ use crate::{
     Instance,
     Store,
     engine::{
-        CallParams,
-        CallResults,
         CodeMap,
         EngineFunc,
+        LoadFromCells,
+        StoreToCells,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
             state::{Inst, Ip, Sp, Stack, VmState},
-            utils::{self, resolve_instance, set_value},
+            utils::{self, resolve_instance},
         },
     },
     func::HostFuncEntity,
@@ -46,7 +46,7 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
 
 mod state {
     use super::Sp;
-    use crate::func::{FuncInOut, Trampoline};
+    use crate::{engine::InOutParams, func::Trampoline};
     use core::marker::PhantomData;
 
     pub type Uninit = PhantomData<marker::Uninit>;
@@ -61,13 +61,13 @@ mod state {
 
     pub struct UninitHost<'a> {
         pub sp: Sp,
-        pub inout: FuncInOut<'a>,
+        pub inout: InOutParams<'a>,
         pub trampoline: Trampoline,
     }
 
     pub struct InitHost<'a> {
         pub sp: Sp,
-        pub inout: FuncInOut<'a>,
+        pub inout: InOutParams<'a>,
         pub trampoline: Trampoline,
     }
 
@@ -80,12 +80,14 @@ mod state {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
-    pub fn write_params(self, params: impl CallParams) -> WasmFuncCall<'a, T, state::Init> {
-        let mut param_slot = Slot::from(0);
-        for param_value in params.call_params() {
-            set_value(self.callee_sp, param_slot, param_value);
-            param_slot = param_slot.next();
-        }
+    pub fn write_params<Params>(self, params: Params) -> WasmFuncCall<'a, T, state::Init>
+    where
+        Params: StoreToCells,
+    {
+        let mut sp = self.callee_sp;
+        let Ok(_) = params.store_to_cells(&mut sp) else {
+            panic!("failed to write parameter values to cells")
+        };
         self.new_state(PhantomData)
     }
 }
@@ -115,26 +117,32 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
-    pub fn provide_host_results(
+    pub fn provide_host_results<Params>(
         self,
-        params: impl CallParams,
+        params: Params,
         slots: SlotSpan,
-    ) -> WasmFuncCall<'a, T, state::Init> {
-        let mut param_slot = slots.head();
-        for param_value in params.call_params() {
-            set_value(self.callee_sp, param_slot, param_value);
-            param_slot = param_slot.next();
-        }
+    ) -> WasmFuncCall<'a, T, state::Init>
+    where
+        Params: StoreToCells,
+    {
+        let mut sp = self.callee_sp.offset(slots.head());
+        let Ok(_) = params.store_to_cells(&mut sp) else {
+            panic!("failed to store provided host results to cells")
+        };
         self.new_state(PhantomData)
     }
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Done> {
-    pub fn write_results<R: CallResults>(self, results: R) -> <R as CallResults>::Results {
-        let len_results = results.len_results();
-        let sp = self.state.sp;
-        let slice = unsafe { sp.as_slice(len_results) };
-        results.call_results(slice)
+    pub fn write_results<Results>(self, results: Results) -> Results::Value
+    where
+        Results: LoadFromCells,
+    {
+        let mut sp = self.state.sp;
+        let Ok(value) = results.load_from_cells(&mut sp) else {
+            panic!("failed to load result values from cells")
+        };
+        value
     }
 }
 
@@ -148,6 +156,10 @@ pub fn init_wasm_func_call<'a, T>(
     let compiled_func = code.get(Some(store.inner.fuel_mut()), engine_func)?;
     let callee_ip = Ip::from(compiled_func.ops());
     let frame_size = compiled_func.len_stack_slots();
+    // Note: using a length of 0 for `callee_params` simply has the effect that all frame
+    //       cells are initialized to zero which is a safe default. There currently is not
+    //       an easy and efficient way to get the number of parameter cells at this point
+    //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
     let instance = resolve_instance(store.prune(), &instance).into();
     let callee_sp = stack.push_frame(
@@ -190,11 +202,11 @@ pub fn init_host_func_call<'a, T>(
     stack: &'a mut Stack,
     func: HostFuncEntity,
 ) -> Result<HostFuncCall<'a, T, state::UninitHost<'a>>, Error> {
-    let len_params = func.len_params();
-    let len_results = func.len_results();
+    let len_param_cells = func.len_param_cells();
+    let len_result_cells = func.len_result_cells();
     let trampoline = *func.trampoline();
-    let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), len_params);
-    let (sp, inout) = stack.prepare_host_frame(None, callee_params, len_results)?;
+    let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), len_param_cells);
+    let (sp, inout) = stack.prepare_host_frame(None, callee_params, len_result_cells)?;
     Ok(HostFuncCall {
         store,
         state: state::UninitHost {
@@ -212,17 +224,19 @@ pub struct HostFuncCall<'a, T, State> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
-    pub fn write_params(self, params: impl CallParams) -> HostFuncCall<'a, T, state::InitHost<'a>> {
+    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
+    where
+        Params: StoreToCells,
+    {
         let state::UninitHost {
             sp,
             inout,
             trampoline,
         } = self.state;
-        let mut param_slot = Slot::from(0);
-        for param_value in params.call_params() {
-            set_value(sp, param_slot, param_value);
-            param_slot = param_slot.next();
-        }
+        let mut sp_writer = sp;
+        let Ok(_) = params.store_to_cells(&mut sp_writer) else {
+            panic!("failed to store parameter values to cells")
+        };
         HostFuncCall {
             store: self.store,
             state: state::InitHost {
@@ -259,10 +273,14 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
 }
 
 impl<'a, T> HostFuncCall<'a, T, state::Done> {
-    pub fn write_results<R: CallResults>(self, results: R) -> <R as CallResults>::Results {
-        let len_results = results.len_results();
-        let sp = self.state.sp;
-        let slice = unsafe { sp.as_slice(len_results) };
-        results.call_results(slice)
+    pub fn write_results<Results>(self, results: Results) -> Results::Value
+    where
+        Results: LoadFromCells,
+    {
+        let mut sp = self.state.sp;
+        let Ok(value) = results.load_from_cells(&mut sp) else {
+            panic!("failed to load result value from cells")
+        };
+        value
     }
 }

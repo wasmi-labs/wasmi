@@ -2,13 +2,19 @@ use crate::{
     Error,
     Func,
     TrapCode,
-    core::{ReadAs, UntypedVal, WriteAs},
     engine::{
         ResumableHostTrapError,
         ResumableOutOfFuelError,
         StackConfig,
         executor::{
+            Cell,
+            CellError,
+            CellsReader,
+            CellsWriter,
             CodeMap,
+            InOutParams,
+            LoadFromCellsByValue,
+            StoreToCells,
             handler::{
                 dispatch::{Control, ExecutionOutcome},
                 utils::extract_mem0,
@@ -16,7 +22,6 @@ use crate::{
         },
         utils::unreachable_unchecked,
     },
-    func::FuncInOut,
     instance::InstanceEntity,
     ir::{self, BoundedSlotSpan, Slot, SlotSpan},
     store::PrunedStore,
@@ -426,13 +431,38 @@ mod ip_tests {
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Sp {
-    value: *mut UntypedVal,
+    value: *mut Cell,
+}
+
+impl CellsWriter for Sp {
+    #[inline]
+    fn next(&mut self, value: Cell) -> Result<(), CellError> {
+        // SAFETY: todo
+        unsafe {
+            ptr::write(self.value, value);
+            self.value = self.value.add(1);
+        };
+        Ok(())
+    }
+}
+
+impl CellsReader for Sp {
+    #[inline]
+    fn next(&mut self) -> Result<Cell, CellError> {
+        // SAFETY: todo
+        let value = unsafe {
+            let value = ptr::read(self.value);
+            self.value = self.value.add(1);
+            value
+        };
+        Ok(value)
+    }
 }
 
 impl Sp {
     /// Creates a new [`Sp`].
     #[inline]
-    pub fn new(value: *mut UntypedVal) -> Self {
+    pub fn new(value: *mut Cell) -> Self {
         Self { value }
     }
 
@@ -448,29 +478,36 @@ impl Sp {
         }
     }
 
+    /// Offsets `self` by `slot` to access the [`Cell`] associated to it.
+    pub fn offset(self, slot: Slot) -> Self {
+        let delta = usize::from(u16::from(slot));
+        let value = unsafe { self.value.add(delta) };
+        Self { value }
+    }
+
     /// Returns a value of type `T` at `slot`.
     pub unsafe fn get<T>(self, slot: Slot) -> T
     where
-        UntypedVal: ReadAs<T>,
+        T: LoadFromCellsByValue,
     {
-        let index = usize::from(u16::from(slot));
-        let value = unsafe { &*self.value.add(index) };
-        <UntypedVal as ReadAs<T>>::read_as(value)
+        let mut sp = self.offset(slot);
+        let Ok(value) = <T as LoadFromCellsByValue>::load_from_cells_by_value(&mut sp) else {
+            // SAFETY: todo
+            unsafe { unreachable_unchecked!() }
+        };
+        value
     }
 
     /// Writes a `value` of type `T` at `slot`.
     pub unsafe fn set<T>(self, slot: Slot, value: T)
     where
-        UntypedVal: WriteAs<T>,
+        T: StoreToCells,
     {
-        let index = usize::from(u16::from(slot));
-        let cell = unsafe { &mut *self.value.add(index) };
-        <UntypedVal as WriteAs<T>>::write_as(cell, value);
-    }
-
-    /// Converts `self` to a slice of cells with length `len`.
-    pub unsafe fn as_slice<'a>(self, len: usize) -> &'a [UntypedVal] {
-        unsafe { core::slice::from_raw_parts(self.value, len) }
+        let mut sp = self.offset(slot);
+        let Ok(_) = <T as StoreToCells>::store_to_cells(value, &mut sp) else {
+            // SAFETY: todo
+            unsafe { unreachable_unchecked!() }
+        };
     }
 }
 
@@ -551,7 +588,7 @@ impl Stack {
         callee_params: BoundedSlotSpan,
         results_len: u16,
         caller_instance: Inst,
-    ) -> Result<(ReturnCallHost, FuncInOut<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
         self.values
             .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
@@ -563,7 +600,7 @@ impl Stack {
         caller_ip: Option<Ip>,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(Sp, FuncInOut<'a>), TrapCode> {
+    ) -> Result<(Sp, InOutParams<'a>), TrapCode> {
         let caller_start = self.frames.prepare_host_frame(caller_ip);
         self.values
             .prepare_host_frame(caller_start, callee_params, results_len)
@@ -633,7 +670,7 @@ impl Stack {
 #[derive(Debug)]
 pub struct ValueStack {
     /// The cells of the value stack.
-    cells: Vec<UntypedVal>,
+    cells: Vec<Cell>,
     /// The maximum height of the value stack.
     max_height: usize,
 }
@@ -643,7 +680,7 @@ impl ValueStack {
     fn new(min_height: usize, max_height: usize) -> Self {
         debug_assert!(min_height <= max_height);
         // We need to convert from `size_of<Cell>`` to `size_of<u8>`:
-        let sizeof_cell = mem::size_of::<UntypedVal>();
+        let sizeof_cell = mem::size_of::<Cell>();
         let min_height = min_height / sizeof_cell;
         let max_height = max_height / sizeof_cell;
         let cells = Vec::with_capacity(min_height);
@@ -669,7 +706,7 @@ impl ValueStack {
     ///
     /// This is mostly used to separate instances with and without heap allocations for caching.
     fn bytes_allocated(&self) -> usize {
-        let bytes_per_frame = mem::size_of::<UntypedVal>();
+        let bytes_per_frame = mem::size_of::<Cell>();
         self.cells.capacity() * bytes_per_frame
     }
 
@@ -754,7 +791,7 @@ impl ValueStack {
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(ReturnCallHost, FuncInOut<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
         let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
@@ -765,7 +802,7 @@ impl ValueStack {
                 Some(_) if caller_start != callee_start => self.sp(caller_start),
                 _ => Sp::dangling(),
             };
-            let inout = FuncInOut::new(&mut [], 0, 0);
+            let inout = InOutParams::new(&mut [], 0, 0).unwrap();
             let control = match caller {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
                 None => ReturnCallHost::Break(sp),
@@ -781,7 +818,9 @@ impl ValueStack {
         let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
-        let inout = FuncInOut::new(cells, params_len, results_len);
+        let Ok(inout) = InOutParams::new(cells, params_len, results_len) else {
+            panic!("todo")
+        };
         let control = match caller {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
             None => ReturnCallHost::Break(caller_sp),
@@ -795,7 +834,7 @@ impl ValueStack {
         caller_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(Sp, FuncInOut<'a>), TrapCode> {
+    ) -> Result<(Sp, InOutParams<'a>), TrapCode> {
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
@@ -807,7 +846,9 @@ impl ValueStack {
         let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
-        let inout = FuncInOut::new(cells, params_len, results_len);
+        let Ok(inout) = InOutParams::new(cells, params_len, results_len) else {
+            panic!("todo")
+        };
         Ok((sp, inout))
     }
 
@@ -822,7 +863,7 @@ impl ValueStack {
         let end = start.add(len_slots)?;
         self.grow_if_needed(end)?;
         let start_locals = start.into_inner().wrapping_add(len_params);
-        self.cells[start_locals..end.into_inner()].fill_with(UntypedVal::default);
+        self.cells[start_locals..end.into_inner()].fill_with(Cell::default);
         let sp = self.sp(start);
         Ok(sp)
     }
@@ -847,19 +888,19 @@ impl ValueStack {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
         callee_cells.copy_within(params_start..params_end, 0);
-        callee_cells[params_len..callee_size].fill_with(UntypedVal::default);
+        callee_cells[params_len..callee_size].fill_with(Cell::default);
         let sp = self.sp(callee_start);
         Ok(sp)
     }
 
     /// Returns cells as slice: `cells[start..]`
-    fn cells_from(&mut self, start: SpOffset) -> Option<&mut [UntypedVal]> {
+    fn cells_from(&mut self, start: SpOffset) -> Option<&mut [Cell]> {
         let start = start.into_inner();
         self.cells.get_mut(start..)
     }
 
     /// Returns cells as slice: `cells[start..end]`
-    fn cells_from_to(&mut self, start: SpOffset, end: SpOffset) -> Option<&mut [UntypedVal]> {
+    fn cells_from_to(&mut self, start: SpOffset, end: SpOffset) -> Option<&mut [Cell]> {
         let start = start.into_inner();
         let end = end.into_inner();
         self.cells.get_mut(start..end)

@@ -28,10 +28,8 @@ use self::{
         LocalOperand,
         LoopControlFrame,
         Operand,
-        OperandIdx,
         Stack,
         StackAllocations,
-        TempOperand,
     },
     utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
 };
@@ -58,6 +56,7 @@ use crate::{
                 TryIntoCmpSelectInstr as _,
                 UpdateBranchOffset as _,
             },
+            func::stack::TempOperand,
             utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
         },
     },
@@ -169,6 +168,10 @@ impl WasmTranslator<'_> for FuncTranslator {
     }
 
     fn finish_translate_locals(&mut self) -> Result<(), Error> {
+        // Note: must initialize function body `block` after registering all
+        //       function parameters and locals so that the function `block`
+        //       has proper knowledge of its position within the operands stack.
+        self.init_func_body_block()?;
         Ok(())
     }
 
@@ -246,20 +249,8 @@ impl FuncTranslator {
             operands,
             immediates,
         };
-        translator.init_func_body_block()?;
         translator.init_func_params()?;
         Ok(translator)
-    }
-
-    /// Initializes the function body enclosing control block.
-    fn init_func_body_block(&mut self) -> Result<(), Error> {
-        let func_ty = self.module.get_type_of_func(self.func);
-        let block_ty = BlockType::func_type(func_ty);
-        let end_label = self.instrs.new_label();
-        let consume_fuel = self.instrs.encode_consume_fuel()?;
-        self.stack
-            .push_func_block(block_ty, end_label, consume_fuel)?;
-        Ok(())
     }
 
     /// Initializes the function's parameters.
@@ -278,8 +269,19 @@ impl FuncTranslator {
             )
         };
         self.locals.register(amount, ty)?;
-        self.stack.register_locals(amount)?;
-        self.layout.register_locals(amount)?;
+        self.stack.register_locals(amount, ty)?;
+        self.layout.register_locals(amount, ty)?;
+        Ok(())
+    }
+
+    /// Initializes the function body enclosing control block.
+    fn init_func_body_block(&mut self) -> Result<(), Error> {
+        let func_ty = self.module.get_type_of_func(self.func);
+        let block_ty = BlockType::func_type(func_ty);
+        let end_label = self.instrs.new_label();
+        let consume_fuel = self.instrs.encode_consume_fuel()?;
+        self.stack
+            .push_func_block(block_ty, end_label, consume_fuel)?;
         Ok(())
     }
 
@@ -287,7 +289,10 @@ impl FuncTranslator {
     ///
     /// Returns `None` if the frame size is out of bounds.
     fn frame_size(&self) -> Option<u16> {
-        let frame_size = self.stack.max_height().checked_add(self.locals.len())?;
+        let frame_size = self
+            .stack
+            .max_stack_offset()
+            .checked_add(self.locals.len())?;
         u16::try_from(frame_size).ok()
     }
 
@@ -327,6 +332,8 @@ impl FuncTranslator {
 
     /// Copy the top-most `len` operands to [`Operand::Temp`] values.
     ///
+    /// Returns a [`SlotSpan`] to the copied operands.
+    ///
     /// # Note
     ///
     /// - The top-most `len` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
@@ -335,15 +342,18 @@ impl FuncTranslator {
         &mut self,
         len: usize,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<SlotSpan, Error> {
+    ) -> Result<BoundedSlotSpan, Error> {
         debug_assert!(len > 0);
+        let mut copied_cells: u16 = 0;
         for n in 0..len {
             let operand = self.stack.operand_to_temp(n);
+            copied_cells = copied_cells
+                .checked_add(operand.temp_slots().len())
+                .ok_or(TranslationError::SlotAccessOutOfBounds)?;
             self.copy_operand_to_temp(operand, consume_fuel)?;
         }
-        let first_idx = self.stack.peek(len - 1).index();
-        let first = self.layout.temp_to_slot(first_idx)?;
-        Ok(SlotSpan::new(first))
+        let first = self.stack.peek(len - 1).temp_slots().head();
+        Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
     /// Convert all branch params up to `depth` to [`Operand::Temp`].
@@ -358,10 +368,10 @@ impl FuncTranslator {
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         let len_branch_params = target.len_branch_params(&self.engine);
-        let Some(branch_results) = self.frame_results(target)? else {
+        let Some(branch_slots) = target.branch_slots() else {
             return Ok(());
         };
-        self.encode_copies(branch_results, len_branch_params, consume_fuel_instr)?;
+        self.encode_copies(branch_slots.span(), len_branch_params, consume_fuel_instr)?;
         Ok(())
     }
 
@@ -458,20 +468,42 @@ impl FuncTranslator {
     ) -> Result<Option<Op>, Error> {
         let instr = match value {
             Operand::Temp(value) => {
-                let value = layout.temp_to_slot(value)?;
+                let ty = value.ty();
+                let value = value.temp_slots().head();
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Op::copy(result, value)
+                match ty {
+                    ValType::V128 => {
+                        let results = SlotSpan::new(result);
+                        let values = SlotSpan::new(value);
+                        let Some(op) = Self::make_copy_span(results, values, 2) else {
+                            return Ok(None);
+                        };
+                        op
+                    }
+                    _ => Op::copy(result, value),
+                }
             }
             Operand::Local(value) => {
+                let ty = value.ty();
                 let value = layout.local_to_slot(value)?;
                 if result == value {
                     // Case: no-op copy
                     return Ok(None);
                 }
-                Op::copy(result, value)
+                match ty {
+                    ValType::V128 => {
+                        let results = SlotSpan::new(result);
+                        let values = SlotSpan::new(value);
+                        let Some(op) = Self::make_copy_span(results, values, 2) else {
+                            return Ok(None);
+                        };
+                        op
+                    }
+                    _ => Op::copy(result, value),
+                }
             }
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
         };
@@ -513,20 +545,30 @@ impl FuncTranslator {
         len: u16,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        if results == values {
+        let Some(op) = Self::make_copy_span(results, values, len) else {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
+        };
+        self.instrs
+            .encode(op, consume_fuel_instr, |costs: &FuelCostsProvider| {
+                costs.fuel_for_copying_values(u64::from(len))
+            })?;
+        Ok(())
+    }
+
+    /// Returns an [`Op::copy_span_asc`] or [`Op::copy_span_des`] depending on inputs.
+    ///
+    /// Returns `None` if the `copy_span` operation is a no-op.
+    fn make_copy_span(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
+        if results == values {
+            // Case: results and values are equal and therefore the copy is a no-op
+            return None;
         }
         let copy_span = match results.head() > values.head() {
             true => Op::copy_span_des,
             false => Op::copy_span_asc,
         };
-        self.instrs.encode(
-            copy_span(results, values, len),
-            consume_fuel_instr,
-            |costs: &FuelCostsProvider| costs.fuel_for_copying_values(u64::from(len)),
-        )?;
-        Ok(())
+        Some(copy_span(results, values, len))
     }
 
     /// Encode a copy instruction that copies many values.
@@ -546,7 +588,6 @@ impl FuncTranslator {
         let values = &self.operands[..];
         let (results, values) = Self::copy_many_strip_noop_start(results, values, &self.layout)?;
         let values = Self::copy_many_strip_noop_end(results, values, &self.layout)?;
-        let len = values.len() as u16;
         debug_assert!(!Self::has_overlapping_copies(
             results,
             values,
@@ -563,8 +604,8 @@ impl FuncTranslator {
             _values => {}
         }
         debug_assert!(!values.is_empty());
-        if let Some(values) = Self::try_form_regspan_of(values, &self.layout)? {
-            return self.encode_copy_span(results, values, len, consume_fuel_instr);
+        if let Some(values) = Self::try_form_slot_span_of(values, &self.layout)? {
+            return self.encode_copy_span(results, values.span(), values.len(), consume_fuel_instr);
         }
         let values = Self::copy_operands_to_temp(
             values,
@@ -572,25 +613,32 @@ impl FuncTranslator {
             &mut self.layout,
             &mut self.instrs,
         )?;
-        self.encode_copy_span(results, values, len, consume_fuel_instr)
+        self.encode_copy_span(results, values.span(), values.len(), consume_fuel_instr)
     }
 
     /// Copy `values` to temporary stack [`Slot`]s without changing the translation stack.
+    ///
+    /// Returns a [`BoundedSlotSpan`] to the cells where `values` have been copied to.
     fn copy_operands_to_temp(
         values: &[Operand],
         pos_fuel: Option<Pos<ir::BlockFuel>>,
         layout: &mut StackLayout,
         instrs: &mut OpEncoder,
-    ) -> Result<SlotSpan, Error> {
+    ) -> Result<BoundedSlotSpan, Error> {
         debug_assert!(!values.is_empty());
+        let mut copied_slots: u16 = 0;
         for value in values {
-            let result = layout.temp_to_slot(value.index())?;
+            let results = value.temp_slots();
+            let result = results.head();
             let value = *value;
             Self::encode_copy_impl(result, value, pos_fuel, layout, instrs)?;
+            copied_slots = copied_slots
+                .checked_add(results.len())
+                .ok_or(TranslationError::SlotOutOfBounds)?;
         }
-        let first = layout.temp_to_slot(values[0].index())?;
-        let span = SlotSpan::new(first);
-        Ok(span)
+        let head = values[0].temp_slots().head();
+        let span = SlotSpan::new(head);
+        Ok(BoundedSlotSpan::new(span, copied_slots))
     }
 
     /// Tries to strip noop copies from the start of the `copy_many`.
@@ -606,7 +654,7 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_first() {
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => layout.temp_to_slot(value)?,
+                Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
                     // Immediate values will never yield no-op copies.
                     break;
@@ -638,7 +686,7 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_last() {
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => layout.temp_to_slot(value)?,
+                Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
                     // Immediate values will never yield no-op copies.
                     break;
@@ -681,7 +729,7 @@ impl FuncTranslator {
             //       copies can never overlap.
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => layout.temp_to_slot(value)?,
+                Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
                     // Immediates are allocated as function local constants
                     // which can not collide with the result registers.
@@ -697,26 +745,6 @@ impl FuncTranslator {
         }
         // No copy collissions have been found.
         Ok(false)
-    }
-
-    /// Returns the results [`SlotSpan`] of the `frame` if any.
-    fn frame_results(&self, frame: &impl ControlFrameBase) -> Result<Option<SlotSpan>, Error> {
-        Self::frame_results_impl(frame, &self.engine, &self.layout)
-    }
-
-    /// Returns the results [`SlotSpan`] of the `frame` if any.
-    fn frame_results_impl(
-        frame: &impl ControlFrameBase,
-        engine: &Engine,
-        layout: &StackLayout,
-    ) -> Result<Option<SlotSpan>, Error> {
-        if frame.len_branch_params(engine) == 0 {
-            return Ok(None);
-        }
-        let height = frame.height();
-        let start = layout.temp_to_slot(OperandIdx::from(height))?;
-        let span = SlotSpan::new(start);
-        Ok(Some(span))
     }
 
     /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
@@ -746,7 +774,7 @@ impl FuncTranslator {
         operand: Operand,
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Slot, Error> {
-        let result = self.layout.temp_to_slot(operand.index())?;
+        let result = operand.temp_slots().head();
         self.encode_copy(result, operand, consume_fuel)?;
         Ok(result)
     }
@@ -758,13 +786,14 @@ impl FuncTranslator {
     /// # Note
     ///
     /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
+    // TODO: return `BoundedSlotSpan` instead of just `Slot`
     fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand),
-            Operand::Temp(operand) => self.layout.temp_to_slot(operand),
+            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
             Operand::Immediate(operand) => {
                 let value = operand.val();
-                let result = self.layout.temp_to_slot(operand.operand_index())?;
+                let result = operand.temp_slots().head();
                 let copy_instr = Self::make_copy_imm_instr(result, value)?;
                 let consume_fuel = self.stack.consume_fuel_instr();
                 self.instrs
@@ -782,9 +811,9 @@ impl FuncTranslator {
     fn preserve_all_locals(&mut self) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for local in self.stack.preserve_all_locals() {
-            debug_assert!(matches!(local, Operand::Local(_)));
-            let result = self.layout.temp_to_slot(local.index())?;
-            let Some(copy_instr) = Self::make_copy_instr(result, local, &mut self.layout)? else {
+            let result = local.temp_slots().head();
+            let Some(copy_instr) = Self::make_copy_instr(result, local.into(), &mut self.layout)?
+            else {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
             self.instrs
@@ -813,7 +842,7 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let result = self.layout.temp_to_slot(self.stack.push_temp(result_ty)?)?;
+        let result = self.stack.push_temp(result_ty)?.temp_slots().head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
         self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
@@ -896,9 +925,10 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let values = self.try_form_regspan_or_move(usize::from(len_values), consume_fuel_instr)?;
+        let values =
+            self.try_form_slot_span_or_move(usize::from(len_values), consume_fuel_instr)?;
         self.push_instr(
-            Op::branch_table_span(table.len() + 1, index, values, len_values),
+            Op::branch_table_span(table.len() + 1, index, values.span(), values.len()),
             FuelCostsProvider::base,
         )?;
         // Encode the `br_table` targets:
@@ -909,13 +939,12 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(results) = Self::frame_results_impl(&frame, &self.engine, &self.layout)?
-            else {
+            let Some(results) = frame.branch_slots() else {
                 panic!("must have frame results since `br_table` requires to copy values");
             };
             self.instrs.encode_branch(
                 frame.label(),
-                |offset| ir::BranchTableTarget::new(results, offset),
+                |offset| ir::BranchTableTarget::new(results.span(), offset),
                 fuel_pos,
                 0,
             )?;
@@ -930,16 +959,19 @@ impl FuncTranslator {
         consume_fuel: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
+        let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
+            ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
+            _ => Op::return_slot(slot),
+        };
         let instr = match len_results {
             0 => Op::Return {},
             1 => match self.stack.peek(0) {
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_slot(operand)?;
-                    Op::return_slot(value)
+                    return_slot_for_ty(operand.ty(), value)
                 }
                 Operand::Temp(operand) => {
-                    let value = self.layout.temp_to_slot(operand)?;
-                    Op::return_slot(value)
+                    return_slot_for_ty(operand.ty(), operand.temp_slots().head())
                 }
                 Operand::Immediate(operand) => {
                     let val = operand.val();
@@ -954,16 +986,15 @@ impl FuncTranslator {
                         ValType::V128 => {
                             let value = self.stack.peek(0);
                             let temp_slot = self.copy_operand_to_temp(value, consume_fuel)?;
-                            Op::return_slot(temp_slot)
+                            Op::return_span(BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2))
                         }
                     }
                 }
             },
             _ => {
-                self.move_operands_to_temp(usize::from(len_results), consume_fuel)?;
-                let result0 = self.stack.peek(usize::from(len_results) - 1);
-                let slot0 = self.layout.temp_to_slot(result0.index())?;
-                Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot0), len_results))
+                let len_results = usize::from(len_results);
+                let results = self.move_operands_to_temp(len_results, consume_fuel)?;
+                Op::return_span(results)
             }
         };
         let instr = self
@@ -978,20 +1009,20 @@ impl FuncTranslator {
         self.operands.extend(self.stack.peek_n(len));
     }
 
-    /// Tries to form a [`SlotSpan`] from the top-most `n` operands on the [`Stack`].
+    /// Tries to form a [`BoundedSlotSpan`] from the top-most `n` operands on the [`Stack`].
     ///
-    /// Returns `None` if forming a [`SlotSpan`] was not possible.
-    fn try_form_regspan(&self, len: usize) -> Result<Option<SlotSpan>, Error> {
-        Self::try_form_regspan_of(self.stack.peek_n(len), &self.layout)
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_slot_span(&self, len: usize) -> Result<Option<BoundedSlotSpan>, Error> {
+        Self::try_form_slot_span_of(self.stack.peek_n(len), &self.layout)
     }
 
-    /// Tries to form a [`SlotSpan`] from the `values` slice of [`Operand`]s.
+    /// Tries to form a [`BoundedSlotSpan`] from the `values` [`Operand`]s.
     ///
-    /// Returns `None` if forming a [`SlotSpan`] was not possible.
-    fn try_form_regspan_of<T>(
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_slot_span_of<T>(
         values: impl IntoIterator<Item = T>,
         layout: &StackLayout,
-    ) -> Result<Option<SlotSpan>, Error>
+    ) -> Result<Option<BoundedSlotSpan>, Error>
     where
         T: AsRef<Operand>,
     {
@@ -999,44 +1030,92 @@ impl FuncTranslator {
         let Some(head) = values.next() else {
             return Ok(None);
         };
-        let mut head = match head.as_ref() {
-            Operand::Local(start) => layout.local_to_slot(start)?,
-            Operand::Temp(start) => layout.temp_to_slot(start)?,
-            Operand::Immediate(_) => return Ok(None),
-        };
-        let start = head;
-        for value in values {
-            let cur = match value.as_ref() {
-                Operand::Immediate(_) => return Ok(None),
-                Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => layout.temp_to_slot(value)?,
-            };
-            if head != cur.prev() {
-                return Ok(None);
-            }
-            head = cur;
+        match head.as_ref() {
+            Operand::Local(operand) => Self::try_form_span_of_locals(operand, values, layout),
+            Operand::Temp(operand) => Self::try_form_span_of_temps(operand, values),
+            Operand::Immediate(_) => Ok(None),
         }
-        Ok(Some(SlotSpan::new(start)))
     }
 
-    /// Tries to form a [`SlotSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
+    /// Tries to form a [`BoundedSlotSpan`] from the local [`Operand`]s in `head` and `values`.
     ///
-    /// Returns `None` if forming a [`SlotSpan`] was not possible.
-    fn try_form_regspan_or_move(
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_span_of_locals<T>(
+        head: &LocalOperand,
+        values: impl IntoIterator<Item = T>,
+        layout: &StackLayout,
+    ) -> Result<Option<BoundedSlotSpan>, Error>
+    where
+        T: AsRef<Operand>,
+    {
+        let head_slots = layout.local_to_slots(head)?;
+        let start = head_slots.span().head();
+        let mut len = head_slots.len();
+        let mut next = start.next_n(len);
+        for value in values {
+            match value.as_ref() {
+                Operand::Local(operand) => {
+                    let slots = layout.local_to_slots(operand)?;
+                    if slots.head() != next {
+                        // Note: the operands do not form a contiguous span of slots.
+                        return Ok(None);
+                    }
+                    len = len
+                        .checked_add(slots.len())
+                        .ok_or(TranslationError::SlotAccessOutOfBounds)?;
+                    next = next.next_n(slots.len());
+                }
+                _ => return Ok(None),
+            }
+        }
+        Ok(Some(BoundedSlotSpan::new(SlotSpan::new(start), len)))
+    }
+
+    /// Tries to form a [`BoundedSlotSpan`] from the temporary [`Operand`]s in `head` and `values`.
+    ///
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_span_of_temps<T>(
+        head: &TempOperand,
+        values: impl IntoIterator<Item = T>,
+    ) -> Result<Option<BoundedSlotSpan>, Error>
+    where
+        T: AsRef<Operand>,
+    {
+        let head_slots = head.temp_slots();
+        let start = head_slots.span().head();
+        let mut len = head_slots.len();
+        let mut next = start.next_n(len);
+        for value in values {
+            match value.as_ref() {
+                Operand::Temp(operand) => {
+                    let slots = operand.temp_slots();
+                    if slots.head() != next {
+                        // Note: the operands do not form a contiguous span of slots.
+                        return Ok(None);
+                    }
+                    len = len
+                        .checked_add(slots.len())
+                        .ok_or(TranslationError::SlotAccessOutOfBounds)?;
+                    next = next.next_n(slots.len());
+                }
+                _ => return Ok(None),
+            }
+        }
+        Ok(Some(BoundedSlotSpan::new(SlotSpan::new(start), len)))
+    }
+
+    /// Tries to form a [`BoundedSlotSpan`] from the top-most `len` operands on the [`Stack`] or copy to temporaries.
+    ///
+    /// Returns `None` if forming a [`BoundedSlotSpan`] was not possible.
+    fn try_form_slot_span_or_move(
         &mut self,
         len: usize,
         consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<SlotSpan, Error> {
-        if let Some(span) = self.try_form_regspan(len)? {
+    ) -> Result<BoundedSlotSpan, Error> {
+        if let Some(span) = self.try_form_slot_span(len)? {
             return Ok(span);
         }
-        self.move_operands_to_temp(len, consume_fuel_instr)?;
-        let Some(span) = self.try_form_regspan(len)? else {
-            unreachable!(
-                "the top-most `len` operands are now temporaries thus `SlotSpan` forming should succeed"
-            )
-        };
-        Ok(span)
+        self.move_operands_to_temp(len, consume_fuel_instr)
     }
 
     /// Translates the end of a Wasm `block` control frame.
@@ -1188,7 +1267,7 @@ impl FuncTranslator {
         let local_idx = LocalIdx::from(local_index);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
-            let result = self.layout.temp_to_slot(preserved)?;
+            let result = preserved.temp_slots().head();
             let value = self.layout.local_to_slot(local_idx)?;
             self.instrs.encode(
                 Op::copy(result, value),
@@ -1239,7 +1318,7 @@ impl FuncTranslator {
             StackSpace::Local
         ));
         let old_result = match old_result {
-            Operand::Temp(old_result) => self.layout.temp_to_slot(old_result)?,
+            Operand::Temp(old_result) => old_result.temp_slots().head(),
             Operand::Local(_) | Operand::Immediate(_) => {
                 // Case immediate: cannot replace immediate value result.
                 // Case     local: cannot replace local with another local due to observable behavior.
@@ -1291,7 +1370,7 @@ impl FuncTranslator {
         }
         let condition = match condition {
             Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => self.layout.temp_to_slot(condition)?,
+            Operand::Temp(condition) => condition.temp_slots().head(),
             Operand::Immediate(condition) => {
                 let condition = i32::from(condition.val());
                 let take_branch = match branch_eqz {
@@ -1347,7 +1426,7 @@ impl FuncTranslator {
             // Note: local variable results have observable behavior which must not change.
             return Ok(false);
         }
-        let br_condition = self.layout.temp_to_slot(condition)?;
+        let br_condition = condition.temp_slots().head();
         if cmp_result != br_condition {
             // Note: cannot fuse cmp instruction with a result that differs
             //       from the branch condition operand.
@@ -1433,21 +1512,25 @@ impl FuncTranslator {
 
     /// Adjusts the stack for a call to a function with type `ty`.
     ///
-    /// Returns a bounded [`SlotSpan`] to the start of the call
-    /// parameters and results.
+    /// Returns a bounded [`SlotSpan`] to the start of the call parameters and results
+    /// with the length equal to the number of cells storing the call parameters.
     fn adjust_stack_for_call(
         &mut self,
         ty: &FuncType,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
-        let len_params = ty.len_params();
-        for _ in 0..len_params {
+        let mut params_start = self.stack.next_temp_slots();
+        let mut params_len: u16 = 0;
+        for _ in 0..ty.len_params() {
             let operand = self.stack.pop();
+            let slots = operand.temp_slots();
+            params_start = slots.span();
+            params_len = params_len
+                .checked_add(slots.len())
+                .ok_or(TranslationError::AllocatedTooManySlots)?;
             self.copy_operand_to_temp(operand, fuel_pos)?;
         }
-        let height = self.stack.height();
-        let start = self.layout.temp_to_slot(OperandIdx::from(height))?;
-        let params = BoundedSlotSpan::new(SlotSpan::new(start), len_params);
+        let params = BoundedSlotSpan::new(params_start, params_len);
         for result in ty.results() {
             self.stack.push_temp(*result)?;
         }
@@ -1547,7 +1630,7 @@ impl FuncTranslator {
     ) -> Result<Input<R>, Error> {
         let reg = match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand)?,
-            Operand::Temp(operand) => self.layout.temp_to_slot(operand)?,
+            Operand::Temp(operand) => operand.temp_slots().head(),
             Operand::Immediate(operand) => return f(self, operand.val()),
         };
         Ok(Input::Slot(reg))
@@ -1572,7 +1655,7 @@ impl FuncTranslator {
             }
             Operand::Temp(value) => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = self.layout.temp_to_slot(value)?;
+                let reg = value.temp_slots().head();
                 return Ok(Input::Slot(reg));
             }
         };
@@ -1926,29 +2009,41 @@ impl FuncTranslator {
                     true => true_val,
                     false => false_val,
                 };
-                if let Operand::Temp(selected) = selected {
+                if let Operand::Temp(_) = selected {
                     // Case: the selected operand is a temporary which needs to be copied
                     //       if it was the `false_val` since it changed its index. This is
                     //       not the case for the `true_val` since `true_val` is the first
                     //       value popped from the stack.
-                    if !condition {
-                        let selected = self.layout.temp_to_slot(selected)?;
-                        self.push_instr_with_result(
-                            ty,
-                            |result| Op::copy(result, selected),
-                            FuelCostsProvider::base,
-                        )?;
+                    let consume_fuel_instr = self.stack.consume_fuel_instr();
+                    let result = self.stack.push_temp(ty)?.temp_slots().head();
+                    let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
+                    else {
                         return Ok(());
-                    }
+                    };
+                    debug_assert!(op.result_ref().is_some());
+                    self.instrs
+                        .stage(op, consume_fuel_instr, FuelCostsProvider::base)?;
+                    return Ok(());
                 }
                 self.stack.push_operand(selected)?;
                 return Ok(());
             }
             Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => self.layout.temp_to_slot(condition)?,
+            Operand::Temp(condition) => condition.temp_slots().head(),
         };
         let true_val = self.copy_if_immediate(true_val)?;
         let false_val = self.copy_if_immediate(false_val)?;
+        #[cfg(feature = "simd")]
+        if matches!(ty, ValType::V128) {
+            // Case: for `v128` values the `select128` instruction must be used.
+            // Unlike normal `select` instructions the `select128` cannot be fused.
+            self.push_instr_with_result(
+                ty,
+                |result| Op::select128(result, condition, false_val, true_val),
+                FuelCostsProvider::base,
+            )?;
+            return Ok(());
+        }
         if !self.try_fuse_select(ty, condition, true_val, false_val)? {
             self.push_instr_with_result(
                 ty,
@@ -1992,8 +2087,7 @@ impl FuncTranslator {
         }
         let CmpSelectFusion::Applied(fused_select) =
             staged.try_into_cmp_select_instr(true_val, false_val, || {
-                let select_result = self.stack.push_temp(ty)?;
-                let select_result = self.layout.temp_to_slot(select_result)?;
+                let select_result = self.stack.push_temp(ty)?.temp_slots().head();
                 Ok(select_result)
             })?
         else {
@@ -2054,7 +2148,7 @@ impl FuncTranslator {
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        let lhs_reg = self.layout.temp_to_slot(lhs)?;
+        let lhs_reg = lhs.temp_slots().head();
         let Some(result) = staged.result_ref().copied() else {
             // Case: cannot fuse non-cmp instructions
             return Ok(false);
@@ -2069,10 +2163,9 @@ impl FuncTranslator {
         };
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        let result_idx = self.stack.push_temp(ValType::I32)?;
+        let new_result = self.stack.push_temp(ValType::I32)?.temp_slots().head();
         // Need to replace `cmp` instruction result register since it might
         // have been misaligned if `lhs` originally referred to the zero operand.
-        let new_result = self.layout.temp_to_slot(result_idx)?;
         let Some(negated) = negated.update_result_slot(new_result) else {
             unreachable!("`negated` has been asserted as `cmp` instruction");
         };
@@ -2100,7 +2193,7 @@ impl FuncTranslator {
         let ptr = self.stack.pop();
         let ptr = match ptr {
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
-            Operand::Temp(ptr) => self.layout.temp_to_slot(ptr)?,
+            Operand::Temp(ptr) => ptr.temp_slots().head(),
             Operand::Immediate(ptr) => {
                 let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
@@ -2175,7 +2268,7 @@ impl FuncTranslator {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = match ptr {
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
-            Operand::Temp(ptr) => self.layout.temp_to_slot(ptr)?,
+            Operand::Temp(ptr) => ptr.temp_slots().head(),
             Operand::Immediate(ptr) => {
                 return self.encode_store_ix::<T>(ptr, offset, memory, value);
             }
@@ -2189,7 +2282,7 @@ impl FuncTranslator {
                 T::store_ss(ptr, offset, value, memory)
             }
             Operand::Temp(value) => {
-                let value = self.layout.temp_to_slot(value)?;
+                let value = value.temp_slots().head();
                 T::store_ss(ptr, offset, value, memory)
             }
             Operand::Immediate(value) => {
@@ -2223,7 +2316,7 @@ impl FuncTranslator {
                 T::store_is(address, value, memory)
             }
             Operand::Temp(value) => {
-                let value = self.layout.temp_to_slot(value)?;
+                let value = value.temp_slots().head();
                 T::store_is(address, value, memory)
             }
             Operand::Immediate(value) => {
@@ -2266,7 +2359,7 @@ impl FuncTranslator {
                 T::store_mem0_offset16_ss(ptr, offset16, value)
             }
             Operand::Temp(value) => {
-                let value = self.layout.temp_to_slot(value)?;
+                let value = value.temp_slots().head();
                 T::store_mem0_offset16_ss(ptr, offset16, value)
             }
             Operand::Immediate(value) => {
@@ -2357,10 +2450,8 @@ impl FuncTranslator {
         let rhs_hi = self.copy_if_immediate(rhs_hi)?;
         let lhs_lo = self.copy_if_immediate(lhs_lo)?;
         let lhs_hi = self.copy_if_immediate(lhs_hi)?;
-        let result_lo = self.stack.push_temp(ValType::I64)?;
-        let result_hi = self.stack.push_temp(ValType::I64)?;
-        let result_lo = self.layout.temp_to_slot(result_lo)?;
-        let result_hi = self.layout.temp_to_slot(result_hi)?;
+        let result_lo = self.stack.push_temp(ValType::I64)?.temp_slots().head();
+        let result_hi = self.stack.push_temp(ValType::I64)?.temp_slots().head();
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
@@ -2412,9 +2503,8 @@ impl FuncTranslator {
                 (lhs, rhs)
             }
         };
-        let result0 = self.stack.push_temp(ValType::I64)?;
-        let _result1 = self.stack.push_temp(ValType::I64)?;
-        let result0 = self.layout.temp_to_slot(result0)?;
+        let result0 = self.stack.push_temp(ValType::I64)?.temp_slots().head();
+        self.stack.push_temp(ValType::I64)?;
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
@@ -2446,7 +2536,7 @@ impl FuncTranslator {
             if matches!(lhs, Operand::Temp(_)) {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
                 let consume_fuel_instr = self.stack.consume_fuel_instr();
-                let result = self.layout.temp_to_slot(result)?;
+                let result = result.temp_slots().head();
                 self.encode_copy(result, lhs, consume_fuel_instr)?;
             }
             self.stack.push_immediate(0_i64)?; // hi-bits

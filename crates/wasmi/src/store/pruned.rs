@@ -1,4 +1,4 @@
-use super::{CallHooks, FuncInOut, StoreInner, typeid};
+use super::{CallHooks, StoreInner, typeid};
 use crate::{
     CallHook,
     Error,
@@ -6,7 +6,7 @@ use crate::{
     Store,
     Table,
     core::{UntypedRef, hint},
-    engine::Inst,
+    engine::{InOutParams, Inst},
     errors::{MemoryError, TableError},
     func::Trampoline,
     store::error::{InternalStoreError, StoreError},
@@ -35,7 +35,7 @@ pub struct PrunedStoreVTable {
         store: &mut PrunedStore,
         trampoline: Trampoline,
         instance: Option<Inst>,
-        params_results: FuncInOut,
+        inout: InOutParams,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>>,
     /// Grows `memory` by `delta` pages.
@@ -55,7 +55,7 @@ impl PrunedStoreVTable {
             call_host_func: |pruned: &mut PrunedStore,
                              trampoline: Trampoline,
                              instance: Option<Inst>,
-                             params_results: FuncInOut,
+                             inout: InOutParams,
                              call_hooks: CallHooks|
              -> Result<(), StoreError<Error>> {
                 let store: &mut Store<T> = pruned.restore()?;
@@ -64,7 +64,7 @@ impl PrunedStoreVTable {
                         .invoke_call_hook(CallHook::CallingHost)
                         .map_err(StoreError::external)?;
                 }
-                store.call_host_func(trampoline, instance, params_results)?;
+                store.call_host_func(trampoline, instance, inout)?;
                 if matches!(call_hooks, CallHooks::Call) {
                     store
                         .invoke_call_hook(CallHook::ReturningFromHost)
@@ -105,10 +105,10 @@ impl PrunedStoreVTable {
         pruned: &mut PrunedStore,
         trampoline: Trampoline,
         instance: Option<Inst>,
-        params_results: FuncInOut,
+        inout: InOutParams,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>> {
-        (self.call_host_func)(pruned, trampoline, instance, params_results, call_hooks)
+        (self.call_host_func)(pruned, trampoline, instance, inout, call_hooks)
     }
 
     #[inline]
@@ -195,16 +195,13 @@ impl PrunedStore {
         &mut self,
         trampoline: Trampoline,
         instance: Option<Inst>,
-        params_results: FuncInOut,
+        inout: InOutParams,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>> {
-        self.pruned.restore_pruned.clone().call_host_func(
-            self,
-            trampoline,
-            instance,
-            params_results,
-            call_hooks,
-        )
+        self.pruned
+            .restore_pruned
+            .clone()
+            .call_host_func(self, trampoline, instance, inout, call_hooks)
     }
 
     /// Grows the [`Memory`] by `delta` pages and returns the result.

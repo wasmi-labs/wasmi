@@ -1,12 +1,38 @@
 use crate::{
+    Error,
     ExternRef,
     Func,
     Nullable,
     ValType,
     core::{Typed, TypedVal, UntypedVal},
+    engine::TranslationError,
     ir::Sign,
 };
 use core::{convert::identity, num::NonZero};
+
+/// Returns the number of Wasmi engine cell slots required to represent a [`ValType`] `ty`.
+#[inline]
+pub fn required_cells_for_ty(ty: ValType) -> u16 {
+    match ty {
+        #[cfg(feature = "simd")]
+        ValType::V128 => 2,
+        _ => 1,
+    }
+}
+
+/// Returns the number of Wasmi engine cell slots required to represent a slice of [`ValType`] `tys`.
+#[inline]
+pub fn required_cells_for_tys(tys: &[ValType]) -> Result<u16, Error> {
+    let len_cells: usize = tys
+        .iter()
+        .copied()
+        .map(required_cells_for_ty)
+        .map(usize::from)
+        .sum();
+    len_cells
+        .try_into()
+        .map_err(|_| Error::from(TranslationError::SlotAccessOutOfBounds))
+}
 
 impl Typed for ExternRef {
     const TY: ValType = ValType::ExternRef;

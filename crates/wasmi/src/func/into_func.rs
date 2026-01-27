@@ -1,7 +1,4 @@
-use super::{
-    TrampolineEntity,
-    func_inout::{FuncFinished, FuncInOut, FuncResults},
-};
+use super::TrampolineEntity;
 use crate::{
     Caller,
     Error,
@@ -12,7 +9,8 @@ use crate::{
     FuncType,
     Nullable,
     ValType,
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal},
+    core::UntypedVal,
+    engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
 };
 use core::{array, iter::FusedIterator};
 
@@ -81,11 +79,16 @@ macro_rules! impl_into_func {
                     <Self::Results as WasmTyList>::types(),
                 );
                 let trampoline = TrampolineEntity::new(
-                    move |caller: Caller<T>, params_results: FuncInOut| -> Result<FuncFinished, Error> {
-                        let (($($tuple,)*), func_results): (Self::Params, FuncResults) = params_results.decode_params();
+                    move |caller: Caller<T>, inout: InOutParams| -> Result<InOutResults, Error> {
+                        let ($($tuple,)*) = inout.decode_params().unwrap_or_else(|error| {
+                            panic!("failed to decode call parameters from cells: {error}")
+                        });
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
-                        Ok(func_results.encode_results(results))
+                        let inout = inout.encode_results(results).unwrap_or_else(|error| {
+                            panic!("failed to encode call results into cells: {error}")
+                        });
+                        Ok(inout)
                     },
                 );
                 (func_type, trampoline)
@@ -162,7 +165,9 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmTy: From<UntypedVal> + Into<UntypedVal> + Send {
+pub trait WasmTy:
+    From<UntypedVal> + Into<UntypedVal> + Send + LoadFromCellsByValue + StoreToCells
+{
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
     fn ty() -> ValType;
@@ -203,13 +208,8 @@ impl_wasm_type! {
 ///
 /// # Note
 ///
-/// This is a convenience trait that allows to:
-///
-/// - Read host function parameters from a region of the value stack.
-/// - Write host function results into a region of the value stack.
-/// - Iterate over the value types of the Wasm type sequence
-///     - This is useful to construct host function signatures.
-pub trait WasmTyList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
+/// This is a convenience trait that allows to construct [`ValType`] sequences.
+pub trait WasmTyList: LoadFromCellsByValue + StoreToCells + Sized + Send {
     /// The number of Wasm types in the list.
     #[doc(hidden)]
     const LEN: usize;
@@ -226,33 +226,9 @@ pub trait WasmTyList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
     #[doc(hidden)]
     type TypesIter: ExactSizeIterator<Item = ValType> + DoubleEndedIterator + FusedIterator;
 
-    /// The [`UntypedVal`] sequence as array.
-    #[doc(hidden)]
-    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedVal>
-        + AsRef<[UntypedVal]>
-        + AsMut<[UntypedVal]>
-        + Copy
-        + Clone;
-
-    /// The iterator type of the sequence of [`Val`].
-    ///
-    /// [`Val`]: [`crate::core::Value`]
-    #[doc(hidden)]
-    type ValuesIter: ExactSizeIterator<Item = UntypedVal> + DoubleEndedIterator + FusedIterator;
-
     /// Returns an array representing the [`ValType`] sequence of `Self`.
     #[doc(hidden)]
     fn types() -> Self::Types;
-
-    /// Returns an array representing the [`UntypedVal`] sequence of `self`.
-    #[doc(hidden)]
-    fn values(self) -> Self::Values;
-
-    /// Consumes the [`UntypedVal`] iterator and creates `Self` if possible.
-    ///
-    /// Returns `None` if construction of `Self` is impossible.
-    #[doc(hidden)]
-    fn from_values(values: &[UntypedVal]) -> Option<Self>;
 }
 
 impl<T1> WasmTyList for T1
@@ -263,25 +239,10 @@ where
 
     type Types = [ValType; 1];
     type TypesIter = array::IntoIter<ValType, 1>;
-    type Values = [UntypedVal; 1];
-    type ValuesIter = array::IntoIter<UntypedVal, 1>;
 
     #[inline]
     fn types() -> Self::Types {
         [<T1 as WasmTy>::ty()]
-    }
-
-    #[inline]
-    fn values(self) -> Self::Values {
-        [<T1 as Into<UntypedVal>>::into(self)]
-    }
-
-    #[inline]
-    fn from_values(values: &[UntypedVal]) -> Option<Self> {
-        if let [value] = *values {
-            return Some(value.into());
-        }
-        None
     }
 }
 
@@ -297,34 +258,12 @@ macro_rules! impl_wasm_type_list {
 
             type Types = [ValType; $n];
             type TypesIter = array::IntoIter<ValType, $n>;
-            type Values = [UntypedVal; $n];
-            type ValuesIter = array::IntoIter<UntypedVal, $n>;
 
             #[inline]
             fn types() -> Self::Types {
                 [$(
                     <$tuple as WasmTy>::ty()
                 ),*]
-            }
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn values(self) -> Self::Values {
-                let ($($tuple,)*) = self;
-                [$(
-                    <$tuple as Into<UntypedVal>>::into($tuple)
-                ),*]
-            }
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn from_values(values: &[UntypedVal]) -> Option<Self> {
-                if let [$($tuple),*] = *values {
-                    return Some(
-                        ( $( Into::into($tuple), )* )
-                    )
-                }
-                None
             }
         }
     };

@@ -1,4 +1,21 @@
-pub use self::handler::{Inst, Stack, op_code_to_handler};
+pub use self::{
+    handler::{
+        Cell,
+        CellError,
+        CellsReader,
+        CellsWriter,
+        ExecutionOutcome,
+        Inst,
+        LoadByVal,
+        LoadFromCells,
+        LoadFromCellsByValue,
+        Stack,
+        StoreToCells,
+        op_code_to_handler,
+        resume_wasm_func_call,
+    },
+    inout::{InOutParams, InOutResults},
+};
 use super::code_map::CodeMap;
 use crate::{
     Error,
@@ -7,23 +24,17 @@ use crate::{
     Store,
     StoreContextMut,
     engine::{
-        CallParams,
-        CallResults,
         EngineInner,
         ResumableCallBase,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
-        executor::handler::{
-            ExecutionOutcome,
-            init_host_func_call,
-            init_wasm_func_call,
-            resume_wasm_func_call,
-        },
+        executor::handler::{init_host_func_call, init_wasm_func_call},
     },
     ir::SlotSpan,
 };
 
 mod handler;
+mod inout;
 
 impl EngineInner {
     /// Executes the given [`Func`] with the given `params` and returns the `results`.
@@ -33,22 +44,23 @@ impl EngineInner {
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub fn execute_func<T, Results>(
+    pub fn execute_func<T, Params, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: impl CallParams,
+        params: Params,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Error>
+    ) -> Result<Results::Value, Error>
     where
-        Results: CallResults,
+        Params: StoreToCells,
+        Results: LoadFromCells,
     {
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&self.code_map, &mut stack)
+        let value = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(ctx.store, func, params, results)
             .map_err(ExecutionOutcome::into_non_resumable)?;
         self.stacks.lock().recycle(stack);
-        Ok(results)
+        Ok(value)
     }
 
     /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
@@ -58,22 +70,23 @@ impl EngineInner {
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub fn execute_func_resumable<T, Results>(
+    pub fn execute_func_resumable<T, Params, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
-        params: impl CallParams,
+        params: Params,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: CallResults,
+        Params: StoreToCells,
+        Results: LoadFromCells,
     {
         let store = ctx.store;
         let mut stack = self.stacks.lock().reuse_or_new();
         let outcome = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(store, func, params, results);
-        let results = match outcome {
-            Ok(results) => results,
+        let value = match outcome {
+            Ok(value) => value,
             Err(ExecutionOutcome::Host(error)) => {
                 let host_func = *error.host_func();
                 let caller_results = *error.caller_results();
@@ -102,7 +115,7 @@ impl EngineInner {
             }
         };
         self.stacks.lock().recycle(stack);
-        Ok(ResumableCallBase::Finished(results))
+        Ok(ResumableCallBase::Finished(value))
     }
 
     /// Resumes the given [`Func`] with the given `params` and returns the `results`.
@@ -112,15 +125,16 @@ impl EngineInner {
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub fn resume_func_host_trap<T, Results>(
+    pub fn resume_func_host_trap<T, Params, Results>(
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallHostTrap,
-        params: impl CallParams,
+        params: Params,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: CallResults,
+        Params: StoreToCells,
+        Results: LoadFromCells,
     {
         let caller_results = invocation.caller_results();
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
@@ -159,9 +173,9 @@ impl EngineInner {
         ctx: StoreContextMut<T>,
         mut invocation: ResumableCallOutOfFuel,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
+    ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: CallResults,
+        Results: LoadFromCells,
     {
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
         let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
@@ -212,15 +226,16 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
-    fn execute_root_func<T, Results>(
+    fn execute_root_func<T, Params, Results>(
         &mut self,
         store: &mut Store<T>,
         func: &Func,
-        params: impl CallParams,
+        params: Params,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
+    ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Results: CallResults,
+        Params: StoreToCells,
+        Results: LoadFromCells,
     {
         self.stack.reset();
         let results = match store.inner.resolve_func(func) {
@@ -254,21 +269,22 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
-    fn resume_func_host_trap<T, Results>(
+    fn resume_func_host_trap<T, Params, Results>(
         &mut self,
         store: &mut Store<T>,
-        params: impl CallParams,
+        params: Params,
         params_slots: SlotSpan,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
+    ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Results: CallResults,
+        Params: StoreToCells,
+        Results: LoadFromCells,
     {
-        let results = resume_wasm_func_call(store, self.code_map, self.stack)?
+        let value = resume_wasm_func_call(store, self.code_map, self.stack)?
             .provide_host_results(params, params_slots)
             .execute()?
             .write_results(results);
-        Ok(results)
+        Ok(value)
     }
 
     /// Resumes the execution of the given [`Func`] using `params` after running out of fuel.
@@ -283,13 +299,13 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, ExecutionOutcome>
+    ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Results: CallResults,
+        Results: LoadFromCells,
     {
-        let results = resume_wasm_func_call(store, self.code_map, self.stack)?
+        let value = resume_wasm_func_call(store, self.code_map, self.stack)?
             .execute()?
             .write_results(results);
-        Ok(results)
+        Ok(value)
     }
 }

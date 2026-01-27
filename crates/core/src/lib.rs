@@ -56,6 +56,6 @@ pub use self::{
     },
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
-    untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},
+    untyped::{ReadAs, UntypedVal, WriteAs},
     value::{V128, ValType},
 };

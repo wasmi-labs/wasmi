@@ -18,8 +18,8 @@ use crate::{
     ResourceLimiter,
     collections::arena::Arena,
     core::{CoreMemory, ResourceLimiterRef},
-    engine::Inst,
-    func::{FuncInOut, Trampoline, TrampolineEntity, TrampolineIdx},
+    engine::{InOutParams, Inst},
+    func::{Trampoline, TrampolineEntity, TrampolineIdx},
 };
 use alloc::boxed::Box;
 use core::{
@@ -110,11 +110,11 @@ impl<T> Store<T> {
         &mut self,
         trampoline: Trampoline,
         instance: Option<Inst>,
-        params_results: FuncInOut,
+        inout: InOutParams,
     ) -> Result<(), StoreError<Error>> {
         let trampoline = self.resolve_trampoline(&trampoline)?.clone();
         trampoline
-            .call(self, instance, params_results)
+            .call(self, instance, inout)
             .map_err(StoreError::external)?;
         Ok(())
     }

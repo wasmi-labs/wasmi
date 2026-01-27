@@ -1,4 +1,4 @@
-use super::{OperandIdx, Reset};
+use super::{Reset, StackPos};
 use crate::{Error, engine::translator::func::LocalIdx};
 use alloc::vec::Vec;
 use core::iter;
@@ -7,7 +7,7 @@ use core::iter;
 #[derive(Debug, Default)]
 pub struct LocalsHead {
     /// The index of the first occurrence of every local variable.
-    first_operands: Vec<Option<OperandIdx>>,
+    first_operands: Vec<Option<StackPos>>,
 }
 
 impl Reset for LocalsHead {
@@ -44,8 +44,8 @@ impl LocalsHead {
     pub fn replace_first(
         &mut self,
         index: LocalIdx,
-        first_operand: Option<OperandIdx>,
-    ) -> Option<OperandIdx> {
+        first_operand: Option<StackPos>,
+    ) -> Option<StackPos> {
         let index = Self::local_idx_to_index(index);
         let cell = &mut self.first_operands[index];
         match first_operand {

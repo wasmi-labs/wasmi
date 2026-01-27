@@ -1,16 +1,12 @@
 mod caller;
 mod error;
-mod func_inout;
 mod into_func;
 mod ty;
 mod typed_func;
 
-use self::func_inout::FuncFinished;
-pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    func_inout::FuncInOut,
     into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
     ty::FuncType,
     typed_func::{TypedFunc, WasmParams, WasmResults},
@@ -28,7 +24,7 @@ use crate::{
     Error,
     Val,
     collections::arena::ArenaIndex,
-    engine::{Inst, ResumableCall},
+    engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
     reftype::RefId,
 };
 use alloc::{boxed::Box, sync::Arc};
@@ -92,10 +88,10 @@ impl From<HostFuncEntity> for FuncEntity {
 /// A host function reference and its function type.
 #[derive(Debug, Copy, Clone)]
 pub struct HostFuncEntity {
-    /// The number of parameters of the [`HostFuncEntity`].
-    len_params: u16,
-    /// The number of results of the [`HostFuncEntity`].
-    len_results: u16,
+    /// The number of cells required to represent the parameters of the [`HostFuncEntity`].
+    len_param_cells: u16,
+    /// The number of cells required to represent the results of the [`HostFuncEntity`].
+    len_result_cells: u16,
     /// The function type of the host function.
     ty: DedupFuncType,
     /// A reference to the trampoline of the host function.
@@ -105,25 +101,33 @@ pub struct HostFuncEntity {
 impl HostFuncEntity {
     /// Creates a new [`HostFuncEntity`].
     pub fn new(engine: &Engine, ty: &FuncType, func: Trampoline) -> Self {
-        let len_params = ty.len_params();
-        let len_results = ty.len_results();
+        let Ok(len_param_cells) = required_cells_for_tys(ty.params()) else {
+            // Note: we panic instead of returning an error since function types may
+            //       at most have 1000 parameters which should always fit.
+            panic!("host function requires too many cells for its parameters: {ty:?}")
+        };
+        let Ok(len_result_cells) = required_cells_for_tys(ty.results()) else {
+            // Note: we panic instead of returning an error since function types may
+            //       at most have 1000 results which should always fit.
+            panic!("host function requires too many cells for its results: {ty:?}")
+        };
         let ty = engine.alloc_func_type(ty.clone());
         Self {
-            len_params,
-            len_results,
+            len_param_cells,
+            len_result_cells,
             ty,
             func,
         }
     }
 
-    /// Returns the number of parameters of the [`HostFuncEntity`].
-    pub fn len_params(&self) -> u16 {
-        self.len_params
+    /// Returns the number of cells required to represent the parameters of the [`HostFuncEntity`].
+    pub fn len_param_cells(&self) -> u16 {
+        self.len_param_cells
     }
 
-    /// Returns the number of results of the [`HostFuncEntity`].
-    pub fn len_results(&self) -> u16 {
-        self.len_results
+    /// Returns the number of cells required to represent the results of the [`HostFuncEntity`].
+    pub fn len_result_cells(&self) -> u16 {
+        self.len_result_cells
     }
 
     /// Returns the signature of the host function.
@@ -210,7 +214,6 @@ impl<T> Debug for HostFuncTrampolineEntity<T> {
 impl<T> HostFuncTrampolineEntity<T> {
     /// Creates a new host function trampoline from the given dynamically typed closure.
     pub fn new(
-        // engine: &Engine,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Self {
@@ -222,16 +225,23 @@ impl<T> HostFuncTrampolineEntity<T> {
         let results_iter = ty.results().iter().copied().map(Val::default_for_ty);
         let len_params = ty.params().len();
         let params_results: Box<[Val]> = params_iter.chain(results_iter).collect();
-        let trampoline = <TrampolineEntity<T>>::new(move |caller, args| {
+        let trampoline = <TrampolineEntity<T>>::new(move |caller, inout| {
             // We are required to clone the buffer because we are operating within a `Fn`.
             // This way the trampoline closure only has to own a single slice buffer.
             // Note: An alternative solution is to use interior mutability but that solution
             //       comes with its own downsides.
             let mut params_results = params_results.clone();
             let (params, results) = params_results.split_at_mut(len_params);
-            let func_results = args.decode_params_into_slice(params).unwrap();
+            inout
+                .decode_params_into(&mut params[..])
+                .unwrap_or_else(|error| {
+                    panic!("failed to decode host function parameters: {error}")
+                });
             func(caller, params, results)?;
-            Ok(func_results.encode_results_from_slice(results).unwrap())
+            let results = inout
+                .encode_results(&results[..])
+                .unwrap_or_else(|error| panic!("failed to encode host function results: {error}"));
+            Ok(results)
         });
         Self { ty, trampoline }
     }
@@ -239,7 +249,6 @@ impl<T> HostFuncTrampolineEntity<T> {
     /// Creates a new host function trampoline from the given statically typed closure.
     pub fn wrap<Params, Results>(func: impl IntoFunc<T, Params, Results>) -> Self {
         let (ty, trampoline) = func.into_func();
-        // let ty = engine.alloc_func_type(signature);
         Self { ty, trampoline }
     }
 
@@ -254,8 +263,10 @@ impl<T> HostFuncTrampolineEntity<T> {
     }
 }
 
-type TrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncInOut) -> Result<FuncFinished, Error> + Send + Sync + 'static;
+type TrampolineFn<T> = dyn for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
+    + Send
+    + Sync
+    + 'static;
 
 pub struct TrampolineEntity<T> {
     closure: Arc<TrampolineFn<T>>,
@@ -271,7 +282,10 @@ impl<T> TrampolineEntity<T> {
     /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncInOut) -> Result<FuncFinished, Error> + Send + Sync + 'static,
+        F: for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
+            + Send
+            + Sync
+            + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -281,12 +295,12 @@ impl<T> TrampolineEntity<T> {
     /// Calls the host function trampoline with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
-    pub fn call(
+    pub fn call<'a>(
         &self,
         mut ctx: impl AsContextMut<Data = T>,
         instance: Option<Inst>,
-        params: FuncInOut,
-    ) -> Result<FuncFinished, Error> {
+        params: InOutParams<'a>,
+    ) -> Result<InOutResults<'a>, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.closure)(caller, params)
     }
