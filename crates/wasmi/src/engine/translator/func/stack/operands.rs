@@ -529,8 +529,7 @@ impl PreservedAllLocalsIter<'_> {
 }
 
 impl Iterator for PreservedAllLocalsIter<'_> {
-    // TODO: return `LocalOperand` instead
-    type Item = Operand;
+    type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
         if !self.has_remaining_locals() {
@@ -539,8 +538,16 @@ impl Iterator for PreservedAllLocalsIter<'_> {
         self.stack_pos = self.find_next_local()?;
         let stack_pos = StackPos::from(self.stack_pos);
         let operand = self.operands.operand_to_temp_at(stack_pos);
-        debug_assert!(matches!(operand, StackOperand::Local { .. }));
-        Some(Operand::new(stack_pos, operand))
+        let StackOperand::Local {
+            temp_slots,
+            ty,
+            local_index,
+            ..
+        } = operand
+        else {
+            panic!("expected `StackOperand::Local` but found: {operand:?}")
+        };
+        Some(LocalOperand::new(temp_slots, ty, local_index))
     }
 }
 
@@ -554,17 +561,23 @@ pub struct PreservedLocalsIter<'stack> {
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
-    // TODO: return `LocalOperand` instead
-    type Item = Operand;
+    type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
         let stack_pos = self.stack_pos?;
         let operand = self.operands.operand_to_temp_at(stack_pos);
-        self.stack_pos = match operand {
-            StackOperand::Local { next_local, .. } => next_local,
-            op => panic!("expected `StackOperand::Local` but found: {op:?}"),
+        let StackOperand::Local {
+            temp_slots,
+            ty,
+            local_index,
+            next_local,
+            ..
+        } = operand
+        else {
+            panic!("expected `StackOperand::Local` but found: {operand:?}")
         };
-        Some(Operand::new(stack_pos, operand))
+        self.stack_pos = next_local;
+        Some(LocalOperand::new(temp_slots, ty, local_index))
     }
 }
 

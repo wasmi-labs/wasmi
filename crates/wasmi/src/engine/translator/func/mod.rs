@@ -811,9 +811,9 @@ impl FuncTranslator {
     fn preserve_all_locals(&mut self) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for local in self.stack.preserve_all_locals() {
-            debug_assert!(matches!(local, Operand::Local(_)));
             let result = local.temp_slots().head();
-            let Some(copy_instr) = Self::make_copy_instr(result, local, &mut self.layout)? else {
+            let Some(copy_instr) = Self::make_copy_instr(result, local.into(), &mut self.layout)?
+            else {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
             self.instrs
