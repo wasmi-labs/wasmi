@@ -317,7 +317,7 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots_v2`
+        // TODO: remove in favor of `branch_slots`
         self.0.len_branch_params(engine)
     }
 
@@ -434,7 +434,7 @@ pub trait ControlFrameBase {
     fn branch_to(&mut self);
 
     /// Returns the number of operands required for branching to `self`.
-    // TODO: remove in favor of `branch_slots_v2`
+    // TODO: remove in favor of `branch_slots`
     fn len_branch_params(&self, engine: &Engine) -> u16;
 
     /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
@@ -521,7 +521,7 @@ impl ControlFrameBase for ControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots_v2`
+        // TODO: remove in favor of `branch_slots`
         match self {
             ControlFrame::Block(frame) => frame.len_branch_params(engine),
             ControlFrame::Loop(frame) => frame.len_branch_params(engine),
@@ -600,7 +600,7 @@ impl ControlFrameBase for BlockControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots_v2`
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_results(engine)
     }
 
@@ -659,7 +659,7 @@ impl ControlFrameBase for LoopControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots_v2`
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_params(engine)
     }
 
@@ -739,7 +739,7 @@ impl ControlFrameBase for IfControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots_v2`
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_results(engine)
     }
 
@@ -884,7 +884,7 @@ impl ControlFrameBase for ElseControlFrame {
     }
 
     fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots_v2`
+        // TODO: remove in favor of `branch_slots`
         self.ty.len_results(engine)
     }
 
