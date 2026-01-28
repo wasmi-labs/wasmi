@@ -29,8 +29,13 @@ impl ResultsVisitor for &'_ mut Slot {
 
 impl ResultsVisitor for &'_ mut [Slot; 2] {
     fn host_visitor<V: VisitResults>(self, visitor: &mut V) {
-        visitor.visit_result_reg(&mut self[1]);
-        visitor.visit_result_reg(&mut self[0]);
+        // Note: the below lines have been deliberately commented out because
+        //       they caused continued problems with `local.set` optimization
+        //       a.k.a. result replacement for very little gains since this
+        //       only affected the `wide-arithmetic` operations.
+        //
+        // visitor.visit_result_reg(&mut self[1]);
+        // visitor.visit_result_reg(&mut self[0]);
     }
 }
 
