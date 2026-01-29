@@ -236,14 +236,14 @@ macro_rules! impl_into_shift_amount {
 impl_into_shift_amount!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 macro_rules! impl_into_simd_shift_amount {
-    ( $($ty:ty),* $(,)? ) => {
+    ( $([$ty:ty; $n:literal]),* $(,)? ) => {
         $(
-            impl IntoShiftAmount for $ty {
+            impl IntoShiftAmount for [$ty; $n] {
                 type ShiftSource = u32;
                 type ShiftAmount = u8;
 
                 fn into_shift_amount(source: Self::ShiftSource) -> Option<Self::ShiftAmount> {
-                    let len_bits = (::core::mem::size_of::<Self::ShiftSource>() * 8) as Self::ShiftSource;
+                    let len_bits = (::core::mem::size_of::<$ty>() * 8) as Self::ShiftSource;
                     let shamt = source.checked_rem_euclid(len_bits)?;
                     Some(shamt as _)
                 }
