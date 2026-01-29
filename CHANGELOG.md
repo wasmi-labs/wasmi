@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.8` - 2026-01-29
+
+### Fixed
+
+- Fixed another bug with incorrect translation of `wide-arithmetic` ops followed by `local.set`. [#1762]
+
+[#1762]: https://github.com/wasmi-labs/wasmi/issues/1762
+
 ## `1.0.7` - 2026-01-09
 
 ### Fixed
