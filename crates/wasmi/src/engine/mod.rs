@@ -108,7 +108,7 @@ impl EngineId {
     }
 }
 
-/// A value associated to a [`Store`](crate::Store).
+/// A value associated to a [`Store`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct EngineOwned<T> {
     /// The identifier of the associated engine.

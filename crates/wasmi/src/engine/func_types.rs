@@ -68,7 +68,7 @@ pub struct FuncTypeRegistry {
 }
 
 impl FuncTypeRegistry {
-    /// Creates a new [`FuncTypeRegistry`] using the given [`EngineIdx`].
+    /// Creates a new [`FuncTypeRegistry`] using the given [`EngineId`].
     pub(crate) fn new(engine_id: EngineId) -> Self {
         Self {
             engine_id,
