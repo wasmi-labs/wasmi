@@ -199,7 +199,7 @@ impl<T> Store<T> {
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
     pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
         let idx = self.typed.trampolines.alloc(func);
-        Trampoline::from_inner(self.inner.wrap_stored(idx))
+        Trampoline::from_inner(self.inner.id().wrap(idx))
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]
@@ -232,7 +232,7 @@ impl<T> Store<T> {
         func: &Trampoline,
     ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
         let entity_index = self.inner.unwrap_stored(func.as_inner())?;
-        let Some(trampoline) = self.typed.trampolines.get(entity_index) else {
+        let Some(trampoline) = self.typed.trampolines.get(*entity_index) else {
             return Err(InternalStoreError::not_found());
         };
         Ok(trampoline)
