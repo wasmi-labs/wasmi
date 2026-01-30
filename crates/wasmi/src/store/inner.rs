@@ -30,11 +30,11 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-/// A unique store index.
+/// A unique store identifier.
 ///
 /// # Note
 ///
-/// Used to protect against invalid entity indices.
+/// Used to differntiate different store instances.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreId(u32);
 
