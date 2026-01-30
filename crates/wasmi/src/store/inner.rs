@@ -70,7 +70,7 @@ pub struct StoreInner {
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
-    store_idx: StoreId,
+    id: StoreId,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
@@ -106,7 +106,7 @@ impl StoreInner {
         let fuel = Fuel::new(fuel_enabled, fuel_costs);
         StoreInner {
             engine: engine.clone(),
-            store_idx: StoreId::new(),
+            id: StoreId::new(),
             funcs: Arena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
@@ -177,7 +177,7 @@ impl StoreInner {
     /// [`Stored<Idx>`] associates an `Idx` type with the internal store index.
     /// This way wrapped indices cannot be misused with incorrect [`StoreInner`] instances.
     pub(super) fn wrap_stored<Idx>(&self, entity_idx: Idx) -> Stored<Idx> {
-        Stored::new(self.store_idx, entity_idx)
+        Stored::new(self.id, entity_idx)
     }
 
     /// Unwraps the given [`Stored<Idx>`] reference and returns the `Idx`.
@@ -189,7 +189,7 @@ impl StoreInner {
     where
         Idx: ArenaIndex + Debug,
     {
-        match stored.entity_index(self.store_idx) {
+        match stored.entity_index(self.id) {
             Some(index) => Ok(index),
             None => Err(InternalStoreError::store_mismatch()),
         }
