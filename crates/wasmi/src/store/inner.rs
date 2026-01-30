@@ -63,14 +63,6 @@ pub struct Stored<T> {
 }
 
 impl<T> Stored<T> {
-    /// Returns `T` if `store` matches `self`'s identifier. Consumes `self`.
-    pub fn unwrap(self, store: StoreId) -> Option<T> {
-        if store != self.store {
-            return None;
-        }
-        Some(self.value)
-    }
-
     /// Returns `&T` if `store` matches `self`'s identifier.
     pub fn get(&self, store: StoreId) -> Option<&T> {
         if store != self.store {
