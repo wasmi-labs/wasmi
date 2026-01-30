@@ -232,7 +232,7 @@ impl<T> Store<T> {
         func: &Trampoline,
     ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
         let entity_index = self.inner.unwrap_stored(func.as_inner())?;
-        let Some(trampoline) = self.typed.trampolines.get(entity_index) else {
+        let Some(trampoline) = self.typed.trampolines.get(*entity_index) else {
             return Err(InternalStoreError::not_found());
         };
         Ok(trampoline)

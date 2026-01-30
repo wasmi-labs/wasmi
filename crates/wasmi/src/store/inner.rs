@@ -18,7 +18,7 @@ use crate::{
     MemoryIdx,
     Table,
     TableIdx,
-    collections::arena::{Arena, ArenaIndex, GuardedEntity},
+    collections::arena::{Arena, ArenaIndex},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
@@ -38,19 +38,6 @@ use core::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreId(u32);
 
-impl ArenaIndex for StoreId { // TODO: we might want to remove this trait impl
-    fn into_usize(self) -> usize {
-        self.0 as usize
-    }
-
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as store index: {error}")
-        });
-        Self(value)
-    }
-}
-
 impl StoreId {
     /// Returns a new unique [`StoreIdx`].
     fn new() -> Self {
@@ -59,10 +46,39 @@ impl StoreId {
         let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
         Self(next_idx)
     }
+
+    /// Wraps a `value` into a [`Stored<T>`] associated to `self`.
+    pub fn wrap<T>(self, value: T) -> Stored<T> {
+        Stored { store: self, value }
+    }
 }
 
-/// A stored entity.
-pub type Stored<Idx> = GuardedEntity<StoreId, Idx>;
+/// A value associated to a [`Store`](crate::Store).
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Stored<T> {
+    /// The identifier of the associated store.
+    store: StoreId,
+    /// The stored value.
+    value: T,
+}
+
+impl<T> Stored<T> {
+    /// Returns `T` if `store` matches `self`'s identifier. Consumes `self`.
+    pub fn unwrap(self, store: StoreId) -> Option<T> {
+        if store != self.store {
+            return None;
+        }
+        Some(self.value)
+    }
+
+    /// Returns `&T` if `store` matches `self`'s identifier.
+    pub fn get(&self, store: StoreId) -> Option<&T> {
+        if store != self.store {
+            return None;
+        }
+        Some(&self.value)
+    }
+}
 
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
@@ -170,27 +186,27 @@ impl StoreInner {
         self.memories.len()
     }
 
-    /// Wraps an entity `Idx` (index type) as a [`Stored<Idx>`] type.
+    /// Wraps a value of type `T` into a [`Stored<Idx>`].
     ///
     /// # Note
     ///
-    /// [`Stored<Idx>`] associates an `Idx` type with the internal store index.
+    /// [`Stored<T>`] associates a value of type `T` with the store.
     /// This way wrapped indices cannot be misused with incorrect [`StoreInner`] instances.
-    pub(super) fn wrap_stored<Idx>(&self, entity_idx: Idx) -> Stored<Idx> {
-        Stored::new(self.id, entity_idx)
+    pub(super) fn wrap_stored<T>(&self, value: T) -> Stored<T> {
+        self.id.wrap(value)
     }
 
-    /// Unwraps the given [`Stored<Idx>`] reference and returns the `Idx`.
+    /// Unwraps the given [`Stored<T>`] reference and returns the `T`.
     ///
     /// # Errors
     ///
-    /// If the [`Stored<Idx>`] does not originate from this [`StoreInner`].
-    pub(super) fn unwrap_stored<Idx>(&self, stored: &Stored<Idx>) -> Result<Idx, InternalStoreError>
-    where
-        Idx: ArenaIndex + Debug,
-    {
-        match stored.entity_index(self.id) {
-            Some(index) => Ok(index),
+    /// If the [`Stored<T>`] does not originate from `self`.
+    pub(super) fn unwrap_stored<'a, T>(
+        &self,
+        stored: &'a Stored<T>,
+    ) -> Result<&'a T, InternalStoreError> {
+        match stored.get(self.id) {
+            Some(value) => Ok(value),
             None => Err(InternalStoreError::store_mismatch()),
         }
     }
@@ -268,7 +284,7 @@ impl StoreInner {
         };
         let uninit = self
             .instances
-            .get_mut(idx)
+            .get_mut(*idx)
             .unwrap_or_else(|| panic!("missing entity for the given instance: {instance:?}"));
         assert!(
             !uninit.is_initialized(),
@@ -292,7 +308,7 @@ impl StoreInner {
         Idx: ArenaIndex + Debug,
     {
         let idx = self.unwrap_stored(idx)?;
-        match entities.get(idx) {
+        match entities.get(*idx) {
             Some(entity) => Ok(entity),
             None => Err(InternalStoreError::not_found()),
         }
@@ -366,7 +382,7 @@ impl StoreInner {
         global: &Global,
     ) -> Result<&mut CoreGlobal, InternalStoreError> {
         let idx = self.unwrap_stored(global.as_inner())?;
-        Self::resolve_mut(idx, &mut self.globals)
+        Self::resolve_mut(*idx, &mut self.globals)
     }
 
     /// Returns a shared reference to the [`CoreTable`] associated to the given [`Table`].
@@ -390,7 +406,7 @@ impl StoreInner {
         table: &Table,
     ) -> Result<&mut CoreTable, InternalStoreError> {
         let idx = self.unwrap_stored(table.as_inner())?;
-        Self::resolve_mut(idx, &mut self.tables)
+        Self::resolve_mut(*idx, &mut self.tables)
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] and [`CoreElementSegment`] associated to `table` and `elem`.
@@ -408,8 +424,8 @@ impl StoreInner {
     ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
         let table_idx = self.unwrap_stored(table.as_inner())?;
         let elem_idx = self.unwrap_stored(elem.as_inner())?;
-        let table = Self::resolve_mut(table_idx, &mut self.tables)?;
-        let elem = Self::resolve_mut(elem_idx, &mut self.elems)?;
+        let table = Self::resolve_mut(*table_idx, &mut self.tables)?;
+        let elem = Self::resolve_mut(*elem_idx, &mut self.elems)?;
         Ok((table, elem))
     }
 
@@ -427,7 +443,7 @@ impl StoreInner {
         table: &Table,
     ) -> Result<(&mut CoreTable, &mut Fuel), InternalStoreError> {
         let idx = self.unwrap_stored(table.as_inner())?;
-        let table = Self::resolve_mut(idx, &mut self.tables)?;
+        let table = Self::resolve_mut(*idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
         Ok((table, fuel))
     }
@@ -445,7 +461,7 @@ impl StoreInner {
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
         let fst = self.unwrap_stored(fst.as_inner())?;
         let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
+        let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|| {
             panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
         });
         let fuel = &mut self.fuel;
@@ -480,7 +496,7 @@ impl StoreInner {
         let mem_idx = self.unwrap_stored(table.as_inner())?;
         let elem_idx = segment.as_inner();
         let elem = self.resolve(elem_idx, &self.elems)?;
-        let mem = Self::resolve_mut(mem_idx, &mut self.tables)?;
+        let mem = Self::resolve_mut(*mem_idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
         Ok((mem, elem, fuel))
     }
@@ -509,7 +525,7 @@ impl StoreInner {
         segment: &ElementSegment,
     ) -> Result<&mut CoreElementSegment, InternalStoreError> {
         let idx = self.unwrap_stored(segment.as_inner())?;
-        Self::resolve_mut(idx, &mut self.elems)
+        Self::resolve_mut(*idx, &mut self.elems)
     }
 
     /// Returns a shared reference to the [`CoreMemory`] associated to the given [`Memory`].
@@ -536,7 +552,7 @@ impl StoreInner {
         memory: &Memory,
     ) -> Result<&'a mut CoreMemory, InternalStoreError> {
         let idx = self.unwrap_stored(memory.as_inner())?;
-        Self::resolve_mut(idx, &mut self.memories)
+        Self::resolve_mut(*idx, &mut self.memories)
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
@@ -550,7 +566,7 @@ impl StoreInner {
         memory: &Memory,
     ) -> Result<(&mut CoreMemory, &mut Fuel), InternalStoreError> {
         let idx = self.unwrap_stored(memory.as_inner())?;
-        let memory = Self::resolve_mut(idx, &mut self.memories)?;
+        let memory = Self::resolve_mut(*idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
         Ok((memory, fuel))
     }
@@ -580,7 +596,7 @@ impl StoreInner {
         let mem_idx = self.unwrap_stored(memory.as_inner())?;
         let data_idx = segment.as_inner();
         let data = self.resolve(data_idx, &self.datas)?;
-        let mem = Self::resolve_mut(mem_idx, &mut self.memories)?;
+        let mem = Self::resolve_mut(*mem_idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
         Ok((mem, data, fuel))
     }
@@ -598,7 +614,7 @@ impl StoreInner {
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
         let fst = self.unwrap_stored(fst.as_inner())?;
         let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self.memories.get_pair_mut(fst, snd).unwrap_or_else(|| {
+        let (fst, snd) = self.memories.get_pair_mut(*fst, *snd).unwrap_or_else(|| {
             panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
         });
         let fuel = &mut self.fuel;
@@ -616,7 +632,7 @@ impl StoreInner {
         segment: &DataSegment,
     ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
         let idx = self.unwrap_stored(segment.as_inner())?;
-        Self::resolve_mut(idx, &mut self.datas)
+        Self::resolve_mut(*idx, &mut self.datas)
     }
 
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
