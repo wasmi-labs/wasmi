@@ -39,7 +39,7 @@ use core::{
 pub struct StoreId(u32);
 
 impl StoreId {
-    /// Returns a new unique [`StoreIdx`].
+    /// Returns a new unique [`StoreId`].
     fn new() -> Self {
         /// A static store index counter.
         static CURRENT_STORE_IDX: AtomicU32 = AtomicU32::new(0);
