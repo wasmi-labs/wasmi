@@ -6,9 +6,8 @@
 
 mod component_vec;
 mod dedup;
-mod guarded;
 
-pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
+pub use self::{component_vec::ComponentVec, dedup::DedupArena};
 use alloc::vec::Vec;
 use core::{
     iter::Enumerate,

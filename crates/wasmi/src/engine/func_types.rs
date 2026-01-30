@@ -1,12 +1,12 @@
-use super::{EngineIdx, Guarded};
+use super::{EngineId, EngineOwned};
 use crate::{
     FuncType,
-    collections::arena::{ArenaIndex, DedupArena, GuardedEntity},
+    collections::arena::{ArenaIndex, DedupArena},
 };
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct DedupFuncTypeIdx(u32);
+struct DedupFuncTypeIdx(u32);
 
 impl ArenaIndex for DedupFuncTypeIdx {
     fn into_usize(self) -> usize {
@@ -38,19 +38,7 @@ impl ArenaIndex for DedupFuncTypeIdx {
 ///   or result types of the underlying [`FuncType`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct DedupFuncType(GuardedEntity<EngineIdx, DedupFuncTypeIdx>);
-
-impl DedupFuncType {
-    /// Creates a new function signature reference.
-    pub(super) fn from_inner(stored: GuardedEntity<EngineIdx, DedupFuncTypeIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> GuardedEntity<EngineIdx, DedupFuncTypeIdx> {
-        self.0
-    }
-}
+pub struct DedupFuncType(EngineOwned<DedupFuncTypeIdx>);
 
 /// A [`FuncType`] registry that efficiently deduplicate stored function types.
 ///
@@ -69,7 +57,7 @@ pub struct FuncTypeRegistry {
     /// # Note
     ///
     /// This is used to guard against invalid entity indices.
-    engine_idx: EngineIdx,
+    engine_id: EngineId,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -81,9 +69,9 @@ pub struct FuncTypeRegistry {
 
 impl FuncTypeRegistry {
     /// Creates a new [`FuncTypeRegistry`] using the given [`EngineIdx`].
-    pub(crate) fn new(engine_idx: EngineIdx) -> Self {
+    pub(crate) fn new(engine_id: EngineId) -> Self {
         Self {
-            engine_idx,
+            engine_id,
             func_types: DedupArena::default(),
         }
     }
@@ -93,24 +81,21 @@ impl FuncTypeRegistry {
     /// # Panics
     ///
     /// If the guarded entity is not owned by the engine.
-    fn unwrap_index<Idx>(&self, func_type: Guarded<Idx>) -> Idx
+    fn unwrap_or_panic<T>(&self, func_type: EngineOwned<T>) -> T
     where
-        Idx: ArenaIndex,
+        T: ArenaIndex,
     {
-        func_type.entity_index(self.engine_idx).unwrap_or_else(|| {
+        self.engine_id.unwrap(func_type).unwrap_or_else(|| {
             panic!(
-                "encountered foreign entity in func type registry: {}",
-                self.engine_idx.into_usize()
+                "encountered foreign entity in func type registry: {:?}",
+                self.engine_id,
             )
         })
     }
 
     /// Allocates a new function type to the engine.
     pub(crate) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        DedupFuncType::from_inner(Guarded::new(
-            self.engine_idx,
-            self.func_types.alloc(func_type),
-        ))
+        DedupFuncType(self.engine_id.wrap(self.func_types.alloc(func_type)))
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -120,7 +105,7 @@ impl FuncTypeRegistry {
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
     pub(crate) fn resolve_func_type(&self, func_type: &DedupFuncType) -> &FuncType {
-        let entity_index = self.unwrap_index(func_type.into_inner());
+        let entity_index = self.unwrap_or_panic(func_type.0);
         self.func_types
             .get(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored function type: {entity_index:?}"))

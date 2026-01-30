@@ -59,7 +59,6 @@ use crate::{
     Func,
     FuncType,
     StoreContextMut,
-    collections::arena::{ArenaIndex, GuardedEntity},
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::{
@@ -79,33 +78,44 @@ use crate::Store;
 ///
 /// Used to protect against invalid entity indices.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct EngineIdx(u32);
+pub struct EngineId(u32);
 
-impl ArenaIndex for EngineIdx {
-    fn into_usize(self) -> usize {
-        self.0 as _
-    }
-
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as engine index: {error}")
-        });
-        Self(value)
-    }
-}
-
-impl EngineIdx {
-    /// Returns a new unique [`EngineIdx`].
+impl EngineId {
+    /// Returns a new unique [`EngineId`].
     fn new() -> Self {
         /// A static store index counter.
         static CURRENT_STORE_IDX: AtomicU32 = AtomicU32::new(0);
         let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
         Self(next_idx)
     }
+
+    /// Wraps a `value` into a [`EngineOwned<T>`] associated to `self`.
+    pub fn wrap<T>(self, value: T) -> EngineOwned<T> {
+        EngineOwned {
+            engine: self,
+            value,
+        }
+    }
+
+    /// Unwraps `owned`'s value if [`EngineOwned<T>`] is associated to `self`.
+    ///
+    /// Otherwise returns `None`.
+    pub fn unwrap<T>(self, owned: EngineOwned<T>) -> Option<T> {
+        if self != owned.engine {
+            return None;
+        }
+        Some(owned.value)
+    }
 }
 
-/// An entity owned by the [`Engine`].
-type Guarded<Idx> = GuardedEntity<EngineIdx, Idx>;
+/// A value associated to a [`Store`](crate::Store).
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct EngineOwned<T> {
+    /// The identifier of the associated engine.
+    engine: EngineId,
+    /// The engine owned value.
+    value: T,
+}
 
 /// The Wasmi interpreter.
 ///
@@ -583,7 +593,7 @@ impl EngineStacks {
 impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     fn new(config: &Config) -> Self {
-        let engine_idx = EngineIdx::new();
+        let engine_idx = EngineId::new();
         Self {
             config: config.clone(),
             code_map: CodeMap::new(config),
