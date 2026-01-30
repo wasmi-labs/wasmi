@@ -41,10 +41,10 @@ pub struct StoreId(u32);
 impl StoreId {
     /// Returns a new unique [`StoreId`].
     fn new() -> Self {
-        /// A static store index counter.
-        static CURRENT_STORE_IDX: AtomicU32 = AtomicU32::new(0);
-        let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
-        Self(next_idx)
+        /// An atomic, static store identifier counter.
+        static STORE_ID: AtomicU32 = AtomicU32::new(0);
+        let next = STORE_ID.fetch_add(1, Ordering::AcqRel);
+        Self(next)
     }
 
     /// Wraps a `value` into a [`Stored<T>`] associated to `self`.
