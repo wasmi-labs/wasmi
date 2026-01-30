@@ -140,6 +140,11 @@ impl StoreInner {
         &self.engine
     }
 
+    /// Returns the [`StoreId`] of `self`.
+    pub(crate) fn id(&self) -> StoreId {
+        self.id
+    }
+
     /// Returns an exclusive reference to the [`Fuel`] counters.
     pub fn fuel_mut(&mut self) -> &mut Fuel {
         &mut self.fuel
@@ -186,16 +191,6 @@ impl StoreInner {
         self.memories.len()
     }
 
-    /// Wraps a value of type `T` into a [`Stored<Idx>`].
-    ///
-    /// # Note
-    ///
-    /// [`Stored<T>`] associates a value of type `T` with the store.
-    /// This way wrapped indices cannot be misused with incorrect [`StoreInner`] instances.
-    pub(super) fn wrap_stored<T>(&self, value: T) -> Stored<T> {
-        self.id.wrap(value)
-    }
-
     /// Unwraps the given [`Stored<T>`] reference and returns the `T`.
     ///
     /// # Errors
@@ -214,37 +209,37 @@ impl StoreInner {
     /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
     pub fn alloc_global(&mut self, global: CoreGlobal) -> Global {
         let global = self.globals.alloc(global);
-        Global::from_inner(self.wrap_stored(global))
+        Global::from_inner(self.id.wrap(global))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
     pub fn alloc_table(&mut self, table: CoreTable) -> Table {
         let table = self.tables.alloc(table);
-        Table::from_inner(self.wrap_stored(table))
+        Table::from_inner(self.id.wrap(table))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
     pub fn alloc_memory(&mut self, memory: CoreMemory) -> Memory {
         let memory = self.memories.alloc(memory);
-        Memory::from_inner(self.wrap_stored(memory))
+        Memory::from_inner(self.id.wrap(memory))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
     pub fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
         let segment = self.datas.alloc(segment);
-        DataSegment::from_inner(self.wrap_stored(segment))
+        DataSegment::from_inner(self.id.wrap(segment))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
     pub fn alloc_element_segment(&mut self, segment: CoreElementSegment) -> ElementSegment {
         let segment = self.elems.alloc(segment);
-        ElementSegment::from_inner(self.wrap_stored(segment))
+        ElementSegment::from_inner(self.id.wrap(segment))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
     pub fn alloc_extern_object(&mut self, object: ExternRefEntity) -> ExternRef {
         let object = self.extern_objects.alloc(object);
-        ExternRef::from_inner(self.wrap_stored(object))
+        ExternRef::from_inner(self.id.wrap(object))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -258,7 +253,7 @@ impl StoreInner {
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
         let instance = self.instances.alloc(InstanceEntity::uninitialized());
-        Instance::from_inner(self.wrap_stored(instance))
+        Instance::from_inner(self.id.wrap(instance))
     }
 
     /// Initializes the [`Instance`] using the given [`InstanceEntity`].
@@ -664,7 +659,7 @@ impl StoreInner {
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
     pub fn alloc_func(&mut self, func: FuncEntity) -> Func {
         let idx = self.funcs.alloc(func);
-        Func::from_inner(self.wrap_stored(idx))
+        Func::from_inner(self.id.wrap(idx))
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
