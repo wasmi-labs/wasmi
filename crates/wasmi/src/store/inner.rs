@@ -64,7 +64,7 @@ pub struct Stored<T> {
 
 impl<T> Stored<T> {
     /// Returns `&T` if `store` matches `self`'s identifier.
-    pub fn get(&self, store: StoreId) -> Option<&T> {
+    fn get(&self, store: StoreId) -> Option<&T> {
         if store != self.store {
             return None;
         }
