@@ -36,9 +36,9 @@ use core::{
 ///
 /// Used to protect against invalid entity indices.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreIdx(u32);
+pub struct StoreId(u32);
 
-impl ArenaIndex for StoreIdx {
+impl ArenaIndex for StoreId {
     fn into_usize(self) -> usize {
         self.0 as usize
     }
@@ -51,7 +51,7 @@ impl ArenaIndex for StoreIdx {
     }
 }
 
-impl StoreIdx {
+impl StoreId {
     /// Returns a new unique [`StoreIdx`].
     fn new() -> Self {
         /// A static store index counter.
@@ -62,7 +62,7 @@ impl StoreIdx {
 }
 
 /// A stored entity.
-pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
+pub type Stored<Idx> = GuardedEntity<StoreId, Idx>;
 
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
@@ -70,7 +70,7 @@ pub struct StoreInner {
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
-    store_idx: StoreIdx,
+    store_idx: StoreId,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
@@ -106,7 +106,7 @@ impl StoreInner {
         let fuel = Fuel::new(fuel_enabled, fuel_costs);
         StoreInner {
             engine: engine.clone(),
-            store_idx: StoreIdx::new(),
+            store_idx: StoreId::new(),
             funcs: Arena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
