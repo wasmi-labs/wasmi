@@ -38,7 +38,7 @@ use core::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreId(u32);
 
-impl ArenaIndex for StoreId {
+impl ArenaIndex for StoreId { // TODO: we might want to remove this trait impl
     fn into_usize(self) -> usize {
         self.0 as usize
     }
