@@ -22,6 +22,8 @@ pub trait ArenaKey: Copy {
     /// Converts the [`ArenaKey`] into the underlying `usize` value.
     fn into_usize(self) -> usize;
     /// Converts the `usize` value into the associated [`ArenaKey`].
+    ///
+    /// Returns `None` if `Self` cannot represent `value`.
     fn from_usize(value: usize) -> Option<Self>;
 }
 
