@@ -1,15 +1,5 @@
 use super::arena::*;
 
-impl ArenaKey for usize {
-    fn into_usize(self) -> usize {
-        self
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        Some(value)
-    }
-}
-
 const TEST_ENTITIES: &[&str] = &["a", "b", "c", "d"];
 
 mod arena {
