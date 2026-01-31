@@ -108,14 +108,14 @@ where
     Key: ArenaKey,
 {
     /// Returns the next entity index.
-    fn next_index(&self) -> Key {
+    fn next_key(&self) -> Key {
         Key::from_usize(self.entities.len())
     }
 
     /// Allocates a new entity and returns its index.
     #[inline]
     pub fn alloc(&mut self, entity: T) -> Key {
-        let index = self.next_index();
+        let index = self.next_key();
         self.entities.push(entity);
         index
     }
@@ -126,10 +126,10 @@ where
     where
         T: Default,
     {
-        let start = self.next_index();
+        let start = self.next_key();
         self.entities
             .extend(core::iter::repeat_with(T::default).take(amount));
-        let end = self.next_index();
+        let end = self.next_key();
         Range { start, end }
     }
 

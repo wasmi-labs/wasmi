@@ -89,7 +89,7 @@ where
         match self.entity2idx.entry(entity.clone()) {
             map::Entry::Occupied(entry) => *entry.get(),
             map::Entry::Vacant(entry) => {
-                let index = self.entities.next_index();
+                let index = self.entities.next_key();
                 self.entities.alloc(entity);
                 entry.insert(index);
                 index
