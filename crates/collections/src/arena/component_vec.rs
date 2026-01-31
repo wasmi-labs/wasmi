@@ -1,4 +1,4 @@
-use crate::arena::ArenaIndex;
+use crate::arena::ArenaKey;
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
@@ -87,7 +87,7 @@ impl<Idx, T> ComponentVec<Idx, T> {
 
 impl<Idx, T> ComponentVec<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     /// Sets the `component` for the entity at `index`.
     ///
@@ -133,7 +133,7 @@ where
 
 impl<Idx, T> Index<Idx> for ComponentVec<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     type Output = T;
 
@@ -146,7 +146,7 @@ where
 
 impl<Idx, T> IndexMut<Idx> for ComponentVec<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     #[inline]
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {

@@ -18,7 +18,7 @@ use crate::{
     MemoryIdx,
     Table,
     TableIdx,
-    collections::arena::{Arena, ArenaIndex},
+    collections::arena::{Arena, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
@@ -292,7 +292,7 @@ impl StoreInner {
         entities: &'a Arena<Idx, Entity>,
     ) -> Result<&'a Entity, InternalStoreError>
     where
-        Idx: ArenaIndex + Debug,
+        Idx: ArenaKey + Debug,
     {
         let idx = self.unwrap_stored(idx)?;
         match entities.get(*idx) {
@@ -316,7 +316,7 @@ impl StoreInner {
         entities: &mut Arena<Idx, Entity>,
     ) -> Result<&mut Entity, InternalStoreError>
     where
-        Idx: ArenaIndex + Debug,
+        Idx: ArenaKey + Debug,
     {
         match entities.get_mut(idx) {
             Some(entity) => Ok(entity),

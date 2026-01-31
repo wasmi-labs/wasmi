@@ -17,10 +17,10 @@ use core::{
 };
 
 /// Types that can be used as indices for arenas.
-pub trait ArenaIndex: Copy {
-    /// Converts the [`ArenaIndex`] into the underlying `usize` value.
+pub trait ArenaKey: Copy {
+    /// Converts the [`ArenaKey`] into the underlying `usize` value.
     fn into_usize(self) -> usize;
-    /// Converts the `usize` value into the associated [`ArenaIndex`].
+    /// Converts the `usize` value into the associated [`ArenaKey`].
     fn from_usize(value: usize) -> Self;
 }
 
@@ -104,7 +104,7 @@ impl<Idx, T> Arena<Idx, T> {
 
 impl<Idx, T> Arena<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     /// Returns the next entity index.
     fn next_index(&self) -> Idx {
@@ -182,7 +182,7 @@ impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
 
 impl<'a, Idx, T> IntoIterator for &'a Arena<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     type Item = (Idx, &'a T);
     type IntoIter = Iter<'a, Idx, T>;
@@ -195,7 +195,7 @@ where
 
 impl<'a, Idx, T> IntoIterator for &'a mut Arena<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     type Item = (Idx, &'a mut T);
     type IntoIter = IterMut<'a, Idx, T>;
@@ -215,7 +215,7 @@ pub struct Iter<'a, Idx, T> {
 
 impl<'a, Idx, T> Iterator for Iter<'a, Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     type Item = (Idx, &'a T);
 
@@ -234,7 +234,7 @@ where
 
 impl<Idx, T> DoubleEndedIterator for Iter<'_, Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -246,7 +246,7 @@ where
 
 impl<Idx, T> ExactSizeIterator for Iter<'_, Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     #[inline]
     fn len(&self) -> usize {
@@ -263,7 +263,7 @@ pub struct IterMut<'a, Idx, T> {
 
 impl<'a, Idx, T> Iterator for IterMut<'a, Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     type Item = (Idx, &'a mut T);
 
@@ -282,7 +282,7 @@ where
 
 impl<Idx, T> DoubleEndedIterator for IterMut<'_, Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -294,7 +294,7 @@ where
 
 impl<Idx, T> ExactSizeIterator for IterMut<'_, Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     #[inline]
     fn len(&self) -> usize {
@@ -311,7 +311,7 @@ impl<Idx, T> Arena<Idx, T> {
 
 impl<Idx, T> Index<Idx> for Arena<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     type Output = T;
 
@@ -324,7 +324,7 @@ where
 
 impl<Idx, T> IndexMut<Idx> for Arena<Idx, T>
 where
-    Idx: ArenaIndex,
+    Idx: ArenaKey,
 {
     #[inline]
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {

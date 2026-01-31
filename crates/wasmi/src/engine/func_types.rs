@@ -1,14 +1,14 @@
 use super::{EngineId, EngineOwned};
 use crate::{
     FuncType,
-    collections::arena::{ArenaIndex, DedupArena},
+    collections::arena::{ArenaKey, DedupArena},
 };
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct DedupFuncTypeIdx(u32);
 
-impl ArenaIndex for DedupFuncTypeIdx {
+impl ArenaKey for DedupFuncTypeIdx {
     fn into_usize(self) -> usize {
         self.0 as _
     }
@@ -83,7 +83,7 @@ impl FuncTypeRegistry {
     /// If the guarded entity is not owned by the engine.
     fn unwrap_or_panic<T>(&self, func_type: EngineOwned<T>) -> T
     where
-        T: ArenaIndex,
+        T: ArenaKey,
     {
         self.engine_id.unwrap(func_type).unwrap_or_else(|| {
             panic!(

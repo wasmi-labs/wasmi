@@ -3,7 +3,7 @@ use crate::{
     AsContextMut,
     Func,
     Global,
-    collections::arena::ArenaIndex,
+    collections::arena::ArenaKey,
     core::{CoreElementSegment, UntypedRef},
     module,
     store::Stored,
@@ -14,7 +14,7 @@ use alloc::boxed::Box;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ElementSegmentIdx(u32);
 
-impl ArenaIndex for ElementSegmentIdx {
+impl ArenaKey for ElementSegmentIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

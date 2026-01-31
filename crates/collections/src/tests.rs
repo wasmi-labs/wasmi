@@ -1,6 +1,6 @@
 use super::arena::*;
 
-impl ArenaIndex for usize {
+impl ArenaKey for usize {
     fn into_usize(self) -> usize {
         self
     }

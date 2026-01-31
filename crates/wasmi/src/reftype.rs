@@ -3,7 +3,7 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    collections::arena::ArenaIndex,
+    collections::arena::ArenaKey,
     core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
     store::Stored,
 };
@@ -68,7 +68,7 @@ impl<T> RefId<T> {
     }
 }
 
-impl<T> ArenaIndex for RefId<T> {
+impl<T> ArenaKey for RefId<T> {
     fn into_usize(self) -> usize {
         u32::from(self.id).wrapping_sub(1) as usize
     }

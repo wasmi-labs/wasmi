@@ -18,7 +18,7 @@ use crate::{
     TypedFunc,
     WasmParams,
     WasmResults,
-    collections::{Map, arena::ArenaIndex},
+    collections::{Map, arena::ArenaKey},
     func::FuncError,
     memory::DataSegment,
 };
@@ -34,7 +34,7 @@ mod tests;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InstanceIdx(u32);
 
-impl ArenaIndex for InstanceIdx {
+impl ArenaKey for InstanceIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }
