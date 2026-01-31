@@ -10,8 +10,8 @@ use core::{
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
 pub struct DedupArena<Key, T> {
-    entity2idx: Map<T, Key>,
-    entities: Arena<Key, T>,
+    item2key: Map<T, Key>,
+    items: Arena<Key, T>,
 }
 
 impl<Key, T> Default for DedupArena<Key, T> {
@@ -27,7 +27,7 @@ where
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.entities.eq(&other.entities)
+        self.items.eq(&other.items)
     }
 }
 
@@ -38,15 +38,15 @@ impl<Key, T> DedupArena<Key, T> {
     #[inline]
     pub fn new() -> Self {
         Self {
-            entity2idx: Map::new(),
-            entities: Arena::new(),
+            item2key: Map::new(),
+            items: Arena::new(),
         }
     }
 
     /// Returns the allocated number of entities.
     #[inline]
     pub fn len(&self) -> usize {
-        self.entities.len()
+        self.items.len()
     }
 
     /// Returns `true` if the [`Arena`] has not yet allocated entities.
@@ -58,20 +58,20 @@ impl<Key, T> DedupArena<Key, T> {
     /// Clears all entities from the arena.
     #[inline]
     pub fn clear(&mut self) {
-        self.entity2idx.clear();
-        self.entities.clear();
+        self.item2key.clear();
+        self.items.clear();
     }
 
     /// Returns an iterator over the shared reference of the [`Arena`] entities.
     #[inline]
     pub fn iter(&self) -> Iter<'_, Key, T> {
-        self.entities.iter()
+        self.items.iter()
     }
 
     /// Returns an iterator over the exclusive reference of the [`Arena`] entities.
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, Key, T> {
-        self.entities.iter_mut()
+        self.items.iter_mut()
     }
 }
 
@@ -86,14 +86,14 @@ where
     ///
     /// Only allocates if the entity does not already exist in the [`DedupArena`].
     pub fn alloc(&mut self, item: T) -> Result<Key, ArenaError> {
-        match self.entity2idx.entry(item.clone()) {
+        match self.item2key.entry(item.clone()) {
             map::Entry::Occupied(entry) => {
                 let key = *entry.get();
                 Ok(key)
             }
             map::Entry::Vacant(entry) => {
-                let key = self.entities.next_key()?;
-                self.entities.alloc(item)?;
+                let key = self.items.next_key()?;
+                self.items.alloc(item)?;
                 entry.insert(key);
                 Ok(key)
             }
@@ -103,13 +103,13 @@ where
     /// Returns a shared reference to the entity at the given key if any.
     #[inline]
     pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
-        self.entities.get(key)
+        self.items.get(key)
     }
 
     /// Returns an exclusive reference to the entity at the given key if any.
     #[inline]
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
-        self.entities.get_mut(key)
+        self.items.get_mut(key)
     }
 }
 
@@ -128,8 +128,8 @@ where
             .map(|(idx, entity)| (entity.clone(), idx))
             .collect::<Map<_, _>>();
         Self {
-            entity2idx,
-            entities,
+            item2key: entity2idx,
+            items: entities,
         }
     }
 }
@@ -168,7 +168,7 @@ where
 
     #[inline]
     fn index(&self, key: Key) -> &Self::Output {
-        &self.entities[key]
+        &self.items[key]
     }
 }
 
@@ -178,6 +178,6 @@ where
 {
     #[inline]
     fn index_mut(&mut self, key: Key) -> &mut Self::Output {
-        &mut self.entities[key]
+        &mut self.items[key]
     }
 }
