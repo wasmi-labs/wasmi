@@ -233,7 +233,7 @@ impl Stack {
         );
         let branch_slots_head = self.branch_slots(len_params);
         let branch_slots_len =
-            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.params()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls
             .push_loop(ty, block_height, branch_slots, label, consume_fuel);
