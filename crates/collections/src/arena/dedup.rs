@@ -87,6 +87,11 @@ where
     /// # Note
     ///
     /// Only allocates if the item does not already exist in the [`DedupArena`].
+    ///
+    /// # Errors
+    ///
+    /// - If there are no more valid keys left for allocation.
+    /// - If the system ran out of heap memory.
     pub fn alloc(&mut self, item: T) -> Result<Key, ArenaError> {
         match self.item2key.entry(item.clone()) {
             map::Entry::Occupied(entry) => {
@@ -103,12 +108,22 @@ where
     }
 
     /// Returns a shared reference to the item at the given key if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the `key` is out of bounds.
+    /// - If the `key` is invalid.
     #[inline]
     pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
         self.items.get(key)
     }
 
     /// Returns an exclusive reference to the item at the given key if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the `key` is out of bounds.
+    /// - If the `key` is invalid.
     #[inline]
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
         self.items.get_mut(key)

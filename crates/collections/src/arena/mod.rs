@@ -183,8 +183,11 @@ where
 
     /// Returns an exclusive reference to the pair of entities at the given indices if any.
     ///
-    /// Returns `None` if `fst` and `snd` refer to the same entity.
-    /// Returns `None` if either `fst` or `snd` is invalid for this [`Arena`].
+    /// # Errors
+    ///
+    /// - If `fst` and `snd` refer to the same item, a.k.a. aliasing each other.
+    /// - If `fst` or `snd` keys are invalid.
+    /// - If `fst` or `snd` is out of bounds for the arena.
     #[inline]
     pub fn get_pair_mut(&mut self, fst: Key, snd: Key) -> Result<(&mut T, &mut T), ArenaError> {
         let fst_key = fst.into_usize();
