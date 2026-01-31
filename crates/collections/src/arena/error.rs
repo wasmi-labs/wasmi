@@ -20,11 +20,11 @@ impl Error for ArenaError {}
 impl fmt::Display for ArenaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            ArenaError::OutOfSystemMemory => "ran out of system memory",
-            ArenaError::InvalidKey => "item access with invalid key",
-            ArenaError::OutOfBoundsKey => "encounteded out of bounds key",
-            ArenaError::NotEnoughKeys => "ran out of valid keys",
-            ArenaError::AliasingPairAccess => "tried to access aliasing item pair",
+            Self::OutOfSystemMemory => "ran out of system memory",
+            Self::InvalidKey => "item access with invalid key",
+            Self::OutOfBoundsKey => "encounteded out of bounds key",
+            Self::NotEnoughKeys => "ran out of valid keys",
+            Self::AliasingPairAccess => "tried to access aliasing item pair",
         };
         f.write_str(s)
     }
