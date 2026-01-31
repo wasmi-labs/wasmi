@@ -32,7 +32,9 @@ pub trait ArenaKey: Copy {
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
 pub struct Arena<Key, T> {
+    /// The items stored in the arena.
     items: Vec<T>,
+    /// Marker for the compiler to associate the `Key` type.
     marker: PhantomData<Key>,
 }
 
