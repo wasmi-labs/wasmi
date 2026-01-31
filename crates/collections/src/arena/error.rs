@@ -11,6 +11,8 @@ pub enum ArenaError {
     OutOfBoundsKey,
     /// Allocated too many items to an arena.
     NotEnoughKeys,
+    /// Tried to access aliasing item pair.
+    AliasingPairAccess,
 }
 
 impl Error for ArenaError {}
@@ -22,6 +24,7 @@ impl fmt::Display for ArenaError {
             ArenaError::InvalidKey => "item access with invalid key",
             ArenaError::OutOfBoundsKey => "encounteded out of bounds key",
             ArenaError::NotEnoughKeys => "ran out of valid keys",
+            ArenaError::AliasingPairAccess => "tried to access aliasing item pair",
         };
         f.write_str(s)
     }
