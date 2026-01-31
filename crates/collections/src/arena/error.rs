@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{error::Error, fmt};
 
 /// An error occurred when operating with [`Arena`](crate::Arena).
 #[derive(Debug)]
@@ -12,6 +12,8 @@ pub enum ArenaError {
     /// Allocated too many items to an arena.
     NotEnoughKeys,
 }
+
+impl Error for ArenaError {}
 
 impl fmt::Display for ArenaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
