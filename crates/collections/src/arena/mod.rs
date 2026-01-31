@@ -8,10 +8,10 @@ mod component_vec;
 mod dedup;
 mod error;
 
-pub use self::{component_vec::ComponentVec, dedup::DedupArena};
+pub use self::{component_vec::ComponentVec, dedup::DedupArena, error::ArenaError};
 use alloc::vec::Vec;
 use core::{
-    iter::Enumerate,
+    iter::{self, Enumerate},
     marker::PhantomData,
     ops::{Index, IndexMut, Range},
     slice,
@@ -22,10 +22,10 @@ pub trait ArenaKey: Copy {
     /// Converts the [`ArenaKey`] into the underlying `usize` value.
     fn into_usize(self) -> usize;
     /// Converts the `usize` value into the associated [`ArenaKey`].
-    fn from_usize(value: usize) -> Self;
+    fn from_usize(value: usize) -> Option<Self>;
 }
 
-/// An arena allocator with a given index and entity type.
+/// An arena allocator with a given key and entity type.
 ///
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
@@ -108,41 +108,73 @@ where
     Key: ArenaKey,
 {
     /// Returns the next entity index.
-    fn next_key(&self) -> Key {
-        Key::from_usize(self.entities.len())
+    ///
+    /// # Errors
+    ///
+    /// If there are no more valid keys left for allocation.
+    fn next_key(&self) -> Result<Key, ArenaError> {
+        Key::from_usize(self.entities.len()).ok_or(ArenaError::NotEnoughKeys)
     }
 
     /// Allocates a new entity and returns its index.
+    ///
+    /// # Errors
+    ///
+    /// - If there are no more valid keys left for allocation.
+    /// - If the system ran out of heap memory.
     #[inline]
-    pub fn alloc(&mut self, entity: T) -> Key {
-        let index = self.next_key();
+    pub fn alloc(&mut self, entity: T) -> Result<Key, ArenaError> {
+        let key = self.next_key()?;
+        self.entities
+            .try_reserve(1)
+            .map_err(|_| ArenaError::OutOfSystemMemory)?;
         self.entities.push(entity);
-        index
+        Ok(key)
     }
 
-    /// Allocates a new default initialized entity and returns its index.
+    /// Allocates `amount` default initialized entities and returns their keys.
+    ///
+    /// # Errors
+    ///
+    /// - If there are no more valid keys left for allocation.
+    /// - If the system ran out of heap memory.
     #[inline]
-    pub fn alloc_many(&mut self, amount: usize) -> Range<Key>
+    pub fn alloc_many(&mut self, amount: usize) -> Result<Range<Key>, ArenaError>
     where
         T: Default,
     {
-        let start = self.next_key();
+        let start = self.next_key()?;
         self.entities
-            .extend(core::iter::repeat_with(T::default).take(amount));
-        let end = self.next_key();
-        Range { start, end }
+            .try_reserve(amount)
+            .map_err(|_| ArenaError::OutOfSystemMemory)?;
+        self.entities
+            .extend(iter::repeat_with(T::default).take(amount));
+        let end = self.next_key()?;
+        Ok(Range { start, end })
     }
 
-    /// Returns a shared reference to the entity at the given index if any.
+    /// Returns a shared reference to the entity at the given key if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the `key` is out of bounds.
+    /// - If the `key` is invalid.
     #[inline]
-    pub fn get(&self, index: Key) -> Option<&T> {
-        self.entities.get(index.into_usize())
+    pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
+        let key = key.into_usize();
+        self.entities.get(key).ok_or(ArenaError::OutOfBoundsKey)
     }
 
-    /// Returns an exclusive reference to the entity at the given index if any.
+    /// Returns an exclusive reference to the entity at the given key if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the `key` is out of bounds.
+    /// - If the `key` is invalid.
     #[inline]
-    pub fn get_mut(&mut self, index: Key) -> Option<&mut T> {
-        self.entities.get_mut(index.into_usize())
+    pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
+        let key = key.into_usize();
+        self.entities.get_mut(key).ok_or(ArenaError::OutOfBoundsKey)
     }
 
     /// Returns an exclusive reference to the pair of entities at the given indices if any.
@@ -150,21 +182,23 @@ where
     /// Returns `None` if `fst` and `snd` refer to the same entity.
     /// Returns `None` if either `fst` or `snd` is invalid for this [`Arena`].
     #[inline]
-    pub fn get_pair_mut(&mut self, fst: Key, snd: Key) -> Option<(&mut T, &mut T)> {
-        let fst_index = fst.into_usize();
-        let snd_index = snd.into_usize();
-        if fst_index == snd_index {
-            return None;
+    pub fn get_pair_mut(&mut self, fst: Key, snd: Key) -> Result<(&mut T, &mut T), ArenaError> {
+        let fst_key = fst.into_usize();
+        let snd_key = snd.into_usize();
+        if fst_key == snd_key {
+            return Err(ArenaError::AliasingPairAccess);
         }
-        if fst_index > snd_index {
+        if fst_key > snd_key {
             let (fst, snd) = self.get_pair_mut(snd, fst)?;
-            return Some((snd, fst));
+            return Ok((snd, fst));
         }
-        // At this point we know that fst_index < snd_index.
-        let (fst_set, snd_set) = self.entities.split_at_mut(snd_index);
-        let fst = fst_set.get_mut(fst_index)?;
-        let snd = snd_set.get_mut(0)?;
-        Some((fst, snd))
+        debug_assert!(fst_key < snd_key);
+        let Some((fst_set, snd_set)) = self.entities.split_at_mut_checked(snd_key) else {
+            return Err(ArenaError::OutOfBoundsKey);
+        };
+        let fst = &mut fst_set[fst_key];
+        let snd = &mut snd_set[0];
+        Ok((fst, snd))
     }
 }
 
@@ -222,9 +256,12 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter
-            .next()
-            .map(|(idx, entity)| (Key::from_usize(idx), entity))
+        self.iter.next().map(|(key, entity)| {
+            let Some(key) = Key::from_usize(key) else {
+                unreachable!("arena can only contain valid keys")
+            };
+            (key, entity)
+        })
     }
 
     #[inline]
@@ -239,9 +276,12 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter
-            .next()
-            .map(|(idx, entity)| (Key::from_usize(idx), entity))
+        self.iter.next().map(|(key, entity)| {
+            let Some(key) = Key::from_usize(key) else {
+                unreachable!("arena can only contain valid keys")
+            };
+            (key, entity)
+        })
     }
 }
 
@@ -270,9 +310,12 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter
-            .next()
-            .map(|(idx, entity)| (Key::from_usize(idx), entity))
+        self.iter.next().map(|(key, entity)| {
+            let Some(key) = Key::from_usize(key) else {
+                unreachable!("arena can only contain valid keys")
+            };
+            (key, entity)
+        })
     }
 
     #[inline]
@@ -287,9 +330,12 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter
-            .next()
-            .map(|(idx, entity)| (Key::from_usize(idx), entity))
+        self.iter.next().map(|(key, entity)| {
+            let Some(key) = Key::from_usize(key) else {
+                unreachable!("arena can only contain valid keys")
+            };
+            (key, entity)
+        })
     }
 }
 
@@ -303,10 +349,15 @@ where
     }
 }
 
-impl<Key, T> Arena<Key, T> {
-    /// Panics with an index out of bounds message.
-    fn index_out_of_bounds(len: usize, index: usize) -> ! {
-        panic!("index out of bounds: the len is {len} but the index is {index}")
+impl<Key, T> Arena<Key, T>
+where
+    Key: ArenaKey,
+{
+    /// Panics with an key out of bounds message.
+    #[cold]
+    fn panic_index_access(error: ArenaError, len: usize, key: Key) -> ! {
+        let key = key.into_usize();
+        panic!("failed to access item at {key} of arena with len (= {len}): {error}")
     }
 }
 
@@ -317,9 +368,9 @@ where
     type Output = T;
 
     #[inline]
-    fn index(&self, index: Key) -> &Self::Output {
-        self.get(index)
-            .unwrap_or_else(|| Self::index_out_of_bounds(self.len(), index.into_usize()))
+    fn index(&self, key: Key) -> &Self::Output {
+        self.get(key)
+            .unwrap_or_else(|error| Self::panic_index_access(error, self.len(), key))
     }
 }
 
@@ -328,9 +379,9 @@ where
     Key: ArenaKey,
 {
     #[inline]
-    fn index_mut(&mut self, index: Key) -> &mut Self::Output {
+    fn index_mut(&mut self, key: Key) -> &mut Self::Output {
         let len = self.len();
-        self.get_mut(index)
-            .unwrap_or_else(|| Self::index_out_of_bounds(len, index.into_usize()))
+        self.get_mut(key)
+            .unwrap_or_else(|error| Self::panic_index_access(error, len, key))
     }
 }
