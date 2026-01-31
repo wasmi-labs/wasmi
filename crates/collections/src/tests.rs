@@ -5,8 +5,8 @@ impl ArenaKey for usize {
         self
     }
 
-    fn from_usize(value: usize) -> Self {
-        value
+    fn from_usize(value: usize) -> Option<Self> {
+        Some(value)
     }
 }
 
@@ -22,19 +22,19 @@ mod arena {
         assert!(arena.is_empty());
         // Fill arena and check invariants while doing so.
         for idx in 0..entities.len() {
-            assert!(arena.get(idx).is_none());
+            assert!(arena.get(idx).is_err());
         }
         for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.alloc(str), n);
+            assert_eq!(arena.alloc(str).ok(), Some(n));
         }
         // Check state of filled arena.
         assert_eq!(arena.len(), entities.len());
         assert!(!arena.is_empty());
         for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.get(n), Some(str));
+            assert_eq!(arena.get(n).ok(), Some(str));
             assert_eq!(&arena[n], str);
         }
-        assert_eq!(arena.get(arena.len()), None);
+        assert!(arena.get(arena.len()).is_err());
         // Return filled arena.
         arena
     }
@@ -52,9 +52,9 @@ mod arena {
         assert_eq!(arena.len(), 0);
         assert!(arena.is_empty());
         for idx in 0..arena.len() {
-            assert_eq!(arena.get(idx), None);
+            assert!(arena.get(idx).is_err());
         }
-        assert_eq!(arena.get(arena.len()), None);
+        assert!(arena.get(arena.len()).is_err());
     }
 
     #[test]
@@ -79,8 +79,8 @@ mod arena {
         let previous_len = arena.len();
         for (idx, str) in TEST_ENTITIES.iter().enumerate() {
             let offset = previous_len + idx;
-            assert_eq!(arena.alloc(str), offset);
-            assert_eq!(arena.get(offset), Some(str));
+            assert_eq!(arena.alloc(str).ok(), Some(offset));
+            assert_eq!(arena.get(offset).ok(), Some(str));
         }
         // Assert that the arena actually did increase in size since
         // there is no deduplication of equal entities.
