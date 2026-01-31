@@ -10,7 +10,7 @@ use crate::{
     Config,
     Error,
     TrapCode,
-    collections::arena::{Arena, ArenaIndex},
+    collections::arena::{Arena, ArenaKey},
     core::{Fuel, FuelCostsProvider},
     engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
     errors::FuelError,
@@ -59,7 +59,7 @@ impl EngineFunc {
     }
 }
 
-impl ArenaIndex for EngineFunc {
+impl ArenaKey for EngineFunc {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

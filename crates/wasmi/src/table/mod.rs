@@ -3,7 +3,7 @@ pub use self::{
     ty::TableType,
 };
 use super::{AsContext, AsContextMut, Stored};
-use crate::{Error, Ref, collections::arena::ArenaIndex, core::CoreTable, errors::TableError};
+use crate::{Error, Ref, collections::arena::ArenaKey, core::CoreTable, errors::TableError};
 
 mod element;
 mod ty;
@@ -12,7 +12,7 @@ mod ty;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableIdx(u32);
 
-impl ArenaIndex for TableIdx {
+impl ArenaKey for TableIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

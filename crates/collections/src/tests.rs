@@ -1,15 +1,5 @@
 use super::arena::*;
 
-impl ArenaIndex for usize {
-    fn into_usize(self) -> usize {
-        self
-    }
-
-    fn from_usize(value: usize) -> Self {
-        value
-    }
-}
-
 const TEST_ENTITIES: &[&str] = &["a", "b", "c", "d"];
 
 mod arena {
@@ -22,19 +12,19 @@ mod arena {
         assert!(arena.is_empty());
         // Fill arena and check invariants while doing so.
         for idx in 0..entities.len() {
-            assert!(arena.get(idx).is_none());
+            assert!(arena.get(idx).is_err());
         }
         for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.alloc(str), n);
+            assert_eq!(arena.alloc(str).ok(), Some(n));
         }
         // Check state of filled arena.
         assert_eq!(arena.len(), entities.len());
         assert!(!arena.is_empty());
         for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.get(n), Some(str));
+            assert_eq!(arena.get(n).ok(), Some(str));
             assert_eq!(&arena[n], str);
         }
-        assert_eq!(arena.get(arena.len()), None);
+        assert!(arena.get(arena.len()).is_err());
         // Return filled arena.
         arena
     }
@@ -52,9 +42,9 @@ mod arena {
         assert_eq!(arena.len(), 0);
         assert!(arena.is_empty());
         for idx in 0..arena.len() {
-            assert_eq!(arena.get(idx), None);
+            assert!(arena.get(idx).is_err());
         }
-        assert_eq!(arena.get(arena.len()), None);
+        assert!(arena.get(arena.len()).is_err());
     }
 
     #[test]
@@ -79,8 +69,8 @@ mod arena {
         let previous_len = arena.len();
         for (idx, str) in TEST_ENTITIES.iter().enumerate() {
             let offset = previous_len + idx;
-            assert_eq!(arena.alloc(str), offset);
-            assert_eq!(arena.get(offset), Some(str));
+            assert_eq!(arena.alloc(str).ok(), Some(offset));
+            assert_eq!(arena.get(offset).ok(), Some(str));
         }
         // Assert that the arena actually did increase in size since
         // there is no deduplication of equal entities.
@@ -98,19 +88,19 @@ mod dedup_arena {
         assert!(arena.is_empty());
         // Fill arena and check invariants while doing so.
         for idx in 0..entities.len() {
-            assert!(arena.get(idx).is_none());
+            assert!(arena.get(idx).is_err());
         }
         for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.alloc(str), n);
+            assert_eq!(arena.alloc(str).ok(), Some(n));
         }
         // Check state of filled arena.
         assert_eq!(arena.len(), entities.len());
         assert!(!arena.is_empty());
         for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.get(n), Some(str));
+            assert_eq!(arena.get(n).ok(), Some(str));
             assert_eq!(&arena[n], str);
         }
-        assert_eq!(arena.get(arena.len()), None);
+        assert!(arena.get(arena.len()).is_err());
         // Return filled arena.
         arena
     }
@@ -128,9 +118,9 @@ mod dedup_arena {
         assert_eq!(arena.len(), 0);
         assert!(arena.is_empty());
         for idx in 0..arena.len() {
-            assert_eq!(arena.get(idx), None);
+            assert!(arena.get(idx).is_err());
         }
-        assert_eq!(arena.get(arena.len()), None);
+        assert!(arena.get(arena.len()).is_err());
     }
 
     #[test]
@@ -151,9 +141,9 @@ mod dedup_arena {
         let mut arena = alloc_dedup_arena(TEST_ENTITIES);
         // Re-inserting the same entities into the filled arena will
         // yield back the same indices as their already allocated entities.
-        for (idx, str) in TEST_ENTITIES.iter().enumerate() {
-            assert_eq!(arena.alloc(str), idx);
-            assert_eq!(arena.get(idx), Some(str));
+        for (key, str) in TEST_ENTITIES.iter().enumerate() {
+            assert_eq!(arena.alloc(str).ok(), Some(key));
+            assert_eq!(arena.get(key).ok(), Some(str));
         }
         // Assert that the deduplicating arena did not increase in size.
         assert_eq!(arena.len(), TEST_ENTITIES.len());

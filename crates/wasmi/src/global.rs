@@ -3,7 +3,7 @@ use crate::{
     GlobalType,
     Mutability,
     Val,
-    collections::arena::ArenaIndex,
+    collections::arena::ArenaKey,
     core::CoreGlobal,
     errors::GlobalError,
 };
@@ -12,7 +12,7 @@ use crate::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GlobalIdx(u32);
 
-impl ArenaIndex for GlobalIdx {
+impl ArenaKey for GlobalIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

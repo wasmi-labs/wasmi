@@ -23,7 +23,7 @@ use crate::{
     Engine,
     Error,
     Val,
-    collections::arena::ArenaIndex,
+    collections::arena::ArenaKey,
     engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
     reftype::RefId,
 };
@@ -37,7 +37,7 @@ pub type FuncIdx = RefId<Func>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TrampolineIdx(usize);
 
-impl ArenaIndex for TrampolineIdx {
+impl ArenaKey for TrampolineIdx {
     fn into_usize(self) -> usize {
         self.0
     }

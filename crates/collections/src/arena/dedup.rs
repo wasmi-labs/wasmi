@@ -1,142 +1,159 @@
-use super::{Arena, ArenaIndex, Iter, IterMut};
+use super::{Arena, ArenaError, ArenaKey, Iter, IterMut};
 use crate::{Map, map};
 use core::{
     hash::Hash,
     ops::{Index, IndexMut},
 };
 
-/// A deduplicating arena allocator with a given index and entity type.
+/// A deduplicating arena allocator with a given key and item type.
 ///
-/// For performance reasons the arena cannot deallocate single entities.
+/// For performance reasons the arena cannot deallocate single items.
 #[derive(Debug)]
-pub struct DedupArena<Idx, T> {
-    entity2idx: Map<T, Idx>,
-    entities: Arena<Idx, T>,
+pub struct DedupArena<Key, T> {
+    /// Allows to track existence and key of a contained item.
+    item2key: Map<T, Key>,
+    /// The contained items of the deduplicating arena.
+    items: Arena<Key, T>,
 }
 
-impl<Idx, T> Default for DedupArena<Idx, T> {
+impl<Key, T> Default for DedupArena<Key, T> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Idx, T> PartialEq for DedupArena<Idx, T>
+impl<Key, T> PartialEq for DedupArena<Key, T>
 where
     T: PartialEq,
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.entities.eq(&other.entities)
+        self.items.eq(&other.items)
     }
 }
 
-impl<Idx, T> Eq for DedupArena<Idx, T> where T: Eq {}
+impl<Key, T> Eq for DedupArena<Key, T> where T: Eq {}
 
-impl<Idx, T> DedupArena<Idx, T> {
-    /// Creates a new empty deduplicating entity arena.
+impl<Key, T> DedupArena<Key, T> {
+    /// Creates a new empty deduplicating item arena.
     #[inline]
     pub fn new() -> Self {
         Self {
-            entity2idx: Map::new(),
-            entities: Arena::new(),
+            item2key: Map::new(),
+            items: Arena::new(),
         }
     }
 
-    /// Returns the allocated number of entities.
+    /// Returns the allocated number of items.
     #[inline]
     pub fn len(&self) -> usize {
-        self.entities.len()
+        self.items.len()
     }
 
-    /// Returns `true` if the [`Arena`] has not yet allocated entities.
+    /// Returns `true` if the [`Arena`] has not yet allocated items.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Clears all entities from the arena.
+    /// Clears all items from the arena.
     #[inline]
     pub fn clear(&mut self) {
-        self.entity2idx.clear();
-        self.entities.clear();
+        self.item2key.clear();
+        self.items.clear();
     }
 
-    /// Returns an iterator over the shared reference of the [`Arena`] entities.
+    /// Returns an iterator over the shared reference of the [`Arena`] items.
     #[inline]
-    pub fn iter(&self) -> Iter<'_, Idx, T> {
-        self.entities.iter()
+    pub fn iter(&self) -> Iter<'_, Key, T> {
+        self.items.iter()
     }
 
-    /// Returns an iterator over the exclusive reference of the [`Arena`] entities.
+    /// Returns an iterator over the exclusive reference of the [`Arena`] items.
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<'_, Idx, T> {
-        self.entities.iter_mut()
+    pub fn iter_mut(&mut self) -> IterMut<'_, Key, T> {
+        self.items.iter_mut()
     }
 }
 
-impl<Idx, T> DedupArena<Idx, T>
+impl<Key, T> DedupArena<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
     T: Hash + Ord + Clone,
 {
-    /// Allocates a new entity and returns its index.
+    /// Allocates a new item and returns its index.
     ///
     /// # Note
     ///
-    /// Only allocates if the entity does not already exist in the [`DedupArena`].
-    pub fn alloc(&mut self, entity: T) -> Idx {
-        match self.entity2idx.entry(entity.clone()) {
-            map::Entry::Occupied(entry) => *entry.get(),
+    /// Only allocates if the item does not already exist in the [`DedupArena`].
+    ///
+    /// # Errors
+    ///
+    /// - If there are no more valid keys left for allocation.
+    /// - If the system ran out of heap memory.
+    pub fn alloc(&mut self, item: T) -> Result<Key, ArenaError> {
+        match self.item2key.entry(item.clone()) {
+            map::Entry::Occupied(entry) => {
+                let key = *entry.get();
+                Ok(key)
+            }
             map::Entry::Vacant(entry) => {
-                let index = self.entities.next_index();
-                self.entities.alloc(entity);
-                entry.insert(index);
-                index
+                let key = self.items.next_key()?;
+                self.items.alloc(item)?;
+                entry.insert(key);
+                Ok(key)
             }
         }
     }
 
-    /// Returns a shared reference to the entity at the given index if any.
+    /// Returns a shared reference to the item at the given key if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the `key` is out of bounds.
+    /// - If the `key` is invalid.
     #[inline]
-    pub fn get(&self, index: Idx) -> Option<&T> {
-        self.entities.get(index)
+    pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
+        self.items.get(key)
     }
 
-    /// Returns an exclusive reference to the entity at the given index if any.
+    /// Returns an exclusive reference to the item at the given key if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the `key` is out of bounds.
+    /// - If the `key` is invalid.
     #[inline]
-    pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
-        self.entities.get_mut(index)
+    pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
+        self.items.get_mut(key)
     }
 }
 
-impl<Idx, T> FromIterator<T> for DedupArena<Idx, T>
+impl<Key, T> FromIterator<T> for DedupArena<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
     T: Hash + Clone + Ord,
 {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = T>,
     {
-        let entities = Arena::from_iter(iter);
-        let entity2idx = entities
+        let items = Arena::from_iter(iter);
+        let item2key = items
             .iter()
-            .map(|(idx, entity)| (entity.clone(), idx))
+            .map(|(key, item)| (item.clone(), key))
             .collect::<Map<_, _>>();
-        Self {
-            entity2idx,
-            entities,
-        }
+        Self { item2key, items }
     }
 }
 
-impl<'a, Idx, T> IntoIterator for &'a DedupArena<Idx, T>
+impl<'a, Key, T> IntoIterator for &'a DedupArena<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
-    type Item = (Idx, &'a T);
-    type IntoIter = Iter<'a, Idx, T>;
+    type Item = (Key, &'a T);
+    type IntoIter = Iter<'a, Key, T>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -144,12 +161,12 @@ where
     }
 }
 
-impl<'a, Idx, T> IntoIterator for &'a mut DedupArena<Idx, T>
+impl<'a, Key, T> IntoIterator for &'a mut DedupArena<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
-    type Item = (Idx, &'a mut T);
-    type IntoIter = IterMut<'a, Idx, T>;
+    type Item = (Key, &'a mut T);
+    type IntoIter = IterMut<'a, Key, T>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -157,24 +174,24 @@ where
     }
 }
 
-impl<Idx, T> Index<Idx> for DedupArena<Idx, T>
+impl<Key, T> Index<Key> for DedupArena<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
     type Output = T;
 
     #[inline]
-    fn index(&self, index: Idx) -> &Self::Output {
-        &self.entities[index]
+    fn index(&self, key: Key) -> &Self::Output {
+        &self.items[key]
     }
 }
 
-impl<Idx, T> IndexMut<Idx> for DedupArena<Idx, T>
+impl<Key, T> IndexMut<Key> for DedupArena<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
     #[inline]
-    fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
-        &mut self.entities[index]
+    fn index_mut(&mut self, key: Key) -> &mut Self::Output {
+        &mut self.items[key]
     }
 }
