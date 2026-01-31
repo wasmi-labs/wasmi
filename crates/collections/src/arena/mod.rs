@@ -32,7 +32,7 @@ pub trait ArenaKey: Copy {
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
 pub struct Arena<Key, T> {
-    entities: Vec<T>,
+    items: Vec<T>,
     marker: PhantomData<Key>,
 }
 
@@ -53,7 +53,7 @@ where
     T: PartialEq,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.entities.eq(&other.entities)
+        self.items.eq(&other.items)
     }
 }
 
@@ -63,7 +63,7 @@ impl<Key, T> Arena<Key, T> {
     /// Creates a new empty entity [`Arena`].
     pub fn new() -> Self {
         Self {
-            entities: Vec::new(),
+            items: Vec::new(),
             marker: PhantomData,
         }
     }
@@ -71,7 +71,7 @@ impl<Key, T> Arena<Key, T> {
     /// Returns the allocated number of entities.
     #[inline]
     pub fn len(&self) -> usize {
-        self.entities.len()
+        self.items.len()
     }
 
     /// Returns `true` if the arena has not yet allocated entities.
@@ -83,14 +83,14 @@ impl<Key, T> Arena<Key, T> {
     /// Clears all entities from the arena.
     #[inline]
     pub fn clear(&mut self) {
-        self.entities.clear();
+        self.items.clear();
     }
 
     /// Returns an iterator over the shared reference of the arena entities.
     #[inline]
     pub fn iter(&self) -> Iter<'_, Key, T> {
         Iter {
-            iter: self.entities.iter().enumerate(),
+            iter: self.items.iter().enumerate(),
             marker: PhantomData,
         }
     }
@@ -99,7 +99,7 @@ impl<Key, T> Arena<Key, T> {
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, Key, T> {
         IterMut {
-            iter: self.entities.iter_mut().enumerate(),
+            iter: self.items.iter_mut().enumerate(),
             marker: PhantomData,
         }
     }
@@ -115,7 +115,7 @@ where
     ///
     /// If there are no more valid keys left for allocation.
     fn next_key(&self) -> Result<Key, ArenaError> {
-        Key::from_usize(self.entities.len()).ok_or(ArenaError::NotEnoughKeys)
+        Key::from_usize(self.items.len()).ok_or(ArenaError::NotEnoughKeys)
     }
 
     /// Allocates a new entity and returns its index.
@@ -127,10 +127,10 @@ where
     #[inline]
     pub fn alloc(&mut self, entity: T) -> Result<Key, ArenaError> {
         let key = self.next_key()?;
-        self.entities
+        self.items
             .try_reserve(1)
             .map_err(|_| ArenaError::OutOfSystemMemory)?;
-        self.entities.push(entity);
+        self.items.push(entity);
         Ok(key)
     }
 
@@ -146,10 +146,10 @@ where
         T: Default,
     {
         let start = self.next_key()?;
-        self.entities
+        self.items
             .try_reserve(amount)
             .map_err(|_| ArenaError::OutOfSystemMemory)?;
-        self.entities
+        self.items
             .extend(iter::repeat_with(T::default).take(amount));
         let end = self.next_key()?;
         Ok(Range { start, end })
@@ -164,7 +164,7 @@ where
     #[inline]
     pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
         let key = key.into_usize();
-        self.entities.get(key).ok_or(ArenaError::OutOfBoundsKey)
+        self.items.get(key).ok_or(ArenaError::OutOfBoundsKey)
     }
 
     /// Returns an exclusive reference to the entity at the given key if any.
@@ -176,7 +176,7 @@ where
     #[inline]
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
         let key = key.into_usize();
-        self.entities.get_mut(key).ok_or(ArenaError::OutOfBoundsKey)
+        self.items.get_mut(key).ok_or(ArenaError::OutOfBoundsKey)
     }
 
     /// Returns an exclusive reference to the pair of entities at the given indices if any.
@@ -195,7 +195,7 @@ where
             return Ok((snd, fst));
         }
         debug_assert!(fst_key < snd_key);
-        let Some((fst_set, snd_set)) = self.entities.split_at_mut_checked(snd_key) else {
+        let Some((fst_set, snd_set)) = self.items.split_at_mut_checked(snd_key) else {
             return Err(ArenaError::OutOfBoundsKey);
         };
         let fst = &mut fst_set[fst_key];
@@ -211,7 +211,7 @@ impl<Key, T> FromIterator<T> for Arena<Key, T> {
         I: IntoIterator<Item = T>,
     {
         Self {
-            entities: Vec::from_iter(iter),
+            items: Vec::from_iter(iter),
             marker: PhantomData,
         }
     }
