@@ -5,12 +5,14 @@ use core::{
     ops::{Index, IndexMut},
 };
 
-/// A deduplicating arena allocator with a given index and entity type.
+/// A deduplicating arena allocator with a given key and item type.
 ///
-/// For performance reasons the arena cannot deallocate single entities.
+/// For performance reasons the arena cannot deallocate single items.
 #[derive(Debug)]
 pub struct DedupArena<Key, T> {
+    /// Allows to track existence and key of a contained item.
     item2key: Map<T, Key>,
+    /// The contained items of the deduplicating arena.
     items: Arena<Key, T>,
 }
 
@@ -34,7 +36,7 @@ where
 impl<Key, T> Eq for DedupArena<Key, T> where T: Eq {}
 
 impl<Key, T> DedupArena<Key, T> {
-    /// Creates a new empty deduplicating entity arena.
+    /// Creates a new empty deduplicating item arena.
     #[inline]
     pub fn new() -> Self {
         Self {
@@ -80,11 +82,11 @@ where
     Key: ArenaKey,
     T: Hash + Ord + Clone,
 {
-    /// Allocates a new entity and returns its index.
+    /// Allocates a new item and returns its index.
     ///
     /// # Note
     ///
-    /// Only allocates if the entity does not already exist in the [`DedupArena`].
+    /// Only allocates if the item does not already exist in the [`DedupArena`].
     pub fn alloc(&mut self, item: T) -> Result<Key, ArenaError> {
         match self.item2key.entry(item.clone()) {
             map::Entry::Occupied(entry) => {
@@ -100,13 +102,13 @@ where
         }
     }
 
-    /// Returns a shared reference to the entity at the given key if any.
+    /// Returns a shared reference to the item at the given key if any.
     #[inline]
     pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
         self.items.get(key)
     }
 
-    /// Returns an exclusive reference to the entity at the given key if any.
+    /// Returns an exclusive reference to the item at the given key if any.
     #[inline]
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
         self.items.get_mut(key)
@@ -123,12 +125,12 @@ where
         I: IntoIterator<Item = T>,
     {
         let entities = Arena::from_iter(iter);
-        let entity2idx = entities
+        let item2idx = entities
             .iter()
-            .map(|(idx, entity)| (entity.clone(), idx))
+            .map(|(idx, item)| (item.clone(), idx))
             .collect::<Map<_, _>>();
         Self {
-            item2key: entity2idx,
+            item2key: item2idx,
             items: entities,
         }
     }
