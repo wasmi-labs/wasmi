@@ -6,6 +6,7 @@
 
 mod component_vec;
 mod dedup;
+mod error;
 
 pub use self::{component_vec::ComponentVec, dedup::DedupArena};
 use alloc::vec::Vec;
