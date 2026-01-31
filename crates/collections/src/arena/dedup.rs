@@ -45,32 +45,32 @@ impl<Key, T> DedupArena<Key, T> {
         }
     }
 
-    /// Returns the allocated number of entities.
+    /// Returns the allocated number of items.
     #[inline]
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
-    /// Returns `true` if the [`Arena`] has not yet allocated entities.
+    /// Returns `true` if the [`Arena`] has not yet allocated items.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Clears all entities from the arena.
+    /// Clears all items from the arena.
     #[inline]
     pub fn clear(&mut self) {
         self.item2key.clear();
         self.items.clear();
     }
 
-    /// Returns an iterator over the shared reference of the [`Arena`] entities.
+    /// Returns an iterator over the shared reference of the [`Arena`] items.
     #[inline]
     pub fn iter(&self) -> Iter<'_, Key, T> {
         self.items.iter()
     }
 
-    /// Returns an iterator over the exclusive reference of the [`Arena`] entities.
+    /// Returns an iterator over the exclusive reference of the [`Arena`] items.
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, Key, T> {
         self.items.iter_mut()
@@ -124,15 +124,12 @@ where
     where
         I: IntoIterator<Item = T>,
     {
-        let entities = Arena::from_iter(iter);
-        let item2idx = entities
+        let items = Arena::from_iter(iter);
+        let item2key = items
             .iter()
-            .map(|(idx, item)| (item.clone(), idx))
+            .map(|(key, item)| (item.clone(), key))
             .collect::<Map<_, _>>();
-        Self {
-            item2key: item2idx,
-            items: entities,
-        }
+        Self { item2key, items }
     }
 }
 
