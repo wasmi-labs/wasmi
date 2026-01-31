@@ -29,24 +29,24 @@ pub trait ArenaKey: Copy {
 ///
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
-pub struct Arena<Idx, T> {
+pub struct Arena<Key, T> {
     entities: Vec<T>,
-    marker: PhantomData<Idx>,
+    marker: PhantomData<Key>,
 }
 
-/// [`Arena`] does not store `Idx` therefore it is `Send` without its bound.
-unsafe impl<Idx, T> Send for Arena<Idx, T> where T: Send {}
+/// [`Arena`] does not store `Key` therefore it is `Send` without its bound.
+unsafe impl<Key, T> Send for Arena<Key, T> where T: Send {}
 
-/// [`Arena`] does not store `Idx` therefore it is `Sync` without its bound.
-unsafe impl<Idx, T> Sync for Arena<Idx, T> where T: Sync {}
+/// [`Arena`] does not store `Key` therefore it is `Sync` without its bound.
+unsafe impl<Key, T> Sync for Arena<Key, T> where T: Sync {}
 
-impl<Idx, T> Default for Arena<Idx, T> {
+impl<Key, T> Default for Arena<Key, T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Idx, T> PartialEq for Arena<Idx, T>
+impl<Key, T> PartialEq for Arena<Key, T>
 where
     T: PartialEq,
 {
@@ -55,9 +55,9 @@ where
     }
 }
 
-impl<Idx, T> Eq for Arena<Idx, T> where T: Eq {}
+impl<Key, T> Eq for Arena<Key, T> where T: Eq {}
 
-impl<Idx, T> Arena<Idx, T> {
+impl<Key, T> Arena<Key, T> {
     /// Creates a new empty entity [`Arena`].
     pub fn new() -> Self {
         Self {
@@ -86,7 +86,7 @@ impl<Idx, T> Arena<Idx, T> {
 
     /// Returns an iterator over the shared reference of the arena entities.
     #[inline]
-    pub fn iter(&self) -> Iter<'_, Idx, T> {
+    pub fn iter(&self) -> Iter<'_, Key, T> {
         Iter {
             iter: self.entities.iter().enumerate(),
             marker: PhantomData,
@@ -95,7 +95,7 @@ impl<Idx, T> Arena<Idx, T> {
 
     /// Returns an iterator over the exclusive reference of the arena entities.
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<'_, Idx, T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Key, T> {
         IterMut {
             iter: self.entities.iter_mut().enumerate(),
             marker: PhantomData,
@@ -103,18 +103,18 @@ impl<Idx, T> Arena<Idx, T> {
     }
 }
 
-impl<Idx, T> Arena<Idx, T>
+impl<Key, T> Arena<Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     /// Returns the next entity index.
-    fn next_index(&self) -> Idx {
-        Idx::from_usize(self.entities.len())
+    fn next_index(&self) -> Key {
+        Key::from_usize(self.entities.len())
     }
 
     /// Allocates a new entity and returns its index.
     #[inline]
-    pub fn alloc(&mut self, entity: T) -> Idx {
+    pub fn alloc(&mut self, entity: T) -> Key {
         let index = self.next_index();
         self.entities.push(entity);
         index
@@ -122,7 +122,7 @@ where
 
     /// Allocates a new default initialized entity and returns its index.
     #[inline]
-    pub fn alloc_many(&mut self, amount: usize) -> Range<Idx>
+    pub fn alloc_many(&mut self, amount: usize) -> Range<Key>
     where
         T: Default,
     {
@@ -135,13 +135,13 @@ where
 
     /// Returns a shared reference to the entity at the given index if any.
     #[inline]
-    pub fn get(&self, index: Idx) -> Option<&T> {
+    pub fn get(&self, index: Key) -> Option<&T> {
         self.entities.get(index.into_usize())
     }
 
     /// Returns an exclusive reference to the entity at the given index if any.
     #[inline]
-    pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
+    pub fn get_mut(&mut self, index: Key) -> Option<&mut T> {
         self.entities.get_mut(index.into_usize())
     }
 
@@ -150,7 +150,7 @@ where
     /// Returns `None` if `fst` and `snd` refer to the same entity.
     /// Returns `None` if either `fst` or `snd` is invalid for this [`Arena`].
     #[inline]
-    pub fn get_pair_mut(&mut self, fst: Idx, snd: Idx) -> Option<(&mut T, &mut T)> {
+    pub fn get_pair_mut(&mut self, fst: Key, snd: Key) -> Option<(&mut T, &mut T)> {
         let fst_index = fst.into_usize();
         let snd_index = snd.into_usize();
         if fst_index == snd_index {
@@ -168,7 +168,7 @@ where
     }
 }
 
-impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
+impl<Key, T> FromIterator<T> for Arena<Key, T> {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
@@ -181,12 +181,12 @@ impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
     }
 }
 
-impl<'a, Idx, T> IntoIterator for &'a Arena<Idx, T>
+impl<'a, Key, T> IntoIterator for &'a Arena<Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
-    type Item = (Idx, &'a T);
-    type IntoIter = Iter<'a, Idx, T>;
+    type Item = (Key, &'a T);
+    type IntoIter = Iter<'a, Key, T>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -194,12 +194,12 @@ where
     }
 }
 
-impl<'a, Idx, T> IntoIterator for &'a mut Arena<Idx, T>
+impl<'a, Key, T> IntoIterator for &'a mut Arena<Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
-    type Item = (Idx, &'a mut T);
-    type IntoIter = IterMut<'a, Idx, T>;
+    type Item = (Key, &'a mut T);
+    type IntoIter = IterMut<'a, Key, T>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -209,22 +209,22 @@ where
 
 /// An iterator over shared references of arena entities and their indices.
 #[derive(Debug)]
-pub struct Iter<'a, Idx, T> {
+pub struct Iter<'a, Key, T> {
     iter: Enumerate<slice::Iter<'a, T>>,
-    marker: PhantomData<fn() -> Idx>,
+    marker: PhantomData<fn() -> Key>,
 }
 
-impl<'a, Idx, T> Iterator for Iter<'a, Idx, T>
+impl<'a, Key, T> Iterator for Iter<'a, Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
-    type Item = (Idx, &'a T);
+    type Item = (Key, &'a T);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
-            .map(|(idx, entity)| (Idx::from_usize(idx), entity))
+            .map(|(idx, entity)| (Key::from_usize(idx), entity))
     }
 
     #[inline]
@@ -233,21 +233,21 @@ where
     }
 }
 
-impl<Idx, T> DoubleEndedIterator for Iter<'_, Idx, T>
+impl<Key, T> DoubleEndedIterator for Iter<'_, Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
-            .map(|(idx, entity)| (Idx::from_usize(idx), entity))
+            .map(|(idx, entity)| (Key::from_usize(idx), entity))
     }
 }
 
-impl<Idx, T> ExactSizeIterator for Iter<'_, Idx, T>
+impl<Key, T> ExactSizeIterator for Iter<'_, Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     #[inline]
     fn len(&self) -> usize {
@@ -257,22 +257,22 @@ where
 
 /// An iterator over exclusive references of arena entities and their indices.
 #[derive(Debug)]
-pub struct IterMut<'a, Idx, T> {
+pub struct IterMut<'a, Key, T> {
     iter: Enumerate<slice::IterMut<'a, T>>,
-    marker: PhantomData<fn() -> Idx>,
+    marker: PhantomData<fn() -> Key>,
 }
 
-impl<'a, Idx, T> Iterator for IterMut<'a, Idx, T>
+impl<'a, Key, T> Iterator for IterMut<'a, Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
-    type Item = (Idx, &'a mut T);
+    type Item = (Key, &'a mut T);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
-            .map(|(idx, entity)| (Idx::from_usize(idx), entity))
+            .map(|(idx, entity)| (Key::from_usize(idx), entity))
     }
 
     #[inline]
@@ -281,21 +281,21 @@ where
     }
 }
 
-impl<Idx, T> DoubleEndedIterator for IterMut<'_, Idx, T>
+impl<Key, T> DoubleEndedIterator for IterMut<'_, Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
-            .map(|(idx, entity)| (Idx::from_usize(idx), entity))
+            .map(|(idx, entity)| (Key::from_usize(idx), entity))
     }
 }
 
-impl<Idx, T> ExactSizeIterator for IterMut<'_, Idx, T>
+impl<Key, T> ExactSizeIterator for IterMut<'_, Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     #[inline]
     fn len(&self) -> usize {
@@ -303,32 +303,32 @@ where
     }
 }
 
-impl<Idx, T> Arena<Idx, T> {
+impl<Key, T> Arena<Key, T> {
     /// Panics with an index out of bounds message.
     fn index_out_of_bounds(len: usize, index: usize) -> ! {
         panic!("index out of bounds: the len is {len} but the index is {index}")
     }
 }
 
-impl<Idx, T> Index<Idx> for Arena<Idx, T>
+impl<Key, T> Index<Key> for Arena<Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     type Output = T;
 
     #[inline]
-    fn index(&self, index: Idx) -> &Self::Output {
+    fn index(&self, index: Key) -> &Self::Output {
         self.get(index)
             .unwrap_or_else(|| Self::index_out_of_bounds(self.len(), index.into_usize()))
     }
 }
 
-impl<Idx, T> IndexMut<Idx> for Arena<Idx, T>
+impl<Key, T> IndexMut<Key> for Arena<Key, T>
 where
-    Idx: ArenaKey,
+    Key: ArenaKey,
 {
     #[inline]
-    fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
+    fn index_mut(&mut self, index: Key) -> &mut Self::Output {
         let len = self.len();
         self.get_mut(index)
             .unwrap_or_else(|| Self::index_out_of_bounds(len, index.into_usize()))
