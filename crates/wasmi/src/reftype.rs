@@ -70,22 +70,11 @@ impl<T> RefId<T> {
 
 impl<T> ArenaKey for RefId<T> {
     fn into_usize(self) -> usize {
-        u32::from(self.id).wrapping_sub(1) as usize
+        self.id.into_usize()
     }
 
-    fn from_usize(index: usize) -> Self {
-        index
-            .try_into()
-            .ok()
-            .map(|index: u32| index.wrapping_add(1))
-            .and_then(<NonZero<u32>>::new)
-            .map(Self::new)
-            .unwrap_or_else(|| {
-                panic!(
-                    "out of bounds ID for `RawRefId<{}>`: {index}",
-                    any::type_name::<T>()
-                )
-            })
+    fn from_usize(index: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(index).map(Self::new)
     }
 }
 

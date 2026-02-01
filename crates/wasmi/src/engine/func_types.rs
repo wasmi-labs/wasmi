@@ -10,14 +10,11 @@ struct DedupFuncTypeIdx(u32);
 
 impl ArenaKey for DedupFuncTypeIdx {
     fn into_usize(self) -> usize {
-        self.0 as _
+        self.0.into_usize()
     }
 
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as dedup func type index: {error}")
-        });
-        Self(value)
+    fn from_usize(value: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(value).map(Self)
     }
 }
 

@@ -42,8 +42,8 @@ impl ArenaKey for TrampolineIdx {
         self.0
     }
 
-    fn from_usize(index: usize) -> Self {
-        Self(index)
+    fn from_usize(value: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(value).map(Self)
     }
 }
 

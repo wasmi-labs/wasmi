@@ -61,14 +61,11 @@ impl EngineFunc {
 
 impl ArenaKey for EngineFunc {
     fn into_usize(self) -> usize {
-        self.0 as usize
+        self.0.into_usize()
     }
 
-    fn from_usize(index: usize) -> Self {
-        let Ok(index) = u32::try_from(index) else {
-            panic!("out of bounds compiled func index: {index}")
-        };
-        Self(index)
+    fn from_usize(value: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(value).map(Self)
     }
 }
 
