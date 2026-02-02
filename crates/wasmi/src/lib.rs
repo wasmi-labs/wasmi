@@ -92,6 +92,8 @@ mod foreach_tuple;
 pub mod tests;
 
 mod engine;
+#[macro_use]
+mod store;
 mod error;
 mod func;
 mod global;
@@ -101,8 +103,6 @@ mod linker;
 mod memory;
 mod module;
 mod reftype;
-#[macro_use]
-mod store;
 mod table;
 mod value;
 
@@ -206,7 +206,6 @@ pub use self::{
 };
 use self::{
     func::{FuncEntity, FuncIdx},
-    global::GlobalIdx,
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
     store::Stored,

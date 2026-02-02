@@ -10,7 +10,6 @@ use crate::{
     FuncIdx,
     FuncType,
     Global,
-    GlobalIdx,
     Instance,
     InstanceEntity,
     InstanceIdx,
@@ -87,7 +86,7 @@ pub struct StoreInner {
     /// Stored tables.
     tables: StoreArena<Table>,
     /// Stored global variables.
-    globals: Arena<GlobalIdx, CoreGlobal>,
+    globals: StoreArena<Global>,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// Stored data segments.
@@ -207,7 +206,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc global"),
         };
-        Global::from_inner(self.id.wrap(key))
+        Global::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
@@ -388,7 +387,7 @@ impl StoreInner {
     /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn try_resolve_global(&self, global: &Global) -> Result<&CoreGlobal, InternalStoreError> {
-        self.resolve(global.as_inner(), &self.globals)
+        self.resolve(global.raw(), &self.globals)
     }
 
     /// Returns an exclusive reference to the [`CoreGlobal`] associated to the given [`Global`].
@@ -401,7 +400,7 @@ impl StoreInner {
         &mut self,
         global: &Global,
     ) -> Result<&mut CoreGlobal, InternalStoreError> {
-        let idx = self.unwrap_stored(global.as_inner())?;
+        let idx = self.unwrap_stored(global.raw())?;
         Self::resolve_mut(*idx, &mut self.globals)
     }
 

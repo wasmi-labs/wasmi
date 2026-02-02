@@ -1,49 +1,12 @@
-use super::{AsContext, AsContextMut, Stored};
-use crate::{
-    GlobalType,
-    Mutability,
-    Val,
-    collections::arena::ArenaKey,
-    core::CoreGlobal,
-    errors::GlobalError,
-};
+use super::{AsContext, AsContextMut};
+use crate::{GlobalType, Mutability, Val, core::CoreGlobal, errors::GlobalError};
 
-/// A raw index to a global variable entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GlobalIdx(u32);
-
-impl ArenaKey for GlobalIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    /// A Wasm global variable reference.
+    struct Global(u32) => CoreGlobal;
 }
 
-/// A Wasm global variable reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Global(Stored<GlobalIdx>);
-
 impl Global {
-    /// Creates a new stored global variable reference.
-    ///
-    /// # Note
-    ///
-    /// This API is primarily used by the [`Store`] itself.
-    ///
-    /// [`Store`]: [`crate::Store`]
-    pub(super) fn from_inner(stored: Stored<GlobalIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<GlobalIdx> {
-        &self.0
-    }
-
     /// Creates a new global variable to the store.
     pub fn new(mut ctx: impl AsContextMut, initial_value: Val, mutability: Mutability) -> Self {
         ctx.as_context_mut()
