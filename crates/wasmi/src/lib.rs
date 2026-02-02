@@ -101,6 +101,7 @@ mod linker;
 mod memory;
 mod module;
 mod reftype;
+#[macro_use]
 mod store;
 mod table;
 mod value;
