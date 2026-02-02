@@ -18,7 +18,7 @@ use crate::{
     MemoryIdx,
     Table,
     TableIdx,
-    collections::arena::{Arena, ArenaKey},
+    collections::arena::{Arena, ArenaError, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
@@ -197,40 +197,66 @@ impl StoreInner {
             None => Err(InternalStoreError::store_mismatch()),
         }
     }
+}
 
+/// Generically handle an [`ArenaError`] given a contextual message.
+#[cold]
+fn handle_arena_err(err: ArenaError, context: &str) -> ! {
+    panic!("{context}: {err}")
+}
+
+impl StoreInner {
     /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
     pub fn alloc_global(&mut self, value: CoreGlobal) -> Global {
-        let key = self.globals.alloc(value);
+        let key = match self.globals.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc global"),
+        };
         Global::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
     pub fn alloc_table(&mut self, value: CoreTable) -> Table {
-        let key = self.tables.alloc(value);
+        let key = match self.tables.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc table"),
+        };
         Table::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
     pub fn alloc_memory(&mut self, value: CoreMemory) -> Memory {
-        let key = self.memories.alloc(value);
+        let key = match self.memories.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc memory"),
+        };
         Memory::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
     pub fn alloc_data_segment(&mut self, value: DataSegmentEntity) -> DataSegment {
-        let key = self.datas.alloc(value);
+        let key = match self.datas.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc data segment"),
+        };
         DataSegment::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
     pub fn alloc_element_segment(&mut self, value: CoreElementSegment) -> ElementSegment {
-        let key = self.elems.alloc(value);
+        let key = match self.elems.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc element segment"),
+        };
         ElementSegment::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
     pub fn alloc_extern_object(&mut self, value: ExternRefEntity) -> ExternRef {
-        let key = self.extern_objects.alloc(value);
+        let key = match self.extern_objects.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc extern object"),
+        };
         ExternRef::from_inner(self.id.wrap(key))
     }
 
