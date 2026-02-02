@@ -229,7 +229,7 @@ where
     #[inline]
     pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
         let key = key.into_usize();
-        self.items.get(key).ok_or(ArenaError::OutOfBoundsKey)
+        self.items.get(key).ok_or(ArenaError::KeyOutOfBounds)
     }
 
     /// Returns an exclusive reference to the entity at the given key if any.
@@ -240,7 +240,7 @@ where
     #[inline]
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
         let key = key.into_usize();
-        self.items.get_mut(key).ok_or(ArenaError::OutOfBoundsKey)
+        self.items.get_mut(key).ok_or(ArenaError::KeyOutOfBounds)
     }
 
     /// Returns an exclusive reference to the pair of entities at the given indices if any.
@@ -262,7 +262,7 @@ where
         }
         debug_assert!(fst_key < snd_key);
         let Some((fst_set, snd_set)) = self.items.split_at_mut_checked(snd_key) else {
-            return Err(ArenaError::OutOfBoundsKey);
+            return Err(ArenaError::KeyOutOfBounds);
         };
         let fst = &mut fst_set[fst_key];
         let snd = &mut snd_set[0];
