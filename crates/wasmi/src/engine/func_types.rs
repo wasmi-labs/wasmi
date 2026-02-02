@@ -92,7 +92,11 @@ impl FuncTypeRegistry {
 
     /// Allocates a new function type to the engine.
     pub(crate) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        DedupFuncType(self.engine_id.wrap(self.func_types.alloc(func_type)))
+        let key = match self.func_types.alloc(func_type) {
+            Ok(key) => key,
+            Err(err) => panic!("failed to alloc func type: {err}"),
+        };
+        DedupFuncType(self.engine_id.wrap(key))
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -101,10 +105,10 @@ impl FuncTypeRegistry {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(crate) fn resolve_func_type(&self, func_type: &DedupFuncType) -> &FuncType {
-        let entity_index = self.unwrap_or_panic(func_type.0);
+    pub(crate) fn resolve_func_type(&self, key: &DedupFuncType) -> &FuncType {
+        let raw_key = self.unwrap_or_panic(key.0);
         self.func_types
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored function type: {entity_index:?}"))
+            .get(raw_key)
+            .unwrap_or_else(|err| panic!("failed to resolve function type at {key:?}: {err}"))
     }
 }
