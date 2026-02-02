@@ -210,7 +210,7 @@ use self::{
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
     store::Stored,
-    table::{ElementSegment, ElementSegmentIdx, TableIdx},
+    table::{ElementSegment, ElementSegmentIdx},
 };
 pub use wasmi_core::{
     F32,

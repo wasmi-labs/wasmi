@@ -2,42 +2,25 @@ pub use self::{
     element::{ElementSegment, ElementSegmentIdx},
     ty::TableType,
 };
-use super::{AsContext, AsContextMut, Stored};
-use crate::{Error, Ref, collections::arena::ArenaKey, core::CoreTable, errors::TableError};
+use crate::{
+    AsContext,
+    AsContextMut,
+    Error,
+    Ref,
+    core::CoreTable,
+    errors::TableError,
+    store::Handle,
+};
 
 mod element;
 mod ty;
 
-/// A raw index to a table entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TableIdx(u32);
-
-impl ArenaKey for TableIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    /// A Wasm table reference.
+    struct Table(u32) => CoreTable;
 }
 
-/// A Wasm table reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Table(Stored<TableIdx>);
-
 impl Table {
-    /// Creates a new table reference.
-    pub(super) fn from_inner(stored: Stored<TableIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<TableIdx> {
-        &self.0
-    }
-
     /// Creates a new table to the store.
     ///
     /// # Errors
@@ -169,7 +152,7 @@ impl Table {
     /// intentionally keep this API hidden from users.
     #[inline]
     pub(crate) fn eq(lhs: &Self, rhs: &Self) -> bool {
-        lhs.as_inner() == rhs.as_inner()
+        lhs.raw() == rhs.raw()
     }
 
     /// Copy `len` elements from `src_table[src_index..]` into

@@ -17,13 +17,12 @@ use crate::{
     Memory,
     MemoryIdx,
     Table,
-    TableIdx,
     collections::arena::{Arena, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
-    store::{error::InternalStoreError, handle_arena_err},
+    store::{Handle, RawHandle, error::InternalStoreError, handle_arena_err},
 };
 use core::{
     fmt::Debug,
@@ -72,6 +71,8 @@ impl<T> Stored<T> {
     }
 }
 
+type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
+
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
@@ -84,7 +85,7 @@ pub struct StoreInner {
     /// Stored linear memories.
     memories: Arena<MemoryIdx, CoreMemory>,
     /// Stored tables.
-    tables: Arena<TableIdx, CoreTable>,
+    tables: StoreArena<Table>,
     /// Stored global variables.
     globals: Arena<GlobalIdx, CoreGlobal>,
     /// Stored module instances.
@@ -215,7 +216,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc table"),
         };
-        Table::from_inner(self.id.wrap(key))
+        Table::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
@@ -411,7 +412,7 @@ impl StoreInner {
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn try_resolve_table(&self, table: &Table) -> Result<&CoreTable, InternalStoreError> {
-        self.resolve(table.as_inner(), &self.tables)
+        self.resolve(table.raw(), &self.tables)
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
@@ -424,7 +425,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
     ) -> Result<&mut CoreTable, InternalStoreError> {
-        let idx = self.unwrap_stored(table.as_inner())?;
+        let idx = self.unwrap_stored(table.raw())?;
         Self::resolve_mut(*idx, &mut self.tables)
     }
 
@@ -441,7 +442,7 @@ impl StoreInner {
         table: &Table,
         elem: &ElementSegment,
     ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
-        let table_idx = self.unwrap_stored(table.as_inner())?;
+        let table_idx = self.unwrap_stored(table.raw())?;
         let elem_idx = self.unwrap_stored(elem.as_inner())?;
         let table = Self::resolve_mut(*table_idx, &mut self.tables)?;
         let elem = Self::resolve_mut(*elem_idx, &mut self.elems)?;
@@ -461,7 +462,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
     ) -> Result<(&mut CoreTable, &mut Fuel), InternalStoreError> {
-        let idx = self.unwrap_stored(table.as_inner())?;
+        let idx = self.unwrap_stored(table.raw())?;
         let table = Self::resolve_mut(*idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
         Ok((table, fuel))
@@ -478,8 +479,8 @@ impl StoreInner {
         fst: &Table,
         snd: &Table,
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
-        let fst = self.unwrap_stored(fst.as_inner())?;
-        let snd = self.unwrap_stored(snd.as_inner())?;
+        let fst = self.unwrap_stored(fst.raw())?;
+        let snd = self.unwrap_stored(snd.raw())?;
         let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|err| {
             panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
         });
@@ -512,7 +513,7 @@ impl StoreInner {
         table: &Table,
         segment: &ElementSegment,
     ) -> Result<(&mut CoreTable, &CoreElementSegment, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(table.as_inner())?;
+        let mem_idx = self.unwrap_stored(table.raw())?;
         let elem_idx = segment.as_inner();
         let elem = self.resolve(elem_idx, &self.elems)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.tables)?;
