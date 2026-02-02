@@ -12,7 +12,6 @@ use crate::{
     Global,
     Instance,
     InstanceEntity,
-    InstanceIdx,
     Memory,
     Table,
     collections::arena::{Arena, ArenaKey},
@@ -87,7 +86,7 @@ pub struct StoreInner {
     /// Stored global variables.
     globals: StoreArena<Global>,
     /// Stored module instances.
-    instances: Arena<InstanceIdx, InstanceEntity>,
+    instances: StoreArena<Instance>,
     /// Stored data segments.
     datas: Arena<DataSegmentIdx, DataSegmentEntity>,
     /// Stored data segments.
@@ -276,7 +275,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc uninit instance"),
         };
-        Instance::from_inner(self.id.wrap(key))
+        Instance::from(self.id.wrap(key))
     }
 
     /// Initializes the [`Instance`] using the given [`InstanceEntity`].
@@ -296,7 +295,7 @@ impl StoreInner {
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
-        let idx = match self.unwrap_stored(instance.as_inner()) {
+        let idx = match self.unwrap_stored(instance.raw()) {
             Ok(idx) => idx,
             Err(error) => panic!("failed to unwrap stored entity: {error}"),
         };
@@ -666,7 +665,7 @@ impl StoreInner {
         &self,
         key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        self.resolve(key.as_inner(), &self.instances)
+        self.resolve(key.raw(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].

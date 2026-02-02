@@ -206,7 +206,7 @@ pub use self::{
 };
 use self::{
     func::{FuncEntity, FuncIdx},
-    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
+    instance::{InstanceEntity, InstanceEntityBuilder},
     memory::{DataSegmentEntity, DataSegmentIdx},
     store::Stored,
     table::{ElementSegment, ElementSegmentIdx},
