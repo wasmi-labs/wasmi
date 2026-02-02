@@ -18,12 +18,12 @@ use crate::{
     MemoryIdx,
     Table,
     TableIdx,
-    collections::arena::{Arena, ArenaError, ArenaKey},
+    collections::arena::{Arena, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
-    store::error::InternalStoreError,
+    store::{error::InternalStoreError, handle_arena_err},
 };
 use core::{
     fmt::Debug,
@@ -197,12 +197,6 @@ impl StoreInner {
             None => Err(InternalStoreError::store_mismatch()),
         }
     }
-}
-
-/// Generically handle an [`ArenaError`] given a contextual message.
-#[cold]
-fn handle_arena_err(err: ArenaError, context: &str) -> ! {
-    panic!("{context}: {err}")
 }
 
 impl StoreInner {
