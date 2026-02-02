@@ -260,6 +260,15 @@ impl StoreInner {
         ExternRef::from_inner(self.id.wrap(key))
     }
 
+    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
+    pub fn alloc_func(&mut self, value: FuncEntity) -> Func {
+        let key = match self.funcs.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc func"),
+        };
+        Func::from_inner(self.id.wrap(key))
+    }
+
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
     ///
     /// # Note
@@ -678,15 +687,6 @@ impl StoreInner {
         key: &ExternRef,
     ) -> Result<&ExternRefEntity, InternalStoreError> {
         self.resolve(key.as_inner(), &self.extern_objects)
-    }
-
-    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
-    pub fn alloc_func(&mut self, value: FuncEntity) -> Func {
-        let key = match self.funcs.alloc(value) {
-            Ok(key) => key,
-            Err(err) => handle_arena_err(err, "alloc func"),
-        };
-        Func::from_inner(self.id.wrap(key))
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
