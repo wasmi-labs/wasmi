@@ -625,19 +625,19 @@ impl StoreInner {
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn try_resolve_memory_pair_and_fuel(
         &mut self,
-        fst: &Memory,
-        snd: &Memory,
+        mem0: &Memory,
+        mem1: &Memory,
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let fst = self.unwrap_stored(fst.as_inner())?;
-        let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self
+        let mem0 = self.unwrap_stored(mem0.as_inner())?;
+        let mem1 = self.unwrap_stored(mem1.as_inner())?;
+        let (mem0, mem1) = self
             .memories
-            .get_pair_mut(*fst, *snd)
+            .get_pair_mut(*mem0, *mem1)
             .unwrap_or_else(|err| {
-                panic!("failed to resolve stored pair of memories at {fst:?} and {snd:?}: {err}")
+                panic!("failed to resolve stored pair of memories at {mem0:?} and {mem1:?}: {err}")
             });
         let fuel = &mut self.fuel;
-        Ok((fst, snd, fuel))
+        Ok((mem0, mem1, fuel))
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
@@ -648,10 +648,10 @@ impl StoreInner {
     /// - If the [`DataSegment`] cannot be resolved to its entity.
     pub fn try_resolve_data_mut(
         &mut self,
-        segment: &DataSegment,
+        key: &DataSegment,
     ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
-        let idx = self.unwrap_stored(segment.as_inner())?;
-        Self::resolve_mut(*idx, &mut self.datas)
+        let raw_key = self.unwrap_stored(key.as_inner())?;
+        Self::resolve_mut(*raw_key, &mut self.datas)
     }
 
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
@@ -662,9 +662,9 @@ impl StoreInner {
     /// - If the [`Instance`] cannot be resolved to its entity.
     pub fn try_resolve_instance(
         &self,
-        instance: &Instance,
+        key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        self.resolve(instance.as_inner(), &self.instances)
+        self.resolve(key.as_inner(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
@@ -675,14 +675,14 @@ impl StoreInner {
     /// - If the [`ExternRef`] cannot be resolved to its entity.
     pub fn try_resolve_externref(
         &self,
-        object: &ExternRef,
+        key: &ExternRef,
     ) -> Result<&ExternRefEntity, InternalStoreError> {
-        self.resolve(object.as_inner(), &self.extern_objects)
+        self.resolve(key.as_inner(), &self.extern_objects)
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
-    pub fn alloc_func(&mut self, func: FuncEntity) -> Func {
-        let key = match self.funcs.alloc(func) {
+    pub fn alloc_func(&mut self, value: FuncEntity) -> Func {
+        let key = match self.funcs.alloc(value) {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc func"),
         };
@@ -695,8 +695,8 @@ impl StoreInner {
     ///
     /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
-    pub fn try_resolve_func(&self, func: &Func) -> Result<&FuncEntity, InternalStoreError> {
-        self.resolve(func.as_inner(), &self.funcs)
+    pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
+        self.resolve(key.as_inner(), &self.funcs)
     }
 }
 
