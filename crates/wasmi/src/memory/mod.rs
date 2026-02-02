@@ -6,22 +6,19 @@ pub use self::{
     ty::{MemoryType, MemoryTypeBuilder},
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
-use crate::{Error, collections::arena::ArenaIndex, core::CoreMemory, errors::MemoryError};
+use crate::{Error, collections::arena::ArenaKey, core::CoreMemory, errors::MemoryError};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MemoryIdx(u32);
 
-impl ArenaIndex for MemoryIdx {
+impl ArenaKey for MemoryIdx {
     fn into_usize(self) -> usize {
-        self.0 as usize
+        self.0.into_usize()
     }
 
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as memory index: {error}")
-        });
-        Self(value)
+    fn from_usize(value: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(value).map(Self)
     }
 }
 

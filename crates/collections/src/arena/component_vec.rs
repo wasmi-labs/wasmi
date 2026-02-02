@@ -1,4 +1,4 @@
-use crate::arena::ArenaIndex;
+use crate::arena::ArenaKey;
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
@@ -7,18 +7,18 @@ use core::{
 };
 
 /// Stores components for entities backed by a [`Vec`].
-pub struct ComponentVec<Idx, T> {
+pub struct ComponentVec<Key, T> {
     components: Vec<Option<T>>,
-    marker: PhantomData<fn() -> Idx>,
+    marker: PhantomData<fn() -> Key>,
 }
 
-/// [`ComponentVec`] does not store `Idx` therefore it is `Send` without its bound.
-unsafe impl<Idx, T> Send for ComponentVec<Idx, T> where T: Send {}
+/// [`ComponentVec`] does not store `Key` therefore it is `Send` without its bound.
+unsafe impl<Key, T> Send for ComponentVec<Key, T> where T: Send {}
 
-/// [`ComponentVec`] does not store `Idx` therefore it is `Sync` without its bound.
-unsafe impl<Idx, T> Sync for ComponentVec<Idx, T> where T: Sync {}
+/// [`ComponentVec`] does not store `Key` therefore it is `Sync` without its bound.
+unsafe impl<Key, T> Sync for ComponentVec<Key, T> where T: Sync {}
 
-impl<Idx, T> Debug for ComponentVec<Idx, T>
+impl<Key, T> Debug for ComponentVec<Key, T>
 where
     T: Debug,
 {
@@ -42,21 +42,21 @@ where
             .iter()
             .enumerate()
             .filter_map(|(n, component)| component.as_ref().map(|c| (n, c)));
-        for (idx, component) in components {
-            map.entry(&idx, component);
+        for (key, component) in components {
+            map.entry(&key, component);
         }
         map.finish()
     }
 }
 
-impl<Idx, T> Default for ComponentVec<Idx, T> {
+impl<Key, T> Default for ComponentVec<Key, T> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Idx, T> PartialEq for ComponentVec<Idx, T>
+impl<Key, T> PartialEq for ComponentVec<Key, T>
 where
     T: PartialEq,
 {
@@ -66,9 +66,9 @@ where
     }
 }
 
-impl<Idx, T> Eq for ComponentVec<Idx, T> where T: Eq {}
+impl<Key, T> Eq for ComponentVec<Key, T> where T: Eq {}
 
-impl<Idx, T> ComponentVec<Idx, T> {
+impl<Key, T> ComponentVec<Key, T> {
     /// Creates a new empty [`ComponentVec`].
     #[inline]
     pub fn new() -> Self {
@@ -85,14 +85,14 @@ impl<Idx, T> ComponentVec<Idx, T> {
     }
 }
 
-impl<Idx, T> ComponentVec<Idx, T>
+impl<Key, T> ComponentVec<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
     /// Sets the `component` for the entity at `index`.
     ///
     /// Returns the old component of the same entity if any.
-    pub fn set(&mut self, index: Idx, component: T) -> Option<T> {
+    pub fn set(&mut self, index: Key, component: T) -> Option<T> {
         let index = index.into_usize();
         if index >= self.components.len() {
             // The underlying vector does not have enough capacity
@@ -104,7 +104,7 @@ where
 
     /// Unsets the component for the entity at `index` and returns it if any.
     #[inline]
-    pub fn unset(&mut self, index: Idx) -> Option<T> {
+    pub fn unset(&mut self, index: Key) -> Option<T> {
         self.components
             .get_mut(index.into_usize())
             .and_then(Option::take)
@@ -114,7 +114,7 @@ where
     ///
     /// Returns `None` if no component is stored under the `index`.
     #[inline]
-    pub fn get(&self, index: Idx) -> Option<&T> {
+    pub fn get(&self, index: Key) -> Option<&T> {
         self.components
             .get(index.into_usize())
             .and_then(Option::as_ref)
@@ -124,32 +124,32 @@ where
     ///
     /// Returns `None` if no component is stored under the `index`.
     #[inline]
-    pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
+    pub fn get_mut(&mut self, index: Key) -> Option<&mut T> {
         self.components
             .get_mut(index.into_usize())
             .and_then(Option::as_mut)
     }
 }
 
-impl<Idx, T> Index<Idx> for ComponentVec<Idx, T>
+impl<Key, T> Index<Key> for ComponentVec<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
     type Output = T;
 
     #[inline]
-    fn index(&self, index: Idx) -> &Self::Output {
+    fn index(&self, index: Key) -> &Self::Output {
         self.get(index)
             .unwrap_or_else(|| panic!("missing component at index: {}", index.into_usize()))
     }
 }
 
-impl<Idx, T> IndexMut<Idx> for ComponentVec<Idx, T>
+impl<Key, T> IndexMut<Key> for ComponentVec<Key, T>
 where
-    Idx: ArenaIndex,
+    Key: ArenaKey,
 {
     #[inline]
-    fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
+    fn index_mut(&mut self, index: Key) -> &mut Self::Output {
         self.get_mut(index)
             .unwrap_or_else(|| panic!("missing component at index: {}", index.into_usize()))
     }

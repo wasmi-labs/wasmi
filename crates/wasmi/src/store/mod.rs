@@ -16,7 +16,7 @@ use crate::{
     Error,
     Memory,
     ResourceLimiter,
-    collections::arena::Arena,
+    collections::arena::{Arena, ArenaError},
     core::{CoreMemory, ResourceLimiterRef},
     engine::{InOutParams, Inst},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
@@ -195,11 +195,22 @@ impl<T> Store<T> {
     pub fn set_fuel(&mut self, fuel: u64) -> Result<(), Error> {
         self.inner.set_fuel(fuel)
     }
+}
 
+/// Generically handle an [`ArenaError`] given a contextual message.
+#[cold]
+fn handle_arena_err(err: ArenaError, context: &str) -> ! {
+    panic!("{context}: {err}")
+}
+
+impl<T> Store<T> {
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
-    pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
-        let idx = self.typed.trampolines.alloc(func);
-        Trampoline::from_inner(self.inner.id().wrap(idx))
+    pub(super) fn alloc_trampoline(&mut self, value: TrampolineEntity<T>) -> Trampoline {
+        let key = match self.typed.trampolines.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc host func trampoline"),
+        };
+        Trampoline::from_inner(self.inner.id().wrap(key))
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]
@@ -229,10 +240,10 @@ impl<T> Store<T> {
     /// - If the [`Trampoline`] cannot be resolved to its entity.
     fn resolve_trampoline(
         &self,
-        func: &Trampoline,
+        key: &Trampoline,
     ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
-        let entity_index = self.inner.unwrap_stored(func.as_inner())?;
-        let Some(trampoline) = self.typed.trampolines.get(*entity_index) else {
+        let raw_key = self.inner.unwrap_stored(key.as_inner())?;
+        let Ok(trampoline) = self.typed.trampolines.get(*raw_key) else {
             return Err(InternalStoreError::not_found());
         };
         Ok(trampoline)

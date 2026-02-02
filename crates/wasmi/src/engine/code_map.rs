@@ -10,7 +10,7 @@ use crate::{
     Config,
     Error,
     TrapCode,
-    collections::arena::{Arena, ArenaIndex},
+    collections::arena::{Arena, ArenaKey},
     core::{Fuel, FuelCostsProvider},
     engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
     errors::FuelError,
@@ -59,16 +59,13 @@ impl EngineFunc {
     }
 }
 
-impl ArenaIndex for EngineFunc {
+impl ArenaKey for EngineFunc {
     fn into_usize(self) -> usize {
-        self.0 as usize
+        self.0.into_usize()
     }
 
-    fn from_usize(index: usize) -> Self {
-        let Ok(index) = u32::try_from(index) else {
-            panic!("out of bounds compiled func index: {index}")
-        };
-        Self(index)
+    fn from_usize(value: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(value).map(Self)
     }
 }
 
@@ -231,7 +228,10 @@ impl CodeMap {
     /// - [`CodeMap::init_func_as_compiled`]
     /// - [`CodeMap::init_func_as_uncompiled`]
     pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
-        let Range { start, end } = self.funcs.lock().alloc_many(amount);
+        let Range { start, end } = match self.funcs.lock().alloc_many(amount) {
+            Ok(keys) => keys,
+            Err(err) => panic!("failed to alloc funcs: {err}"),
+        };
         EngineFuncSpan::new(start, end)
     }
 
@@ -243,8 +243,9 @@ impl CodeMap {
     /// - If `func` refers to an already initialized [`EngineFunc`].
     pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntity) {
         let mut funcs = self.funcs.lock();
-        let Some(func) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
+        let func = match funcs.get_mut(func) {
+            Ok(func) => func,
+            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
         };
         func.init_compiled(entity);
     }
@@ -264,8 +265,9 @@ impl CodeMap {
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
         let mut funcs = self.funcs.lock();
-        let Some(func) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
+        let func = match funcs.get_mut(func) {
+            Ok(func) => func,
+            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
         };
         func.init_uncompiled(UncompiledFuncEntity::new(
             func_idx,
@@ -317,12 +319,13 @@ impl CodeMap {
     #[inline]
     fn get_compiled(&self, func: EngineFunc) -> Option<CompiledFuncRef<'_>> {
         let funcs = self.funcs.lock();
-        let Some(entity) = funcs.get(func) else {
-            // Safety: this is just called internally with function indices
-            //         that are known to be valid. Since this is a performance
-            //         critical path we need to leave out this check.
-            unsafe {
-                unreachable_unchecked!("encountered invalid function index for engine: {func:?}")
+        let entity = match funcs.get(func) {
+            Ok(entity) => entity,
+            Err(err) => {
+                // Safety: this is just called internally with function indices
+                //         that are known to be valid. Since this is a performance
+                //         critical path we need to leave out this check.
+                unsafe { unreachable_unchecked!("failed to resolve function at {func:?}: {err}") }
             }
         };
         let cref = entity.get_compiled()?;
@@ -335,10 +338,11 @@ impl CodeMap {
     #[inline]
     fn get_uncompiled(&self, func: EngineFunc) -> Option<UncompiledFuncEntity> {
         let mut funcs = self.funcs.lock();
-        let Some(entity) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
+        let func = match funcs.get_mut(func) {
+            Ok(func) => func,
+            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
         };
-        entity.get_uncompiled()
+        func.get_uncompiled()
     }
 
     /// Prolongs the lifetime of `cref` to `self`.
@@ -376,8 +380,9 @@ impl CodeMap {
         //       since compilation can take a prolonged time.
         let compiled_func = uncompiled.compile(fuel, &self.features);
         let mut funcs = self.funcs.lock();
-        let Some(entity) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
+        let entity = match funcs.get_mut(func) {
+            Ok(func) => func,
+            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
         };
         match compiled_func {
             Ok(compiled_func) => {
@@ -408,8 +413,9 @@ impl CodeMap {
     fn wait_for_compilation(&self, func: EngineFunc) -> Result<CompiledFuncRef<'_>, Error> {
         'wait: loop {
             let funcs = self.funcs.lock();
-            let Some(entity) = funcs.get(func) else {
-                panic!("encountered invalid internal function: {func:?}")
+            let entity = match funcs.get(func) {
+                Ok(func) => func,
+                Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
             };
             match entity {
                 FuncEntity::Compiling => continue 'wait,

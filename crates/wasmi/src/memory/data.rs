@@ -1,6 +1,6 @@
 use crate::{
     AsContextMut,
-    collections::arena::ArenaIndex,
+    collections::arena::ArenaKey,
     module::{self, PassiveDataSegmentBytes},
     store::Stored,
 };
@@ -10,16 +10,13 @@ use core::convert::AsRef;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DataSegmentIdx(u32);
 
-impl ArenaIndex for DataSegmentIdx {
+impl ArenaKey for DataSegmentIdx {
     fn into_usize(self) -> usize {
-        self.0 as usize
+        self.0.into_usize()
     }
 
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as data segment index: {error}")
-        });
-        Self(value)
+    fn from_usize(value: usize) -> Option<Self> {
+        <_ as ArenaKey>::from_usize(value).map(Self)
     }
 }
 

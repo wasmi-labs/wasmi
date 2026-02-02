@@ -18,12 +18,12 @@ use crate::{
     MemoryIdx,
     Table,
     TableIdx,
-    collections::arena::{Arena, ArenaIndex},
+    collections::arena::{Arena, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
-    store::error::InternalStoreError,
+    store::{error::InternalStoreError, handle_arena_err},
 };
 use core::{
     fmt::Debug,
@@ -197,41 +197,70 @@ impl StoreInner {
             None => Err(InternalStoreError::store_mismatch()),
         }
     }
+}
 
+impl StoreInner {
     /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
-    pub fn alloc_global(&mut self, global: CoreGlobal) -> Global {
-        let global = self.globals.alloc(global);
-        Global::from_inner(self.id.wrap(global))
+    pub fn alloc_global(&mut self, value: CoreGlobal) -> Global {
+        let key = match self.globals.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc global"),
+        };
+        Global::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
-    pub fn alloc_table(&mut self, table: CoreTable) -> Table {
-        let table = self.tables.alloc(table);
-        Table::from_inner(self.id.wrap(table))
+    pub fn alloc_table(&mut self, value: CoreTable) -> Table {
+        let key = match self.tables.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc table"),
+        };
+        Table::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
-    pub fn alloc_memory(&mut self, memory: CoreMemory) -> Memory {
-        let memory = self.memories.alloc(memory);
-        Memory::from_inner(self.id.wrap(memory))
+    pub fn alloc_memory(&mut self, value: CoreMemory) -> Memory {
+        let key = match self.memories.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc memory"),
+        };
+        Memory::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
-    pub fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
-        let segment = self.datas.alloc(segment);
-        DataSegment::from_inner(self.id.wrap(segment))
+    pub fn alloc_data_segment(&mut self, value: DataSegmentEntity) -> DataSegment {
+        let key = match self.datas.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc data segment"),
+        };
+        DataSegment::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
-    pub fn alloc_element_segment(&mut self, segment: CoreElementSegment) -> ElementSegment {
-        let segment = self.elems.alloc(segment);
-        ElementSegment::from_inner(self.id.wrap(segment))
+    pub fn alloc_element_segment(&mut self, value: CoreElementSegment) -> ElementSegment {
+        let key = match self.elems.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc element segment"),
+        };
+        ElementSegment::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
-    pub fn alloc_extern_object(&mut self, object: ExternRefEntity) -> ExternRef {
-        let object = self.extern_objects.alloc(object);
-        ExternRef::from_inner(self.id.wrap(object))
+    pub fn alloc_extern_object(&mut self, value: ExternRefEntity) -> ExternRef {
+        let key = match self.extern_objects.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc extern object"),
+        };
+        ExternRef::from_inner(self.id.wrap(key))
+    }
+
+    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
+    pub fn alloc_func(&mut self, value: FuncEntity) -> Func {
+        let key = match self.funcs.alloc(value) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc func"),
+        };
+        Func::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -244,8 +273,11 @@ impl StoreInner {
     /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
-        let instance = self.instances.alloc(InstanceEntity::uninitialized());
-        Instance::from_inner(self.id.wrap(instance))
+        let key = match self.instances.alloc(InstanceEntity::uninitialized()) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc uninit instance"),
+        };
+        Instance::from_inner(self.id.wrap(key))
     }
 
     /// Initializes the [`Instance`] using the given [`InstanceEntity`].
@@ -272,7 +304,7 @@ impl StoreInner {
         let uninit = self
             .instances
             .get_mut(*idx)
-            .unwrap_or_else(|| panic!("missing entity for the given instance: {instance:?}"));
+            .unwrap_or_else(|err| panic!("failed to resolve instance (= {instance:?}): {err}"));
         assert!(
             !uninit.is_initialized(),
             "encountered an already initialized instance: {uninit:?}",
@@ -292,12 +324,12 @@ impl StoreInner {
         entities: &'a Arena<Idx, Entity>,
     ) -> Result<&'a Entity, InternalStoreError>
     where
-        Idx: ArenaIndex + Debug,
+        Idx: ArenaKey + Debug,
     {
         let idx = self.unwrap_stored(idx)?;
         match entities.get(*idx) {
-            Some(entity) => Ok(entity),
-            None => Err(InternalStoreError::not_found()),
+            Ok(entity) => Ok(entity),
+            Err(_err) => Err(InternalStoreError::not_found()),
         }
     }
 
@@ -316,11 +348,11 @@ impl StoreInner {
         entities: &mut Arena<Idx, Entity>,
     ) -> Result<&mut Entity, InternalStoreError>
     where
-        Idx: ArenaIndex + Debug,
+        Idx: ArenaKey + Debug,
     {
         match entities.get_mut(idx) {
-            Some(entity) => Ok(entity),
-            None => Err(InternalStoreError::not_found()),
+            Ok(entity) => Ok(entity),
+            Err(_err) => Err(InternalStoreError::not_found()),
         }
     }
 
@@ -448,8 +480,8 @@ impl StoreInner {
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
         let fst = self.unwrap_stored(fst.as_inner())?;
         let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|| {
-            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|err| {
+            panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
         });
         let fuel = &mut self.fuel;
         Ok((fst, snd, fuel))
@@ -596,16 +628,19 @@ impl StoreInner {
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn try_resolve_memory_pair_and_fuel(
         &mut self,
-        fst: &Memory,
-        snd: &Memory,
+        mem0: &Memory,
+        mem1: &Memory,
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let fst = self.unwrap_stored(fst.as_inner())?;
-        let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self.memories.get_pair_mut(*fst, *snd).unwrap_or_else(|| {
-            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
-        });
+        let mem0 = self.unwrap_stored(mem0.as_inner())?;
+        let mem1 = self.unwrap_stored(mem1.as_inner())?;
+        let (mem0, mem1) = self
+            .memories
+            .get_pair_mut(*mem0, *mem1)
+            .unwrap_or_else(|err| {
+                panic!("failed to resolve stored pair of memories at {mem0:?} and {mem1:?}: {err}")
+            });
         let fuel = &mut self.fuel;
-        Ok((fst, snd, fuel))
+        Ok((mem0, mem1, fuel))
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
@@ -616,10 +651,10 @@ impl StoreInner {
     /// - If the [`DataSegment`] cannot be resolved to its entity.
     pub fn try_resolve_data_mut(
         &mut self,
-        segment: &DataSegment,
+        key: &DataSegment,
     ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
-        let idx = self.unwrap_stored(segment.as_inner())?;
-        Self::resolve_mut(*idx, &mut self.datas)
+        let raw_key = self.unwrap_stored(key.as_inner())?;
+        Self::resolve_mut(*raw_key, &mut self.datas)
     }
 
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
@@ -630,9 +665,9 @@ impl StoreInner {
     /// - If the [`Instance`] cannot be resolved to its entity.
     pub fn try_resolve_instance(
         &self,
-        instance: &Instance,
+        key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        self.resolve(instance.as_inner(), &self.instances)
+        self.resolve(key.as_inner(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
@@ -643,15 +678,9 @@ impl StoreInner {
     /// - If the [`ExternRef`] cannot be resolved to its entity.
     pub fn try_resolve_externref(
         &self,
-        object: &ExternRef,
+        key: &ExternRef,
     ) -> Result<&ExternRefEntity, InternalStoreError> {
-        self.resolve(object.as_inner(), &self.extern_objects)
-    }
-
-    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
-    pub fn alloc_func(&mut self, func: FuncEntity) -> Func {
-        let idx = self.funcs.alloc(func);
-        Func::from_inner(self.id.wrap(idx))
+        self.resolve(key.as_inner(), &self.extern_objects)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
@@ -660,8 +689,8 @@ impl StoreInner {
     ///
     /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
-    pub fn try_resolve_func(&self, func: &Func) -> Result<&FuncEntity, InternalStoreError> {
-        self.resolve(func.as_inner(), &self.funcs)
+    pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
+        self.resolve(key.as_inner(), &self.funcs)
     }
 }
 
