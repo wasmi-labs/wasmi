@@ -5,7 +5,6 @@ use crate::{
     Error,
     Func,
     FuncEntity,
-    FuncIdx,
     FuncType,
     Global,
     Instance,
@@ -16,7 +15,7 @@ use crate::{
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
-    reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
+    reftype::{ExternRef, ExternRefEntity},
     store::{Handle, RawHandle, error::InternalStoreError, handle_arena_err},
 };
 use core::{
@@ -76,7 +75,7 @@ pub struct StoreInner {
     /// Used to protect against invalid entity indices.
     id: StoreId,
     /// Stored Wasm or host functions.
-    funcs: Arena<FuncIdx, FuncEntity>,
+    funcs: StoreArena<Func>,
     /// Stored linear memories.
     memories: StoreArena<Memory>,
     /// Stored tables.
@@ -92,7 +91,7 @@ pub struct StoreInner {
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
-    extern_objects: Arena<ExternRefIdx, ExternRefEntity>,
+    extern_objects: StoreArena<ExternRef>,
     /// The [`Engine`] in use by the [`StoreInner`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -247,7 +246,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc extern object"),
         };
-        ExternRef::from_inner(self.id.wrap(key))
+        ExternRef::from(self.id.wrap(key))
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
@@ -256,7 +255,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc func"),
         };
-        Func::from_inner(self.id.wrap(key))
+        Func::from(self.id.wrap(key))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -676,7 +675,7 @@ impl StoreInner {
         &self,
         key: &ExternRef,
     ) -> Result<&ExternRefEntity, InternalStoreError> {
-        self.resolve(key.as_inner(), &self.extern_objects)
+        self.resolve(key.raw(), &self.extern_objects)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
@@ -686,7 +685,7 @@ impl StoreInner {
     /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
     pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
-        self.resolve(key.as_inner(), &self.funcs)
+        self.resolve(key.raw(), &self.funcs)
     }
 }
 

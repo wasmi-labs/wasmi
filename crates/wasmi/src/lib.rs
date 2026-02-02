@@ -205,7 +205,7 @@ pub use self::{
     value::Val,
 };
 use self::{
-    func::{FuncEntity, FuncIdx},
+    func::FuncEntity,
     instance::{InstanceEntity, InstanceEntityBuilder},
     memory::DataSegmentEntity,
     store::Stored,

@@ -25,13 +25,9 @@ use crate::{
     Val,
     collections::arena::ArenaKey,
     engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
-    reftype::RefId,
 };
 use alloc::{boxed::Box, sync::Arc};
-use core::{fmt, fmt::Debug};
-
-/// A raw index to a function entity.
-pub type FuncIdx = RefId<Func>;
+use core::{fmt, fmt::Debug, num::NonZero};
 
 /// A raw index to a host function trampoline entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -314,22 +310,12 @@ impl<T> Clone for TrampolineEntity<T> {
     }
 }
 
-/// A Wasm or host function reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Func(Stored<FuncIdx>);
+define_handle! {
+    /// A Wasm or host function reference.
+    struct Func(NonZero<u32>) => FuncEntity;
+}
 
 impl Func {
-    /// Creates a new Wasm or host function reference.
-    pub(super) fn from_inner(stored: Stored<FuncIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<FuncIdx> {
-        &self.0
-    }
-
     /// Creates a new [`Func`] with the given arguments.
     ///
     /// This is typically used to create a host-defined function to pass as an import to a Wasm module.
