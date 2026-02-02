@@ -1,7 +1,6 @@
 use crate::{
     DataSegmentEntity,
     ElementSegment,
-    ElementSegmentIdx,
     Engine,
     Error,
     Func,
@@ -89,7 +88,7 @@ pub struct StoreInner {
     /// Stored data segments.
     datas: StoreArena<DataSegment>,
     /// Stored data segments.
-    elems: Arena<ElementSegmentIdx, CoreElementSegment>,
+    elems: StoreArena<ElementSegment>,
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
@@ -239,7 +238,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc element segment"),
         };
-        ElementSegment::from_inner(self.id.wrap(key))
+        ElementSegment::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
@@ -439,7 +438,7 @@ impl StoreInner {
         elem: &ElementSegment,
     ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
         let table_idx = self.unwrap_stored(table.raw())?;
-        let elem_idx = self.unwrap_stored(elem.as_inner())?;
+        let elem_idx = self.unwrap_stored(elem.raw())?;
         let table = Self::resolve_mut(*table_idx, &mut self.tables)?;
         let elem = Self::resolve_mut(*elem_idx, &mut self.elems)?;
         Ok((table, elem))
@@ -510,7 +509,7 @@ impl StoreInner {
         segment: &ElementSegment,
     ) -> Result<(&mut CoreTable, &CoreElementSegment, &mut Fuel), InternalStoreError> {
         let mem_idx = self.unwrap_stored(table.raw())?;
-        let elem_idx = segment.as_inner();
+        let elem_idx = segment.raw();
         let elem = self.resolve(elem_idx, &self.elems)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
@@ -527,7 +526,7 @@ impl StoreInner {
         &self,
         segment: &ElementSegment,
     ) -> Result<&CoreElementSegment, InternalStoreError> {
-        self.resolve(segment.as_inner(), &self.elems)
+        self.resolve(segment.raw(), &self.elems)
     }
 
     /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
@@ -540,7 +539,7 @@ impl StoreInner {
         &mut self,
         segment: &ElementSegment,
     ) -> Result<&mut CoreElementSegment, InternalStoreError> {
-        let idx = self.unwrap_stored(segment.as_inner())?;
+        let idx = self.unwrap_stored(segment.raw())?;
         Self::resolve_mut(*idx, &mut self.elems)
     }
 

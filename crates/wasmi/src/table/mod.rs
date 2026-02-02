@@ -1,7 +1,4 @@
-pub use self::{
-    element::{ElementSegment, ElementSegmentIdx},
-    ty::TableType,
-};
+pub use self::{element::ElementSegment, ty::TableType};
 use crate::{
     AsContext,
     AsContextMut,

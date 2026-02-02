@@ -3,43 +3,17 @@ use crate::{
     AsContextMut,
     Func,
     Global,
-    collections::arena::ArenaKey,
     core::{CoreElementSegment, UntypedRef},
     module,
-    store::Stored,
 };
 use alloc::boxed::Box;
 
-/// A raw index to a element segment entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ElementSegmentIdx(u32);
-
-impl ArenaKey for ElementSegmentIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    /// A Wasm data segment reference.
+    struct ElementSegment(u32) => CoreElementSegment;
 }
 
-/// A Wasm data segment reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct ElementSegment(Stored<ElementSegmentIdx>);
-
 impl ElementSegment {
-    /// Creates a new linear memory reference.
-    pub fn from_inner(stored: Stored<ElementSegmentIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub fn as_inner(&self) -> &Stored<ElementSegmentIdx> {
-        &self.0
-    }
-
     /// Allocates a new [`ElementSegment`] on the store.
     ///
     /// # Errors
