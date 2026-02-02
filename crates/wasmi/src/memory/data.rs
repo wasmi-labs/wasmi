@@ -1,41 +1,15 @@
 use crate::{
     AsContextMut,
-    collections::arena::ArenaKey,
     module::{self, PassiveDataSegmentBytes},
-    store::Stored,
 };
 use core::convert::AsRef;
 
-/// A raw index to a data segment entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct DataSegmentIdx(u32);
-
-impl ArenaKey for DataSegmentIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    /// A Wasm data segment reference.
+    struct DataSegment(u32) => DataSegmentEntity;
 }
 
-/// A Wasm data segment reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct DataSegment(Stored<DataSegmentIdx>);
-
 impl DataSegment {
-    /// Creates a new linear memory reference.
-    pub fn from_inner(stored: Stored<DataSegmentIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub fn as_inner(&self) -> &Stored<DataSegmentIdx> {
-        &self.0
-    }
-
     /// Allocates a new active [`DataSegment`] on the store.
     ///
     /// # Errors

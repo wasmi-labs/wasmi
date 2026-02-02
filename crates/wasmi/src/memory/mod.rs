@@ -2,7 +2,7 @@ mod data;
 mod ty;
 
 pub use self::{
-    data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
+    data::{DataSegment, DataSegmentEntity},
     ty::{MemoryType, MemoryTypeBuilder},
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut};

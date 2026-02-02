@@ -1,6 +1,5 @@
 use crate::{
     DataSegmentEntity,
-    DataSegmentIdx,
     ElementSegment,
     ElementSegmentIdx,
     Engine,
@@ -88,7 +87,7 @@ pub struct StoreInner {
     /// Stored module instances.
     instances: StoreArena<Instance>,
     /// Stored data segments.
-    datas: Arena<DataSegmentIdx, DataSegmentEntity>,
+    datas: StoreArena<DataSegment>,
     /// Stored data segments.
     elems: Arena<ElementSegmentIdx, CoreElementSegment>,
     /// Stored external objects for [`ExternRef`] types.
@@ -231,7 +230,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc data segment"),
         };
-        DataSegment::from_inner(self.id.wrap(key))
+        DataSegment::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
@@ -611,7 +610,7 @@ impl StoreInner {
         segment: &DataSegment,
     ) -> Result<(&mut CoreMemory, &DataSegmentEntity, &mut Fuel), InternalStoreError> {
         let mem_idx = self.unwrap_stored(memory.raw())?;
-        let data_idx = segment.as_inner();
+        let data_idx = segment.raw();
         let data = self.resolve(data_idx, &self.datas)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
@@ -651,7 +650,7 @@ impl StoreInner {
         &mut self,
         key: &DataSegment,
     ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
-        let raw_key = self.unwrap_stored(key.as_inner())?;
+        let raw_key = self.unwrap_stored(key.raw())?;
         Self::resolve_mut(*raw_key, &mut self.datas)
     }
 
