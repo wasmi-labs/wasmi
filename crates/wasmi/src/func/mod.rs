@@ -16,49 +16,23 @@ use super::{
     AsContextMut,
     Instance,
     StoreContext,
-    Stored,
     engine::{DedupFuncType, EngineFunc},
 };
 use crate::{
     Engine,
     Error,
     Val,
-    collections::arena::ArenaKey,
     engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZero};
 
-/// A raw index to a host function trampoline entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TrampolineIdx(usize);
-
-impl ArenaKey for TrampolineIdx {
-    fn into_usize(self) -> usize {
-        self.0
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    struct Trampoline(usize) => TrampolineEntity<Generic>;
 }
 
-/// A host function reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Trampoline(Stored<TrampolineIdx>);
-
-impl Trampoline {
-    /// Creates a new host function reference.
-    pub(super) fn from_inner(stored: Stored<TrampolineIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<TrampolineIdx> {
-        &self.0
-    }
-}
+/// Marker type to mark a type as generic in associated trait.
+pub enum Generic {}
 
 /// A Wasm or host function instance.
 #[derive(Debug)]
