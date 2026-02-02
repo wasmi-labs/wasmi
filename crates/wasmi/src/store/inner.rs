@@ -14,7 +14,6 @@ use crate::{
     InstanceEntity,
     InstanceIdx,
     Memory,
-    MemoryIdx,
     Table,
     collections::arena::{Arena, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
@@ -82,7 +81,7 @@ pub struct StoreInner {
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
-    memories: Arena<MemoryIdx, CoreMemory>,
+    memories: StoreArena<Memory>,
     /// Stored tables.
     tables: StoreArena<Table>,
     /// Stored global variables.
@@ -224,7 +223,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc memory"),
         };
-        Memory::from_inner(self.id.wrap(key))
+        Memory::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
@@ -557,7 +556,7 @@ impl StoreInner {
         &'a self,
         memory: &Memory,
     ) -> Result<&'a CoreMemory, InternalStoreError> {
-        self.resolve(memory.as_inner(), &self.memories)
+        self.resolve(memory.raw(), &self.memories)
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
@@ -570,7 +569,7 @@ impl StoreInner {
         &'a mut self,
         memory: &Memory,
     ) -> Result<&'a mut CoreMemory, InternalStoreError> {
-        let idx = self.unwrap_stored(memory.as_inner())?;
+        let idx = self.unwrap_stored(memory.raw())?;
         Self::resolve_mut(*idx, &mut self.memories)
     }
 
@@ -584,7 +583,7 @@ impl StoreInner {
         &mut self,
         memory: &Memory,
     ) -> Result<(&mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let idx = self.unwrap_stored(memory.as_inner())?;
+        let idx = self.unwrap_stored(memory.raw())?;
         let memory = Self::resolve_mut(*idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
         Ok((memory, fuel))
@@ -612,7 +611,7 @@ impl StoreInner {
         memory: &Memory,
         segment: &DataSegment,
     ) -> Result<(&mut CoreMemory, &DataSegmentEntity, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(memory.as_inner())?;
+        let mem_idx = self.unwrap_stored(memory.raw())?;
         let data_idx = segment.as_inner();
         let data = self.resolve(data_idx, &self.datas)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.memories)?;
@@ -631,8 +630,8 @@ impl StoreInner {
         mem0: &Memory,
         mem1: &Memory,
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let mem0 = self.unwrap_stored(mem0.as_inner())?;
-        let mem1 = self.unwrap_stored(mem1.as_inner())?;
+        let mem0 = self.unwrap_stored(mem0.raw())?;
+        let mem1 = self.unwrap_stored(mem1.raw())?;
         let (mem0, mem1) = self
             .memories
             .get_pair_mut(*mem0, *mem1)
