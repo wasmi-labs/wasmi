@@ -226,7 +226,6 @@ where
     /// # Errors
     ///
     /// - If the `key` is out of bounds.
-    /// - If the `key` is invalid.
     #[inline]
     pub fn get(&self, key: Key) -> Result<&T, ArenaError> {
         let key = key.into_usize();
@@ -238,7 +237,6 @@ where
     /// # Errors
     ///
     /// - If the `key` is out of bounds.
-    /// - If the `key` is invalid.
     #[inline]
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
         let key = key.into_usize();
@@ -250,7 +248,6 @@ where
     /// # Errors
     ///
     /// - If `fst` and `snd` refer to the same item, a.k.a. aliasing each other.
-    /// - If `fst` or `snd` keys are invalid.
     /// - If `fst` or `snd` is out of bounds for the arena.
     #[inline]
     pub fn get_pair_mut(&mut self, fst: Key, snd: Key) -> Result<(&mut T, &mut T), ArenaError> {

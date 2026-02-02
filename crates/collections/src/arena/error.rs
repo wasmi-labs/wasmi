@@ -5,8 +5,6 @@ use core::{error::Error, fmt};
 pub enum ArenaError {
     /// Ran out of system memory when allocating a new item.
     OutOfSystemMemory,
-    /// Encountered an invalid key upon item access.
-    InvalidKey,
     /// Encountered a key that is out of bounds for an arena.
     OutOfBoundsKey,
     /// Allocated too many items to an arena.
@@ -21,7 +19,6 @@ impl fmt::Display for ArenaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Self::OutOfSystemMemory => "ran out of system memory",
-            Self::InvalidKey => "item access with invalid key",
             Self::OutOfBoundsKey => "encounteded out of bounds key",
             Self::NotEnoughKeys => "ran out of valid keys",
             Self::AliasingPairAccess => "tried to access aliasing item pair",
