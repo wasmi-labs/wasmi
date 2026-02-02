@@ -20,6 +20,16 @@ pub struct RawHandle<T: Handle> {
     marker: PhantomData<T>,
 }
 
+impl<T: Handle> RawHandle<T> {
+    /// Creates a new [`RawHandle`] from the underlying raw representation.
+    fn new(raw: <T as Handle>::Raw) -> Self {
+        Self {
+            raw,
+            marker: PhantomData,
+        }
+    }
+}
+
 impl<T: Handle> ArenaKey for RawHandle<T> {
     #[inline]
     fn into_usize(self) -> usize {
@@ -28,11 +38,7 @@ impl<T: Handle> ArenaKey for RawHandle<T> {
 
     #[inline]
     fn from_usize(value: usize) -> Option<Self> {
-        let raw = <<T as Handle>::Raw as ArenaKey>::from_usize(value)?;
-        Some(Self {
-            raw,
-            marker: PhantomData,
-        })
+        <<T as Handle>::Raw as ArenaKey>::from_usize(value).map(Self::new)
     }
 }
 
