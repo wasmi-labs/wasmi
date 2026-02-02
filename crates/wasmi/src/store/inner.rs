@@ -270,8 +270,11 @@ impl StoreInner {
     /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
-        let instance = self.instances.alloc(InstanceEntity::uninitialized());
-        Instance::from_inner(self.id.wrap(instance))
+        let key = match self.instances.alloc(InstanceEntity::uninitialized()) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc uninit instance"),
+        };
+        Instance::from_inner(self.id.wrap(key))
     }
 
     /// Initializes the [`Instance`] using the given [`InstanceEntity`].
@@ -298,7 +301,7 @@ impl StoreInner {
         let uninit = self
             .instances
             .get_mut(*idx)
-            .unwrap_or_else(|| panic!("missing entity for the given instance: {instance:?}"));
+            .unwrap_or_else(|err| panic!("failed to resolve instance (= {instance:?}): {err}"));
         assert!(
             !uninit.is_initialized(),
             "encountered an already initialized instance: {uninit:?}",
@@ -322,8 +325,8 @@ impl StoreInner {
     {
         let idx = self.unwrap_stored(idx)?;
         match entities.get(*idx) {
-            Some(entity) => Ok(entity),
-            None => Err(InternalStoreError::not_found()),
+            Ok(entity) => Ok(entity),
+            Err(_err) => Err(InternalStoreError::not_found()),
         }
     }
 
@@ -345,8 +348,8 @@ impl StoreInner {
         Idx: ArenaKey + Debug,
     {
         match entities.get_mut(idx) {
-            Some(entity) => Ok(entity),
-            None => Err(InternalStoreError::not_found()),
+            Ok(entity) => Ok(entity),
+            Err(_err) => Err(InternalStoreError::not_found()),
         }
     }
 
@@ -474,8 +477,8 @@ impl StoreInner {
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
         let fst = self.unwrap_stored(fst.as_inner())?;
         let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|| {
-            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|err| {
+            panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
         });
         let fuel = &mut self.fuel;
         Ok((fst, snd, fuel))
@@ -627,9 +630,12 @@ impl StoreInner {
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
         let fst = self.unwrap_stored(fst.as_inner())?;
         let snd = self.unwrap_stored(snd.as_inner())?;
-        let (fst, snd) = self.memories.get_pair_mut(*fst, *snd).unwrap_or_else(|| {
-            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
-        });
+        let (fst, snd) = self
+            .memories
+            .get_pair_mut(*fst, *snd)
+            .unwrap_or_else(|err| {
+                panic!("failed to resolve stored pair of memories at {fst:?} and {snd:?}: {err}")
+            });
         let fuel = &mut self.fuel;
         Ok((fst, snd, fuel))
     }
@@ -676,8 +682,11 @@ impl StoreInner {
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
     pub fn alloc_func(&mut self, func: FuncEntity) -> Func {
-        let idx = self.funcs.alloc(func);
-        Func::from_inner(self.id.wrap(idx))
+        let key = match self.funcs.alloc(func) {
+            Ok(key) => key,
+            Err(err) => handle_arena_err(err, "alloc func"),
+        };
+        Func::from_inner(self.id.wrap(key))
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
