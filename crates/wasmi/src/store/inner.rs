@@ -199,39 +199,39 @@ impl StoreInner {
     }
 
     /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
-    pub fn alloc_global(&mut self, global: CoreGlobal) -> Global {
-        let global = self.globals.alloc(global);
-        Global::from_inner(self.id.wrap(global))
+    pub fn alloc_global(&mut self, value: CoreGlobal) -> Global {
+        let key = self.globals.alloc(value);
+        Global::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
-    pub fn alloc_table(&mut self, table: CoreTable) -> Table {
-        let table = self.tables.alloc(table);
-        Table::from_inner(self.id.wrap(table))
+    pub fn alloc_table(&mut self, value: CoreTable) -> Table {
+        let key = self.tables.alloc(value);
+        Table::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
-    pub fn alloc_memory(&mut self, memory: CoreMemory) -> Memory {
-        let memory = self.memories.alloc(memory);
-        Memory::from_inner(self.id.wrap(memory))
+    pub fn alloc_memory(&mut self, value: CoreMemory) -> Memory {
+        let key = self.memories.alloc(value);
+        Memory::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
-    pub fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
-        let segment = self.datas.alloc(segment);
-        DataSegment::from_inner(self.id.wrap(segment))
+    pub fn alloc_data_segment(&mut self, value: DataSegmentEntity) -> DataSegment {
+        let key = self.datas.alloc(value);
+        DataSegment::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
-    pub fn alloc_element_segment(&mut self, segment: CoreElementSegment) -> ElementSegment {
-        let segment = self.elems.alloc(segment);
-        ElementSegment::from_inner(self.id.wrap(segment))
+    pub fn alloc_element_segment(&mut self, value: CoreElementSegment) -> ElementSegment {
+        let key = self.elems.alloc(value);
+        ElementSegment::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
-    pub fn alloc_extern_object(&mut self, object: ExternRefEntity) -> ExternRef {
-        let object = self.extern_objects.alloc(object);
-        ExternRef::from_inner(self.id.wrap(object))
+    pub fn alloc_extern_object(&mut self, value: ExternRefEntity) -> ExternRef {
+        let key = self.extern_objects.alloc(value);
+        ExternRef::from_inner(self.id.wrap(key))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
