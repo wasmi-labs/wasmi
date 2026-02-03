@@ -23,12 +23,13 @@ use crate::{
     Error,
     Val,
     engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
+    store::Stored,
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZero};
 
 define_handle! {
-    struct Trampoline(usize) => TrampolineEntity<Generic>;
+    struct Trampoline(usize, Stored) => TrampolineEntity<Generic>;
 }
 
 /// Marker type to mark a type as generic in associated trait.
@@ -286,7 +287,7 @@ impl<T> Clone for TrampolineEntity<T> {
 
 define_handle! {
     /// A Wasm or host function reference.
-    struct Func(NonZero<u32>) => FuncEntity;
+    struct Func(NonZero<u32>, Stored) => FuncEntity;
 }
 
 impl Func {

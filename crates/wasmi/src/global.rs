@@ -1,9 +1,17 @@
-use super::{AsContext, AsContextMut};
-use crate::{GlobalType, Mutability, Val, core::CoreGlobal, errors::GlobalError};
+use crate::{
+    AsContext,
+    AsContextMut,
+    GlobalType,
+    Mutability,
+    Val,
+    core::CoreGlobal,
+    errors::GlobalError,
+    store::Stored,
+};
 
 define_handle! {
     /// A Wasm global variable reference.
-    struct Global(u32) => CoreGlobal;
+    struct Global(u32, Stored) => CoreGlobal;
 }
 
 impl Global {

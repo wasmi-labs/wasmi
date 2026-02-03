@@ -5,12 +5,20 @@ pub use self::{
     data::{DataSegment, DataSegmentEntity},
     ty::{MemoryType, MemoryTypeBuilder},
 };
-use super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
-use crate::{Error, core::CoreMemory, errors::MemoryError};
+use crate::{
+    AsContext,
+    AsContextMut,
+    Error,
+    StoreContext,
+    StoreContextMut,
+    core::CoreMemory,
+    errors::MemoryError,
+    store::Stored,
+};
 
 define_handle! {
     /// A Wasm linear memory reference.
-    struct Memory(u32) => CoreMemory;
+    struct Memory(u32, Stored) => CoreMemory;
 }
 
 impl Memory {

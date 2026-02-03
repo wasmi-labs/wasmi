@@ -4,6 +4,7 @@ use crate::{
     RefType,
     StoreContext,
     core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
+    store::Stored,
 };
 use alloc::boxed::Box;
 use core::{any::Any, mem, num::NonZero};
@@ -226,7 +227,7 @@ impl ExternRefEntity {
 
 define_handle! {
     /// Represents an opaque reference to any data within WebAssembly.
-    struct ExternRef(NonZero<u32>) => ExternRefEntity;
+    struct ExternRef(NonZero<u32>, Stored) => ExternRefEntity;
 }
 
 impl ExternRef {

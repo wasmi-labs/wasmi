@@ -1,12 +1,13 @@
 use crate::{
     AsContextMut,
     module::{self, PassiveDataSegmentBytes},
+    store::Stored,
 };
 use core::convert::AsRef;
 
 define_handle! {
     /// A Wasm data segment reference.
-    struct DataSegment(u32) => DataSegmentEntity;
+    struct DataSegment(u32, Stored) => DataSegmentEntity;
 }
 
 impl DataSegment {

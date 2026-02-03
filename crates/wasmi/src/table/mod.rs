@@ -6,7 +6,7 @@ use crate::{
     Ref,
     core::CoreTable,
     errors::TableError,
-    store::Handle,
+    store::{Handle, Stored},
 };
 
 mod element;
@@ -14,7 +14,7 @@ mod ty;
 
 define_handle! {
     /// A Wasm table reference.
-    struct Table(u32) => CoreTable;
+    struct Table(u32, Stored) => CoreTable;
 }
 
 impl Table {

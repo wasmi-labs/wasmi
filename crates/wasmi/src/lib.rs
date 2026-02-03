@@ -91,9 +91,10 @@ mod foreach_tuple;
 #[cfg(test)]
 pub mod tests;
 
-mod engine;
 #[macro_use]
 mod store;
+
+mod engine;
 mod error;
 mod func;
 mod global;

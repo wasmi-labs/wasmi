@@ -1,16 +1,24 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 pub use self::exports::{Export, ExportsIter, Extern, ExternType};
-use super::{AsContext, Func, Global, Memory, Module, StoreContext, Table, engine::DedupFuncType};
 use crate::{
+    AsContext,
     AsContextMut,
     ElementSegment,
     Error,
+    Func,
+    Global,
+    Memory,
+    Module,
+    StoreContext,
+    Table,
     TypedFunc,
     WasmParams,
     WasmResults,
     collections::Map,
+    engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
+    store::Stored,
 };
 use alloc::{boxed::Box, sync::Arc};
 
@@ -120,7 +128,7 @@ define_handle! {
     ///
     /// Instances are owned by a [`Store`](crate::Store).
     /// Create new instances using [`Linker::instantiate_and_start`](crate::Linker::instantiate_and_start).
-    struct Instance(u32) => InstanceEntity;
+    struct Instance(u32, Stored) => InstanceEntity;
 }
 
 impl Instance {

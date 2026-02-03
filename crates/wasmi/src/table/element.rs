@@ -5,12 +5,13 @@ use crate::{
     Global,
     core::{CoreElementSegment, UntypedRef},
     module,
+    store::Stored,
 };
 use alloc::boxed::Box;
 
 define_handle! {
     /// A Wasm data segment reference.
-    struct ElementSegment(u32) => CoreElementSegment;
+    struct ElementSegment(u32, Stored) => CoreElementSegment;
 }
 
 impl ElementSegment {
