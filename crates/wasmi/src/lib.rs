@@ -92,7 +92,7 @@ mod foreach_tuple;
 pub mod tests;
 
 #[macro_use]
-mod store;
+mod handle;
 
 mod engine;
 mod error;
@@ -104,6 +104,7 @@ mod linker;
 mod memory;
 mod module;
 mod reftype;
+mod store;
 mod table;
 mod value;
 
@@ -207,9 +208,9 @@ pub use self::{
 };
 use self::{
     func::FuncEntity,
+    handle::{Handle, RawHandle},
     instance::{InstanceEntity, InstanceEntityBuilder},
     memory::DataSegmentEntity,
-    store::Handle,
     table::ElementSegment,
 };
 pub use wasmi_core::{

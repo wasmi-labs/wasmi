@@ -3,10 +3,11 @@ use crate::{
     AsContext,
     AsContextMut,
     Error,
+    Handle,
     Ref,
     core::CoreTable,
     errors::TableError,
-    store::{Handle, Stored},
+    store::Stored,
 };
 
 mod element;

@@ -109,20 +109,20 @@ macro_rules! define_handle {
             ::core::clone::Clone,
         )]
         #[repr(transparent)]
-        pub struct $name(<Self as $crate::Handle>::Owned<$crate::store::RawHandle<Self>>);
+        pub struct $name(<Self as $crate::Handle>::Owned<$crate::RawHandle<Self>>);
 
         impl $crate::Handle for $name {
             type Raw = $raw;
             type Entity = $entity;
             type Owned<T> = $owned<T>;
 
-            fn raw(&self) -> &Self::Owned<$crate::store::RawHandle<Self>> {
+            fn raw(&self) -> &Self::Owned<$crate::RawHandle<Self>> {
                 &self.0
             }
         }
 
-        impl ::core::convert::From<<Self as $crate::Handle>::Owned<$crate::store::RawHandle<Self>>> for $name {
-            fn from(handle: <Self as $crate::Handle>::Owned<$crate::store::RawHandle<Self>>) -> Self {
+        impl ::core::convert::From<<Self as $crate::Handle>::Owned<$crate::RawHandle<Self>>> for $name {
+            fn from(handle: <Self as $crate::Handle>::Owned<$crate::RawHandle<Self>>) -> Self {
                 Self(handle)
             }
         }

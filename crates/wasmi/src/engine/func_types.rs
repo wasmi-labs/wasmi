@@ -1,8 +1,8 @@
 use crate::{
     FuncType,
+    RawHandle,
     collections::arena::{ArenaKey, DedupArena},
     engine::{EngineId, EngineOwned},
-    store::RawHandle,
 };
 
 define_handle! {

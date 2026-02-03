@@ -3,10 +3,7 @@ mod error;
 mod inner;
 mod pruned;
 mod typeid;
-#[macro_use]
-mod handle;
 
-pub(crate) use self::handle::{Handle, RawHandle};
 use self::pruned::PrunedStoreVTable;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
@@ -17,7 +14,9 @@ pub use self::{
 use crate::{
     Engine,
     Error,
+    Handle,
     Memory,
+    RawHandle,
     ResourceLimiter,
     collections::arena::{Arena, ArenaError},
     core::{CoreMemory, ResourceLimiterRef},
