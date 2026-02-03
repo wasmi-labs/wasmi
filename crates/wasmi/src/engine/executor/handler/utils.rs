@@ -29,7 +29,7 @@ use crate::{
     ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
-    table::ElementSegment,
+    table::{ElementSegment, TableEntity},
 };
 use core::num::NonZero;
 
@@ -390,7 +390,7 @@ impl_resolve_from_store! {
     fn resolve_func(func: &Func) -> &'a FuncEntity = StoreInner::try_resolve_func;
     fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
     fn resolve_memory(memory: &Memory) -> &'a CoreMemory = StoreInner::try_resolve_memory;
-    fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
+    fn resolve_table(table: &Table) -> &'a TableEntity = StoreInner::try_resolve_table;
     fn resolve_instance(func: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
     // fn resolve_func_type(func_type: DedupFuncType) -> DedupFuncType = StoreInner::resolve_func_type;
 
@@ -398,7 +398,7 @@ impl_resolve_from_store! {
     fn resolve_data_mut(data: &DataSegment) -> &'a mut DataSegmentEntity = StoreInner::try_resolve_data_mut;
     fn resolve_global_mut(global: &Global) -> &'a mut CoreGlobal = StoreInner::try_resolve_global_mut;
     fn resolve_memory_mut(memory: &Memory) -> &'a mut CoreMemory = StoreInner::try_resolve_memory_mut;
-    fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
+    fn resolve_table_mut(table: &Table) -> &'a mut TableEntity = StoreInner::try_resolve_table_mut;
 }
 
 pub fn resolve_indirect_func(
