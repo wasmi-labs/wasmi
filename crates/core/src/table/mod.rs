@@ -220,7 +220,7 @@ impl Table {
         self.set_untyped(index, value.into())
     }
 
-    /// Returns the [`UntypedRef`] of the [`Table`] at `index`.
+    /// Sets the [`UntypedRef`] of the [`Table`] at `index`.
     ///
     /// # Errors
     ///
