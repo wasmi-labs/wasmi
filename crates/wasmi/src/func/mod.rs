@@ -16,53 +16,24 @@ use super::{
     AsContextMut,
     Instance,
     StoreContext,
-    Stored,
     engine::{DedupFuncType, EngineFunc},
 };
 use crate::{
     Engine,
     Error,
     Val,
-    collections::arena::ArenaKey,
     engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
-    reftype::RefId,
+    store::Stored,
 };
 use alloc::{boxed::Box, sync::Arc};
-use core::{fmt, fmt::Debug};
+use core::{fmt, fmt::Debug, num::NonZero};
 
-/// A raw index to a function entity.
-pub type FuncIdx = RefId<Func>;
-
-/// A raw index to a host function trampoline entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TrampolineIdx(usize);
-
-impl ArenaKey for TrampolineIdx {
-    fn into_usize(self) -> usize {
-        self.0
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    struct Trampoline(usize, Stored) => TrampolineEntity<Generic>;
 }
 
-/// A host function reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Trampoline(Stored<TrampolineIdx>);
-
-impl Trampoline {
-    /// Creates a new host function reference.
-    pub(super) fn from_inner(stored: Stored<TrampolineIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<TrampolineIdx> {
-        &self.0
-    }
-}
+/// Marker type to mark a type as generic in associated trait.
+pub enum Generic {}
 
 /// A Wasm or host function instance.
 #[derive(Debug)]
@@ -314,22 +285,12 @@ impl<T> Clone for TrampolineEntity<T> {
     }
 }
 
-/// A Wasm or host function reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Func(Stored<FuncIdx>);
+define_handle! {
+    /// A Wasm or host function reference.
+    struct Func(NonZero<u32>, Stored) => FuncEntity;
+}
 
 impl Func {
-    /// Creates a new Wasm or host function reference.
-    pub(super) fn from_inner(stored: Stored<FuncIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<FuncIdx> {
-        &self.0
-    }
-
     /// Creates a new [`Func`] with the given arguments.
     ///
     /// This is typically used to create a host-defined function to pass as an import to a Wasm module.

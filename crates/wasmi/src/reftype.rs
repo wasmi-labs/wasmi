@@ -3,80 +3,11 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    collections::arena::ArenaKey,
     core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
     store::Stored,
 };
 use alloc::boxed::Box;
-use core::{any, any::Any, cmp, fmt, marker::PhantomData, mem, num::NonZero};
-
-/// The typed base type for all reference type identifiers.
-pub struct RefId<T> {
-    /// The underlying non-zero identifier.
-    id: NonZero<u32>,
-    /// Marker for the compiler to differentiate reference types.
-    marker: PhantomData<fn() -> T>,
-}
-
-impl<T> fmt::Debug for RefId<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RawRefId")
-            .field("id", &self.id)
-            .field("marker", &any::type_name::<T>())
-            .finish()
-    }
-}
-
-impl<T> Copy for RefId<T> {}
-
-impl<T> Clone for RefId<T> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<T> PartialEq for RefId<T> {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-impl<T> Eq for RefId<T> {}
-
-impl<T> PartialOrd for RefId<T> {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<T> Ord for RefId<T> {
-    #[inline]
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.id.cmp(&other.id)
-    }
-}
-
-impl<T> RefId<T> {
-    /// Creates a new [`RefId`] from the given `id`.
-    pub fn new(id: NonZero<u32>) -> Self {
-        Self {
-            id,
-            marker: PhantomData,
-        }
-    }
-}
-
-impl<T> ArenaKey for RefId<T> {
-    fn into_usize(self) -> usize {
-        self.id.into_usize()
-    }
-
-    fn from_usize(index: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(index).map(Self::new)
-    }
-}
+use core::{any::Any, mem, num::NonZero};
 
 /// A nullable reference type.
 #[derive(Debug, Default, Copy, Clone)]
@@ -271,9 +202,6 @@ impl Ref {
     }
 }
 
-/// A raw index to an external entity.
-pub type ExternRefIdx = RefId<ExternRef>;
-
 /// An externally defined object.
 #[derive(Debug)]
 pub struct ExternRefEntity {
@@ -297,22 +225,12 @@ impl ExternRefEntity {
     }
 }
 
-/// Represents an opaque reference to any data within WebAssembly.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct ExternRef(Stored<ExternRefIdx>);
+define_handle! {
+    /// Represents an opaque reference to any data within WebAssembly.
+    struct ExternRef(NonZero<u32>, Stored) => ExternRefEntity;
+}
 
 impl ExternRef {
-    /// Creates a new [`ExternRef`] reference from its raw representation.
-    pub(crate) fn from_inner(stored: Stored<ExternRefIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the raw representation of the [`ExternRef`].
-    pub(crate) fn as_inner(&self) -> &Stored<ExternRefIdx> {
-        &self.0
-    }
-
     /// Creates a new instance of `ExternRef` wrapping the given value.
     pub fn new<T>(mut ctx: impl AsContextMut, object: T) -> Self
     where

@@ -1,29 +1,22 @@
 use crate::{
     DataSegmentEntity,
-    DataSegmentIdx,
     ElementSegment,
-    ElementSegmentIdx,
     Engine,
     Error,
     Func,
     FuncEntity,
-    FuncIdx,
     FuncType,
     Global,
-    GlobalIdx,
     Instance,
     InstanceEntity,
-    InstanceIdx,
     Memory,
-    MemoryIdx,
     Table,
-    TableIdx,
     collections::arena::{Arena, ArenaKey},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
-    reftype::{ExternRef, ExternRefEntity, ExternRefIdx},
-    store::{error::InternalStoreError, handle_arena_err},
+    reftype::{ExternRef, ExternRefEntity},
+    store::{Handle, RawHandle, error::InternalStoreError, handle_arena_err},
 };
 use core::{
     fmt::Debug,
@@ -72,6 +65,8 @@ impl<T> Stored<T> {
     }
 }
 
+type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
+
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
@@ -80,23 +75,23 @@ pub struct StoreInner {
     /// Used to protect against invalid entity indices.
     id: StoreId,
     /// Stored Wasm or host functions.
-    funcs: Arena<FuncIdx, FuncEntity>,
+    funcs: StoreArena<Func>,
     /// Stored linear memories.
-    memories: Arena<MemoryIdx, CoreMemory>,
+    memories: StoreArena<Memory>,
     /// Stored tables.
-    tables: Arena<TableIdx, CoreTable>,
+    tables: StoreArena<Table>,
     /// Stored global variables.
-    globals: Arena<GlobalIdx, CoreGlobal>,
+    globals: StoreArena<Global>,
     /// Stored module instances.
-    instances: Arena<InstanceIdx, InstanceEntity>,
+    instances: StoreArena<Instance>,
     /// Stored data segments.
-    datas: Arena<DataSegmentIdx, DataSegmentEntity>,
+    datas: StoreArena<DataSegment>,
     /// Stored data segments.
-    elems: Arena<ElementSegmentIdx, CoreElementSegment>,
+    elems: StoreArena<ElementSegment>,
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
-    extern_objects: Arena<ExternRefIdx, ExternRefEntity>,
+    extern_objects: StoreArena<ExternRef>,
     /// The [`Engine`] in use by the [`StoreInner`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -206,7 +201,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc global"),
         };
-        Global::from_inner(self.id.wrap(key))
+        Global::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
@@ -215,7 +210,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc table"),
         };
-        Table::from_inner(self.id.wrap(key))
+        Table::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
@@ -224,7 +219,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc memory"),
         };
-        Memory::from_inner(self.id.wrap(key))
+        Memory::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
@@ -233,7 +228,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc data segment"),
         };
-        DataSegment::from_inner(self.id.wrap(key))
+        DataSegment::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
@@ -242,7 +237,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc element segment"),
         };
-        ElementSegment::from_inner(self.id.wrap(key))
+        ElementSegment::from(self.id.wrap(key))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
@@ -251,7 +246,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc extern object"),
         };
-        ExternRef::from_inner(self.id.wrap(key))
+        ExternRef::from(self.id.wrap(key))
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
@@ -260,7 +255,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc func"),
         };
-        Func::from_inner(self.id.wrap(key))
+        Func::from(self.id.wrap(key))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -277,7 +272,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc uninit instance"),
         };
-        Instance::from_inner(self.id.wrap(key))
+        Instance::from(self.id.wrap(key))
     }
 
     /// Initializes the [`Instance`] using the given [`InstanceEntity`].
@@ -297,7 +292,7 @@ impl StoreInner {
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
-        let idx = match self.unwrap_stored(instance.as_inner()) {
+        let idx = match self.unwrap_stored(instance.raw()) {
             Ok(idx) => idx,
             Err(error) => panic!("failed to unwrap stored entity: {error}"),
         };
@@ -387,7 +382,7 @@ impl StoreInner {
     /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn try_resolve_global(&self, global: &Global) -> Result<&CoreGlobal, InternalStoreError> {
-        self.resolve(global.as_inner(), &self.globals)
+        self.resolve(global.raw(), &self.globals)
     }
 
     /// Returns an exclusive reference to the [`CoreGlobal`] associated to the given [`Global`].
@@ -400,7 +395,7 @@ impl StoreInner {
         &mut self,
         global: &Global,
     ) -> Result<&mut CoreGlobal, InternalStoreError> {
-        let idx = self.unwrap_stored(global.as_inner())?;
+        let idx = self.unwrap_stored(global.raw())?;
         Self::resolve_mut(*idx, &mut self.globals)
     }
 
@@ -411,7 +406,7 @@ impl StoreInner {
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn try_resolve_table(&self, table: &Table) -> Result<&CoreTable, InternalStoreError> {
-        self.resolve(table.as_inner(), &self.tables)
+        self.resolve(table.raw(), &self.tables)
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
@@ -424,7 +419,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
     ) -> Result<&mut CoreTable, InternalStoreError> {
-        let idx = self.unwrap_stored(table.as_inner())?;
+        let idx = self.unwrap_stored(table.raw())?;
         Self::resolve_mut(*idx, &mut self.tables)
     }
 
@@ -441,8 +436,8 @@ impl StoreInner {
         table: &Table,
         elem: &ElementSegment,
     ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
-        let table_idx = self.unwrap_stored(table.as_inner())?;
-        let elem_idx = self.unwrap_stored(elem.as_inner())?;
+        let table_idx = self.unwrap_stored(table.raw())?;
+        let elem_idx = self.unwrap_stored(elem.raw())?;
         let table = Self::resolve_mut(*table_idx, &mut self.tables)?;
         let elem = Self::resolve_mut(*elem_idx, &mut self.elems)?;
         Ok((table, elem))
@@ -461,7 +456,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
     ) -> Result<(&mut CoreTable, &mut Fuel), InternalStoreError> {
-        let idx = self.unwrap_stored(table.as_inner())?;
+        let idx = self.unwrap_stored(table.raw())?;
         let table = Self::resolve_mut(*idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
         Ok((table, fuel))
@@ -478,8 +473,8 @@ impl StoreInner {
         fst: &Table,
         snd: &Table,
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
-        let fst = self.unwrap_stored(fst.as_inner())?;
-        let snd = self.unwrap_stored(snd.as_inner())?;
+        let fst = self.unwrap_stored(fst.raw())?;
+        let snd = self.unwrap_stored(snd.raw())?;
         let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|err| {
             panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
         });
@@ -512,8 +507,8 @@ impl StoreInner {
         table: &Table,
         segment: &ElementSegment,
     ) -> Result<(&mut CoreTable, &CoreElementSegment, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(table.as_inner())?;
-        let elem_idx = segment.as_inner();
+        let mem_idx = self.unwrap_stored(table.raw())?;
+        let elem_idx = segment.raw();
         let elem = self.resolve(elem_idx, &self.elems)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
@@ -530,7 +525,7 @@ impl StoreInner {
         &self,
         segment: &ElementSegment,
     ) -> Result<&CoreElementSegment, InternalStoreError> {
-        self.resolve(segment.as_inner(), &self.elems)
+        self.resolve(segment.raw(), &self.elems)
     }
 
     /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
@@ -543,7 +538,7 @@ impl StoreInner {
         &mut self,
         segment: &ElementSegment,
     ) -> Result<&mut CoreElementSegment, InternalStoreError> {
-        let idx = self.unwrap_stored(segment.as_inner())?;
+        let idx = self.unwrap_stored(segment.raw())?;
         Self::resolve_mut(*idx, &mut self.elems)
     }
 
@@ -557,7 +552,7 @@ impl StoreInner {
         &'a self,
         memory: &Memory,
     ) -> Result<&'a CoreMemory, InternalStoreError> {
-        self.resolve(memory.as_inner(), &self.memories)
+        self.resolve(memory.raw(), &self.memories)
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
@@ -570,7 +565,7 @@ impl StoreInner {
         &'a mut self,
         memory: &Memory,
     ) -> Result<&'a mut CoreMemory, InternalStoreError> {
-        let idx = self.unwrap_stored(memory.as_inner())?;
+        let idx = self.unwrap_stored(memory.raw())?;
         Self::resolve_mut(*idx, &mut self.memories)
     }
 
@@ -584,7 +579,7 @@ impl StoreInner {
         &mut self,
         memory: &Memory,
     ) -> Result<(&mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let idx = self.unwrap_stored(memory.as_inner())?;
+        let idx = self.unwrap_stored(memory.raw())?;
         let memory = Self::resolve_mut(*idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
         Ok((memory, fuel))
@@ -612,8 +607,8 @@ impl StoreInner {
         memory: &Memory,
         segment: &DataSegment,
     ) -> Result<(&mut CoreMemory, &DataSegmentEntity, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(memory.as_inner())?;
-        let data_idx = segment.as_inner();
+        let mem_idx = self.unwrap_stored(memory.raw())?;
+        let data_idx = segment.raw();
         let data = self.resolve(data_idx, &self.datas)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
@@ -631,8 +626,8 @@ impl StoreInner {
         mem0: &Memory,
         mem1: &Memory,
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let mem0 = self.unwrap_stored(mem0.as_inner())?;
-        let mem1 = self.unwrap_stored(mem1.as_inner())?;
+        let mem0 = self.unwrap_stored(mem0.raw())?;
+        let mem1 = self.unwrap_stored(mem1.raw())?;
         let (mem0, mem1) = self
             .memories
             .get_pair_mut(*mem0, *mem1)
@@ -653,7 +648,7 @@ impl StoreInner {
         &mut self,
         key: &DataSegment,
     ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
-        let raw_key = self.unwrap_stored(key.as_inner())?;
+        let raw_key = self.unwrap_stored(key.raw())?;
         Self::resolve_mut(*raw_key, &mut self.datas)
     }
 
@@ -667,7 +662,7 @@ impl StoreInner {
         &self,
         key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        self.resolve(key.as_inner(), &self.instances)
+        self.resolve(key.raw(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
@@ -680,7 +675,7 @@ impl StoreInner {
         &self,
         key: &ExternRef,
     ) -> Result<&ExternRefEntity, InternalStoreError> {
-        self.resolve(key.as_inner(), &self.extern_objects)
+        self.resolve(key.raw(), &self.extern_objects)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
@@ -690,7 +685,7 @@ impl StoreInner {
     /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
     pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
-        self.resolve(key.as_inner(), &self.funcs)
+        self.resolve(key.raw(), &self.funcs)
     }
 }
 

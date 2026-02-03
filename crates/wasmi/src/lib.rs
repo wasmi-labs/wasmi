@@ -91,6 +91,9 @@ mod foreach_tuple;
 #[cfg(test)]
 pub mod tests;
 
+#[macro_use]
+mod handle;
+
 mod engine;
 mod error;
 mod func;
@@ -204,12 +207,11 @@ pub use self::{
     value::Val,
 };
 use self::{
-    func::{FuncEntity, FuncIdx},
-    global::GlobalIdx,
-    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
-    store::Stored,
-    table::{ElementSegment, ElementSegmentIdx, TableIdx},
+    func::FuncEntity,
+    handle::{Handle, RawHandle},
+    instance::{InstanceEntity, InstanceEntityBuilder},
+    memory::DataSegmentEntity,
+    table::ElementSegment,
 };
 pub use wasmi_core::{
     F32,

@@ -14,12 +14,14 @@ pub use self::{
 use crate::{
     Engine,
     Error,
+    Handle,
     Memory,
+    RawHandle,
     ResourceLimiter,
     collections::arena::{Arena, ArenaError},
     core::{CoreMemory, ResourceLimiterRef},
     engine::{InOutParams, Inst},
-    func::{Trampoline, TrampolineEntity, TrampolineIdx},
+    func::{Trampoline, TrampolineEntity},
 };
 use alloc::boxed::Box;
 use core::{
@@ -210,7 +212,7 @@ impl<T> Store<T> {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc host func trampoline"),
         };
-        Trampoline::from_inner(self.inner.id().wrap(key))
+        Trampoline::from(self.inner.id().wrap(key))
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]
@@ -242,7 +244,7 @@ impl<T> Store<T> {
         &self,
         key: &Trampoline,
     ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
-        let raw_key = self.inner.unwrap_stored(key.as_inner())?;
+        let raw_key = self.inner.unwrap_stored(key.raw())?;
         let Ok(trampoline) = self.typed.trampolines.get(*raw_key) else {
             return Err(InternalStoreError::not_found());
         };
@@ -304,7 +306,7 @@ impl<T> Store<T> {
 #[derive(Debug)]
 pub struct TypedStoreInner<T> {
     /// Stored host function trampolines.
-    trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
+    trampolines: Arena<RawHandle<Trampoline>, TrampolineEntity<T>>,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
     /// User provided callback called when a host calls a WebAssembly function

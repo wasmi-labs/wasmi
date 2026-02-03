@@ -1,41 +1,29 @@
-use super::{EngineId, EngineOwned};
 use crate::{
     FuncType,
+    RawHandle,
     collections::arena::{ArenaKey, DedupArena},
+    engine::{EngineId, EngineOwned},
 };
 
-/// A raw index to a function signature entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct DedupFuncTypeIdx(u32);
-
-impl ArenaKey for DedupFuncTypeIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    /// A deduplicated Wasm [`FuncType`].
+    ///
+    /// # Note
+    ///
+    /// Advantages over a non-deduplicated [`FuncType`] are:
+    ///
+    /// - Comparison for equality is as fast as an integer value comparison.
+    ///     - With this we can speed up indirect calls in the engine.
+    /// - Requires a lot less memory footprint to be stored somewhere compared
+    ///   to a full fledged [`FuncType`].
+    ///
+    /// Disadvantages compared to non-deduplicated [`FuncType`] are:
+    ///
+    /// - Requires another indirection to acquire information such as parameter
+    ///   or result types of the underlying [`FuncType`].
+    #[derive(PartialEq, Eq)]
+    struct DedupFuncType(u32, EngineOwned) => FuncType;
 }
-
-/// A deduplicated Wasm [`FuncType`].
-///
-/// # Note
-///
-/// Advantages over a non-deduplicated [`FuncType`] are:
-///
-/// - Comparison for equality is as fast as an integer value comparison.
-///     - With this we can speed up indirect calls in the engine.
-/// - Requires a lot less memory footprint to be stored somewhere compared
-///   to a full fledged [`FuncType`].
-///
-/// Disadvantages compared to non-deduplicated [`FuncType`] are:
-///
-/// - Requires another indirection to acquire information such as parameter
-///   or result types of the underlying [`FuncType`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct DedupFuncType(EngineOwned<DedupFuncTypeIdx>);
 
 /// A [`FuncType`] registry that efficiently deduplicate stored function types.
 ///
@@ -61,7 +49,7 @@ pub struct FuncTypeRegistry {
     ///
     /// The engine deduplicates function types to make the equality
     /// comparison very fast. This helps to speed up indirect calls.
-    func_types: DedupArena<DedupFuncTypeIdx, FuncType>,
+    func_types: DedupArena<RawHandle<DedupFuncType>, FuncType>,
 }
 
 impl FuncTypeRegistry {

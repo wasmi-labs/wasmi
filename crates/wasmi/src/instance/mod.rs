@@ -1,26 +1,24 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 pub use self::exports::{Export, ExportsIter, Extern, ExternType};
-use super::{
+use crate::{
     AsContext,
+    AsContextMut,
+    ElementSegment,
+    Error,
     Func,
     Global,
     Memory,
     Module,
     StoreContext,
-    Stored,
     Table,
-    engine::DedupFuncType,
-};
-use crate::{
-    AsContextMut,
-    ElementSegment,
-    Error,
     TypedFunc,
     WasmParams,
     WasmResults,
-    collections::{Map, arena::ArenaKey},
+    collections::Map,
+    engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
+    store::Stored,
 };
 use alloc::{boxed::Box, sync::Arc};
 
@@ -29,20 +27,6 @@ mod exports;
 
 #[cfg(test)]
 mod tests;
-
-/// A raw index to a module instance entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct InstanceIdx(u32);
-
-impl ArenaKey for InstanceIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
-}
 
 /// A module instance entity.
 #[derive(Debug)]
@@ -132,20 +116,20 @@ impl InstanceEntity {
     }
 }
 
-/// An instantiated WebAssembly [`Module`].
-///
-/// This type represents an instantiation of a [`Module`].
-/// It primarily allows to access its [`exports`](Instance::exports)
-/// to call functions, get or set globals, read or write memory, etc.
-///
-/// When interacting with any Wasm code you will want to create an
-/// [`Instance`] in order to execute anything.
-///
-/// Instances are owned by a [`Store`](crate::Store).
-/// Create new instances using [`Linker::instantiate_and_start`](crate::Linker::instantiate_and_start).
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct Instance(Stored<InstanceIdx>);
+define_handle! {
+    /// An instantiated WebAssembly [`Module`].
+    ///
+    /// This type represents an instantiation of a [`Module`].
+    /// It primarily allows to access its [`exports`](Instance::exports)
+    /// to call functions, get or set globals, read or write memory, etc.
+    ///
+    /// When interacting with any Wasm code you will want to create an
+    /// [`Instance`] in order to execute anything.
+    ///
+    /// Instances are owned by a [`Store`](crate::Store).
+    /// Create new instances using [`Linker::instantiate_and_start`](crate::Linker::instantiate_and_start).
+    struct Instance(u32, Stored) => InstanceEntity;
+}
 
 impl Instance {
     /// Creates a new [`Instance`] from the pre-compiled [`Module`] and the list of `imports`.
@@ -186,22 +170,6 @@ impl Instance {
     ) -> Result<Instance, Error> {
         let instance = Module::instantiate(module, &mut store, imports.iter().cloned())?;
         Ok(instance)
-    }
-
-    /// Creates a new stored instance reference.
-    ///
-    /// # Note
-    ///
-    /// This API is primarily used by the [`Store`] itself.
-    ///
-    /// [`Store`]: [`crate::Store`]
-    pub(super) fn from_inner(stored: Stored<InstanceIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<InstanceIdx> {
-        &self.0
     }
 
     /// Returns the function at the `index` if any.

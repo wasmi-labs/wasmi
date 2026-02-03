@@ -2,42 +2,26 @@ mod data;
 mod ty;
 
 pub use self::{
-    data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
+    data::{DataSegment, DataSegmentEntity},
     ty::{MemoryType, MemoryTypeBuilder},
 };
-use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
-use crate::{Error, collections::arena::ArenaKey, core::CoreMemory, errors::MemoryError};
+use crate::{
+    AsContext,
+    AsContextMut,
+    Error,
+    StoreContext,
+    StoreContextMut,
+    core::CoreMemory,
+    errors::MemoryError,
+    store::Stored,
+};
 
-/// A raw index to a linear memory entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MemoryIdx(u32);
-
-impl ArenaKey for MemoryIdx {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
-    }
+define_handle! {
+    /// A Wasm linear memory reference.
+    struct Memory(u32, Stored) => CoreMemory;
 }
 
-/// A Wasm linear memory reference.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Memory(Stored<MemoryIdx>);
-
 impl Memory {
-    /// Creates a new linear memory reference.
-    pub(super) fn from_inner(stored: Stored<MemoryIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn as_inner(&self) -> &Stored<MemoryIdx> {
-        &self.0
-    }
-
     /// Creates a new linear memory to the store.
     ///
     /// # Errors
