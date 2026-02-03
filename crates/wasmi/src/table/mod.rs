@@ -447,7 +447,7 @@ impl TableEntity {
     ///
     /// - If `val` has a type mismatch with the element type of the table.
     /// - If the region to be filled is out of bounds for the table.
-    /// - If `val` originates from a different [`Store`] than the table.
+    /// - If `val` originates from a different [`Store`](crate::Store) than the table.
     ///
     /// # Panics
     ///
