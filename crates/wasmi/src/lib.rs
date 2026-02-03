@@ -208,6 +208,7 @@ use self::{
     func::FuncEntity,
     instance::{InstanceEntity, InstanceEntityBuilder},
     memory::DataSegmentEntity,
+    store::Handle,
     table::ElementSegment,
 };
 pub use wasmi_core::{

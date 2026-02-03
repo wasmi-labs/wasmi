@@ -1,15 +1,17 @@
-use crate::{collections::arena::ArenaKey, store::Stored};
+use crate::collections::arena::ArenaKey;
 use core::{fmt, marker::PhantomData};
 
 /// A handle for a stored owned entity.
-pub trait Handle: Copy + From<Stored<RawHandle<Self>>> {
+pub trait Handle: Copy + From<Self::Owned<RawHandle<Self>>> {
     /// The raw representation of the handle.
     type Raw: ArenaKey;
     /// The store owned entity type of the handle.
     type Entity;
+    /// The owner associating reference.
+    type Owned<T>;
 
     /// Returns a shared reference to the raw handle to the store owned entity.
-    fn raw(&self) -> &Stored<RawHandle<Self>>;
+    fn raw(&self) -> &Self::Owned<RawHandle<Self>>;
 }
 
 /// A raw handle with an associated handle type.
@@ -22,6 +24,7 @@ pub struct RawHandle<T: Handle> {
 
 impl<T: Handle> RawHandle<T> {
     /// Creates a new [`RawHandle`] from the underlying raw representation.
+    #[inline]
     fn new(raw: <T as Handle>::Raw) -> Self {
         Self {
             raw,
@@ -97,7 +100,7 @@ where
 macro_rules! define_handle {
     (
         $( #[$docs:meta] )*
-        struct $name:ident($raw:ty) => $entity:ty;
+        struct $name:ident($raw:ty, $owned:ident) => $entity:ty;
     ) => {
         $( #[$docs] )*
         #[derive(
@@ -106,19 +109,20 @@ macro_rules! define_handle {
             ::core::clone::Clone,
         )]
         #[repr(transparent)]
-        pub struct $name($crate::store::Stored<$crate::store::RawHandle<Self>>);
+        pub struct $name(<Self as $crate::Handle>::Owned<$crate::store::RawHandle<Self>>);
 
-        impl $crate::store::Handle for $name {
+        impl $crate::Handle for $name {
             type Raw = $raw;
             type Entity = $entity;
+            type Owned<T> = $owned<T>;
 
-            fn raw(&self) -> &crate::store::Stored<$crate::store::RawHandle<Self>> {
+            fn raw(&self) -> &Self::Owned<$crate::store::RawHandle<Self>> {
                 &self.0
             }
         }
 
-        impl ::core::convert::From<$crate::store::Stored<$crate::store::RawHandle<Self>>> for $name {
-            fn from(handle: $crate::store::Stored<$crate::store::RawHandle<Self>>) -> Self {
+        impl ::core::convert::From<<Self as $crate::Handle>::Owned<$crate::store::RawHandle<Self>>> for $name {
+            fn from(handle: <Self as $crate::Handle>::Owned<$crate::store::RawHandle<Self>>) -> Self {
                 Self(handle)
             }
         }
