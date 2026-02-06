@@ -165,9 +165,7 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmTy:
-    Send + LoadFromCellsByValue + StoreToCells
-{
+pub trait WasmTy: Send + LoadFromCellsByValue + StoreToCells {
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
     fn ty() -> ValType;
