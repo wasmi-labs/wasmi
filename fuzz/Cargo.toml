@@ -14,8 +14,8 @@ cargo-fuzz = true
 wasmi_fuzz = { workspace = true }
 wasmi = { workspace = true, features = ["std", "simd"] }
 wasm-smith = { workspace = true }
-libfuzzer-sys = "0.4.7"
-arbitrary = "1.3.2"
+libfuzzer-sys = "0.4.10"
+arbitrary = "1.4"
 wasmprinter = { workspace = true, optional = true }
 
 [features]
