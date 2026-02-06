@@ -297,7 +297,7 @@ jobs:
         run: |
           FEATURES=""
           if [ "${{ matrix.fuzz_target }}" == "differential" ]; then
-            FEATURES="--features differential,wasmi-v0,wasmi-v1"
+            FEATURES="--features differential,wasmi-v1"
           fi
           echo "FEATURES=$FEATURES" >> $GITHUB_ENV
       - name: Check Fuzzing Target
