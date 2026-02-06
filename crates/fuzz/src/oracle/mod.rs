@@ -51,13 +51,7 @@ pub enum ChosenOracle {
     WasmiV1,
     /// The Wasmtime oracle.
     #[cfg(feature = "wasmtime")]
-    #[cfg_attr(
-        all(
-            feature = "wasmtime",
-            not(feature = "wasmi-v1")
-        ),
-        default
-    )]
+    #[cfg_attr(all(feature = "wasmtime", not(feature = "wasmi-v1")), default)]
     Wasmtime,
 }
 
