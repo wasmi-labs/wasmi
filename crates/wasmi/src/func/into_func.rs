@@ -9,7 +9,6 @@ use crate::{
     FuncType,
     Nullable,
     ValType,
-    core::UntypedVal,
     engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
 };
 use core::{array, iter::FusedIterator};
@@ -166,7 +165,7 @@ for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
 pub trait WasmTy:
-    From<UntypedVal> + Into<UntypedVal> + Send + LoadFromCellsByValue + StoreToCells
+    Send + LoadFromCellsByValue + StoreToCells
 {
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
