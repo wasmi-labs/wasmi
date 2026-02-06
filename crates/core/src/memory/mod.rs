@@ -239,7 +239,7 @@ impl Memory {
                 .checked_mul(bytes_per_page)
                 .expect("additional size is within [min, max) page bounds");
             if let Err(FuelError::OutOfFuel { required_fuel }) =
-                fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(additional_bytes))
+                fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<u8>(additional_bytes))
             {
                 return notify_limiter(limiter, MemoryError::OutOfFuel { required_fuel });
             }
