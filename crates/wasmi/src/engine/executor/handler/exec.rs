@@ -579,7 +579,7 @@ pub fn memory_copy(
     let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
     let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
     consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_bytes(len as u64));
+        .fuel_for_copying_values::<u8>(len as u64));
     dst_bytes.copy_from_slice(src_bytes);
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
@@ -599,7 +599,7 @@ fn memory_copy_within(
     memory_slice(memory, src_index, len).into_control()?;
     memory_slice(memory, dst_index, len).into_control()?;
     consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_bytes(len as u64));
+        .fuel_for_copying_values::<u8>(len as u64));
     memory
         .data_mut()
         .copy_within(src_index..src_index.wrapping_add(len), dst_index);
@@ -637,7 +637,7 @@ pub fn memory_fill(
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     let slice = memory_slice_mut(memory, dst, len).into_control()?;
     consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_bytes(len as u64));
+        .fuel_for_copying_values::<u8>(len as u64));
     slice.fill(value);
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
@@ -686,7 +686,7 @@ pub fn memory_init(
         trap!(TrapCode::MemoryOutOfBounds)
     };
     consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_bytes(len as u64));
+        .fuel_for_copying_values::<u8>(len as u64));
     memory.copy_from_slice(data);
     dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }

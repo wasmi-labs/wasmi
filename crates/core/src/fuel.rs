@@ -1,4 +1,3 @@
-use crate::UntypedVal;
 use alloc::sync::Arc;
 use core::{
     error::Error,
@@ -140,22 +139,11 @@ impl FuelCostsProvider {
     ///
     /// - On overflow this returns [`u64::MAX`].
     /// - The following Wasmi IR instructions may make use of this:
+    ///     - calls (parameter passing)
     ///     - `memory.grow`
     ///     - `memory.copy`
     ///     - `memory.fill`
     ///     - `memory.init`
-    pub fn fuel_for_copying_bytes(&self, len_bytes: u64) -> u64 {
-        len_bytes / self.bytes_per_fuel()
-    }
-
-    /// Returns the fuel costs for copying `len_values` [`UntypedVal`] items.
-    ///
-    /// # Note
-    ///
-    /// - On overflow this returns [`u64::MAX`].
-    /// - [`UntypedVal`] might be 64-bit or 128-bit depending on the crate's config.
-    /// - The following Wasmi IR instructions may make use of this:
-    ///     - calls (parameter passing)
     ///     - `copy_span`
     ///     - `copy_many`
     ///     - `return_span`
@@ -164,12 +152,21 @@ impl FuelCostsProvider {
     ///     - `table.copy` (+ variants)
     ///     - `table.fill` (+ variants)
     ///     - `table.init` (+ variants)
-    pub fn fuel_for_copying_values(&self, len_values: u64) -> u64 {
-        let Ok(size_of_val) = u64::try_from(mem::size_of::<UntypedVal>()) else {
+    fn fuel_for_copying_bytes(&self, len_bytes: u64) -> u64 {
+        len_bytes / self.bytes_per_fuel()
+    }
+
+    /// Returns the fuel costs for copying `len` items of type `T`.
+    ///
+    /// # Note
+    ///
+    /// - On overflow this returns [`u64::MAX`].
+    pub fn fuel_for_copying_values<T>(&self, len_values: u64) -> u64 {
+        let Ok(bytes_per_value) = u64::try_from(mem::size_of::<T>()) else {
             return u64::MAX;
         };
-        let copied_bytes = len_values.saturating_mul(size_of_val);
-        self.fuel_for_copying_bytes(copied_bytes)
+        let len_bytes = len_values.saturating_mul(bytes_per_value);
+        self.fuel_for_copying_bytes(len_bytes)
     }
 }
 

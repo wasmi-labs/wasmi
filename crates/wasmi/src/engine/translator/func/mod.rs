@@ -44,6 +44,7 @@ use crate::{
     core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
     engine::{
         BlockType,
+        Cell,
         CompiledFuncEntity,
         TranslationError,
         translator::{
@@ -551,7 +552,7 @@ impl FuncTranslator {
         };
         self.instrs
             .encode(op, consume_fuel_instr, |costs: &FuelCostsProvider| {
-                costs.fuel_for_copying_values(u64::from(len))
+                costs.fuel_for_copying_values::<Cell>(u64::from(len))
             })?;
         Ok(())
     }

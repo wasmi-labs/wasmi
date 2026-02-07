@@ -13,6 +13,7 @@ mod utils;
 pub(crate) use self::{
     block_type::BlockType,
     executor::{
+        Cell,
         InOutParams,
         InOutResults,
         Inst,
