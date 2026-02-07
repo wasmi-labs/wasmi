@@ -19,7 +19,7 @@ use crate::{
     Func,
     Nullable,
     TrapCode,
-    core::{CoreTable, ReadAs, UntypedRef, wasm},
+    core::{ReadAs, UntypedRef, wasm},
     engine::{
         EngineFunc,
         executor::handler::{
@@ -63,6 +63,7 @@ use crate::{
     func::FuncEntity,
     ir::{self, Slot, SlotSpan, index},
     store::StoreError,
+    table::TableEntity,
 };
 use core::cmp;
 
@@ -815,7 +816,7 @@ pub fn table_copy(
         .store
         .inner_mut()
         .resolve_table_pair_and_fuel(&dst_table, &src_table);
-    if let Err(error) = CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
+    if let Err(error) = TableEntity::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
         let trap_code = match error {
             TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
             TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
@@ -894,7 +895,7 @@ pub fn table_init(
         .store
         .inner_mut()
         .resolve_table_init_params(&table, &elem);
-    if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
+    if let Err(error) = table.init(element, dst, src, len, Some(fuel)) {
         let trap_code = match error {
             TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
             TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
