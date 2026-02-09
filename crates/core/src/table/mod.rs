@@ -402,7 +402,7 @@ impl Table {
     ///
     /// # Errors
     ///
-    /// - If the region to be filled is out of bounds for the [`Table`].
+    /// If the region to be filled is out of bounds for the [`Table`].
     ///
     /// # Panics
     ///
