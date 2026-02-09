@@ -7,7 +7,7 @@ use crate::{
     Nullable,
     Ref,
     RefType,
-    core::{CoreElementSegment, CoreTable, Fuel, ResourceLimiterRef, TypedRef, UntypedRef},
+    core::{CoreElementSegment, CoreTable, Fuel, ResourceLimiterRef, UntypedRef},
     errors::TableError,
     store::{StoreId, Stored},
 };
@@ -235,13 +235,17 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `init` does not match the table's element type `ty`.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, Error> {
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, TableError> {
+        if ty.element() != init.ty() {
+            return Err(TableError::ElementTypeMismatch);
+        }
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
         let id = inner.id();
-        let core = CoreTable::new(ty.core, init.into(), &mut resource_limiter)?;
+        let init = UntypedRef::from(init);
+        let core = CoreTable::new(ty.core, init, &mut resource_limiter)?;
         Ok(Self { id, core })
     }
 

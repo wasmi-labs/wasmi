@@ -34,7 +34,6 @@ impl Table {
         init: TypedRawRef,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
-        ty.ensure_element_type_matches(init.ty())?;
         let Ok(min_size) = usize::try_from(ty.minimum()) else {
             return Err(TableError::MinimumSizeOverflow);
         };
