@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.0.9` - 2026-02-09
+
+### Fixed
+
+- Fixed a bug that Wasmi's translator would sometimes incorrectly merge `copy` instructions. [#1779]
+
+[#1779]: https://github.com/wasmi-labs/wasmi/issues/1779
+
 ## `1.0.8` - 2026-01-29
 
 ### Fixed
