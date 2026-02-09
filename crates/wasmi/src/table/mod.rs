@@ -316,7 +316,7 @@ impl TableEntity {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`TypedRef`].
+    /// The newly added elements are initialized to the `init` [`Ref`].
     ///
     /// # Errors
     ///
@@ -376,7 +376,7 @@ impl TableEntity {
         self.core.get(index)
     }
 
-    /// Sets the [`TypedRef`] of this table at `index`.
+    /// Sets the [`Ref`] of this table at `index`.
     ///
     /// # Errors
     ///
