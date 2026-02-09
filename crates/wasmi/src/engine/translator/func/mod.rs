@@ -582,18 +582,8 @@ impl FuncTranslator {
             debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
             return Some(Op::copy_span(results, values, len));
         }
-        if result == last_result0.prev() && value == last_value0.prev() {
-            // Case: we can prepend `copy_instr`.
-            if result == last_value0 || result == last_value1 {
-                // Case: cannot merge since `result` overwrites results of `last_copy`.
-                return None;
-            }
-            let results = SlotSpan::new(result);
-            let values = SlotSpan::new(value);
-            let len = 3_u16;
-            debug_assert!(!SlotSpan::has_overlapping_copies(results, values, len));
-            return Some(Op::copy_span(results, values, len));
-        }
+        // Note: must not prepend copy when fusing since this may break the copy order
+        //       which breaks semantic equivalence. So only appending copies is allowed.
         None
     }
 
@@ -622,19 +612,8 @@ impl FuncTranslator {
             }
             return Some(Op::copy_span(results, values, new_len));
         }
-        if result == last_result0.prev() && value == last_value0.prev() {
-            // Case: we can prepend `copy_instr`.
-            let new_len = len + 1;
-            if SlotSpan::has_overlapping_copies(results, values, new_len) {
-                // Case: cannot merge since resulting `copy_span` has overlapping copies.
-                return None;
-            }
-            return Some(Op::copy_span(
-                SlotSpan::new(result),
-                SlotSpan::new(value),
-                new_len,
-            ));
-        }
+        // Note: must not prepend copy when fusing since this may break the copy order
+        //       which breaks semantic equivalence. So only appending copies is allowed.
         None
     }
 
