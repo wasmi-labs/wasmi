@@ -4,7 +4,7 @@ use crate::{
     GlobalType,
     Mutability,
     Val,
-    core::CoreGlobal,
+    core::{CoreGlobal, UntypedVal},
     errors::GlobalError,
     store::Stored,
 };
@@ -16,11 +16,13 @@ define_handle! {
 
 impl Global {
     /// Creates a new global variable to the store.
-    pub fn new(mut ctx: impl AsContextMut, initial_value: Val, mutability: Mutability) -> Self {
+    pub fn new(mut ctx: impl AsContextMut, value: Val, mutability: Mutability) -> Self {
+        let ty = GlobalType::new(value.ty(), mutability);
+        let value = UntypedVal::from(value);
         ctx.as_context_mut()
             .store
             .inner
-            .alloc_global(CoreGlobal::new(initial_value.into(), mutability))
+            .alloc_global(CoreGlobal::new(value, ty))
     }
 
     /// Returns the [`GlobalType`] of the global variable.
