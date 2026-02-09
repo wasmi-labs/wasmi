@@ -353,7 +353,7 @@ impl TableEntity {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
-        self.core.grow_untyped(delta, init, fuel, limiter)
+        self.core.grow(delta, init, fuel, limiter)
     }
 
     /// Returns the table element value at `index`.
@@ -373,7 +373,7 @@ impl TableEntity {
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
     pub fn get_untyped(&self, index: u64) -> Option<UntypedRef> {
-        self.core.get_untyped(index)
+        self.core.get(index)
     }
 
     /// Sets the [`TypedRef`] of this table at `index`.
@@ -393,7 +393,7 @@ impl TableEntity {
     ///
     /// If `index` is out of bounds.
     pub fn set_untyped(&mut self, index: u64, value: UntypedRef) -> Result<(), TableError> {
-        self.core.set_untyped(index, value)
+        self.core.set(index, value)
     }
 
     /// Initialize `len` elements from `src_element[src_index..]` into `self[dst_index..]`.
@@ -500,6 +500,6 @@ impl TableEntity {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        self.core.fill_untyped(dst, val, len, fuel)
+        self.core.fill(dst, val, len, fuel)
     }
 }
