@@ -295,7 +295,7 @@ impl TableEntity {
             }
             _ => {}
         }
-        Ok(TypedRef::from(value).into())
+        Ok(UntypedRef::from(value))
     }
 
     /// Converts the [`UntypedRef`] `untyped` to a [`Ref`].
