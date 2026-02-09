@@ -25,7 +25,7 @@ wasmtime = { workspace = true, optional = true, features = [
 ] }
 wasm-smith = { workspace = true }
 wasmprinter = { workspace = true }
-wasmi-v1 = { package = "wasmi", version = "1.0.8", features = ["std", "simd", "extra-checks"], optional = true }
+wasmi-v1 = { package = "wasmi", version = "1.0.9", features = ["std", "simd", "extra-checks"], optional = true }
 arbitrary = "1.4"
 sha2 = "0.10.9"
 anyhow = "1.0.101"
