@@ -6,6 +6,7 @@ use crate::{
     Handle,
     Nullable,
     Ref,
+    RefType,
     core::{CoreElementSegment, CoreTable, Fuel, ResourceLimiterRef, TypedRef, UntypedRef},
     errors::TableError,
     store::{StoreId, Stored},
@@ -273,10 +274,13 @@ impl TableEntity {
     /// # Panics
     ///
     /// If `value` originates from a different store.
-    fn unwrap_ref(&self, value: Ref) -> TypedRef {
+    fn unwrap_ref(&self, value: Ref) -> Result<UntypedRef, TableError> {
         #[cold]
         fn different_store_err(value: &Ref) -> ! {
             panic!("value originates from different store: {value:?}")
+        }
+        if value.ty() != self.ty().element() {
+            return Err(TableError::ElementTypeMismatch);
         }
         match &value {
             Ref::Func(Nullable::Val(val)) => {
@@ -291,7 +295,15 @@ impl TableEntity {
             }
             _ => {}
         }
-        value.into()
+        Ok(TypedRef::from(value).into())
+    }
+
+    /// Converts the [`UntypedRef`] `untyped` to a [`Ref`].
+    fn untyped_ref_to_ref(&self, untyped: UntypedRef) -> Ref {
+        match self.ty().element() {
+            RefType::Func => Ref::Func(untyped.into()),
+            RefType::Extern => Ref::Extern(untyped.into()),
+        }
     }
 
     /// Grows the table by the given amount of elements.
@@ -313,8 +325,8 @@ impl TableEntity {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
-        let init = self.unwrap_ref(init);
-        self.core.grow(delta, init, fuel, limiter)
+        let init = self.unwrap_ref(init)?;
+        self.grow_untyped(delta, init, fuel, limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -344,7 +356,8 @@ impl TableEntity {
     ///
     /// Returns `None` if `index` is out of bounds.
     pub fn get(&self, index: u64) -> Option<Ref> {
-        self.core.get(index).map(Ref::from)
+        let untyped = self.get_untyped(index)?;
+        Some(self.untyped_ref_to_ref(untyped))
     }
 
     /// Returns the untyped table element value at `index`.
@@ -366,8 +379,8 @@ impl TableEntity {
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
     pub fn set(&mut self, index: u64, value: Ref) -> Result<(), TableError> {
-        let value = self.unwrap_ref(value);
-        self.core.set(index, value)
+        let value = self.unwrap_ref(value)?;
+        self.set_untyped(index, value)
     }
 
     /// Sets the [`UntypedRef`] of the table at `index`.
@@ -459,8 +472,8 @@ impl TableEntity {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        let val = self.unwrap_ref(val);
-        self.core.fill(dst, val, len, fuel)
+        let val = self.unwrap_ref(val)?;
+        self.fill_untyped(dst, val, len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
