@@ -89,7 +89,10 @@ impl Val {
             ValType::I64 => Self::I64(val.into()),
             ValType::F32 => Self::F32(val.into()),
             ValType::F64 => Self::F64(val.into()),
+            #[cfg(feature = "simd")]
             ValType::V128 => Self::V128(val.into()),
+            #[cfg(not(feature = "simd"))]
+            ValType::V128 => panic!("Val::from_raw_parts does not work for `v128` values without `simd`"),
             ValType::FuncRef => Self::FuncRef(val.into()),
             ValType::ExternRef => Self::ExternRef(val.into()),
         }
