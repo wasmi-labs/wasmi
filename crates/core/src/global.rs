@@ -126,7 +126,7 @@ impl Global {
     /// Returns a pointer to the [`RawVal`] of the [`Global`].
     /// 
     /// # Panics (Debug)
-    /// 
+    ///
     /// If the underlying global value is immutable.
     pub fn get_raw_ptr(&mut self) -> NonNull<RawVal> {
         debug_assert!(matches!(self.ty.mutability(), Mutability::Var));
