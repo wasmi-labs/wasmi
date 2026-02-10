@@ -251,30 +251,6 @@ impl From<V128> for Val {
     }
 }
 
-impl From<TypedRawVal> for Val {
-    fn from(value: TypedRawVal) -> Self {
-        let raw = value.raw();
-        match value.ty() {
-            ValType::I32 => Self::I32(raw.into()),
-            ValType::I64 => Self::I64(raw.into()),
-            ValType::F32 => Self::F32(raw.into()),
-            ValType::F64 => Self::F64(raw.into()),
-            ValType::V128 => {
-                #[cfg(feature = "simd")]
-                {
-                    Self::V128(raw.into())
-                }
-                #[cfg(not(feature = "simd"))]
-                {
-                    panic!("`simd` crate feature is disabled")
-                }
-            }
-            ValType::FuncRef => Self::FuncRef(raw.into()),
-            ValType::ExternRef => Self::ExternRef(raw.into()),
-        }
-    }
-}
-
 impl From<Val> for TypedRawVal {
     fn from(value: Val) -> Self {
         Self::new(value.ty(), value.into())
