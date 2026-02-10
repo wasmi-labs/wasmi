@@ -9,7 +9,6 @@ use crate::{
     FuncType,
     Nullable,
     ValType,
-    core::RawVal,
     engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
 };
 use core::{array, iter::FusedIterator};

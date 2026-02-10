@@ -3,7 +3,7 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    core::{RawRef, RawVal, ReadAs, TypedRawRef, WriteAs},
+    core::{RawRef, RawVal, ReadAs, WriteAs},
     store::{AsStoreId, Stored},
 };
 use alloc::boxed::Box;
@@ -360,22 +360,6 @@ macro_rules! impl_conversions {
                         Nullable::Val(reftype) => RawRef::from(reftype),
                         Nullable::Null => RawRef::from(0_u64),
                     }
-                }
-            }
-
-            impl From<$reftype> for TypedRawRef {
-                fn from(value: $reftype) -> Self {
-                    let ty = RefType::$ty;
-                    let value = RawRef::from(value);
-                    TypedRawRef::new(ty, value)
-                }
-            }
-
-            impl From<Nullable<$reftype>> for TypedRawRef {
-                fn from(value: Nullable<$reftype>) -> Self {
-                    let ty = RefType::$ty;
-                    let value = RawRef::from(value);
-                    TypedRawRef::new(ty, value)
                 }
             }
         )*

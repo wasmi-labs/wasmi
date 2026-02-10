@@ -121,7 +121,7 @@ impl Global {
     }
 
     /// Returns a pointer to the [`RawVal`] of the [`Global`].
-    /// 
+    ///
     /// # Panics (Debug)
     ///
     /// If the underlying global value is immutable.
