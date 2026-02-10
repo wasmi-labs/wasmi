@@ -13,7 +13,7 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, UntypedVal},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal},
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -125,7 +125,7 @@ impl_into_control! {
     i8, i16, i32, i64, isize,
     f32, f64,
     V128,
-    UntypedVal,
+    RawVal,
 }
 
 pub trait GetValue<T> {
@@ -427,11 +427,11 @@ pub fn resolve_indirect_func(
 
 pub fn set_global<V>(global: index::Global, value: V, state: &mut VmState, instance: Inst)
 where
-    UntypedVal: WriteAs<V>,
+    RawVal: WriteAs<V>,
 {
     let global = fetch_global(instance, global);
     let global = resolve_global_mut(state.store, &global);
-    let mut value_ptr = global.get_untyped_ptr();
+    let mut value_ptr = global.get_raw_ptr();
     let global_ref = unsafe { value_ptr.as_mut() };
     global_ref.write_as(value);
 }

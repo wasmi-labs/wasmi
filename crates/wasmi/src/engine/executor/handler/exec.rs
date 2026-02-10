@@ -180,7 +180,7 @@ pub fn global_get64(
     let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
     let global = resolve_global(state.store, &global);
-    let value: u64 = global.get_untyped().read_as();
+    let value: u64 = global.get_raw().read_as();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -198,7 +198,7 @@ pub fn global_get128(
     let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
     let global = resolve_global(state.store, &global);
-    let value: V128 = global.get_untyped().read_as();
+    let value: V128 = global.get_raw().read_as();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }

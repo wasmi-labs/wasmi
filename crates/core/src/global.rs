@@ -1,4 +1,4 @@
-use crate::{TypedVal, UntypedVal, ValType};
+use crate::{RawVal, TypedVal, ValType};
 use core::{error::Error, fmt, fmt::Display, ptr::NonNull};
 
 /// An error that may occur upon operating on global variables.
@@ -77,7 +77,7 @@ impl GlobalType {
 #[derive(Debug)]
 pub struct Global {
     /// The current value of the global variable.
-    value: UntypedVal,
+    value: RawVal,
     /// The type of the global variable.
     ty: GlobalType,
 }
@@ -118,13 +118,13 @@ impl Global {
         TypedVal::new(self.ty().content(), self.value)
     }
 
-    /// Returns the current [`UntypedVal`] of the [`Global`].
-    pub fn get_untyped(&self) -> &UntypedVal {
+    /// Returns the current [`RawVal`] of the [`Global`].
+    pub fn get_raw(&self) -> &RawVal {
         &self.value
     }
 
-    /// Returns a pointer to the [`UntypedVal`] of the [`Global`].
-    pub fn get_untyped_ptr(&mut self) -> NonNull<UntypedVal> {
+    /// Returns a pointer to the [`RawVal`] of the [`Global`].
+    pub fn get_raw_ptr(&mut self) -> NonNull<RawVal> {
         NonNull::from(&mut self.value)
     }
 }

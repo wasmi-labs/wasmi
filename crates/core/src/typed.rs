@@ -1,4 +1,4 @@
-use crate::{F32, F64, UntypedVal, V128, ValType};
+use crate::{F32, F64, RawVal, V128, ValType};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -31,13 +31,13 @@ impl_typed_for! {
     V128 => ValType::V128;
 }
 
-impl From<TypedVal> for UntypedVal {
+impl From<TypedVal> for RawVal {
     fn from(typed_value: TypedVal) -> Self {
         typed_value.value
     }
 }
 
-/// An [`UntypedVal`] with its assumed [`ValType`].
+/// An [`RawVal`] with its assumed [`ValType`].
 ///
 /// # Note
 ///
@@ -52,12 +52,12 @@ pub struct TypedVal {
     /// The type of the value.
     ty: ValType,
     /// The underlying raw value.
-    value: UntypedVal,
+    value: RawVal,
 }
 
 impl TypedVal {
     /// Create a new [`TypedVal`].
-    pub fn new(ty: ValType, value: UntypedVal) -> Self {
+    pub fn new(ty: ValType, value: RawVal) -> Self {
         Self { ty, value }
     }
 
@@ -66,15 +66,15 @@ impl TypedVal {
         self.ty
     }
 
-    /// Returns the [`UntypedVal`] of the [`TypedVal`].
-    pub fn untyped(&self) -> UntypedVal {
+    /// Returns the [`RawVal`] of the [`TypedVal`].
+    pub fn raw(&self) -> RawVal {
         self.value
     }
 }
 
 impl<T> From<T> for TypedVal
 where
-    T: Typed + Into<UntypedVal>,
+    T: Typed + Into<RawVal>,
 {
     fn from(value: T) -> Self {
         Self::new(<T as Typed>::TY, value.into())

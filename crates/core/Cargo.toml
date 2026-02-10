@@ -22,7 +22,7 @@ default = ["std"]
 std = []
 # Enables the Wasm `simd` proposal.
 #
-# This also changes the size of `UntypedVal` from 64-bit to 128-bit
+# This also changes the size of `RawVal` from 64-bit to 128-bit
 # which may have significant impact on performance and memory usage.
 simd = []
 

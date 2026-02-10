@@ -41,7 +41,7 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, Typed, TypedVal, UntypedVal},
+    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedVal},
     engine::{
         BlockType,
         Cell,
@@ -519,7 +519,7 @@ impl FuncTranslator {
             ValType::F32 => Op::copy32(result, f32::from(value).to_bits()),
             ValType::F64 => Op::copy64(result, f64::from(value).to_bits()),
             ValType::ExternRef | ValType::FuncRef => {
-                Op::copy64(result, u64::from(UntypedVal::from(value)))
+                Op::copy64(result, u64::from(RawVal::from(value)))
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
@@ -982,7 +982,7 @@ impl FuncTranslator {
                         ValType::F32 => Op::return32(f32::from(val).to_bits()),
                         ValType::F64 => Op::return64(f64::from(val).to_bits()),
                         ValType::FuncRef | ValType::ExternRef => {
-                            Op::return64(u64::from(UntypedVal::from(val)))
+                            Op::return64(u64::from(RawVal::from(val)))
                         }
                         ValType::V128 => {
                             let value = self.stack.peek(0);

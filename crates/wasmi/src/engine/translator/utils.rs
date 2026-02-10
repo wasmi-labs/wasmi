@@ -4,7 +4,7 @@ use crate::{
     Func,
     Nullable,
     ValType,
-    core::{Typed, TypedVal, UntypedVal},
+    core::{RawVal, Typed, TypedVal},
     engine::TranslationError,
     ir::Sign,
 };
@@ -54,7 +54,7 @@ macro_rules! impl_typed_for {
                     // was already performed and thus type checking does not necessarily
                     // need to happen redundantly outside of debug builds.
                     debug_assert!(matches!(typed_value.ty(), <$ty as Typed>::TY));
-                    Self::from(typed_value.untyped())
+                    Self::from(typed_value.raw())
                 }
             }
         )*
@@ -71,10 +71,10 @@ impl_typed_for! {
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + Typed + From<TypedVal> + Into<TypedVal> + From<UntypedVal> + Into<UntypedVal>
+    Copy + Eq + Typed + From<TypedVal> + Into<TypedVal> + From<RawVal> + Into<RawVal>
 {
     /// The non-zero type of the [`WasmInteger`].
-    type NonZero: Copy + Into<Self> + Into<UntypedVal>;
+    type NonZero: Copy + Into<Self> + Into<RawVal>;
 
     /// Returns `self` as [`Self::NonZero`] if possible.
     ///

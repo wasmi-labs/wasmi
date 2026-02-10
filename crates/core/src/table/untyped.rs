@@ -1,4 +1,4 @@
-use crate::{ReadAs, RefType, UntypedVal, WriteAs};
+use crate::{RawVal, ReadAs, RefType, WriteAs};
 
 /// An untyped reference value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -22,28 +22,28 @@ impl From<UntypedRef> for u64 {
     }
 }
 
-impl From<UntypedRef> for UntypedVal {
+impl From<UntypedRef> for RawVal {
     #[inline]
     fn from(value: UntypedRef) -> Self {
         Self::from(value.bits)
     }
 }
 
-impl From<UntypedVal> for UntypedRef {
+impl From<RawVal> for UntypedRef {
     #[inline]
-    fn from(value: UntypedVal) -> Self {
+    fn from(value: RawVal) -> Self {
         Self::from(u64::from(value))
     }
 }
 
-impl ReadAs<UntypedRef> for UntypedVal {
+impl ReadAs<UntypedRef> for RawVal {
     #[inline]
     fn read_as(&self) -> UntypedRef {
         UntypedRef::from(<Self as ReadAs<u64>>::read_as(self))
     }
 }
 
-impl WriteAs<UntypedRef> for UntypedVal {
+impl WriteAs<UntypedRef> for RawVal {
     #[inline]
     fn write_as(&mut self, value: UntypedRef) {
         self.write_as(value.bits)
@@ -56,7 +56,7 @@ impl From<TypedRef> for UntypedRef {
     }
 }
 
-/// An [`UntypedVal`] with its assumed [`RefType`].
+/// An [`RawVal`] with its assumed [`RefType`].
 ///
 /// # Note
 ///

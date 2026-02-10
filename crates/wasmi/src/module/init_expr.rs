@@ -14,7 +14,7 @@ use crate::{
     Func,
     Nullable,
     Val,
-    core::{UntypedVal, wasm},
+    core::{RawVal, wasm},
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
@@ -26,7 +26,7 @@ use crate::V128;
 /// Types that allow evaluation given an evaluation context.
 pub trait Eval {
     /// Evaluates `self` given an [`EvalContext`].
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal>;
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal>;
 }
 
 /// A [`ConstExpr`] evaluation context.
@@ -76,12 +76,12 @@ pub enum Op {
 /// - `ref.null`
 #[derive(Debug)]
 pub struct ConstOp {
-    /// The underlying precomputed untyped value.
-    value: UntypedVal,
+    /// The underlying precomputed raw value.
+    value: RawVal,
 }
 
 impl Eval for ConstOp {
-    fn eval(&self, _ctx: &dyn EvalContext) -> Option<UntypedVal> {
+    fn eval(&self, _ctx: &dyn EvalContext) -> Option<RawVal> {
         Some(self.value)
     }
 }
@@ -95,8 +95,8 @@ pub struct GlobalOp {
 }
 
 impl Eval for GlobalOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
-        ctx.get_global(self.global_index).map(UntypedVal::from)
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
+        ctx.get_global(self.global_index).map(RawVal::from)
     }
 }
 
@@ -109,8 +109,8 @@ pub struct FuncRefOp {
 }
 
 impl Eval for FuncRefOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
-        ctx.get_func(self.function_index).map(UntypedVal::from)
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
+        ctx.get_func(self.function_index).map(RawVal::from)
     }
 }
 
@@ -127,7 +127,7 @@ impl Eval for FuncRefOp {
 #[allow(clippy::type_complexity)]
 pub struct ExprOp {
     /// The underlying closure that implements the expression.
-    expr: Box<dyn Fn(&dyn EvalContext) -> Option<UntypedVal> + Send + Sync>,
+    expr: Box<dyn Fn(&dyn EvalContext) -> Option<RawVal> + Send + Sync>,
 }
 
 impl fmt::Debug for ExprOp {
@@ -137,7 +137,7 @@ impl fmt::Debug for ExprOp {
 }
 
 impl Eval for ExprOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
         (self.expr)(ctx)
     }
 }
@@ -166,7 +166,7 @@ impl Op {
     /// Creates a new expression operator for the given `expr`.
     pub fn expr<T>(expr: T) -> Self
     where
-        T: Fn(&dyn EvalContext) -> Option<UntypedVal> + Send + Sync + 'static,
+        T: Fn(&dyn EvalContext) -> Option<RawVal> + Send + Sync + 'static,
     {
         Self::Expr(ExprOp {
             expr: Box::new(expr),
@@ -175,7 +175,7 @@ impl Op {
 }
 
 impl Eval for Op {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
         match self {
             Op::Const(op) => op.eval(ctx),
             Op::Global(op) => op.eval(ctx),
@@ -197,14 +197,14 @@ pub struct ConstExpr {
 }
 
 impl Eval for ConstExpr {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
         self.op.eval(ctx)
     }
 }
 
 macro_rules! def_expr {
     ($lhs:ident, $rhs:ident, $expr:expr) => {{
-        Op::expr(move |ctx: &dyn EvalContext| -> Option<UntypedVal> {
+        Op::expr(move |ctx: &dyn EvalContext| -> Option<RawVal> {
             let lhs = $lhs.eval(ctx)?;
             let rhs = $rhs.eval(ctx)?;
             Some($expr(lhs.into(), rhs.into()).into())
@@ -265,10 +265,10 @@ impl ConstExpr {
         /// Convenience function to create the various expression operators.
         fn expr_op<Lhs, Rhs, T>(stack: &mut ConstExprStack, expr: fn(Lhs, Rhs) -> T) -> Op
         where
-            Lhs: From<UntypedVal> + 'static,
-            Rhs: From<UntypedVal> + 'static,
+            Lhs: From<RawVal> + 'static,
+            Rhs: From<RawVal> + 'static,
             T: 'static,
-            UntypedVal: From<T>,
+            RawVal: From<T>,
         {
             let (lhs, rhs) = stack
                 .pop2()
@@ -378,7 +378,7 @@ impl ConstExpr {
     ///
     /// This is useful for evaluations during Wasm translation to
     /// perform optimizations on the translated bytecode.
-    pub fn eval_const(&self) -> Option<UntypedVal> {
+    pub fn eval_const(&self) -> Option<RawVal> {
         self.eval(&EmptyEvalContext)
     }
 
@@ -390,7 +390,7 @@ impl ConstExpr {
     /// # Note
     ///
     /// This is useful for evaluation of [`ConstExpr`] during bytecode execution.
-    pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<UntypedVal>
+    pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<RawVal>
     where
         G: Fn(u32) -> Val,
         F: Fn(u32) -> Nullable<Func>,

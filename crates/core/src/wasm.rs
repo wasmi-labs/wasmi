@@ -17,7 +17,7 @@ macro_rules! op {
     }};
 }
 
-macro_rules! impl_untyped_val {
+macro_rules! impl_rawval_val {
     (
         $(#[$attr:meta])*
         fn $name:ident(value: $ty:ty) -> Result<$ret_ty:ty> = $f:expr; $($tt:tt)*
@@ -32,7 +32,7 @@ macro_rules! impl_untyped_val {
             ($f)(value)
         }
 
-        impl_untyped_val!( $($tt)* );
+        impl_rawval_val!( $($tt)* );
     };
     (
         fn $name:ident(value: $ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
@@ -43,7 +43,7 @@ macro_rules! impl_untyped_val {
             ($f)(value)
         }
 
-        impl_untyped_val!( $($tt)* );
+        impl_rawval_val!( $($tt)* );
     };
     (
         $(#[$attr:meta])*
@@ -59,7 +59,7 @@ macro_rules! impl_untyped_val {
             ($f)(lhs, rhs)
         }
 
-        impl_untyped_val!( $($tt)* );
+        impl_rawval_val!( $($tt)* );
     };
     (
         fn $name:ident(lhs: $lhs_ty:ty, rhs: $rhs_ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
@@ -70,12 +70,12 @@ macro_rules! impl_untyped_val {
             ($f)(lhs, rhs)
         }
 
-        impl_untyped_val!( $($tt)* );
+        impl_rawval_val!( $($tt)* );
     };
     () => {};
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm Integer Instructions
 
     fn i32_add(lhs: i32, rhs: i32) -> i32 = i32::wrapping_add;
@@ -104,7 +104,7 @@ impl_untyped_val! {
     fn i64_rotr(lhs: i64, rhs: i64) -> i64 = Integer::rotr;
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm Integer Division and Remainder Instructions
 
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
@@ -133,7 +133,7 @@ impl_untyped_val! {
     fn i64_rem_u(lhs: u64, rhs: u64) -> Result<u64> = <i64 as Integer>::rem_u;
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm Unary Instructions
 
     fn i32_clz(value: i32) -> i32 = Integer::leading_zeros;
@@ -146,7 +146,7 @@ impl_untyped_val! {
     fn i64_eqz(value: i64) -> bool = Integer::is_zero;
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm Comparison Instructions
 
     fn i32_eq(lhs: i32, rhs: i32) -> bool = op!(==);
@@ -187,7 +187,7 @@ impl_untyped_val! {
     fn f64_ge(lhs: f64, rhs: f64) -> bool = op!(>=);
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm Float Instructions
 
     fn f32_abs(value: f32) -> f32 = Float::abs;
@@ -221,7 +221,7 @@ impl_untyped_val! {
     fn f64_copysign(lhs: f64, rhs: f64) -> f64 = Float::copysign;
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm Conversion Routines
 
     fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
@@ -265,7 +265,7 @@ impl_untyped_val! {
     fn f64_convert_i64_u(value: u64) -> f64 = |v| v as f64;
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm `sign-extension` proposal
 
     fn i32_extend8_s(value: i32) -> i32 = <_ as SignExtendFrom<i8>>::sign_extend_from;
@@ -275,7 +275,7 @@ impl_untyped_val! {
     fn i64_extend32_s(value: i64) -> i64 = <_ as SignExtendFrom<i32>>::sign_extend_from;
 }
 
-impl_untyped_val! {
+impl_rawval_val! {
     // Wasm `saturating-float-to-int` proposal
 
     fn i32_trunc_sat_f32_s(value: f32) -> i32 = TruncateSaturateInto::truncate_saturate_into;

@@ -442,7 +442,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::F32 => Op::global_set32_i(global, f32::from(value).to_bits()),
             ValType::F64 => Op::global_set64_i(f64::from(value).to_bits(), global),
             ValType::FuncRef | ValType::ExternRef => {
-                Op::global_set64_i(u64::from(value.untyped()), global)
+                Op::global_set64_i(u64::from(value.raw()), global)
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
@@ -1826,24 +1826,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         match self.stack.pop() {
             Operand::Local(input) => {
-                // Note: `funcref` and `externref` both serialize to `UntypedValue`
+                // Note: `funcref` and `externref` both serialize to `RawValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
                 //       via reinterpretation of the value's type.
                 self.stack.push_local(input.local_index(), ValType::I64)?;
                 self.visit_i64_eqz()
             }
             Operand::Temp(_) => {
-                // Note: `funcref` and `externref` both serialize to `UntypedValue`
+                // Note: `funcref` and `externref` both serialize to `RawValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
                 //       via reinterpretation of the value's type.
                 self.stack.push_temp(ValType::I64)?;
                 self.visit_i64_eqz()
             }
             Operand::Immediate(input) => {
-                let untyped = input.val().untyped();
+                let raw = input.val().raw();
                 let is_null = match input.ty() {
-                    ValType::FuncRef => <Nullable<Func>>::from(untyped).is_null(),
-                    ValType::ExternRef => <Nullable<ExternRef>>::from(untyped).is_null(),
+                    ValType::FuncRef => <Nullable<Func>>::from(raw).is_null(),
+                    ValType::ExternRef => <Nullable<ExternRef>>::from(raw).is_null(),
                     invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
                 };
                 self.stack.push_immediate(i32::from(is_null))?;
@@ -1907,7 +1907,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (index, value) = self.stack.pop2();
         let index = self.make_index32_or_copy(index, index_ty)?;
         let value = self.make_input(value, |_this, value| {
-            Ok(Input::Immediate(u64::from(value.untyped())))
+            Ok(Input::Immediate(u64::from(value.raw())))
         })?;
         let instr = match (index, value) {
             (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(table, index, value),

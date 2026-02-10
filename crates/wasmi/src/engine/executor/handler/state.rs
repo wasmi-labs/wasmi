@@ -771,7 +771,7 @@ impl ValueStack {
         }
         let max_len = cmp::max(new_len, len);
         // Safety: there is no need to initialize the cells since we are operating
-        //         on `UntypedVal` which only has valid bit patterns.
+        //         on `RawVal` which only has valid bit patterns.
         // Note: non-security related initialization of function parameters
         //       and zero-initialization of function locals happens elsewhere.
         unsafe { self.cells.set_len(max_len) };
