@@ -2,7 +2,7 @@ use super::{ImmediateOperand, LocalIdx, LocalOperand, LocalsHead, Operand, Reset
 use crate::{
     Error,
     ValType,
-    core::{RawVal, TypedVal},
+    core::{RawVal, TypedRawVal},
     engine::{TranslationError, translator::utils::required_cells_for_ty},
     ir::{Slot, SlotSpan},
 };
@@ -274,7 +274,7 @@ impl OperandStack {
     #[inline]
     pub fn push_immediate(
         &mut self,
-        value: impl Into<TypedVal>,
+        value: impl Into<TypedRawVal>,
     ) -> Result<ImmediateOperand, Error> {
         let value = value.into();
         let ty = value.ty();

@@ -7,7 +7,7 @@ use crate::{
     Ref,
     V128,
     ValType,
-    core::{RawVal, TypedVal},
+    core::{RawVal, TypedRawVal},
 };
 
 /// Untyped instances that allow to be typed.
@@ -237,8 +237,8 @@ impl From<V128> for Val {
     }
 }
 
-impl From<TypedVal> for Val {
-    fn from(value: TypedVal) -> Self {
+impl From<TypedRawVal> for Val {
+    fn from(value: TypedRawVal) -> Self {
         let raw = value.raw();
         match value.ty() {
             ValType::I32 => Self::I32(raw.into()),
@@ -261,7 +261,7 @@ impl From<TypedVal> for Val {
     }
 }
 
-impl From<Val> for TypedVal {
+impl From<Val> for TypedRawVal {
     fn from(value: Val) -> Self {
         Self::new(value.ty(), value.into())
     }

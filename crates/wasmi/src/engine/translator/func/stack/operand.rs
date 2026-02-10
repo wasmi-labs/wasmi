@@ -1,7 +1,7 @@
 use super::{LocalIdx, StackOperand, StackPos};
 use crate::{
     ValType,
-    core::{RawVal, TypedVal},
+    core::{RawVal, TypedRawVal},
     engine::translator::utils::required_cells_for_ty,
     ir::{BoundedSlotSpan, SlotSpan},
 };
@@ -227,8 +227,8 @@ impl ImmediateOperand {
     }
 
     /// Returns the immediate value (and its type) of the [`ImmediateOperand`].
-    pub fn val(&self) -> TypedVal {
-        TypedVal::new(self.ty, self.val)
+    pub fn val(&self) -> TypedRawVal {
+        TypedRawVal::new(self.ty, self.val)
     }
 
     /// Returns the type of the [`ImmediateOperand`].

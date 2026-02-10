@@ -1,4 +1,4 @@
-use crate::{RawVal, TypedVal, ValType};
+use crate::{RawVal, TypedRawVal, ValType};
 use core::{error::Error, fmt, fmt::Display, ptr::NonNull};
 
 /// An error that may occur upon operating on global variables.
@@ -84,7 +84,7 @@ pub struct Global {
 
 impl Global {
     /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(initial_value: TypedVal, mutability: Mutability) -> Self {
+    pub fn new(initial_value: TypedRawVal, mutability: Mutability) -> Self {
         Self {
             ty: GlobalType::new(initial_value.ty(), mutability),
             value: initial_value.into(),
@@ -102,7 +102,7 @@ impl Global {
     ///
     /// - If the [`Global`] is immutable.
     /// - If `new_value` does not match the type of the [`Global`].
-    pub fn set(&mut self, new_value: TypedVal) -> Result<(), GlobalError> {
+    pub fn set(&mut self, new_value: TypedRawVal) -> Result<(), GlobalError> {
         if !self.ty().mutability().is_mut() {
             return Err(GlobalError::ImmutableWrite);
         }
@@ -113,9 +113,9 @@ impl Global {
         Ok(())
     }
 
-    /// Returns the current [`TypedVal`] of the [`Global`].
-    pub fn get(&self) -> TypedVal {
-        TypedVal::new(self.ty().content(), self.value)
+    /// Returns the current [`TypedRawVal`] of the [`Global`].
+    pub fn get(&self) -> TypedRawVal {
+        TypedRawVal::new(self.ty().content(), self.value)
     }
 
     /// Returns the current [`RawVal`] of the [`Global`].

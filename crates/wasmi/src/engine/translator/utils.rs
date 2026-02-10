@@ -4,7 +4,7 @@ use crate::{
     Func,
     Nullable,
     ValType,
-    core::{RawVal, Typed, TypedVal},
+    core::{RawVal, Typed, TypedRawVal},
     engine::TranslationError,
     ir::Sign,
 };
@@ -45,8 +45,8 @@ macro_rules! impl_typed_for {
                 const TY: ValType = crate::ValType::$ident;
             }
 
-            impl From<TypedVal> for $ty {
-                fn from(typed_value: TypedVal) -> Self {
+            impl From<TypedRawVal> for $ty {
+                fn from(typed_value: TypedRawVal) -> Self {
                     // # Note
                     //
                     // We only use a `debug_assert` here instead of a proper `assert`
@@ -71,7 +71,7 @@ impl_typed_for! {
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + Typed + From<TypedVal> + Into<TypedVal> + From<RawVal> + Into<RawVal>
+    Copy + Eq + Typed + From<TypedRawVal> + Into<TypedRawVal> + From<RawVal> + Into<RawVal>
 {
     /// The non-zero type of the [`WasmInteger`].
     type NonZero: Copy + Into<Self> + Into<RawVal>;
@@ -109,7 +109,7 @@ impl_wasm_integer!(i32, u32, i64, u64);
 /// # Note
 ///
 /// This trait provides some utility methods useful for translation.
-pub trait WasmFloat: Typed + Copy + Into<TypedVal> + From<TypedVal> {
+pub trait WasmFloat: Typed + Copy + Into<TypedRawVal> + From<TypedRawVal> {
     /// Returns the [`Sign`] of `self`.
     fn sign(self) -> Sign<Self>;
 }

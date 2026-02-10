@@ -56,6 +56,6 @@ pub use self::{
         UntypedRef,
     },
     trap::{Trap, TrapCode},
-    typed::{Typed, TypedVal},
+    typed::{Typed, TypedRawVal},
     value::{V128, ValType},
 };

@@ -41,7 +41,7 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedVal},
+    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedRawVal},
     engine::{
         BlockType,
         Cell,
@@ -116,7 +116,7 @@ pub struct FuncTranslator {
     /// Temporary buffer for operands.
     operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
-    immediates: Vec<TypedVal>,
+    immediates: Vec<TypedRawVal>,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -133,7 +133,7 @@ pub struct FuncTranslatorAllocations {
     /// Temporary buffer for operands.
     operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
-    immediates: Vec<TypedVal>,
+    immediates: Vec<TypedRawVal>,
 }
 
 impl Reset for FuncTranslatorAllocations {
@@ -512,7 +512,7 @@ impl FuncTranslator {
     }
 
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
-    fn make_copy_imm_instr(result: Slot, value: TypedVal) -> Result<Op, Error> {
+    fn make_copy_imm_instr(result: Slot, value: TypedRawVal) -> Result<Op, Error> {
         let instr = match value.ty() {
             ValType::I32 => Op::copy32(result, i32::from(value).to_bits()),
             ValType::I64 => Op::copy64(result, i64::from(value).to_bits()),
@@ -874,14 +874,14 @@ impl FuncTranslator {
     /// The `table` default target is pushed last to the `buffer`.
     fn copy_targets_from_br_table(
         table: &wasmparser::BrTable,
-        buffer: &mut Vec<TypedVal>,
+        buffer: &mut Vec<TypedRawVal>,
     ) -> Result<(), Error> {
         let default_target = table.default();
         buffer.clear();
         for target in table.targets() {
-            buffer.push(TypedVal::from(target?));
+            buffer.push(TypedRawVal::from(target?));
         }
-        buffer.push(TypedVal::from(default_target));
+        buffer.push(TypedRawVal::from(default_target));
         Ok(())
     }
 
@@ -1545,8 +1545,8 @@ impl FuncTranslator {
         consteval: fn(input: T) -> R,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal>,
-        R: Into<TypedVal> + Typed,
+        T: From<TypedRawVal>,
+        R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         let input = self.stack.pop();
@@ -1569,8 +1569,8 @@ impl FuncTranslator {
         consteval: fn(input: T) -> Result<R, TrapCode>,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal>,
-        R: Into<TypedVal> + Typed,
+        T: From<TypedRawVal>,
+        R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         let input = self.stack.pop();
@@ -1601,8 +1601,8 @@ impl FuncTranslator {
     /// This Wasm operation is a no-op. Ideally we only have to change the types on the stack.
     fn translate_reinterpret<T, R>(&mut self, consteval: fn(T) -> R) -> Result<(), Error>
     where
-        T: From<TypedVal> + Typed,
-        R: Into<TypedVal> + Typed,
+        T: From<TypedRawVal> + Typed,
+        R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop() {
@@ -1627,7 +1627,7 @@ impl FuncTranslator {
     fn make_input<R>(
         &mut self,
         operand: Operand,
-        f: impl FnOnce(&mut Self, TypedVal) -> Result<Input<R>, Error>,
+        f: impl FnOnce(&mut Self, TypedRawVal) -> Result<Input<R>, Error>,
     ) -> Result<Input<R>, Error> {
         let reg = match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand)?,
@@ -1696,8 +1696,8 @@ impl FuncTranslator {
         consteval: impl FnOnce(T, T) -> Result<R, TrapCode>,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal>,
-        R: Into<TypedVal>,
+        T: From<TypedRawVal>,
+        R: Into<TypedRawVal>,
     {
         let lhs: T = lhs.val().into();
         let rhs: T = rhs.val().into();
@@ -1720,8 +1720,8 @@ impl FuncTranslator {
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal>,
-        R: Into<TypedVal>,
+        T: From<TypedRawVal>,
+        R: Into<TypedRawVal>,
     {
         self.translate_binary_consteval_fallible::<T, R>(lhs, rhs, |lhs, rhs| {
             Ok(consteval(lhs, rhs))
@@ -1742,8 +1742,8 @@ impl FuncTranslator {
         opt_si: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal> + Copy,
-        R: Into<TypedVal> + Typed,
+        T: From<TypedRawVal> + Copy,
+        R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -1829,8 +1829,8 @@ impl FuncTranslator {
         consteval: fn(T, T) -> R,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal> + Copy,
-        R: Into<TypedVal> + Typed,
+        T: From<TypedRawVal> + Copy,
+        R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -1874,7 +1874,7 @@ impl FuncTranslator {
         consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
-        T: WasmInteger + IntoShiftAmount<ShiftSource: From<TypedVal>>,
+        T: WasmInteger + IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
@@ -2247,7 +2247,7 @@ impl FuncTranslator {
     /// - `{i32, i64}.{store, store8, store16, store32}`
     fn translate_store<T: op::StoreOperator>(&mut self, memarg: MemArg) -> Result<(), Error>
     where
-        T::Value: Copy + From<TypedVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         bail_unreachable!(self);
@@ -2263,7 +2263,7 @@ impl FuncTranslator {
         value: Operand,
     ) -> Result<(), Error>
     where
-        T::Value: Copy + From<TypedVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         let (memory, offset) = Self::decode_memarg(memarg)?;
@@ -2305,7 +2305,7 @@ impl FuncTranslator {
         value: Operand,
     ) -> Result<(), Error>
     where
-        T::Value: Copy + From<TypedVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
@@ -2345,7 +2345,7 @@ impl FuncTranslator {
         value: Operand,
     ) -> Result<bool, Error>
     where
-        T::Value: Copy + From<TypedVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         if !memory.is_default() {
@@ -2384,7 +2384,12 @@ impl FuncTranslator {
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<Address> {
+    fn effective_address(
+        &self,
+        mem: index::Memory,
+        ptr: TypedRawVal,
+        offset: u64,
+    ) -> Option<Address> {
         let memory_type = *self
             .module
             .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));
@@ -2520,7 +2525,7 @@ impl FuncTranslator {
     fn try_opt_i64_mul_wide_sx(
         &mut self,
         lhs: Operand,
-        rhs: TypedVal,
+        rhs: TypedRawVal,
         signed: bool,
     ) -> Result<bool, Error> {
         let rhs = i64::from(rhs);

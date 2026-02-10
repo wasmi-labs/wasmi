@@ -29,7 +29,7 @@ use crate::{
     Engine,
     Error,
     ValType,
-    core::TypedVal,
+    core::TypedRawVal,
     engine::{
         BlockType,
         translator::{
@@ -406,7 +406,7 @@ impl Stack {
     #[inline]
     pub fn push_immediate(
         &mut self,
-        value: impl Into<TypedVal>,
+        value: impl Into<TypedRawVal>,
     ) -> Result<ImmediateOperand, Error> {
         self.operands.push_immediate(value)
     }

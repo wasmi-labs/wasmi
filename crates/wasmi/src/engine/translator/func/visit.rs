@@ -10,7 +10,7 @@ use crate::{
     Nullable,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, TypedVal, wasm},
+    core::{FuelCostsProvider, IndexType, TypedRawVal, wasm},
     engine::{
         BlockType,
         translator::func::{
@@ -386,7 +386,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             if let Some(value) = init_expr.eval_const() {
                 // Case: access to immutable internally defined global variables
                 //       can be replaced with their constant initialization value.
-                self.stack.push_immediate(TypedVal::new(content, value))?;
+                self.stack
+                    .push_immediate(TypedRawVal::new(content, value))?;
                 return Ok(());
             }
             if let Some(func_index) = init_expr.funcref() {
@@ -1813,8 +1814,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
-            ValType::FuncRef => TypedVal::from(<Nullable<Func>>::Null),
-            ValType::ExternRef => TypedVal::from(<Nullable<ExternRef>>::Null),
+            ValType::FuncRef => TypedRawVal::from(<Nullable<Func>>::Null),
+            ValType::ExternRef => TypedRawVal::from(<Nullable<ExternRef>>::Null),
             ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
         };
         self.stack.push_immediate(null)?;
