@@ -163,25 +163,19 @@ impl Table {
         src_index: u64,
         len: u64,
     ) -> Result<(), TableError> {
+        let store = &mut store.as_context_mut().store.inner;
         if Self::eq(dst_table, src_table) {
             // The `dst_table` and `src_table` are the same table
             // therefore we have to copy within the same table.
-            let table = store
-                .as_context_mut()
-                .store
-                .inner
-                .resolve_table_mut(dst_table);
-            table
+            store
+                .resolve_table_mut(dst_table)
                 .copy_within(dst_index, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         } else {
             // The `dst_table` and `src_table` are different entities
             // therefore we have to copy from one table to the other.
-            let (dst_table, src_table, _fuel) = store
-                .as_context_mut()
-                .store
-                .inner
-                .resolve_table_pair_and_fuel(dst_table, src_table);
+            let (dst_table, src_table, _fuel) =
+                store.resolve_table_pair_and_fuel(dst_table, src_table);
             TableEntity::copy(dst_table, dst_index, src_table, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         }
