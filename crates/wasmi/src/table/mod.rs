@@ -6,7 +6,6 @@ use crate::{
     Handle,
     Nullable,
     Ref,
-    RefType,
     core::{CoreElementSegment, CoreTable, Fuel, ResourceLimiterRef, UntypedRef},
     errors::TableError,
     store::{StoreId, Stored},
@@ -296,14 +295,6 @@ impl TableEntity {
         Ok(UntypedRef::from(value))
     }
 
-    /// Converts the [`UntypedRef`] `untyped` to a [`Ref`].
-    fn untyped_ref_to_ref(&self, untyped: UntypedRef) -> Ref {
-        match self.ty().element() {
-            RefType::Func => Ref::Func(untyped.into()),
-            RefType::Extern => Ref::Extern(untyped.into()),
-        }
-    }
-
     /// Grows the table by the given amount of elements.
     ///
     /// Returns the old size of the table upon success.
@@ -354,8 +345,9 @@ impl TableEntity {
     ///
     /// Returns `None` if `index` is out of bounds.
     pub fn get(&self, index: u64) -> Option<Ref> {
-        let untyped = self.get_untyped(index)?;
-        Some(self.untyped_ref_to_ref(untyped))
+        let ty = self.ty().element();
+        let val = self.get_untyped(index)?;
+        Some(Ref::from_raw_parts(val, ty, self.id))
     }
 
     /// Returns the untyped table element value at `index`.

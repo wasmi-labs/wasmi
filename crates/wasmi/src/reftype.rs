@@ -109,6 +109,13 @@ impl From<Nullable<ExternRef>> for Ref {
 }
 
 impl Ref {
+    /// Create a [`Ref`] from its raw parts.
+    pub(crate) fn from_raw_parts(val: UntypedRef, ty: RefType, _store: StoreId) -> Self {
+        match ty {
+            RefType::Func => Ref::Func(val.into()),
+            RefType::Extern => Ref::Extern(val.into()),
+        }
+    }
     /// Creates new default value of given type.
     #[inline]
     pub fn default_for_ty(ty: RefType) -> Self {
