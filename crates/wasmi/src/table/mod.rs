@@ -8,7 +8,7 @@ use crate::{
     Ref,
     core::{CoreElementSegment, CoreTable, Fuel, ResourceLimiterRef, UntypedRef},
     errors::TableError,
-    store::{StoreId, Stored},
+    store::{AsStoreId as _, StoreId, Stored},
 };
 
 mod element;
