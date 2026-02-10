@@ -58,11 +58,8 @@ impl Global {
     ///
     /// Panics if `ctx` does not own this [`Global`].
     pub fn get(&self, ctx: impl AsContext) -> Val {
-        ctx.as_context()
-            .store
-            .inner
-            .resolve_global(self)
-            .get()
-            .into()
+        let store = &ctx.as_context().store.inner;
+        let value = store.resolve_global(self).get();
+        Val::from_raw_parts(value.untyped(), value.ty(), || store.id())
     }
 }

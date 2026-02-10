@@ -81,6 +81,23 @@ pub enum Val {
 }
 
 impl Val {
+    /// Create a [`Val`] from its raw parts.
+    pub(crate) fn from_raw_parts(
+        val: UntypedVal,
+        ty: ValType,
+        _store: impl FnOnce() -> StoreId,
+    ) -> Self {
+        match ty {
+            ValType::I32 => Self::I32(val.into()),
+            ValType::I64 => Self::I64(val.into()),
+            ValType::F32 => Self::F32(val.into()),
+            ValType::F64 => Self::F64(val.into()),
+            ValType::V128 => Self::V128(val.into()),
+            ValType::FuncRef => Self::FuncRef(val.into()),
+            ValType::ExternRef => Self::ExternRef(val.into()),
+        }
+    }
+
     /// Creates new default value of given type.
     #[inline]
     #[deprecated(note = "use `Val::default_for_ty` instead")]
