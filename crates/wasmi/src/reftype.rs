@@ -116,6 +116,7 @@ impl Ref {
             RefType::Extern => Ref::Extern(val.into()),
         }
     }
+
     /// Creates new default value of given type.
     #[inline]
     pub fn default_for_ty(ty: RefType) -> Self {
