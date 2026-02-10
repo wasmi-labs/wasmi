@@ -4,7 +4,7 @@ use crate::{
     GlobalType,
     Mutability,
     Val,
-    core::{CoreGlobal, UntypedVal},
+    core::{CoreGlobal, RawVal},
     errors::GlobalError,
     store::Stored,
 };
@@ -18,7 +18,7 @@ impl Global {
     /// Creates a new global variable to the store.
     pub fn new(mut ctx: impl AsContextMut, value: Val, mutability: Mutability) -> Self {
         let ty = GlobalType::new(value.ty(), mutability);
-        let value = UntypedVal::from(value);
+        let value = RawVal::from(value);
         ctx.as_context_mut()
             .store
             .inner
@@ -60,6 +60,6 @@ impl Global {
     pub fn get(&self, ctx: impl AsContext) -> Val {
         let store = &ctx.as_context().store.inner;
         let value = store.resolve_global(self).get();
-        Val::from_raw_parts(value.untyped(), value.ty(), store)
+        Val::from_raw_parts(value.raw(), value.ty(), store)
     }
 }

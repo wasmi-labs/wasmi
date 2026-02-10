@@ -8,6 +8,7 @@ use crate::{
     V128,
     ValType,
     core::{RawVal, TypedRawVal},
+    store::AsStoreId,
 };
 
 /// Untyped instances that allow to be typed.
@@ -82,7 +83,7 @@ pub enum Val {
 
 impl Val {
     /// Create a [`Val`] from its raw parts.
-    pub(crate) fn from_raw_parts(val: UntypedVal, ty: ValType, _store: impl AsStoreId) -> Self {
+    pub(crate) fn from_raw_parts(val: RawVal, ty: ValType, _store: impl AsStoreId) -> Self {
         match ty {
             ValType::I32 => Self::I32(val.into()),
             ValType::I64 => Self::I64(val.into()),

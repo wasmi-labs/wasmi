@@ -83,12 +83,9 @@ pub struct Global {
 }
 
 impl Global {
-    /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(value: TypedRawVal, mutability: Mutability) -> Self {
-        Self {
-            ty: GlobalType::new(value.ty(), mutability),
-            value: value.into(),
-        }
+    /// Creates a new global variable with the given initial `value` and type `ty`.
+    pub fn new(value: RawVal, ty: GlobalType) -> Self {
+        Self { value, ty }
     }
 
     /// Returns the [`GlobalType`] of the global variable.
