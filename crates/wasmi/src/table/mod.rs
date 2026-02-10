@@ -6,7 +6,7 @@ use crate::{
     Handle,
     Nullable,
     Ref,
-    core::{CoreElementSegment, CoreTable, Fuel, ResourceLimiterRef, UntypedRef},
+    core::{CoreElementSegment, CoreTable, Fuel, RawRef, ResourceLimiterRef},
     errors::TableError,
     store::{AsStoreId as _, StoreId, Stored},
 };
@@ -237,7 +237,7 @@ impl TableEntity {
             .store
             .store_inner_and_resource_limiter_ref();
         let id = inner.id();
-        let init = UntypedRef::from(init);
+        let init = RawRef::from(init);
         let core = CoreTable::new(ty.core, init, &mut resource_limiter)?;
         Ok(Self { id, core })
     }
@@ -266,12 +266,12 @@ impl TableEntity {
         self.core.size()
     }
 
-    /// Unwraps the [`Ref`] into an [`UntypedRef`] and checks [`Store`](crate::Store) origin.
+    /// Unwraps the [`Ref`] into an [`RawRef`] and checks [`Store`](crate::Store) origin.
     ///
     /// # Panics
     ///
     /// If `value` originates from a different store.
-    fn unwrap_ref(&self, value: Ref) -> Result<UntypedRef, TableError> {
+    fn unwrap_ref(&self, value: Ref) -> Result<RawRef, TableError> {
         #[cold]
         fn different_store_err(value: &Ref) -> ! {
             panic!("value originates from different store: {value:?}")
@@ -292,7 +292,7 @@ impl TableEntity {
             }
             _ => {}
         }
-        Ok(UntypedRef::from(value))
+        Ok(RawRef::from(value))
     }
 
     /// Grows the table by the given amount of elements.
@@ -326,7 +326,7 @@ impl TableEntity {
     ///
     /// This is an internal API that exists for efficiency purposes.
     ///
-    /// The newly added elements are initialized to the `init` [`UntypedRef`].
+    /// The newly added elements are initialized to the `init` [`RawRef`].
     ///
     /// # Errors
     ///
@@ -334,7 +334,7 @@ impl TableEntity {
     pub fn grow_untyped(
         &mut self,
         delta: u64,
-        init: UntypedRef,
+        init: RawRef,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
@@ -358,7 +358,7 @@ impl TableEntity {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_untyped(&self, index: u64) -> Option<UntypedRef> {
+    pub fn get_untyped(&self, index: u64) -> Option<RawRef> {
         self.core.get(index)
     }
 
@@ -373,12 +373,12 @@ impl TableEntity {
         self.set_untyped(index, value)
     }
 
-    /// Sets the [`UntypedRef`] of the table at `index`.
+    /// Sets the [`RawRef`] of the table at `index`.
     ///
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set_untyped(&mut self, index: u64, value: UntypedRef) -> Result<(), TableError> {
+    pub fn set_untyped(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
         self.core.set(index, value)
     }
 
@@ -482,7 +482,7 @@ impl TableEntity {
     pub fn fill_untyped(
         &mut self,
         dst: u64,
-        val: UntypedRef,
+        val: RawRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {

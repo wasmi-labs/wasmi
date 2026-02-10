@@ -4,7 +4,7 @@ use crate::{
     RefType,
     StoreContext,
     core::{RawRef, RawVal, ReadAs, TypedRawRef, WriteAs},
-    store::Stored,
+    store::{AsStoreId, Stored},
 };
 use alloc::boxed::Box;
 use core::{any::Any, mem, num::NonZero};
@@ -68,17 +68,7 @@ pub enum Ref {
     Extern(Nullable<ExternRef>),
 }
 
-impl From<TypedRawRef> for Ref {
-    fn from(value: TypedRawRef) -> Self {
-        let raw = value.raw();
-        match value.ty() {
-            RefType::Func => Self::Func(raw.into()),
-            RefType::Extern => Self::Extern(raw.into()),
-        }
-    }
-}
-
-impl From<Ref> for TypedRawRef {
+impl From<Ref> for RawRef {
     fn from(value: Ref) -> Self {
         match value {
             Ref::Func(nullable) => nullable.into(),
@@ -110,7 +100,7 @@ impl From<Nullable<ExternRef>> for Ref {
 
 impl Ref {
     /// Create a [`Ref`] from its raw parts.
-    pub(crate) fn from_raw_parts(val: UntypedRef, ty: RefType, _store: impl AsStoreId) -> Self {
+    pub(crate) fn from_raw_parts(val: RawRef, ty: RefType, _store: impl AsStoreId) -> Self {
         match ty {
             RefType::Func => Ref::Func(val.into()),
             RefType::Extern => Ref::Extern(val.into()),
