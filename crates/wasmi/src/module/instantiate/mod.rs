@@ -368,7 +368,7 @@ impl Module {
                     .store
                     .inner
                     .resolve_table_and_element_mut(&table, &element);
-                table.init(elem, dst_index, 0, len_items, None)?;
+                table.init(elem.as_ref(), dst_index, 0, len_items, None)?;
                 // Now drop the active element segment as commanded by the Wasm spec.
                 elem.drop_items();
             }

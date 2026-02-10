@@ -6,7 +6,7 @@ use crate::{
     Handle,
     Nullable,
     Ref,
-    core::{CoreElementSegment, CoreTable, Fuel, RawRef, ResourceLimiterRef, TypedRawRef},
+    core::{CoreTable, RawRef, TypedRawRef},
     errors::TableError,
     store::{AsStoreId as _, StoreInner, Stored},
 };
@@ -16,7 +16,7 @@ mod ty;
 
 define_handle! {
     /// A Wasm table reference.
-    struct Table(u32, Stored) => TableEntity;
+    struct Table(u32, Stored) => CoreTable;
 }
 
 impl Table {
@@ -31,7 +31,7 @@ impl Table {
             .store
             .store_inner_and_resource_limiter_ref();
         let init = Self::unwrap_ref(store, init)?;
-        let table = TableEntity::new(ty, init, &mut resource_limiter)?;
+        let table = CoreTable::new(ty.core, init, &mut resource_limiter)?;
         let handle = ctx.as_context_mut().store.inner.alloc_table(table);
         Ok(handle)
     }
@@ -42,7 +42,8 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context().store.inner.resolve_table(self).ty()
+        let core = ctx.as_context().store.inner.resolve_table(self).ty();
+        TableType { core }
     }
 
     /// Returns the dynamic [`TableType`] of the [`Table`].
@@ -56,11 +57,13 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub(crate) fn dynamic_ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context()
+        let core = ctx
+            .as_context()
             .store
             .inner
             .resolve_table(self)
-            .dynamic_ty()
+            .dynamic_ty();
+        TableType { core }
     }
 
     /// Returns the current size of the [`Table`].
@@ -204,7 +207,7 @@ impl Table {
             // therefore we have to copy from one table to the other.
             let (dst_table, src_table, _fuel) =
                 store.resolve_table_pair_and_fuel(dst_table, src_table);
-            TableEntity::copy(dst_table, dst_index, src_table, src_index, len, None)
+            CoreTable::copy(dst_table, dst_index, src_table, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         }
     }
@@ -232,255 +235,5 @@ impl Table {
         let store = &mut ctx.as_context_mut().store.inner;
         let val = Self::unwrap_ref(store, val)?;
         store.resolve_table_mut(self).fill(dst, val, len, None)
-    }
-}
-
-/// A Wasm table entity.
-#[derive(Debug)]
-pub struct TableEntity {
-    /// The underlying table implementation.
-    core: CoreTable,
-}
-
-impl TableEntity {
-    /// Creates a new table.
-    ///
-    /// # Note
-    ///
-    /// - The table will store elements of type `ty`.
-    /// - The elements of the table will be initialized to `init`.
-    ///
-    /// # Errors
-    ///
-    /// If `init` does not match the table's element type `ty`.
-    pub fn new(
-        ty: TableType,
-        init: TypedRawRef,
-        limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<Self, TableError> {
-        if ty.element() != init.ty() {
-            return Err(TableError::ElementTypeMismatch);
-        }
-        let core = CoreTable::new(ty.core, init.raw(), limiter)?;
-        Ok(Self { core })
-    }
-
-    /// Returns the resizable limits of the table.
-    pub fn ty(&self) -> TableType {
-        TableType {
-            core: self.core.ty(),
-        }
-    }
-
-    /// Returns the dynamic [`TableType`] of the table.
-    ///
-    /// # Note
-    ///
-    /// This respects the current size of the table.
-    /// as its minimum size and is useful for import subtyping checks.
-    pub fn dynamic_ty(&self) -> TableType {
-        TableType {
-            core: self.core.dynamic_ty(),
-        }
-    }
-
-    /// Returns the current size of the table.
-    pub fn size(&self) -> u64 {
-        self.core.size()
-    }
-
-    /// Unwrap `value` to [`RawRef`] if its type matches the element type of `self`.
-    fn unwrap_typed(&self, value: TypedRawRef) -> Result<RawRef, TableError> {
-        if value.ty() != self.ty().element() {
-            return Err(TableError::ElementTypeMismatch);
-        }
-        Ok(value.raw())
-    }
-
-    /// Grows the table by the given amount of elements.
-    ///
-    /// Returns the old size of the table upon success.
-    ///
-    /// # Note
-    ///
-    /// This is an internal API that exists for efficiency purposes.
-    ///
-    /// The newly added elements are initialized to the `init` [`RawRef`].
-    ///
-    /// # Errors
-    ///
-    /// If the table is grown beyond its maximum limits.
-    pub fn grow(
-        &mut self,
-        delta: u64,
-        init: TypedRawRef,
-        fuel: Option<&mut Fuel>,
-        limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, TableError> {
-        let init = self.unwrap_typed(init)?;
-        self.core.grow(delta, init, fuel, limiter)
-    }
-
-    /// Grows the table by the given amount of elements.
-    ///
-    /// Returns the old size of the table upon success.
-    ///
-    /// # Note
-    ///
-    /// This is an internal API that exists for efficiency purposes.
-    ///
-    /// The newly added elements are initialized to the `init` [`RawRef`].
-    ///
-    /// # Errors
-    ///
-    /// If the table is grown beyond its maximum limits.
-    pub fn grow_raw(
-        &mut self,
-        delta: u64,
-        init: RawRef,
-        fuel: Option<&mut Fuel>,
-        limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, TableError> {
-        self.core.grow(delta, init, fuel, limiter)
-    }
-
-    /// Returns the untyped table element value at `index`.
-    ///
-    /// Returns `None` if `index` is out of bounds.
-    ///
-    /// # Note
-    ///
-    /// This is a more efficient version of [`Table::get`] for
-    /// internal use only.
-    pub fn get(&self, index: u64) -> Option<TypedRawRef> {
-        self.core.get(index)
-    }
-
-    /// Sets the [`RawRef`] of the table at `index`.
-    ///
-    /// # Errors
-    ///
-    /// If `index` is out of bounds.
-    pub fn set(&mut self, index: u64, value: TypedRawRef) -> Result<(), TableError> {
-        let value = self.unwrap_typed(value)?;
-        self.set_raw(index, value)
-    }
-
-    /// Sets the [`RawRef`] of the table at `index`.
-    ///
-    /// # Errors
-    ///
-    /// If `index` is out of bounds.
-    pub fn set_raw(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
-        self.core.set(index, value)
-    }
-
-    /// Initialize `len` elements from `src_element[src_index..]` into `self[dst_index..]`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the range is out of bounds of either the source or destination tables.
-    ///
-    /// # Panics
-    ///
-    /// If the [`ElementSegment`]'s element type does not match the table's element type.
-    /// Note: This is a panic instead of an error since it is asserted at Wasm validation time.
-    pub fn init(
-        &mut self,
-        element: &CoreElementSegment,
-        dst_index: u64,
-        src_index: u32,
-        len: u32,
-        fuel: Option<&mut Fuel>,
-    ) -> Result<(), TableError> {
-        self.core
-            .init(element.as_ref(), dst_index, src_index, len, fuel)
-    }
-
-    /// Copy `len` elements from `src_table[src_index..]` into
-    /// `dst_table[dst_index..]`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the range is out of bounds of either the source or
-    /// destination tables.
-    pub fn copy(
-        dst_table: &mut Self,
-        dst_index: u64,
-        src_table: &Self,
-        src_index: u64,
-        len: u64,
-        fuel: Option<&mut Fuel>,
-    ) -> Result<(), TableError> {
-        CoreTable::copy(
-            &mut dst_table.core,
-            dst_index,
-            &src_table.core,
-            src_index,
-            len,
-            fuel,
-        )
-    }
-
-    /// Copy `len` elements from `self[src_index..]` into `self[dst_index..]`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the range is out of bounds of the table.
-    pub fn copy_within(
-        &mut self,
-        dst_index: u64,
-        src_index: u64,
-        len: u64,
-        fuel: Option<&mut Fuel>,
-    ) -> Result<(), TableError> {
-        self.core.copy_within(dst_index, src_index, len, fuel)
-    }
-
-    /// Fill `table[dst..(dst + len)]` with the given value.
-    ///
-    /// # Note
-    ///
-    /// This is an API for internal use only and exists for efficiency reasons.
-    ///
-    /// # Errors
-    ///
-    /// - If the region to be filled is out of bounds for the table.
-    ///
-    /// # Panics
-    ///
-    /// If `ctx` does not own `dst_table` or `src_table`.
-    pub fn fill(
-        &mut self,
-        dst: u64,
-        val: TypedRawRef,
-        len: u64,
-        fuel: Option<&mut Fuel>,
-    ) -> Result<(), TableError> {
-        let val = self.unwrap_typed(val)?;
-        self.fill_raw(dst, val, len, fuel)
-    }
-
-    /// Fill `table[dst..(dst + len)]` with the given value.
-    ///
-    /// # Note
-    ///
-    /// This is an API for internal use only and exists for efficiency reasons.
-    ///
-    /// # Errors
-    ///
-    /// - If the region to be filled is out of bounds for the table.
-    ///
-    /// # Panics
-    ///
-    /// If `ctx` does not own `dst_table` or `src_table`.
-    pub fn fill_raw(
-        &mut self,
-        dst: u64,
-        val: RawRef,
-        len: u64,
-        fuel: Option<&mut Fuel>,
-    ) -> Result<(), TableError> {
-        self.core.fill(dst, val, len, fuel)
     }
 }
