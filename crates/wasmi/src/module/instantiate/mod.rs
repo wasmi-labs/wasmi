@@ -21,7 +21,7 @@ use crate::{
     Nullable,
     Ref,
     Table,
-    core::UntypedVal,
+    core::RawVal,
     error::ErrorKind,
     errors::MemoryError,
     func::WasmFuncEntity,
@@ -287,7 +287,7 @@ impl Module {
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
         init_expr: &ConstExpr,
-    ) -> UntypedVal {
+    ) -> RawVal {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),

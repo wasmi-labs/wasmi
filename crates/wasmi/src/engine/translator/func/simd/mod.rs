@@ -7,7 +7,7 @@ use crate::{
     Error,
     V128,
     ValType,
-    core::{FuelCostsProvider, Typed, TypedVal, simd::IntoLaneIdx},
+    core::{FuelCostsProvider, Typed, TypedRawVal, simd::IntoLaneIdx},
     engine::translator::{
         func::{Operand, utils::Input},
         utils::{IntoShiftAmount, ToBits, Wrap},
@@ -29,7 +29,7 @@ impl FuncTranslator {
         make_instr_si: fn(result: Slot, value: <Wrapped as ToBits>::Out) -> Op,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal> + Wrap<Wrapped>,
+        T: From<TypedRawVal> + Wrap<Wrapped>,
         Wrapped: ToBits,
     {
         bail_unreachable!(self);
@@ -56,7 +56,7 @@ impl FuncTranslator {
         const_eval: fn(input: V128, lane: T::LaneIdx) -> R,
     ) -> Result<(), Error>
     where
-        R: Into<TypedVal> + Typed,
+        R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
@@ -80,7 +80,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm SIMD replace lane instruction.
     fn translate_replace_lane<T: op::SimdReplaceLane>(&mut self, lane: u8) -> Result<(), Error>
     where
-        T::Item: IntoLaneIdx + From<TypedVal> + Copy,
+        T::Item: IntoLaneIdx + From<TypedRawVal> + Copy,
         T::Immediate: Copy,
     {
         bail_unreachable!(self);
@@ -115,7 +115,7 @@ impl FuncTranslator {
         const_eval: fn(input: V128) -> T,
     ) -> Result<(), Error>
     where
-        T: Into<TypedVal> + Typed,
+        T: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         let input = self.stack.pop();
@@ -192,7 +192,7 @@ impl FuncTranslator {
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: IntoShiftAmount<ShiftSource: From<TypedVal>>,
+        T: IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();

@@ -1,4 +1,4 @@
-use crate::{RefType, UntypedRef};
+use crate::{RawRef, RefType};
 use alloc::boxed::Box;
 
 /// A Wasm [`ElementSegment`].
@@ -7,7 +7,7 @@ pub struct ElementSegment {
     /// The [`RefType`] of elements of this [`ElementSegment`].
     ty: RefType,
     /// Pre-resolved items of the Wasm element segment.
-    items: Box<[UntypedRef]>,
+    items: Box<[RawRef]>,
 }
 
 impl ElementSegment {
@@ -18,9 +18,9 @@ impl ElementSegment {
     /// If the length of `items` exceeds `u32`.
     pub fn new<I>(ty: RefType, items: I) -> Self
     where
-        I: IntoIterator<Item = UntypedRef>,
+        I: IntoIterator<Item = RawRef>,
     {
-        let items: Box<[UntypedRef]> = items.into_iter().collect();
+        let items: Box<[RawRef]> = items.into_iter().collect();
         assert!(
             u32::try_from(items.len()).is_ok(),
             "element segment has too many items: {}",
@@ -40,7 +40,7 @@ impl ElementSegment {
     }
 
     /// Returns the items of the [`ElementSegment`].
-    pub fn items(&self) -> &[UntypedRef] {
+    pub fn items(&self) -> &[RawRef] {
         &self.items[..]
     }
 
@@ -61,7 +61,7 @@ pub struct ElementSegmentRef<'a> {
     /// The [`RefType`] of elements of this [`ElementSegment`].
     ty: RefType,
     /// The items of the Wasm element segment.
-    items: &'a [UntypedRef],
+    items: &'a [RawRef],
 }
 
 impl<'a> From<&'a ElementSegment> for ElementSegmentRef<'a> {
@@ -80,7 +80,7 @@ impl<'a> ElementSegmentRef<'a> {
     }
 
     /// Returns the items of the [`ElementSegment`].
-    pub fn items(self) -> &'a [UntypedRef] {
+    pub fn items(self) -> &'a [RawRef] {
         self.items
     }
 

@@ -2,7 +2,7 @@ use super::{ImmediateOperand, LocalIdx, LocalOperand, LocalsHead, Operand, Reset
 use crate::{
     Error,
     ValType,
-    core::{TypedVal, UntypedVal},
+    core::{RawVal, TypedRawVal},
     engine::{TranslationError, translator::utils::required_cells_for_ty},
     ir::{Slot, SlotSpan},
 };
@@ -65,7 +65,7 @@ pub enum StackOperand {
         /// The type of the immediate operand.
         ty: ValType,
         /// The value of the immediate operand.
-        val: UntypedVal,
+        val: RawVal,
     },
 }
 
@@ -274,11 +274,11 @@ impl OperandStack {
     #[inline]
     pub fn push_immediate(
         &mut self,
-        value: impl Into<TypedVal>,
+        value: impl Into<TypedRawVal>,
     ) -> Result<ImmediateOperand, Error> {
         let value = value.into();
         let ty = value.ty();
-        let val = value.untyped();
+        let val = value.raw();
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands.push(StackOperand::Immediate {
             temp_slots,

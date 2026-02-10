@@ -20,10 +20,10 @@ mod host_error;
 mod index_ty;
 mod limiter;
 mod memory;
+mod raw;
 mod table;
 mod trap;
 mod typed;
-mod untyped;
 mod value;
 pub mod wasm;
 
@@ -44,18 +44,18 @@ pub use self::{
     index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
+    raw::{RawVal, ReadAs, WriteAs},
     table::{
         ElementSegment,
         ElementSegmentRef,
+        RawRef,
         RefType,
         Table,
         TableError,
         TableType,
-        TypedRef,
-        UntypedRef,
+        TypedRawRef,
     },
     trap::{Trap, TrapCode},
-    typed::{Typed, TypedVal},
-    untyped::{ReadAs, UntypedVal, WriteAs},
+    typed::{Typed, TypedRawVal},
     value::{V128, ValType},
 };

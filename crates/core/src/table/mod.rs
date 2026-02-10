@@ -1,13 +1,13 @@
 mod element;
 mod error;
+mod raw;
 mod ty;
-mod untyped;
 
 pub use self::{
     element::{ElementSegment, ElementSegmentRef},
     error::TableError,
+    raw::{RawRef, TypedRawRef},
     ty::{RefType, TableType},
-    untyped::{TypedRef, UntypedRef},
 };
 use crate::{Fuel, FuelError, ResourceLimiterRef};
 use alloc::vec::Vec;
@@ -20,7 +20,7 @@ mod tests;
 #[derive(Debug)]
 pub struct Table {
     ty: TableType,
-    elements: Vec<UntypedRef>,
+    elements: Vec<RawRef>,
 }
 
 impl Table {
@@ -31,7 +31,7 @@ impl Table {
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(
         ty: TableType,
-        init: TypedRef,
+        init: TypedRawRef,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
         ty.ensure_element_type_matches(init.ty())?;
@@ -54,7 +54,7 @@ impl Table {
             }
             return Err(error);
         };
-        elements.extend(iter::repeat_n::<UntypedRef>(init.into(), min_size));
+        elements.extend(iter::repeat_n::<RawRef>(init.into(), min_size));
         Ok(Self { ty, elements })
     }
 
@@ -93,7 +93,7 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`TypedRef`].
+    /// The newly added elements are initialized to the `init` [`TypedRawRef`].
     ///
     /// # Errors
     ///
@@ -102,12 +102,12 @@ impl Table {
     pub fn grow(
         &mut self,
         delta: u64,
-        init: TypedRef,
+        init: TypedRawRef,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
         self.ty().ensure_element_type_matches(init.ty())?;
-        self.grow_untyped(delta, init.into(), fuel, limiter)
+        self.grow_raw(delta, init.into(), fuel, limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -118,15 +118,15 @@ impl Table {
     ///
     /// This is an internal API that exists for efficiency purposes.
     ///
-    /// The newly added elements are initialized to the `init` [`UntypedRef`].
+    /// The newly added elements are initialized to the `init` [`RawRef`].
     ///
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
-    pub fn grow_untyped(
+    pub fn grow_raw(
         &mut self,
         delta: u64,
-        init: UntypedRef,
+        init: RawRef,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
@@ -172,7 +172,7 @@ impl Table {
             }
         }
         if let Some(fuel) = fuel {
-            match fuel.consume_fuel(|costs| costs.fuel_for_copying_values::<UntypedRef>(delta)) {
+            match fuel.consume_fuel(|costs| costs.fuel_for_copying_values::<RawRef>(delta)) {
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
                 Err(FuelError::OutOfFuel { required_fuel }) => {
                     return notify_limiter(limiter, TableError::OutOfFuel { required_fuel });
@@ -190,13 +190,13 @@ impl Table {
     /// Returns the [`Table`] element value at `index`.
     ///
     /// Returns `None` if `index` is out of bounds.
-    pub fn get(&self, index: u64) -> Option<TypedRef> {
-        let untyped = self.get_untyped(index)?;
-        let value = TypedRef::new(self.ty().element(), untyped);
-        Some(value)
+    pub fn get(&self, index: u64) -> Option<TypedRawRef> {
+        let raw = self.get_raw(index)?;
+        let ty = self.ty().element();
+        Some(TypedRawRef::new(ty, raw))
     }
 
-    /// Returns the untyped [`Table`] element value at `index`.
+    /// Returns the raw [`Table`] element reference at `index`.
     ///
     /// Returns `None` if `index` is out of bounds.
     ///
@@ -204,32 +204,32 @@ impl Table {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_untyped(&self, index: u64) -> Option<UntypedRef> {
+    pub fn get_raw(&self, index: u64) -> Option<RawRef> {
         let index = usize::try_from(index).ok()?;
         self.elements.get(index).copied()
     }
 
-    /// Sets the [`TypedRef`] of this [`Table`] at `index`.
+    /// Sets the [`TypedRawRef`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
-    pub fn set(&mut self, index: u64, value: TypedRef) -> Result<(), TableError> {
+    pub fn set(&mut self, index: u64, value: TypedRawRef) -> Result<(), TableError> {
         self.ty().ensure_element_type_matches(value.ty())?;
-        self.set_untyped(index, value.into())
+        self.set_raw(index, value.into())
     }
 
-    /// Returns the [`UntypedRef`] of the [`Table`] at `index`.
+    /// Returns the [`RawRef`] of the [`Table`] at `index`.
     ///
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set_untyped(&mut self, index: u64, value: UntypedRef) -> Result<(), TableError> {
-        let Some(untyped) = self.elements.get_mut(index as usize) else {
+    pub fn set_raw(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
+        let Some(raw) = self.elements.get_mut(index as usize) else {
             return Err(TableError::SetOutOfBounds);
         };
-        *untyped = value;
+        *raw = value;
         Ok(())
     }
 
@@ -280,9 +280,7 @@ impl Table {
             return Ok(());
         }
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| {
-                costs.fuel_for_copying_values::<UntypedRef>(u64::from(len))
-            })?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<RawRef>(u64::from(len)))?;
         }
         // Perform the actual table initialization.
         dst_items.copy_from_slice(src_items);
@@ -329,7 +327,7 @@ impl Table {
             .and_then(|items| items.get(..len_size))
             .ok_or(TableError::CopyOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<UntypedRef>(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<RawRef>(len))?;
         }
         // Finally, copy elements in-place for the table.
         dst_items.copy_from_slice(src_items);
@@ -365,7 +363,7 @@ impl Table {
             return Err(TableError::CopyOutOfBounds);
         };
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<UntypedRef>(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<RawRef>(len))?;
         }
         // Finally, copy elements in-place for the table.
         self.elements
@@ -389,12 +387,12 @@ impl Table {
     pub fn fill(
         &mut self,
         dst: u64,
-        val: TypedRef,
+        val: TypedRawRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
         self.ty().ensure_element_type_matches(val.ty())?;
-        self.fill_untyped(dst, val.into(), len, fuel)
+        self.fill_raw(dst, val.into(), len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -412,10 +410,10 @@ impl Table {
     /// If `ctx` does not own `dst_table` or `src_table`.
     ///
     /// [`Store`]: [`crate::Store`]
-    pub fn fill_untyped(
+    pub fn fill_raw(
         &mut self,
         dst: u64,
-        val: UntypedRef,
+        val: RawRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
@@ -431,7 +429,7 @@ impl Table {
             .and_then(|elements| elements.get_mut(..len_size))
             .ok_or(TableError::FillOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<UntypedRef>(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values::<RawRef>(len))?;
         }
         dst.fill(val);
         Ok(())

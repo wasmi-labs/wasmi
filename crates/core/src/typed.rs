@@ -1,4 +1,4 @@
-use crate::{F32, F64, UntypedVal, V128, ValType};
+use crate::{F32, F64, RawVal, V128, ValType};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -31,50 +31,41 @@ impl_typed_for! {
     V128 => ValType::V128;
 }
 
-impl From<TypedVal> for UntypedVal {
-    fn from(typed_value: TypedVal) -> Self {
+impl From<TypedRawVal> for RawVal {
+    fn from(typed_value: TypedRawVal) -> Self {
         typed_value.value
     }
 }
 
-/// An [`UntypedVal`] with its assumed [`ValType`].
-///
-/// # Note
-///
-/// We explicitly do not make use of the existing [`Val`]
-/// abstraction since [`Val`] is optimized towards being a
-/// user facing type whereas [`TypedVal`] is focusing on
-/// performance and efficiency in computations.
-///
-/// [`Val`]: [`crate::core::Value`]
+/// An [`RawVal`] with its assumed [`ValType`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct TypedVal {
+pub struct TypedRawVal {
     /// The type of the value.
     ty: ValType,
     /// The underlying raw value.
-    value: UntypedVal,
+    value: RawVal,
 }
 
-impl TypedVal {
-    /// Create a new [`TypedVal`].
-    pub fn new(ty: ValType, value: UntypedVal) -> Self {
+impl TypedRawVal {
+    /// Create a new [`TypedRawVal`].
+    pub fn new(ty: ValType, value: RawVal) -> Self {
         Self { ty, value }
     }
 
-    /// Returns the [`ValType`] of the [`TypedVal`].
+    /// Returns the [`ValType`] of the [`TypedRawVal`].
     pub fn ty(&self) -> ValType {
         self.ty
     }
 
-    /// Returns the [`UntypedVal`] of the [`TypedVal`].
-    pub fn untyped(&self) -> UntypedVal {
+    /// Returns the [`RawVal`] of the [`TypedRawVal`].
+    pub fn raw(&self) -> RawVal {
         self.value
     }
 }
 
-impl<T> From<T> for TypedVal
+impl<T> From<T> for TypedRawVal
 where
-    T: Typed + Into<UntypedVal>,
+    T: Typed + Into<RawVal>,
 {
     fn from(value: T) -> Self {
         Self::new(<T as Typed>::TY, value.into())
@@ -82,11 +73,11 @@ where
 }
 
 macro_rules! impl_from_typed_value_for {
-    ( $( $( #[$attr:meta] )* impl From<TypedVal> for $ty:ty );* $(;)? ) => {
+    ( $( $( #[$attr:meta] )* impl From<TypedRawVal> for $ty:ty );* $(;)? ) => {
         $(
             $( #[$attr] )*
-            impl From<TypedVal> for $ty {
-                fn from(typed_value: TypedVal) -> Self {
+            impl From<TypedRawVal> for $ty {
+                fn from(typed_value: TypedRawVal) -> Self {
                     // # Note
                     //
                     // We only use a `debug_assert` here instead of a proper `assert`
@@ -106,32 +97,32 @@ macro_rules! impl_from_typed_value_for {
     };
 }
 impl_from_typed_value_for! {
-    impl From<TypedVal> for bool;
-    impl From<TypedVal> for i32;
-    impl From<TypedVal> for u32;
-    impl From<TypedVal> for i64;
-    impl From<TypedVal> for u64;
-    impl From<TypedVal> for f32;
-    impl From<TypedVal> for f64;
+    impl From<TypedRawVal> for bool;
+    impl From<TypedRawVal> for i32;
+    impl From<TypedRawVal> for u32;
+    impl From<TypedRawVal> for i64;
+    impl From<TypedRawVal> for u64;
+    impl From<TypedRawVal> for f32;
+    impl From<TypedRawVal> for f64;
     #[cfg(feature = "simd")]
-    impl From<TypedVal> for V128;
+    impl From<TypedRawVal> for V128;
 }
 
 macro_rules! impl_from_typed_value_as_for {
-    ( $( $( #[$attr:meta] )* impl From<TypedVal> for $ty:ty as $as:ty );* $(;)? ) => {
+    ( $( $( #[$attr:meta] )* impl From<TypedRawVal> for $ty:ty as $as:ty );* $(;)? ) => {
         $(
             $( #[$attr] )*
-            impl From<TypedVal> for $ty {
-                fn from(typed_value: TypedVal) -> Self {
-                    <$as as From<TypedVal>>::from(typed_value) as $ty
+            impl From<TypedRawVal> for $ty {
+                fn from(typed_value: TypedRawVal) -> Self {
+                    <$as as From<TypedRawVal>>::from(typed_value) as $ty
                 }
             }
         )*
     };
 }
 impl_from_typed_value_as_for! {
-    impl From<TypedVal> for i8 as i32;
-    impl From<TypedVal> for i16 as i32;
-    impl From<TypedVal> for u8 as u32;
-    impl From<TypedVal> for u16 as u32;
+    impl From<TypedRawVal> for i8 as i32;
+    impl From<TypedRawVal> for i16 as i32;
+    impl From<TypedRawVal> for u8 as u32;
+    impl From<TypedRawVal> for u16 as u32;
 }

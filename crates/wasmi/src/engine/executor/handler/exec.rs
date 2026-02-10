@@ -19,7 +19,7 @@ use crate::{
     Func,
     Nullable,
     TrapCode,
-    core::{CoreTable, ReadAs, UntypedRef, wasm},
+    core::{CoreTable, RawRef, ReadAs, wasm},
     engine::{
         EngineFunc,
         executor::handler::{
@@ -180,7 +180,7 @@ pub fn global_get64(
     let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
     let global = resolve_global(state.store, &global);
-    let value: u64 = global.get_untyped().read_as();
+    let value: u64 = global.get_raw().read_as();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -198,7 +198,7 @@ pub fn global_get128(
     let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
     let global = fetch_global(instance, global);
     let global = resolve_global(state.store, &global);
-    let value: V128 = global.get_untyped().read_as();
+    let value: V128 = global.get_raw().read_as();
     set_value(sp, result, value);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
@@ -849,10 +849,10 @@ pub fn table_fill(
     ) = unsafe { decode_op(ip) };
     let dst: u64 = get_value(dst, sp);
     let len: u64 = get_value(len, sp);
-    let value: UntypedRef = get_value(value, sp);
+    let value: RawRef = get_value(value, sp);
     let table = fetch_table(instance, table);
     let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
-    if let Err(error) = table.fill_untyped(dst, value, len, Some(fuel)) {
+    if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
         let trap_code = match error {
             TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
             TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
@@ -939,7 +939,7 @@ macro_rules! impl_table_get {
                 let table = fetch_table(instance, table);
                 let table = resolve_table(state.store, &table);
                 let index = $ext(get_value(index, sp));
-                let value = match table.get_untyped(index) {
+                let value = match table.get_raw(index) {
                     Some(value) => value,
                     None => trap!(TrapCode::TableOutOfBounds)
                 };
@@ -971,7 +971,7 @@ macro_rules! impl_table_set {
                 let table = resolve_table_mut(state.store, &table);
                 let index = $ext(get_value(index, sp));
                 let value: u64 = get_value(value, sp);
-                if let Err(TableError::SetOutOfBounds) = table.set_untyped(index, UntypedRef::from(value)) {
+                if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                     trap!(TrapCode::TableOutOfBounds)
                 };
                 dispatch!(state, ip, sp, mem0, mem0_len, instance)

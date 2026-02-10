@@ -5,7 +5,7 @@ use crate::{
     ValType,
     core::{
         FuelCostsProvider,
-        TypedVal,
+        TypedRawVal,
         simd::{self, ImmLaneIdx},
     },
     engine::translator::func::{Operand, op, simd::op as simd_op},
@@ -16,7 +16,7 @@ use wasmparser::{MemArg, VisitSimdOperator};
 
 impl FuncTranslator {
     /// Hacky utility method to convert an immediate value into an [`Operand`].
-    fn immediate_to_operand<T: Into<TypedVal>>(&mut self, value: T) -> Result<Operand, Error> {
+    fn immediate_to_operand<T: Into<TypedRawVal>>(&mut self, value: T) -> Result<Operand, Error> {
         self.stack.push_immediate(value)?;
         Ok(self.stack.pop())
     }

@@ -7,7 +7,7 @@ use crate::{
     Ref,
     V128,
     ValType,
-    core::{TypedVal, UntypedVal},
+    core::{RawVal, TypedRawVal},
 };
 
 /// Untyped instances that allow to be typed.
@@ -19,7 +19,7 @@ pub trait WithType {
     fn with_type(self, ty: ValType) -> Self::Output;
 }
 
-impl WithType for UntypedVal {
+impl WithType for RawVal {
     type Output = Val;
 
     fn with_type(self, ty: ValType) -> Self::Output {
@@ -38,7 +38,7 @@ impl WithType for UntypedVal {
     }
 }
 
-impl From<Val> for UntypedVal {
+impl From<Val> for RawVal {
     fn from(value: Val) -> Self {
         match value {
             Val::I32(value) => value.into(),
@@ -237,31 +237,31 @@ impl From<V128> for Val {
     }
 }
 
-impl From<TypedVal> for Val {
-    fn from(value: TypedVal) -> Self {
-        let untyped = value.untyped();
+impl From<TypedRawVal> for Val {
+    fn from(value: TypedRawVal) -> Self {
+        let raw = value.raw();
         match value.ty() {
-            ValType::I32 => Self::I32(untyped.into()),
-            ValType::I64 => Self::I64(untyped.into()),
-            ValType::F32 => Self::F32(untyped.into()),
-            ValType::F64 => Self::F64(untyped.into()),
+            ValType::I32 => Self::I32(raw.into()),
+            ValType::I64 => Self::I64(raw.into()),
+            ValType::F32 => Self::F32(raw.into()),
+            ValType::F64 => Self::F64(raw.into()),
             ValType::V128 => {
                 #[cfg(feature = "simd")]
                 {
-                    Self::V128(untyped.into())
+                    Self::V128(raw.into())
                 }
                 #[cfg(not(feature = "simd"))]
                 {
                     panic!("`simd` crate feature is disabled")
                 }
             }
-            ValType::FuncRef => Self::FuncRef(untyped.into()),
-            ValType::ExternRef => Self::ExternRef(untyped.into()),
+            ValType::FuncRef => Self::FuncRef(raw.into()),
+            ValType::ExternRef => Self::ExternRef(raw.into()),
         }
     }
 }
 
-impl From<Val> for TypedVal {
+impl From<Val> for TypedRawVal {
     fn from(value: Val) -> Self {
         Self::new(value.ty(), value.into())
     }

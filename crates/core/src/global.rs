@@ -1,4 +1,4 @@
-use crate::{TypedVal, UntypedVal, ValType};
+use crate::{RawVal, TypedRawVal, ValType};
 use core::{error::Error, fmt, fmt::Display, ptr::NonNull};
 
 /// An error that may occur upon operating on global variables.
@@ -77,14 +77,14 @@ impl GlobalType {
 #[derive(Debug)]
 pub struct Global {
     /// The current value of the global variable.
-    value: UntypedVal,
+    value: RawVal,
     /// The type of the global variable.
     ty: GlobalType,
 }
 
 impl Global {
     /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(initial_value: TypedVal, mutability: Mutability) -> Self {
+    pub fn new(initial_value: TypedRawVal, mutability: Mutability) -> Self {
         Self {
             ty: GlobalType::new(initial_value.ty(), mutability),
             value: initial_value.into(),
@@ -102,7 +102,7 @@ impl Global {
     ///
     /// - If the [`Global`] is immutable.
     /// - If `new_value` does not match the type of the [`Global`].
-    pub fn set(&mut self, new_value: TypedVal) -> Result<(), GlobalError> {
+    pub fn set(&mut self, new_value: TypedRawVal) -> Result<(), GlobalError> {
         if !self.ty().mutability().is_mut() {
             return Err(GlobalError::ImmutableWrite);
         }
@@ -113,18 +113,18 @@ impl Global {
         Ok(())
     }
 
-    /// Returns the current [`TypedVal`] of the [`Global`].
-    pub fn get(&self) -> TypedVal {
-        TypedVal::new(self.ty().content(), self.value)
+    /// Returns the current [`TypedRawVal`] of the [`Global`].
+    pub fn get(&self) -> TypedRawVal {
+        TypedRawVal::new(self.ty().content(), self.value)
     }
 
-    /// Returns the current [`UntypedVal`] of the [`Global`].
-    pub fn get_untyped(&self) -> &UntypedVal {
+    /// Returns the current [`RawVal`] of the [`Global`].
+    pub fn get_raw(&self) -> &RawVal {
         &self.value
     }
 
-    /// Returns a pointer to the [`UntypedVal`] of the [`Global`].
-    pub fn get_untyped_ptr(&mut self) -> NonNull<UntypedVal> {
+    /// Returns a pointer to the [`RawVal`] of the [`Global`].
+    pub fn get_raw_ptr(&mut self) -> NonNull<RawVal> {
         NonNull::from(&mut self.value)
     }
 }

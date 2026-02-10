@@ -5,7 +5,7 @@ use crate::{
     Memory,
     Store,
     Table,
-    core::{UntypedRef, hint},
+    core::{RawRef, hint},
     engine::{InOutParams, Inst},
     errors::{MemoryError, TableError},
     func::Trampoline,
@@ -46,7 +46,7 @@ pub struct PrunedStoreVTable {
         &mut PrunedStore,
         table: &Table,
         delta: u64,
-        init: UntypedRef,
+        init: RawRef,
     ) -> Result<u64, StoreError<TableError>>,
 }
 impl PrunedStoreVTable {
@@ -86,13 +86,13 @@ impl PrunedStoreVTable {
             grow_table: |pruned: &mut PrunedStore,
                          table: &Table,
                          delta: u64,
-                         init: UntypedRef|
+                         init: RawRef|
              -> Result<u64, StoreError<TableError>> {
                 let store: &mut Store<T> = pruned.restore()?;
                 let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
                 let (table, fuel) = store.try_resolve_table_and_fuel_mut(table)?;
                 table
-                    .grow_untyped(delta, init, Some(fuel), &mut resource_limiter)
+                    .grow_raw(delta, init, Some(fuel), &mut resource_limiter)
                     .map_err(StoreError::external)
             },
         }
@@ -127,7 +127,7 @@ impl PrunedStoreVTable {
         pruned: &mut PrunedStore,
         table: &Table,
         delta: u64,
-        init: UntypedRef,
+        init: RawRef,
     ) -> Result<u64, StoreError<TableError>> {
         (self.grow_table)(pruned, table, delta, init)
     }
@@ -223,7 +223,7 @@ impl PrunedStore {
         &mut self,
         table: &Table,
         delta: u64,
-        init: UntypedRef,
+        init: RawRef,
     ) -> Result<u64, StoreError<TableError>> {
         self.pruned
             .restore_pruned

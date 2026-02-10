@@ -3,7 +3,7 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    core::{ReadAs, TypedRef, UntypedRef, UntypedVal, WriteAs},
+    core::{RawRef, RawVal, ReadAs, TypedRawRef, WriteAs},
     store::Stored,
 };
 use alloc::boxed::Box;
@@ -68,17 +68,17 @@ pub enum Ref {
     Extern(Nullable<ExternRef>),
 }
 
-impl From<TypedRef> for Ref {
-    fn from(value: TypedRef) -> Self {
-        let untyped = value.untyped();
+impl From<TypedRawRef> for Ref {
+    fn from(value: TypedRawRef) -> Self {
+        let raw = value.raw();
         match value.ty() {
-            RefType::Func => Self::Func(untyped.into()),
-            RefType::Extern => Self::Extern(untyped.into()),
+            RefType::Func => Self::Func(raw.into()),
+            RefType::Extern => Self::Extern(raw.into()),
         }
     }
 }
 
-impl From<Ref> for TypedRef {
+impl From<Ref> for TypedRawRef {
     fn from(value: Ref) -> Self {
         match value {
             Ref::Func(nullable) => nullable.into(),
@@ -87,7 +87,7 @@ impl From<Ref> for TypedRef {
     }
 }
 
-impl WriteAs<Ref> for UntypedVal {
+impl WriteAs<Ref> for RawVal {
     fn write_as(&mut self, value: Ref) {
         match value {
             Ref::Func(nullable) => self.write_as(nullable),
@@ -255,10 +255,10 @@ impl ExternRef {
 #[test]
 fn externref_sizeof() {
     // These assertions are important in order to convert `FuncRef`
-    // from and to 64-bit `UntypedValue` instances.
+    // from and to 64-bit `RawValue` instances.
     //
     // The following equation must be true:
-    //     size_of(ExternRef) == size_of(ExternObject) == size_of(UntypedValue)
+    //     size_of(ExternRef) == size_of(ExternObject) == size_of(RawValue)
     use core::mem::size_of;
     assert_eq!(size_of::<ExternRef>(), size_of::<u64>());
     assert_eq!(size_of::<ExternRef>(), size_of::<ExternRef>());
@@ -266,20 +266,17 @@ fn externref_sizeof() {
 
 #[test]
 fn externref_null_to_zero() {
-    assert_eq!(
-        UntypedVal::from(<Nullable<ExternRef>>::Null),
-        UntypedVal::from(0)
-    );
-    assert!(<Nullable<ExternRef>>::from(UntypedVal::from(0)).is_null());
+    assert_eq!(RawVal::from(<Nullable<ExternRef>>::Null), RawVal::from(0));
+    assert!(<Nullable<ExternRef>>::from(RawVal::from(0)).is_null());
 }
 
 #[test]
 fn funcref_sizeof() {
     // These assertions are important in order to convert `FuncRef`
-    // from and to 64-bit `UntypedValue` instances.
+    // from and to 64-bit `RawValue` instances.
     //
     // The following equation must be true:
-    //     size_of(Func) == size_of(UntypedValue) == size_of(FuncRef)
+    //     size_of(Func) == size_of(RawValue) == size_of(FuncRef)
     use crate::Func;
     use core::mem::size_of;
     assert_eq!(size_of::<Func>(), size_of::<u64>());
@@ -289,24 +286,21 @@ fn funcref_sizeof() {
 #[test]
 fn funcref_null_to_zero() {
     use crate::Func;
-    assert_eq!(
-        UntypedVal::from(<Nullable<Func>>::Null),
-        UntypedVal::from(0)
-    );
-    assert!(<Nullable<Func>>::from(UntypedVal::from(0)).is_null());
+    assert_eq!(RawVal::from(<Nullable<Func>>::Null), RawVal::from(0));
+    assert!(<Nullable<Func>>::from(RawVal::from(0)).is_null());
 }
 
 macro_rules! impl_conversions {
     ( $( $reftype:ty: $ty:ident ),* $(,)? ) => {
         $(
-            impl ReadAs<$reftype> for UntypedVal {
+            impl ReadAs<$reftype> for RawVal {
                 fn read_as(&self) -> $reftype {
                     let bits = u64::from(*self);
                     unsafe { mem::transmute::<u64, $reftype>(bits) }
                 }
             }
 
-            impl ReadAs<Nullable<$reftype>> for UntypedVal {
+            impl ReadAs<Nullable<$reftype>> for RawVal {
                 fn read_as(&self) -> Nullable<$reftype> {
                     let bits = u64::from(*self);
                     if bits == 0 {
@@ -316,14 +310,14 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl WriteAs<$reftype> for UntypedVal {
+            impl WriteAs<$reftype> for RawVal {
                 fn write_as(&mut self, value: $reftype) {
                     let bits = unsafe { mem::transmute::<$reftype, u64>(value) };
                     self.write_as(bits)
                 }
             }
 
-            impl WriteAs<Nullable<$reftype>> for UntypedVal {
+            impl WriteAs<Nullable<$reftype>> for RawVal {
                 fn write_as(&mut self, value: Nullable<$reftype>) {
                     match value {
                         Nullable::Null => self.write_as(0_u64),
@@ -332,20 +326,20 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<UntypedVal> for Nullable<$reftype> {
-                fn from(untyped: UntypedVal) -> Self {
-                    <UntypedVal as ReadAs<Nullable<$reftype>>>::read_as(&untyped)
+            impl From<RawVal> for Nullable<$reftype> {
+                fn from(value: RawVal) -> Self {
+                    <RawVal as ReadAs<Nullable<$reftype>>>::read_as(&value)
                 }
             }
 
-            impl From<Nullable<$reftype>> for UntypedVal {
+            impl From<Nullable<$reftype>> for RawVal {
                 fn from(reftype: Nullable<$reftype>) -> Self {
-                    UntypedRef::from(reftype).into()
+                    RawRef::from(reftype).into()
                 }
             }
 
-            impl From<UntypedRef> for Nullable<$reftype> {
-                fn from(value: UntypedRef) -> Self {
+            impl From<RawRef> for Nullable<$reftype> {
+                fn from(value: RawRef) -> Self {
                     let bits = u64::from(value);
                     if bits == 0 {
                         return <Nullable<$reftype>>::Null;
@@ -355,35 +349,35 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<$reftype> for UntypedRef {
+            impl From<$reftype> for RawRef {
                 fn from(reftype: $reftype) -> Self {
                     let bits = unsafe { mem::transmute::<$reftype, u64>(reftype) };
                     Self::from(bits)
                 }
             }
 
-            impl From<Nullable<$reftype>> for UntypedRef {
+            impl From<Nullable<$reftype>> for RawRef {
                 fn from(reftype: Nullable<$reftype>) -> Self {
                     match reftype {
-                        Nullable::Val(reftype) => UntypedRef::from(reftype),
-                        Nullable::Null => UntypedRef::from(0_u64),
+                        Nullable::Val(reftype) => RawRef::from(reftype),
+                        Nullable::Null => RawRef::from(0_u64),
                     }
                 }
             }
 
-            impl From<$reftype> for TypedRef {
+            impl From<$reftype> for TypedRawRef {
                 fn from(value: $reftype) -> Self {
                     let ty = RefType::$ty;
-                    let value = UntypedRef::from(value);
-                    TypedRef::new(ty, value)
+                    let value = RawRef::from(value);
+                    TypedRawRef::new(ty, value)
                 }
             }
 
-            impl From<Nullable<$reftype>> for TypedRef {
+            impl From<Nullable<$reftype>> for TypedRawRef {
                 fn from(value: Nullable<$reftype>) -> Self {
                     let ty = RefType::$ty;
-                    let value = UntypedRef::from(value);
-                    TypedRef::new(ty, value)
+                    let value = RawRef::from(value);
+                    TypedRawRef::new(ty, value)
                 }
             }
         )*

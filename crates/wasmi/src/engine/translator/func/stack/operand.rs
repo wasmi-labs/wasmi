@@ -1,7 +1,7 @@
 use super::{LocalIdx, StackOperand, StackPos};
 use crate::{
     ValType,
-    core::{TypedVal, UntypedVal},
+    core::{RawVal, TypedRawVal},
     engine::translator::utils::required_cells_for_ty,
     ir::{BoundedSlotSpan, SlotSpan},
 };
@@ -69,7 +69,7 @@ impl Operand {
     }
 
     /// Creates an immediate [`Operand`].
-    pub(super) fn immediate(temp_slots: SlotSpan, ty: ValType, val: UntypedVal) -> Self {
+    pub(super) fn immediate(temp_slots: SlotSpan, ty: ValType, val: RawVal) -> Self {
         Self::Immediate(ImmediateOperand {
             temp_slots,
             ty,
@@ -201,7 +201,7 @@ pub struct ImmediateOperand {
     /// The type of the immediate value.
     ty: ValType,
     /// The value of the immediate value.
-    val: UntypedVal,
+    val: RawVal,
 }
 
 impl From<ImmediateOperand> for Operand {
@@ -212,7 +212,7 @@ impl From<ImmediateOperand> for Operand {
 
 impl ImmediateOperand {
     /// Creates a new [`ImmediateOperand`] from its parts.
-    pub(super) fn new(temp_slots: SlotSpan, ty: ValType, val: UntypedVal) -> Self {
+    pub(super) fn new(temp_slots: SlotSpan, ty: ValType, val: RawVal) -> Self {
         Self {
             temp_slots,
             ty,
@@ -227,8 +227,8 @@ impl ImmediateOperand {
     }
 
     /// Returns the immediate value (and its type) of the [`ImmediateOperand`].
-    pub fn val(&self) -> TypedVal {
-        TypedVal::new(self.ty, self.val)
+    pub fn val(&self) -> TypedRawVal {
+        TypedRawVal::new(self.ty, self.val)
     }
 
     /// Returns the type of the [`ImmediateOperand`].
