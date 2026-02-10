@@ -191,7 +191,7 @@ impl Table {
     ///
     /// # Panics
     ///
-    /// If `ctx` does not own `dst_table` or `src_table`.
+    /// If `ctx` does not own `self`.
     ///
     /// [`Store`]: [`crate::Store`]
     pub fn fill(
