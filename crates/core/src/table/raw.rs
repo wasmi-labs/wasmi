@@ -50,43 +50,28 @@ impl WriteAs<RawRef> for RawVal {
     }
 }
 
-impl From<TypedRawRef> for RawRef {
-    fn from(typed_ref: TypedRawRef) -> Self {
-        typed_ref.value
-    }
-}
-
-/// An [`RawVal`] with its assumed [`RefType`].
-///
-/// # Note
-///
-/// We explicitly do not make use of the existing [`Val`]
-/// abstraction since [`Val`] is optimized towards being a
-/// user facing type whereas [`RefType`] is focusing on
-/// performance and efficiency in computations.
-///
-/// [`Val`]: [`crate::core::Value`]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+/// A raw typed reference value.
+#[derive(Debug, Copy, Clone)]
 pub struct TypedRawRef {
-    /// The type of the value.
+    /// The underlying raw reference value.
+    raw: RawRef,
+    /// The underlying reference type.
     ty: RefType,
-    /// The underlying raw reference.
-    value: RawRef,
 }
 
 impl TypedRawRef {
-    /// Create a new [`TypedRawRef`].
-    pub fn new(ty: RefType, value: RawRef) -> Self {
-        Self { ty, value }
+    /// Creates a new [`TypedRawRef`] from the given `raw` and `ty` components.
+    pub fn new(raw: RawRef, ty: RefType) -> Self {
+        Self { raw, ty }
     }
 
-    /// Returns the [`RefType`] of the [`TypedRawRef`].
+    /// Returns the [`RawRef`] of `self`.
+    pub fn raw(&self) -> RawRef {
+        self.raw
+    }
+
+    /// Returns the [`RefType`] of `self`.
     pub fn ty(&self) -> RefType {
         self.ty
-    }
-
-    /// Returns the [`RawRef`] of the [`TypedRawRef`].
-    pub fn raw(&self) -> RawRef {
-        self.value
     }
 }
