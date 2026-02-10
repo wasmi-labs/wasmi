@@ -20,10 +20,10 @@ use crate::{
         AsStoreId as _,
         Handle,
         RawHandle,
-        StoreId,
         Stored,
         error::InternalStoreError,
         handle_arena_err,
+        id::StoreId,
     },
     table::TableEntity,
 };

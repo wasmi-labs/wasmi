@@ -6,9 +6,9 @@ use crate::{
     Handle,
     Nullable,
     Ref,
-    core::{CoreElementSegment, CoreTable, Fuel, RawRef, ResourceLimiterRef},
+    core::{CoreElementSegment, CoreTable, Fuel, RawRef, ResourceLimiterRef, TypedRawRef},
     errors::TableError,
-    store::{AsStoreId as _, StoreId, Stored},
+    store::{AsStoreId as _, StoreInner, Stored},
 };
 
 mod element;
@@ -26,9 +26,13 @@ impl Table {
     ///
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, Error> {
-        let mut ctx = ctx.as_context_mut();
-        let entity = TableEntity::new(&mut ctx, ty, init)?;
-        let handle = ctx.store.inner.alloc_table(entity);
+        let (store, mut resource_limiter) = ctx
+            .as_context_mut()
+            .store
+            .store_inner_and_resource_limiter_ref();
+        let init = Self::unwrap_ref(store, init)?;
+        let table = TableEntity::new(ty, init, &mut resource_limiter)?;
+        let handle = ctx.as_context_mut().store.inner.alloc_table(table);
         Ok(handle)
     }
 
@@ -68,6 +72,30 @@ impl Table {
         ctx.as_context().store.inner.resolve_table(self).size()
     }
 
+    /// Unwraps the given `value` into a [`TypedRawRef`] if it originated from `store`.
+    fn unwrap_ref(store: &StoreInner, value: Ref) -> Result<TypedRawRef, TableError> {
+        #[cold]
+        fn different_store_err(value: &Ref) -> ! {
+            panic!("value originates from different store: {value:?}")
+        }
+        match &value {
+            Ref::Func(Nullable::Val(val)) => {
+                store
+                    .unwrap(val.raw())
+                    .unwrap_or_else(|| different_store_err(&value));
+            }
+            Ref::Extern(Nullable::Val(val)) => {
+                store
+                    .unwrap(val.raw())
+                    .unwrap_or_else(|| different_store_err(&value));
+            }
+            _ => {}
+        }
+        let ty = value.ty();
+        let raw = RawRef::from(value);
+        Ok(TypedRawRef::new(raw, ty))
+    }
+
     /// Grows the table by the given amount of elements.
     ///
     /// Returns the old size of the [`Table`] upon success.
@@ -94,6 +122,7 @@ impl Table {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
+        let init = Self::unwrap_ref(inner, init)?;
         let table = inner.resolve_table_mut(self);
         table.grow(delta, init, None, &mut limiter)
     }
@@ -106,7 +135,9 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn get(&self, ctx: impl AsContext, index: u64) -> Option<Ref> {
-        ctx.as_context().store.inner.resolve_table(self).get(index)
+        let store = &ctx.as_context().store.inner;
+        let raw = store.resolve_table(self).get(index)?;
+        Some(Ref::from_raw_parts(raw.raw(), raw.ty(), store))
     }
 
     /// Sets the [`Ref`] of this [`Table`] at `index`.
@@ -125,11 +156,9 @@ impl Table {
         index: u64,
         value: Ref,
     ) -> Result<(), TableError> {
-        ctx.as_context_mut()
-            .store
-            .inner
-            .resolve_table_mut(self)
-            .set(index, value)
+        let store = &mut ctx.as_context_mut().store.inner;
+        let value = Self::unwrap_ref(store, value)?;
+        store.resolve_table_mut(self).set(index, value)
     }
 
     /// Returns `true` if `lhs` and `rhs` [`Table`] refer to the same entity.
@@ -200,19 +229,15 @@ impl Table {
         val: Ref,
         len: u64,
     ) -> Result<(), TableError> {
-        ctx.as_context_mut()
-            .store
-            .inner
-            .resolve_table_mut(self)
-            .fill(dst, val, len, None)
+        let store = &mut ctx.as_context_mut().store.inner;
+        let val = Self::unwrap_ref(store, val)?;
+        store.resolve_table_mut(self).fill(dst, val, len, None)
     }
 }
 
 /// A Wasm table entity.
 #[derive(Debug)]
 pub struct TableEntity {
-    /// The shared [`StoreId`] of all elements stored in the table.
-    id: StoreId,
     /// The underlying table implementation.
     core: CoreTable,
 }
@@ -228,18 +253,16 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `init` does not match the table's element type `ty`.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, TableError> {
+    pub fn new(
+        ty: TableType,
+        init: TypedRawRef,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<Self, TableError> {
         if ty.element() != init.ty() {
             return Err(TableError::ElementTypeMismatch);
         }
-        let (inner, mut resource_limiter) = ctx
-            .as_context_mut()
-            .store
-            .store_inner_and_resource_limiter_ref();
-        let id = inner.id();
-        let init = RawRef::from(init);
-        let core = CoreTable::new(ty.core, init, &mut resource_limiter)?;
-        Ok(Self { id, core })
+        let core = CoreTable::new(ty.core, init.raw(), limiter)?;
+        Ok(Self { core })
     }
 
     /// Returns the resizable limits of the table.
@@ -266,56 +289,12 @@ impl TableEntity {
         self.core.size()
     }
 
-    /// Unwraps the [`Ref`] into an [`RawRef`] and checks [`Store`](crate::Store) origin.
-    ///
-    /// # Panics
-    ///
-    /// If `value` originates from a different store.
-    fn unwrap_ref(&self, value: Ref) -> Result<RawRef, TableError> {
-        #[cold]
-        fn different_store_err(value: &Ref) -> ! {
-            panic!("value originates from different store: {value:?}")
-        }
+    /// Unwrap `value` to [`RawRef`] if its type matches the element type of `self`.
+    fn unwrap_typed(&self, value: TypedRawRef) -> Result<RawRef, TableError> {
         if value.ty() != self.ty().element() {
             return Err(TableError::ElementTypeMismatch);
         }
-        match &value {
-            Ref::Func(Nullable::Val(val)) => {
-                self.id
-                    .unwrap(val.raw())
-                    .unwrap_or_else(|| different_store_err(&value));
-            }
-            Ref::Extern(Nullable::Val(val)) => {
-                self.id
-                    .unwrap(val.raw())
-                    .unwrap_or_else(|| different_store_err(&value));
-            }
-            _ => {}
-        }
-        Ok(RawRef::from(value))
-    }
-
-    /// Grows the table by the given amount of elements.
-    ///
-    /// Returns the old size of the table upon success.
-    ///
-    /// # Note
-    ///
-    /// The newly added elements are initialized to the `init` [`Ref`].
-    ///
-    /// # Errors
-    ///
-    /// - If the table is grown beyond its maximum limits.
-    /// - If `value` does not match the table element type.
-    pub fn grow(
-        &mut self,
-        delta: u64,
-        init: Ref,
-        fuel: Option<&mut Fuel>,
-        limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, TableError> {
-        let init = self.unwrap_ref(init)?;
-        self.grow_untyped(delta, init, fuel, limiter)
+        Ok(value.raw())
     }
 
     /// Grows the table by the given amount of elements.
@@ -331,7 +310,31 @@ impl TableEntity {
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
-    pub fn grow_untyped(
+    pub fn grow(
+        &mut self,
+        delta: u64,
+        init: TypedRawRef,
+        fuel: Option<&mut Fuel>,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<u64, TableError> {
+        let init = self.unwrap_typed(init)?;
+        self.core.grow(delta, init, fuel, limiter)
+    }
+
+    /// Grows the table by the given amount of elements.
+    ///
+    /// Returns the old size of the table upon success.
+    ///
+    /// # Note
+    ///
+    /// This is an internal API that exists for efficiency purposes.
+    ///
+    /// The newly added elements are initialized to the `init` [`RawRef`].
+    ///
+    /// # Errors
+    ///
+    /// If the table is grown beyond its maximum limits.
+    pub fn grow_raw(
         &mut self,
         delta: u64,
         init: RawRef,
@@ -339,15 +342,6 @@ impl TableEntity {
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
         self.core.grow(delta, init, fuel, limiter)
-    }
-
-    /// Returns the table element value at `index`.
-    ///
-    /// Returns `None` if `index` is out of bounds.
-    pub fn get(&self, index: u64) -> Option<Ref> {
-        let ty = self.ty().element();
-        let val = self.get_untyped(index)?;
-        Some(Ref::from_raw_parts(val, ty, self.id))
     }
 
     /// Returns the untyped table element value at `index`.
@@ -358,19 +352,8 @@ impl TableEntity {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_untyped(&self, index: u64) -> Option<RawRef> {
+    pub fn get(&self, index: u64) -> Option<TypedRawRef> {
         self.core.get(index)
-    }
-
-    /// Sets the [`Ref`] of this table at `index`.
-    ///
-    /// # Errors
-    ///
-    /// - If `index` is out of bounds.
-    /// - If `value` does not match the [`Table`] element type.
-    pub fn set(&mut self, index: u64, value: Ref) -> Result<(), TableError> {
-        let value = self.unwrap_ref(value)?;
-        self.set_untyped(index, value)
     }
 
     /// Sets the [`RawRef`] of the table at `index`.
@@ -378,7 +361,17 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set_untyped(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
+    pub fn set(&mut self, index: u64, value: TypedRawRef) -> Result<(), TableError> {
+        let value = self.unwrap_typed(value)?;
+        self.set_raw(index, value)
+    }
+
+    /// Sets the [`RawRef`] of the table at `index`.
+    ///
+    /// # Errors
+    ///
+    /// If `index` is out of bounds.
+    pub fn set_raw(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
         self.core.set(index, value)
     }
 
@@ -446,11 +439,13 @@ impl TableEntity {
 
     /// Fill `table[dst..(dst + len)]` with the given value.
     ///
+    /// # Note
+    ///
+    /// This is an API for internal use only and exists for efficiency reasons.
+    ///
     /// # Errors
     ///
-    /// - If `val` has a type mismatch with the element type of the table.
     /// - If the region to be filled is out of bounds for the table.
-    /// - If `val` originates from a different [`Store`](crate::Store) than the table.
     ///
     /// # Panics
     ///
@@ -458,12 +453,12 @@ impl TableEntity {
     pub fn fill(
         &mut self,
         dst: u64,
-        val: Ref,
+        val: TypedRawRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        let val = self.unwrap_ref(val)?;
-        self.fill_untyped(dst, val, len, fuel)
+        let val = self.unwrap_typed(val)?;
+        self.fill_raw(dst, val, len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -479,7 +474,7 @@ impl TableEntity {
     /// # Panics
     ///
     /// If `ctx` does not own `dst_table` or `src_table`.
-    pub fn fill_untyped(
+    pub fn fill_raw(
         &mut self,
         dst: u64,
         val: RawRef,

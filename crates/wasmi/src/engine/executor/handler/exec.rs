@@ -940,8 +940,8 @@ macro_rules! impl_table_get {
                 let table = fetch_table(instance, table);
                 let table = resolve_table(state.store, &table);
                 let index = $ext(get_value(index, sp));
-                let value = match table.get_raw(index) {
-                    Some(value) => value,
+                let value = match table.get(index) {
+                    Some(value) => value.raw(),
                     None => trap!(TrapCode::TableOutOfBounds)
                 };
                 set_value(sp, result, value);

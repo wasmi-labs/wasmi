@@ -5,7 +5,7 @@ mod inner;
 mod pruned;
 mod typeid;
 
-pub(crate) use self::id::{AsStoreId, StoreId};
+pub(crate) use self::id::AsStoreId;
 use self::pruned::PrunedStoreVTable;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
