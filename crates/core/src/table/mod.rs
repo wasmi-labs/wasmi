@@ -6,7 +6,7 @@ mod ty;
 pub use self::{
     element::{ElementSegment, ElementSegmentRef},
     error::TableError,
-    raw::{RawRef, TypedRef},
+    raw::{RawRef, TypedRawRef},
     ty::{RefType, TableType},
 };
 use crate::{Fuel, FuelError, ResourceLimiterRef};
@@ -31,7 +31,7 @@ impl Table {
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(
         ty: TableType,
-        init: TypedRef,
+        init: TypedRawRef,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
         ty.ensure_element_type_matches(init.ty())?;
@@ -93,7 +93,7 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`TypedRef`].
+    /// The newly added elements are initialized to the `init` [`TypedRawRef`].
     ///
     /// # Errors
     ///
@@ -102,7 +102,7 @@ impl Table {
     pub fn grow(
         &mut self,
         delta: u64,
-        init: TypedRef,
+        init: TypedRawRef,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
@@ -190,9 +190,9 @@ impl Table {
     /// Returns the [`Table`] element value at `index`.
     ///
     /// Returns `None` if `index` is out of bounds.
-    pub fn get(&self, index: u64) -> Option<TypedRef> {
+    pub fn get(&self, index: u64) -> Option<TypedRawRef> {
         let raw = self.get_untyped(index)?;
-        let value = TypedRef::new(self.ty().element(), raw);
+        let value = TypedRawRef::new(self.ty().element(), raw);
         Some(value)
     }
 
@@ -209,13 +209,13 @@ impl Table {
         self.elements.get(index).copied()
     }
 
-    /// Sets the [`TypedRef`] of this [`Table`] at `index`.
+    /// Sets the [`TypedRawRef`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
-    pub fn set(&mut self, index: u64, value: TypedRef) -> Result<(), TableError> {
+    pub fn set(&mut self, index: u64, value: TypedRawRef) -> Result<(), TableError> {
         self.ty().ensure_element_type_matches(value.ty())?;
         self.set_untyped(index, value.into())
     }
@@ -387,7 +387,7 @@ impl Table {
     pub fn fill(
         &mut self,
         dst: u64,
-        val: TypedRef,
+        val: TypedRawRef,
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {

@@ -3,7 +3,7 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    core::{RawRef, RawVal, ReadAs, TypedRef, WriteAs},
+    core::{RawRef, RawVal, ReadAs, TypedRawRef, WriteAs},
     store::Stored,
 };
 use alloc::boxed::Box;
@@ -68,8 +68,8 @@ pub enum Ref {
     Extern(Nullable<ExternRef>),
 }
 
-impl From<TypedRef> for Ref {
-    fn from(value: TypedRef) -> Self {
+impl From<TypedRawRef> for Ref {
+    fn from(value: TypedRawRef) -> Self {
         let untyped = value.raw();
         match value.ty() {
             RefType::Func => Self::Func(untyped.into()),
@@ -78,7 +78,7 @@ impl From<TypedRef> for Ref {
     }
 }
 
-impl From<Ref> for TypedRef {
+impl From<Ref> for TypedRawRef {
     fn from(value: Ref) -> Self {
         match value {
             Ref::Func(nullable) => nullable.into(),
@@ -365,19 +365,19 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<$reftype> for TypedRef {
+            impl From<$reftype> for TypedRawRef {
                 fn from(value: $reftype) -> Self {
                     let ty = RefType::$ty;
                     let value = RawRef::from(value);
-                    TypedRef::new(ty, value)
+                    TypedRawRef::new(ty, value)
                 }
             }
 
-            impl From<Nullable<$reftype>> for TypedRef {
+            impl From<Nullable<$reftype>> for TypedRawRef {
                 fn from(value: Nullable<$reftype>) -> Self {
                     let ty = RefType::$ty;
                     let value = RawRef::from(value);
-                    TypedRef::new(ty, value)
+                    TypedRawRef::new(ty, value)
                 }
             }
         )*

@@ -53,7 +53,7 @@ pub use self::{
         Table,
         TableError,
         TableType,
-        TypedRef,
+        TypedRawRef,
     },
     trap::{Trap, TrapCode},
     typed::{Typed, TypedRawVal},

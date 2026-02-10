@@ -50,8 +50,8 @@ impl WriteAs<RawRef> for RawVal {
     }
 }
 
-impl From<TypedRef> for RawRef {
-    fn from(typed_ref: TypedRef) -> Self {
+impl From<TypedRawRef> for RawRef {
+    fn from(typed_ref: TypedRawRef) -> Self {
         typed_ref.value
     }
 }
@@ -67,25 +67,25 @@ impl From<TypedRef> for RawRef {
 ///
 /// [`Val`]: [`crate::core::Value`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct TypedRef {
+pub struct TypedRawRef {
     /// The type of the value.
     ty: RefType,
     /// The underlying raw reference.
     value: RawRef,
 }
 
-impl TypedRef {
-    /// Create a new [`TypedRef`].
+impl TypedRawRef {
+    /// Create a new [`TypedRawRef`].
     pub fn new(ty: RefType, value: RawRef) -> Self {
         Self { ty, value }
     }
 
-    /// Returns the [`RefType`] of the [`TypedRef`].
+    /// Returns the [`RefType`] of the [`TypedRawRef`].
     pub fn ty(&self) -> RefType {
         self.ty
     }
 
-    /// Returns the [`RawRef`] of the [`TypedRef`].
+    /// Returns the [`RawRef`] of the [`TypedRawRef`].
     pub fn raw(&self) -> RawRef {
         self.value
     }
