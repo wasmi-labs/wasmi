@@ -1,5 +1,3 @@
-use wasmi_core::WriteAs;
-
 use super::state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
@@ -14,7 +12,7 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, WriteAs},
     engine::{
         DedupFuncType,
         EngineFunc,
