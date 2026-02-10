@@ -110,7 +110,7 @@ impl From<Nullable<ExternRef>> for Ref {
 
 impl Ref {
     /// Create a [`Ref`] from its raw parts.
-    pub(crate) fn from_raw_parts(val: UntypedRef, ty: RefType, _store: StoreId) -> Self {
+    pub(crate) fn from_raw_parts(val: UntypedRef, ty: RefType, _store: impl AsStoreId) -> Self {
         match ty {
             RefType::Func => Ref::Func(val.into()),
             RefType::Extern => Ref::Extern(val.into()),
