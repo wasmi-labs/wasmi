@@ -92,7 +92,7 @@ impl PrunedStoreVTable {
                 let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
                 let (table, fuel) = store.try_resolve_table_and_fuel_mut(table)?;
                 table
-                    .grow_untyped(delta, init, Some(fuel), &mut resource_limiter)
+                    .grow_raw(delta, init, Some(fuel), &mut resource_limiter)
                     .map_err(StoreError::external)
             },
         }

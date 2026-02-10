@@ -413,7 +413,7 @@ pub fn resolve_indirect_func(
     let table = fetch_table(instance, table);
     let table = resolve_table(state.store, &table);
     let funcref = table
-        .get_untyped(index)
+        .get_raw(index)
         .map(<Nullable<Func>>::from)
         .ok_or(TrapCode::TableOutOfBounds)?;
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;

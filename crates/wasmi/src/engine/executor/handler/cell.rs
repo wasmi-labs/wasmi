@@ -3,7 +3,7 @@ use core::{convert::identity, fmt, marker::PhantomData, mem};
 
 /// A single 64-bit cell of the value stack.
 ///
-/// This stores values on the value stack in an untyped manner.
+/// This stores values on the value stack without type or store association.
 /// For values of type [`V128`] two consecutive 64-bit [`Cell`]s are used.
 #[derive(Debug, Default, Copy, Clone)]
 #[repr(transparent)]

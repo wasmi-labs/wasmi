@@ -70,10 +70,10 @@ pub enum Ref {
 
 impl From<TypedRawRef> for Ref {
     fn from(value: TypedRawRef) -> Self {
-        let untyped = value.raw();
+        let raw = value.raw();
         match value.ty() {
-            RefType::Func => Self::Func(untyped.into()),
-            RefType::Extern => Self::Extern(untyped.into()),
+            RefType::Func => Self::Func(raw.into()),
+            RefType::Extern => Self::Extern(raw.into()),
         }
     }
 }
@@ -327,8 +327,8 @@ macro_rules! impl_conversions {
             }
 
             impl From<RawVal> for Nullable<$reftype> {
-                fn from(untyped: RawVal) -> Self {
-                    <RawVal as ReadAs<Nullable<$reftype>>>::read_as(&untyped)
+                fn from(value: RawVal) -> Self {
+                    <RawVal as ReadAs<Nullable<$reftype>>>::read_as(&value)
                 }
             }
 
