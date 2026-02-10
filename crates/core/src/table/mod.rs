@@ -205,7 +205,9 @@ impl Table {
     /// internal use only.
     pub fn get_raw(&self, index: u64) -> Option<RawRef> {
         let index = usize::try_from(index).ok()?;
-        self.elements.get(index).copied()
+        let raw = self.elements.get(index).copied()?;
+        let ty = self.ty().element();
+        Some(TypedRawRef::new(raw, ty))
     }
 
     /// Sets the [`TypedRawRef`] of this [`Table`] at `index`.
