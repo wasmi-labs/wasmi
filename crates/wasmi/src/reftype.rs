@@ -3,7 +3,7 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    core::{RawVal, ReadAs, TypedRef, UntypedRef, WriteAs},
+    core::{RawRef, RawVal, ReadAs, TypedRef, WriteAs},
     store::Stored,
 };
 use alloc::boxed::Box;
@@ -70,7 +70,7 @@ pub enum Ref {
 
 impl From<TypedRef> for Ref {
     fn from(value: TypedRef) -> Self {
-        let untyped = value.untyped();
+        let untyped = value.raw();
         match value.ty() {
             RefType::Func => Self::Func(untyped.into()),
             RefType::Extern => Self::Extern(untyped.into()),
@@ -334,12 +334,12 @@ macro_rules! impl_conversions {
 
             impl From<Nullable<$reftype>> for RawVal {
                 fn from(reftype: Nullable<$reftype>) -> Self {
-                    UntypedRef::from(reftype).into()
+                    RawRef::from(reftype).into()
                 }
             }
 
-            impl From<UntypedRef> for Nullable<$reftype> {
-                fn from(value: UntypedRef) -> Self {
+            impl From<RawRef> for Nullable<$reftype> {
+                fn from(value: RawRef) -> Self {
                     let bits = u64::from(value);
                     if bits == 0 {
                         return <Nullable<$reftype>>::Null;
@@ -349,18 +349,18 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<$reftype> for UntypedRef {
+            impl From<$reftype> for RawRef {
                 fn from(reftype: $reftype) -> Self {
                     let bits = unsafe { mem::transmute::<$reftype, u64>(reftype) };
                     Self::from(bits)
                 }
             }
 
-            impl From<Nullable<$reftype>> for UntypedRef {
+            impl From<Nullable<$reftype>> for RawRef {
                 fn from(reftype: Nullable<$reftype>) -> Self {
                     match reftype {
-                        Nullable::Val(reftype) => UntypedRef::from(reftype),
-                        Nullable::Null => UntypedRef::from(0_u64),
+                        Nullable::Val(reftype) => RawRef::from(reftype),
+                        Nullable::Null => RawRef::from(0_u64),
                     }
                 }
             }
@@ -368,7 +368,7 @@ macro_rules! impl_conversions {
             impl From<$reftype> for TypedRef {
                 fn from(value: $reftype) -> Self {
                     let ty = RefType::$ty;
-                    let value = UntypedRef::from(value);
+                    let value = RawRef::from(value);
                     TypedRef::new(ty, value)
                 }
             }
@@ -376,7 +376,7 @@ macro_rules! impl_conversions {
             impl From<Nullable<$reftype>> for TypedRef {
                 fn from(value: Nullable<$reftype>) -> Self {
                     let ty = RefType::$ty;
-                    let value = UntypedRef::from(value);
+                    let value = RawRef::from(value);
                     TypedRef::new(ty, value)
                 }
             }

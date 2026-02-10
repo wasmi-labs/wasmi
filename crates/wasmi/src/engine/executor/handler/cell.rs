@@ -1,4 +1,4 @@
-use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::UntypedRef};
+use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::RawRef};
 use core::{convert::identity, fmt, marker::PhantomData, mem};
 
 /// A single 64-bit cell of the value stack.
@@ -17,7 +17,7 @@ macro_rules! iN_to_u64 {
 
 macro_rules! ref_to_u64 {
     ($ty:ty) => {
-        |value: $ty| -> u64 { u64::from(UntypedRef::from(value)) }
+        |value: $ty| -> u64 { u64::from(RawRef::from(value)) }
     };
 }
 
@@ -50,12 +50,12 @@ impl_from_for_cell! {
     ExternRef = ref_to_u64!(ExternRef),
     Nullable<Func> = ref_to_u64!(Nullable<Func>),
     Nullable<ExternRef> = ref_to_u64!(Nullable<ExternRef>),
-    UntypedRef = u64::from,
+    RawRef = u64::from,
 }
 
 macro_rules! u64_to_ref {
     ($ty:ty) => {
-        |value: u64| -> $ty { <$ty as From<UntypedRef>>::from(UntypedRef::from(value)) }
+        |value: u64| -> $ty { <$ty as From<RawRef>>::from(RawRef::from(value)) }
     };
 }
 
@@ -86,7 +86,7 @@ impl_into_for_cell! {
     F64 = F64::from_bits,
     Nullable<Func> = u64_to_ref!(Nullable<Func>),
     Nullable<ExternRef> = u64_to_ref!(Nullable<ExternRef>),
-    UntypedRef = UntypedRef::from,
+    RawRef = RawRef::from,
 }
 
 /// Errors raised in the encode and decode APIs of [`Cell`].
@@ -215,7 +215,7 @@ impl_store_to_cells_for_prim!(
     Nullable<Func>,
     ExternRef,
     Nullable<ExternRef>,
-    UntypedRef,
+    RawRef,
 );
 
 macro_rules! impl_store_to_cells_for_tuples {
@@ -332,7 +332,7 @@ impl_load_from_cells_for_prim!(
     F64,
     Nullable<Func>,
     Nullable<ExternRef>,
-    UntypedRef,
+    RawRef,
 );
 
 impl LoadFromCellsByValue for V128 {

@@ -1,56 +1,56 @@
 use crate::{RawVal, ReadAs, RefType, WriteAs};
 
-/// An untyped reference value.
+/// A raw reference value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct UntypedRef {
+pub struct RawRef {
     /// The underlying bits.
     bits: u64,
 }
 
-impl From<u64> for UntypedRef {
+impl From<u64> for RawRef {
     #[inline]
     fn from(bits: u64) -> Self {
         Self { bits }
     }
 }
 
-impl From<UntypedRef> for u64 {
+impl From<RawRef> for u64 {
     #[inline]
-    fn from(value: UntypedRef) -> Self {
+    fn from(value: RawRef) -> Self {
         value.bits
     }
 }
 
-impl From<UntypedRef> for RawVal {
+impl From<RawRef> for RawVal {
     #[inline]
-    fn from(value: UntypedRef) -> Self {
+    fn from(value: RawRef) -> Self {
         Self::from(value.bits)
     }
 }
 
-impl From<RawVal> for UntypedRef {
+impl From<RawVal> for RawRef {
     #[inline]
     fn from(value: RawVal) -> Self {
         Self::from(u64::from(value))
     }
 }
 
-impl ReadAs<UntypedRef> for RawVal {
+impl ReadAs<RawRef> for RawVal {
     #[inline]
-    fn read_as(&self) -> UntypedRef {
-        UntypedRef::from(<Self as ReadAs<u64>>::read_as(self))
+    fn read_as(&self) -> RawRef {
+        RawRef::from(<Self as ReadAs<u64>>::read_as(self))
     }
 }
 
-impl WriteAs<UntypedRef> for RawVal {
+impl WriteAs<RawRef> for RawVal {
     #[inline]
-    fn write_as(&mut self, value: UntypedRef) {
+    fn write_as(&mut self, value: RawRef) {
         self.write_as(value.bits)
     }
 }
 
-impl From<TypedRef> for UntypedRef {
+impl From<TypedRef> for RawRef {
     fn from(typed_ref: TypedRef) -> Self {
         typed_ref.value
     }
@@ -71,12 +71,12 @@ pub struct TypedRef {
     /// The type of the value.
     ty: RefType,
     /// The underlying raw reference.
-    value: UntypedRef,
+    value: RawRef,
 }
 
 impl TypedRef {
     /// Create a new [`TypedRef`].
-    pub fn new(ty: RefType, value: UntypedRef) -> Self {
+    pub fn new(ty: RefType, value: RawRef) -> Self {
         Self { ty, value }
     }
 
@@ -85,8 +85,8 @@ impl TypedRef {
         self.ty
     }
 
-    /// Returns the [`UntypedRef`] of the [`TypedRef`].
-    pub fn untyped(&self) -> UntypedRef {
+    /// Returns the [`RawRef`] of the [`TypedRef`].
+    pub fn raw(&self) -> RawRef {
         self.value
     }
 }

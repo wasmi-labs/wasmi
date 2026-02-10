@@ -3,7 +3,7 @@ use crate::{
     AsContextMut,
     Func,
     Global,
-    core::{CoreElementSegment, UntypedRef},
+    core::{CoreElementSegment, RawRef},
     module,
     store::Stored,
 };
@@ -28,7 +28,7 @@ impl ElementSegment {
     ) -> Self {
         let get_func = |index| get_func(index).into();
         let get_global = |index| get_global(index).get(&ctx);
-        let items: Box<[UntypedRef]> = match elem.kind() {
+        let items: Box<[RawRef]> = match elem.kind() {
             module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
                 elem
                     .items()
@@ -37,7 +37,7 @@ impl ElementSegment {
                         let Some(init) = const_expr.eval_with_context(get_global, get_func) else {
                             panic!("unexpected failed initialization of constant expression: {const_expr:?}")
                         };
-                        UntypedRef::from(init)
+                        RawRef::from(init)
                 }).collect()
             }
             module::ElementSegmentKind::Declared => Box::from([]),

@@ -48,12 +48,12 @@ pub use self::{
     table::{
         ElementSegment,
         ElementSegmentRef,
+        RawRef,
         RefType,
         Table,
         TableError,
         TableType,
         TypedRef,
-        UntypedRef,
     },
     trap::{Trap, TrapCode},
     typed::{Typed, TypedRawVal},
