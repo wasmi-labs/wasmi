@@ -34,9 +34,7 @@ impl Table {
         init: TypedRawRef,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
-        if init.ty() != ty.element() {
-            return Err(TableError::ElementTypeMismatch);
-        }
+        ty.ensure_element_type_matches(init.ty())?;
         let Ok(min_size) = usize::try_from(ty.minimum()) else {
             return Err(TableError::MinimumSizeOverflow);
         };
@@ -91,10 +89,9 @@ impl Table {
 
     /// Unwrap `value` to [`RawRef`] if its type matches the element type of `self`.
     fn unwrap_typed(&self, value: TypedRawRef) -> Result<RawRef, TableError> {
-        if value.ty() != self.ty().element() {
-            return Err(TableError::ElementTypeMismatch);
-        }
-        Ok(value.raw())
+        self.ty()
+            .ensure_element_type_matches(value.ty())
+            .map(|_| value.raw())
     }
 
     /// Grows the table by the given amount of elements.
