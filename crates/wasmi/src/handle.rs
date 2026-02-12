@@ -23,13 +23,20 @@ pub struct RawHandle<T: Handle> {
 }
 
 impl<T: Handle> RawHandle<T> {
-    /// Creates a new [`RawHandle`] from the underlying raw representation.
+    /// Creates a new [`RawHandle`] from the underlying raw representation.]
+    // TODO: this is pub for `Nullable<ExternRef,Func>::from_raw_parts`, not sure if really necessary
     #[inline]
-    fn new(raw: <T as Handle>::Raw) -> Self {
+    pub(crate) fn new(raw: <T as Handle>::Raw) -> Self {
         Self {
             raw,
             marker: PhantomData,
         }
+    }
+
+    /// Returns the raw underlying handle value.
+    #[inline]
+    pub(crate) fn raw(self) -> <T as Handle>::Raw {
+        self.raw
     }
 }
 
