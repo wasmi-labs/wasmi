@@ -387,23 +387,6 @@ impl<T> Default for LoadByVal<T> {
     }
 }
 
-/// Trait implemented by types that can be loading from a [`CellsReader`].
-pub trait LoadFromCells {
-    /// The value loaded.
-    ///
-    /// # Note
-    ///
-    /// This is supposed to be `()` when not using [`LoadByVal`].
-    type Value;
-
-    /// Loads `self` from `cells`.
-    ///
-    /// # Errors
-    ///
-    /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError>;
-}
-
 /// Trait implemented by types that can be lifting from a [`CellsReader`].
 ///
 /// # Note
@@ -515,30 +498,6 @@ impl LiftFromCellsByValue for V128 {
         cells: &mut impl CellsReader,
     ) -> Result<Self, CellError> {
         <V128 as LoadFromCellsByValue>::load_from_cells_by_value(cells)
-    }
-}
-
-impl<T> LoadFromCells for LoadByVal<T>
-where
-    T: LoadFromCellsByValue,
-{
-    type Value = T;
-
-    #[inline]
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-        <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)
-    }
-}
-
-impl<T> LoadFromCells for &'_ mut T
-where
-    T: LoadFromCellsByValue,
-{
-    type Value = ();
-
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-        *self = <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
-        Ok(())
     }
 }
 
