@@ -16,8 +16,6 @@ use super::{
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
-    Func,
-    Nullable,
     TrapCode,
     core::{CoreTable, RawRef, ReadAs, wasm},
     engine::{
@@ -997,8 +995,8 @@ pub fn ref_func(
 ) -> Done {
     let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let funcref = <Nullable<Func>>::from(func);
-    set_value(sp, result, funcref);
+    let rawref = RawRef::from(func);
+    set_value(sp, result, rawref);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
 
