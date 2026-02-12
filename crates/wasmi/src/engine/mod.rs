@@ -17,11 +17,11 @@ pub(crate) use self::{
         InOutParams,
         InOutResults,
         Inst,
+        LiftFromCells,
+        LiftFromCellsByValue,
         LoadByVal,
-        LoadFromCells,
-        LoadFromCellsByValue,
+        LowerToCells,
         Stack,
-        StoreToCells,
     },
     func_types::DedupFuncType,
     translator::{
@@ -318,8 +318,8 @@ impl Engine {
         results: Results,
     ) -> Result<Results::Value, Error>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         self.inner.execute_func(ctx, func, params, results)
     }
@@ -355,8 +355,8 @@ impl Engine {
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         self.inner
             .execute_func_resumable(ctx, func, params, results)
@@ -393,8 +393,8 @@ impl Engine {
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         self.inner
             .resume_func_host_trap(ctx, invocation, params, results)
@@ -430,7 +430,7 @@ impl Engine {
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: LoadFromCells,
+        Results: LiftFromCells,
     {
         self.inner.resume_func_out_of_fuel(ctx, invocation, results)
     }

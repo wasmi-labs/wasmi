@@ -6,8 +6,8 @@ use crate::{
     engine::{
         CodeMap,
         EngineFunc,
-        LoadFromCells,
-        StoreToCells,
+        LiftFromCells,
+        LowerToCells,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
             state::{Inst, Ip, Sp, Stack, VmState},
@@ -82,10 +82,10 @@ mod state {
 impl<'a, T> WasmFuncCall<'a, T, state::Uninit> {
     pub fn write_params<Params>(self, params: Params) -> WasmFuncCall<'a, T, state::Init>
     where
-        Params: StoreToCells,
+        Params: LowerToCells,
     {
         let mut sp = self.callee_sp;
-        let Ok(_) = params.store_to_cells(&mut sp) else {
+        let Ok(_) = params.lower_to_cells(&*self.store, &mut sp) else {
             panic!("failed to write parameter values to cells")
         };
         self.new_state(PhantomData)
@@ -123,10 +123,10 @@ impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
         slots: SlotSpan,
     ) -> WasmFuncCall<'a, T, state::Init>
     where
-        Params: StoreToCells,
+        Params: LowerToCells,
     {
         let mut sp = self.callee_sp.offset(slots.head());
-        let Ok(_) = params.store_to_cells(&mut sp) else {
+        let Ok(_) = params.lower_to_cells(&*self.store, &mut sp) else {
             panic!("failed to store provided host results to cells")
         };
         self.new_state(PhantomData)
@@ -136,10 +136,10 @@ impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
 impl<'a, T> WasmFuncCall<'a, T, state::Done> {
     pub fn write_results<Results>(self, results: Results) -> Results::Value
     where
-        Results: LoadFromCells,
+        Results: LiftFromCells,
     {
         let mut sp = self.state.sp;
-        let Ok(value) = results.load_from_cells(&mut sp) else {
+        let Ok(value) = results.lift_from_cells(&*self.store, &mut sp) else {
             panic!("failed to load result values from cells")
         };
         value
@@ -226,7 +226,7 @@ pub struct HostFuncCall<'a, T, State> {
 impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
     pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
     where
-        Params: StoreToCells,
+        Params: LowerToCells,
     {
         let state::UninitHost {
             sp,
@@ -234,7 +234,7 @@ impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
             trampoline,
         } = self.state;
         let mut sp_writer = sp;
-        let Ok(_) = params.store_to_cells(&mut sp_writer) else {
+        let Ok(_) = params.lower_to_cells(&*self.store, &mut sp_writer) else {
             panic!("failed to store parameter values to cells")
         };
         HostFuncCall {
@@ -275,10 +275,10 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
 impl<'a, T> HostFuncCall<'a, T, state::Done> {
     pub fn write_results<Results>(self, results: Results) -> Results::Value
     where
-        Results: LoadFromCells,
+        Results: LiftFromCells,
     {
         let mut sp = self.state.sp;
-        let Ok(value) = results.load_from_cells(&mut sp) else {
+        let Ok(value) = results.lift_from_cells(&*self.store, &mut sp) else {
             panic!("failed to load result value from cells")
         };
         value
