@@ -388,7 +388,7 @@ impl<T> Default for LoadByVal<T> {
 }
 
 /// Trait implemented by types that can be loaded from a [`CellsReader`].
-/// 
+///
 /// # Note
 ///
 /// The loaded values are also re-associated with a [`Store`](crate::Store).
