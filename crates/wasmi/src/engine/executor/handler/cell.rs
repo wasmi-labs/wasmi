@@ -96,13 +96,16 @@ pub enum CellError {
     NotEnoughCells,
     /// Raised when there are not enough values for the given amount of [`Cell`]s.
     NotEnoughValues,
+    /// Raised when a lowered value originates from a different [`Store`](crate::Store).
+    StoreOwnerMismatch,
 }
 
 impl fmt::Display for CellError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            CellError::NotEnoughCells => "not enough cells",
-            CellError::NotEnoughValues => "not enough values",
+            Self::NotEnoughCells => "not enough cells",
+            Self::NotEnoughValues => "not enough values",
+            Self::StoreOwnerMismatch => "value originates from different store",
         };
         f.write_str(s)
     }
