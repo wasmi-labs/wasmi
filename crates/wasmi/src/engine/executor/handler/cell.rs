@@ -255,7 +255,7 @@ impl<T> Default for LoadByVal<T> {
     }
 }
 
-/// Trait implemented by types that can be decoded from a [`CellsReader`].
+/// Trait implemented by types that can be loading from a [`CellsReader`].
 pub trait LoadFromCells {
     /// The value loaded.
     ///
@@ -264,7 +264,7 @@ pub trait LoadFromCells {
     /// This is supposed to be `()` when not using [`LoadByVal`].
     type Value;
 
-    /// Decodes `self` from `cells`.
+    /// Loads `self` from `cells`.
     ///
     /// # Errors
     ///
@@ -274,7 +274,7 @@ pub trait LoadFromCells {
 
 /// Trait implemented by types that can be decoded by value from a [`CellsReader`].
 pub trait LoadFromCellsByValue: Sized {
-    /// Decodes a value of type `Self` from `cells`.
+    /// Loads a value of type `Self` from `cells`.
     ///
     /// # Errors
     ///
