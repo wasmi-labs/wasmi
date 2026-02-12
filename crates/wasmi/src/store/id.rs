@@ -1,4 +1,4 @@
-use crate::store::StoreInner;
+use crate::store::{Store, StoreInner};
 
 /// A unique store identifier.
 ///
@@ -29,66 +29,63 @@ pub struct Stored<T> {
 }
 
 /// Trait implemented by utilities that can wrap or unwrap [`Stored`] values.
-pub trait AsStoreId {
+pub trait AsStoreId: Copy {
     /// Wraps the given `value` as [`Stored<T>`] associating it with `self`.
-    fn wrap<T>(&self, value: T) -> Stored<T>;
+    fn wrap<T>(self, value: T) -> Stored<T>;
 
     /// Unwraps the given [`Stored<T>`] reference and returns the `T`.
     ///
     /// Returns `None` if `value` does not originate from `self`.
-    fn unwrap<'a, T>(&self, value: &'a Stored<T>) -> Option<&'a T>;
+    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T>;
 }
 
 impl AsStoreId for StoreId {
     #[inline]
-    fn wrap<T>(&self, value: T) -> Stored<T> {
-        Stored {
-            store: *self,
-            value,
-        }
+    fn wrap<T>(self, value: T) -> Stored<T> {
+        Stored { store: self, value }
     }
 
     #[inline]
-    fn unwrap<'a, T>(&self, value: &'a Stored<T>) -> Option<&'a T> {
-        if value.store != *self {
+    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+        if value.store != self {
             return None;
         }
         Some(&value.value)
     }
 }
 
-impl AsStoreId for StoreInner {
+impl AsStoreId for &'_ StoreId {
     #[inline]
-    fn wrap<T>(&self, value: T) -> Stored<T> {
-        self.id().wrap(value)
+    fn wrap<T>(self, value: T) -> Stored<T> {
+        <StoreId as AsStoreId>::wrap(*self, value)
     }
 
     #[inline]
-    fn unwrap<'a, T>(&self, value: &'a Stored<T>) -> Option<&'a T> {
-        self.id().unwrap(value)
+    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+        <StoreId as AsStoreId>::unwrap(*self, value)
     }
 }
 
 impl AsStoreId for &'_ StoreInner {
     #[inline]
-    fn wrap<T>(&self, value: T) -> Stored<T> {
-        StoreInner::wrap(self, value)
+    fn wrap<T>(self, value: T) -> Stored<T> {
+        self.id().wrap(value)
     }
 
     #[inline]
-    fn unwrap<'a, T>(&self, value: &'a Stored<T>) -> Option<&'a T> {
-        StoreInner::unwrap(self, value)
+    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+        self.id().unwrap(value)
     }
 }
 
-impl AsStoreId for &'_ mut StoreInner {
+impl<D> AsStoreId for &'_ Store<D> {
     #[inline]
-    fn wrap<T>(&self, value: T) -> Stored<T> {
-        StoreInner::wrap(self, value)
+    fn wrap<T>(self, value: T) -> Stored<T> {
+        self.inner.wrap(value)
     }
 
     #[inline]
-    fn unwrap<'a, T>(&self, value: &'a Stored<T>) -> Option<&'a T> {
-        StoreInner::unwrap(self, value)
+    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+        self.inner.unwrap(value)
     }
 }
