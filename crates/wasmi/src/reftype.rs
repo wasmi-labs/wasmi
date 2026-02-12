@@ -4,6 +4,7 @@ use crate::{
     RefType,
     StoreContext,
     core::{RawRef, RawVal, ReadAs, WriteAs},
+    handle::RawHandle,
     store::{AsStoreId, Stored},
 };
 use alloc::boxed::Box;
@@ -100,10 +101,10 @@ impl From<Nullable<ExternRef>> for Ref {
 
 impl Ref {
     /// Create a [`Ref`] from its raw parts.
-    pub(crate) fn from_raw_parts(val: RawRef, ty: RefType, _store: impl AsStoreId) -> Self {
+    pub(crate) fn from_raw_parts(val: RawRef, ty: RefType, store: impl AsStoreId) -> Self {
         match ty {
-            RefType::Func => Ref::Func(val.into()),
-            RefType::Extern => Ref::Extern(val.into()),
+            RefType::Func => Ref::Func(<Nullable<Func>>::from_raw_parts(val, store)),
+            RefType::Extern => Ref::Extern(<Nullable<ExternRef>>::from_raw_parts(val, store)),
         }
     }
 
@@ -360,6 +361,24 @@ macro_rules! impl_conversions {
                         Nullable::Val(reftype) => RawRef::from(reftype),
                         Nullable::Null => RawRef::from(0_u64),
                     }
+                }
+            }
+
+            impl Nullable<$reftype> {
+                #[doc = concat!("Create a [`Nullable<", stringify!($reftype), ">`] from its raw parts.")]
+                pub(crate) fn from_raw_parts(val: RawRef, store: impl AsStoreId) -> Self {
+                    match <NonZero<u32>>::new(u64::from(val) as u32) {
+                        Some(value) => Self::Val(<$reftype>::from_raw_parts(value, store)),
+                        None => Self::Null,
+                    }
+                }
+            }
+
+            impl $reftype {
+                #[doc = concat!("Create a [`", stringify!($reftype), "`] from its raw parts.")]
+                pub(crate) fn from_raw_parts(value: NonZero<u32>, store: impl AsStoreId) -> Self {
+                    let raw_handle = <RawHandle<$reftype>>::new(value);
+                    <$reftype>::from(store.wrap(raw_handle))
                 }
             }
         )*
