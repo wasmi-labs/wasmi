@@ -387,11 +387,11 @@ impl<T> Default for LoadByVal<T> {
     }
 }
 
-/// Trait implemented by types that can be lifting from a [`CellsReader`].
-///
+/// Trait implemented by types that can be loaded from a [`CellsReader`].
+/// 
 /// # Note
 ///
-/// This is similar to [`LoadFromCells`] but values are also re-associated to a `store`.
+/// The loaded values are also re-associated with a [`Store`](crate::Store).
 pub trait LiftFromCells {
     /// The value loaded and re-associated with the [`Store`](crate::Store`).
     ///
