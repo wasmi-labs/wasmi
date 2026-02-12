@@ -1,4 +1,4 @@
-use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::RawRef};
+use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::RawRef, store::AsStoreId};
 use core::{convert::identity, fmt, marker::PhantomData, mem};
 
 /// A single 64-bit cell of the value stack.
@@ -116,6 +116,38 @@ pub trait StoreToCells {
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
     fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError>;
+}
+
+/// Trait implemented by types that can be stored onto a slice of [`Cell`]s.
+///
+/// # Note
+///
+/// In contrast to [`StoreToCells`] this also disassociates the stored values
+/// from their [`Store`](crate::Store).
+pub trait LowerToCells {
+    /// Encodes `self` to `cells`.
+    ///
+    /// # Errors
+    ///
+    /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
+    fn lower_to_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError>;
+}
+
+impl<T> LowerToCells for T
+where
+    T: StoreToCells,
+{
+    fn lower_to_cells(
+        self,
+        _store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError> {
+        <T as StoreToCells>::store_to_cells(self, cells)
+    }
 }
 
 /// Types that allow writing to a contiguous slice of [`Cell`]s.
@@ -272,6 +304,46 @@ pub trait LoadFromCells {
     fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError>;
 }
 
+/// Trait implemented by types that can be lifting from a [`CellsReader`].
+///
+/// # Note
+///
+/// This is similar to [`LoadFromCells`] but values are also re-associated to a `store`.
+pub trait LiftFromCells {
+    /// The value loaded and re-associated with the [`Store`](crate::Store`).
+    ///
+    /// # Note
+    ///
+    /// This is supposed to be `()` when not using [`LoadByVal`].
+    type Value;
+
+    /// Loads `self` from `cells`, re-association it with the `store`.
+    ///
+    /// # Errors
+    ///
+    /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
+    fn lift_from_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError>;
+}
+
+impl<T> LiftFromCells for T
+where
+    T: LoadFromCells,
+{
+    type Value = <T as LoadFromCells>::Value;
+
+    fn lift_from_cells(
+        self,
+        _store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError> {
+        <T as LoadFromCells>::load_from_cells(self, cells)
+    }
+}
+
 /// Trait implemented by types that can be decoded by value from a [`CellsReader`].
 pub trait LoadFromCellsByValue: Sized {
     /// Loads a value of type `Self` from `cells`.
@@ -280,6 +352,31 @@ pub trait LoadFromCellsByValue: Sized {
     ///
     /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
     fn load_from_cells_by_value(cells: &mut impl CellsReader) -> Result<Self, CellError>;
+}
+
+/// Trait implemented by types that can be decoded by value from a [`CellsReader`].
+pub trait LiftFromCellsByValue: Sized {
+    /// Loads a value of type `Self` from `cells` and re-associates it with the `store`.
+    ///
+    /// # Errors
+    ///
+    /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
+    fn lift_from_cells_by_value(
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self, CellError>;
+}
+
+impl<T> LiftFromCellsByValue for T
+where
+    T: LoadFromCellsByValue,
+{
+    fn lift_from_cells_by_value(
+        _store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self, CellError> {
+        <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)
+    }
 }
 
 /// Types that allow reading from a contiguous slice of [`Cell`]s.
