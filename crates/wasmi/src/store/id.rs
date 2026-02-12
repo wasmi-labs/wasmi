@@ -19,7 +19,7 @@ impl StoreId {
     }
 }
 
-/// A value associated to a [`Store`](crate::Store).
+/// A value associated to a [`Store`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Stored<T> {
     /// The identifier of the associated store.
