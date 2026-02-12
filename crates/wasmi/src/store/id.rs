@@ -36,7 +36,7 @@ pub trait AsStoreId: Copy {
     /// Unwraps the given [`Stored<T>`] reference and returns the `T`.
     ///
     /// Returns `None` if `value` does not originate from `self`.
-    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T>;
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T>;
 }
 
 impl AsStoreId for StoreId {
@@ -46,7 +46,7 @@ impl AsStoreId for StoreId {
     }
 
     #[inline]
-    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
         if value.store != self {
             return None;
         }
@@ -61,7 +61,7 @@ impl AsStoreId for &'_ StoreId {
     }
 
     #[inline]
-    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
         <StoreId as AsStoreId>::unwrap(*self, value)
     }
 }
@@ -73,7 +73,7 @@ impl AsStoreId for &'_ StoreInner {
     }
 
     #[inline]
-    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
         self.id().unwrap(value)
     }
 }
@@ -85,7 +85,7 @@ impl<D> AsStoreId for &'_ Store<D> {
     }
 
     #[inline]
-    fn unwrap<'a, T>(self, value: &'a Stored<T>) -> Option<&'a T> {
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
         self.inner.unwrap(value)
     }
 }

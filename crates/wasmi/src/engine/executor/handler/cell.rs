@@ -158,7 +158,7 @@ impl LowerToCells for Func {
         store: impl AsStoreId,
         cells: &mut impl CellsWriter,
     ) -> Result<(), CellError> {
-        let Some(value) = store.unwrap(&self.raw()) else {
+        let Some(value) = store.unwrap(self.raw()) else {
             return Err(CellError::StoreOwnerMismatch);
         };
         value.raw().get().store_to_cells(cells)
@@ -184,7 +184,7 @@ impl LowerToCells for ExternRef {
         store: impl AsStoreId,
         cells: &mut impl CellsWriter,
     ) -> Result<(), CellError> {
-        let Some(value) = store.unwrap(&self.raw()) else {
+        let Some(value) = store.unwrap(self.raw()) else {
             return Err(CellError::StoreOwnerMismatch);
         };
         value.raw().get().store_to_cells(cells)
