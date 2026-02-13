@@ -7,7 +7,7 @@ use crate::{
     Ref,
     V128,
     ValType,
-    core::{RawVal, TypedRawVal},
+    core::{RawRef, RawVal},
     store::AsStoreId,
 };
 
@@ -35,23 +35,6 @@ impl WithType for RawVal {
             ValType::ExternRef => Val::ExternRef(self.into()),
             #[cfg(not(feature = "simd"))]
             unsupported => unimplemented!("encountered unsupported `ValType`: {unsupported:?}"),
-        }
-    }
-}
-
-impl From<Val> for RawVal {
-    fn from(value: Val) -> Self {
-        match value {
-            Val::I32(value) => value.into(),
-            Val::I64(value) => value.into(),
-            Val::F32(value) => value.into(),
-            Val::F64(value) => value.into(),
-            #[cfg(feature = "simd")]
-            Val::V128(value) => value.into(),
-            Val::FuncRef(value) => value.into(),
-            Val::ExternRef(value) => value.into(),
-            #[cfg(not(feature = "simd"))]
-            unsupported => unimplemented!("encountered unsupported `Val`: {unsupported:?}"),
         }
     }
 }
@@ -98,6 +81,49 @@ impl Val {
             ValType::FuncRef => Self::FuncRef(val.into()),
             ValType::ExternRef => Self::ExternRef(val.into()),
         }
+    }
+
+    /// Unwraps [`Val`] into its underlying [`RawVal`].
+    ///
+    /// Returns `None` if `self` does not originate from `store`.
+    pub(crate) fn unwrap_raw(&self, store: impl AsStoreId) -> Option<RawVal> {
+        let value = match self {
+            Self::I32(value) => (*value).into(),
+            Self::I64(value) => (*value).into(),
+            Self::F32(value) => (*value).into(),
+            Self::F64(value) => (*value).into(),
+            #[cfg(feature = "simd")]
+            Self::V128(value) => (*value).into(),
+            #[cfg(not(feature = "simd"))]
+            Self::V128(_) => {
+                unimplemented!("must enable `simd` crate feature to use `V128` values")
+            }
+            Self::FuncRef(value) => <Nullable<Func>>::unwrap_raw(&value, store)?.into(),
+            Self::ExternRef(value) => <Nullable<ExternRef>>::unwrap_raw(&value, store)?.into(),
+        };
+        Some(value)
+    }
+
+    /// Returns the underlying [`RawVal`] of `self` or `None`.
+    ///
+    /// Returns `None` if `self` is a non-null reference value.
+    pub(crate) fn as_raw_or_none(&self) -> Option<RawVal> {
+        let raw = match self {
+            Self::I32(value) => (*value).into(),
+            Self::I64(value) => (*value).into(),
+            Self::F32(value) => (*value).into(),
+            Self::F64(value) => (*value).into(),
+            Self::V128(value) => (*value).into(),
+            Self::FuncRef(value) => match value.is_null() {
+                true => RawVal::from(RawRef::null()),
+                false => return None,
+            },
+            Self::ExternRef(value) => match value.is_null() {
+                true => RawVal::from(RawRef::null()),
+                false => return None,
+            },
+        };
+        Some(raw)
     }
 
     /// Creates new default value of given type.
@@ -253,11 +279,5 @@ impl From<V128> for Val {
     #[inline]
     fn from(value: V128) -> Self {
         Self::V128(value)
-    }
-}
-
-impl From<Val> for TypedRawVal {
-    fn from(value: Val) -> Self {
-        Self::new(value.ty(), value.into())
     }
 }

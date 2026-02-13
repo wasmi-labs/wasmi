@@ -96,7 +96,11 @@ pub struct GlobalOp {
 
 impl Eval for GlobalOp {
     fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
-        ctx.get_global(self.global_index).map(RawVal::from)
+        let value = ctx.get_global(self.global_index)?;
+        let Some(raw) = value.as_raw_or_none() else {
+            panic!("must not be a non-null reference value")
+        };
+        Some(raw)
     }
 }
 
@@ -110,7 +114,11 @@ pub struct FuncRefOp {
 
 impl Eval for FuncRefOp {
     fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
-        ctx.get_func(self.function_index).map(RawVal::from)
+        let value = ctx.get_func(self.function_index)?;
+        let Some(raw) = value.as_raw_or_none() else {
+            panic!("must not be a non-null reference value")
+        };
+        Some(raw)
     }
 }
 

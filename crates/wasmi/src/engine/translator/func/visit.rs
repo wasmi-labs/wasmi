@@ -8,9 +8,10 @@ use crate::{
     FuncType,
     Mutability,
     Nullable,
+    RefType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, TypedRawVal, wasm},
+    core::{FuelCostsProvider, IndexType, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
         translator::func::{
@@ -1814,8 +1815,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
-            ValType::FuncRef => TypedRawVal::from(<Nullable<Func>>::Null),
-            ValType::ExternRef => TypedRawVal::from(<Nullable<ExternRef>>::Null),
+            ValType::FuncRef => TypedRawRef::null(RefType::Func),
+            ValType::ExternRef => TypedRawRef::null(RefType::Extern),
             ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
         };
         self.stack.push_immediate(null)?;
@@ -1908,7 +1909,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (index, value) = self.stack.pop2();
         let index = self.make_index32_or_copy(index, index_ty)?;
         let value = self.make_input(value, |_this, value| {
-            Ok(Input::Immediate(u64::from(value.raw())))
+            Ok(Input::Immediate(u32::from(value.raw())))
         })?;
         let instr = match (index, value) {
             (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(table, index, value),

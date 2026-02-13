@@ -1,4 +1,7 @@
-use crate::store::{Store, StoreInner};
+use crate::{
+    StoreContext,
+    store::{PrunedStore, Store, StoreInner},
+};
 
 /// A unique store identifier.
 ///
@@ -87,5 +90,29 @@ impl<D> AsStoreId for &'_ Store<D> {
     #[inline]
     fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
         self.inner.unwrap(value)
+    }
+}
+
+impl AsStoreId for &'_ PrunedStore {
+    #[inline]
+    fn wrap<T>(self, value: T) -> Stored<T> {
+        self.inner().wrap(value)
+    }
+
+    #[inline]
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
+        self.inner().unwrap(value)
+    }
+}
+
+impl<S> AsStoreId for StoreContext<'_, S> {
+    #[inline]
+    fn wrap<T>(self, value: T) -> Stored<T> {
+        self.store.wrap(value)
+    }
+
+    #[inline]
+    fn unwrap<T>(self, value: &Stored<T>) -> Option<&T> {
+        self.store.unwrap(value)
     }
 }

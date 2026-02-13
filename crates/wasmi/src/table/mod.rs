@@ -4,11 +4,10 @@ use crate::{
     AsContextMut,
     Error,
     Handle,
-    Nullable,
     Ref,
-    core::{CoreTable, RawRef, TypedRawRef},
+    core::{CoreTable, TypedRawRef},
     errors::TableError,
-    store::{AsStoreId as _, StoreInner, Stored},
+    store::{StoreInner, Stored},
 };
 
 mod element;
@@ -77,25 +76,10 @@ impl Table {
 
     /// Unwraps the given `value` into a [`TypedRawRef`] if it originated from `store`.
     fn unwrap_ref(store: &StoreInner, value: Ref) -> Result<TypedRawRef, TableError> {
-        #[cold]
-        fn different_store_err(value: &Ref) -> ! {
-            panic!("value originates from different store: {value:?}")
-        }
-        match &value {
-            Ref::Func(Nullable::Val(val)) => {
-                store
-                    .unwrap(val.raw())
-                    .unwrap_or_else(|| different_store_err(&value));
-            }
-            Ref::Extern(Nullable::Val(val)) => {
-                store
-                    .unwrap(val.raw())
-                    .unwrap_or_else(|| different_store_err(&value));
-            }
-            _ => {}
-        }
         let ty = value.ty();
-        let raw = RawRef::from(value);
+        let Some(raw) = value.unwrap_raw(store) else {
+            panic!("value does not originate from `store`: {value:?}")
+        };
         Ok(TypedRawRef::new(raw, ty))
     }
 

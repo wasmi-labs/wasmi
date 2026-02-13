@@ -69,15 +69,6 @@ pub enum Ref {
     Extern(Nullable<ExternRef>),
 }
 
-impl From<Ref> for RawRef {
-    fn from(value: Ref) -> Self {
-        match value {
-            Ref::Func(nullable) => nullable.into(),
-            Ref::Extern(nullable) => nullable.into(),
-        }
-    }
-}
-
 impl WriteAs<Ref> for RawVal {
     fn write_as(&mut self, value: Ref) {
         match value {
@@ -265,7 +256,10 @@ fn externref_sizeof() {
 
 #[test]
 fn externref_null_to_zero() {
-    assert_eq!(RawVal::from(<Nullable<ExternRef>>::Null), RawVal::from(0));
+    use crate::Store;
+    let store = <Store<()>>::default();
+    let null = <Nullable<ExternRef>>::Null;
+    assert_eq!(null.unwrap_raw(&store), Some(RawRef::from(0)));
     assert!(<Nullable<ExternRef>>::from(RawVal::from(0)).is_null());
 }
 
@@ -284,8 +278,10 @@ fn funcref_sizeof() {
 
 #[test]
 fn funcref_null_to_zero() {
-    use crate::Func;
-    assert_eq!(RawVal::from(<Nullable<Func>>::Null), RawVal::from(0));
+    use crate::{Func, Store};
+    let store = <Store<()>>::default();
+    let null = <Nullable<Func>>::Null;
+    assert_eq!(null.unwrap_raw(&store), Some(RawRef::from(0)));
     assert!(<Nullable<Func>>::from(RawVal::from(0)).is_null());
 }
 
@@ -331,54 +327,40 @@ macro_rules! impl_conversions {
                 }
             }
 
-            impl From<Nullable<$reftype>> for RawVal {
-                fn from(reftype: Nullable<$reftype>) -> Self {
-                    RawRef::from(reftype).into()
-                }
-            }
-
-            impl From<RawRef> for Nullable<$reftype> {
-                fn from(value: RawRef) -> Self {
-                    let bits = u64::from(value);
-                    if bits == 0 {
-                        return <Nullable<$reftype>>::Null;
-                    }
-                    let value = unsafe { mem::transmute::<u64, $reftype>(bits) };
-                    Nullable::Val(value)
-                }
-            }
-
-            impl From<$reftype> for RawRef {
-                fn from(reftype: $reftype) -> Self {
-                    let bits = unsafe { mem::transmute::<$reftype, u64>(reftype) };
-                    Self::from(bits)
-                }
-            }
-
-            impl From<Nullable<$reftype>> for RawRef {
-                fn from(reftype: Nullable<$reftype>) -> Self {
-                    match reftype {
-                        Nullable::Val(reftype) => RawRef::from(reftype),
-                        Nullable::Null => RawRef::from(0_u64),
-                    }
-                }
-            }
-
-            impl Nullable<$reftype> {
-                #[doc = concat!("Create a [`Nullable<", stringify!($reftype), ">`] from its raw parts.")]
-                pub(crate) fn from_raw_parts(val: RawRef, store: impl AsStoreId) -> Self {
-                    match <NonZero<u32>>::new(u64::from(val) as u32) {
-                        Some(value) => Self::Val(<$reftype>::from_raw_parts(value, store)),
-                        None => Self::Null,
-                    }
-                }
-            }
-
             impl $reftype {
+                /// Unwraps the underlying [`RawRef`] if `self` originates from `store`.
+                ///
+                /// Otherwise returns `None`.
+                pub(crate) fn unwrap_raw(&self, store: impl AsStoreId) -> Option<RawRef> {
+                    use crate::Handle as _;
+                    let value = store.unwrap(self.raw())?;
+                    Some(RawRef::from(value.raw().get()))
+                }
+
                 #[doc = concat!("Create a [`", stringify!($reftype), "`] from its raw parts.")]
                 pub(crate) fn from_raw_parts(value: NonZero<u32>, store: impl AsStoreId) -> Self {
                     let raw_handle = <RawHandle<$reftype>>::new(value);
                     <$reftype>::from(store.wrap(raw_handle))
+                }
+            }
+
+            impl Nullable<$reftype> {
+                /// Unwraps the underlying [`RawRef`] if `self` originates from `store`.
+                ///
+                /// Otherwise returns `None`.
+                pub(crate) fn unwrap_raw(&self, store: impl AsStoreId) -> Option<RawRef> {
+                    match self {
+                        Self::Null => Some(RawRef::from(0_u32)),
+                        Self::Val(value) => <$reftype>::unwrap_raw(value, store),
+                    }
+                }
+
+                #[doc = concat!("Create a [`Nullable<", stringify!($reftype), ">`] from its raw parts.")]
+                pub(crate) fn from_raw_parts(val: RawRef, store: impl AsStoreId) -> Self {
+                    match <NonZero<u32>>::new(u32::from(val)) {
+                        Some(value) => Self::Val(<$reftype>::from_raw_parts(value, store)),
+                        None => Self::Null,
+                    }
                 }
             }
         )*
@@ -387,6 +369,18 @@ macro_rules! impl_conversions {
 impl_conversions! {
     ExternRef: Extern,
     Func: Func,
+}
+
+impl Ref {
+    /// Unwraps the underlying [`RawRef`] if `self` originates from `store`.
+    ///
+    /// Otherwise returns `None`.
+    pub(crate) fn unwrap_raw(&self, store: impl AsStoreId) -> Option<RawRef> {
+        match self {
+            Self::Func(value) => value.unwrap_raw(store),
+            Self::Extern(value) => value.unwrap_raw(store),
+        }
+    }
 }
 
 #[cfg(test)]

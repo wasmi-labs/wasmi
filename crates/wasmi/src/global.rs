@@ -1,10 +1,12 @@
+use wasmi_core::TypedRawVal;
+
 use crate::{
     AsContext,
     AsContextMut,
     GlobalType,
     Mutability,
     Val,
-    core::{CoreGlobal, RawVal},
+    core::CoreGlobal,
     errors::GlobalError,
     store::Stored,
 };
@@ -16,9 +18,15 @@ define_handle! {
 
 impl Global {
     /// Creates a new global variable to the store.
+    ///
+    /// # Panics
+    ///
+    /// If `value` does not originate from `ctx`.
     pub fn new(mut ctx: impl AsContextMut, value: Val, mutability: Mutability) -> Self {
         let ty = GlobalType::new(value.ty(), mutability);
-        let value = RawVal::from(value);
+        let Some(value) = Val::unwrap_raw(&value, ctx.as_context()) else {
+            panic!("value does not originate from `ctx`: {value:?}")
+        };
         ctx.as_context_mut()
             .store
             .inner
@@ -43,13 +51,18 @@ impl Global {
     ///
     /// # Panics
     ///
-    /// Panics if `ctx` does not own this [`Global`].
+    /// Panics if `ctx` does not own this `self` or `new_value`.
     pub fn set(&self, mut ctx: impl AsContextMut, new_value: Val) -> Result<(), GlobalError> {
+        let ty = new_value.ty();
+        let Some(new_value) = new_value.unwrap_raw(ctx.as_context()) else {
+            panic!("new_value does not originate from `ctx`: {new_value:?}")
+        };
+        let new_value = TypedRawVal::new(ty, new_value);
         ctx.as_context_mut()
             .store
             .inner
             .resolve_global_mut(self)
-            .set(new_value.into())
+            .set(new_value)
     }
 
     /// Returns the current value of the global variable.

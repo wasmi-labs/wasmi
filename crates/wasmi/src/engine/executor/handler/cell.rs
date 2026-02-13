@@ -27,18 +27,12 @@ macro_rules! iN_to_u64 {
     };
 }
 
-macro_rules! ref_to_u64 {
-    ($ty:ty) => {
-        |value: $ty| -> u64 { u64::from(RawRef::from(value)) }
-    };
-}
-
 macro_rules! impl_from_for_cell {
     ( $($ty:ty = $eval:expr),* $(,)? ) => {
         $(
             impl From<$ty> for Cell {
                 fn from(value: $ty) -> Self {
-                    Self($eval(value))
+                    Self($eval(value) as u64)
                 }
             }
         )*
@@ -58,17 +52,7 @@ impl_from_for_cell! {
     F32 = |v| u64::from(F32::to_bits(v)),
     f64 = f64::to_bits,
     F64 = F64::to_bits,
-    Func = ref_to_u64!(Func),
-    ExternRef = ref_to_u64!(ExternRef),
-    Nullable<Func> = ref_to_u64!(Nullable<Func>),
-    Nullable<ExternRef> = ref_to_u64!(Nullable<ExternRef>),
-    RawRef = u64::from,
-}
-
-macro_rules! u64_to_ref {
-    ($ty:ty) => {
-        |value: u64| -> $ty { <$ty as From<RawRef>>::from(RawRef::from(value)) }
-    };
+    RawRef = u32::from,
 }
 
 macro_rules! impl_into_for_cell {
@@ -96,9 +80,7 @@ impl_into_for_cell! {
     F32 = |v| F32::from_bits(v as _),
     f64 = f64::from_bits,
     F64 = F64::from_bits,
-    Nullable<Func> = u64_to_ref!(Nullable<Func>),
-    Nullable<ExternRef> = u64_to_ref!(Nullable<ExternRef>),
-    RawRef = RawRef::from,
+    RawRef = |v| RawRef::from(v as u32),
 }
 
 /// Errors raised in the encode and decode APIs of [`Cell`].

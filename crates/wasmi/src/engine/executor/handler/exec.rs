@@ -968,7 +968,7 @@ macro_rules! impl_table_set {
                 let table = fetch_table(instance, table);
                 let table = resolve_table_mut(state.store, &table);
                 let index = $ext(get_value(index, sp));
-                let value: u64 = get_value(value, sp);
+                let value: u32 = get_value(value, sp);
                 if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                     trap!(TrapCode::TableOutOfBounds)
                 };
@@ -995,7 +995,9 @@ pub fn ref_func(
 ) -> Done {
     let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
     let func = fetch_func(instance, func);
-    let rawref = RawRef::from(func);
+    let Some(rawref) = func.unwrap_raw(&*state.store) else {
+        unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
+    };
     set_value(sp, result, rawref);
     dispatch!(state, ip, sp, mem0, mem0_len, instance)
 }
