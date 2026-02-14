@@ -92,9 +92,8 @@ macro_rules! add_funcs_to_linker {
                         stringify!($fname),
                         move |mut caller: Caller<'_, T>, $($arg : $typ,)*| -> Result<$ret, wasmi::Error> {
                             let result = async {
-                                let memory = match caller.get_export("memory") {
-                                    Some(Extern::Memory(m)) => m,
-                                    _ => return Err(wasmi::Error::new(String::from("missing required WASI memory export"))),
+                                let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
+                                    return Err(wasmi::Error::new(String::from("missing required WASI memory export")))
                                 };
                                 let(memory, ctx) = memory.data_and_store_mut(&mut caller);
                                 let ctx = wasi_ctx(ctx);
