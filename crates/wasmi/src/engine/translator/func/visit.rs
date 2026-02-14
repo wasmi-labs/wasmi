@@ -443,7 +443,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::F32 => Op::global_set32_i(global, f32::from(value).to_bits()),
             ValType::F64 => Op::global_set64_i(f64::from(value).to_bits(), global),
             ValType::FuncRef | ValType::ExternRef => {
-                Op::global_set64_i(u64::from(value.raw()), global)
+                let value = u32::from(RawRef::from(value.raw()));
+                Op::global_set32_i(global, value)
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {

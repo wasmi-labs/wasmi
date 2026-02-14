@@ -36,13 +36,12 @@ use self::{
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
-    core::RawRef,
     Engine,
     Error,
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedRawVal},
+    core::{FuelCostsProvider, IndexType, RawRef, Typed, TypedRawVal},
     engine::{
         BlockType,
         Cell,
@@ -983,7 +982,7 @@ impl FuncTranslator {
                         ValType::F32 => Op::return32(f32::from(val).to_bits()),
                         ValType::F64 => Op::return64(f64::from(val).to_bits()),
                         ValType::FuncRef | ValType::ExternRef => {
-                            Op::return64(u64::from(RawVal::from(val)))
+                            Op::return32(u32::from(RawRef::from(val.raw())))
                         }
                         ValType::V128 => {
                             let value = self.stack.peek(0);
