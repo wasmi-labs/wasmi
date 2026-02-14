@@ -19,7 +19,7 @@ mod tests;
 fn main() -> Result<()> {
     let args = Args::parse();
     let wasm_file = args.wasm_file();
-    let wasi_ctx = args.wasi_context()?;
+    let wasi_ctx = args.store_context()?;
     let mut ctx = Context::new(wasm_file, wasi_ctx, args.fuel(), args.compilation_mode())?;
     let (func_name, func) = get_invoked_func(&args, &ctx)?;
     let ty = func.ty(ctx.store());

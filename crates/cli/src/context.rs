@@ -1,7 +1,12 @@
 use anyhow::{Error, anyhow};
 use std::{fs, path::Path};
 use wasmi::{CompilationMode, Config, ExternType, Func, FuncType, Instance, Module, Store};
-use wasmi_wasi::WasiCtx;
+
+#[cfg(feature = "wasi")]
+pub type StoreContext = wasmi_wasi::WasiCtx;
+
+#[cfg(not(feature = "wasi"))]
+pub type StoreContext = ();
 
 /// The [`Context`] for the Wasmi CLI application.
 ///
@@ -10,7 +15,7 @@ pub struct Context {
     /// The given Wasm module.
     module: Module,
     /// The used Wasm store.
-    store: Store<WasiCtx>,
+    store: Store<StoreContext>,
     /// The Wasm module instance to operate on.
     instance: Instance,
 }
@@ -24,7 +29,7 @@ impl Context {
     /// - If adding WASI definitions to the linker failed.
     pub fn new(
         wasm_file: &Path,
-        wasi_ctx: WasiCtx,
+        store_ctx: StoreContext,
         fuel: Option<u64>,
         compilation_mode: CompilationMode,
     ) -> Result<Self, Error> {
@@ -41,13 +46,15 @@ impl Context {
         let module = wasmi::Module::new(&engine, wasm).map_err(|error| {
             anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
         })?;
-        let mut store = wasmi::Store::new(&engine, wasi_ctx);
+        let mut store = wasmi::Store::new(&engine, store_ctx);
         if let Some(fuel) = fuel {
             store.set_fuel(fuel).unwrap_or_else(|error| {
                 panic!("error: fuel metering is enabled but encountered: {error}")
             });
         }
-        let mut linker = <wasmi::Linker<WasiCtx>>::new(&engine);
+        #[cfg_attr(not(feature = "wasi"), allow(unused_mut))]
+        let mut linker = <wasmi::Linker<StoreContext>>::new(&engine);
+        #[cfg(feature = "wasi")]
         wasmi_wasi::add_to_linker(&mut linker, |ctx| ctx)
             .map_err(|error| anyhow!("failed to add WASI definitions to the linker: {error}"))?;
         let instance = linker
@@ -74,12 +81,12 @@ impl Context {
     }
 
     /// Returns a shared reference to the [`Store`] of the [`Context`].
-    pub fn store(&self) -> &Store<WasiCtx> {
+    pub fn store(&self) -> &Store<StoreContext> {
         &self.store
     }
 
     /// Returns an exclusive reference to the [`Store`] of the [`Context`].
-    pub fn store_mut(&mut self) -> &mut Store<WasiCtx> {
+    pub fn store_mut(&mut self) -> &mut Store<StoreContext> {
         &mut self.store
     }
 
