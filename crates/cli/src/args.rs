@@ -1,20 +1,23 @@
-use anyhow::{Context, Error, Result};
+use crate::context::StoreContext;
+#[cfg(feature = "wasi")]
+use anyhow::Context;
+use anyhow::{Error, Result};
 use clap::{Parser, ValueEnum};
-use std::{
-    ffi::OsStr,
-    net::SocketAddr,
-    path::{Path, PathBuf},
-    str::FromStr,
-};
-use wasmi_wasi::{Dir, TcpListener, WasiCtx, WasiCtxBuilder, ambient_authority};
+use std::path::{Path, PathBuf};
+#[cfg(feature = "wasi")]
+use std::{ffi::OsStr, net::SocketAddr, str::FromStr};
+#[cfg(feature = "wasi")]
+use wasmi_wasi::{Dir, TcpListener, WasiCtxBuilder, ambient_authority};
 
 /// A CLI flag value key-value argument.
 #[derive(Debug, Clone)]
+#[cfg(feature = "wasi")]
 struct KeyValue {
     key: String,
     value: String,
 }
 
+#[cfg(feature = "wasi")]
 impl FromStr for KeyValue {
     type Err = Error;
 
@@ -47,6 +50,7 @@ pub struct Args {
         action = clap::ArgAction::Append,
         value_hint = clap::ValueHint::DirPath,
     )]
+    #[cfg(feature = "wasi")]
     dirs: Vec<PathBuf>,
 
     /// The socket address provided to the module. Allows it to perform socket-related `WASI` ops.
@@ -55,6 +59,7 @@ pub struct Args {
         value_name = "SOCKET ADDRESS",
         action = clap::ArgAction::Append,
     )]
+    #[cfg(feature = "wasi")]
     tcplisten: Vec<SocketAddr>,
 
     /// The environment variable pair made available for the program.
@@ -64,6 +69,7 @@ pub struct Args {
         value_parser(KeyValue::from_str),
         action = clap::ArgAction::Append,
     )]
+    #[cfg(feature = "wasi")]
     envs: Vec<KeyValue>,
 
     /// The file containing the WebAssembly module to execute.
@@ -151,11 +157,12 @@ impl Args {
         self.verbose
     }
 
-    /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
+    /// Pre-opens all directories given in `--dir` and returns them for use by the [`StoreContext`].
     ///
     /// # Errors
     ///
     /// If any of the given directions in `--dir` cannot be opened.
+    #[cfg(feature = "wasi")]
     fn preopen_dirs(&self) -> Result<Vec<(&Path, Dir)>> {
         self.dirs
             .iter()
@@ -168,46 +175,15 @@ impl Args {
             .collect::<Result<Vec<_>>>()
     }
 
-    /// Opens sockets given in `--tcplisten` and returns them for use by the [`WasiCtx`].
-    ///
-    /// # Errors
-    ///
-    /// If any of the given socket addresses in `--tcplisten` cannot be listened to.
-    fn preopen_sockets(&self) -> Result<Vec<TcpListener>> {
-        self.tcplisten
-            .iter()
-            .map(|addr| {
-                let std_tcp_listener = std::net::TcpListener::bind(addr)
-                    .with_context(|| format!("failed to bind to tcp address '{addr}'"))?;
-                std_tcp_listener.set_nonblocking(true)?;
-                Ok(TcpListener::from_std(std_tcp_listener))
-            })
-            .collect::<Result<Vec<_>>>()
+    /// Creates the [`StoreContext`] for this session.
+    #[cfg(not(feature = "wasi"))]
+    pub fn store_context(&self) -> Result<StoreContext, Error> {
+        Ok(StoreContext)
     }
 
-    /// Returns the arguments that the WASI invocation expects to receive.
-    ///
-    /// The first argument is always the module file name itself followed
-    /// by the arguments to the invoked function if any.
-    ///
-    /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
-    fn argv(&self) -> Vec<String> {
-        let mut args = Vec::with_capacity(self.func_args.len() + 1);
-        // The WebAssembly filename is expected to be the first argument to WASI.
-        // Note that the module name still has it's `.wasm` file extension.
-        let module_name = self
-            .wasm_file
-            .file_name()
-            .and_then(OsStr::to_str)
-            .unwrap_or("")
-            .into();
-        args.push(module_name);
-        args.extend_from_slice(&self.func_args);
-        args
-    }
-
-    /// Creates the [`WasiCtx`] for this session.
-    pub fn wasi_context(&self) -> Result<WasiCtx, Error> {
+    /// Creates the [`StoreContext`] for this session.
+    #[cfg(feature = "wasi")]
+    pub fn store_context(&self) -> Result<StoreContext, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
         for KeyValue { key, value } in &self.envs {
             wasi_builder.env(key, value)?;
@@ -226,5 +202,45 @@ impl Args {
             wasi_builder.preopened_dir(dir, dir_name)?;
         }
         Ok(wasi_builder.build())
+    }
+
+    /// Opens sockets given in `--tcplisten` and returns them for use by the [`StoreContext`].
+    ///
+    /// # Errors
+    ///
+    /// If any of the given socket addresses in `--tcplisten` cannot be listened to.
+    #[cfg(feature = "wasi")]
+    fn preopen_sockets(&self) -> Result<Vec<TcpListener>> {
+        self.tcplisten
+            .iter()
+            .map(|addr| {
+                let std_tcp_listener = std::net::TcpListener::bind(addr)
+                    .with_context(|| format!("failed to bind to tcp address '{addr}'"))?;
+                std_tcp_listener.set_nonblocking(true)?;
+                Ok(TcpListener::from_std(std_tcp_listener))
+            })
+            .collect::<Result<Vec<_>>>()
+    }
+
+    /// Returns the arguments that the WASI invocation expects to receive.
+    ///
+    /// The first argument is always the module file name itself followed
+    /// by the arguments to the invoked function if any.
+    ///
+    /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
+    #[cfg(feature = "wasi")]
+    fn argv(&self) -> Vec<String> {
+        let mut args = Vec::with_capacity(self.func_args.len() + 1);
+        // The WebAssembly filename is expected to be the first argument to WASI.
+        // Note that the module name still has it's `.wasm` file extension.
+        let module_name = self
+            .wasm_file
+            .file_name()
+            .and_then(OsStr::to_str)
+            .unwrap_or("")
+            .into();
+        args.push(module_name);
+        args.extend_from_slice(&self.func_args);
+        args
     }
 }
