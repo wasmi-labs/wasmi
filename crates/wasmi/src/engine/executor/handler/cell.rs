@@ -31,6 +31,7 @@ macro_rules! impl_from_for_cell {
     ( $($ty:ty = $eval:expr),* $(,)? ) => {
         $(
             impl From<$ty> for Cell {
+                #[allow(clippy::cast_lossless)]
                 fn from(value: $ty) -> Self {
                     Self($eval(value) as u64)
                 }
