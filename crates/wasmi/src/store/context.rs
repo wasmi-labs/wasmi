@@ -27,9 +27,7 @@ pub struct StoreContext<'a, T> {
 
 impl<T> Clone for StoreContext<'_, T> {
     fn clone(&self) -> Self {
-        Self {
-            store: self.store.clone(),
-        }
+        *self
     }
 }
 
