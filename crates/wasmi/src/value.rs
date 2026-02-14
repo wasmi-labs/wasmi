@@ -66,7 +66,7 @@ pub enum Val {
 
 impl Val {
     /// Create a [`Val`] from its raw parts.
-    pub(crate) fn from_raw_parts(val: RawVal, ty: ValType, _store: impl AsStoreId) -> Self {
+    pub(crate) fn from_raw_parts(val: RawVal, ty: ValType, store: impl AsStoreId) -> Self {
         match ty {
             ValType::I32 => Self::I32(val.into()),
             ValType::I64 => Self::I64(val.into()),
@@ -78,22 +78,24 @@ impl Val {
             ValType::V128 => {
                 panic!("Val::from_raw_parts does not work for `v128` values without `simd`")
             }
-            ValType::FuncRef => Self::FuncRef(val.into()),
-            ValType::ExternRef => Self::ExternRef(val.into()),
+            ValType::FuncRef => Self::FuncRef(<Nullable<Func>>::from_raw_parts(val.into(), store)),
+            ValType::ExternRef => {
+                Self::ExternRef(<Nullable<ExternRef>>::from_raw_parts(val.into(), store))
+            }
         }
     }
 
     /// Unwraps [`Val`] into its underlying [`RawVal`].
     ///
     /// Returns `None` if `self` does not originate from `store`.
-    pub(crate) fn unwrap_raw(&self, store: impl AsStoreId) -> Option<RawVal> {
-        let value = match self {
-            Self::I32(value) => (*value).into(),
-            Self::I64(value) => (*value).into(),
-            Self::F32(value) => (*value).into(),
-            Self::F64(value) => (*value).into(),
+    pub(crate) fn unwrap_raw_val(&self, store: impl AsStoreId) -> Option<RawVal> {
+        let value = match *self {
+            Self::I32(value) => value.into(),
+            Self::I64(value) => value.into(),
+            Self::F32(value) => value.into(),
+            Self::F64(value) => value.into(),
             #[cfg(feature = "simd")]
-            Self::V128(value) => (*value).into(),
+            Self::V128(value) => value.into(),
             #[cfg(not(feature = "simd"))]
             Self::V128(_) => {
                 unimplemented!("must enable `simd` crate feature to use `V128` values")
@@ -104,24 +106,34 @@ impl Val {
         Some(value)
     }
 
+    /// Unwraps [`Val`] into its underlying [`RawRef`] if possible.
+    ///
+    /// # Note
+    ///
+    /// - Returns `None` if `self` is not a reference value.
+    /// - Returns `None` if `self` does not originate from `store`.
+    pub(crate) fn unwrap_raw_ref(&self, store: impl AsStoreId) -> Option<RawRef> {
+        let value = match *self {
+            Self::FuncRef(value) => <Nullable<Func>>::unwrap_raw(&value, store)?,
+            Self::ExternRef(value) => <Nullable<ExternRef>>::unwrap_raw(&value, store)?,
+            _ => return None,
+        };
+        Some(value)
+    }
+
     /// Returns the underlying [`RawVal`] of `self` or `None`.
     ///
     /// Returns `None` if `self` is a non-null reference value.
     pub(crate) fn as_raw_or_none(&self) -> Option<RawVal> {
-        let raw = match self {
-            Self::I32(value) => (*value).into(),
-            Self::I64(value) => (*value).into(),
-            Self::F32(value) => (*value).into(),
-            Self::F64(value) => (*value).into(),
-            Self::V128(value) => (*value).into(),
-            Self::FuncRef(value) => match value.is_null() {
-                true => RawVal::from(RawRef::null()),
-                false => return None,
-            },
-            Self::ExternRef(value) => match value.is_null() {
-                true => RawVal::from(RawRef::null()),
-                false => return None,
-            },
+        let raw = match *self {
+            Self::I32(value) => value.into(),
+            Self::I64(value) => value.into(),
+            Self::F32(value) => value.into(),
+            Self::F64(value) => value.into(),
+            Self::V128(value) => value.into(),
+            Self::FuncRef(Nullable::Null) => RawRef::null().into(),
+            Self::ExternRef(Nullable::Null) => RawRef::null().into(),
+            _ => return None,
         };
         Some(raw)
     }
