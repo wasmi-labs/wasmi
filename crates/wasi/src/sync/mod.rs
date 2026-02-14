@@ -9,5 +9,6 @@ pub use wasi_common::sync::*;
 #[doc(inline)]
 pub use self::snapshots::preview_1::{
     AddWasi,
+    add_to_externals,
     add_wasi_snapshot_preview1_to_linker as add_to_linker,
 };
