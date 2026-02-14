@@ -135,57 +135,49 @@ pub trait LowerToCells {
     ) -> Result<(), CellError>;
 }
 
-impl LowerToCells for Func {
-    fn lower_to_cells(
-        self,
-        store: impl AsStoreId,
-        cells: &mut impl CellsWriter,
-    ) -> Result<(), CellError> {
-        let Some(value) = store.unwrap(self.raw()) else {
-            return Err(CellError::StoreOwnerMismatch);
-        };
-        value.raw().get().store_to_cells(cells)
-    }
-}
+macro_rules! impl_lower_and_lift_for_refs {
+    ( $($refty:ty),* $(,)? ) => {
+        $(
+            impl LowerToCells for $refty {
+                fn lower_to_cells(
+                    self,
+                    store: impl AsStoreId,
+                    cells: &mut impl CellsWriter,
+                ) -> Result<(), CellError> {
+                    let Some(value) = store.unwrap(self.raw()) else {
+                        return Err(CellError::StoreOwnerMismatch);
+                    };
+                    value.raw().get().store_to_cells(cells)
+                }
+            }
 
-impl LowerToCells for Nullable<Func> {
-    fn lower_to_cells(
-        self,
-        store: impl AsStoreId,
-        cells: &mut impl CellsWriter,
-    ) -> Result<(), CellError> {
-        match self {
-            Self::Null => 0_u32.lower_to_cells(store, cells),
-            Self::Val(value) => value.lower_to_cells(store, cells),
-        }
-    }
-}
+            impl LowerToCells for Nullable<$refty> {
+                fn lower_to_cells(
+                    self,
+                    store: impl AsStoreId,
+                    cells: &mut impl CellsWriter,
+                ) -> Result<(), CellError> {
+                    match self {
+                        Self::Null => 0_u32.lower_to_cells(store, cells),
+                        Self::Val(value) => value.lower_to_cells(store, cells),
+                    }
+                }
+            }
 
-impl LowerToCells for ExternRef {
-    fn lower_to_cells(
-        self,
-        store: impl AsStoreId,
-        cells: &mut impl CellsWriter,
-    ) -> Result<(), CellError> {
-        let Some(value) = store.unwrap(self.raw()) else {
-            return Err(CellError::StoreOwnerMismatch);
-        };
-        value.raw().get().store_to_cells(cells)
-    }
+            impl LiftFromCellsByValue for Nullable<$refty> {
+                fn lift_from_cells_by_value(
+                    store: impl AsStoreId,
+                    cells: &mut impl CellsReader,
+                ) -> Result<Self, CellError> {
+                    let rawref = <RawRef as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
+                    let funcref = <Nullable<$refty>>::from_raw_parts(rawref, store);
+                    Ok(funcref)
+                }
+            }
+        )*
+    };
 }
-
-impl LowerToCells for Nullable<ExternRef> {
-    fn lower_to_cells(
-        self,
-        store: impl AsStoreId,
-        cells: &mut impl CellsWriter,
-    ) -> Result<(), CellError> {
-        match self {
-            Self::Null => 0_u32.lower_to_cells(store, cells),
-            Self::Val(value) => value.lower_to_cells(store, cells),
-        }
-    }
-}
+impl_lower_and_lift_for_refs! { Func, ExternRef }
 
 impl LowerToCells for Ref {
     fn lower_to_cells(
@@ -517,28 +509,6 @@ impl LiftFromCells for &'_ mut Val {
             Val::FuncRef(value) => value.lift_from_cells(store, cells),
             Val::ExternRef(value) => value.lift_from_cells(store, cells),
         }
-    }
-}
-
-impl LiftFromCellsByValue for Nullable<Func> {
-    fn lift_from_cells_by_value(
-        store: impl AsStoreId,
-        cells: &mut impl CellsReader,
-    ) -> Result<Self, CellError> {
-        let rawref = <RawRef as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
-        let funcref = <Nullable<Func>>::from_raw_parts(rawref, store);
-        Ok(funcref)
-    }
-}
-
-impl LiftFromCellsByValue for Nullable<ExternRef> {
-    fn lift_from_cells_by_value(
-        store: impl AsStoreId,
-        cells: &mut impl CellsReader,
-    ) -> Result<Self, CellError> {
-        let rawref = <RawRef as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
-        let externref = <Nullable<ExternRef>>::from_raw_parts(rawref, store);
-        Ok(externref)
     }
 }
 
