@@ -178,7 +178,7 @@ impl Args {
     /// Creates the [`WasiCtx`] for this session.
     #[cfg(not(feature = "wasi"))]
     pub fn store_context(&self) -> Result<StoreContext, Error> {
-        Ok(())
+        Ok(StoreContext)
     }
 
     /// Creates the [`WasiCtx`] for this session.

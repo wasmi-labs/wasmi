@@ -6,7 +6,7 @@ use wasmi::{CompilationMode, Config, ExternType, Func, FuncType, Instance, Modul
 pub type StoreContext = wasmi_wasi::WasiCtx;
 
 #[cfg(not(feature = "wasi"))]
-pub type StoreContext = ();
+pub struct StoreContext;
 
 /// The [`Context`] for the Wasmi CLI application.
 ///
