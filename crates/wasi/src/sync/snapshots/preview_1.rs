@@ -71,14 +71,13 @@ where
 // `wasi preview_1` functions to the linker
 macro_rules! add_funcs_to_linker {
     (
-        $linker:ty,
         $(
             $( #[$docs:meta] )*
             fn $fname:ident ($( $arg:ident : $typ:ty ),* $(,)? ) -> $ret:tt
         );+ $(;)?
     ) => {
         #[allow(deprecated)]
-        impl<T> AddWasi<T> for $linker {
+        impl<T> AddWasi<T> for wasmi::Linker<T> {
             fn add_wasi<U>(
                 &mut self,
                 wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
@@ -121,8 +120,6 @@ macro_rules! add_funcs_to_linker {
 macro_rules! apply_wasi_definitions {
     ($mac:ident, $linker:ty) => {
         $mac! {
-            $linker,
-
             /// Read command-line argument data.
             ///
             /// # Note
