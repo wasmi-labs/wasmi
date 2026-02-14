@@ -3,12 +3,12 @@ use crate::{
     Func,
     RefType,
     StoreContext,
-    core::{RawRef, RawVal, ReadAs, WriteAs},
+    core::RawRef,
     handle::RawHandle,
     store::{AsStoreId, Stored},
 };
 use alloc::boxed::Box;
-use core::{any::Any, mem, num::NonZero};
+use core::{any::Any, num::NonZero};
 
 /// A nullable reference type.
 #[derive(Debug, Default, Copy, Clone)]
@@ -67,15 +67,6 @@ pub enum Ref {
     Func(Nullable<Func>),
     /// A Wasm `externref`.
     Extern(Nullable<ExternRef>),
-}
-
-impl WriteAs<Ref> for RawVal {
-    fn write_as(&mut self, value: Ref) {
-        match value {
-            Ref::Func(nullable) => self.write_as(nullable),
-            Ref::Extern(nullable) => self.write_as(nullable),
-        }
-    }
 }
 
 impl From<Nullable<Func>> for Ref {
@@ -260,7 +251,7 @@ fn externref_null_to_zero() {
     let store = <Store<()>>::default();
     let null = <Nullable<ExternRef>>::Null;
     assert_eq!(null.unwrap_raw(&store), Some(RawRef::from(0)));
-    assert!(<Nullable<ExternRef>>::from(RawVal::from(0)).is_null());
+    assert!(<Nullable<ExternRef>>::from_raw_parts(RawRef::from(0), &store).is_null());
 }
 
 #[test]
@@ -282,51 +273,12 @@ fn funcref_null_to_zero() {
     let store = <Store<()>>::default();
     let null = <Nullable<Func>>::Null;
     assert_eq!(null.unwrap_raw(&store), Some(RawRef::from(0)));
-    assert!(<Nullable<Func>>::from(RawVal::from(0)).is_null());
+    assert!(<Nullable<Func>>::from_raw_parts(RawRef::from(0), &store).is_null());
 }
 
 macro_rules! impl_conversions {
     ( $( $reftype:ty: $ty:ident ),* $(,)? ) => {
         $(
-            impl ReadAs<$reftype> for RawVal {
-                fn read_as(&self) -> $reftype {
-                    let bits = u64::from(*self);
-                    unsafe { mem::transmute::<u64, $reftype>(bits) }
-                }
-            }
-
-            impl ReadAs<Nullable<$reftype>> for RawVal {
-                fn read_as(&self) -> Nullable<$reftype> {
-                    let bits = u64::from(*self);
-                    if bits == 0 {
-                        return <Nullable<$reftype>>::Null;
-                    }
-                    <Nullable<$reftype>>::Val(<Self as ReadAs<$reftype>>::read_as(self))
-                }
-            }
-
-            impl WriteAs<$reftype> for RawVal {
-                fn write_as(&mut self, value: $reftype) {
-                    let bits = unsafe { mem::transmute::<$reftype, u64>(value) };
-                    self.write_as(bits)
-                }
-            }
-
-            impl WriteAs<Nullable<$reftype>> for RawVal {
-                fn write_as(&mut self, value: Nullable<$reftype>) {
-                    match value {
-                        Nullable::Null => self.write_as(0_u64),
-                        Nullable::Val(value) => self.write_as(value),
-                    }
-                }
-            }
-
-            impl From<RawVal> for Nullable<$reftype> {
-                fn from(value: RawVal) -> Self {
-                    <RawVal as ReadAs<Nullable<$reftype>>>::read_as(&value)
-                }
-            }
-
             impl $reftype {
                 /// Unwraps the underlying [`RawRef`] if `self` originates from `store`.
                 ///
