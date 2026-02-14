@@ -385,11 +385,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
-                // Case: access to immutable internally defined global variables
-                //       can be replaced with their constant initialization value.
-                self.stack
-                    .push_immediate(TypedRawVal::new(content, value))?;
-                return Ok(());
+                if let Some(value) = value.as_raw_or_none() {
+                    // Case: access to immutable internally defined global variables
+                    //       can be replaced with their constant initialization value.
+                    self.stack
+                        .push_immediate(TypedRawVal::new(content, value))?;
+                    return Ok(());
+                }
             }
             if let Some(func_index) = init_expr.funcref() {
                 // Case: forward to `ref.func x` translation.

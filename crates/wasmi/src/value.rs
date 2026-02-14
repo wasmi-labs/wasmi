@@ -236,6 +236,20 @@ impl From<i64> for Val {
     }
 }
 
+impl From<f32> for Val {
+    #[inline]
+    fn from(val: f32) -> Self {
+        Self::F32(F32::from_float(val))
+    }
+}
+
+impl From<f64> for Val {
+    #[inline]
+    fn from(val: f64) -> Self {
+        Self::F64(F64::from_float(val))
+    }
+}
+
 impl From<F32> for Val {
     #[inline]
     fn from(val: F32) -> Self {
