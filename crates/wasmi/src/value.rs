@@ -11,34 +11,6 @@ use crate::{
     store::AsStoreId,
 };
 
-/// Untyped instances that allow to be typed.
-pub trait WithType {
-    /// The typed output type.
-    type Output;
-
-    /// Converts `self` to [`Self::Output`] using `ty`.
-    fn with_type(self, ty: ValType) -> Self::Output;
-}
-
-impl WithType for RawVal {
-    type Output = Val;
-
-    fn with_type(self, ty: ValType) -> Self::Output {
-        match ty {
-            ValType::I32 => Val::I32(self.into()),
-            ValType::I64 => Val::I64(self.into()),
-            ValType::F32 => Val::F32(self.into()),
-            ValType::F64 => Val::F64(self.into()),
-            #[cfg(feature = "simd")]
-            ValType::V128 => Val::V128(self.into()),
-            ValType::FuncRef => Val::FuncRef(self.into()),
-            ValType::ExternRef => Val::ExternRef(self.into()),
-            #[cfg(not(feature = "simd"))]
-            unsupported => unimplemented!("encountered unsupported `ValType`: {unsupported:?}"),
-        }
-    }
-}
-
 /// Runtime representation of a Wasm value.
 ///
 /// Wasm code manipulate values of the four basic value types:
