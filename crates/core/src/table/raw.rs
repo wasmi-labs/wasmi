@@ -13,6 +13,11 @@ impl RawRef {
     pub fn null() -> Self {
         Self { bits: 0_u32 }
     }
+
+    /// Returns `true` if `self` is a `null` reference.
+    pub fn is_null(self) -> bool {
+        self.bits == 0
+    }
 }
 
 impl From<u32> for RawRef {
