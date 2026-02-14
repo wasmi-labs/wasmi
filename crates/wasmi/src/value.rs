@@ -102,6 +102,7 @@ impl Val {
             Self::I64(value) => value.into(),
             Self::F32(value) => value.into(),
             Self::F64(value) => value.into(),
+            #[cfg(feature = "simd")]
             Self::V128(value) => value.into(),
             Self::FuncRef(Nullable::Null) => RawRef::null().into(),
             Self::ExternRef(Nullable::Null) => RawRef::null().into(),

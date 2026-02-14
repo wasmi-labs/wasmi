@@ -372,6 +372,7 @@ impl Val {
             Self::I64(value) => value.into(),
             Self::F32(value) => value.to_float().into(),
             Self::F64(value) => value.to_float().into(),
+            #[cfg(feature = "simd")]
             Self::V128(value) => value.into(),
             Self::FuncRef(Nullable::Null) => ConstVal::Null(RefType::Func),
             Self::ExternRef(Nullable::Null) => ConstVal::Null(RefType::Extern),
