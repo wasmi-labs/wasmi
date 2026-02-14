@@ -53,12 +53,11 @@ impl Context {
             });
         }
         #[cfg_attr(not(feature = "wasi"), allow(unused_mut))]
-        let mut linker = <wasmi::Linker<StoreContext>>::new(&engine);
+        let mut externals = Vec::new();
         #[cfg(feature = "wasi")]
-        wasmi_wasi::add_to_linker(&mut linker, |ctx| ctx)
-            .map_err(|error| anyhow!("failed to add WASI definitions to the linker: {error}"))?;
-        let instance = linker
-            .instantiate_and_start(&mut store, &module)
+        wasmi_wasi::add_to_externals(&mut store, &module, &mut externals, |ctx| ctx)
+            .map_err(|error| anyhow!("failed to populate WASI externals: {error}"))?;
+        let instance = Instance::new(&mut store, &module, &externals)
             .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
         Ok(Self {
             module,

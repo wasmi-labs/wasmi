@@ -4,7 +4,7 @@ use std::{
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
 use wasi_common::{Error, snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1};
-use wasmi::{Caller, Extern, Linker};
+use wasmi::{Caller, Extern, ImportType, Linker};
 
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s
 fn dummy_raw_waker() -> RawWaker {
@@ -41,6 +41,8 @@ pub trait AddWasi<T> {
         wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
     ) -> Result<(), Error>
     where
+        U: 'static,
+        T: Send + 'static,
         U: WasiSnapshotPreview1;
 }
 
@@ -59,57 +61,78 @@ pub trait AddWasi<T> {
 /// Look [here](https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md) for more details.
 pub fn add_wasi_snapshot_preview1_to_linker<T, U>(
     linker: &mut Linker<T>,
-    wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+    get_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
 ) -> Result<(), Error>
 where
+    U: 'static,
+    T: Send + 'static,
     U: WasiSnapshotPreview1,
 {
-    <Linker<T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
+    <Linker<T> as AddWasi<T>>::add_wasi(linker, get_ctx)
 }
 
-// Creates the function item `add_wasi_snapshot_preview1_to_wasmi_linker` which when called adds all
-// `wasi preview_1` functions to the linker
-macro_rules! add_funcs_to_linker {
+macro_rules! wrap_wasi_funcs {
     (
-        $linker:ty,
         $(
             $( #[$docs:meta] )*
             fn $fname:ident ($( $arg:ident : $typ:ty ),* $(,)? ) -> $ret:tt
         );+ $(;)?
     ) => {
-        #[allow(deprecated)]
-        impl<T> AddWasi<T> for $linker {
+        $(
+            $(#[$docs])*
+            pub fn $fname<T, U>(
+                get_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+            ) -> impl Fn(Caller<'_, T> $(, $typ)* ) -> Result<$ret, wasmi::Error>
+            where
+                U: 'static,
+                T: Send + 'static,
+                U: WasiSnapshotPreview1,
+            {
+                move |mut caller: Caller<'_, T>, $($arg : $typ,)*| -> Result<$ret, wasmi::Error> {
+                    let result = async {
+                        let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
+                            return Err(wasmi::Error::new(String::from("missing required WASI memory export")))
+                        };
+                        let(memory, ctx) = memory.data_and_store_mut(&mut caller);
+                        let ctx = get_ctx(ctx);
+                        let mut memory = WasmiGuestMemory::Unshared(memory);
+                        match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &mut memory, $($arg,)*).await {
+                            Ok(r) => Ok(<$ret>::from(r)),
+                            Err(e) => match e.downcast::<wasi_common::I32Exit>() {
+                                Ok(wasi_common::I32Exit(status)) => Err(wasmi::Error::i32_exit(status)),
+                                Err(e) => Err(wasmi::Error::new(e.to_string())),
+                            }
+                        }
+                    };
+                    run_in_dummy_executor(result)?
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! add_funcs_to_linker {
+    (
+        $(
+            $( #[$docs:meta] )*
+            fn $fname:ident ($( $arg:ident : $typ:ty ),* $(,)? ) -> $ret:tt
+        );+ $(;)?
+    ) => {
+        impl<T> AddWasi<T> for wasmi::Linker<T> {
             fn add_wasi<U>(
                 &mut self,
-                wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+                get_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
             ) -> Result<(), Error>
             where
+                U: 'static,
+                T: Send + 'static,
                 U: WasiSnapshotPreview1,
             {
                 $(
-                    // $(#[$docs])* // TODO: find place for docs
                     self.func_wrap(
                         "wasi_snapshot_preview1",
                         stringify!($fname),
-                        move |mut caller: Caller<'_, T>, $($arg : $typ,)*| -> Result<$ret, wasmi::Error> {
-                            let result = async {
-                                let memory = match caller.get_export("memory") {
-                                    Some(Extern::Memory(m)) => m,
-                                    _ => return Err(wasmi::Error::new(String::from("missing required WASI memory export"))),
-                                };
-                                let(memory, ctx) = memory.data_and_store_mut(&mut caller);
-                                let ctx = wasi_ctx(ctx);
-                                let mut memory = WasmiGuestMemory::Unshared(memory);
-                                match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &mut memory, $($arg,)*).await {
-                                    Ok(r) => Ok(<$ret>::from(r)),
-                                    Err(e) => match e.downcast::<wasi_common::I32Exit>() {
-                                        Ok(wasi_common::I32Exit(status)) => Err(wasmi::Error::i32_exit(status)),
-                                        Err(e) => Err(wasmi::Error::new(e.to_string())),
-                                    }
-                                }
-                            };
-                            run_in_dummy_executor(result)?
-                        }
+                        wrapped::$fname::<T, U>(get_ctx),
                     ).map_err(wiggle::anyhow::Error::from).map_err(wasi_common::Error::trap)?;
                 )*
                 Ok(())
@@ -118,11 +141,88 @@ macro_rules! add_funcs_to_linker {
     }
 }
 
-macro_rules! apply_wasi_definitions {
-    ($mac:ident, $linker:ty) => {
-        $mac! {
-            $linker,
+/// Error returned by [`add_to_externals`] when encountering invalid Wasi imports.
+#[derive(Debug)]
+pub struct InvalidWasiImport {
+    /// The module name of the invalid import.
+    module: Box<str>,
+    /// The field name of the invalid import.
+    name: Box<str>,
+}
 
+impl std::fmt::Display for InvalidWasiImport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid Wasi import: {}::{}", self.module, self.name)
+    }
+}
+
+impl std::error::Error for InvalidWasiImport {}
+
+impl InvalidWasiImport {
+    /// Creates a new [`InvalidWasiImport`] from the given [`ImportType`].
+    #[cold]
+    fn new(import: ImportType<'_>) -> Self {
+        Self {
+            module: import.module().into(),
+            name: import.name().into(),
+        }
+    }
+}
+
+macro_rules! add_funcs_to_externals {
+    (
+        $(
+            $( #[$docs:meta] )*
+            fn $fname:ident ($( $arg:ident : $typ:ty ),* $(,)? ) -> $ret:tt
+        );+ $(;)?
+    ) => {
+        /// Add Wasi APIs imported by `module` to the `externals` buffer.
+        ///
+        /// # Note
+        ///
+        /// - This only supports Wasi (preview 1) or `wasip1`.
+        /// - The `externals` buffer is cleared before being populated.
+        /// - This API is technically more efficient than [`add_to_linker`](crate::add_to_linker).
+        ///
+        /// # Errors
+        ///
+        /// If invalid or unknown Wasi imports are encountered.
+        pub fn add_to_externals<T, U>(
+            mut ctx: impl wasmi::AsContextMut<Data = T>,
+            module: &wasmi::Module,
+            externals: &mut Vec<wasmi::Extern>,
+            get_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+        ) -> Result<(), InvalidWasiImport>
+        where
+            U: 'static,
+            T: Send + 'static,
+            U: WasiSnapshotPreview1,
+        {
+            let imports = module.imports();
+            externals.clear();
+            externals.reserve(imports.len());
+            for import in imports {
+                if import.module() != "wasi_snapshot_preview1" {
+                    return Err(InvalidWasiImport::new(import))
+                }
+                let external = match import.name() {
+                    $(
+                        std::stringify!($fname) => {
+                            wasmi::Func::wrap(&mut ctx, wrapped::$fname::<T, U>(get_ctx))
+                        }
+                    )*
+                    _ => return Err(InvalidWasiImport::new(import))
+                };
+                externals.push(Extern::from(external));
+            }
+            Ok(())
+        }
+    }
+}
+
+macro_rules! apply_wasi_definitions {
+    ($mac:ident) => {
+        $mac! {
             /// Read command-line argument data.
             ///
             /// # Note
@@ -767,4 +867,9 @@ macro_rules! apply_wasi_definitions {
     };
 }
 
-apply_wasi_definitions!(add_funcs_to_linker, Linker<T>);
+pub mod wrapped {
+    use super::*;
+    apply_wasi_definitions!(wrap_wasi_funcs);
+}
+apply_wasi_definitions!(add_funcs_to_linker);
+apply_wasi_definitions!(add_funcs_to_externals);
