@@ -1,17 +1,14 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
     Error,
-    ExternRef,
     F32,
     F64,
-    Func,
     FuncType,
     Mutability,
-    Nullable,
     RefType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, TypedRawRef, TypedRawVal, wasm},
+    core::{FuelCostsProvider, IndexType, RawRef, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
         translator::func::{
@@ -1846,8 +1843,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Operand::Immediate(input) => {
                 let raw = input.val().raw();
                 let is_null = match input.ty() {
-                    ValType::FuncRef => <Nullable<Func>>::from(raw).is_null(),
-                    ValType::ExternRef => <Nullable<ExternRef>>::from(raw).is_null(),
+                    ValType::FuncRef | ValType::ExternRef => RawRef::from(raw).is_null(),
                     invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
                 };
                 self.stack.push_immediate(i32::from(is_null))?;
