@@ -178,8 +178,8 @@ impl Op {
 ///
 /// # Note
 ///
-/// - In contrast to [`Val`] this type does not allow for [`Store`] or [`Instance`]
-///   related values such as non-`null` reference values.
+/// - In contrast to [`Val`] this type does not allow for [`Store`](crate::Store)
+///   or [`Instance`](crate::Instance) related values such as non-`null` reference values.
 /// - This type is meant to be used in Wasm initializer expressions only.
 #[derive(Debug, Copy, Clone)]
 enum ConstVal {
