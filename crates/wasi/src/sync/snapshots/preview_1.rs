@@ -177,15 +177,15 @@ macro_rules! add_funcs_to_externals {
         );+ $(;)?
     ) => {
         /// Add Wasi APIs imported by `module` to the `externals` buffer.
-        /// 
+        ///
         /// # Note
-        /// 
+        ///
         /// - This only supports Wasi (preview 1) or `wasip1`.
         /// - The `externals` buffer is cleared before being populated.
         /// - This API is technically more efficient than [`add_to_linker`](crate::add_to_linker).
-        /// 
+        ///
         /// # Errors
-        /// 
+        ///
         /// If invalid or unknown Wasi imports are encountered.
         pub fn add_to_externals<T, U>(
             mut ctx: impl wasmi::AsContextMut<Data = T>,
