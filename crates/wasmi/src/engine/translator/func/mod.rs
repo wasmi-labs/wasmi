@@ -36,6 +36,7 @@ use self::{
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
+    core::RawRef,
     Engine,
     Error,
     FuncType,
@@ -519,7 +520,7 @@ impl FuncTranslator {
             ValType::F32 => Op::copy32(result, f32::from(value).to_bits()),
             ValType::F64 => Op::copy64(result, f64::from(value).to_bits()),
             ValType::ExternRef | ValType::FuncRef => {
-                Op::copy64(result, u64::from(RawVal::from(value)))
+                Op::copy32(result, u32::from(RawRef::from(value.raw())))
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
