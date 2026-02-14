@@ -157,7 +157,7 @@ impl Args {
         self.verbose
     }
 
-    /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
+    /// Pre-opens all directories given in `--dir` and returns them for use by the [`StoreContext`].
     ///
     /// # Errors
     ///
@@ -175,13 +175,13 @@ impl Args {
             .collect::<Result<Vec<_>>>()
     }
 
-    /// Creates the [`WasiCtx`] for this session.
+    /// Creates the [`StoreContext`] for this session.
     #[cfg(not(feature = "wasi"))]
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         Ok(StoreContext)
     }
 
-    /// Creates the [`WasiCtx`] for this session.
+    /// Creates the [`StoreContext`] for this session.
     #[cfg(feature = "wasi")]
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
@@ -204,7 +204,7 @@ impl Args {
         Ok(wasi_builder.build())
     }
 
-    /// Opens sockets given in `--tcplisten` and returns them for use by the [`WasiCtx`].
+    /// Opens sockets given in `--tcplisten` and returns them for use by the [`StoreContext`].
     ///
     /// # Errors
     ///
