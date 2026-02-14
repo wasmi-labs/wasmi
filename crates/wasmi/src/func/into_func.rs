@@ -1,5 +1,6 @@
 use super::TrampolineEntity;
 use crate::{
+    AsContext,
     Caller,
     Error,
     ExternRef,
@@ -9,8 +10,7 @@ use crate::{
     FuncType,
     Nullable,
     ValType,
-    core::RawVal,
-    engine::{InOutParams, InOutResults, LoadFromCellsByValue, StoreToCells},
+    engine::{InOutParams, InOutResults, LiftFromCellsByValue, LowerToCells},
 };
 use core::{array, iter::FusedIterator};
 
@@ -80,12 +80,13 @@ macro_rules! impl_into_func {
                 );
                 let trampoline = TrampolineEntity::new(
                     move |caller: Caller<T>, inout: InOutParams| -> Result<InOutResults, Error> {
-                        let ($($tuple,)*) = inout.decode_params().unwrap_or_else(|error| {
+                        let store_id = caller.as_context().store.inner.id();
+                        let ($($tuple,)*) = inout.decode_params(store_id).unwrap_or_else(|error| {
                             panic!("failed to decode call parameters from cells: {error}")
                         });
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
-                        let inout = inout.encode_results(results).unwrap_or_else(|error| {
+                        let inout = inout.encode_results(store_id, results).unwrap_or_else(|error| {
                             panic!("failed to encode call results into cells: {error}")
                         });
                         Ok(inout)
@@ -165,7 +166,7 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmTy: From<RawVal> + Into<RawVal> + Send + LoadFromCellsByValue + StoreToCells {
+pub trait WasmTy: Send + LiftFromCellsByValue + LowerToCells {
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
     fn ty() -> ValType;
@@ -207,7 +208,7 @@ impl_wasm_type! {
 /// # Note
 ///
 /// This is a convenience trait that allows to construct [`ValType`] sequences.
-pub trait WasmTyList: LoadFromCellsByValue + StoreToCells + Sized + Send {
+pub trait WasmTyList: LiftFromCellsByValue + LowerToCells + Sized + Send {
     /// The number of Wasm types in the list.
     #[doc(hidden)]
     const LEN: usize;

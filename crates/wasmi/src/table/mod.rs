@@ -5,9 +5,9 @@ use crate::{
     Error,
     Handle,
     Ref,
-    core::CoreTable,
+    core::{CoreTable, TypedRawRef},
     errors::TableError,
-    store::Stored,
+    store::{StoreInner, Stored},
 };
 
 mod element;
@@ -25,13 +25,14 @@ impl Table {
     ///
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, Error> {
-        let (inner, mut resource_limiter) = ctx
+        let (store, mut resource_limiter) = ctx
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = CoreTable::new(ty.core, init.into(), &mut resource_limiter)?;
-        let table = inner.alloc_table(entity);
-        Ok(table)
+        let init = Self::unwrap_ref(store, init)?;
+        let table = CoreTable::new(ty.core, init, &mut resource_limiter)?;
+        let handle = ctx.as_context_mut().store.inner.alloc_table(table);
+        Ok(handle)
     }
 
     /// Returns the type and limits of the table.
@@ -73,6 +74,15 @@ impl Table {
         ctx.as_context().store.inner.resolve_table(self).size()
     }
 
+    /// Unwraps the given `value` into a [`TypedRawRef`] if it originated from `store`.
+    fn unwrap_ref(store: &StoreInner, value: Ref) -> Result<TypedRawRef, TableError> {
+        let ty = value.ty();
+        let Some(raw) = value.unwrap_raw(store) else {
+            panic!("value does not originate from `store`: {value:?}")
+        };
+        Ok(TypedRawRef::new(raw, ty))
+    }
+
     /// Grows the table by the given amount of elements.
     ///
     /// Returns the old size of the [`Table`] upon success.
@@ -99,8 +109,9 @@ impl Table {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
+        let init = Self::unwrap_ref(inner, init)?;
         let table = inner.resolve_table_mut(self);
-        table.grow(delta, init.into(), None, &mut limiter)
+        table.grow(delta, init, None, &mut limiter)
     }
 
     /// Returns the [`Table`] element value at `index`.
@@ -111,12 +122,9 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn get(&self, ctx: impl AsContext, index: u64) -> Option<Ref> {
-        ctx.as_context()
-            .store
-            .inner
-            .resolve_table(self)
-            .get(index)
-            .map(Ref::from)
+        let store = &ctx.as_context().store.inner;
+        let raw = store.resolve_table(self).get(index)?;
+        Some(Ref::from_raw_parts(raw.raw(), raw.ty(), store))
     }
 
     /// Sets the [`Ref`] of this [`Table`] at `index`.
@@ -135,11 +143,9 @@ impl Table {
         index: u64,
         value: Ref,
     ) -> Result<(), TableError> {
-        ctx.as_context_mut()
-            .store
-            .inner
-            .resolve_table_mut(self)
-            .set(index, value.into())
+        let store = &mut ctx.as_context_mut().store.inner;
+        let value = Self::unwrap_ref(store, value)?;
+        store.resolve_table_mut(self).set(index, value)
     }
 
     /// Returns `true` if `lhs` and `rhs` [`Table`] refer to the same entity.
@@ -172,25 +178,19 @@ impl Table {
         src_index: u64,
         len: u64,
     ) -> Result<(), TableError> {
+        let store = &mut store.as_context_mut().store.inner;
         if Self::eq(dst_table, src_table) {
             // The `dst_table` and `src_table` are the same table
             // therefore we have to copy within the same table.
-            let table = store
-                .as_context_mut()
-                .store
-                .inner
-                .resolve_table_mut(dst_table);
-            table
+            store
+                .resolve_table_mut(dst_table)
                 .copy_within(dst_index, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         } else {
             // The `dst_table` and `src_table` are different entities
             // therefore we have to copy from one table to the other.
-            let (dst_table, src_table, _fuel) = store
-                .as_context_mut()
-                .store
-                .inner
-                .resolve_table_pair_and_fuel(dst_table, src_table);
+            let (dst_table, src_table, _fuel) =
+                store.resolve_table_pair_and_fuel(dst_table, src_table);
             CoreTable::copy(dst_table, dst_index, src_table, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         }
@@ -206,7 +206,7 @@ impl Table {
     ///
     /// # Panics
     ///
-    /// If `ctx` does not own `dst_table` or `src_table`.
+    /// If `ctx` does not own `self`.
     ///
     /// [`Store`]: [`crate::Store`]
     pub fn fill(
@@ -216,10 +216,8 @@ impl Table {
         val: Ref,
         len: u64,
     ) -> Result<(), TableError> {
-        ctx.as_context_mut()
-            .store
-            .inner
-            .resolve_table_mut(self)
-            .fill(dst, val.into(), len, None)
+        let store = &mut ctx.as_context_mut().store.inner;
+        let val = Self::unwrap_ref(store, val)?;
+        store.resolve_table_mut(self).fill(dst, val, len, None)
     }
 }

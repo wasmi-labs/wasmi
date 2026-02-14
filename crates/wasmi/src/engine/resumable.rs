@@ -5,7 +5,7 @@ use crate::{
     Engine,
     Error,
     Val,
-    engine::{LoadByVal, LoadFromCellsByValue, Stack},
+    engine::{LiftFromCellsByValue, LoadByVal, Stack},
     func::FuncError,
     ir::SlotSpan,
 };
@@ -517,7 +517,7 @@ impl<Results> TypedResumableCallHostTrap<Results> {
         inputs: &[Val],
     ) -> Result<TypedResumableCall<Results>, Error>
     where
-        Results: LoadFromCellsByValue,
+        Results: LiftFromCellsByValue,
     {
         self.invocation.validate_inputs(ctx.as_context(), inputs)?;
         self.common
@@ -586,7 +586,7 @@ impl<Results> TypedResumableCallOutOfFuel<Results> {
         mut ctx: impl AsContextMut<Data = T>,
     ) -> Result<TypedResumableCall<Results>, Error>
     where
-        Results: LoadFromCellsByValue,
+        Results: LiftFromCellsByValue,
     {
         self.common
             .engine

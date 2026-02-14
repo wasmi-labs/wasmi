@@ -7,53 +7,9 @@ use crate::{
     Ref,
     V128,
     ValType,
-    core::{RawVal, TypedRawVal},
+    core::{RawRef, RawVal},
+    store::AsStoreId,
 };
-
-/// Untyped instances that allow to be typed.
-pub trait WithType {
-    /// The typed output type.
-    type Output;
-
-    /// Converts `self` to [`Self::Output`] using `ty`.
-    fn with_type(self, ty: ValType) -> Self::Output;
-}
-
-impl WithType for RawVal {
-    type Output = Val;
-
-    fn with_type(self, ty: ValType) -> Self::Output {
-        match ty {
-            ValType::I32 => Val::I32(self.into()),
-            ValType::I64 => Val::I64(self.into()),
-            ValType::F32 => Val::F32(self.into()),
-            ValType::F64 => Val::F64(self.into()),
-            #[cfg(feature = "simd")]
-            ValType::V128 => Val::V128(self.into()),
-            ValType::FuncRef => Val::FuncRef(self.into()),
-            ValType::ExternRef => Val::ExternRef(self.into()),
-            #[cfg(not(feature = "simd"))]
-            unsupported => unimplemented!("encountered unsupported `ValType`: {unsupported:?}"),
-        }
-    }
-}
-
-impl From<Val> for RawVal {
-    fn from(value: Val) -> Self {
-        match value {
-            Val::I32(value) => value.into(),
-            Val::I64(value) => value.into(),
-            Val::F32(value) => value.into(),
-            Val::F64(value) => value.into(),
-            #[cfg(feature = "simd")]
-            Val::V128(value) => value.into(),
-            Val::FuncRef(value) => value.into(),
-            Val::ExternRef(value) => value.into(),
-            #[cfg(not(feature = "simd"))]
-            unsupported => unimplemented!("encountered unsupported `Val`: {unsupported:?}"),
-        }
-    }
-}
 
 /// Runtime representation of a Wasm value.
 ///
@@ -81,6 +37,80 @@ pub enum Val {
 }
 
 impl Val {
+    /// Create a [`Val`] from its raw parts.
+    pub(crate) fn from_raw_parts(val: RawVal, ty: ValType, store: impl AsStoreId) -> Self {
+        match ty {
+            ValType::I32 => Self::I32(val.into()),
+            ValType::I64 => Self::I64(val.into()),
+            ValType::F32 => Self::F32(val.into()),
+            ValType::F64 => Self::F64(val.into()),
+            #[cfg(feature = "simd")]
+            ValType::V128 => Self::V128(val.into()),
+            #[cfg(not(feature = "simd"))]
+            ValType::V128 => {
+                panic!("Val::from_raw_parts does not work for `v128` values without `simd`")
+            }
+            ValType::FuncRef => Self::FuncRef(<Nullable<Func>>::from_raw_parts(val.into(), store)),
+            ValType::ExternRef => {
+                Self::ExternRef(<Nullable<ExternRef>>::from_raw_parts(val.into(), store))
+            }
+        }
+    }
+
+    /// Unwraps [`Val`] into its underlying [`RawVal`].
+    ///
+    /// Returns `None` if `self` does not originate from `store`.
+    pub(crate) fn unwrap_raw_val(&self, store: impl AsStoreId) -> Option<RawVal> {
+        let value = match *self {
+            Self::I32(value) => value.into(),
+            Self::I64(value) => value.into(),
+            Self::F32(value) => value.into(),
+            Self::F64(value) => value.into(),
+            #[cfg(feature = "simd")]
+            Self::V128(value) => value.into(),
+            #[cfg(not(feature = "simd"))]
+            Self::V128(_) => {
+                unimplemented!("must enable `simd` crate feature to use `V128` values")
+            }
+            Self::FuncRef(value) => <Nullable<Func>>::unwrap_raw(&value, store)?.into(),
+            Self::ExternRef(value) => <Nullable<ExternRef>>::unwrap_raw(&value, store)?.into(),
+        };
+        Some(value)
+    }
+
+    /// Unwraps [`Val`] into its underlying [`RawRef`] if possible.
+    ///
+    /// # Note
+    ///
+    /// - Returns `None` if `self` is not a reference value.
+    /// - Returns `None` if `self` does not originate from `store`.
+    pub(crate) fn unwrap_raw_ref(&self, store: impl AsStoreId) -> Option<RawRef> {
+        let value = match *self {
+            Self::FuncRef(value) => <Nullable<Func>>::unwrap_raw(&value, store)?,
+            Self::ExternRef(value) => <Nullable<ExternRef>>::unwrap_raw(&value, store)?,
+            _ => return None,
+        };
+        Some(value)
+    }
+
+    /// Returns the underlying [`RawVal`] of `self` or `None`.
+    ///
+    /// Returns `None` if `self` is a non-null reference value.
+    pub(crate) fn as_raw_or_none(&self) -> Option<RawVal> {
+        let raw = match *self {
+            Self::I32(value) => value.into(),
+            Self::I64(value) => value.into(),
+            Self::F32(value) => value.into(),
+            Self::F64(value) => value.into(),
+            #[cfg(feature = "simd")]
+            Self::V128(value) => value.into(),
+            Self::FuncRef(Nullable::Null) => RawRef::null().into(),
+            Self::ExternRef(Nullable::Null) => RawRef::null().into(),
+            _ => return None,
+        };
+        Some(raw)
+    }
+
     /// Creates new default value of given type.
     #[inline]
     #[deprecated(note = "use `Val::default_for_ty` instead")]
@@ -179,6 +209,20 @@ impl From<i64> for Val {
     }
 }
 
+impl From<f32> for Val {
+    #[inline]
+    fn from(val: f32) -> Self {
+        Self::F32(F32::from_float(val))
+    }
+}
+
+impl From<f64> for Val {
+    #[inline]
+    fn from(val: f64) -> Self {
+        Self::F64(F64::from_float(val))
+    }
+}
+
 impl From<F32> for Val {
     #[inline]
     fn from(val: F32) -> Self {
@@ -234,35 +278,5 @@ impl From<V128> for Val {
     #[inline]
     fn from(value: V128) -> Self {
         Self::V128(value)
-    }
-}
-
-impl From<TypedRawVal> for Val {
-    fn from(value: TypedRawVal) -> Self {
-        let raw = value.raw();
-        match value.ty() {
-            ValType::I32 => Self::I32(raw.into()),
-            ValType::I64 => Self::I64(raw.into()),
-            ValType::F32 => Self::F32(raw.into()),
-            ValType::F64 => Self::F64(raw.into()),
-            ValType::V128 => {
-                #[cfg(feature = "simd")]
-                {
-                    Self::V128(raw.into())
-                }
-                #[cfg(not(feature = "simd"))]
-                {
-                    panic!("`simd` crate feature is disabled")
-                }
-            }
-            ValType::FuncRef => Self::FuncRef(raw.into()),
-            ValType::ExternRef => Self::ExternRef(raw.into()),
-        }
-    }
-}
-
-impl From<Val> for TypedRawVal {
-    fn from(value: Val) -> Self {
-        Self::new(value.ty(), value.into())
     }
 }

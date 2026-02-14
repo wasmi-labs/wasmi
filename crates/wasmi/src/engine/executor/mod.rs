@@ -6,9 +6,11 @@ pub use self::{
         CellsWriter,
         ExecutionOutcome,
         Inst,
+        LiftFromCells,
+        LiftFromCellsByValue,
         LoadByVal,
-        LoadFromCells,
         LoadFromCellsByValue,
+        LowerToCells,
         Stack,
         StoreToCells,
         op_code_to_handler,
@@ -52,8 +54,8 @@ impl EngineInner {
         results: Results,
     ) -> Result<Results::Value, Error>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         let mut stack = self.stacks.lock().reuse_or_new();
         let value = EngineExecutor::new(&self.code_map, &mut stack)
@@ -78,8 +80,8 @@ impl EngineInner {
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         let store = ctx.store;
         let mut stack = self.stacks.lock().reuse_or_new();
@@ -133,8 +135,8 @@ impl EngineInner {
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         let caller_results = invocation.caller_results();
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
@@ -175,7 +177,7 @@ impl EngineInner {
         results: Results,
     ) -> Result<ResumableCallBase<Results::Value>, Error>
     where
-        Results: LoadFromCells,
+        Results: LiftFromCells,
     {
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
         let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
@@ -234,8 +236,8 @@ impl<'engine> EngineExecutor<'engine> {
         results: Results,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         self.stack.reset();
         let results = match store.inner.resolve_func(func) {
@@ -277,8 +279,8 @@ impl<'engine> EngineExecutor<'engine> {
         results: Results,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Params: StoreToCells,
-        Results: LoadFromCells,
+        Params: LowerToCells,
+        Results: LiftFromCells,
     {
         let value = resume_wasm_func_call(store, self.code_map, self.stack)?
             .provide_host_results(params, params_slots)
@@ -301,7 +303,7 @@ impl<'engine> EngineExecutor<'engine> {
         results: Results,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
-        Results: LoadFromCells,
+        Results: LiftFromCells,
     {
         let value = resume_wasm_func_call(store, self.code_map, self.stack)?
             .execute()?

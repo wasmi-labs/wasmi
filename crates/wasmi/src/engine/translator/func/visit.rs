@@ -1,16 +1,14 @@
 use super::{ControlFrame, ControlFrameKind, FuncTranslator, LocalIdx};
 use crate::{
     Error,
-    ExternRef,
     F32,
     F64,
-    Func,
     FuncType,
     Mutability,
-    Nullable,
+    RefType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, TypedRawVal, wasm},
+    core::{FuelCostsProvider, IndexType, RawRef, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
         translator::func::{
@@ -384,11 +382,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
-                // Case: access to immutable internally defined global variables
-                //       can be replaced with their constant initialization value.
-                self.stack
-                    .push_immediate(TypedRawVal::new(content, value))?;
-                return Ok(());
+                if let Some(value) = value.as_raw_or_none() {
+                    // Case: access to immutable internally defined global variables
+                    //       can be replaced with their constant initialization value.
+                    self.stack
+                        .push_immediate(TypedRawVal::new(content, value))?;
+                    return Ok(());
+                }
             }
             if let Some(func_index) = init_expr.funcref() {
                 // Case: forward to `ref.func x` translation.
@@ -443,7 +443,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::F32 => Op::global_set32_i(global, f32::from(value).to_bits()),
             ValType::F64 => Op::global_set64_i(f64::from(value).to_bits(), global),
             ValType::FuncRef | ValType::ExternRef => {
-                Op::global_set64_i(u64::from(value.raw()), global)
+                let value = u32::from(RawRef::from(value.raw()));
+                Op::global_set32_i(global, value)
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
@@ -1814,8 +1815,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
-            ValType::FuncRef => TypedRawVal::from(<Nullable<Func>>::Null),
-            ValType::ExternRef => TypedRawVal::from(<Nullable<ExternRef>>::Null),
+            ValType::FuncRef => TypedRawRef::null(RefType::Func),
+            ValType::ExternRef => TypedRawRef::null(RefType::Extern),
             ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
         };
         self.stack.push_immediate(null)?;
@@ -1843,8 +1844,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Operand::Immediate(input) => {
                 let raw = input.val().raw();
                 let is_null = match input.ty() {
-                    ValType::FuncRef => <Nullable<Func>>::from(raw).is_null(),
-                    ValType::ExternRef => <Nullable<ExternRef>>::from(raw).is_null(),
+                    ValType::FuncRef | ValType::ExternRef => RawRef::from(raw).is_null(),
                     invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
                 };
                 self.stack.push_immediate(i32::from(is_null))?;
@@ -1908,7 +1908,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (index, value) = self.stack.pop2();
         let index = self.make_index32_or_copy(index, index_ty)?;
         let value = self.make_input(value, |_this, value| {
-            Ok(Input::Immediate(u64::from(value.raw())))
+            Ok(Input::Immediate(u32::from(value.raw())))
         })?;
         let instr = match (index, value) {
             (Input::Slot(index), Input::Slot(value)) => Op::table_set_ss(table, index, value),

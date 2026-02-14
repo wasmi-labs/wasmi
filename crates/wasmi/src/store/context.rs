@@ -19,11 +19,19 @@ pub trait AsContextMut: AsContext {
 ///
 /// This type is suitable for [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 #[repr(transparent)]
 pub struct StoreContext<'a, T> {
     pub(crate) store: &'a Store<T>,
 }
+
+impl<T> Clone for StoreContext<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for StoreContext<'_, T> {}
 
 impl<T> StoreContext<'_, T> {
     /// Returns the underlying [`Engine`] this store is connected to.

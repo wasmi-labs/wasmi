@@ -1,5 +1,3 @@
-use wasmi_core::WriteAs;
-
 use super::state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
@@ -10,10 +8,11 @@ use crate::{
     Instance,
     Memory,
     Nullable,
+    RefType,
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, WriteAs},
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -412,10 +411,9 @@ pub fn resolve_indirect_func(
     let index = get_value(index, sp);
     let table = fetch_table(instance, table);
     let table = resolve_table(state.store, &table);
-    let funcref = table
-        .get_raw(index)
-        .map(<Nullable<Func>>::from)
-        .ok_or(TrapCode::TableOutOfBounds)?;
+    let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;
+    debug_assert!(matches!(rawref.ty(), RefType::Func));
+    let funcref = <Nullable<Func>>::from_raw_parts(rawref.raw(), &*state.store);
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
     let actual_fnty = resolve_func(state.store, func).ty_dedup();
     let expected_fnty = fetch_func_type(instance, func_type);

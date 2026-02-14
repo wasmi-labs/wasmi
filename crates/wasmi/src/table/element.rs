@@ -29,17 +29,18 @@ impl ElementSegment {
         let get_func = |index| get_func(index).into();
         let get_global = |index| get_global(index).get(&ctx);
         let items: Box<[RawRef]> = match elem.kind() {
-            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
-                elem
-                    .items()
-                    .iter()
-                    .map(|const_expr| {
-                        let Some(init) = const_expr.eval_with_context(get_global, get_func) else {
-                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
-                        };
-                        RawRef::from(init)
-                }).collect()
-            }
+            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => elem
+                .items()
+                .iter()
+                .map(|const_expr| {
+                    const_expr
+                        .eval_with_context(get_global, get_func)
+                        .and_then(|val| val.unwrap_raw_ref(ctx.as_context()))
+                        .unwrap_or_else(|| {
+                            panic!("failed initialization of constant expression: {const_expr:?}")
+                        })
+                })
+                .collect(),
             module::ElementSegmentKind::Declared => Box::from([]),
         };
         let entity = CoreElementSegment::new(elem.ty(), items);

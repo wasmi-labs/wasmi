@@ -83,12 +83,9 @@ pub struct Global {
 }
 
 impl Global {
-    /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(initial_value: TypedRawVal, mutability: Mutability) -> Self {
-        Self {
-            ty: GlobalType::new(initial_value.ty(), mutability),
-            value: initial_value.into(),
-        }
+    /// Creates a new global variable with the given initial `value` and type `ty`.
+    pub fn new(value: RawVal, ty: GlobalType) -> Self {
+        Self { value, ty }
     }
 
     /// Returns the [`GlobalType`] of the global variable.
@@ -124,7 +121,12 @@ impl Global {
     }
 
     /// Returns a pointer to the [`RawVal`] of the [`Global`].
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the underlying global value is immutable.
     pub fn get_raw_ptr(&mut self) -> NonNull<RawVal> {
+        debug_assert!(matches!(self.ty.mutability(), Mutability::Var));
         NonNull::from(&mut self.value)
     }
 }

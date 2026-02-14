@@ -54,7 +54,7 @@ impl Table {
             }
             return Err(error);
         };
-        elements.extend(iter::repeat_n::<RawRef>(init.into(), min_size));
+        elements.extend(iter::repeat_n::<RawRef>(init.raw(), min_size));
         Ok(Self { ty, elements })
     }
 
@@ -87,18 +87,26 @@ impl Table {
         len
     }
 
+    /// Unwrap `value` to [`RawRef`] if its type matches the element type of `self`.
+    fn unwrap_typed(&self, value: TypedRawRef) -> Result<RawRef, TableError> {
+        self.ty()
+            .ensure_element_type_matches(value.ty())
+            .map(|_| value.raw())
+    }
+
     /// Grows the table by the given amount of elements.
     ///
-    /// Returns the old size of the [`Table`] upon success.
+    /// Returns the old size of the table upon success.
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`TypedRawRef`].
+    /// This is an internal API that exists for efficiency purposes.
+    ///
+    /// The newly added elements are initialized to the `init` [`RawRef`].
     ///
     /// # Errors
     ///
-    /// - If the table is grown beyond its maximum limits.
-    /// - If `value` does not match the [`Table`] element type.
+    /// If the table is grown beyond its maximum limits.
     pub fn grow(
         &mut self,
         delta: u64,
@@ -106,8 +114,8 @@ impl Table {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
-        self.ty().ensure_element_type_matches(init.ty())?;
-        self.grow_raw(delta, init.into(), fuel, limiter)
+        let init = self.unwrap_typed(init)?;
+        self.grow_raw(delta, init, fuel, limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -187,15 +195,6 @@ impl Table {
         Ok(size_before)
     }
 
-    /// Returns the [`Table`] element value at `index`.
-    ///
-    /// Returns `None` if `index` is out of bounds.
-    pub fn get(&self, index: u64) -> Option<TypedRawRef> {
-        let raw = self.get_raw(index)?;
-        let ty = self.ty().element();
-        Some(TypedRawRef::new(ty, raw))
-    }
-
     /// Returns the raw [`Table`] element reference at `index`.
     ///
     /// Returns `None` if `index` is out of bounds.
@@ -204,23 +203,24 @@ impl Table {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_raw(&self, index: u64) -> Option<RawRef> {
+    pub fn get(&self, index: u64) -> Option<TypedRawRef> {
         let index = usize::try_from(index).ok()?;
-        self.elements.get(index).copied()
+        let raw = self.elements.get(index).copied()?;
+        let ty = self.ty().element();
+        Some(TypedRawRef::new(raw, ty))
     }
 
-    /// Sets the [`TypedRawRef`] of this [`Table`] at `index`.
+    /// Sets the [`RawRef`] of the table at `index`.
     ///
     /// # Errors
     ///
-    /// - If `index` is out of bounds.
-    /// - If `value` does not match the [`Table`] element type.
+    /// If `index` is out of bounds.
     pub fn set(&mut self, index: u64, value: TypedRawRef) -> Result<(), TableError> {
-        self.ty().ensure_element_type_matches(value.ty())?;
-        self.set_raw(index, value.into())
+        let value = self.unwrap_typed(value)?;
+        self.set_raw(index, value)
     }
 
-    /// Returns the [`RawRef`] of the [`Table`] at `index`.
+    /// Sets the [`RawRef`] of the [`Table`] at `index`.
     ///
     /// # Errors
     ///
@@ -373,17 +373,17 @@ impl Table {
 
     /// Fill `table[dst..(dst + len)]` with the given value.
     ///
+    /// # Note
+    ///
+    /// This is an API for internal use only and exists for efficiency reasons.
+    ///
     /// # Errors
     ///
-    /// - If `val` has a type mismatch with the element type of the [`Table`].
-    /// - If the region to be filled is out of bounds for the [`Table`].
-    /// - If `val` originates from a different [`Store`] than the [`Table`].
+    /// - If the region to be filled is out of bounds for the table.
     ///
     /// # Panics
     ///
     /// If `ctx` does not own `dst_table` or `src_table`.
-    ///
-    /// [`Store`]: [`crate::Store`]
     pub fn fill(
         &mut self,
         dst: u64,
@@ -391,8 +391,8 @@ impl Table {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        self.ty().ensure_element_type_matches(val.ty())?;
-        self.fill_raw(dst, val.into(), len, fuel)
+        let val = self.unwrap_typed(val)?;
+        self.fill_raw(dst, val, len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -403,7 +403,7 @@ impl Table {
     ///
     /// # Errors
     ///
-    /// - If the region to be filled is out of bounds for the [`Table`].
+    /// If the region to be filled is out of bounds for the [`Table`].
     ///
     /// # Panics
     ///

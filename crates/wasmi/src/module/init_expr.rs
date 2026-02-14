@@ -7,15 +7,7 @@
 //! [`s1vm`]: https://github.com/Neopallium/s1vm
 
 use super::FuncIdx;
-use crate::{
-    ExternRef,
-    F32,
-    F64,
-    Func,
-    Nullable,
-    Val,
-    core::{RawVal, wasm},
-};
+use crate::{ExternRef, F32, F64, Func, Nullable, RefType, Val, core::wasm};
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
 use wasmparser::AbstractHeapType;
@@ -26,16 +18,21 @@ use crate::V128;
 /// Types that allow evaluation given an evaluation context.
 pub trait Eval {
     /// Evaluates `self` given an [`EvalContext`].
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal>;
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<Val>;
 }
 
 /// A [`ConstExpr`] evaluation context.
 ///
 /// Required for evaluating a [`ConstExpr`].
 pub trait EvalContext {
-    /// Returns the [`Val`] of the global value at `index` if any.
+    /// Returns the value of the global at `index` within the context `self` if any.
+    ///
+    /// Returns `None` if `self` cannot find or resolve the global at `index`.
     fn get_global(&self, index: u32) -> Option<Val>;
-    /// Returns the [`Func`] reference at `index` if any.
+
+    /// Returns the function at `index` within the context `self` if any.
+    ///
+    /// Returns `None` if `self` cannot find or resolve the function at `index`.
     fn get_func(&self, index: u32) -> Option<Nullable<Func>>;
 }
 
@@ -58,7 +55,7 @@ pub enum Op {
     /// A constant value.
     Const(ConstOp),
     /// The value of a global variable.
-    Global(GlobalOp),
+    GlobalGet(GlobalGetOp),
     /// A Wasm `ref.func index` value.
     FuncRef(FuncRefOp),
     /// An arbitrary expression.
@@ -77,26 +74,28 @@ pub enum Op {
 #[derive(Debug)]
 pub struct ConstOp {
     /// The underlying precomputed raw value.
-    value: RawVal,
+    value: ConstVal,
 }
 
 impl Eval for ConstOp {
-    fn eval(&self, _ctx: &dyn EvalContext) -> Option<RawVal> {
-        Some(self.value)
+    #[inline]
+    fn eval(&self, _ctx: &dyn EvalContext) -> Option<Val> {
+        Some(self.value.into())
     }
 }
 
 /// Represents a Wasm `global.get` operator.
 
 #[derive(Debug)]
-pub struct GlobalOp {
+pub struct GlobalGetOp {
     /// The index of the global variable.
-    global_index: u32,
+    index: u32,
 }
 
-impl Eval for GlobalOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
-        ctx.get_global(self.global_index).map(RawVal::from)
+impl Eval for GlobalGetOp {
+    #[inline]
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<Val> {
+        ctx.get_global(self.index)
     }
 }
 
@@ -105,12 +104,13 @@ impl Eval for GlobalOp {
 #[derive(Debug)]
 pub struct FuncRefOp {
     /// The index of the function.
-    function_index: u32,
+    index: u32,
 }
 
 impl Eval for FuncRefOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
-        ctx.get_func(self.function_index).map(RawVal::from)
+    #[inline]
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<Val> {
+        ctx.get_func(self.index).map(Val::from)
     }
 }
 
@@ -127,7 +127,7 @@ impl Eval for FuncRefOp {
 #[allow(clippy::type_complexity)]
 pub struct ExprOp {
     /// The underlying closure that implements the expression.
-    expr: Box<dyn Fn(&dyn EvalContext) -> Option<RawVal> + Send + Sync>,
+    expr: Box<dyn Fn(&dyn EvalContext) -> Option<Val> + Send + Sync>,
 }
 
 impl fmt::Debug for ExprOp {
@@ -137,36 +137,36 @@ impl fmt::Debug for ExprOp {
 }
 
 impl Eval for ExprOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<Val> {
         (self.expr)(ctx)
     }
 }
 
 impl Op {
     /// Creates a new constant operator for the given `value`.
-    pub fn constant<T>(value: T) -> Self
+    fn constant<T>(value: T) -> Self
     where
-        T: Into<Val>,
+        T: Into<ConstVal>,
     {
         Self::Const(ConstOp {
-            value: value.into().into(),
+            value: value.into(),
         })
     }
 
-    /// Creates a new global operator with the given index.
-    pub fn global(global_index: u32) -> Self {
-        Self::Global(GlobalOp { global_index })
+    /// Creates a new `global.get` operator with the given index.
+    fn global_get(index: u32) -> Self {
+        Self::GlobalGet(GlobalGetOp { index })
     }
 
-    /// Creates a new global operator with the given index.
-    pub fn funcref(function_index: u32) -> Self {
-        Self::FuncRef(FuncRefOp { function_index })
+    /// Creates a new `func.ref` operator with the given index.
+    fn func_ref(index: u32) -> Self {
+        Self::FuncRef(FuncRefOp { index })
     }
 
     /// Creates a new expression operator for the given `expr`.
-    pub fn expr<T>(expr: T) -> Self
+    fn expr<T>(expr: T) -> Self
     where
-        T: Fn(&dyn EvalContext) -> Option<RawVal> + Send + Sync + 'static,
+        T: Fn(&dyn EvalContext) -> Option<Val> + Send + Sync + 'static,
     {
         Self::Expr(ExprOp {
             expr: Box::new(expr),
@@ -174,13 +174,229 @@ impl Op {
     }
 }
 
-impl Eval for Op {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
+/// A constant initializer value.
+///
+/// # Note
+///
+/// - In contrast to [`Val`] this type does not allow for [`Store`](crate::Store)
+///   or [`Instance`](crate::Instance) related values such as non-`null` reference values.
+/// - This type is meant to be used in Wasm initializer expressions only.
+#[derive(Debug, Copy, Clone)]
+enum ConstVal {
+    /// A Wasm `i32` value.
+    I32(i32),
+    /// A Wasm `i64` value.
+    I64(i64),
+    /// A Wasm `f32` value.
+    F32(F32),
+    /// A Wasm `f64` value.
+    F64(F64),
+    /// A Wasm `v128` value.
+    #[cfg(feature = "simd")]
+    V128(V128),
+    /// A Wasm reference type `null` value.
+    Null(RefType),
+}
+
+impl From<i32> for ConstVal {
+    #[inline]
+    fn from(value: i32) -> Self {
+        Self::I32(value)
+    }
+}
+
+impl From<i64> for ConstVal {
+    #[inline]
+    fn from(value: i64) -> Self {
+        Self::I64(value)
+    }
+}
+
+impl From<f32> for ConstVal {
+    #[inline]
+    fn from(value: f32) -> Self {
+        Self::F32(F32::from_float(value))
+    }
+}
+
+impl From<f64> for ConstVal {
+    #[inline]
+    fn from(value: f64) -> Self {
+        Self::F64(F64::from_float(value))
+    }
+}
+
+impl From<F32> for ConstVal {
+    #[inline]
+    fn from(value: F32) -> Self {
+        Self::F32(value)
+    }
+}
+
+impl From<F64> for ConstVal {
+    #[inline]
+    fn from(value: F64) -> Self {
+        Self::F64(value)
+    }
+}
+
+#[cfg(feature = "simd")]
+impl From<V128> for ConstVal {
+    #[inline]
+    fn from(value: V128) -> Self {
+        Self::V128(value)
+    }
+}
+
+/// Allows to unwrap `self` as type `T`.
+///
+/// Returns `None` if conversion from `self` to `T` is invalid.
+trait UnwrapAs<T> {
+    fn unwrap_as(self) -> Option<T>;
+}
+
+impl UnwrapAs<i32> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<i32> {
         match self {
-            Op::Const(op) => op.eval(ctx),
-            Op::Global(op) => op.eval(ctx),
-            Op::FuncRef(op) => op.eval(ctx),
-            Op::Expr(op) => op.eval(ctx),
+            Self::I32(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<i64> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<i64> {
+        match self {
+            Self::I64(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<f32> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<f32> {
+        match self {
+            Self::F32(value) => Some(value.to_float()),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<f64> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<f64> {
+        match self {
+            Self::F64(value) => Some(value.to_float()),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<F32> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<F32> {
+        match self {
+            Self::F32(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<F64> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<F64> {
+        match self {
+            Self::F64(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(feature = "simd")]
+impl UnwrapAs<V128> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<V128> {
+        match self {
+            Self::V128(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<Nullable<Func>> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<Nullable<Func>> {
+        match self {
+            Self::Null(RefType::Func) => Some(Nullable::Null),
+            _ => None,
+        }
+    }
+}
+
+impl UnwrapAs<Nullable<ExternRef>> for ConstVal {
+    #[inline]
+    fn unwrap_as(self) -> Option<Nullable<ExternRef>> {
+        match self {
+            Self::Null(RefType::Extern) => Some(Nullable::Null),
+            _ => None,
+        }
+    }
+}
+
+impl From<ConstVal> for Val {
+    #[inline]
+    fn from(value: ConstVal) -> Self {
+        match value {
+            ConstVal::I32(value) => value.into(),
+            ConstVal::I64(value) => value.into(),
+            ConstVal::F32(value) => value.into(),
+            ConstVal::F64(value) => value.into(),
+            #[cfg(feature = "simd")]
+            ConstVal::V128(value) => value.into(),
+            ConstVal::Null(RefType::Func) => Self::FuncRef(Nullable::Null),
+            ConstVal::Null(RefType::Extern) => Self::ExternRef(Nullable::Null),
+        }
+    }
+}
+
+impl Val {
+    /// Returns the underlying [`ConstVal`] of `self` or `None`.
+    ///
+    /// Returns `None` if `self` is a non-null reference value.
+    fn as_const_or_none(&self) -> Option<ConstVal> {
+        let value = match *self {
+            Self::I32(value) => value.into(),
+            Self::I64(value) => value.into(),
+            Self::F32(value) => value.to_float().into(),
+            Self::F64(value) => value.to_float().into(),
+            #[cfg(feature = "simd")]
+            Self::V128(value) => value.into(),
+            Self::FuncRef(Nullable::Null) => ConstVal::Null(RefType::Func),
+            Self::ExternRef(Nullable::Null) => ConstVal::Null(RefType::Extern),
+            _ => return None,
+        };
+        Some(value)
+    }
+}
+
+impl ConstVal {
+    /// Creates a new `null` reference type [`ConstVal`].
+    #[inline]
+    pub fn null(ty: RefType) -> Self {
+        Self::Null(ty)
+    }
+}
+
+impl Eval for Op {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<Val> {
+        match self {
+            Self::Const(op) => op.eval(ctx),
+            Self::GlobalGet(op) => op.eval(ctx),
+            Self::FuncRef(op) => op.eval(ctx),
+            Self::Expr(op) => op.eval(ctx),
         }
     }
 }
@@ -197,17 +413,17 @@ pub struct ConstExpr {
 }
 
 impl Eval for ConstExpr {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<RawVal> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<Val> {
         self.op.eval(ctx)
     }
 }
 
 macro_rules! def_expr {
     ($lhs:ident, $rhs:ident, $expr:expr) => {{
-        Op::expr(move |ctx: &dyn EvalContext| -> Option<RawVal> {
-            let lhs = $lhs.eval(ctx)?;
-            let rhs = $rhs.eval(ctx)?;
-            Some($expr(lhs.into(), rhs.into()).into())
+        Op::expr(move |ctx: &dyn EvalContext| -> Option<Val> {
+            let lhs = $lhs.eval(ctx)?.as_const_or_none()?.unwrap_as()?;
+            let rhs = $rhs.eval(ctx)?.as_const_or_none()?.unwrap_as()?;
+            Some(ConstVal::from($expr(lhs, rhs)).into())
         })
     }};
 }
@@ -218,9 +434,11 @@ pub struct ConstExprStack {
     /// The top-most [`Op`] on the stack.
     ///
     /// # Note
+    ///
     /// This is an optimization so that the [`ConstExprStack`] does not
     /// require heap allocations for the common case where only a single
     /// stack slot is needed.
+    // TODO: turn into `Op` to signal that `ConstExprStack` cannot be empty
     top: Option<Op>,
     /// The remaining ops on the stack.
     ops: Vec<Op>,
@@ -262,32 +480,34 @@ impl ConstExpr {
     /// The constructor assumes that Wasm validation already succeeded
     /// on the input Wasm [`ConstExpr`].
     pub fn new(expr: wasmparser::ConstExpr<'_>) -> Self {
+        use wasmparser::Operator as WasmOp;
+
         /// Convenience function to create the various expression operators.
         fn expr_op<Lhs, Rhs, T>(stack: &mut ConstExprStack, expr: fn(Lhs, Rhs) -> T) -> Op
         where
-            Lhs: From<RawVal> + 'static,
-            Rhs: From<RawVal> + 'static,
+            Lhs: 'static,
+            Rhs: 'static,
             T: 'static,
-            RawVal: From<T>,
+            ConstVal: UnwrapAs<Lhs> + UnwrapAs<Rhs> + From<T>,
         {
             let (lhs, rhs) = stack
                 .pop2()
                 .expect("must have 2 operators on the stack due to Wasm validation");
             match (lhs, rhs) {
                 (Op::Const(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::Const(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::Const(lhs), Op::GlobalGet(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Const(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::Global(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::Global(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::Global(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::Global(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::GlobalGet(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::GlobalGet(lhs), Op::GlobalGet(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::GlobalGet(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::GlobalGet(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::FuncRef(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::FuncRef(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::FuncRef(lhs), Op::GlobalGet(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::FuncRef(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::FuncRef(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::Const(rhs)) => def_expr!(lhs, rhs, expr),
-                (Op::Expr(lhs), Op::Global(rhs)) => def_expr!(lhs, rhs, expr),
+                (Op::Expr(lhs), Op::GlobalGet(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::FuncRef(rhs)) => def_expr!(lhs, rhs, expr),
                 (Op::Expr(lhs), Op::Expr(rhs)) => def_expr!(lhs, rhs, expr),
             }
@@ -300,43 +520,37 @@ impl ConstExpr {
                 .read()
                 .unwrap_or_else(|error| panic!("invalid const expression operator: {error}"));
             let op = match wasm_op {
-                wasmparser::Operator::I32Const { value } => Op::constant(value),
-                wasmparser::Operator::I64Const { value } => Op::constant(value),
-                wasmparser::Operator::F32Const { value } => {
-                    Op::constant(F32::from_bits(value.bits()))
-                }
-                wasmparser::Operator::F64Const { value } => {
-                    Op::constant(F64::from_bits(value.bits()))
-                }
+                WasmOp::I32Const { value } => Op::constant(value),
+                WasmOp::I64Const { value } => Op::constant(value),
+                WasmOp::F32Const { value } => Op::constant(f32::from(value)),
+                WasmOp::F64Const { value } => Op::constant(f64::from(value)),
                 #[cfg(feature = "simd")]
-                wasmparser::Operator::V128Const { value } => {
-                    Op::constant(V128::from(value.i128() as u128))
-                }
-                wasmparser::Operator::GlobalGet { global_index } => Op::global(global_index),
-                wasmparser::Operator::RefNull { hty } => {
+                WasmOp::V128Const { value } => Op::constant(V128::from(value.i128() as u128)),
+                WasmOp::GlobalGet { global_index } => Op::global_get(global_index),
+                WasmOp::RefNull { hty } => {
                     let value = match hty {
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Func,
-                        } => Val::from(<Nullable<Func>>::Null),
+                        } => ConstVal::null(RefType::Func),
                         wasmparser::HeapType::Abstract {
                             shared: false,
                             ty: AbstractHeapType::Extern,
-                        } => Val::from(<Nullable<ExternRef>>::Null),
+                        } => ConstVal::null(RefType::Extern),
                         invalid => {
                             panic!("invalid heap type for `ref.null`: {invalid:?}")
                         }
                     };
                     Op::constant(value)
                 }
-                wasmparser::Operator::RefFunc { function_index } => Op::funcref(function_index),
-                wasmparser::Operator::I32Add => expr_op(&mut stack, wasm::i32_add),
-                wasmparser::Operator::I32Sub => expr_op(&mut stack, wasm::i32_sub),
-                wasmparser::Operator::I32Mul => expr_op(&mut stack, wasm::i32_mul),
-                wasmparser::Operator::I64Add => expr_op(&mut stack, wasm::i64_add),
-                wasmparser::Operator::I64Sub => expr_op(&mut stack, wasm::i64_sub),
-                wasmparser::Operator::I64Mul => expr_op(&mut stack, wasm::i64_mul),
-                wasmparser::Operator::End => break,
+                WasmOp::RefFunc { function_index } => Op::func_ref(function_index),
+                WasmOp::I32Add => expr_op(&mut stack, wasm::i32_add),
+                WasmOp::I32Sub => expr_op(&mut stack, wasm::i32_sub),
+                WasmOp::I32Mul => expr_op(&mut stack, wasm::i32_mul),
+                WasmOp::I64Add => expr_op(&mut stack, wasm::i64_add),
+                WasmOp::I64Sub => expr_op(&mut stack, wasm::i64_sub),
+                WasmOp::I64Mul => expr_op(&mut stack, wasm::i64_mul),
+                WasmOp::End => break,
                 op => panic!("unexpected Wasm const expression operator: {op:?}"),
             };
             stack.push(op);
@@ -358,7 +572,9 @@ impl ConstExpr {
     /// Required for setting up table elements.
     pub fn new_funcref(function_index: u32) -> Self {
         Self {
-            op: Op::FuncRef(FuncRefOp { function_index }),
+            op: Op::FuncRef(FuncRefOp {
+                index: function_index,
+            }),
         }
     }
 
@@ -367,7 +583,7 @@ impl ConstExpr {
     /// Otherwise returns `None`.
     pub fn funcref(&self) -> Option<FuncIdx> {
         if let Op::FuncRef(op) = &self.op {
-            return Some(FuncIdx::from(op.function_index));
+            return Some(FuncIdx::from(op.index));
         }
         None
     }
@@ -378,7 +594,7 @@ impl ConstExpr {
     ///
     /// This is useful for evaluations during Wasm translation to
     /// perform optimizations on the translated bytecode.
-    pub fn eval_const(&self) -> Option<RawVal> {
+    pub fn eval_const(&self) -> Option<Val> {
         self.eval(&EmptyEvalContext)
     }
 
@@ -390,7 +606,7 @@ impl ConstExpr {
     /// # Note
     ///
     /// This is useful for evaluation of [`ConstExpr`] during bytecode execution.
-    pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<RawVal>
+    pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<Val>
     where
         G: Fn(u32) -> Val,
         F: Fn(u32) -> Nullable<Func>,

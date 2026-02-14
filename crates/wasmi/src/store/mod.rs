@@ -1,14 +1,17 @@
 mod context;
 mod error;
+mod id;
 mod inner;
 mod pruned;
 mod typeid;
 
+pub(crate) use self::id::AsStoreId;
 use self::pruned::PrunedStoreVTable;
 pub use self::{
     context::{AsContext, AsContextMut, StoreContext, StoreContextMut},
     error::{InternalStoreError, StoreError},
-    inner::{StoreInner, Stored},
+    id::Stored,
+    inner::StoreInner,
     pruned::PrunedStore,
 };
 use crate::{

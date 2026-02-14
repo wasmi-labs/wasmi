@@ -2141,7 +2141,7 @@ impl TableSetOp {
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => FieldTy::U64,
+            OperandKind::Immediate => FieldTy::U32,
         };
         Field::new(Ident::Value, value_ty)
     }

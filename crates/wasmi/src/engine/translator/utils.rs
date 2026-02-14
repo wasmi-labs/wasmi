@@ -1,8 +1,6 @@
 use crate::{
     Error,
     ExternRef,
-    Func,
-    Nullable,
     ValType,
     core::{RawVal, Typed, TypedRawVal},
     engine::TranslationError,
@@ -36,33 +34,6 @@ pub fn required_cells_for_tys(tys: &[ValType]) -> Result<u16, Error> {
 
 impl Typed for ExternRef {
     const TY: ValType = ValType::ExternRef;
-}
-
-macro_rules! impl_typed_for {
-    ( $( $ty:ty as $ident:ident ),* $(,)? ) => {
-        $(
-            impl Typed for $ty {
-                const TY: ValType = crate::ValType::$ident;
-            }
-
-            impl From<TypedRawVal> for $ty {
-                fn from(typed_value: TypedRawVal) -> Self {
-                    // # Note
-                    //
-                    // We only use a `debug_assert` here instead of a proper `assert`
-                    // since the whole translation process assumes that Wasm validation
-                    // was already performed and thus type checking does not necessarily
-                    // need to happen redundantly outside of debug builds.
-                    debug_assert!(matches!(typed_value.ty(), <$ty as Typed>::TY));
-                    Self::from(typed_value.raw())
-                }
-            }
-        )*
-    };
-}
-impl_typed_for! {
-    Nullable<Func> as FuncRef,
-    Nullable<ExternRef> as ExternRef,
 }
 
 /// A WebAssembly integer. Either `i32` or `i64`.

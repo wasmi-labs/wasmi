@@ -1,4 +1,16 @@
-use crate::{ExternRef, F32, F64, Func, Nullable, V128, Val, core::RawRef};
+use crate::{
+    ExternRef,
+    F32,
+    F64,
+    Func,
+    Nullable,
+    Ref,
+    V128,
+    Val,
+    core::RawRef,
+    handle::Handle,
+    store::AsStoreId,
+};
 use core::{convert::identity, fmt, marker::PhantomData, mem};
 
 /// A single 64-bit cell of the value stack.
@@ -15,18 +27,13 @@ macro_rules! iN_to_u64 {
     };
 }
 
-macro_rules! ref_to_u64 {
-    ($ty:ty) => {
-        |value: $ty| -> u64 { u64::from(RawRef::from(value)) }
-    };
-}
-
 macro_rules! impl_from_for_cell {
     ( $($ty:ty = $eval:expr),* $(,)? ) => {
         $(
             impl From<$ty> for Cell {
+                #[allow(clippy::cast_lossless)]
                 fn from(value: $ty) -> Self {
-                    Self($eval(value))
+                    Self($eval(value) as u64)
                 }
             }
         )*
@@ -46,17 +53,7 @@ impl_from_for_cell! {
     F32 = |v| u64::from(F32::to_bits(v)),
     f64 = f64::to_bits,
     F64 = F64::to_bits,
-    Func = ref_to_u64!(Func),
-    ExternRef = ref_to_u64!(ExternRef),
-    Nullable<Func> = ref_to_u64!(Nullable<Func>),
-    Nullable<ExternRef> = ref_to_u64!(Nullable<ExternRef>),
-    RawRef = u64::from,
-}
-
-macro_rules! u64_to_ref {
-    ($ty:ty) => {
-        |value: u64| -> $ty { <$ty as From<RawRef>>::from(RawRef::from(value)) }
-    };
+    RawRef = u32::from,
 }
 
 macro_rules! impl_into_for_cell {
@@ -84,9 +81,7 @@ impl_into_for_cell! {
     F32 = |v| F32::from_bits(v as _),
     f64 = f64::from_bits,
     F64 = F64::from_bits,
-    Nullable<Func> = u64_to_ref!(Nullable<Func>),
-    Nullable<ExternRef> = u64_to_ref!(Nullable<ExternRef>),
-    RawRef = RawRef::from,
+    RawRef = |v| RawRef::from(v as u32),
 }
 
 /// Errors raised in the encode and decode APIs of [`Cell`].
@@ -96,13 +91,16 @@ pub enum CellError {
     NotEnoughCells,
     /// Raised when there are not enough values for the given amount of [`Cell`]s.
     NotEnoughValues,
+    /// Raised when a lowered value originates from a different [`Store`](crate::Store).
+    StoreOwnerMismatch,
 }
 
 impl fmt::Display for CellError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            CellError::NotEnoughCells => "not enough cells",
-            CellError::NotEnoughValues => "not enough values",
+            Self::NotEnoughCells => "not enough cells",
+            Self::NotEnoughValues => "not enough values",
+            Self::StoreOwnerMismatch => "value originates from different store",
         };
         f.write_str(s)
     }
@@ -116,6 +114,82 @@ pub trait StoreToCells {
     ///
     /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
     fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError>;
+}
+
+/// Trait implemented by types that can be stored onto a slice of [`Cell`]s.
+///
+/// # Note
+///
+/// In contrast to [`StoreToCells`] this also disassociates the stored values
+/// from their [`Store`](crate::Store).
+pub trait LowerToCells {
+    /// Encodes `self` to `cells`.
+    ///
+    /// # Errors
+    ///
+    /// If the number of [`Cell`]s that `value` requires exceeds `cells.len()`.
+    fn lower_to_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError>;
+}
+
+macro_rules! impl_lower_and_lift_for_refs {
+    ( $($refty:ty),* $(,)? ) => {
+        $(
+            impl LowerToCells for $refty {
+                fn lower_to_cells(
+                    self,
+                    store: impl AsStoreId,
+                    cells: &mut impl CellsWriter,
+                ) -> Result<(), CellError> {
+                    let Some(value) = store.unwrap(self.raw()) else {
+                        return Err(CellError::StoreOwnerMismatch);
+                    };
+                    value.raw().get().store_to_cells(cells)
+                }
+            }
+
+            impl LowerToCells for Nullable<$refty> {
+                fn lower_to_cells(
+                    self,
+                    store: impl AsStoreId,
+                    cells: &mut impl CellsWriter,
+                ) -> Result<(), CellError> {
+                    match self {
+                        Self::Null => 0_u32.lower_to_cells(store, cells),
+                        Self::Val(value) => value.lower_to_cells(store, cells),
+                    }
+                }
+            }
+
+            impl LiftFromCellsByValue for Nullable<$refty> {
+                fn lift_from_cells_by_value(
+                    store: impl AsStoreId,
+                    cells: &mut impl CellsReader,
+                ) -> Result<Self, CellError> {
+                    let rawref = <RawRef as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
+                    let funcref = <Nullable<$refty>>::from_raw_parts(rawref, store);
+                    Ok(funcref)
+                }
+            }
+        )*
+    };
+}
+impl_lower_and_lift_for_refs! { Func, ExternRef }
+
+impl LowerToCells for Ref {
+    fn lower_to_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError> {
+        match self {
+            Self::Func(nullable) => nullable.lower_to_cells(store, cells),
+            Self::Extern(nullable) => nullable.lower_to_cells(store, cells),
+        }
+    }
 }
 
 /// Types that allow writing to a contiguous slice of [`Cell`]s.
@@ -142,26 +216,34 @@ impl CellsWriter for &'_ mut [Cell] {
     }
 }
 
-impl StoreToCells for &'_ [Val] {
-    fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
+impl LowerToCells for &'_ [Val] {
+    fn lower_to_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError> {
         for val in self {
-            val.store_to_cells(cells)?;
+            val.lower_to_cells(store, cells)?;
         }
         Ok(())
     }
 }
 
-impl StoreToCells for &'_ Val {
+impl LowerToCells for &'_ Val {
     #[inline]
-    fn store_to_cells(self, cells: &mut impl CellsWriter) -> Result<(), CellError> {
+    fn lower_to_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError> {
         match self {
-            Val::I32(value) => value.store_to_cells(cells),
-            Val::I64(value) => value.store_to_cells(cells),
-            Val::F32(value) => value.store_to_cells(cells),
-            Val::F64(value) => value.store_to_cells(cells),
-            Val::V128(value) => value.store_to_cells(cells),
-            Val::FuncRef(value) => value.store_to_cells(cells),
-            Val::ExternRef(value) => value.store_to_cells(cells),
+            Val::I32(value) => value.lower_to_cells(store, cells),
+            Val::I64(value) => value.lower_to_cells(store, cells),
+            Val::F32(value) => value.lower_to_cells(store, cells),
+            Val::F64(value) => value.lower_to_cells(store, cells),
+            Val::V128(value) => value.lower_to_cells(store, cells),
+            Val::FuncRef(value) => value.lower_to_cells(store, cells),
+            Val::ExternRef(value) => value.lower_to_cells(store, cells),
         }
     }
 }
@@ -185,6 +267,17 @@ impl StoreToCells for V128 {
     }
 }
 
+impl LowerToCells for V128 {
+    #[inline]
+    fn lower_to_cells(
+        self,
+        _store: impl AsStoreId,
+        cells: &mut impl CellsWriter,
+    ) -> Result<(), CellError> {
+        <V128 as StoreToCells>::store_to_cells(self, cells)
+    }
+}
+
 macro_rules! impl_store_to_cells_for_prim {
     ( $($ty:ty),* $(,)? ) => {
         $(
@@ -194,28 +287,22 @@ macro_rules! impl_store_to_cells_for_prim {
                     cells.next(Cell::from(self))
                 }
             }
+
+            impl LowerToCells for $ty {
+                #[inline]
+                fn lower_to_cells(
+                    self,
+                    _store: impl AsStoreId,
+                    cells: &mut impl CellsWriter,
+                ) -> Result<(), CellError> {
+                    <$ty as StoreToCells>::store_to_cells(self, cells)
+                }
+            }
         )*
     };
 }
 impl_store_to_cells_for_prim!(
-    bool,
-    i8,
-    i16,
-    i32,
-    i64,
-    u8,
-    u16,
-    u32,
-    u64,
-    f32,
-    f64,
-    F32,
-    F64,
-    Func,
-    Nullable<Func>,
-    ExternRef,
-    Nullable<ExternRef>,
-    RawRef,
+    bool, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, F32, F64, RawRef,
 );
 
 macro_rules! impl_store_to_cells_for_tuples {
@@ -233,6 +320,26 @@ macro_rules! impl_store_to_cells_for_tuples {
                 let ($($camel,)*) = self;
                 $(
                     $camel.store_to_cells(_cells)?;
+                )*
+                Ok(())
+            }
+        }
+
+        impl<$($camel),*> LowerToCells for ($($camel,)*)
+        where
+            $( $camel: LowerToCells, )*
+        {
+            #[inline]
+            #[allow(non_snake_case)]
+            fn lower_to_cells(
+                self,
+                _store: impl AsStoreId,
+                _cells: &mut impl CellsWriter,
+            ) -> Result<(), CellError> {
+                #[allow(unused_mut)]
+                let ($($camel,)*) = self;
+                $(
+                    $camel.lower_to_cells(_store, _cells)?;
                 )*
                 Ok(())
             }
@@ -255,31 +362,52 @@ impl<T> Default for LoadByVal<T> {
     }
 }
 
-/// Trait implemented by types that can be decoded from a [`CellsReader`].
-pub trait LoadFromCells {
-    /// The value loaded.
+/// Trait implemented by types that can be loaded from a [`CellsReader`].
+///
+/// # Note
+///
+/// The loaded values are also re-associated with a [`Store`](crate::Store).
+pub trait LiftFromCells {
+    /// The value loaded and re-associated with the [`Store`](crate::Store`).
     ///
     /// # Note
     ///
     /// This is supposed to be `()` when not using [`LoadByVal`].
     type Value;
 
-    /// Decodes `self` from `cells`.
+    /// Loads `self` from `cells`, re-association it with the `store`.
     ///
     /// # Errors
     ///
     /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError>;
+    fn lift_from_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError>;
 }
 
 /// Trait implemented by types that can be decoded by value from a [`CellsReader`].
 pub trait LoadFromCellsByValue: Sized {
-    /// Decodes a value of type `Self` from `cells`.
+    /// Loads a value of type `Self` from `cells`.
     ///
     /// # Errors
     ///
     /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
     fn load_from_cells_by_value(cells: &mut impl CellsReader) -> Result<Self, CellError>;
+}
+
+/// Trait implemented by types that can be decoded by value from a [`CellsReader`].
+pub trait LiftFromCellsByValue: Sized {
+    /// Loads a value of type `Self` from `cells` and re-associates it with the `store`.
+    ///
+    /// # Errors
+    ///
+    /// If decoding `T` requires more [`Cell`]s than yielded by `cells`.
+    fn lift_from_cells_by_value(
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self, CellError>;
 }
 
 /// Types that allow reading from a contiguous slice of [`Cell`]s.
@@ -313,26 +441,21 @@ macro_rules! impl_load_from_cells_for_prim {
                     Ok(loaded)
                 }
             }
+
+            impl LiftFromCellsByValue for $ty {
+                #[inline]
+                fn lift_from_cells_by_value(
+                    _store: impl AsStoreId,
+                    cells: &mut impl CellsReader,
+                ) -> Result<Self, CellError> {
+                    <$ty as LoadFromCellsByValue>::load_from_cells_by_value(cells)
+                }
+            }
         )*
     };
 }
 impl_load_from_cells_for_prim!(
-    bool,
-    i8,
-    i16,
-    i32,
-    i64,
-    u8,
-    u16,
-    u32,
-    u64,
-    f32,
-    f64,
-    F32,
-    F64,
-    Nullable<Func>,
-    Nullable<ExternRef>,
-    RawRef,
+    bool, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, F32, F64, RawRef,
 );
 
 impl LoadFromCellsByValue for V128 {
@@ -344,55 +467,80 @@ impl LoadFromCellsByValue for V128 {
     }
 }
 
-impl<T> LoadFromCells for LoadByVal<T>
+impl LiftFromCellsByValue for V128 {
+    fn lift_from_cells_by_value(
+        _store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self, CellError> {
+        <V128 as LoadFromCellsByValue>::load_from_cells_by_value(cells)
+    }
+}
+
+impl LiftFromCells for &'_ mut [Val] {
+    type Value = ();
+
+    fn lift_from_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError> {
+        for val in self {
+            val.lift_from_cells(store, cells)?;
+        }
+        Ok(())
+    }
+}
+
+impl LiftFromCells for &'_ mut Val {
+    type Value = ();
+
+    #[inline]
+    fn lift_from_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError> {
+        match self {
+            Val::I32(value) => value.lift_from_cells(store, cells),
+            Val::I64(value) => value.lift_from_cells(store, cells),
+            Val::F32(value) => value.lift_from_cells(store, cells),
+            Val::F64(value) => value.lift_from_cells(store, cells),
+            Val::V128(value) => value.lift_from_cells(store, cells),
+            Val::FuncRef(value) => value.lift_from_cells(store, cells),
+            Val::ExternRef(value) => value.lift_from_cells(store, cells),
+        }
+    }
+}
+
+impl<T> LiftFromCells for LoadByVal<T>
 where
-    T: LoadFromCellsByValue,
+    T: LiftFromCellsByValue,
 {
     type Value = T;
 
     #[inline]
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-        <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)
+    fn lift_from_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError> {
+        <T as LiftFromCellsByValue>::lift_from_cells_by_value(store, cells)
     }
 }
 
-impl<T> LoadFromCells for &'_ mut T
+impl<T> LiftFromCells for &'_ mut T
 where
-    T: LoadFromCellsByValue,
+    T: LiftFromCellsByValue,
 {
     type Value = ();
 
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-        *self = <T as LoadFromCellsByValue>::load_from_cells_by_value(cells)?;
+    fn lift_from_cells(
+        self,
+        store: impl AsStoreId,
+        cells: &mut impl CellsReader,
+    ) -> Result<Self::Value, CellError> {
+        *self = <T as LiftFromCellsByValue>::lift_from_cells_by_value(store, cells)?;
         Ok(())
-    }
-}
-
-impl LoadFromCells for &'_ mut [Val] {
-    type Value = ();
-
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-        for val in self {
-            val.load_from_cells(cells)?;
-        }
-        Ok(())
-    }
-}
-
-impl LoadFromCells for &'_ mut Val {
-    type Value = ();
-
-    #[inline]
-    fn load_from_cells(self, cells: &mut impl CellsReader) -> Result<Self::Value, CellError> {
-        match self {
-            Val::I32(value) => value.load_from_cells(cells),
-            Val::I64(value) => value.load_from_cells(cells),
-            Val::F32(value) => value.load_from_cells(cells),
-            Val::F64(value) => value.load_from_cells(cells),
-            Val::V128(value) => value.load_from_cells(cells),
-            Val::FuncRef(value) => value.load_from_cells(cells),
-            Val::ExternRef(value) => value.load_from_cells(cells),
-        }
     }
 }
 
@@ -409,6 +557,19 @@ macro_rules! impl_load_from_cells_for_tuples {
                 Ok( ($( <$camel as LoadFromCellsByValue>::load_from_cells_by_value(_cells)?, )*) )
             }
         }
+
+        impl<$($camel),*> LiftFromCellsByValue for ($($camel,)*)
+        where
+            $( $camel: LiftFromCellsByValue, )*
+        {
+            #[inline]
+            fn lift_from_cells_by_value(
+                _store: impl AsStoreId,
+                _cells: &mut impl CellsReader,
+            ) -> Result<Self, CellError> {
+                Ok( ($( <$camel as LiftFromCellsByValue>::lift_from_cells_by_value(_store, _cells)?, )*) )
+            }
+        }
     };
 }
 for_each_tuple!(impl_load_from_cells_for_tuples);
@@ -416,6 +577,7 @@ for_each_tuple!(impl_load_from_cells_for_tuples);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Store;
 
     #[test]
     fn tuple_works() {
@@ -460,6 +622,7 @@ mod tests {
     }
 
     fn store_and_load_val_slice(cells: &mut [Cell]) -> Result<bool, CellError> {
+        let store = <Store<()>>::default();
         let values = [
             Val::I32(1_i32),
             Val::I64(2_i64),
@@ -468,9 +631,9 @@ mod tests {
             Val::V128(V128::from(5_u128)),
         ];
         let mut expected = values.clone();
-        values.store_to_cells(&mut &mut cells[..])?;
+        values.lower_to_cells(&store, &mut &mut cells[..])?;
         let cells = &mut &cells[..];
-        expected.load_from_cells(cells)?;
+        expected.lift_from_cells(&store, cells)?;
         if !cells.is_empty() {
             return Err(CellError::NotEnoughValues);
         }

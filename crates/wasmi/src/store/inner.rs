@@ -16,54 +16,17 @@ use crate::{
     engine::DedupFuncType,
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity},
-    store::{Handle, RawHandle, error::InternalStoreError, handle_arena_err},
+    store::{
+        AsStoreId as _,
+        Handle,
+        RawHandle,
+        Stored,
+        error::InternalStoreError,
+        handle_arena_err,
+        id::StoreId,
+    },
 };
-use core::{
-    fmt::Debug,
-    sync::atomic::{AtomicU32, Ordering},
-};
-
-/// A unique store identifier.
-///
-/// # Note
-///
-/// Used to differntiate different store instances.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreId(u32);
-
-impl StoreId {
-    /// Returns a new unique [`StoreId`].
-    fn new() -> Self {
-        /// An atomic, static store identifier counter.
-        static STORE_ID: AtomicU32 = AtomicU32::new(0);
-        let next = STORE_ID.fetch_add(1, Ordering::AcqRel);
-        Self(next)
-    }
-
-    /// Wraps a `value` into a [`Stored<T>`] associated to `self`.
-    pub fn wrap<T>(self, value: T) -> Stored<T> {
-        Stored { store: self, value }
-    }
-}
-
-/// A value associated to a [`Store`](crate::Store).
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Stored<T> {
-    /// The identifier of the associated store.
-    store: StoreId,
-    /// The stored value.
-    value: T,
-}
-
-impl<T> Stored<T> {
-    /// Returns `&T` if `store` matches `self`'s identifier.
-    fn get(&self, store: StoreId) -> Option<&T> {
-        if store != self.store {
-            return None;
-        }
-        Some(&self.value)
-    }
-}
+use core::fmt::Debug;
 
 type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
 
@@ -187,7 +150,7 @@ impl StoreInner {
         &self,
         stored: &'a Stored<T>,
     ) -> Result<&'a T, InternalStoreError> {
-        match stored.get(self.id) {
+        match self.id.unwrap(stored) {
             Some(value) => Ok(value),
             None => Err(InternalStoreError::store_mismatch()),
         }

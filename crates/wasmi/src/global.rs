@@ -1,3 +1,5 @@
+use wasmi_core::TypedRawVal;
+
 use crate::{
     AsContext,
     AsContextMut,
@@ -16,11 +18,19 @@ define_handle! {
 
 impl Global {
     /// Creates a new global variable to the store.
-    pub fn new(mut ctx: impl AsContextMut, initial_value: Val, mutability: Mutability) -> Self {
+    ///
+    /// # Panics
+    ///
+    /// If `value` does not originate from `ctx`.
+    pub fn new(mut ctx: impl AsContextMut, value: Val, mutability: Mutability) -> Self {
+        let ty = GlobalType::new(value.ty(), mutability);
+        let Some(value) = Val::unwrap_raw_val(&value, ctx.as_context()) else {
+            panic!("value does not originate from `ctx`: {value:?}")
+        };
         ctx.as_context_mut()
             .store
             .inner
-            .alloc_global(CoreGlobal::new(initial_value.into(), mutability))
+            .alloc_global(CoreGlobal::new(value, ty))
     }
 
     /// Returns the [`GlobalType`] of the global variable.
@@ -41,13 +51,18 @@ impl Global {
     ///
     /// # Panics
     ///
-    /// Panics if `ctx` does not own this [`Global`].
+    /// Panics if `ctx` does not own this `self` or `new_value`.
     pub fn set(&self, mut ctx: impl AsContextMut, new_value: Val) -> Result<(), GlobalError> {
+        let ty = new_value.ty();
+        let Some(new_value) = new_value.unwrap_raw_val(ctx.as_context()) else {
+            panic!("new_value does not originate from `ctx`: {new_value:?}")
+        };
+        let new_value = TypedRawVal::new(ty, new_value);
         ctx.as_context_mut()
             .store
             .inner
             .resolve_global_mut(self)
-            .set(new_value.into())
+            .set(new_value)
     }
 
     /// Returns the current value of the global variable.
@@ -56,11 +71,8 @@ impl Global {
     ///
     /// Panics if `ctx` does not own this [`Global`].
     pub fn get(&self, ctx: impl AsContext) -> Val {
-        ctx.as_context()
-            .store
-            .inner
-            .resolve_global(self)
-            .get()
-            .into()
+        let store = &ctx.as_context().store.inner;
+        let value = store.resolve_global(self).get();
+        Val::from_raw_parts(value.raw(), value.ty(), store)
     }
 }

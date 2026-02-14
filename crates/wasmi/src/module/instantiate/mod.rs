@@ -21,13 +21,12 @@ use crate::{
     Nullable,
     Ref,
     Table,
-    core::RawVal,
+    Val,
     error::ErrorKind,
     errors::MemoryError,
     func::WasmFuncEntity,
     memory::DataSegment,
     module::FuncIdx,
-    value::WithType,
 };
 
 impl Module {
@@ -270,14 +269,9 @@ impl Module {
     /// [`Store`]: struct.Store.html
     fn extract_globals(&self, mut context: impl AsContextMut, builder: &mut InstanceEntityBuilder) {
         for (global_type, global_init) in self.internal_globals() {
-            let value_type = global_type.content();
             let init_value = Self::eval_init_expr(context.as_context_mut(), builder, global_init);
             let mutability = global_type.mutability();
-            let global = Global::new(
-                context.as_context_mut(),
-                init_value.with_type(value_type),
-                mutability,
-            );
+            let global = Global::new(context.as_context_mut(), init_value, mutability);
             builder.push_global(global);
         }
     }
@@ -287,7 +281,7 @@ impl Module {
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
         init_expr: &ConstExpr,
-    ) -> RawVal {
+    ) -> Val {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),
@@ -344,11 +338,12 @@ impl Module {
             let element =
                 ElementSegment::new(context.as_context_mut(), segment, get_func, get_global);
             if let ElementSegmentKind::Active(active) = segment.kind() {
-                let dst_index = u64::from(Self::eval_init_expr(
-                    context.as_context(),
-                    builder,
-                    active.offset(),
-                ));
+                let dst_index =
+                    match Self::eval_init_expr(context.as_context(), builder, active.offset()) {
+                        Val::I32(value) => u64::from(value as u32),
+                        Val::I64(value) => value as u64,
+                        invalid => panic!("dst_index is not a valid index value: {invalid:?}"),
+                    };
                 let table = builder.get_table(active.table_index().into_u32());
                 // Note: This checks not only that the elements in the element segments properly
                 //       fit into the table at the given offset but also that the element segment
@@ -391,10 +386,13 @@ impl Module {
                     bytes,
                 } => {
                     let memory = builder.get_memory(memory_index.into_u32());
-                    let offset = Self::eval_init_expr(context.as_context(), builder, offset);
-                    let offset = match usize::try_from(u64::from(offset)) {
-                        Ok(offset) => offset,
-                        Err(_) => return Err(Error::from(MemoryError::OutOfBoundsAccess)),
+                    let offset = match Self::eval_init_expr(context.as_context(), builder, offset) {
+                        Val::I32(value) => u64::from(value as u32),
+                        Val::I64(value) => value as u64,
+                        invalid => panic!("offset is not a valid index value: {invalid:?}"),
+                    };
+                    let Ok(offset) = usize::try_from(offset) else {
+                        return Err(Error::from(MemoryError::OutOfBoundsAccess));
                     };
                     memory.write(context.as_context_mut(), offset, bytes)?;
                     DataSegment::new_active(context.as_context_mut())

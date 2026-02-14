@@ -1,4 +1,7 @@
-use crate::engine::executor::{Cell, CellError, LoadFromCells, LoadFromCellsByValue, StoreToCells};
+use crate::{
+    engine::executor::{Cell, CellError, LiftFromCells, LiftFromCellsByValue, LowerToCells},
+    store::AsStoreId,
+};
 use core::cmp::max;
 
 /// Wrapper around a slice of [`Cell`]s to manage reading parameters and writing results of a function call.
@@ -53,32 +56,36 @@ impl<'cells> InOutParams<'cells> {
     /// Decodes the parameter slice of [`Cell`]s into `T` if possible.
     ///
     /// Returns a [`CellError`], otherwise.
-    pub fn decode_params_into<T>(&self, out: T) -> Result<(), CellError>
+    pub fn decode_params_into<T>(&self, store: impl AsStoreId, out: T) -> Result<(), CellError>
     where
-        T: LoadFromCells<Value = ()>,
+        T: LiftFromCells<Value = ()>,
     {
-        out.load_from_cells(&mut self.params())
+        out.lift_from_cells(store, &mut self.params())
     }
 
     /// Decodes the parameter slice of [`Cell`]s into `T` if possible.
     ///
     /// Returns a [`CellError`], otherwise.
-    pub fn decode_params<T>(&self) -> Result<T, CellError>
+    pub fn decode_params<T>(&self, store: impl AsStoreId) -> Result<T, CellError>
     where
-        T: LoadFromCellsByValue,
+        T: LiftFromCellsByValue,
     {
-        <T as LoadFromCellsByValue>::load_from_cells_by_value(&mut self.params())
+        <T as LiftFromCellsByValue>::lift_from_cells_by_value(store, &mut self.params())
     }
 
     /// Encodes the `results` of type `T` into the result [`Cell`]s if possible.
     ///
     /// Returns a [`CellError`], otherwise.
-    pub fn encode_results<T>(self, results: T) -> Result<InOutResults<'cells>, CellError>
+    pub fn encode_results<T>(
+        self,
+        store: impl AsStoreId,
+        results: T,
+    ) -> Result<InOutResults<'cells>, CellError>
     where
-        T: StoreToCells,
+        T: LowerToCells,
     {
         let mut cells = &mut self.cells[..self.len_results];
-        results.store_to_cells(&mut cells)?;
+        results.lower_to_cells(store, &mut cells)?;
         Ok(InOutResults { cells })
     }
 }

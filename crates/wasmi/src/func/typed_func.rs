@@ -4,7 +4,7 @@ use crate::{
     AsContextMut,
     Error,
     TypedResumableCall,
-    engine::{LoadByVal, LoadFromCellsByValue, StoreToCells},
+    engine::{LiftFromCellsByValue, LoadByVal, LowerToCells},
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
 
@@ -138,9 +138,9 @@ where
 }
 
 /// The typed parameters of a [`TypedFunc`].
-pub trait WasmParams: WasmTyList + StoreToCells {}
-impl<T> WasmParams for T where T: WasmTyList + StoreToCells {}
+pub trait WasmParams: WasmTyList + LowerToCells {}
+impl<T> WasmParams for T where T: WasmTyList + LowerToCells {}
 
 /// The typed results of a [`TypedFunc`].
-pub trait WasmResults: WasmTyList + LoadFromCellsByValue {}
-impl<T> WasmResults for T where T: WasmTyList + LoadFromCellsByValue {}
+pub trait WasmResults: WasmTyList + LiftFromCellsByValue {}
+impl<T> WasmResults for T where T: WasmTyList + LiftFromCellsByValue {}
