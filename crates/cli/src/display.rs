@@ -13,15 +13,16 @@ impl<'a> From<&'a ValType> for DisplayValueType<'a> {
 
 impl Display for DisplayValueType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0 {
-            ValType::I32 => write!(f, "i32"),
-            ValType::I64 => write!(f, "i64"),
-            ValType::F32 => write!(f, "f32"),
-            ValType::F64 => write!(f, "f64"),
-            ValType::V128 => write!(f, "v128"),
-            ValType::FuncRef => write!(f, "funcref"),
-            ValType::ExternRef => write!(f, "externref"),
-        }
+        let s = match self.0 {
+            ValType::I32 => "i32",
+            ValType::I64 => "i64",
+            ValType::F32 => "f32",
+            ValType::F64 => "f64",
+            ValType::V128 => "v128",
+            ValType::FuncRef => "funcref",
+            ValType::ExternRef => "externref",
+        };
+        f.write_str(s)
     }
 }
 
