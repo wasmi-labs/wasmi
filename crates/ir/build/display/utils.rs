@@ -31,7 +31,9 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (t0, t1) = &self.0;
-        write!(f, "{t0}{t1}")
+        t0.fmt(f)?;
+        t1.fmt(f)?;
+        Ok(())
     }
 }
 
@@ -43,7 +45,10 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (t0, t1, t2) = &self.0;
-        write!(f, "{t0}{t1}{t2}")
+        t0.fmt(f)?;
+        t1.fmt(f)?;
+        t2.fmt(f)?;
+        Ok(())
     }
 }
 
@@ -71,7 +76,8 @@ where
         first.fmt(f)?;
         let sep = &self.sep;
         for item in iter {
-            write!(f, "{sep}{item}")?;
+            sep.fmt(f)?;
+            item.fmt(f)?;
         }
         Ok(())
     }
