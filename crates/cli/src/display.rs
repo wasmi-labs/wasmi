@@ -13,15 +13,16 @@ impl<'a> From<&'a ValType> for DisplayValueType<'a> {
 
 impl Display for DisplayValueType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0 {
-            ValType::I32 => write!(f, "i32"),
-            ValType::I64 => write!(f, "i64"),
-            ValType::F32 => write!(f, "f32"),
-            ValType::F64 => write!(f, "f64"),
-            ValType::V128 => write!(f, "v128"),
-            ValType::FuncRef => write!(f, "funcref"),
-            ValType::ExternRef => write!(f, "externref"),
-        }
+        let s = match self.0 {
+            ValType::I32 => "i32",
+            ValType::I64 => "i64",
+            ValType::F32 => "f32",
+            ValType::F64 => "f64",
+            ValType::V128 => "v128",
+            ValType::FuncRef => "funcref",
+            ValType::ExternRef => "externref",
+        };
+        f.write_str(s)
     }
 }
 
@@ -37,14 +38,15 @@ impl<'a> From<&'a Val> for DisplayValue<'a> {
 impl fmt::Display for DisplayValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.0 {
-            Val::I32(value) => write!(f, "{value}"),
-            Val::I64(value) => write!(f, "{value}"),
-            Val::F32(value) => write!(f, "{value}"),
-            Val::F64(value) => write!(f, "{value}"),
-            Val::V128(value) => write!(f, "0x{:032X}", value.as_u128()),
-            Val::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
-            Val::ExternRef(value) => {
-                panic!("cannot display externref values but found {value:?}")
+            Val::I32(value) => value.fmt(f),
+            Val::I64(value) => value.fmt(f),
+            Val::F32(value) => value.fmt(f),
+            Val::F64(value) => value.fmt(f),
+            Val::V128(value) => {
+                write!(f, "0x{:032X}", value.as_u128())
+            }
+            Val::FuncRef(_) | Val::ExternRef(_) => {
+                panic!("cannot display reference values but found {:?}", self.0)
             }
         }
     }
@@ -78,28 +80,24 @@ impl<'a> From<&'a FuncType> for DisplayFuncType<'a> {
 impl fmt::Display for DisplayFuncType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(name) = self.name {
-            write!(f, "fn {name}(")?;
+            f.write_str("fn ")?;
+            name.fmt(f)?;
+            f.write_str("(")?;
         } else {
-            write!(f, "fn(")?;
+            f.write_str("fn(")?;
         }
         let params = self.func_type.params();
         let results = self.func_type.results();
-        write!(
-            f,
-            "{}",
-            DisplaySequence::new(", ", params.iter().map(DisplayValueType::from))
-        )?;
-        write!(f, ")")?;
+        DisplaySequence::new(", ", params.iter().map(DisplayValueType::from)).fmt(f)?;
+        f.write_str(")")?;
         if !results.is_empty() {
-            write!(f, " -> ")?;
+            f.write_str(" -> ")?;
             if results.len() == 1 {
-                write!(f, "{}", DisplayValueType::from(&results[0]))?;
+                DisplayValueType::from(&results[0]).fmt(f)?;
             } else {
-                write!(
-                    f,
-                    "({})",
-                    DisplaySequence::new(", ", results.iter().map(DisplayValueType::from))
-                )?;
+                f.write_str("(")?;
+                DisplaySequence::new(", ", results.iter().map(DisplayValueType::from)).fmt(f)?;
+                f.write_str(")")?;
             }
         }
         Ok(())
@@ -136,9 +134,10 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let separator = self.separator;
         if let Some((first, rest)) = self.sequence.split_first() {
-            write!(f, "{first}")?;
+            first.fmt(f)?;
             for param in rest {
-                write!(f, "{separator}{param}")?;
+                f.write_str(separator)?;
+                param.fmt(f)?;
             }
         }
         Ok(())
@@ -158,14 +157,15 @@ impl Display for DisplayExportedFuncs<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let exported_funcs = self.0.exported_funcs().collect::<Box<[_]>>();
         if exported_funcs.is_empty() {
-            return write!(f, "No exported functions found for the Wasm module.");
+            return f.write_str("No exported functions found for the Wasm module.");
         }
-        write!(f, "The Wasm module exports the following functions:\n\n")?;
+        f.write_str("The Wasm module exports the following functions:\n\n")?;
         for func in exported_funcs
             .iter()
             .map(|(name, func_type)| DisplayFuncType::new(name, func_type))
         {
-            writeln!(f, " - {func}")?;
+            f.write_str(" - ")?;
+            func.fmt(f)?;
         }
         Ok(())
     }
