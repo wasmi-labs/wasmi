@@ -14,7 +14,7 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-wasmi = { workspace = true, features = ["wat"] }
+wasmi = { workspace = true }
 wasmi_wasi = { workspace = true, optional = true }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
@@ -28,6 +28,7 @@ hash-collections = ["wasmi/hash-collections"]
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 simd = ["wasmi/simd"]
 wasi = ["wasmi_wasi"]
+wast = ["wasmi/wast"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
 
