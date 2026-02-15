@@ -28,7 +28,7 @@ hash-collections = ["wasmi/hash-collections"]
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 simd = ["wasmi/simd"]
 wasi = ["wasmi_wasi"]
-wast = ["wasmi/wast"]
+wat = ["wasmi/wat"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
 
