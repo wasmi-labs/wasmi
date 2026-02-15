@@ -23,7 +23,7 @@ clap = { version = "4", features = ["derive"] }
 assert_cmd = "2.0.7"
 
 [features]
-default = ["wasi"]
+default = ["wasi", "wat"]
 hash-collections = ["wasmi/hash-collections"]
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 simd = ["wasmi/simd"]
