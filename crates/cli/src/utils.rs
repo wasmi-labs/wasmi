@@ -1,6 +1,6 @@
 use crate::display::DisplayValueType;
-use anyhow::{Error, anyhow, bail};
-use wasmi::{F32, F64, FuncType, V128, Val, ValType};
+use anyhow::{Error, bail};
+use wasmi::{FuncType, V128, Val, ValType};
 
 /// Returns a [`Val`] buffer capable of holding the return values.
 ///
@@ -32,42 +32,23 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Er
         .zip(args)
         .enumerate()
         .map(|(n, (param_type, arg))| {
-            macro_rules! make_err {
-                () => {
-                    |_| {
-                        anyhow!(
-                            "failed to parse function argument \
-                            {arg} at index {n} as {}",
-                            DisplayValueType::from(param_type)
-                        )
-                    }
-                };
-            }
-            match param_type {
-                ValType::I32 => arg.parse::<i32>().map(Val::from).map_err(make_err!()),
-                ValType::I64 => arg.parse::<i64>().map(Val::from).map_err(make_err!()),
-                ValType::F32 => arg
-                    .parse::<f32>()
-                    .map(F32::from)
-                    .map(Val::from)
-                    .map_err(make_err!()),
-                ValType::F64 => arg
-                    .parse::<f64>()
-                    .map(F64::from)
-                    .map(Val::from)
-                    .map_err(make_err!()),
-                ValType::V128 => arg
-                    .parse::<u128>()
-                    .map(V128::from)
-                    .map(Val::from)
-                    .map_err(make_err!()),
-                ValType::FuncRef => {
-                    bail!("the wasmi CLI cannot take arguments of type funcref")
-                }
-                ValType::ExternRef => {
-                    bail!("the wasmi CLI cannot take arguments of type externref")
-                }
-            }
+            let val = match param_type {
+                ValType::I32 => arg.parse::<i32>().map(Val::from).ok(),
+                ValType::I64 => arg.parse::<i64>().map(Val::from).ok(),
+                ValType::F32 => arg.parse::<f32>().map(Val::from).ok(),
+                ValType::F64 => arg.parse::<f64>().map(Val::from).ok(),
+                ValType::V128 => arg.parse::<u128>().map(V128::from).map(Val::from).ok(),
+                ValType::FuncRef => None,
+                ValType::ExternRef => None,
+            };
+            let Some(val) = val else {
+                bail!(
+                    "failed to parse function argument \
+                    {arg} at index {n} as {}",
+                    DisplayValueType::from(param_type)
+                )
+            };
+            Ok(val)
         })
         .collect::<Result<Box<[_]>, _>>()
 }
