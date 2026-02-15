@@ -728,7 +728,7 @@ impl ValueStack {
 
     /// Returns an [`Sp`] pointing to the cell at the `start` index if `self` is non-empty.
     ///
-    /// Otherwise returns a dangling [`Sp`] that must not be derefenced.
+    /// Otherwise returns a dangling [`Sp`] that must not be dereferenced.
     fn sp_or_dangling(&mut self, start: SpOffset) -> Sp {
         match self.cells.is_empty() {
             true => {
