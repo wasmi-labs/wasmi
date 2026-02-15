@@ -17,7 +17,7 @@ exclude.workspace = true
 wasmi = { workspace = true }
 wasmi_wasi = { workspace = true, optional = true }
 anyhow = "1"
-clap = { version = "4", features = ["derive"] }
+argh = { version = "0.1.14", default-features = false, features = ["help"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.7"

@@ -2,7 +2,7 @@ use crate::context::StoreContext;
 #[cfg(feature = "wasi")]
 use anyhow::Context;
 use anyhow::{Error, Result};
-use clap::{Parser, ValueEnum};
+use argh::{FromArgValue, FromArgs};
 use std::path::{Path, PathBuf};
 #[cfg(feature = "wasi")]
 use std::{ffi::OsStr, net::SocketAddr, str::FromStr};
@@ -39,76 +39,57 @@ impl FromStr for KeyValue {
     }
 }
 
-/// The Wasmi CLI application arguments.
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None, trailing_var_arg = true)]
+#[cfg(feature = "wasi")]
+fn parse_key_value(value: &str) -> Result<KeyValue, String> {
+    KeyValue::from_str(value).map_err(|e| e.to_string())
+}
+
+/// The Wasmi CLI application.
+#[derive(FromArgs, Debug)]
+#[argh(description = "The Wasmi CLI application.")]
 pub struct Args {
-    /// The host directory to pre-open for the `guest` to use.
-    #[clap(
-        long = "dir",
-        value_name = "DIRECTORY",
-        action = clap::ArgAction::Append,
-        value_hint = clap::ValueHint::DirPath,
-    )]
+    /// the host directory to pre-open for the `guest` to use
     #[cfg(feature = "wasi")]
+    #[argh(option, long = "dir")]
     dirs: Vec<PathBuf>,
 
-    /// The socket address provided to the module. Allows it to perform socket-related `WASI` ops.
-    #[clap(
-        long = "tcplisten",
-        value_name = "SOCKET ADDRESS",
-        action = clap::ArgAction::Append,
-    )]
+    /// the socket address provided to the module
     #[cfg(feature = "wasi")]
+    #[argh(option, long = "tcplisten")]
     tcplisten: Vec<SocketAddr>,
 
-    /// The environment variable pair made available for the program.
-    #[clap(
-        long = "env",
-        value_name = "NAME=VAL",
-        value_parser(KeyValue::from_str),
-        action = clap::ArgAction::Append,
-    )]
+    /// the environment variable pair made available for the program
     #[cfg(feature = "wasi")]
+    #[argh(option, long = "env", from_str_fn(parse_key_value))]
     envs: Vec<KeyValue>,
 
-    /// The file containing the WebAssembly module to execute.
-    #[clap(
-        value_name = "MODULE",
-        value_hint = clap::ValueHint::FilePath,
-    )]
+    /// the file containing the WebAssembly module to execute
+    #[argh(positional)]
     wasm_file: PathBuf,
 
-    /// The function to invoke.
-    ///
-    /// If this argument is missing, Wasmi CLI will try to run `""` or `_start`.
-    ///
-    /// If neither are exported the Wasmi CLI will display out all exported
-    /// functions of the Wasm module and return with an error.
-    #[clap(long = "invoke", value_name = "FUNCTION")]
+    /// the name of the exported function to invoke
+    #[argh(option, long = "invoke")]
     invoke: Option<String>,
 
-    /// Select Wasmi's mode of compilation.
-    #[clap(long = "compilation-mode", value_enum, default_value_t=CompilationMode::LazyTranslation)]
-    compilation_mode: CompilationMode,
+    /// select Wasmi's mode of compilation (default = lazy-translation)
+    #[argh(option, long = "compilation-mode")]
+    compilation_mode: Option<CompilationMode>,
 
-    /// Enable execution fuel metering with N units of fuel.
-    ///
-    /// The execution will trap after running out of the N units of fuel.
-    #[clap(long = "fuel", value_name = "N")]
+    /// enable execution fuel metering with N units of fuel
+    #[argh(option, long = "fuel")]
     fuel: Option<u64>,
 
-    /// Enable informational messages beyond warnings or errors.
-    #[clap(long = "verbose")]
+    /// enable informational messages beyond warnings or errors
+    #[argh(switch, long = "verbose")]
     verbose: bool,
 
-    /// Arguments given to the Wasm module or the invoked function.
-    #[clap(value_name = "ARGS")]
+    /// arguments given to the Wasm module or the invoked function
+    #[argh(positional)]
     func_args: Vec<String>,
 }
 
 /// The chosen Wasmi compilation mode.
-#[derive(Debug, Default, Copy, Clone, ValueEnum)]
+#[derive(Debug, Default, Copy, Clone, FromArgValue)]
 enum CompilationMode {
     Eager,
     #[default]
@@ -149,7 +130,7 @@ impl Args {
 
     /// Returns `true` if lazy Wasm compilation is enabled.
     pub fn compilation_mode(&self) -> wasmi::CompilationMode {
-        self.compilation_mode.into()
+        self.compilation_mode.unwrap_or_default().into()
     }
 
     /// Returns `true` if verbose messaging is enabled.

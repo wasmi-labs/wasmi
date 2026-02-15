@@ -3,7 +3,6 @@ use crate::{
     display::{DisplayExportedFuncs, DisplayFuncType, DisplaySequence, DisplayValue},
 };
 use anyhow::{Error, Result, anyhow, bail};
-use clap::Parser;
 use context::Context;
 use std::{path::Path, process};
 use wasmi::{Func, FuncType, Val};
@@ -17,7 +16,7 @@ mod utils;
 mod tests;
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args: Args = argh::from_env();
     let wasm_file = args.wasm_file();
     let wasi_ctx = args.store_context()?;
     let mut ctx = Context::new(wasm_file, wasi_ctx, args.fuel(), args.compilation_mode())?;
