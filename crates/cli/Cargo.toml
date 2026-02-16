@@ -13,6 +13,11 @@ keywords.workspace = true
 categories.workspace = true
 exclude.workspace = true
 
+[[bin]]
+name = "wasmi"
+path = "src/main.rs"
+doc = false
+
 [dependencies]
 wasmi = { workspace = true }
 wasmi_wasi = { workspace = true, optional = true }
