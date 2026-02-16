@@ -27,6 +27,7 @@ pub type Handler =
     fn(&mut VmState, ip: Ip, sp: Sp, mem0: Mem0Ptr, mem0_len: Mem0Len, instance: Inst) -> Done;
 
 #[cfg(target_arch = "x86_64")]
+#[allow(improper_ctypes_definitions)] // not used in FFI
 pub type Handler = extern "sysv64" fn(
     &mut VmState,
     ip: Ip,

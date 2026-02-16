@@ -43,6 +43,7 @@ macro_rules! dispatch {
 pub type Handler = fn(&mut Executor, state: &mut VmState) -> Control<(), Break>;
 
 #[cfg(target_arch = "x86_64")]
+#[allow(improper_ctypes_definitions)] // not used in FFI
 pub type Handler = extern "sysv64" fn(&mut Executor, state: &mut VmState) -> Control<(), Break>;
 
 macro_rules! expand_op_code_to_handler {
@@ -179,6 +180,7 @@ macro_rules! impl_executor_handlers {
         $(
             #[cfg_attr(feature = "indirect-dispatch", inline(always))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
+            #[allow(improper_ctypes_definitions)] // not used in FFI
             extern "sysv64" fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
                 match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance) {
                     Done::Continue(NextState { ip, sp, mem0, mem0_len, instance }) => {

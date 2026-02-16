@@ -11,6 +11,7 @@ macro_rules! execution_handler {
         ) -> $done:ty = $body:tt
     ) => {
         #[cfg_attr(feature = "portable-dispatch", inline(always))]
+        #[allow(improper_ctypes_definitions)] // not used in FFI
         pub extern "sysv64" fn $name(
             $state: $state_ty,
             $ip: $ip_ty,
@@ -35,6 +36,7 @@ macro_rules! execution_handler {
         ) -> $done:ty = $body:tt
     ) => {
         #[cfg_attr(feature = "portable-dispatch", inline(always))]
+        #[allow(improper_ctypes_definitions)] // not used in FFI
         pub fn $name(
             $state: $state_ty,
             $ip: $ip_ty,
