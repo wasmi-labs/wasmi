@@ -12,56 +12,58 @@ use crate::{
     },
 };
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn copy128(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        ip,
-        crate::ir::decode::Copy128 {
-            result,
-            value_lo,
-            value_hi,
-        },
-    ) = unsafe { decode_op(ip) };
-    let value_lo: u64 = get_value(value_lo, sp);
-    let value_hi: u64 = get_value(value_hi, sp);
-    let v128: V128 = V128::from((u128::from(value_hi) << 64) | u128::from(value_lo));
-    set_value(sp, result, v128);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn copy128(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            ip,
+            crate::ir::decode::Copy128 {
+                result,
+                value_lo,
+                value_hi,
+            },
+        ) = unsafe { decode_op(ip) };
+        let value_lo: u64 = get_value(value_lo, sp);
+        let value_hi: u64 = get_value(value_hi, sp);
+        let v128: V128 = V128::from((u128::from(value_hi) << 64) | u128::from(value_lo));
+        set_value(sp, result, v128);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn select128(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        ip,
-        crate::ir::decode::Select128 {
-            result,
-            selector,
-            val_true,
-            val_false,
-        },
-    ) = unsafe { decode_op(ip) };
-    let selector: bool = get_value(selector, sp);
-    let selected = match selector {
-        true => val_true,
-        false => val_false,
-    };
-    let selected: V128 = get_value(selected, sp);
-    set_value(sp, result, selected);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn select128(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            ip,
+            crate::ir::decode::Select128 {
+                result,
+                selector,
+                val_true,
+                val_false,
+            },
+        ) = unsafe { decode_op(ip) };
+        let selector: bool = get_value(selector, sp);
+        let selected = match selector {
+            true => val_true,
+            false => val_false,
+        };
+        let selected: V128 = get_value(selected, sp);
+        set_value(sp, result, selected);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
 macro_rules! impl_splat_bytes {
@@ -295,27 +297,28 @@ handler_binary! {
 macro_rules! handler_extract_lane {
     ( $( fn $handler:ident($op:ident) = $eval:expr; )* ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$op {
-                        result,
-                        value,
-                        lane,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let value = get_value(value, sp);
-                let extracted = $eval(value, lane);
-                set_value(sp, result, extracted);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        crate::ir::decode::$op {
+                            result,
+                            value,
+                            lane,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let value = get_value(value, sp);
+                    let extracted = $eval(value, lane);
+                    set_value(sp, result, extracted);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -349,29 +352,30 @@ impl_replace_lane! {
 macro_rules! handler_extract_lane {
     ( $( fn $handler:ident($op:ident) = $eval:expr; )* ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$op {
-                        result,
-                        v128,
-                        value,
-                        lane,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let v128 = get_value(v128, sp);
-                let value = get_value(value, sp);
-                let replaced = $eval(v128, lane, value);
-                set_value(sp, result, replaced);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        crate::ir::decode::$op {
+                            result,
+                            v128,
+                            value,
+                            lane,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let v128 = get_value(v128, sp);
+                    let value = get_value(value, sp);
+                    let replaced = $eval(v128, lane, value);
+                    set_value(sp, result, replaced);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -390,22 +394,23 @@ handler_extract_lane! {
 macro_rules! handler_ternary {
     ( $( fn $handler:ident($decode:ident, $v0:ident, $v1:ident, $v2:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (ip, $crate::ir::decode::$decode { result, $v0, $v1, $v2 }) = unsafe { decode_op(ip) };
-                let $v0 = get_value($v0, sp);
-                let $v1 = get_value($v1, sp);
-                let $v2 = get_value($v2, sp);
-                let value = $eval($v0, $v1, $v2).into_control()?;
-                set_value(sp, result, value);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (ip, $crate::ir::decode::$decode { result, $v0, $v1, $v2 }) = unsafe { decode_op(ip) };
+                    let $v0 = get_value($v0, sp);
+                    let $v1 = get_value($v1, sp);
+                    let $v2 = get_value($v2, sp);
+                    let value = $eval($v0, $v1, $v2).into_control()?;
+                    set_value(sp, result, value);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -460,35 +465,36 @@ handler_load_mem0_offset16_ss! {
 macro_rules! handler_load_lane {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    $crate::ir::decode::$op {
-                        result,
-                        ptr,
-                        offset,
-                        v128,
-                        lane,
-                        memory,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let v128 = get_value(v128, sp);
-                let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
-                    memory, mem0, mem0_len, instance, state,
-                );
-                let value = $eval(mem_bytes, ptr, offset, v128, lane).into_control()?;
-                set_value(sp, result, value);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        $crate::ir::decode::$op {
+                            result,
+                            ptr,
+                            offset,
+                            v128,
+                            lane,
+                            memory,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let ptr = get_value(ptr, sp);
+                    let offset = get_value(offset, sp);
+                    let v128 = get_value(v128, sp);
+                    let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
+                        memory, mem0, mem0_len, instance, state,
+                    );
+                    let value = $eval(mem_bytes, ptr, offset, v128, lane).into_control()?;
+                    set_value(sp, result, value);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -503,23 +509,24 @@ handler_load_lane! {
 macro_rules! handler_load_lane_mem0_offset16 {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (ip, $crate::ir::decode::$op { result, ptr, offset, v128, lane }) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let v128 = get_value(v128, sp);
-                let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                let value = $eval(mem_bytes, ptr, u64::from(u16::from(offset)), v128, lane).into_control()?;
-                set_value(sp, result, value);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (ip, $crate::ir::decode::$op { result, ptr, offset, v128, lane }) = unsafe { decode_op(ip) };
+                    let ptr = get_value(ptr, sp);
+                    let offset = get_value(offset, sp);
+                    let v128 = get_value(v128, sp);
+                    let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
+                    let value = $eval(mem_bytes, ptr, u64::from(u16::from(offset)), v128, lane).into_control()?;
+                    set_value(sp, result, value);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -542,27 +549,28 @@ handler_store_mem0_offset16_sx! {
 macro_rules! handler_store_lane_ss {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    $crate::ir::decode::$op { ptr, offset, value, memory, lane },
-                ) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let value = get_value(value, sp);
-                let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
-                    memory, mem0, mem0_len, instance, state,
-                );
-                $eval(mem_bytes, ptr, offset, value, lane).into_control()?;
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        $crate::ir::decode::$op { ptr, offset, value, memory, lane },
+                    ) = unsafe { decode_op(ip) };
+                    let ptr = get_value(ptr, sp);
+                    let offset = get_value(offset, sp);
+                    let value = get_value(value, sp);
+                    let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
+                        memory, mem0, mem0_len, instance, state,
+                    );
+                    $eval(mem_bytes, ptr, offset, value, lane).into_control()?;
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -577,25 +585,26 @@ handler_store_lane_ss! {
 macro_rules! handler_store_lane_mem0_offset16_ss {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    $crate::ir::decode::$op { ptr, offset, value, lane },
-                ) = unsafe { decode_op(ip) };
-                let ptr = get_value(ptr, sp);
-                let offset = get_value(offset, sp);
-                let value = get_value(value, sp);
-                let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                $eval(mem_bytes, ptr, u64::from(u16::from(offset)), value, lane).into_control()?;
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        $crate::ir::decode::$op { ptr, offset, value, lane },
+                    ) = unsafe { decode_op(ip) };
+                    let ptr = get_value(ptr, sp);
+                    let offset = get_value(offset, sp);
+                    let value = get_value(value, sp);
+                    let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
+                    $eval(mem_bytes, ptr, u64::from(u16::from(offset)), value, lane).into_control()?;
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };

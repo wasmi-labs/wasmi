@@ -76,379 +76,399 @@ fn identity<T>(value: T) -> T {
     value
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn trap(
-    _state: &mut VmState,
-    ip: Ip,
-    _sp: Sp,
-    _mem0: Mem0Ptr,
-    _mem0_len: Mem0Len,
-    _instance: Inst,
-) -> Done {
-    let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
-    trap!(trap_code)
-}
-
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn consume_fuel(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (next_ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
-    let consumption_result = state
-        .store
-        .inner_mut()
-        .fuel_mut()
-        .consume_fuel_unchecked(u64::from(fuel));
-    if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-        out_of_fuel!(state, ip, required_fuel)
+execution_handler! {
+    fn trap(
+        _state: &mut VmState,
+        ip: Ip,
+        _sp: Sp,
+        _mem0: Mem0Ptr,
+        _mem0_len: Mem0Len,
+        _instance: Inst,
+    ) -> Done = {
+        let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
+        trap!(trap_code)
     }
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn copy_span_asc(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        ip,
-        crate::ir::decode::CopySpanAsc {
-            results,
-            values,
-            len,
-        },
-    ) = unsafe { decode_op(ip) };
-    exec_copy_span_asc(sp, results, values, len);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn consume_fuel(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (next_ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
+        let consumption_result = state
+            .store
+            .inner_mut()
+            .fuel_mut()
+            .consume_fuel_unchecked(u64::from(fuel));
+        if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
+            out_of_fuel!(state, ip, required_fuel)
+        }
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn copy_span_des(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        ip,
-        crate::ir::decode::CopySpanDes {
-            results,
-            values,
-            len,
-        },
-    ) = unsafe { decode_op(ip) };
-    exec_copy_span_des(sp, results, values, len);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn copy_span_asc(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            ip,
+            crate::ir::decode::CopySpanAsc {
+                results,
+                values,
+                len,
+            },
+        ) = unsafe { decode_op(ip) };
+        exec_copy_span_asc(sp, results, values, len);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn branch(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
-    let ip = offset_ip(ip, offset);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn copy_span_des(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            ip,
+            crate::ir::decode::CopySpanDes {
+                results,
+                values,
+                len,
+            },
+        ) = unsafe { decode_op(ip) };
+        exec_copy_span_des(sp, results, values, len);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_get64(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
-    let global = fetch_global(instance, global);
-    let global = resolve_global(state.store, &global);
-    let value: u64 = global.get_raw().read_as();
-    set_value(sp, result, value);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn branch(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
+        let ip = offset_ip(ip, offset);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
+execution_handler! {
+    fn global_get64(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
+        let global = fetch_global(instance, global);
+        let global = resolve_global(state.store, &global);
+        let value: u64 = global.get_raw().read_as();
+        set_value(sp, result, value);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
+}
+
 #[cfg(feature = "simd")]
-pub fn global_get128(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
-    let global = fetch_global(instance, global);
-    let global = resolve_global(state.store, &global);
-    let value: V128 = global.get_raw().read_as();
-    set_value(sp, result, value);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn global_get128(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
+        let global = fetch_global(instance, global);
+        let global = resolve_global(state.store, &global);
+        let value: V128 = global.get_raw().read_as();
+        set_value(sp, result, value);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set64_s(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::GlobalSet64S { global, value }) = unsafe { decode_op(ip) };
-    let value: u64 = get_value(value, sp);
-    set_global(global, value, state, instance);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn global_set64_s(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::GlobalSet64S { global, value }) = unsafe { decode_op(ip) };
+        let value: u64 = get_value(value, sp);
+        set_global(global, value, state, instance);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
 #[cfg(feature = "simd")]
-pub fn global_set128_s(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::GlobalSet128S { global, value }) = unsafe { decode_op(ip) };
-    let value: V128 = get_value(value, sp);
-    set_global(global, value, state, instance);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn global_set128_s(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::GlobalSet128S { global, value }) = unsafe { decode_op(ip) };
+        let value: V128 = get_value(value, sp);
+        set_global(global, value, state, instance);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set32_i(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
-    let value: u32 = get_value(value, sp);
-    set_global(global, value, state, instance);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn global_set32_i(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
+        let value: u32 = get_value(value, sp);
+        set_global(global, value, state, instance);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn global_set64_i(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
-    let value: u64 = get_value(value, sp);
-    set_global(global, value, state, instance);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn global_set64_i(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
+        let value: u64 = get_value(value, sp);
+        set_global(global, value, state, instance);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn call_internal(
-    state: &mut VmState,
-    ip: Ip,
-    _sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
-    let func = EngineFunc::from(func);
-    let (callee_ip, callee_sp) = call_wasm(state, caller_ip, params, func, None)?;
-    dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn call_internal(
+        state: &mut VmState,
+        ip: Ip,
+        _sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
+        let func = EngineFunc::from(func);
+        let (callee_ip, callee_sp) = call_wasm(state, caller_ip, params, func, None)?;
+        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn call_imported(
-    state: &mut VmState,
-    ip: Ip,
-    _sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
-    let func = fetch_func(instance, func);
-    let (ip, sp, mem0, mem0_len, instance) =
-        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn call_imported(
+        state: &mut VmState,
+        ip: Ip,
+        _sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
+        let func = fetch_func(instance, func);
+        let (ip, sp, mem0, mem0_len, instance) =
+            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn call_indirect(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        caller_ip,
-        crate::ir::decode::CallIndirect {
-            params,
-            index,
-            func_type,
-            table,
-        },
-    ) = unsafe { decode_op(ip) };
-    let func =
-        resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
-    let (callee_ip, sp, mem0, mem0_len, instance) =
-        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn call_indirect(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            caller_ip,
+            crate::ir::decode::CallIndirect {
+                params,
+                index,
+                func_type,
+                table,
+            },
+        ) = unsafe { decode_op(ip) };
+        let func =
+            resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
+        let (callee_ip, sp, mem0, mem0_len, instance) =
+            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn return_call_internal(
-    state: &mut VmState,
-    ip: Ip,
-    _sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
-    let func = EngineFunc::from(func);
-    let (callee_ip, callee_sp) = return_call_wasm(state, params, func, None)?;
-    dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn return_call_internal(
+        state: &mut VmState,
+        ip: Ip,
+        _sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
+        let func = EngineFunc::from(func);
+        let (callee_ip, callee_sp) = return_call_wasm(state, params, func, None)?;
+        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn return_call_imported(
-    state: &mut VmState,
-    ip: Ip,
-    _sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
-    let func = fetch_func(instance, func);
-    let func_entity = resolve_func(state.store, &func);
-    let (callee_ip, sp, new_instance) = match func_entity {
-        FuncEntity::Wasm(func) => {
-            let wasm_func = func.func_body();
-            let callee_instance = *func.instance();
-            let callee_instance = resolve_instance(state.store, &callee_instance).into();
-            let (callee_ip, callee_sp) =
-                return_call_wasm(state, params, wasm_func, Some(instance))?;
-            (callee_ip, callee_sp, callee_instance)
-        }
-        FuncEntity::Host(host_func) => {
-            let host_func = *host_func;
-            return_call_host(state, func, host_func, params, instance)?
-        }
-    };
-    let (instance, mem0, mem0_len) =
-        update_instance(state.store, instance, new_instance, mem0, mem0_len);
-    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn return_call_imported(
+        state: &mut VmState,
+        ip: Ip,
+        _sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
+        let func = fetch_func(instance, func);
+        let func_entity = resolve_func(state.store, &func);
+        let (callee_ip, sp, new_instance) = match func_entity {
+            FuncEntity::Wasm(func) => {
+                let wasm_func = func.func_body();
+                let callee_instance = *func.instance();
+                let callee_instance = resolve_instance(state.store, &callee_instance).into();
+                let (callee_ip, callee_sp) =
+                    return_call_wasm(state, params, wasm_func, Some(instance))?;
+                (callee_ip, callee_sp, callee_instance)
+            }
+            FuncEntity::Host(host_func) => {
+                let host_func = *host_func;
+                return_call_host(state, func, host_func, params, instance)?
+            }
+        };
+        let (instance, mem0, mem0_len) =
+            update_instance(state.store, instance, new_instance, mem0, mem0_len);
+        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn return_call_indirect(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        _,
-        crate::ir::decode::ReturnCallIndirect {
-            params,
-            index,
-            func_type,
-            table,
-        },
-    ) = unsafe { decode_op(ip) };
-    let func =
-        resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
-    let func_entity = resolve_func(state.store, &func);
-    let (callee_ip, sp, callee_instance) = match func_entity {
-        FuncEntity::Wasm(func) => {
-            let wasm_func = func.func_body();
-            let callee_instance = *func.instance();
-            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-            let (callee_ip, callee_sp) =
-                return_call_wasm(state, params, wasm_func, Some(instance))?;
-            (callee_ip, callee_sp, callee_instance)
-        }
-        FuncEntity::Host(host_func) => {
-            let host_func = *host_func;
-            return_call_host(state, func, host_func, params, instance)?
-        }
-    };
-    let (instance, mem0, mem0_len) =
-        update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn return_call_indirect(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            _,
+            crate::ir::decode::ReturnCallIndirect {
+                params,
+                index,
+                func_type,
+                table,
+            },
+        ) = unsafe { decode_op(ip) };
+        let func =
+            resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
+        let func_entity = resolve_func(state.store, &func);
+        let (callee_ip, sp, callee_instance) = match func_entity {
+            FuncEntity::Wasm(func) => {
+                let wasm_func = func.func_body();
+                let callee_instance = *func.instance();
+                let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+                let (callee_ip, callee_sp) =
+                    return_call_wasm(state, params, wasm_func, Some(instance))?;
+                (callee_ip, callee_sp, callee_instance)
+            }
+            FuncEntity::Host(host_func) => {
+                let host_func = *host_func;
+                return_call_host(state, func, host_func, params, instance)?
+            }
+        };
+        let (instance, mem0, mem0_len) =
+            update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn r#return(
-    state: &mut VmState,
-    _ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    exec_return(state, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn r#return(
+        state: &mut VmState,
+        _ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        exec_return(state, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn return_span(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { decode_op(ip) };
-    let dst = SlotSpan::new(Slot::from(0));
-    let src = values.span();
-    let len = values.len();
-    exec_copy_span_asc(sp, dst, src, len);
-    exec_return(state, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn return_span(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { decode_op(ip) };
+        let dst = SlotSpan::new(Slot::from(0));
+        let src = values.span();
+        let len = values.len();
+        exec_copy_span_asc(sp, dst, src, len);
+        exec_return(state, sp, mem0, mem0_len, instance)
+    }
 }
 
 macro_rules! handler_return {
     ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
-                let value = get_value(value, sp);
-                set_value(sp, Slot::from(0), $eval(value));
-                exec_return(state, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
+                    let value = get_value(value, sp);
+                    set_value(sp, Slot::from(0), $eval(value));
+                    exec_return(state, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -459,127 +479,130 @@ handler_return! {
     fn return64(Return64) = identity::<u64>;
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn memory_size(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
-    let memory = fetch_memory(instance, memory);
-    let size = resolve_memory(state.store, &memory).size();
-    set_value(sp, result, size);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn memory_size(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
+        let memory = fetch_memory(instance, memory);
+        let size = resolve_memory(state.store, &memory).size();
+        set_value(sp, result, size);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn memory_grow(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::MemoryGrow {
-            memory,
-            result,
-            delta,
-        },
-    ) = unsafe { decode_op(ip) };
-    let delta: u64 = get_value(delta, sp);
-    let memref = fetch_memory(instance, memory);
-    let mut mem0 = mem0;
-    let mut mem0_len = mem0_len;
-    let return_value = match state.store.grow_memory(&memref, delta) {
-        Ok(return_value) => {
-            // The `memory.grow` operation might have invalidated the cached
-            // linear memory so we need to reset it in order for the cache to
-            // reload in case it is used again.
-            if memory.is_default() {
-                (mem0, mem0_len) = extract_mem0(state.store, instance);
+execution_handler! {
+    fn memory_grow(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::MemoryGrow {
+                memory,
+                result,
+                delta,
+            },
+        ) = unsafe { decode_op(ip) };
+        let delta: u64 = get_value(delta, sp);
+        let memref = fetch_memory(instance, memory);
+        let mut mem0 = mem0;
+        let mut mem0_len = mem0_len;
+        let return_value = match state.store.grow_memory(&memref, delta) {
+            Ok(return_value) => {
+                // The `memory.grow` operation might have invalidated the cached
+                // linear memory so we need to reset it in order for the cache to
+                // reload in case it is used again.
+                if memory.is_default() {
+                    (mem0, mem0_len) = extract_mem0(state.store, instance);
+                }
+                return_value
             }
-            return_value
-        }
-        Err(StoreError::External(
-            MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
-        )) => {
-            let memory_ty = resolve_memory(state.store, &memref).ty();
-            match memory_ty.is_64() {
-                true => u64::MAX,
-                false => u64::from(u32::MAX),
+            Err(StoreError::External(
+                MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
+            )) => {
+                let memory_ty = resolve_memory(state.store, &memref).ty();
+                match memory_ty.is_64() {
+                    true => u64::MAX,
+                    false => u64::from(u32::MAX),
+                }
             }
-        }
-        Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-            out_of_fuel!(state, ip, required_fuel)
-        }
-        Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
-            trap!(TrapCode::GrowthOperationLimited);
-        }
-        Err(StoreError::Internal(error)) => unsafe {
-            unreachable_unchecked!("internal interpreter error: {error}")
-        },
-        Err(error) => {
-            panic!("`memory.grow`: internal interpreter error: {error}")
-        }
-    };
-    set_value(sp, result, return_value);
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
-}
-
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn memory_copy(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::MemoryCopy {
-            dst_memory,
-            src_memory,
-            dst,
-            src,
-            len,
-        },
-    ) = unsafe { decode_op(ip) };
-    let dst: u64 = get_value(dst, sp);
-    let src: u64 = get_value(src, sp);
-    let len: u64 = get_value(len, sp);
-    let Ok(dst_index) = usize::try_from(dst) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let Ok(src_index) = usize::try_from(src) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let Ok(len) = usize::try_from(len) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    if dst_memory == src_memory {
-        memory_copy_within(state, ip, instance, dst_memory, dst_index, src_index, len)?;
+            Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
+                out_of_fuel!(state, ip, required_fuel)
+            }
+            Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
+                trap!(TrapCode::GrowthOperationLimited);
+            }
+            Err(StoreError::Internal(error)) => unsafe {
+                unreachable_unchecked!("internal interpreter error: {error}")
+            },
+            Err(error) => {
+                panic!("`memory.grow`: internal interpreter error: {error}")
+            }
+        };
+        set_value(sp, result, return_value);
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
     }
-    let dst_memory = fetch_memory(instance, dst_memory);
-    let src_memory = fetch_memory(instance, src_memory);
-    let (src_memory, dst_memory, fuel) = state
-        .store
-        .inner_mut()
-        .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
-    // These accesses just perform the bounds checks required by the Wasm spec.
-    let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
-    let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
-    consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_values::<u8>(len as u64));
-    dst_bytes.copy_from_slice(src_bytes);
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+}
+
+execution_handler! {
+    fn memory_copy(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::MemoryCopy {
+                dst_memory,
+                src_memory,
+                dst,
+                src,
+                len,
+            },
+        ) = unsafe { decode_op(ip) };
+        let dst: u64 = get_value(dst, sp);
+        let src: u64 = get_value(src, sp);
+        let len: u64 = get_value(len, sp);
+        let Ok(dst_index) = usize::try_from(dst) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let Ok(src_index) = usize::try_from(src) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let Ok(len) = usize::try_from(len) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        if dst_memory == src_memory {
+            memory_copy_within(state, ip, instance, dst_memory, dst_index, src_index, len)?;
+            dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        }
+        let dst_memory = fetch_memory(instance, dst_memory);
+        let src_memory = fetch_memory(instance, src_memory);
+        let (src_memory, dst_memory, fuel) = state
+            .store
+            .inner_mut()
+            .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
+        let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
+        consume_fuel!(state, ip, fuel, |costs| costs
+            .fuel_for_copying_values::<u8>(len as u64));
+        dst_bytes.copy_from_slice(src_bytes);
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
 fn memory_copy_within(
@@ -604,196 +627,221 @@ fn memory_copy_within(
     Control::Continue(())
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn memory_fill(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::MemoryFill {
-            memory,
-            dst,
-            len,
-            value,
-        },
-    ) = unsafe { decode_op(ip) };
-    let dst: u64 = get_value(dst, sp);
-    let len: u64 = get_value(len, sp);
-    let value: u8 = get_value(value, sp);
-    let Ok(dst) = usize::try_from(dst) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let Ok(len) = usize::try_from(len) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let memory = fetch_memory(instance, memory);
-    let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
-    let slice = memory_slice_mut(memory, dst, len).into_control()?;
-    consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_values::<u8>(len as u64));
-    slice.fill(value);
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn memory_fill(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::MemoryFill {
+                memory,
+                dst,
+                len,
+                value,
+            },
+        ) = unsafe { decode_op(ip) };
+        let dst: u64 = get_value(dst, sp);
+        let len: u64 = get_value(len, sp);
+        let value: u8 = get_value(value, sp);
+        let Ok(dst) = usize::try_from(dst) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let Ok(len) = usize::try_from(len) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let memory = fetch_memory(instance, memory);
+        let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
+        let slice = memory_slice_mut(memory, dst, len).into_control()?;
+        consume_fuel!(state, ip, fuel, |costs| costs
+            .fuel_for_copying_values::<u8>(len as u64));
+        slice.fill(value);
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn memory_init(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::MemoryInit {
-            memory,
-            data,
-            dst,
-            src,
-            len,
-        },
-    ) = unsafe { decode_op(ip) };
-    let dst: u64 = get_value(dst, sp);
-    let src: u32 = get_value(src, sp);
-    let len: u32 = get_value(len, sp);
-    let Ok(dst_index) = usize::try_from(dst) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let Ok(src_index) = usize::try_from(src) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let Ok(len) = usize::try_from(len) else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    let (memory, data, fuel) = state
-        .store
-        .inner_mut()
-        .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
-    let memory = memory_slice_mut(memory, dst_index, len).into_control()?;
-    let Some(data) = data
-        .bytes()
-        .get(src_index..)
-        .and_then(|data| data.get(..len))
-    else {
-        trap!(TrapCode::MemoryOutOfBounds)
-    };
-    consume_fuel!(state, ip, fuel, |costs| costs
-        .fuel_for_copying_values::<u8>(len as u64));
-    memory.copy_from_slice(data);
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn memory_init(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::MemoryInit {
+                memory,
+                data,
+                dst,
+                src,
+                len,
+            },
+        ) = unsafe { decode_op(ip) };
+        let dst: u64 = get_value(dst, sp);
+        let src: u32 = get_value(src, sp);
+        let len: u32 = get_value(len, sp);
+        let Ok(dst_index) = usize::try_from(dst) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let Ok(src_index) = usize::try_from(src) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let Ok(len) = usize::try_from(len) else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        let (memory, data, fuel) = state
+            .store
+            .inner_mut()
+            .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
+        let memory = memory_slice_mut(memory, dst_index, len).into_control()?;
+        let Some(data) = data
+            .bytes()
+            .get(src_index..)
+            .and_then(|data| data.get(..len))
+        else {
+            trap!(TrapCode::MemoryOutOfBounds)
+        };
+        consume_fuel!(state, ip, fuel, |costs| costs
+            .fuel_for_copying_values::<u8>(len as u64));
+        memory.copy_from_slice(data);
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn data_drop(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::DataDrop { data }) = unsafe { decode_op(ip) };
-    let data = fetch_data(instance, data);
-    resolve_data_mut(state.store, &data).drop_bytes();
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn data_drop(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::DataDrop { data }) = unsafe { decode_op(ip) };
+        let data = fetch_data(instance, data);
+        resolve_data_mut(state.store, &data).drop_bytes();
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn table_size(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
-    let table = fetch_table(instance, table);
-    let size = resolve_table(state.store, &table).size();
-    set_value(sp, result, size);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn table_size(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
+        let table = fetch_table(instance, table);
+        let size = resolve_table(state.store, &table).size();
+        set_value(sp, result, size);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn table_grow(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        ip,
-        crate::ir::decode::TableGrow {
-            table,
-            result,
-            delta,
-            value,
-        },
-    ) = unsafe { decode_op(ip) };
-    let table = fetch_table(instance, table);
-    let delta = get_value(delta, sp);
-    let value = get_value(value, sp);
-    let return_value = match state.store.grow_table(&table, delta, value) {
-        Ok(return_value) => return_value,
-        Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-            let table = resolve_table(state.store, &table);
-            match table.ty().is_64() {
-                true => u64::MAX,
-                false => u64::from(u32::MAX),
+execution_handler! {
+    fn table_grow(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            ip,
+            crate::ir::decode::TableGrow {
+                table,
+                result,
+                delta,
+                value,
+            },
+        ) = unsafe { decode_op(ip) };
+        let table = fetch_table(instance, table);
+        let delta = get_value(delta, sp);
+        let value = get_value(value, sp);
+        let return_value = match state.store.grow_table(&table, delta, value) {
+            Ok(return_value) => return_value,
+            Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
+                let table = resolve_table(state.store, &table);
+                match table.ty().is_64() {
+                    true => u64::MAX,
+                    false => u64::from(u32::MAX),
+                }
             }
-        }
-        Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
-            done!(state, DoneReason::out_of_fuel(required_fuel));
-        }
-        Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
-            trap!(TrapCode::GrowthOperationLimited);
-        }
-        Err(StoreError::Internal(error)) => unsafe {
-            unreachable_unchecked!("internal interpreter error: {error}")
-        },
-        Err(error) => {
-            panic!("`table.grow`: internal interpreter error: {error}")
-        }
-    };
-    set_value(sp, result, return_value);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
+                done!(state, DoneReason::out_of_fuel(required_fuel));
+            }
+            Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
+                trap!(TrapCode::GrowthOperationLimited);
+            }
+            Err(StoreError::Internal(error)) => unsafe {
+                unreachable_unchecked!("internal interpreter error: {error}")
+            },
+            Err(error) => {
+                panic!("`table.grow`: internal interpreter error: {error}")
+            }
+        };
+        set_value(sp, result, return_value);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn table_copy(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::TableCopy {
-            dst_table,
-            src_table,
-            dst,
-            src,
-            len,
-        },
-    ) = unsafe { decode_op(ip) };
-    let dst: u64 = get_value(dst, sp);
-    let src: u64 = get_value(src, sp);
-    let len: u64 = get_value(len, sp);
-    if dst_table == src_table {
-        // Case: copy within the same table
-        let table = fetch_table(instance, dst_table);
-        let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
-        if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
+execution_handler! {
+    fn table_copy(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::TableCopy {
+                dst_table,
+                src_table,
+                dst,
+                src,
+                len,
+            },
+        ) = unsafe { decode_op(ip) };
+        let dst: u64 = get_value(dst, sp);
+        let src: u64 = get_value(src, sp);
+        let len: u64 = get_value(len, sp);
+        if dst_table == src_table {
+            // Case: copy within the same table
+            let table = fetch_table(instance, dst_table);
+            let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
+            if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
+                let trap_code = match error {
+                    TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
+                    TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+                    TableError::OutOfFuel { required_fuel } => {
+                        out_of_fuel!(state, ip, required_fuel)
+                    }
+                    _ => panic!("table.copy: unexpected error: {error:?}"),
+                };
+                trap!(trap_code)
+            }
+            dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        }
+        // Case: copy between two different tables
+        let dst_table = fetch_table(instance, dst_table);
+        let src_table = fetch_table(instance, src_table);
+        let (dst_table, src_table, fuel) = state
+            .store
+            .inner_mut()
+            .resolve_table_pair_and_fuel(&dst_table, &src_table);
+        if let Err(error) = CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
             let trap_code = match error {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
@@ -806,143 +854,128 @@ pub fn table_copy(
         }
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
     }
-    // Case: copy between two different tables
-    let dst_table = fetch_table(instance, dst_table);
-    let src_table = fetch_table(instance, src_table);
-    let (dst_table, src_table, fuel) = state
-        .store
-        .inner_mut()
-        .resolve_table_pair_and_fuel(&dst_table, &src_table);
-    if let Err(error) = CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
-        let trap_code = match error {
-            TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
-            TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
-            TableError::OutOfFuel { required_fuel } => {
-                out_of_fuel!(state, ip, required_fuel)
-            }
-            _ => panic!("table.copy: unexpected error: {error:?}"),
-        };
-        trap!(trap_code)
-    }
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn table_fill(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::TableFill {
-            table,
-            dst,
-            len,
-            value,
-        },
-    ) = unsafe { decode_op(ip) };
-    let dst: u64 = get_value(dst, sp);
-    let len: u64 = get_value(len, sp);
-    let value: RawRef = get_value(value, sp);
-    let table = fetch_table(instance, table);
-    let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
-    if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
-        let trap_code = match error {
-            TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
-            TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
-            TableError::OutOfFuel { required_fuel } => {
-                out_of_fuel!(state, ip, required_fuel)
-            }
-            _ => panic!("table.fill: unexpected error: {error:?}"),
-        };
-        trap!(trap_code)
+execution_handler! {
+    fn table_fill(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::TableFill {
+                table,
+                dst,
+                len,
+                value,
+            },
+        ) = unsafe { decode_op(ip) };
+        let dst: u64 = get_value(dst, sp);
+        let len: u64 = get_value(len, sp);
+        let value: RawRef = get_value(value, sp);
+        let table = fetch_table(instance, table);
+        let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
+        if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
+            let trap_code = match error {
+                TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+                TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
+                TableError::OutOfFuel { required_fuel } => {
+                    out_of_fuel!(state, ip, required_fuel)
+                }
+                _ => panic!("table.fill: unexpected error: {error:?}"),
+            };
+            trap!(trap_code)
+        }
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
     }
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn table_init(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        next_ip,
-        crate::ir::decode::TableInit {
-            table,
-            elem,
-            dst,
-            src,
-            len,
-        },
-    ) = unsafe { decode_op(ip) };
-    let dst: u64 = get_value(dst, sp);
-    let src: u32 = get_value(src, sp);
-    let len: u32 = get_value(len, sp);
-    let table = fetch_table(instance, table);
-    let elem = fetch_elem(instance, elem);
-    let (table, element, fuel) = state
-        .store
-        .inner_mut()
-        .resolve_table_init_params(&table, &elem);
-    if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
-        let trap_code = match error {
-            TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
-            TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
-            TableError::OutOfFuel { required_fuel } => {
-                out_of_fuel!(state, ip, required_fuel)
-            }
-            _ => panic!("table.init: unexpected error: {error:?}"),
-        };
-        trap!(trap_code)
+execution_handler! {
+    fn table_init(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            next_ip,
+            crate::ir::decode::TableInit {
+                table,
+                elem,
+                dst,
+                src,
+                len,
+            },
+        ) = unsafe { decode_op(ip) };
+        let dst: u64 = get_value(dst, sp);
+        let src: u32 = get_value(src, sp);
+        let len: u32 = get_value(len, sp);
+        let table = fetch_table(instance, table);
+        let elem = fetch_elem(instance, elem);
+        let (table, element, fuel) = state
+            .store
+            .inner_mut()
+            .resolve_table_init_params(&table, &elem);
+        if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
+            let trap_code = match error {
+                TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
+                TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
+                TableError::OutOfFuel { required_fuel } => {
+                    out_of_fuel!(state, ip, required_fuel)
+                }
+                _ => panic!("table.init: unexpected error: {error:?}"),
+            };
+            trap!(trap_code)
+        }
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
     }
-    dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn elem_drop(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::ElemDrop { elem }) = unsafe { decode_op(ip) };
-    let elem = fetch_elem(instance, elem);
-    resolve_elem_mut(state.store, &elem).drop_items();
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn elem_drop(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::ElemDrop { elem }) = unsafe { decode_op(ip) };
+        let elem = fetch_elem(instance, elem);
+        resolve_elem_mut(state.store, &elem).drop_items();
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
 macro_rules! impl_table_get {
     ( $( fn $handler:ident($op:ident) = $ext:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
-                let table = fetch_table(instance, table);
-                let table = resolve_table(state.store, &table);
-                let index = $ext(get_value(index, sp));
-                let value = match table.get(index) {
-                    Some(value) => value.raw(),
-                    None => trap!(TrapCode::TableOutOfBounds)
-                };
-                set_value(sp, result, value);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
+                    let table = fetch_table(instance, table);
+                    let table = resolve_table(state.store, &table);
+                    let index = $ext(get_value(index, sp));
+                    let value = match table.get(index) {
+                        Some(value) => value.raw(),
+                        None => trap!(TrapCode::TableOutOfBounds)
+                    };
+                    set_value(sp, result, value);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -955,24 +988,25 @@ impl_table_get! {
 macro_rules! impl_table_set {
     ( $( fn $handler:ident($op:ident) = $ext:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
-                let table = fetch_table(instance, table);
-                let table = resolve_table_mut(state.store, &table);
-                let index = $ext(get_value(index, sp));
-                let value: u32 = get_value(value, sp);
-                if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
-                    trap!(TrapCode::TableOutOfBounds)
-                };
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
+                    let table = fetch_table(instance, table);
+                    let table = resolve_table_mut(state.store, &table);
+                    let index = $ext(get_value(index, sp));
+                    let value: u32 = get_value(value, sp);
+                    if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
+                        trap!(TrapCode::TableOutOfBounds)
+                    };
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -984,22 +1018,23 @@ impl_table_set! {
     fn table_set_ii(TableSet_Ii) = u64::from;
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn ref_func(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
-    let func = fetch_func(instance, func);
-    let Some(rawref) = func.unwrap_raw(&*state.store) else {
-        unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
-    };
-    set_value(sp, result, rawref);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn ref_func(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
+        let func = fetch_func(instance, func);
+        let Some(rawref) = func.unwrap_raw(&*state.store) else {
+            unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
+        };
+        set_value(sp, result, rawref);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
 macro_rules! impl_i64_binop128 {
@@ -1007,25 +1042,26 @@ macro_rules! impl_i64_binop128 {
         $( fn $handler:ident($op:ident) = $eval:expr );* $(;)?
     ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
-                let lhs_lo: i64 = get_value(lhs_lo, sp);
-                let lhs_hi: i64 = get_value(lhs_hi, sp);
-                let rhs_lo: i64 = get_value(rhs_lo, sp);
-                let rhs_hi: i64 = get_value(rhs_hi, sp);
-                let results = results.to_array();
-                let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
-                set_value(sp, results[0], result_lo);
-                set_value(sp, results[1], result_hi);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
+                    let lhs_lo: i64 = get_value(lhs_lo, sp);
+                    let lhs_hi: i64 = get_value(lhs_hi, sp);
+                    let rhs_lo: i64 = get_value(rhs_lo, sp);
+                    let rhs_hi: i64 = get_value(rhs_hi, sp);
+                    let results = results.to_array();
+                    let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
+                    set_value(sp, results[0], result_lo);
+                    set_value(sp, results[1], result_hi);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -1040,23 +1076,24 @@ macro_rules! impl_i64_mul_wide {
         $( fn $handler:ident($op:ident) = $eval:expr );* $(;)?
     ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
-                let lhs: i64 = get_value(lhs, sp);
-                let rhs: i64 = get_value(rhs, sp);
-                let (result_lo, result_hi) = $eval(lhs, rhs);
-                let results = results.to_array();
-                set_value(sp, results[0], result_lo);
-                set_value(sp, results[1], result_hi);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
+                    let lhs: i64 = get_value(lhs, sp);
+                    let rhs: i64 = get_value(rhs, sp);
+                    let (result_lo, result_hi) = $eval(lhs, rhs);
+                    let results = results.to_array();
+                    set_value(sp, results[0], result_lo);
+                    set_value(sp, results[1], result_hi);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -1073,51 +1110,53 @@ fn fetch_branch_table_target(sp: Sp, index: Slot, len_targets: u32) -> usize {
     cmp::min(index, max_index) as usize
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn branch_table(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (ip, crate::ir::decode::BranchTable { len_targets, index }) = unsafe { decode_op(ip) };
-    let chosen_target = fetch_branch_table_target(sp, index, len_targets);
-    let target_offset = 4 * chosen_target;
-    let ip = unsafe { ip.add(target_offset) };
-    let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
-    let ip = offset_ip(ip, offset);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn branch_table(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (ip, crate::ir::decode::BranchTable { len_targets, index }) = unsafe { decode_op(ip) };
+        let chosen_target = fetch_branch_table_target(sp, index, len_targets);
+        let target_offset = 4 * chosen_target;
+        let ip = unsafe { ip.add(target_offset) };
+        let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
+        let ip = offset_ip(ip, offset);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
-#[cfg_attr(feature = "portable-dispatch", inline(always))]
-pub fn branch_table_span(
-    state: &mut VmState,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Done {
-    let (
-        ip,
-        crate::ir::decode::BranchTableSpan {
-            len_targets,
-            index,
-            values,
-            len_values,
-        },
-    ) = unsafe { decode_op(ip) };
-    let chosen_target = fetch_branch_table_target(sp, index, len_targets);
-    let target_offset = 6 * chosen_target;
-    let ip = unsafe { ip.add(target_offset) };
-    let (_, ir::BranchTableTarget { results, offset }) =
-        unsafe { ip.decode::<ir::BranchTableTarget>() };
-    // TODO: maybe provide 2 `br_table_span` operation variants if needed: `br_table_span_{asc,des}`
-    exec_copy_span(sp, results, values, len_values);
-    let ip = offset_ip(ip, offset);
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+execution_handler! {
+    fn branch_table_span(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+    ) -> Done = {
+        let (
+            ip,
+            crate::ir::decode::BranchTableSpan {
+                len_targets,
+                index,
+                values,
+                len_values,
+            },
+        ) = unsafe { decode_op(ip) };
+        let chosen_target = fetch_branch_table_target(sp, index, len_targets);
+        let target_offset = 6 * chosen_target;
+        let ip = unsafe { ip.add(target_offset) };
+        let (_, ir::BranchTableTarget { results, offset }) =
+            unsafe { ip.decode::<ir::BranchTableTarget>() };
+        // TODO: maybe provide 2 `br_table_span` operation variants if needed: `br_table_span_{asc,des}`
+        exec_copy_span(sp, results, values, len_values);
+        let ip = offset_ip(ip, offset);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    }
 }
 
 handler_unary! {
@@ -1408,23 +1447,24 @@ handler_binary! {
 macro_rules! handler_cmp_branch {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
-                let lhs = get_value(lhs, sp);
-                let rhs = get_value(rhs, sp);
-                let ip = match $eval(lhs, rhs) {
-                    true => offset_ip(ip, offset),
-                    false => next_ip,
-                };
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
+                    let lhs = get_value(lhs, sp);
+                    let rhs = get_value(rhs, sp);
+                    let ip = match $eval(lhs, rhs) {
+                        true => offset_ip(ip, offset),
+                        false => next_ip,
+                    };
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -1519,34 +1559,35 @@ handler_cmp_branch! {
 macro_rules! handler_select {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    $crate::ir::decode::$decode {
-                        result,
-                        val_true,
-                        val_false,
-                        lhs,
-                        rhs,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let lhs = get_value(lhs, sp);
-                let rhs = get_value(rhs, sp);
-                let src = match $eval(lhs, rhs) {
-                    true => val_true,
-                    false => val_false,
-                };
-                let src: u64 = get_value(src, sp);
-                set_value(sp, result, src);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        $crate::ir::decode::$decode {
+                            result,
+                            val_true,
+                            val_false,
+                            lhs,
+                            rhs,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let lhs = get_value(lhs, sp);
+                    let rhs = get_value(rhs, sp);
+                    let src = match $eval(lhs, rhs) {
+                        true => val_true,
+                        false => val_false,
+                    };
+                    let src: u64 = get_value(src, sp);
+                    set_value(sp, result, src);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -1620,28 +1661,29 @@ handler_load_ss! {
 macro_rules! handler_load_si {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$decode {
-                        result,
-                        address,
-                        memory,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let address = get_value(address, sp);
-                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
-                set_value(sp, result, loaded);
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        crate::ir::decode::$decode {
+                            result,
+                            address,
+                            memory,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let address = get_value(address, sp);
+                    let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
+                    let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
+                    set_value(sp, result, loaded);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
@@ -1696,28 +1738,29 @@ handler_store_sx! {
 macro_rules! handler_store_ix {
     ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
-            #[cfg_attr(feature = "portable-dispatch", inline(always))]
-            pub fn $handler(
-                state: &mut VmState,
-                ip: Ip,
-                sp: Sp,
-                mem0: Mem0Ptr,
-                mem0_len: Mem0Len,
-                instance: Inst,
-            ) -> Done {
-                let (
-                    ip,
-                    crate::ir::decode::$decode {
-                        address,
-                        value,
-                        memory,
-                    },
-                ) = unsafe { decode_op(ip) };
-                let address = get_value(address, sp);
-                let value: $hint = get_value(value, sp);
-                let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                $store(mem_bytes, usize::from(address), value.into()).into_control()?;
-                dispatch!(state, ip, sp, mem0, mem0_len, instance)
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        crate::ir::decode::$decode {
+                            address,
+                            value,
+                            memory,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let address = get_value(address, sp);
+                    let value: $hint = get_value(value, sp);
+                    let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
+                    $store(mem_bytes, usize::from(address), value.into()).into_control()?;
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
             }
         )*
     };
