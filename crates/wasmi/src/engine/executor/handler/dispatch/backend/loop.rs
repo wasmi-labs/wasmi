@@ -150,12 +150,36 @@ impl Executor {
     }
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 macro_rules! impl_executor_handlers {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         $(
             #[cfg_attr(feature = "indirect-dispatch", inline(always))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
             fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
+                match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance) {
+                    Done::Continue(NextState { ip, sp, mem0, mem0_len, instance }) => {
+                        self.ip = ip;
+                        self.sp = sp;
+                        self.mem0 = mem0;
+                        self.mem0_len = mem0_len;
+                        self.instance = instance;
+                        Control::Continue(())
+                    }
+                    Done::Break(reason) => Self::forward_break(reason),
+                }
+            }
+        )*
+    };
+}
+
+#[cfg(target_arch = "x86_64")]
+macro_rules! impl_executor_handlers {
+    ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
+        $(
+            #[cfg_attr(feature = "indirect-dispatch", inline(always))]
+            #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
+            extern "sysv64" fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
                 match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance) {
                     Done::Continue(NextState { ip, sp, mem0, mem0_len, instance }) => {
                         self.ip = ip;
