@@ -39,7 +39,11 @@ macro_rules! dispatch {
     }};
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 pub type Handler = fn(&mut Executor, state: &mut VmState) -> Control<(), Break>;
+
+#[cfg(target_arch = "x86_64")]
+pub type Handler = extern "sysv64" fn(&mut Executor, state: &mut VmState) -> Control<(), Break>;
 
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
