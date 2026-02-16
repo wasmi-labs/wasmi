@@ -20,7 +20,13 @@ use crate::{
         },
     },
     ir::{self, Op, index},
-    module::{self, MemoryIdx, TableIdx, WasmiValueType},
+    module::{
+        self,
+        MemoryIdx,
+        TableIdx,
+        WasmiValueType,
+        init_expr::{EmptyEvalContext, Eval},
+    },
 };
 use wasmparser::VisitOperator;
 
@@ -381,7 +387,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (global_type, init_value) = self.module.get_global(global_idx);
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
-            if let Some(value) = init_expr.eval_const() {
+            if let Some(value) = init_expr.eval(&EmptyEvalContext) {
                 if let Some(value) = value.as_raw_or_none() {
                     // Case: access to immutable internally defined global variables
                     //       can be replaced with their constant initialization value.
