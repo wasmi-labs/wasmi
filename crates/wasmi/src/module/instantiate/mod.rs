@@ -22,12 +22,18 @@ use crate::{
     Ref,
     Table,
     Val,
+    core::RawRef,
     error::ErrorKind,
     errors::MemoryError,
     func::WasmFuncEntity,
     memory::DataSegment,
-    module::FuncIdx,
+    module::{
+        FuncIdx,
+        init_expr::{Eval, EvalContext},
+    },
+    store::StoreInner,
 };
+use alloc::boxed::Box;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -275,19 +281,43 @@ impl Module {
             builder.push_global(global);
         }
     }
+}
 
+struct InstanceBuilderContext<'a, 'b> {
+    store: &'a StoreInner,
+    builder: &'b InstanceEntityBuilder,
+}
+impl<'a, 'b> InstanceBuilderContext<'a, 'b> {
+    /// Creates a new [`InstanceBuilderContext`].
+    pub fn new(store: &'a StoreInner, builder: &'b InstanceEntityBuilder) -> Self {
+        Self { store, builder }
+    }
+}
+impl EvalContext for InstanceBuilderContext<'_, '_> {
+    fn get_global(&self, index: u32) -> Option<Val> {
+        let global = self.builder.get_global(index);
+        let val = self.store.resolve_global(&global).get();
+        let val = Val::from_raw_parts(val.raw(), val.ty(), self.store);
+        Some(val)
+    }
+
+    fn get_func(&self, index: u32) -> Option<Nullable<Func>> {
+        let func = self.builder.get_func(index);
+        Some(<Nullable<Func>>::from(func))
+    }
+}
+
+impl Module {
     /// Evaluates the given initializer expression using the partially constructed [`Instance`].
     fn eval_init_expr(
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
         init_expr: &ConstExpr,
     ) -> Val {
+        let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
         init_expr
-            .eval_with_context(
-                |global_index| builder.get_global(global_index).get(&context),
-                |func_index| <Nullable<Func>>::from(builder.get_func(func_index)),
-            )
-            .expect("must evaluate to proper value")
+            .eval(&ctx)
+            .unwrap_or_else(|| panic!("failed to evaluate init expr: {init_expr:?}"))
     }
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
@@ -333,10 +363,25 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
         for segment in &self.module_header().element_segments[..] {
-            let get_global = |index| builder.get_global(index);
-            let get_func = |index| builder.get_func(index);
-            let element =
-                ElementSegment::new(context.as_context_mut(), segment, get_func, get_global);
+            let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
+            let items: Box<[RawRef]> = match segment.kind() {
+                ElementSegmentKind::Passive | ElementSegmentKind::Active(_) => segment
+                    .items()
+                    .iter()
+                    .map(|const_expr| {
+                        const_expr
+                            .eval(&ctx)
+                            .and_then(|val| val.unwrap_raw_ref(context.as_context()))
+                            .unwrap_or_else(|| {
+                                panic!(
+                                    "failed initialization of constant expression: {const_expr:?}"
+                                )
+                            })
+                    })
+                    .collect(),
+                ElementSegmentKind::Declared => Box::from([]),
+            };
+            let element = ElementSegment::new(context.as_context_mut(), segment.ty(), items);
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index =
                     match Self::eval_init_expr(context.as_context(), builder, active.offset()) {

@@ -5,7 +5,7 @@ mod element;
 mod export;
 mod global;
 mod import;
-mod init_expr;
+pub(crate) mod init_expr;
 mod instantiate;
 mod parser;
 mod read;
@@ -29,7 +29,7 @@ pub use self::{
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
-    element::{ElementSegment, ElementSegmentKind},
+    element::ElementSegment,
     init_expr::ConstExpr,
     utils::WasmiValueType,
 };

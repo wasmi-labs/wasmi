@@ -1,13 +1,10 @@
 use crate::{
     AsContext,
     AsContextMut,
-    Func,
-    Global,
+    RefType,
     core::{CoreElementSegment, RawRef},
-    module,
     store::Stored,
 };
-use alloc::boxed::Box;
 
 define_handle! {
     /// A Wasm data segment reference.
@@ -22,28 +19,10 @@ impl ElementSegment {
     /// If more than [`u32::MAX`] much linear memory is allocated.
     pub fn new(
         mut ctx: impl AsContextMut,
-        elem: &module::ElementSegment,
-        get_func: impl Fn(u32) -> Func,
-        get_global: impl Fn(u32) -> Global,
+        ty: RefType,
+        items: impl IntoIterator<Item = RawRef>,
     ) -> Self {
-        let get_func = |index| get_func(index).into();
-        let get_global = |index| get_global(index).get(&ctx);
-        let items: Box<[RawRef]> = match elem.kind() {
-            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => elem
-                .items()
-                .iter()
-                .map(|const_expr| {
-                    const_expr
-                        .eval_with_context(get_global, get_func)
-                        .and_then(|val| val.unwrap_raw_ref(ctx.as_context()))
-                        .unwrap_or_else(|| {
-                            panic!("failed initialization of constant expression: {const_expr:?}")
-                        })
-                })
-                .collect(),
-            module::ElementSegmentKind::Declared => Box::from([]),
-        };
-        let entity = CoreElementSegment::new(elem.ty(), items);
+        let entity = CoreElementSegment::new(ty, items);
         ctx.as_context_mut()
             .store
             .inner
