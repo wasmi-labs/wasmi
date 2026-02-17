@@ -1,7 +1,7 @@
 use crate::context::StoreContext;
 #[cfg(feature = "wasi")]
 use anyhow::Context;
-use anyhow::{Error, Result};
+use anyhow::{Error, Result, bail};
 use clap::{Parser, ValueEnum};
 use std::path::{Path, PathBuf};
 #[cfg(feature = "wasi")]
@@ -202,12 +202,18 @@ impl FromStr for KeyValue {
     ///
     /// If the string cannot be parsed into a `KEY=VALUE` style pair.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let eq_pos = s
-            .find('=')
-            .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
-        let (key, eq_value) = s.split_at(eq_pos);
-        assert!(s.starts_with('='));
-        let value = &eq_value[1..];
+        let Some(eq_pos) = s.find('=') else {
+            bail!("missing '=' in KEY=VAL pair: {s}")
+        };
+        let (key, eq_and_value) = s.split_at(eq_pos);
+        debug_assert!(eq_and_value.starts_with('='));
+        let value = &eq_and_value[1..];
+        if key.is_empty() {
+            bail!("missing KEY in --env KEY=VAL: {s}")
+        }
+        if value.is_empty() {
+            bail!("missing VAL in --env KEY=VAL: {s}")
+        }
         let key = key.to_string();
         let value = value.to_string();
         Ok(KeyValue { key, value })
