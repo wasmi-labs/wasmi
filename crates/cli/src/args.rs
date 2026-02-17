@@ -12,7 +12,7 @@ use wasmi_wasi::{Dir, TcpListener, WasiCtxBuilder, ambient_authority};
 /// The Wasmi CLI application arguments.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
-pub struct Args {
+pub struct WasmiApp {
     /// The host directory to pre-open for the `guest` to use.
     #[clap(
         long = "dir",
@@ -82,7 +82,7 @@ pub struct Args {
     args: Vec<String>,
 }
 
-impl Args {
+impl WasmiApp {
     /// Returns the Wasm file path given to the CLI app.
     pub fn module(&self) -> &Path {
         &self.module
@@ -115,7 +115,7 @@ impl Args {
 }
 
 #[cfg(not(feature = "wasi"))]
-impl Args {
+impl WasmiApp {
     /// Creates the [`StoreContext`] for this session.
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         Ok(StoreContext)
@@ -123,7 +123,7 @@ impl Args {
 }
 
 #[cfg(feature = "wasi")]
-impl Args {
+impl WasmiApp {
     /// Creates the [`StoreContext`] for this session.
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
