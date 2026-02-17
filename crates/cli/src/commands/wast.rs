@@ -1,10 +1,7 @@
 use crate::commands::Command;
 use anyhow::{Context as _, Error};
 use clap::Parser;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 
 /// Executes a WebAssembly Script file.
 #[derive(Parser)]
@@ -15,14 +12,11 @@ pub struct WastCommand {
         value_name = "SCRIPT_FILE",
         value_hint = clap::ValueHint::FilePath,
     )]
-    wast: PathBuf,
+    scripts: Vec<PathBuf>,
 }
 
 impl Command for WastCommand {
     fn execute(self) -> Result<(), Error> {
-        let wast_file = self.wast_file();
-        let wast = fs::read_to_string(self.wast_file())
-            .with_context(|| format!("failed to read .wast file: {wast_file:?}"))?;
         let mut config = wasmi::Config::default();
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
@@ -33,13 +27,19 @@ impl Command for WastCommand {
         runner
             .register_wasmitest()
             .context("failed to register wasmitest")?;
-        runner.process_directives(wast_file.as_os_str().to_str().unwrap_or(""), &wast)
+        for script in self.scripts() {
+            let wast = fs::read_to_string(script)
+                .with_context(|| format!("failed to read .wast file: {script:?}"))?;
+            let file_name = script.as_os_str().to_str().unwrap_or("");
+            runner.process_directives(file_name, &wast)?;
+        }
+        Ok(())
     }
 }
 
 impl WastCommand {
     /// Returns the Wast file path.
-    fn wast_file(&self) -> &Path {
-        self.wast.as_path()
+    fn scripts(&self) -> &[PathBuf] {
+        &self.scripts[..]
     }
 }
