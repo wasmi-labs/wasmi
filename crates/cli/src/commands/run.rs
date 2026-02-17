@@ -72,12 +72,20 @@ pub struct RunCommand {
     #[clap(long = "verbose")]
     verbose: bool,
 
-    /// Arguments given to Wasi or the invoked function.
+    /// Wasm module and arguments given to the invoked function or to WASI.
     ///
     /// If the `--invoke` CLI argument has been passed these arguments
     /// will be provided to the invoked function.
     ///
     /// Otherwise these arguments will be passed as WASI CLI arguments.
+    ///
+    /// Usage:
+    ///
+    /// - wasmi foo.wasm
+    ///
+    /// - wasmi foo.wasm a b c
+    ///
+    /// - wasmi foo.wasm --invoke bar a b c
     #[clap(value_name = "ARGS", trailing_var_arg = true)]
     module_and_args: Vec<String>,
 }
