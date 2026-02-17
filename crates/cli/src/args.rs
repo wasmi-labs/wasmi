@@ -77,55 +77,6 @@ pub struct Args {
     args: Vec<String>,
 }
 
-/// A CLI flag value key-value argument.
-#[derive(Debug, Clone)]
-#[cfg(feature = "wasi")]
-struct KeyValue {
-    key: String,
-    value: String,
-}
-
-#[cfg(feature = "wasi")]
-impl FromStr for KeyValue {
-    type Err = Error;
-
-    /// Parses a CLI flag value as [`KeyValue`] type.
-    ///
-    /// # Errors
-    ///
-    /// If the string cannot be parsed into a `KEY=VALUE` style pair.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let eq_pos = s
-            .find('=')
-            .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
-        let (key, eq_value) = s.split_at(eq_pos);
-        assert!(s.starts_with('='));
-        let value = &eq_value[1..];
-        let key = key.to_string();
-        let value = value.to_string();
-        Ok(KeyValue { key, value })
-    }
-}
-
-/// The chosen Wasmi compilation mode.
-#[derive(Debug, Default, Copy, Clone, ValueEnum)]
-enum CompilationMode {
-    Eager,
-    #[default]
-    LazyTranslation,
-    Lazy,
-}
-
-impl From<CompilationMode> for wasmi::CompilationMode {
-    fn from(mode: CompilationMode) -> Self {
-        match mode {
-            CompilationMode::Eager => Self::Eager,
-            CompilationMode::LazyTranslation => Self::LazyTranslation,
-            CompilationMode::Lazy => Self::Lazy,
-        }
-    }
-}
-
 impl Args {
     /// Returns the Wasm file path given to the CLI app.
     pub fn module(&self) -> &Path {
@@ -223,5 +174,54 @@ impl Args {
                 Ok(TcpListener::from_std(std_tcp_listener))
             })
             .collect::<Result<Vec<_>>>()
+    }
+}
+
+/// A CLI flag value key-value argument.
+#[derive(Debug, Clone)]
+#[cfg(feature = "wasi")]
+struct KeyValue {
+    key: String,
+    value: String,
+}
+
+#[cfg(feature = "wasi")]
+impl FromStr for KeyValue {
+    type Err = Error;
+
+    /// Parses a CLI flag value as [`KeyValue`] type.
+    ///
+    /// # Errors
+    ///
+    /// If the string cannot be parsed into a `KEY=VALUE` style pair.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let eq_pos = s
+            .find('=')
+            .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
+        let (key, eq_value) = s.split_at(eq_pos);
+        assert!(s.starts_with('='));
+        let value = &eq_value[1..];
+        let key = key.to_string();
+        let value = value.to_string();
+        Ok(KeyValue { key, value })
+    }
+}
+
+/// The chosen Wasmi compilation mode.
+#[derive(Debug, Default, Copy, Clone, ValueEnum)]
+enum CompilationMode {
+    Eager,
+    #[default]
+    LazyTranslation,
+    Lazy,
+}
+
+impl From<CompilationMode> for wasmi::CompilationMode {
+    fn from(mode: CompilationMode) -> Self {
+        match mode {
+            CompilationMode::Eager => Self::Eager,
+            CompilationMode::LazyTranslation => Self::LazyTranslation,
+            CompilationMode::Lazy => Self::Lazy,
+        }
     }
 }
