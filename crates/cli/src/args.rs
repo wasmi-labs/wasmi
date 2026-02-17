@@ -112,33 +112,19 @@ impl Args {
     pub fn verbose(&self) -> bool {
         self.verbose
     }
+}
 
-    /// Pre-opens all directories given in `--dir` and returns them for use by the [`StoreContext`].
-    ///
-    /// # Errors
-    ///
-    /// If any of the given directions in `--dir` cannot be opened.
-    #[cfg(feature = "wasi")]
-    fn preopen_dirs(&self) -> Result<Vec<(&Path, Dir)>> {
-        self.dirs
-            .iter()
-            .map(|path| {
-                let dir = Dir::open_ambient_dir(path, ambient_authority()).with_context(|| {
-                    format!("failed to open directory '{path:?}' with ambient authority")
-                })?;
-                Ok((path.as_ref(), dir))
-            })
-            .collect::<Result<Vec<_>>>()
-    }
-
+#[cfg(not(feature = "wasi"))]
+impl Args {
     /// Creates the [`StoreContext`] for this session.
-    #[cfg(not(feature = "wasi"))]
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         Ok(StoreContext)
     }
+}
 
+#[cfg(feature = "wasi")]
+impl Args {
     /// Creates the [`StoreContext`] for this session.
-    #[cfg(feature = "wasi")]
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
         for KeyValue { key, value } in &self.envs {
@@ -163,12 +149,28 @@ impl Args {
         Ok(wasi_builder.build())
     }
 
+    /// Pre-opens all directories given in `--dir` and returns them for use by the [`StoreContext`].
+    ///
+    /// # Errors
+    ///
+    /// If any of the given directions in `--dir` cannot be opened.
+    fn preopen_dirs(&self) -> Result<Vec<(&Path, Dir)>> {
+        self.dirs
+            .iter()
+            .map(|path| {
+                let dir = Dir::open_ambient_dir(path, ambient_authority()).with_context(|| {
+                    format!("failed to open directory '{path:?}' with ambient authority")
+                })?;
+                Ok((path.as_ref(), dir))
+            })
+            .collect::<Result<Vec<_>>>()
+    }
+
     /// Opens sockets given in `--tcplisten` and returns them for use by the [`StoreContext`].
     ///
     /// # Errors
     ///
     /// If any of the given socket addresses in `--tcplisten` cannot be listened to.
-    #[cfg(feature = "wasi")]
     fn preopen_sockets(&self) -> Result<Vec<TcpListener>> {
         self.tcplisten
             .iter()
