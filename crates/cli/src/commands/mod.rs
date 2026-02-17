@@ -14,7 +14,7 @@ pub use self::wast::WastCommand;
     name = "wasmi",
     version,
     about,
-    after_help = "If a subcommand is not provided, the `run` subcommand will be used.",
+    after_help = "If a subcommand is not provided, the `run` subcommand will be used."
 )]
 #[cfg_attr(
     feature = "run",
