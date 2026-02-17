@@ -1,7 +1,9 @@
 use crate::context::StoreContext;
 #[cfg(feature = "wasi")]
 use anyhow::Context;
-use anyhow::{Error, Result, bail};
+#[cfg(feature = "wasi")]
+use anyhow::bail;
+use anyhow::{Error, Result};
 use clap::{Parser, ValueEnum};
 use std::path::{Path, PathBuf};
 #[cfg(feature = "wasi")]
@@ -192,6 +194,7 @@ struct KeyValue {
     eq_pos: usize,
 }
 
+#[cfg(feature = "wasi")]
 impl KeyValue {
     /// Returns the key of `self`.
     pub fn key(&self) -> &str {
