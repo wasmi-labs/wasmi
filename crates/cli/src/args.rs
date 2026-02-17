@@ -9,36 +9,6 @@ use std::{net::SocketAddr, str::FromStr};
 #[cfg(feature = "wasi")]
 use wasmi_wasi::{Dir, TcpListener, WasiCtxBuilder, ambient_authority};
 
-/// A CLI flag value key-value argument.
-#[derive(Debug, Clone)]
-#[cfg(feature = "wasi")]
-struct KeyValue {
-    key: String,
-    value: String,
-}
-
-#[cfg(feature = "wasi")]
-impl FromStr for KeyValue {
-    type Err = Error;
-
-    /// Parses a CLI flag value as [`KeyValue`] type.
-    ///
-    /// # Errors
-    ///
-    /// If the string cannot be parsed into a `KEY=VALUE` style pair.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let eq_pos = s
-            .find('=')
-            .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
-        let (key, eq_value) = s.split_at(eq_pos);
-        assert!(s.starts_with('='));
-        let value = &eq_value[1..];
-        let key = key.to_string();
-        let value = value.to_string();
-        Ok(KeyValue { key, value })
-    }
-}
-
 /// The Wasmi CLI application arguments.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -105,6 +75,36 @@ pub struct Args {
     /// Arguments given to Wasi or the invoked function.
     #[clap(value_name = "ARGS", trailing_var_arg = true)]
     args: Vec<String>,
+}
+
+/// A CLI flag value key-value argument.
+#[derive(Debug, Clone)]
+#[cfg(feature = "wasi")]
+struct KeyValue {
+    key: String,
+    value: String,
+}
+
+#[cfg(feature = "wasi")]
+impl FromStr for KeyValue {
+    type Err = Error;
+
+    /// Parses a CLI flag value as [`KeyValue`] type.
+    ///
+    /// # Errors
+    ///
+    /// If the string cannot be parsed into a `KEY=VALUE` style pair.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let eq_pos = s
+            .find('=')
+            .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
+        let (key, eq_value) = s.split_at(eq_pos);
+        assert!(s.starts_with('='));
+        let value = &eq_value[1..];
+        let key = key.to_string();
+        let value = value.to_string();
+        Ok(KeyValue { key, value })
+    }
 }
 
 /// The chosen Wasmi compilation mode.
