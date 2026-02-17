@@ -17,7 +17,7 @@ use wasmi::{Func, Val};
 #[cfg(feature = "wasi")]
 use wasmi_wasi::{Dir, TcpListener, WasiCtxBuilder, ambient_authority};
 
-/// Executes a Wasm module.
+/// Executes a WebAssembly module.
 #[derive(Parser)]
 pub struct RunCommand {
     /// The host directory to pre-open for the `guest` to use.
