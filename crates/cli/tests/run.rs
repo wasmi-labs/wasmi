@@ -34,7 +34,7 @@ fn test_proc_exit() {
 #[test]
 fn test_verbose() {
     let mut cmd = get_cmd();
-    let assert = cmd.arg(get_bin_path("proc_exit")).arg("--verbose").assert();
+    let assert = cmd.arg("--verbose").arg(get_bin_path("proc_exit")).assert();
     let stdout = &assert.get_output().stdout;
     assert!(contains_slice(stdout, b"proc_exit.wat\")::()"));
 }

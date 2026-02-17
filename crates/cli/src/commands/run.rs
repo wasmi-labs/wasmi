@@ -1,20 +1,25 @@
-use crate::context::StoreContext;
+use crate::{
+    commands::Command,
+    context::{Context, StoreContext},
+    display::{DisplayExportedFuncs, DisplaySequence, DisplayValue},
+    utils,
+};
 #[cfg(feature = "wasi")]
-use anyhow::Context;
-#[cfg(feature = "wasi")]
-use anyhow::bail;
-use anyhow::{Error, Result};
+use anyhow::Context as _;
+use anyhow::{Error, Result, anyhow, bail};
 use clap::{Parser, ValueEnum};
-use std::path::{Path, PathBuf};
+#[cfg(feature = "wasi")]
+use std::path::PathBuf;
 #[cfg(feature = "wasi")]
 use std::{net::SocketAddr, str::FromStr};
+use std::{path::Path, process};
+use wasmi::{Func, Val};
 #[cfg(feature = "wasi")]
 use wasmi_wasi::{Dir, TcpListener, WasiCtxBuilder, ambient_authority};
 
-/// The Wasmi CLI application arguments.
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-pub struct WasmiApp {
+/// Executes a WebAssembly module.
+#[derive(Parser)]
+pub struct RunCommand {
     /// The host directory to pre-open for the `guest` to use.
     #[clap(
         long = "dir",
@@ -67,57 +72,153 @@ pub struct WasmiApp {
     #[clap(long = "verbose")]
     verbose: bool,
 
-    /// The file containing the WebAssembly module to execute.
-    #[clap(
-        value_name = "MODULE",
-        value_hint = clap::ValueHint::FilePath,
-    )]
-    module: PathBuf,
-
-    /// Arguments given to Wasi or the invoked function.
+    /// Wasm module and arguments given to the invoked function or to WASI.
     ///
     /// If the `--invoke` CLI argument has been passed these arguments
     /// will be provided to the invoked function.
     ///
     /// Otherwise these arguments will be passed as WASI CLI arguments.
+    ///
+    /// Usage:
+    ///
+    /// - wasmi foo.wasm
+    ///
+    /// - wasmi foo.wasm a b c
+    ///
+    /// - wasmi foo.wasm --invoke bar a b c
     #[clap(value_name = "ARGS", trailing_var_arg = true)]
-    args: Vec<String>,
+    module_and_args: Vec<String>,
 }
 
-impl WasmiApp {
+impl Command for RunCommand {
+    fn execute(self) -> Result<(), Error> {
+        let wasm_file = self.module();
+        let wasi_ctx = self.store_context()?;
+        let mut ctx = Context::new(wasm_file, wasi_ctx, self.fuel(), self.compilation_mode())?;
+        let (func_name, func) = self.invoked_name_and_func(&ctx)?;
+        let ty = func.ty(ctx.store());
+        let func_args = utils::decode_func_args(&ty, self.args())?;
+        let mut func_results = utils::prepare_func_results(&ty);
+        utils::typecheck_args(&func_name, &ty, &func_args)?;
+        self.print_execution_start(&func_name, &func_args);
+        match func.call(ctx.store_mut(), &func_args, &mut func_results) {
+            Ok(()) => {
+                self.print_remaining_fuel(&ctx);
+                Self::print_pretty_results(&func_results);
+                Ok(())
+            }
+            Err(error) => {
+                if let Some(exit_code) = error.i32_exit_status() {
+                    // We received an exit code from the WASI program,
+                    // therefore we exit with the same exit code after
+                    // pretty printing the results.
+                    self.print_remaining_fuel(&ctx);
+                    Self::print_pretty_results(&func_results);
+                    process::exit(exit_code)
+                }
+                bail!("failed during execution of {func_name}: {error}")
+            }
+        }
+    }
+}
+
+impl RunCommand {
+    /// Returns the invoked named function or the WASI entry point to the Wasm module if any.
+    ///
+    /// # Errors
+    ///
+    /// - If the function given via `--invoke` could not be found in the Wasm module.
+    /// - If `--invoke` was not given and no WASI entry points were exported.
+    fn invoked_name_and_func(&self, ctx: &Context) -> Result<(String, Func), Error> {
+        match self.invoked() {
+            Some(func_name) => {
+                let func = ctx
+                    .get_func(func_name)
+                    .map_err(|error| anyhow!("{error}\n\n{}", DisplayExportedFuncs::from(ctx)))?;
+                let func_name = func_name.into();
+                Ok((func_name, func))
+            }
+            None => {
+                // No `--invoke` flag was provided so we try to find
+                // the conventional WASI entry points `""` and `"_start"`.
+                if let Ok(func) = ctx.get_func("") {
+                    Ok(("".into(), func))
+                } else if let Ok(func) = ctx.get_func("_start") {
+                    Ok(("_start".into(), func))
+                } else {
+                    bail!(
+                        "did not specify `--invoke` and could not find exported WASI entry point functions\n\n{}",
+                        DisplayExportedFuncs::from(ctx)
+                    )
+                }
+            }
+        }
+    }
+
+    /// Prints a signalling text that Wasm execution has started.
+    fn print_execution_start(&self, func_name: &str, func_args: &[Val]) {
+        if !self.verbose() {
+            return;
+        }
+        let module = self.module();
+        println!(
+            "executing File({module:?})::{func_name}({}) ...",
+            DisplaySequence::new(", ", func_args.iter().map(DisplayValue::from))
+        );
+    }
+
+    /// Prints the remaining fuel so far if fuel metering was enabled.
+    fn print_remaining_fuel(&self, ctx: &Context) {
+        if let Some(given_fuel) = self.fuel() {
+            let remaining = ctx
+                .store()
+                .get_fuel()
+                .unwrap_or_else(|error| panic!("could not get the remaining fuel: {error}"));
+            let consumed = given_fuel.saturating_sub(remaining);
+            println!("fuel consumed: {consumed}, fuel remaining: {remaining}");
+        }
+    }
+
+    /// Prints the results of the Wasm computation in a human readable form.
+    fn print_pretty_results(results: &[Val]) {
+        for result in results {
+            println!("{}", DisplayValue::from(result))
+        }
+    }
+
     /// Returns the Wasm file path given to the CLI app.
-    pub fn module(&self) -> &Path {
-        &self.module
+    fn module(&self) -> &Path {
+        Path::new(&self.module_and_args[0])
     }
 
     /// Returns the name of the invoked function if any.
-    pub fn invoked(&self) -> Option<&str> {
+    fn invoked(&self) -> Option<&str> {
         self.invoke.as_deref()
     }
 
-    /// Returns the function arguments given to the CLI app.
-    pub fn args(&self) -> &[String] {
-        &self.args[..]
+    /// Returns the arguments for the invoked function.
+    fn args(&self) -> &[String] {
+        &self.module_and_args[1..]
     }
 
     /// Returns the amount of fuel given to the CLI app if any.
-    pub fn fuel(&self) -> Option<u64> {
+    fn fuel(&self) -> Option<u64> {
         self.fuel
     }
 
     /// Returns `true` if lazy Wasm compilation is enabled.
-    pub fn compilation_mode(&self) -> wasmi::CompilationMode {
+    fn compilation_mode(&self) -> wasmi::CompilationMode {
         self.compilation_mode.into()
     }
 
     /// Returns `true` if verbose messaging is enabled.
-    pub fn verbose(&self) -> bool {
+    fn verbose(&self) -> bool {
         self.verbose
     }
 }
 
 #[cfg(not(feature = "wasi"))]
-impl WasmiApp {
+impl RunCommand {
     /// Creates the [`StoreContext`] for this session.
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         Ok(StoreContext)
@@ -125,7 +226,7 @@ impl WasmiApp {
 }
 
 #[cfg(feature = "wasi")]
-impl WasmiApp {
+impl RunCommand {
     /// Creates the [`StoreContext`] for this session.
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
@@ -133,9 +234,7 @@ impl WasmiApp {
             wasi_builder.env(key_val.key(), key_val.value())?;
         }
         // Populate Wasi arguments.
-        let argv0 = self.module().as_os_str().to_str().unwrap_or("");
-        wasi_builder.arg(argv0)?;
-        wasi_builder.args(self.args())?;
+        wasi_builder.args(self.argv())?;
         // Add pre-opened TCP sockets.
         //
         // Note that `num_fd` starts at 3 because the inherited `stdin`, `stdout` and `stderr`
@@ -183,6 +282,11 @@ impl WasmiApp {
                 Ok(TcpListener::from_std(std_tcp_listener))
             })
             .collect::<Result<Vec<_>>>()
+    }
+
+    /// Returns the Wasmi CLI arguments.
+    fn argv(&self) -> &[String] {
+        &self.module_and_args[..]
     }
 }
 
