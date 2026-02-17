@@ -9,6 +9,7 @@ use std::{path::Path, process};
 use wasmi::{Func, FuncType, Val};
 
 mod args;
+mod commands;
 mod context;
 mod display;
 mod utils;
