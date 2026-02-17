@@ -21,6 +21,7 @@ doc = false
 [dependencies]
 wasmi = { workspace = true }
 wasmi_wasi = { workspace = true, optional = true }
+wasmi_wast = { workspace = true, optional = true }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 
@@ -28,12 +29,14 @@ clap = { version = "4", features = ["derive"] }
 assert_cmd = "2.0.7"
 
 [features]
-default = ["wasi", "wat"]
+default = ["run", "wast", "wasi", "wat"]
 hash-collections = ["wasmi/hash-collections"]
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 simd = ["wasmi/simd"]
 wasi = ["wasmi_wasi"]
 wat = ["wasmi/wat"]
+run = []
+wast = ["wasmi_wast"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
 
