@@ -127,8 +127,8 @@ impl Args {
     /// Creates the [`StoreContext`] for this session.
     pub fn store_context(&self) -> Result<StoreContext, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
-        for KeyValue { key, value } in &self.envs {
-            wasi_builder.env(key, value)?;
+        for key_val in &self.envs {
+            wasi_builder.env(key_val.key(), key_val.value())?;
         }
         // Populate Wasi arguments.
         let argv0 = self.module().as_os_str().to_str().unwrap_or("");
@@ -188,8 +188,20 @@ impl Args {
 #[derive(Debug, Clone)]
 #[cfg(feature = "wasi")]
 struct KeyValue {
-    key: String,
-    value: String,
+    key_val: Box<str>,
+    eq_pos: usize,
+}
+
+impl KeyValue {
+    /// Returns the key of `self`.
+    pub fn key(&self) -> &str {
+        self.key_val.split_at(self.eq_pos).0
+    }
+
+    /// Returns the value of `self`.
+    pub fn value(&self) -> &str {
+        &self.key_val.split_at(self.eq_pos).1[1..]
+    }
 }
 
 #[cfg(feature = "wasi")]
@@ -201,22 +213,23 @@ impl FromStr for KeyValue {
     /// # Errors
     ///
     /// If the string cannot be parsed into a `KEY=VALUE` style pair.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let Some(eq_pos) = s.find('=') else {
-            bail!("missing '=' in KEY=VAL pair: {s}")
+    fn from_str(contents: &str) -> Result<Self, Self::Err> {
+        let Some(eq_pos) = contents.find('=') else {
+            bail!("missing '=' in KEY=VAL pair: {contents}")
         };
-        let (key, eq_and_value) = s.split_at(eq_pos);
+        let (key, eq_and_value) = contents.split_at(eq_pos);
         debug_assert!(eq_and_value.starts_with('='));
         let value = &eq_and_value[1..];
         if key.is_empty() {
-            bail!("missing KEY in --env KEY=VAL: {s}")
+            bail!("missing KEY in --env KEY=VAL: {contents}")
         }
         if value.is_empty() {
-            bail!("missing VAL in --env KEY=VAL: {s}")
+            bail!("missing VAL in --env KEY=VAL: {contents}")
         }
-        let key = key.to_string();
-        let value = value.to_string();
-        Ok(KeyValue { key, value })
+        Ok(Self {
+            key_val: contents.into(),
+            eq_pos,
+        })
     }
 }
 
