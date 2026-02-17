@@ -9,11 +9,10 @@ use anyhow::Context as _;
 use anyhow::{Error, Result, anyhow, bail};
 use clap::{Parser, ValueEnum};
 #[cfg(feature = "wasi")]
+use std::path::PathBuf;
+#[cfg(feature = "wasi")]
 use std::{net::SocketAddr, str::FromStr};
-use std::{
-    path::{Path, PathBuf},
-    process,
-};
+use std::{path::Path, process};
 use wasmi::{Func, Val};
 #[cfg(feature = "wasi")]
 use wasmi_wasi::{Dir, TcpListener, WasiCtxBuilder, ambient_authority};
@@ -73,14 +72,6 @@ pub struct RunCommand {
     #[clap(long = "verbose")]
     verbose: bool,
 
-    /// The file containing the WebAssembly module to execute.
-    #[clap(
-        required = true,
-        value_name = "MODULE",
-        value_hint = clap::ValueHint::FilePath,
-    )]
-    module: PathBuf,
-
     /// Arguments given to Wasi or the invoked function.
     ///
     /// If the `--invoke` CLI argument has been passed these arguments
@@ -88,7 +79,7 @@ pub struct RunCommand {
     ///
     /// Otherwise these arguments will be passed as WASI CLI arguments.
     #[clap(value_name = "ARGS", trailing_var_arg = true)]
-    args: Vec<String>,
+    module_and_args: Vec<String>,
 }
 
 impl Command for RunCommand {
@@ -189,7 +180,7 @@ impl RunCommand {
 
     /// Returns the Wasm file path given to the CLI app.
     fn module(&self) -> &Path {
-        &self.module
+        Path::new(&self.module_and_args[0])
     }
 
     /// Returns the name of the invoked function if any.
@@ -197,9 +188,9 @@ impl RunCommand {
         self.invoke.as_deref()
     }
 
-    /// Returns the function arguments given to the CLI app.
+    /// Returns the arguments for the invoked function.
     fn args(&self) -> &[String] {
-        &self.args[..]
+        &self.module_and_args[1..]
     }
 
     /// Returns the amount of fuel given to the CLI app if any.
@@ -235,9 +226,7 @@ impl RunCommand {
             wasi_builder.env(key_val.key(), key_val.value())?;
         }
         // Populate Wasi arguments.
-        let argv0 = self.module().as_os_str().to_str().unwrap_or("");
-        wasi_builder.arg(argv0)?;
-        wasi_builder.args(self.args())?;
+        wasi_builder.args(self.argv())?;
         // Add pre-opened TCP sockets.
         //
         // Note that `num_fd` starts at 3 because the inherited `stdin`, `stdout` and `stderr`
@@ -285,6 +274,11 @@ impl RunCommand {
                 Ok(TcpListener::from_std(std_tcp_listener))
             })
             .collect::<Result<Vec<_>>>()
+    }
+
+    /// Returns the Wasmi CLI arguments.
+    fn argv(&self) -> &[String] {
+        &self.module_and_args[..]
     }
 }
 
