@@ -1,4 +1,6 @@
+#[cfg(feature = "run")]
 mod run;
+#[cfg(feature = "wast")]
 mod wast;
 
 use anyhow::Error;
