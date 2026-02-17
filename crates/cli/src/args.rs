@@ -73,6 +73,11 @@ pub struct Args {
     module: PathBuf,
 
     /// Arguments given to Wasi or the invoked function.
+    ///
+    /// If the `--invoke` CLI argument has been passed these arguments
+    /// will be provided to the invoked function.
+    ///
+    /// Otherwise these arguments will be passed as WASI CLI arguments.
     #[clap(value_name = "ARGS", trailing_var_arg = true)]
     args: Vec<String>,
 }
