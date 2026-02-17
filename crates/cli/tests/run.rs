@@ -49,5 +49,5 @@ fn get_bin_path(name: &str) -> PathBuf {
 }
 
 fn get_cmd() -> assert_cmd::Command {
-    cargo::cargo_bin_cmd!("wasmi_cli")
+    cargo::cargo_bin_cmd!("wasmi")
 }
