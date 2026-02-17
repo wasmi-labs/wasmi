@@ -6,8 +6,7 @@ use crate::{
 };
 #[cfg(feature = "wasi")]
 use anyhow::Context as _;
-use anyhow::bail;
-use anyhow::{Error, Result, anyhow};
+use anyhow::{Error, Result, anyhow, bail};
 use clap::{Parser, ValueEnum};
 #[cfg(feature = "wasi")]
 use std::{net::SocketAddr, str::FromStr};
