@@ -683,7 +683,7 @@ dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "wasm-smith",
- "wasmi 1.0.0",
+ "wasmi 2.0.0-beta.0",
  "wasmi_fuzz",
  "wasmprinter 0.228.0",
 ]
@@ -1651,20 +1651,6 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "1.0.0"
-dependencies = [
- "assert_matches",
- "criterion",
- "spin",
- "wasmi_collections 1.0.0",
- "wasmi_core 1.0.0",
- "wasmi_ir 1.0.0",
- "wasmparser 0.228.0",
- "wat",
-]
-
-[[package]]
-name = "wasmi"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22bf475363d09d960b48275c4ea9403051add498a9d80c64dbc91edabab9d1d0"
@@ -1678,23 +1664,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmi"
+version = "2.0.0-beta.0"
+dependencies = [
+ "assert_matches",
+ "criterion",
+ "spin",
+ "wasmi_collections 2.0.0-beta.0",
+ "wasmi_core 2.0.0-beta.0",
+ "wasmi_ir 2.0.0-beta.0",
+ "wasmparser 0.228.0",
+ "wat",
+]
+
+[[package]]
 name = "wasmi_c_api"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
  "wasmi_c_api_impl",
 ]
 
 [[package]]
 name = "wasmi_c_api_impl"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
- "wasmi 1.0.0",
+ "wasmi 2.0.0-beta.0",
  "wasmi_c_api_macros",
 ]
 
 [[package]]
 name = "wasmi_c_api_macros"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1702,22 +1702,14 @@ dependencies = [
 
 [[package]]
 name = "wasmi_cli"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
- "wasmi 1.0.0",
+ "wasmi 2.0.0-beta.0",
  "wasmi_wasi",
  "wasmi_wast",
-]
-
-[[package]]
-name = "wasmi_collections"
-version = "1.0.0"
-dependencies = [
- "hashbrown 0.15.5",
- "string-interner",
 ]
 
 [[package]]
@@ -1730,10 +1722,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmi_core"
-version = "1.0.0"
+name = "wasmi_collections"
+version = "2.0.0-beta.0"
 dependencies = [
- "libm",
+ "hashbrown 0.15.5",
+ "string-interner",
 ]
 
 [[package]]
@@ -1746,24 +1739,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmi_core"
+version = "2.0.0-beta.0"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "wasmi_fuzz"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
  "anyhow",
  "arbitrary",
  "sha2",
  "wasm-smith",
- "wasmi 1.0.0",
  "wasmi 1.0.9",
+ "wasmi 2.0.0-beta.0",
  "wasmprinter 0.228.0",
  "wasmtime",
-]
-
-[[package]]
-name = "wasmi_ir"
-version = "1.0.0"
-dependencies = [
- "wasmi_core 1.0.0",
 ]
 
 [[package]]
@@ -1776,20 +1769,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmi_ir"
+version = "2.0.0-beta.0"
+dependencies = [
+ "wasmi_core 2.0.0-beta.0",
+]
+
+[[package]]
 name = "wasmi_wasi"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
  "wasi-common",
- "wasmi 1.0.0",
+ "wasmi 2.0.0-beta.0",
  "wiggle",
 ]
 
 [[package]]
 name = "wasmi_wast"
-version = "1.0.0"
+version = "2.0.0-beta.0"
 dependencies = [
  "anyhow",
- "wasmi 1.0.0",
+ "wasmi 2.0.0-beta.0",
  "wast 228.0.0",
 ]
 
