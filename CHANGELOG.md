@@ -8,6 +8,87 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.0` - 2026-02-18
+
+### Added
+
+- Implemented some improvements for `wasmi::Table`.
+  - Added `Ref` and `RefType` and make `wasmi::Table` operate on `Ref` instead of `Val`. [#1747]
+    - This has be beneficial side-effect that `wasmi::Table` is now unaffected by
+      the `simd` crate feature and no longer suffers from increased memory consumption.
+    - Furthermore, this improves Wasmi's Wasmtime API mirror as Wasmtime also uses `Ref` and `RefType`.
+  - Shrink `wasmi::Table` elements from 64-bit to 32-bit. [#1776]
+    - This effectively halfs the memory consumption of `wasmi::Table` instances.
+- Designed and integrated an entirely new internal IR for Wasmi. [#1655]
+  - This affects both execution and translation performance.
+  - New crate features have been added:
+    - `portable-dispatch`:
+        Enable to compile Wasmi on any platform supported by Rust
+        However, this may significantly reduce execution performance.
+    - `indirect-dispatch`:
+        Enable to use less encoding space for Wasmi's internal IR.
+        However, this may significantly reduce execution performance.
+- Wasmi's executor now uses fixed 64-bits cells. [#1755]
+  - This technically is an internal change but it yields observable improvements for users.
+  - Enabling the `simd` crate feature no longer affects memory consumption or
+    execution performance of non-`simd` Wasm code.
+- Implement a variety of improvements for the Wasmi CLI application.
+  - Added a bunch of new crate features to the `wasmi_cli` crate:
+    - PRs: [#1784] [#1787] [#1788]
+    - `wasi`: Enable WASI support. (default: ✅)
+    - `wast`: Enable Wast support and `wast` command. (default: ✅)
+    - `run`: Enable the `run` command (default: ✅)
+    - `portable-dispatch`: Enable `wasmi`'s `portable-dispatch` crate feature. (default: ❌)
+    - `indirect-dispatch`: Enable `wasmi`'s `indirect-dispatch` crate feature. (default: ❌)
+  - Similar to Wasmtime's CLI, Wasmi now also features sub-commands: [#1799]
+    - `run`: Executes a WebAssembly module.
+    - `wast`: Executes a WebAssembly script.
+  - The Wasmi CLI's command has been renamed from `wasmi_cli` to just `wasmi`. [#1798]
+- Add `wasmi_wasi::add_to_externals` API. [#1785]
+  - This is more efficient than the existing `add_to_linker` API and should
+    be used instead if possible.
+  - The Wasmi CLI application now makes use of this API in order to prepare
+    its WASI environment.
+
+### Fixed
+
+### Removed
+
+### Changed
+
+- Wasmi now uses Rust edition 2024 in the entire workspace. [#1759]
+  - This does not affect users since Wasmi's MSRV did not change.
+
+### Internal
+
+- Use OIDC in Wasmi `coverage` CI job. [#1745]
+- Wasmi differential fuzzing oracles are not optionally included. [#1758]
+  - This allows to exclude fuzzing oracles to speed-up fuzzing and compile times.
+- Add a new GitHub Actions CI job to check via `cargo-deny`. [#1761]
+- Refactored `wasmi_collections` arena data structures. [#1771]
+- Removed ancient Wasmi v0.31 as oracle for differential fuzzing. [#1777]
+- Renamed internal `Untyped{Val,Ref}` types to `Raw{Val,Ref}`. [#1781]
+- Refactor and unify Wasmi's internal handle types. [#1772]
+
+[#1655]: https://github.com/wasmi-labs/wasmi/pull/1655
+[#1745]: https://github.com/wasmi-labs/wasmi/pull/1745
+[#1747]: https://github.com/wasmi-labs/wasmi/issues/1747
+[#1758]: https://github.com/wasmi-labs/wasmi/pull/1758
+[#1759]: https://github.com/wasmi-labs/wasmi/pull/1759
+[#1761]: https://github.com/wasmi-labs/wasmi/pull/1761
+[#1755]: https://github.com/wasmi-labs/wasmi/pull/1755
+[#1771]: https://github.com/wasmi-labs/wasmi/pull/1771
+[#1777]: https://github.com/wasmi-labs/wasmi/pull/1777
+[#1781]: https://github.com/wasmi-labs/wasmi/pull/1781
+[#1772]: https://github.com/wasmi-labs/wasmi/pull/1772
+[#1776]: https://github.com/wasmi-labs/wasmi/pull/1776
+[#1784]: https://github.com/wasmi-labs/wasmi/pull/1784
+[#1787]: https://github.com/wasmi-labs/wasmi/pull/1787
+[#1785]: https://github.com/wasmi-labs/wasmi/pull/1785
+[#1788]: https://github.com/wasmi-labs/wasmi/pull/1788
+[#1798]: https://github.com/wasmi-labs/wasmi/pull/1798
+[#1799]: https://github.com/wasmi-labs/wasmi/pull/1799
+
 ## `1.0.9` - 2026-02-09
 
 ### Fixed
