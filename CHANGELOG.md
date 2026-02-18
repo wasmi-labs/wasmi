@@ -50,10 +50,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - The Wasmi CLI application now makes use of this API in order to prepare
     its WASI environment.
 
-### Fixed
-
-### Removed
-
 ### Changed
 
 - Wasmi now uses Rust edition 2024 in the entire workspace. [#1759]
