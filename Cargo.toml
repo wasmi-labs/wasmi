@@ -35,10 +35,10 @@ wasmi_wasi = { version = "1.0.0", path = "crates/wasi", default-features = false
 wasmi_core = { version = "1.0.0", path = "crates/core", default-features = false }
 wasmi_ir = { version = "1.0.0", path = "crates/ir", default-features = false }
 wasmi_collections = { version = "1.0.0", path = "crates/collections", default-features = false }
+wasmi_wast = { version = "1.0.0", path = "crates/wast", default-features = false }
 wasmi_c_api_impl = { version = "1.0.0", path = "crates/c_api" }
 wasmi_c_api_macros = { version = "1.0.0", path = "crates/c_api/macro" }
 wasmi_fuzz = { version = "1.0.0", path = "crates/fuzz" }
-wasmi_wast = { version = "1.0.0", path = "crates/wast" }
 
 # wasm-tools dependencies
 wat = { version = "1.228.0", default-features = false }
