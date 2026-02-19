@@ -285,7 +285,7 @@ macro_rules! impl_conversions {
                 /// Otherwise returns `None`.
                 pub(crate) fn unwrap_raw(&self, store: impl AsStoreId) -> Option<RawRef> {
                     use crate::Handle as _;
-                    let value = store.unwrap(self.raw())?;
+                    let value = store.unwrap(self.as_raw())?;
                     Some(RawRef::from(value.raw().get()))
                 }
 

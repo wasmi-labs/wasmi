@@ -255,7 +255,7 @@ impl StoreInner {
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
-        let idx = match self.unwrap_stored(instance.raw()) {
+        let idx = match self.unwrap_stored(instance.as_raw()) {
             Ok(idx) => idx,
             Err(error) => panic!("failed to unwrap stored entity: {error}"),
         };
@@ -345,7 +345,7 @@ impl StoreInner {
     /// - If the [`Global`] does not originate from this [`StoreInner`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn try_resolve_global(&self, global: &Global) -> Result<&CoreGlobal, InternalStoreError> {
-        self.resolve(global.raw(), &self.globals)
+        self.resolve(global.as_raw(), &self.globals)
     }
 
     /// Returns an exclusive reference to the [`CoreGlobal`] associated to the given [`Global`].
@@ -358,7 +358,7 @@ impl StoreInner {
         &mut self,
         global: &Global,
     ) -> Result<&mut CoreGlobal, InternalStoreError> {
-        let idx = self.unwrap_stored(global.raw())?;
+        let idx = self.unwrap_stored(global.as_raw())?;
         Self::resolve_mut(*idx, &mut self.globals)
     }
 
@@ -369,7 +369,7 @@ impl StoreInner {
     /// - If the [`Table`] does not originate from this [`StoreInner`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn try_resolve_table(&self, table: &Table) -> Result<&CoreTable, InternalStoreError> {
-        self.resolve(table.raw(), &self.tables)
+        self.resolve(table.as_raw(), &self.tables)
     }
 
     /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
@@ -382,7 +382,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
     ) -> Result<&mut CoreTable, InternalStoreError> {
-        let idx = self.unwrap_stored(table.raw())?;
+        let idx = self.unwrap_stored(table.as_raw())?;
         Self::resolve_mut(*idx, &mut self.tables)
     }
 
@@ -399,8 +399,8 @@ impl StoreInner {
         table: &Table,
         elem: &ElementSegment,
     ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
-        let table_idx = self.unwrap_stored(table.raw())?;
-        let elem_idx = self.unwrap_stored(elem.raw())?;
+        let table_idx = self.unwrap_stored(table.as_raw())?;
+        let elem_idx = self.unwrap_stored(elem.as_raw())?;
         let table = Self::resolve_mut(*table_idx, &mut self.tables)?;
         let elem = Self::resolve_mut(*elem_idx, &mut self.elems)?;
         Ok((table, elem))
@@ -419,7 +419,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
     ) -> Result<(&mut CoreTable, &mut Fuel), InternalStoreError> {
-        let idx = self.unwrap_stored(table.raw())?;
+        let idx = self.unwrap_stored(table.as_raw())?;
         let table = Self::resolve_mut(*idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
         Ok((table, fuel))
@@ -436,8 +436,8 @@ impl StoreInner {
         fst: &Table,
         snd: &Table,
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
-        let fst = self.unwrap_stored(fst.raw())?;
-        let snd = self.unwrap_stored(snd.raw())?;
+        let fst = self.unwrap_stored(fst.as_raw())?;
+        let snd = self.unwrap_stored(snd.as_raw())?;
         let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|err| {
             panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
         });
@@ -470,8 +470,8 @@ impl StoreInner {
         table: &Table,
         segment: &ElementSegment,
     ) -> Result<(&mut CoreTable, &CoreElementSegment, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(table.raw())?;
-        let elem_idx = segment.raw();
+        let mem_idx = self.unwrap_stored(table.as_raw())?;
+        let elem_idx = segment.as_raw();
         let elem = self.resolve(elem_idx, &self.elems)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.tables)?;
         let fuel = &mut self.fuel;
@@ -488,7 +488,7 @@ impl StoreInner {
         &self,
         segment: &ElementSegment,
     ) -> Result<&CoreElementSegment, InternalStoreError> {
-        self.resolve(segment.raw(), &self.elems)
+        self.resolve(segment.as_raw(), &self.elems)
     }
 
     /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
@@ -501,7 +501,7 @@ impl StoreInner {
         &mut self,
         segment: &ElementSegment,
     ) -> Result<&mut CoreElementSegment, InternalStoreError> {
-        let idx = self.unwrap_stored(segment.raw())?;
+        let idx = self.unwrap_stored(segment.as_raw())?;
         Self::resolve_mut(*idx, &mut self.elems)
     }
 
@@ -515,7 +515,7 @@ impl StoreInner {
         &'a self,
         memory: &Memory,
     ) -> Result<&'a CoreMemory, InternalStoreError> {
-        self.resolve(memory.raw(), &self.memories)
+        self.resolve(memory.as_raw(), &self.memories)
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
@@ -528,7 +528,7 @@ impl StoreInner {
         &'a mut self,
         memory: &Memory,
     ) -> Result<&'a mut CoreMemory, InternalStoreError> {
-        let idx = self.unwrap_stored(memory.raw())?;
+        let idx = self.unwrap_stored(memory.as_raw())?;
         Self::resolve_mut(*idx, &mut self.memories)
     }
 
@@ -542,7 +542,7 @@ impl StoreInner {
         &mut self,
         memory: &Memory,
     ) -> Result<(&mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let idx = self.unwrap_stored(memory.raw())?;
+        let idx = self.unwrap_stored(memory.as_raw())?;
         let memory = Self::resolve_mut(*idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
         Ok((memory, fuel))
@@ -570,8 +570,8 @@ impl StoreInner {
         memory: &Memory,
         segment: &DataSegment,
     ) -> Result<(&mut CoreMemory, &DataSegmentEntity, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(memory.raw())?;
-        let data_idx = segment.raw();
+        let mem_idx = self.unwrap_stored(memory.as_raw())?;
+        let data_idx = segment.as_raw();
         let data = self.resolve(data_idx, &self.datas)?;
         let mem = Self::resolve_mut(*mem_idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
@@ -589,8 +589,8 @@ impl StoreInner {
         mem0: &Memory,
         mem1: &Memory,
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let mem0 = self.unwrap_stored(mem0.raw())?;
-        let mem1 = self.unwrap_stored(mem1.raw())?;
+        let mem0 = self.unwrap_stored(mem0.as_raw())?;
+        let mem1 = self.unwrap_stored(mem1.as_raw())?;
         let (mem0, mem1) = self
             .memories
             .get_pair_mut(*mem0, *mem1)
@@ -611,7 +611,7 @@ impl StoreInner {
         &mut self,
         key: &DataSegment,
     ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
-        let raw_key = self.unwrap_stored(key.raw())?;
+        let raw_key = self.unwrap_stored(key.as_raw())?;
         Self::resolve_mut(*raw_key, &mut self.datas)
     }
 
@@ -625,7 +625,7 @@ impl StoreInner {
         &self,
         key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        self.resolve(key.raw(), &self.instances)
+        self.resolve(key.as_raw(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
@@ -638,7 +638,7 @@ impl StoreInner {
         &self,
         key: &ExternRef,
     ) -> Result<&ExternRefEntity, InternalStoreError> {
-        self.resolve(key.raw(), &self.extern_objects)
+        self.resolve(key.as_raw(), &self.extern_objects)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
@@ -648,7 +648,7 @@ impl StoreInner {
     /// - If the [`Func`] does not originate from this [`StoreInner`].
     /// - If the [`Func`] cannot be resolved to its entity.
     pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
-        self.resolve(key.raw(), &self.funcs)
+        self.resolve(key.as_raw(), &self.funcs)
     }
 }
 

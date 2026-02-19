@@ -11,7 +11,7 @@ pub trait Handle: Copy {
     type Owned<T>;
 
     /// Returns a shared reference to the raw handle to the store owned entity.
-    fn raw(&self) -> &Self::Owned<RawHandle<Self>>;
+    fn as_raw(&self) -> &Self::Owned<RawHandle<Self>>;
 
     /// Creates `Self` from its raw representation.
     fn from_raw(raw: Self::Owned<RawHandle<Self>>) -> Self;
@@ -127,7 +127,7 @@ macro_rules! define_handle {
             type Owned<T> = $owned<T>;
 
             #[inline]
-            fn raw(&self) -> &Self::Owned<$crate::RawHandle<Self>> {
+            fn as_raw(&self) -> &Self::Owned<$crate::RawHandle<Self>> {
                 &self.0
             }
 

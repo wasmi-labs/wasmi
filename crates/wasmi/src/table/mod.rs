@@ -156,7 +156,7 @@ impl Table {
     /// intentionally keep this API hidden from users.
     #[inline]
     pub(crate) fn eq(lhs: &Self, rhs: &Self) -> bool {
-        lhs.raw() == rhs.raw()
+        lhs.as_raw() == rhs.as_raw()
     }
 
     /// Copy `len` elements from `src_table[src_index..]` into

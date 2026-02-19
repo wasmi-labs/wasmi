@@ -247,7 +247,7 @@ impl<T> Store<T> {
         &self,
         key: &Trampoline,
     ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
-        let raw_key = self.inner.unwrap_stored(key.raw())?;
+        let raw_key = self.inner.unwrap_stored(key.as_raw())?;
         let Ok(trampoline) = self.typed.trampolines.get(*raw_key) else {
             return Err(InternalStoreError::not_found());
         };
