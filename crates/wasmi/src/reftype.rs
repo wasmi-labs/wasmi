@@ -292,7 +292,7 @@ macro_rules! impl_conversions {
                 #[doc = concat!("Create a [`", stringify!($reftype), "`] from its raw parts.")]
                 pub(crate) fn from_raw_parts(value: NonZero<u32>, store: impl AsStoreId) -> Self {
                     let raw_handle = <RawHandle<$reftype>>::new(value);
-                    <$reftype>::from(store.wrap(raw_handle))
+                    <$reftype as $crate::Handle>::from_raw(store.wrap(raw_handle))
                 }
             }
 

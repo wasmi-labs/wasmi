@@ -2,7 +2,7 @@ use crate::collections::arena::ArenaKey;
 use core::{fmt, marker::PhantomData};
 
 /// A handle for a stored owned entity.
-pub trait Handle: Copy + From<Self::Owned<RawHandle<Self>>> {
+pub trait Handle: Copy {
     /// The raw representation of the handle.
     type Raw: ArenaKey;
     /// The store owned entity type of the handle.
@@ -12,6 +12,9 @@ pub trait Handle: Copy + From<Self::Owned<RawHandle<Self>>> {
 
     /// Returns a shared reference to the raw handle to the store owned entity.
     fn raw(&self) -> &Self::Owned<RawHandle<Self>>;
+
+    /// Creates `Self` from its raw representation.
+    fn from_raw(raw: Self::Owned<RawHandle<Self>>) -> Self;
 }
 
 /// A raw handle with an associated handle type.
@@ -123,14 +126,14 @@ macro_rules! define_handle {
             type Entity = $entity;
             type Owned<T> = $owned<T>;
 
+            #[inline]
             fn raw(&self) -> &Self::Owned<$crate::RawHandle<Self>> {
                 &self.0
             }
-        }
 
-        impl ::core::convert::From<<Self as $crate::Handle>::Owned<$crate::RawHandle<Self>>> for $name {
-            fn from(handle: <Self as $crate::Handle>::Owned<$crate::RawHandle<Self>>) -> Self {
-                Self(handle)
+            #[inline]
+            fn from_raw(raw: <Self as $crate::Handle>::Owned::<$crate::RawHandle<Self>>) -> Self {
+                Self(raw)
             }
         }
     };

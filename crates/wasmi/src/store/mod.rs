@@ -215,7 +215,7 @@ impl<T> Store<T> {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc host func trampoline"),
         };
-        Trampoline::from(self.inner.id().wrap(key))
+        Trampoline::from_raw(self.inner.id().wrap(key))
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]

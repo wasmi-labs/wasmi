@@ -164,7 +164,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc global"),
         };
-        Global::from(self.id.wrap(key))
+        Global::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
@@ -173,7 +173,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc table"),
         };
-        Table::from(self.id.wrap(key))
+        Table::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
@@ -182,7 +182,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc memory"),
         };
-        Memory::from(self.id.wrap(key))
+        Memory::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
@@ -191,7 +191,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc data segment"),
         };
-        DataSegment::from(self.id.wrap(key))
+        DataSegment::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
@@ -200,7 +200,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc element segment"),
         };
-        ElementSegment::from(self.id.wrap(key))
+        ElementSegment::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new [`ExternRefEntity`] and returns a [`ExternRef`] reference to it.
@@ -209,7 +209,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc extern object"),
         };
-        ExternRef::from(self.id.wrap(key))
+        ExternRef::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
@@ -218,7 +218,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc func"),
         };
-        Func::from(self.id.wrap(key))
+        Func::from_raw(self.id.wrap(key))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -235,7 +235,7 @@ impl StoreInner {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc uninit instance"),
         };
-        Instance::from(self.id.wrap(key))
+        Instance::from_raw(self.id.wrap(key))
     }
 
     /// Initializes the [`Instance`] using the given [`InstanceEntity`].
