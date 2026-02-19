@@ -8,6 +8,16 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.1` - 2026-02-19
+
+### Changed
+
+- Wasmi's internal `Handle` trait no longer has a `From` super-trait. [#1804]
+  - This fixes an issue from users with conflicting `From` impls for Wasmi handles
+    such as `Func`, `Global`, etc..
+
+[#1804]: https://github.com/wasmi-labs/wasmi/pull/1804
+
 ## `2.0.0-beta.0` - 2026-02-18
 
 ### Added
