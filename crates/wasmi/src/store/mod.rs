@@ -215,7 +215,7 @@ impl<T> Store<T> {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc host func trampoline"),
         };
-        Trampoline::from(self.inner.id().wrap(key))
+        Trampoline::from_raw(self.inner.id().wrap(key))
     }
 
     /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]
@@ -247,7 +247,7 @@ impl<T> Store<T> {
         &self,
         key: &Trampoline,
     ) -> Result<&TrampolineEntity<T>, InternalStoreError> {
-        let raw_key = self.inner.unwrap_stored(key.raw())?;
+        let raw_key = self.inner.unwrap_stored(key.as_raw())?;
         let Ok(trampoline) = self.typed.trampolines.get(*raw_key) else {
             return Err(InternalStoreError::not_found());
         };

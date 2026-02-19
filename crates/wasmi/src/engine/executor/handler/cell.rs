@@ -144,7 +144,7 @@ macro_rules! impl_lower_and_lift_for_refs {
                     store: impl AsStoreId,
                     cells: &mut impl CellsWriter,
                 ) -> Result<(), CellError> {
-                    let Some(value) = store.unwrap(self.raw()) else {
+                    let Some(value) = store.unwrap(self.as_raw()) else {
                         return Err(CellError::StoreOwnerMismatch);
                     };
                     value.raw().get().store_to_cells(cells)
