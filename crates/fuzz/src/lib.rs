@@ -14,7 +14,7 @@ pub mod oracle;
     not(any(feature = "wasmi-v1", feature = "wasmtime",))
 ))]
 const _: () = {
-    compile_error!("differntial fuzzing: must have `wasmi-v1` or `wasmtime` crate feature enabled");
+    compile_error!("differential fuzzing: must have `wasmi-v1` or `wasmtime` crate feature enabled");
 };
 
 pub use self::{

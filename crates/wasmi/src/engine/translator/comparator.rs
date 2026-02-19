@@ -597,7 +597,7 @@ pub trait UpdateBranchOffset: Sized {
     ///
     /// # Panics
     ///
-    /// - If `self` does not have a [`BranchOffset`] to udpate.
+    /// - If `self` does not have a [`BranchOffset`] to update.
     /// - If the [`BranchOffset`] of `self` is already initialized. (Debug)
     fn update_branch_offset(&mut self, new_offset: BranchOffset);
 
