@@ -86,7 +86,7 @@ pub struct RunCommand {
     /// - wasmi foo.wasm a b c
     ///
     /// - wasmi foo.wasm --invoke bar a b c
-    #[clap(value_name = "ARGS", trailing_var_arg = true)]
+    #[clap(required = true, value_name = "ARGS", trailing_var_arg = true)]
     module_and_args: Vec<String>,
 }
 
