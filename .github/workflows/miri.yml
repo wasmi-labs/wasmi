@@ -21,7 +21,7 @@ jobs:
           run:
             # Note: We use `|| true` because cargo install returns an error
             #       if cargo-nextest was already installed on the CI runner.
-            cargo install cargo-nextest || true
+            cargo install cargo-nextest --locked || true
         - name: Miri Testing - Wasm Spec Testsuite
           env:
             # Debug assertions are checked in the normal test jobs.
