@@ -7,7 +7,7 @@ use crate::{
 ///
 /// # Note
 ///
-/// Used to differntiate different store instances.
+/// Used to differentiate different store instances.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreId(u32);
 
