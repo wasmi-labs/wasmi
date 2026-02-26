@@ -48,8 +48,11 @@ macro_rules! declare_vecs {
         }
 
         impl$(<$lt>)? $name $(<$lt>)? {
-            /// Sets the data buffer of `self` to `buffer` and leaks the current data buffer.
+            /// Sets the data buffer of `self` to `buffer`.
+            ///
+            /// Drops the previous buffer if one was present.
             pub fn set_buffer(&mut self, buffer: Box<[$elem_ty]>) {
+                drop(self.take());
                 let slice = Box::leak(buffer);
                 self.size = slice.len();
                 self.data = slice.as_mut_ptr();

@@ -60,6 +60,21 @@ pub extern "C" fn wasm_valtype_kind(vt: &wasm_valtype_t) -> wasm_valkind_t {
     from_valtype(&vt.ty)
 }
 
+/// Tries to convert a raw `u8` into the respective [`wasm_valkind_t`].
+///
+/// Returns `None` if the value does not correspond to a valid variant.
+pub(crate) fn try_valkind_from_u8(raw: u8) -> Option<wasm_valkind_t> {
+    match raw {
+        0 => Some(wasm_valkind_t::WASM_I32),
+        1 => Some(wasm_valkind_t::WASM_I64),
+        2 => Some(wasm_valkind_t::WASM_F32),
+        3 => Some(wasm_valkind_t::WASM_F64),
+        128 => Some(wasm_valkind_t::WASM_EXTERNREF),
+        129 => Some(wasm_valkind_t::WASM_FUNCREF),
+        _ => None,
+    }
+}
+
 /// Converts the [`wasm_valkind_t`] into the respective [`ValType`].
 pub(crate) fn into_valtype(kind: wasm_valkind_t) -> ValType {
     match kind {
@@ -70,6 +85,18 @@ pub(crate) fn into_valtype(kind: wasm_valkind_t) -> ValType {
         wasm_valkind_t::WASM_EXTERNREF => ValType::ExternRef,
         wasm_valkind_t::WASM_FUNCREF => ValType::FuncRef,
     }
+}
+
+/// Tries to convert the [`wasm_valkind_t`] into the respective [`ValType`].
+///
+/// Returns `None` if the kind discriminant is invalid (not a known variant).
+/// This is used in safety-critical paths where the kind may have been set
+/// by C code and could contain an invalid discriminant value.
+pub(crate) fn try_into_valtype(kind: wasm_valkind_t) -> Option<ValType> {
+    // Validate that the discriminant is actually a known variant by
+    // round-tripping through u8.
+    let raw = kind as u8;
+    try_valkind_from_u8(raw).map(into_valtype)
 }
 
 /// Converts the [`ValType`] into the respective [`wasm_valkind_t`].

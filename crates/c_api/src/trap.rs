@@ -48,6 +48,11 @@ pub extern "C" fn wasm_trap_new(
     message: &wasm_message_t,
 ) -> Box<wasm_trap_t> {
     let message = message.as_slice();
+    if message.is_empty() {
+        return Box::new(wasm_trap_t {
+            error: Error::new(""),
+        });
+    }
     if message[message.len() - 1] != 0 {
         panic!("wasm_trap_new: expected `message` to be a null-terminated C-string");
     }

@@ -1,4 +1,4 @@
-use crate::{from_valtype, into_valtype, utils, wasm_ref_t, wasm_valkind_t};
+use crate::{from_valtype, try_into_valtype, utils, wasm_ref_t, wasm_valkind_t};
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
 use wasmi::{F32, F64, Func, Nullable, Ref, Val, ValType};
@@ -36,7 +36,13 @@ pub union wasm_val_union {
 
 impl Drop for wasm_val_t {
     fn drop(&mut self) {
-        if into_valtype(self.kind).is_ref() && !unsafe { self.of.ref_ }.is_null() {
+        // Validate the kind discriminant before use. If the kind is invalid
+        // (e.g. set to an out-of-range value by C code), skip the drop to
+        // avoid undefined behavior from matching on an invalid enum variant.
+        let Some(ty) = try_into_valtype(self.kind) else {
+            return;
+        };
+        if ty.is_ref() && !unsafe { self.of.ref_ }.is_null() {
             drop(unsafe { Box::from_raw(self.of.ref_) });
         }
     }
@@ -48,8 +54,13 @@ impl Clone for wasm_val_t {
             kind: self.kind,
             of: self.of,
         };
+        // Validate the kind discriminant before use to avoid UB from
+        // an invalid enum variant potentially set by C code.
+        let Some(ty) = try_into_valtype(self.kind) else {
+            return ret;
+        };
         unsafe {
-            if into_valtype(self.kind).is_ref() && !self.of.ref_.is_null() {
+            if ty.is_ref() && !self.of.ref_.is_null() {
                 ret.of.ref_ = Box::into_raw(Box::new((*self.of.ref_).clone()));
             }
         }

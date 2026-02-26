@@ -202,6 +202,12 @@ pub unsafe extern "C" fn wasm_func_call(
     params: *const wasm_val_vec_t,
     results: *mut wasm_val_vec_t,
 ) -> *mut wasm_trap_t {
+    if params.is_null() || results.is_null() {
+        let trap = Box::new(wasm_trap_t::new(Error::new(
+            "wasm_func_call: null params or results pointer",
+        )));
+        return Box::into_raw(trap);
+    }
     unsafe {
         let f = func.func();
         let results = (*results).as_uninit_slice();
