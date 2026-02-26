@@ -164,7 +164,7 @@ impl Table {
             match limiter.table_growing(current, desired, maximum) {
                 Ok(true) => (),
                 Ok(false) => return Err(TableError::GrowOutOfBounds),
-                Err(_) => return Err(TableError::ResourceLimiterDeniedAllocation),
+                Err(error) => return Err(error.into()),
             }
         }
         let notify_limiter =
@@ -226,7 +226,8 @@ impl Table {
     ///
     /// If `index` is out of bounds.
     pub fn set_raw(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
-        let Some(raw) = self.elements.get_mut(index as usize) else {
+        let index = usize::try_from(index).ok();
+        let Some(raw) = index.and_then(|i| self.elements.get_mut(i)) else {
             return Err(TableError::SetOutOfBounds);
         };
         *raw = value;
