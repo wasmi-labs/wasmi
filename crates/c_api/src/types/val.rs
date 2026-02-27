@@ -44,13 +44,23 @@ pub enum wasm_valkind_t {
     WASM_FUNCREF = 129,
 }
 
-/// Creates a new owned [`wasm_valtype_t`] from the [`wasm_valkind_t`].
+/// Creates a new owned [`wasm_valtype_t`] from the given kind value.
+///
+/// # Note
+///
+/// The `kind` parameter accepts a raw `u8` instead of [`wasm_valkind_t`]
+/// to avoid undefined behavior when C callers pass an invalid discriminant.
+///
+/// # Panics
+///
+/// Panics if `kind` does not correspond to a valid [`wasm_valkind_t`] variant.
 #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
-pub extern "C" fn wasm_valtype_new(kind: wasm_valkind_t) -> Box<wasm_valtype_t> {
-    Box::new(wasm_valtype_t {
-        ty: into_valtype(kind),
-    })
+pub extern "C" fn wasm_valtype_new(kind: u8) -> Box<wasm_valtype_t> {
+    let Some(ty) = try_valkind_from_u8(kind).map(into_valtype) else {
+        panic!("wasm_valtype_new: invalid kind discriminant value: {kind}");
+    };
+    Box::new(wasm_valtype_t { ty })
 }
 
 /// Returns the [`wasm_valkind_t`] of the [`wasm_valtype_t`].
