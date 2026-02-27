@@ -1,4 +1,4 @@
-use crate::{from_valtype, try_into_valtype, utils, wasm_ref_t, wasm_valkind_t};
+use crate::{from_valtype, try_into_valtype, try_valkind_from_u8, utils, wasm_ref_t, wasm_valkind_t};
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
 use wasmi::{F32, F64, Func, Nullable, Ref, Val, ValType};
@@ -129,8 +129,21 @@ impl wasm_val_t {
     /// # Note
     ///
     /// This effectively clones the [`wasm_val_t`] if necessary.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `kind` field contains an invalid discriminant value
+    /// that does not correspond to a known [`wasm_valkind_t`] variant.
     pub fn to_val(&self) -> Val {
-        match self.kind {
+        // Validate the kind discriminant before matching to avoid
+        // undefined behavior from an invalid enum value set by C code.
+        let raw = self.kind as u8;
+        let Some(kind) = try_valkind_from_u8(raw) else {
+            panic!(
+                "wasm_val_t: invalid kind discriminant value: {raw}"
+            );
+        };
+        match kind {
             wasm_valkind_t::WASM_I32 => Val::from(unsafe { self.of.i32 }),
             wasm_valkind_t::WASM_I64 => Val::from(unsafe { self.of.i64 }),
             wasm_valkind_t::WASM_F32 => Val::from(F32::from(unsafe { self.of.f32 })),
