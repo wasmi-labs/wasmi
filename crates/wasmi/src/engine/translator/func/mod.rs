@@ -467,12 +467,14 @@ impl FuncTranslator {
         value: Operand,
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
-        let instr = match value {
-            Operand::Temp(value) => return Self::make_copy_temp_instr(result, value),
-            Operand::Local(value) => return Self::make_copy_local_instr(result, value, layout),
-            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
-        };
-        Ok(Some(instr))
+        match value {
+            Operand::Temp(value) => Self::make_copy_temp_instr(result, value),
+            Operand::Local(value) => Self::make_copy_local_instr(result, value, layout),
+            Operand::Immediate(value) => {
+                let copy_op = Self::make_copy_imm_instr(result, value.val())?;
+                Ok(Some(copy_op))
+            }
+        }
     }
 
     /// Returns the copy instruction to copy the given temporary `value` to `result`.
