@@ -1,13 +1,13 @@
 use crate::{ResourceLimiter, core::LimiterError};
 
 /// Value returned by [`ResourceLimiter::instances`] default method
-pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;
+pub const DEFAULT_INSTANCE_LIMIT: usize = 10_000;
 
 /// Value returned by [`ResourceLimiter::tables`] default method
-pub const DEFAULT_TABLE_LIMIT: usize = 10000;
+pub const DEFAULT_TABLE_LIMIT: usize = 10_000;
 
 /// Value returned by [`ResourceLimiter::memories`] default method
-pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
+pub const DEFAULT_MEMORY_LIMIT: usize = 10_000;
 
 /// Used to build [`StoreLimits`].
 pub struct StoreLimitsBuilder(StoreLimits);
