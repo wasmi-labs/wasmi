@@ -467,48 +467,62 @@ impl FuncTranslator {
         value: Operand,
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
-        let instr = match value {
-            Operand::Temp(value) => {
-                let ty = value.ty();
-                let value = value.temp_slots().head();
-                if result == value {
-                    // Case: no-op copy
-                    return Ok(None);
-                }
-                match ty {
-                    ValType::V128 => {
-                        let results = SlotSpan::new(result);
-                        let values = SlotSpan::new(value);
-                        let Some(op) = Self::make_copy_span(results, values, 2) else {
-                            return Ok(None);
-                        };
-                        op
-                    }
-                    _ => Op::copy_slot(result, value),
-                }
+        match value {
+            Operand::Temp(value) => Self::make_copy_temp_instr(result, value),
+            Operand::Local(value) => Self::make_copy_local_instr(result, value, layout),
+            Operand::Immediate(value) => {
+                let copy_op = Self::make_copy_imm_instr(result, value.val())?;
+                Ok(Some(copy_op))
             }
-            Operand::Local(value) => {
-                let ty = value.ty();
-                let value = layout.local_to_slot(value)?;
-                if result == value {
-                    // Case: no-op copy
+        }
+    }
+
+    /// Returns the copy instruction to copy the given temporary `value` to `result`.
+    fn make_copy_temp_instr(result: Slot, value: TempOperand) -> Result<Option<Op>, Error> {
+        let ty = value.ty();
+        let value = value.temp_slots().head();
+        if result == value {
+            // Case: no-op copy
+            return Ok(None);
+        }
+        let copy_op = match ty {
+            ValType::V128 => {
+                let results = SlotSpan::new(result);
+                let values = SlotSpan::new(value);
+                let Some(op) = Self::make_copy_span(results, values, 2) else {
                     return Ok(None);
-                }
-                match ty {
-                    ValType::V128 => {
-                        let results = SlotSpan::new(result);
-                        let values = SlotSpan::new(value);
-                        let Some(op) = Self::make_copy_span(results, values, 2) else {
-                            return Ok(None);
-                        };
-                        op
-                    }
-                    _ => Op::copy_slot(result, value),
-                }
+                };
+                op
             }
-            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
+            _ => Op::copy_slot(result, value),
         };
-        Ok(Some(instr))
+        Ok(Some(copy_op))
+    }
+
+    /// Returns the copy instruction to copy the given local `value` to `result`.
+    fn make_copy_local_instr(
+        result: Slot,
+        value: LocalOperand,
+        layout: &mut StackLayout,
+    ) -> Result<Option<Op>, Error> {
+        let ty = value.ty();
+        let value = layout.local_to_slot(value)?;
+        if result == value {
+            // Case: no-op copy
+            return Ok(None);
+        }
+        let copy_op = match ty {
+            ValType::V128 => {
+                let results = SlotSpan::new(result);
+                let values = SlotSpan::new(value);
+                let Some(op) = Self::make_copy_span(results, values, 2) else {
+                    return Ok(None);
+                };
+                op
+            }
+            _ => Op::copy_slot(result, value),
+        };
+        Ok(Some(copy_op))
     }
 
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
@@ -1269,12 +1283,12 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = preserved.temp_slots().head();
-            let value = self.layout.local_to_slot(local_idx)?;
-            self.instrs.encode(
-                Op::copy_slot(result, value),
-                consume_fuel_instr,
-                FuelCostsProvider::base,
-            )?;
+            let Some(copy_op) = Self::make_copy_local_instr(result, preserved, &mut self.layout)?
+            else {
+                panic!("copying local to temp must yield operator")
+            };
+            self.instrs
+                .encode(copy_op, consume_fuel_instr, FuelCostsProvider::base)?;
         }
         if push_result {
             match input {
