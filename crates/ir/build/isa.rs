@@ -402,11 +402,11 @@ fn add_control_ops(isa: &mut Isa) {
             [Field::new(Ident::Value, FieldTy::Slot)],
         )),
         Op::from(GenericOp::new(
-            Ident::Return32,
+            Ident::ReturnImm32,
             [Field::new(Ident::Value, FieldTy::U32)],
         )),
         Op::from(GenericOp::new(
-            Ident::Return64,
+            Ident::ReturnImm64,
             [Field::new(Ident::Value, FieldTy::U64)],
         )),
         Op::from(GenericOp::new(
@@ -440,21 +440,21 @@ fn add_control_ops(isa: &mut Isa) {
 fn add_copy_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(
-            Ident::Copy,
+            Ident::CopySlot,
             [
                 Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::Slot),
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::Copy32,
+            Ident::CopyImm32,
             [
                 Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::U32),
             ],
         )),
         Op::from(GenericOp::new(
-            Ident::Copy64,
+            Ident::CopyImm64,
             [
                 Field::new(Ident::Result, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::U64),
@@ -738,7 +738,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
         return;
     }
     isa.push_op(GenericOp::new(
-        Ident::Copy128,
+        Ident::CopyImm128,
         [
             Field::new(Ident::Result, FieldTy::Slot),
             Field::new(Ident::ValueLo, FieldTy::U64),

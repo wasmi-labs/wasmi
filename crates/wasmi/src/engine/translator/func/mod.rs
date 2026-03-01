@@ -484,7 +484,7 @@ impl FuncTranslator {
                         };
                         op
                     }
-                    _ => Op::copy(result, value),
+                    _ => Op::copy_slot(result, value),
                 }
             }
             Operand::Local(value) => {
@@ -503,7 +503,7 @@ impl FuncTranslator {
                         };
                         op
                     }
-                    _ => Op::copy(result, value),
+                    _ => Op::copy_slot(result, value),
                 }
             }
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
@@ -514,19 +514,19 @@ impl FuncTranslator {
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
     fn make_copy_imm_instr(result: Slot, value: TypedRawVal) -> Result<Op, Error> {
         let instr = match value.ty() {
-            ValType::I32 => Op::copy32(result, i32::from(value).to_bits()),
-            ValType::I64 => Op::copy64(result, i64::from(value).to_bits()),
-            ValType::F32 => Op::copy32(result, f32::from(value).to_bits()),
-            ValType::F64 => Op::copy64(result, f64::from(value).to_bits()),
+            ValType::I32 => Op::copy_imm32(result, i32::from(value).to_bits()),
+            ValType::I64 => Op::copy_imm64(result, i64::from(value).to_bits()),
+            ValType::F32 => Op::copy_imm32(result, f32::from(value).to_bits()),
+            ValType::F64 => Op::copy_imm64(result, f64::from(value).to_bits()),
             ValType::ExternRef | ValType::FuncRef => {
-                Op::copy32(result, u32::from(RawRef::from(value.raw())))
+                Op::copy_imm32(result, u32::from(RawRef::from(value.raw())))
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
                 let value = V128::from(value).as_u128();
                 let value_lo = (value & 0xFFFF_FFFF_FFFF_FFFF) as u64;
                 let value_hi = (value >> 64) as u64;
-                Op::copy128(result, value_lo, value_hi)
+                Op::copy_imm128(result, value_lo, value_hi)
             }
             #[cfg(not(feature = "simd"))]
             ValType::V128 => panic!("unexpected `v128` operand: {value:?}"),
@@ -977,12 +977,12 @@ impl FuncTranslator {
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
-                        ValType::I32 => Op::return32(i32::from(val).to_bits()),
-                        ValType::I64 => Op::return64(i64::from(val).to_bits()),
-                        ValType::F32 => Op::return32(f32::from(val).to_bits()),
-                        ValType::F64 => Op::return64(f64::from(val).to_bits()),
+                        ValType::I32 => Op::return_imm32(i32::from(val).to_bits()),
+                        ValType::I64 => Op::return_imm64(i64::from(val).to_bits()),
+                        ValType::F32 => Op::return_imm32(f32::from(val).to_bits()),
+                        ValType::F64 => Op::return_imm64(f64::from(val).to_bits()),
                         ValType::FuncRef | ValType::ExternRef => {
-                            Op::return32(u32::from(RawRef::from(val.raw())))
+                            Op::return_imm32(u32::from(RawRef::from(val.raw())))
                         }
                         ValType::V128 => {
                             let value = self.stack.peek(0);
@@ -1271,7 +1271,7 @@ impl FuncTranslator {
             let result = preserved.temp_slots().head();
             let value = self.layout.local_to_slot(local_idx)?;
             self.instrs.encode(
-                Op::copy(result, value),
+                Op::copy_slot(result, value),
                 consume_fuel_instr,
                 FuelCostsProvider::base,
             )?;

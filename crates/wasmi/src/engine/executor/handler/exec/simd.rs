@@ -13,7 +13,7 @@ use crate::{
 };
 
 execution_handler! {
-    fn copy128(
+    fn copy_imm128(
         state: &mut VmState,
         ip: Ip,
         sp: Sp,
@@ -23,7 +23,7 @@ execution_handler! {
     ) -> Done = {
         let (
             ip,
-            crate::ir::decode::Copy128 {
+            crate::ir::decode::CopyImm128 {
                 result,
                 value_lo,
                 value_hi,

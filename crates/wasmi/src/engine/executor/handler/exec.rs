@@ -475,8 +475,8 @@ macro_rules! handler_return {
 }
 handler_return! {
     fn return_slot(ReturnSlot) = identity::<u64>;
-    fn return32(Return32) = identity::<u32>;
-    fn return64(Return64) = identity::<u64>;
+    fn return_imm32(ReturnImm32) = identity::<u32>;
+    fn return_imm64(ReturnImm64) = identity::<u64>;
 }
 
 execution_handler! {
@@ -1161,9 +1161,9 @@ execution_handler! {
 
 handler_unary! {
     // copy
-    fn copy(Copy) = identity::<u64>;
-    fn copy32(Copy32) = identity::<u32>;
-    fn copy64(Copy64) = identity::<u64>;
+    fn copy_slot(CopySlot) = identity::<u64>;
+    fn copy_imm32(CopyImm32) = identity::<u32>;
+    fn copy_imm64(CopyImm64) = identity::<u64>;
     // i32
     fn i32_popcnt_ss(I32Popcnt_Ss) = wasm::i32_popcnt;
     fn i32_ctz_ss(I32Ctz_Ss) = wasm::i32_ctz;
