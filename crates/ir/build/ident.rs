@@ -155,9 +155,9 @@ define_ident!(
     Load32Zero: load32_zero,
     Load64Zero: load64_zero,
 
-    Copy: copy,
-    Copy32: copy32,
-    Copy64: copy64,
+    CopySlot: copy_slot,
+    CopyImm32: copy_imm32,
+    CopyImm64: copy_imm64,
     CopySpanAsc: copy_span_asc,
     CopySpanDes: copy_span_des,
 
@@ -204,8 +204,8 @@ define_ident!(
     ConsumeFuel: consume_fuel,
     Fuel: fuel,
     Return: r#return,
-    Return32: return32,
-    Return64: return64,
+    ReturnImm32: return_imm32,
+    ReturnImm64: return_imm64,
     ReturnSlot: return_slot,
     ReturnSpan: return_span,
     Values: values,
@@ -263,7 +263,7 @@ define_ident!(
     ValTrue: val_true,
     ValFalse: val_false,
 
-    Copy128: copy128,
+    CopyImm128: copy_imm128,
     ValueLo: value_lo,
     ValueHi: value_hi,
     Selector: selector,
