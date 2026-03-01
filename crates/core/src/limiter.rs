@@ -34,33 +34,6 @@ impl Display for LimiterError {
     }
 }
 
-impl From<MemoryError> for LimiterError {
-    fn from(error: MemoryError) -> Self {
-        match error {
-            MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
-            MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            MemoryError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
-            error => panic!("unexpected `MemoryError`: {error}"),
-        }
-    }
-}
-
-impl From<TableError> for LimiterError {
-    fn from(error: TableError) -> Self {
-        match error {
-            TableError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            TableError::GrowOutOfBounds
-            | TableError::CopyOutOfBounds
-            | TableError::FillOutOfBounds
-            | TableError::InitOutOfBounds => Self::OutOfBoundsGrowth,
-            TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            TableError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
-            error => panic!("unexpected `TableError`: {error}"),
-        }
-    }
-}
-
 /// Used by hosts to limit resource consumption of instances.
 ///
 /// Resources limited via this trait are primarily related to memory.
@@ -135,11 +108,11 @@ pub trait ResourceLimiter {
 
     /// Notifies the resource limiter that growing a memory, permitted by
     /// the [`ResourceLimiter::memory_growing`] method, has failed.
-    fn memory_grow_failed(&mut self, _error: &LimiterError) {}
+    fn memory_grow_failed(&mut self, _error: &MemoryError) {}
 
     /// Notifies the resource limiter that growing a table, permitted by
     /// the [`ResourceLimiter::table_growing`] method, has failed.
-    fn table_grow_failed(&mut self, _error: &LimiterError) {}
+    fn table_grow_failed(&mut self, _error: &TableError) {}
 
     /// The maximum number of instances that can be created for a Wasm store.
     ///

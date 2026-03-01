@@ -107,7 +107,7 @@ impl Memory {
             Ok(buffer) => buffer,
             Err(error) => {
                 if let Some(limiter) = limiter.as_resource_limiter() {
-                    limiter.memory_grow_failed(&error.into())
+                    limiter.memory_grow_failed(&error)
                 }
                 return Err(error);
             }
@@ -190,7 +190,7 @@ impl Memory {
             err: MemoryError,
         ) -> Result<u64, MemoryError> {
             if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.memory_grow_failed(&err.into())
+                limiter.memory_grow_failed(&err)
             }
             Err(err)
         }
