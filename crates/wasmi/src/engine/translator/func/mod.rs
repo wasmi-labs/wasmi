@@ -1281,7 +1281,8 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = preserved.temp_slots().head();
-            let Some(copy_op) = Self::make_copy_local_instr(result, preserved, &mut self.layout)? else {
+            let Some(copy_op) = Self::make_copy_local_instr(result, preserved, &mut self.layout)?
+            else {
                 panic!("copying local to temp must yield operator")
             };
             self.instrs
