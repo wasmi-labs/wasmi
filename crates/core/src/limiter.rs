@@ -8,14 +8,10 @@ use core::{
 /// An error either returned by a [`ResourceLimiter`] or back to one.
 #[derive(Debug, Copy, Clone)]
 pub enum LimiterError {
-    /// Encountered when the underlying system ran out of allocatable memory.
-    OutOfSystemMemory,
-    /// Encountered when a memory or table is grown beyond its bounds.
-    OutOfBoundsGrowth,
     /// Returned if a [`ResourceLimiter`] denies allocation or growth.
+    ///
+    /// Used to signal that `memory.grow` or `table.grow` failure should panic.
     ResourceLimiterDeniedAllocation,
-    /// Encountered when an operation ran out of fuel.
-    OutOfFuel { required_fuel: u64 },
 }
 
 impl Error for LimiterError {}
@@ -23,14 +19,9 @@ impl Error for LimiterError {}
 impl Display for LimiterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
-            Self::OutOfSystemMemory => "out of system memory",
-            Self::OutOfBoundsGrowth => "out of bounds growth",
             Self::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
-            Self::OutOfFuel { required_fuel } => {
-                return write!(f, "not enough fuel. required={required_fuel}");
-            }
         };
-        write!(f, "{message}")
+        f.write_str(message)
     }
 }
 
