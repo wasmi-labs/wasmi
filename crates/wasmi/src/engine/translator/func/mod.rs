@@ -1277,12 +1277,11 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = preserved.temp_slots().head();
-            let value = self.layout.local_to_slot(local_idx)?;
-            self.instrs.encode(
-                Op::copy_slot(result, value),
-                consume_fuel_instr,
-                FuelCostsProvider::base,
-            )?;
+            let Some(copy_op) = Self::make_copy_local_instr(result, preserved, &mut self.layout)? else {
+                panic!("copying local to temp must yield operator")
+            };
+            self.instrs
+                .encode(copy_op, consume_fuel_instr, FuelCostsProvider::base)?;
         }
         if push_result {
             match input {
