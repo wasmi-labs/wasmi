@@ -1,4 +1,11 @@
-use crate::{from_valtype, try_into_valtype, try_valkind_from_u8, utils, wasm_ref_t, wasm_valkind_t};
+use crate::{
+    from_valtype,
+    try_into_valtype,
+    try_valkind_from_u8,
+    utils,
+    wasm_ref_t,
+    wasm_valkind_t,
+};
 use alloc::boxed::Box;
 use core::{mem::MaybeUninit, ptr};
 use wasmi::{F32, F64, Func, Nullable, Ref, Val, ValType};
@@ -139,9 +146,7 @@ impl wasm_val_t {
         // undefined behavior from an invalid enum value set by C code.
         let raw = self.kind as u8;
         let Some(kind) = try_valkind_from_u8(raw) else {
-            panic!(
-                "wasm_val_t: invalid kind discriminant value: {raw}"
-            );
+            panic!("wasm_val_t: invalid kind discriminant value: {raw}");
         };
         match kind {
             wasm_valkind_t::WASM_I32 => Val::from(unsafe { self.of.i32 }),
