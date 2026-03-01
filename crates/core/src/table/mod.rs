@@ -230,7 +230,7 @@ impl Table {
     }
 
     /// Returns an exclusive reference to the [`RawRef`] at `index` if any.
-    /// 
+    ///
     /// Returns `None` otherwise.
     fn get_raw_mut(&mut self, index: u64) -> Option<&mut RawRef> {
         let index = usize::try_from(index).ok()?;
