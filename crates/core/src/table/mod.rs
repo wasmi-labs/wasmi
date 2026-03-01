@@ -161,10 +161,8 @@ impl Table {
 
         // ResourceLimiter gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
-            match limiter.table_growing(current, desired, maximum) {
-                Ok(true) => (),
-                Ok(false) => return Err(TableError::GrowOutOfBounds),
-                Err(_) => return Err(TableError::ResourceLimiterDeniedAllocation),
+            if !limiter.table_growing(current, desired, maximum)? {
+                return Err(TableError::GrowOutOfBounds);
             }
         }
         let notify_limiter =
