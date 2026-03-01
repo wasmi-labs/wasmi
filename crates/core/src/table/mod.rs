@@ -50,7 +50,7 @@ impl Table {
         if elements.try_reserve(min_size).is_err() {
             let error = TableError::OutOfSystemMemory;
             if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.table_grow_failed(&error.into())
+                limiter.table_grow_failed(&error)?;
             }
             return Err(error);
         };
@@ -161,16 +161,14 @@ impl Table {
 
         // ResourceLimiter gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
-            match limiter.table_growing(current, desired, maximum) {
-                Ok(true) => (),
-                Ok(false) => return Err(TableError::GrowOutOfBounds),
-                Err(_) => return Err(TableError::ResourceLimiterDeniedAllocation),
+            if !limiter.table_growing(current, desired, maximum)? {
+                return Err(TableError::GrowOutOfBounds);
             }
         }
         let notify_limiter =
             |limiter: &mut ResourceLimiterRef<'_>, error: TableError| -> Result<u64, TableError> {
                 if let Some(limiter) = limiter.as_resource_limiter() {
-                    limiter.table_grow_failed(&error.into());
+                    limiter.table_grow_failed(&error)?;
                 }
                 Err(error)
             };

@@ -56,10 +56,7 @@ impl Display for MemoryError {
 impl From<LimiterError> for MemoryError {
     fn from(error: LimiterError) -> Self {
         match error {
-            LimiterError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            LimiterError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            LimiterError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
         }
     }
 }

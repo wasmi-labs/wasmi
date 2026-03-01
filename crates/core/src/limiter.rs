@@ -8,14 +8,10 @@ use core::{
 /// An error either returned by a [`ResourceLimiter`] or back to one.
 #[derive(Debug, Copy, Clone)]
 pub enum LimiterError {
-    /// Encountered when the underlying system ran out of allocatable memory.
-    OutOfSystemMemory,
-    /// Encountered when a memory or table is grown beyond its bounds.
-    OutOfBoundsGrowth,
     /// Returned if a [`ResourceLimiter`] denies allocation or growth.
+    ///
+    /// Used to signal that `memory.grow` or `table.grow` failure should panic.
     ResourceLimiterDeniedAllocation,
-    /// Encountered when an operation ran out of fuel.
-    OutOfFuel { required_fuel: u64 },
 }
 
 impl Error for LimiterError {}
@@ -23,41 +19,9 @@ impl Error for LimiterError {}
 impl Display for LimiterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
-            LimiterError::OutOfSystemMemory => "out of system memory",
-            LimiterError::OutOfBoundsGrowth => "out of bounds growth",
-            LimiterError::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
-            LimiterError::OutOfFuel { required_fuel } => {
-                return write!(f, "not enough fuel. required={required_fuel}");
-            }
+            Self::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
         };
-        write!(f, "{message}")
-    }
-}
-
-impl From<MemoryError> for LimiterError {
-    fn from(error: MemoryError) -> Self {
-        match error {
-            MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
-            MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            MemoryError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
-            error => panic!("unexpected `MemoryError`: {error}"),
-        }
-    }
-}
-
-impl From<TableError> for LimiterError {
-    fn from(error: TableError) -> Self {
-        match error {
-            TableError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            TableError::GrowOutOfBounds
-            | TableError::CopyOutOfBounds
-            | TableError::FillOutOfBounds
-            | TableError::InitOutOfBounds => Self::OutOfBoundsGrowth,
-            TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            TableError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
-            error => panic!("unexpected `TableError`: {error}"),
-        }
+        f.write_str(message)
     }
 }
 
@@ -135,11 +99,23 @@ pub trait ResourceLimiter {
 
     /// Notifies the resource limiter that growing a memory, permitted by
     /// the [`ResourceLimiter::memory_growing`] method, has failed.
-    fn memory_grow_failed(&mut self, _error: &LimiterError) {}
+    ///
+    /// # Errors
+    ///
+    /// To signal to the caller that `memory.grow` failure should panic.
+    fn memory_grow_failed(&mut self, _error: &MemoryError) -> Result<(), LimiterError> {
+        Ok(())
+    }
 
     /// Notifies the resource limiter that growing a table, permitted by
     /// the [`ResourceLimiter::table_growing`] method, has failed.
-    fn table_grow_failed(&mut self, _error: &LimiterError) {}
+    ///
+    /// # Errors
+    ///
+    /// To signal to the caller that `table.grow` failure should panic.
+    fn table_grow_failed(&mut self, _error: &TableError) -> Result<(), LimiterError> {
+        Ok(())
+    }
 
     /// The maximum number of instances that can be created for a Wasm store.
     ///

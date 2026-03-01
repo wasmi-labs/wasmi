@@ -62,10 +62,7 @@ impl Display for TableError {
 impl From<LimiterError> for TableError {
     fn from(error: LimiterError) -> Self {
         match error {
-            LimiterError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            LimiterError::OutOfBoundsGrowth => Self::GrowOutOfBounds,
             LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            LimiterError::OutOfFuel { required_fuel } => Self::OutOfFuel { required_fuel },
         }
     }
 }
