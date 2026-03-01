@@ -475,7 +475,7 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
-    /// Returns the copy instruction to copy the given local `value` to `result`.
+    /// Returns the copy instruction to copy the given temporary `value` to `result`.
     fn make_copy_temp_instr(result: Slot, value: TempOperand) -> Result<Option<Op>, Error> {
         let ty = value.ty();
         let value = value.temp_slots().head();
