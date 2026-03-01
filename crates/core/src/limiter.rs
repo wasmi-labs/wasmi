@@ -23,10 +23,10 @@ impl Error for LimiterError {}
 impl Display for LimiterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
-            LimiterError::OutOfSystemMemory => "out of system memory",
-            LimiterError::OutOfBoundsGrowth => "out of bounds growth",
-            LimiterError::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
-            LimiterError::OutOfFuel { required_fuel } => {
+            Self::OutOfSystemMemory => "out of system memory",
+            Self::OutOfBoundsGrowth => "out of bounds growth",
+            Self::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
+            Self::OutOfFuel { required_fuel } => {
                 return write!(f, "not enough fuel. required={required_fuel}");
             }
         };
