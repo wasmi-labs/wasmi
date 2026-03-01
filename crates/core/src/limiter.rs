@@ -108,11 +108,23 @@ pub trait ResourceLimiter {
 
     /// Notifies the resource limiter that growing a memory, permitted by
     /// the [`ResourceLimiter::memory_growing`] method, has failed.
-    fn memory_grow_failed(&mut self, _error: &MemoryError) {}
+    ///
+    /// # Errors
+    ///
+    /// To signal to the caller that `memory.grow` failure should panic.
+    fn memory_grow_failed(&mut self, _error: &MemoryError) -> Result<(), LimiterError> {
+        Ok(())
+    }
 
     /// Notifies the resource limiter that growing a table, permitted by
     /// the [`ResourceLimiter::table_growing`] method, has failed.
-    fn table_grow_failed(&mut self, _error: &TableError) {}
+    ///
+    /// # Errors
+    ///
+    /// To signal to the caller that `table.grow` failure should panic.
+    fn table_grow_failed(&mut self, _error: &TableError) -> Result<(), LimiterError> {
+        Ok(())
+    }
 
     /// The maximum number of instances that can be created for a Wasm store.
     ///
