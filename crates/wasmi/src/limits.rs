@@ -1,4 +1,8 @@
-use crate::{ResourceLimiter, core::LimiterError};
+use crate::{
+    ResourceLimiter,
+    core::LimiterError,
+    errors::{MemoryError, TableError},
+};
 
 /// Value returned by [`ResourceLimiter::instances`] default method
 pub const DEFAULT_INSTANCE_LIMIT: usize = 10_000;
@@ -153,6 +157,13 @@ impl ResourceLimiter for StoreLimits {
         Ok(allow)
     }
 
+    fn memory_grow_failed(&mut self, _error: &MemoryError) -> Result<(), LimiterError> {
+        if self.trap_on_grow_failure {
+            return Err(LimiterError::ResourceLimiterDeniedAllocation);
+        }
+        Ok(())
+    }
+
     fn table_growing(
         &mut self,
         _current: usize,
@@ -170,6 +181,13 @@ impl ResourceLimiter for StoreLimits {
             return Err(LimiterError::ResourceLimiterDeniedAllocation);
         }
         Ok(allow)
+    }
+
+    fn table_grow_failed(&mut self, _error: &TableError) -> Result<(), LimiterError> {
+        if self.trap_on_grow_failure {
+            return Err(LimiterError::ResourceLimiterDeniedAllocation);
+        }
+        Ok(())
     }
 
     fn instances(&self) -> usize {
