@@ -224,11 +224,17 @@ impl Table {
     ///
     /// If `index` is out of bounds.
     pub fn set_raw(&mut self, index: u64, value: RawRef) -> Result<(), TableError> {
-        let Some(raw) = self.elements.get_mut(index as usize) else {
-            return Err(TableError::SetOutOfBounds);
-        };
-        *raw = value;
+        let cell = self.get_raw_mut(index).ok_or(TableError::SetOutOfBounds)?;
+        *cell = value;
         Ok(())
+    }
+
+    /// Returns an exclusive reference to the [`RawRef`] at `index` if any.
+    ///
+    /// Returns `None` otherwise.
+    fn get_raw_mut(&mut self, index: u64) -> Option<&mut RawRef> {
+        let index = usize::try_from(index).ok()?;
+        self.elements.get_mut(index)
     }
 
     /// Initialize `len` elements from `src_element[src_index..]` into `self[dst_index..]`.
