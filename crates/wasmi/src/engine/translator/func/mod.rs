@@ -468,29 +468,33 @@ impl FuncTranslator {
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
         let instr = match value {
-            Operand::Temp(value) => {
-                let ty = value.ty();
-                let value = value.temp_slots().head();
-                if result == value {
-                    // Case: no-op copy
-                    return Ok(None);
-                }
-                match ty {
-                    ValType::V128 => {
-                        let results = SlotSpan::new(result);
-                        let values = SlotSpan::new(value);
-                        let Some(op) = Self::make_copy_span(results, values, 2) else {
-                            return Ok(None);
-                        };
-                        op
-                    }
-                    _ => Op::copy_slot(result, value),
-                }
-            }
+            Operand::Temp(value) => return Self::make_copy_temp_instr(result, value),
             Operand::Local(value) => return Self::make_copy_local_instr(result, value, layout),
             Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
         };
         Ok(Some(instr))
+    }
+
+    /// Returns the copy instruction to copy the given local `value` to `result`.
+    fn make_copy_temp_instr(result: Slot, value: TempOperand) -> Result<Option<Op>, Error> {
+        let ty = value.ty();
+        let value = value.temp_slots().head();
+        if result == value {
+            // Case: no-op copy
+            return Ok(None);
+        }
+        let copy_op = match ty {
+            ValType::V128 => {
+                let results = SlotSpan::new(result);
+                let values = SlotSpan::new(value);
+                let Some(op) = Self::make_copy_span(results, values, 2) else {
+                    return Ok(None);
+                };
+                op
+            }
+            _ => Op::copy_slot(result, value),
+        };
+        Ok(Some(copy_op))
     }
 
     /// Returns the copy instruction to copy the given local `value` to `result`.
