@@ -440,6 +440,11 @@ impl ModuleParser {
         }
         if let Some(limit) = enforced_limits.min_avg_bytes_per_function {
             if size >= limit.req_funcs_bytes {
+                debug_assert!(
+                    count != 0,
+                    "size and count are inter-dependent: if size > 0 then count != 0",
+                    // note: `limit.req_funcs_bytes` cannot be 0 by construction
+                );
                 let limit = limit.min_avg_bytes_per_function;
                 let avg = size / count;
                 if avg < limit {
