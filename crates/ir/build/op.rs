@@ -1352,7 +1352,7 @@ pub enum SelectWidth {
 impl SelectWidth {
     fn field_ty(&self, kind: OperandKind) -> FieldTy {
         match kind {
-            OperandKind::Slot => return FieldTy::Slot,
+            OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self {
                 Self::Bits32 => FieldTy::U32,
                 Self::Bits64 => FieldTy::U64,
