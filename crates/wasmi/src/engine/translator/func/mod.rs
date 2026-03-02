@@ -2003,7 +2003,7 @@ impl FuncTranslator {
     /// - Fuses compare instructions with the associated select instructions if possible.
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (true_val, false_val, condition) = self.stack.pop3();
+        let (mut true_val, mut false_val, condition) = self.stack.pop3();
         if let Some(type_hint) = type_hint {
             debug_assert_eq!(true_val.ty(), type_hint);
             debug_assert_eq!(false_val.ty(), type_hint);
@@ -2057,8 +2057,6 @@ impl FuncTranslator {
             )?;
             return Ok(());
         }
-        let mut true_val = self.make_input(true_val, |_, v| Ok(Input::Immediate(v.raw())))?;
-        let mut false_val = self.make_input(false_val, |_, v| Ok(Input::Immediate(v.raw())))?;
         let fusion = self.try_fuse_select(condition)?;
         if fusion.is_fused() {
             self.instrs.drop_staged();
@@ -2066,6 +2064,29 @@ impl FuncTranslator {
                 mem::swap(&mut true_val, &mut false_val);
             }
         }
+        match ty {
+            ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef => {
+                self.encode_select32(ty, condition, true_val, false_val)
+            }
+            ValType::I64 | ValType::F64 => self.encode_select64(ty, condition, true_val, false_val),
+            ValType::V128 => unreachable!("v128 case is handled elsewhere"),
+        }
+    }
+
+    /// Encodes `select32` operator variants.
+    fn encode_select32(
+        &mut self,
+        ty: ValType,
+        condition: Slot,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<(), Error> {
+        debug_assert!(matches!(
+            ty,
+            ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef
+        ));
+        let true_val = self.make_input(true_val, |_, v| Ok(Input::Immediate(u32::from(v))))?;
+        let false_val = self.make_input(false_val, |_, v| Ok(Input::Immediate(u32::from(v))))?;
         self.push_instr_with_result(
             ty,
             |result| match (true_val, false_val) {
@@ -2073,13 +2094,45 @@ impl FuncTranslator {
                     Op::select_ssss(result, condition, true_val, false_val)
                 }
                 (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::select32_sssi(result, condition, true_val, u32::from(false_val))
+                    Op::select32_sssi(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::select32_ssis(result, condition, u32::from(true_val), false_val)
+                    Op::select32_ssis(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::select32_ssii(result, condition, u32::from(true_val), u32::from(false_val))
+                    Op::select32_ssii(result, condition, true_val, false_val)
+                }
+            },
+            FuelCostsProvider::base,
+        )?;
+        Ok(())
+    }
+
+    /// Encodes `select32` operator variants.
+    fn encode_select64(
+        &mut self,
+        ty: ValType,
+        condition: Slot,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<(), Error> {
+        debug_assert!(matches!(ty, ValType::I64 | ValType::F64));
+        let true_val = self.make_input(true_val, |_, v| Ok(Input::Immediate(u64::from(v))))?;
+        let false_val = self.make_input(false_val, |_, v| Ok(Input::Immediate(u64::from(v))))?;
+        self.push_instr_with_result(
+            ty,
+            |result| match (true_val, false_val) {
+                (Input::Slot(true_val), Input::Slot(false_val)) => {
+                    Op::select_ssss(result, condition, true_val, false_val)
+                }
+                (Input::Slot(true_val), Input::Immediate(false_val)) => {
+                    Op::select64_sssi(result, condition, true_val, false_val)
+                }
+                (Input::Immediate(true_val), Input::Slot(false_val)) => {
+                    Op::select64_ssis(result, condition, true_val, false_val)
+                }
+                (Input::Immediate(true_val), Input::Immediate(false_val)) => {
+                    Op::select64_ssii(result, condition, true_val, false_val)
                 }
             },
             FuelCostsProvider::base,
