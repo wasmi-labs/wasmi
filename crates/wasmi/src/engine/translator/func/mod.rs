@@ -2059,7 +2059,7 @@ impl FuncTranslator {
             )?;
             return Ok(());
         }
-        if !self.try_fuse_select(ty, condition, true_val, false_val)? {
+        if !self.try_fuse_cmp_select(ty, condition, true_val, false_val)? {
             self.push_instr_with_result(
                 ty,
                 |result| Op::select_i32_eq_ssi(result, false_val, true_val, condition, 0_i32),
@@ -2075,7 +2075,7 @@ impl FuncTranslator {
     ///
     /// - Returns `Some` if fusion was successful.
     /// - Returns `None` if fusion could not be applied.
-    pub fn try_fuse_select(
+    pub fn try_fuse_cmp_select(
         &mut self,
         ty: ValType,
         condition: Slot,
