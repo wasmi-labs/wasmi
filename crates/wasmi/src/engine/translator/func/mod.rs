@@ -50,11 +50,9 @@ use crate::{
         translator::{
             WasmTranslator,
             comparator::{
-                CmpSelectFusion,
                 LogicalizeCmpInstr,
                 NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
-                TryIntoCmpSelectInstr as _,
                 UpdateBranchOffset as _,
             },
             func::stack::TempOperand,
@@ -1996,6 +1994,13 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `select` or `select <ty>` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies constant propagation in case `condition` is a constant value.
+    /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
+    /// - Fuses compare instructions with the associated select instructions if possible.
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
         let (true_val, false_val, condition) = self.stack.pop3();
@@ -2101,8 +2106,9 @@ impl FuncTranslator {
     ///
     /// # Returns
     ///
-    /// - Returns `Some` if fusion was successful.
-    /// - Returns `None` if fusion could not be applied.
+    /// - Returns [`SelectFusion::Fused`] or [`SelectFusion::FusedSwap`] if fusion was successful.
+    ///     - If [`SelectFusion::FusedSwap`] was returned, true and false operands need to be swapped.
+    /// - Returns [`SelectFusion::None`] if fusion could not be applied.
     fn try_fuse_select(&self, condition: Slot) -> Result<SelectFusion, Error> {
         let Some(staged) = self.instrs.peek_staged() else {
             // If there is no last instruction there is no comparison instruction to negate.
@@ -2128,122 +2134,6 @@ impl FuncTranslator {
             _ => SelectFusion::None,
         };
         Ok(fusion)
-    }
-
-    /// Translates a Wasm `select` or `select <ty>` instruction.
-    ///
-    /// # Note
-    ///
-    /// - This applies constant propagation in case `condition` is a constant value.
-    /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
-    /// - Fuses compare instructions with the associated select instructions if possible.
-    fn translate_cmp_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
-        bail_unreachable!(self);
-        let (true_val, false_val, condition) = self.stack.pop3();
-        if let Some(type_hint) = type_hint {
-            debug_assert_eq!(true_val.ty(), type_hint);
-            debug_assert_eq!(false_val.ty(), type_hint);
-        }
-        let ty = true_val.ty();
-        if true_val.is_same(&false_val) {
-            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
-            //               thus `select` will always yield this same value irrespective of the condition.
-            self.stack.push_operand(true_val)?;
-            return Ok(());
-        }
-        let condition = match condition {
-            Operand::Immediate(condition) => {
-                let condition = i32::from(condition.val()) != 0;
-                let selected = match condition {
-                    true => true_val,
-                    false => false_val,
-                };
-                if let Operand::Temp(_) = selected {
-                    // Case: the selected operand is a temporary which needs to be copied
-                    //       if it was the `false_val` since it changed its index. This is
-                    //       not the case for the `true_val` since `true_val` is the first
-                    //       value popped from the stack.
-                    let consume_fuel_instr = self.stack.consume_fuel_instr();
-                    let result = self.stack.push_temp(ty)?.temp_slots().head();
-                    let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
-                    else {
-                        return Ok(());
-                    };
-                    debug_assert!(op.result_ref().is_some());
-                    self.instrs
-                        .stage(op, consume_fuel_instr, FuelCostsProvider::base)?;
-                    return Ok(());
-                }
-                self.stack.push_operand(selected)?;
-                return Ok(());
-            }
-            Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => condition.temp_slots().head(),
-        };
-        let true_val = self.copy_if_immediate(true_val)?;
-        let false_val = self.copy_if_immediate(false_val)?;
-        #[cfg(feature = "simd")]
-        if matches!(ty, ValType::V128) {
-            // Case: for `v128` values the `select128` instruction must be used.
-            // Unlike normal `select` instructions the `select128` cannot be fused.
-            self.push_instr_with_result(
-                ty,
-                |result| Op::select128(result, condition, false_val, true_val),
-                FuelCostsProvider::base,
-            )?;
-            return Ok(());
-        }
-        if !self.try_fuse_cmp_select(ty, condition, true_val, false_val)? {
-            self.push_instr_with_result(
-                ty,
-                |result| Op::select_i32_eq_ssi(result, false_val, true_val, condition, 0_i32),
-                FuelCostsProvider::base,
-            )?;
-        };
-        Ok(())
-    }
-
-    /// Tries to fuse a compare instruction with a Wasm `select` instruction.
-    ///
-    /// # Returns
-    ///
-    /// - Returns `Some` if fusion was successful.
-    /// - Returns `None` if fusion could not be applied.
-    pub fn try_fuse_cmp_select(
-        &mut self,
-        ty: ValType,
-        condition: Slot,
-        true_val: Slot,
-        false_val: Slot,
-    ) -> Result<bool, Error> {
-        let Some(staged) = self.instrs.peek_staged() else {
-            // If there is no last instruction there is no comparison instruction to negate.
-            return Ok(false);
-        };
-        let Some(staged_result) = staged.result_ref().copied() else {
-            // All negatable instructions have a single result register.
-            return Ok(false);
-        };
-        if matches!(self.layout.stack_space(staged_result), StackSpace::Local) {
-            // The operator stores its result into a local variable which
-            // is an observable side effect which we are not allowed to mutate.
-            return Ok(false);
-        }
-        if staged_result != condition {
-            // The result of the last instruction and the select's `condition`
-            // are not equal thus indicating that we cannot fuse the instructions.
-            return Ok(false);
-        }
-        let CmpSelectFusion::Applied(fused_select) =
-            staged.try_into_cmp_select_instr(true_val, false_val, || {
-                let select_result = self.stack.push_temp(ty)?.temp_slots().head();
-                Ok(select_result)
-            })?
-        else {
-            return Ok(false);
-        };
-        self.instrs.replace_staged(fused_select)?;
-        Ok(true)
     }
 
     /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
