@@ -1,7 +1,7 @@
 use core::{ffi, mem::MaybeUninit, ptr, slice};
 
 /// Wrapper for running a C-defined finalizer over foreign data upon [`Drop`].
-/// 
+///
 /// # Safety
 ///
 /// The [`Send`] and [`Sync`] implementations for this type are only safe if

@@ -217,9 +217,7 @@ pub unsafe extern "C" fn wasm_func_call(
             // want to try to insulate callers against bugs in wasmtime/wasi/etc if we
             // can. As a result we catch panics here and transform them to traps to
             // allow the caller to have any insulation possible against Rust panics.
-            std::panic::catch_unwind(AssertUnwindSafe(|| {
-                f.call(ctx, wt_params, wt_results)
-            }))
+            std::panic::catch_unwind(AssertUnwindSafe(|| f.call(ctx, wt_params, wt_results)))
         }
         #[cfg(not(feature = "std"))]
         {

@@ -27,7 +27,7 @@ impl From<wasmi_error_t> for Error {
 }
 
 /// Creates a new [`wasmi_error_t`] with the given error message.
-/// 
+///
 /// Returns `None` if `msg` is `null`.
 ///
 /// Wraps [`wasmi::Error::new`].
@@ -35,7 +35,7 @@ impl From<wasmi_error_t> for Error {
 #[allow(clippy::not_unsafe_ptr_arg_deref)] // clippy 0.1.79 (129f3b99 2024-06-10): incorrectly reports a bug here
 pub extern "C" fn wasmi_error_new(msg: *const ffi::c_char) -> Option<Box<wasmi_error_t>> {
     if msg.is_null() {
-        return None
+        return None;
     }
     let msg_bytes = unsafe { ffi::CStr::from_ptr(msg) };
     let msg_string = String::from_utf8_lossy(msg_bytes.to_bytes()).into_owned();
