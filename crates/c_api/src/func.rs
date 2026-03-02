@@ -202,43 +202,42 @@ pub unsafe extern "C" fn wasm_func_call(
     params: *const wasm_val_vec_t,
     results: *mut wasm_val_vec_t,
 ) -> *mut wasm_trap_t {
-    unsafe {
-        let f = func.func();
-        let results = (*results).as_uninit_slice();
-        let params = (*params).as_slice();
-        let mut dst = Vec::new();
-        let (wt_params, wt_results) =
-            prepare_params_and_results(&mut dst, params.iter().map(|i| i.to_val()), results.len());
+    let f = func.func();
+    let results = unsafe { (*results).as_uninit_slice() };
+    let params = unsafe { (*params).as_slice() };
+    let mut dst = Vec::new();
+    let (wt_params, wt_results) =
+        prepare_params_and_results(&mut dst, params.iter().map(|i| i.to_val()), results.len());
 
-        let result = {
-            #[cfg(feature = "std")]
-            {
-                // We're calling arbitrary code here most of the time, and we in general
-                // want to try to insulate callers against bugs in wasmtime/wasi/etc if we
-                // can. As a result we catch panics here and transform them to traps to
-                // allow the caller to have any insulation possible against Rust panics.
-                std::panic::catch_unwind(AssertUnwindSafe(|| {
-                    f.call(func.inner.store.context_mut(), wt_params, wt_results)
-                }))
+    let result = {
+        let ctx = unsafe { func.inner.store.context_mut() };
+        #[cfg(feature = "std")]
+        {
+            // We're calling arbitrary code here most of the time, and we in general
+            // want to try to insulate callers against bugs in wasmtime/wasi/etc if we
+            // can. As a result we catch panics here and transform them to traps to
+            // allow the caller to have any insulation possible against Rust panics.
+            std::panic::catch_unwind(AssertUnwindSafe(|| {
+                f.call(ctx, wt_params, wt_results)
+            }))
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            Ok(f.call(ctx, wt_params, wt_results))
+        }
+    };
+    match result {
+        Ok(Ok(())) => {
+            for (slot, val) in results.iter_mut().zip(wt_results.iter().cloned()) {
+                crate::initialize(slot, wasm_val_t::from(val));
             }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(f.call(func.inner.store.context_mut(), wt_params, wt_results))
-            }
-        };
-        match result {
-            Ok(Ok(())) => {
-                for (slot, val) in results.iter_mut().zip(wt_results.iter().cloned()) {
-                    crate::initialize(slot, wasm_val_t::from(val));
-                }
-                ptr::null_mut()
-            }
-            Ok(Err(err)) => Box::into_raw(Box::new(wasm_trap_t::new(err))),
-            Err(panic) => {
-                let err = error_from_panic(panic);
-                let trap = Box::new(wasm_trap_t::new(err));
-                Box::into_raw(trap)
-            }
+            ptr::null_mut()
+        }
+        Ok(Err(err)) => Box::into_raw(Box::new(wasm_trap_t::new(err))),
+        Err(panic) => {
+            let err = error_from_panic(panic);
+            let trap = Box::new(wasm_trap_t::new(err));
+            Box::into_raw(trap)
         }
     }
 }
