@@ -1556,7 +1556,7 @@ handler_cmp_branch! {
     fn branch_f64_not_lt_is(BranchF64NotLt_Is) = eval::wasmi_f64_not_lt;
 }
 
-macro_rules! handler_select {
+macro_rules! handler_cmp_select {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
             execution_handler! {
@@ -1592,7 +1592,7 @@ macro_rules! handler_select {
         )*
     };
 }
-handler_select! {
+handler_cmp_select! {
     // i32
     fn select_i32_eq_sss(SelectI32Eq_Sss) = wasm::i32_eq;
     fn select_i32_eq_ssi(SelectI32Eq_Ssi) = wasm::i32_eq;
