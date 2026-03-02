@@ -3,7 +3,34 @@ use crate::build::{
     Op,
     ident::Ident,
     op::{
-        BinaryOp, BinaryOpKind, CmpBranchOp, CmpOpKind, CmpSelectOp, Commutativity, Field, FieldTy, GenericOp, LaneWidth, LoadOp, LoadOpKind, OperandKind, SelectOp, SelectWidth, SimdTy, StoreOp, StoreOpKind, TableGetOp, TableSetOp, TernaryOp, TernaryOpKind, Ty, UnaryOp, UnaryOpKind, V128ExtractLaneOp, V128LoadLaneOp, V128ReplaceLaneOp
+        BinaryOp,
+        BinaryOpKind,
+        CmpBranchOp,
+        CmpOpKind,
+        CmpSelectOp,
+        Commutativity,
+        Field,
+        FieldTy,
+        GenericOp,
+        LaneWidth,
+        LoadOp,
+        LoadOpKind,
+        OperandKind,
+        SelectOp,
+        SelectWidth,
+        SimdTy,
+        StoreOp,
+        StoreOpKind,
+        TableGetOp,
+        TableSetOp,
+        TernaryOp,
+        TernaryOpKind,
+        Ty,
+        UnaryOp,
+        UnaryOpKind,
+        V128ExtractLaneOp,
+        V128LoadLaneOp,
+        V128ReplaceLaneOp,
     },
 };
 
@@ -263,14 +290,16 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
 }
 
 fn add_select_ops(isa: &mut Isa) {
-    isa.push_op(
-        SelectOp::new(SelectWidth::None, OperandKind::Slot, OperandKind::Slot)
-    );
+    isa.push_op(SelectOp::new(
+        SelectWidth::None,
+        OperandKind::Slot,
+        OperandKind::Slot,
+    ));
     for width in [SelectWidth::Bits32, SelectWidth::Bits64] {
         for true_val in [OperandKind::Slot, OperandKind::Immediate] {
             for false_val in [OperandKind::Slot, OperandKind::Immediate] {
                 if matches!(true_val, OperandKind::Slot) && matches!(false_val, OperandKind::Slot) {
-                    continue
+                    continue;
                 }
                 isa.push_op(SelectOp::new(width, true_val, false_val));
             }

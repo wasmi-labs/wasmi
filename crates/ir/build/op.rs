@@ -1353,13 +1353,11 @@ impl SelectWidth {
     fn field_ty(&self, kind: OperandKind) -> FieldTy {
         match kind {
             OperandKind::Slot => return FieldTy::Slot,
-            OperandKind::Immediate => {
-                match self {
-                    Self::Bits32 => FieldTy::U32,
-                    Self::Bits64 => FieldTy::U64,
-                    Self::None => panic!("must not have immediate operands"),
-                }
-            }
+            OperandKind::Immediate => match self {
+                Self::Bits32 => FieldTy::U32,
+                Self::Bits64 => FieldTy::U64,
+                Self::None => panic!("must not have immediate operands"),
+            },
         }
     }
 }
@@ -1384,7 +1382,11 @@ pub struct SelectOp {
 
 impl SelectOp {
     pub fn new(width: SelectWidth, true_val: OperandKind, false_val: OperandKind) -> Self {
-        Self { width, true_val, false_val }
+        Self {
+            width,
+            true_val,
+            false_val,
+        }
     }
 
     pub fn result_field(&self) -> Field {
