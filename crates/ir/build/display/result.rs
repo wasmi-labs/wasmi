@@ -70,7 +70,6 @@ impl Op {
             Op::Binary(_) => true,
             Op::Ternary(_) => true,
             Op::CmpBranch(_) => false,
-            Op::CmpSelect(_) => true,
             Op::Select(_) => true,
             Op::Load(_) => true,
             Op::Store(_) => false,

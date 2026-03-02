@@ -9,7 +9,6 @@ use crate::build::{
     op::{
         BinaryOp,
         CmpBranchOp,
-        CmpSelectOp,
         GenericOp,
         LaneWidth,
         LoadOp,
@@ -95,16 +94,6 @@ impl Display for DisplayDecode<&'_ CmpBranchOp> {
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = CmpBranchOp<{lhs}, {rhs}>;")
-    }
-}
-
-impl Display for DisplayDecode<&'_ CmpSelectOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let op = self.value;
-        let camel_ident = DisplayIdent::camel(op);
-        let lhs = op.lhs_field().ty;
-        let rhs = op.rhs_field().ty;
-        writeln!(f, "pub type {camel_ident} = CmpSelectOp<{lhs}, {rhs}>;")
     }
 }
 

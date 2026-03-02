@@ -8,7 +8,6 @@ use crate::build::{
     op::{
         BinaryOp,
         CmpBranchOp,
-        CmpSelectOp,
         Field,
         GenericOp,
         LoadOp,
@@ -173,7 +172,6 @@ impl_display_variant! {
     BinaryOp,
     TernaryOp,
     CmpBranchOp,
-    CmpSelectOp,
     SelectOp,
     LoadOp,
     StoreOp,

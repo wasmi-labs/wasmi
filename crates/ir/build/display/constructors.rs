@@ -5,7 +5,6 @@ use crate::build::{
     op::{
         BinaryOp,
         CmpBranchOp,
-        CmpSelectOp,
         Field,
         GenericOp,
         LoadOp,
@@ -106,7 +105,6 @@ impl_display_constructor! {
     BinaryOp,
     TernaryOp,
     CmpBranchOp,
-    CmpSelectOp,
     SelectOp,
     LoadOp,
     StoreOp,

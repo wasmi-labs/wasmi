@@ -4,7 +4,6 @@ use crate::build::{
     op::{
         BinaryOp,
         CmpBranchOp,
-        CmpSelectOp,
         GenericOp,
         LoadOp,
         OperandKind,
@@ -121,24 +120,6 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
         write!(
             f,
             "{branch}{sep}{input_ident}{sep}{ident}_{lhs_suffix}{rhs_suffix}"
-        )
-    }
-}
-
-impl Display for DisplayIdent<&'_ CmpSelectOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let case = self.case;
-        let cmp = self.value.cmp;
-        let sep = case.wrap(Sep);
-        let select = case.wrap(Ident::Select);
-        let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(cmp.ident_prefix());
-        let result_suffix = case.wrap(OperandKind::Slot);
-        let lhs_suffix = SnakeCase(self.value.lhs);
-        let rhs_suffix = SnakeCase(self.value.rhs);
-        write!(
-            f,
-            "{select}{sep}{input_ident}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
         )
     }
 }
