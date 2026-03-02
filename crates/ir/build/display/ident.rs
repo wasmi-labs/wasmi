@@ -7,6 +7,7 @@ use crate::build::{
         CmpSelectOp,
         GenericOp,
         LoadOp,
+        SelectOp,
         OperandKind,
         StoreOp,
         TableGetOp,
@@ -138,6 +139,22 @@ impl Display for DisplayIdent<&'_ CmpSelectOp> {
         write!(
             f,
             "{select}{sep}{input_ident}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ SelectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let select = case.wrap(Ident::Select);
+        let width = self.value.width;
+        let result_suffix = case.wrap(OperandKind::Slot);
+        let condition_suffix = SnakeCase(OperandKind::Slot);
+        let tval_suffix = SnakeCase(self.value.true_val);
+        let fval_suffix = SnakeCase(self.value.false_val);
+        write!(
+            f,
+            "{select}{width}_{result_suffix}{condition_suffix}{tval_suffix}{fval_suffix}"
         )
     }
 }

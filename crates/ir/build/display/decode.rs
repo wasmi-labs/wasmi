@@ -11,6 +11,7 @@ use crate::build::{
         CmpBranchOp,
         CmpSelectOp,
         GenericOp,
+        SelectOp,
         LaneWidth,
         LoadOp,
         OperandKind,
@@ -104,6 +105,16 @@ impl Display for DisplayDecode<&'_ CmpSelectOp> {
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = CmpSelectOp<{lhs}, {rhs}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ SelectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let lhs = op.true_val_field().ty;
+        let rhs = op.false_val_field().ty;
+        writeln!(f, "pub type {camel_ident} = SelectOp<{lhs}, {rhs}>;")
     }
 }
 

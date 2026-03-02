@@ -10,6 +10,7 @@ macro_rules! apply_macro_for_ops {
             Ternary(TernaryOp),
             CmpBranch(CmpBranchOp),
             CmpSelect(CmpSelectOp),
+            Select(SelectOp),
             Load(LoadOp),
             Store(StoreOp),
             TableGet(TableGetOp),
@@ -1338,6 +1339,77 @@ impl CmpBranchOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.offset_field(), self.lhs_field(), self.rhs_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum SelectWidth {
+    None,
+    Bits32,
+    Bits64,
+}
+
+impl SelectWidth {
+    fn field_ty(&self, kind: OperandKind) -> FieldTy {
+        match kind {
+            OperandKind::Slot => return FieldTy::Slot,
+            OperandKind::Immediate => {
+                match self {
+                    Self::Bits32 => FieldTy::U32,
+                    Self::Bits64 => FieldTy::U64,
+                    Self::None => panic!("must not have immediate operands"),
+                }
+            }
+        }
+    }
+}
+
+impl Display for SelectWidth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            SelectWidth::None => "",
+            SelectWidth::Bits32 => "32",
+            SelectWidth::Bits64 => "64",
+        };
+        f.write_str(s)
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct SelectOp {
+    pub width: SelectWidth,
+    pub true_val: OperandKind,
+    pub false_val: OperandKind,
+}
+
+impl SelectOp {
+    pub fn new(width: SelectWidth, true_val: OperandKind, false_val: OperandKind) -> Self {
+        Self { width, true_val, false_val }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, FieldTy::Slot)
+    }
+
+    pub fn condition_field(&self) -> Field {
+        Field::new(Ident::Condition, FieldTy::Slot)
+    }
+
+    pub fn true_val_field(&self) -> Field {
+        Field::new(Ident::TrueVal, self.width.field_ty(self.true_val))
+    }
+
+    pub fn false_val_field(&self) -> Field {
+        Field::new(Ident::FalseVal, self.width.field_ty(self.false_val))
+    }
+
+    pub fn fields(&self) -> [Field; 4] {
+        [
+            self.result_field(),
+            self.condition_field(),
+            self.true_val_field(),
+            self.false_val_field(),
+        ]
     }
 }
 

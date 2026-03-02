@@ -8,6 +8,7 @@ use self::op::{
     BinaryOp,
     CmpBranchOp,
     CmpSelectOp,
+    SelectOp,
     LoadOp_Si,
     LoadOp_Ss,
     LoadOpMem0Offset16_Ss,

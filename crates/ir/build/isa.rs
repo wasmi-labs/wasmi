@@ -3,32 +3,7 @@ use crate::build::{
     Op,
     ident::Ident,
     op::{
-        BinaryOp,
-        BinaryOpKind,
-        CmpBranchOp,
-        CmpOpKind,
-        CmpSelectOp,
-        Commutativity,
-        Field,
-        FieldTy,
-        GenericOp,
-        LaneWidth,
-        LoadOp,
-        LoadOpKind,
-        OperandKind,
-        SimdTy,
-        StoreOp,
-        StoreOpKind,
-        TableGetOp,
-        TableSetOp,
-        TernaryOp,
-        TernaryOpKind,
-        Ty,
-        UnaryOp,
-        UnaryOpKind,
-        V128ExtractLaneOp,
-        V128LoadLaneOp,
-        V128ReplaceLaneOp,
+        BinaryOp, BinaryOpKind, CmpBranchOp, CmpOpKind, CmpSelectOp, Commutativity, Field, FieldTy, GenericOp, LaneWidth, LoadOp, LoadOpKind, OperandKind, SelectOp, SelectWidth, SimdTy, StoreOp, StoreOpKind, TableGetOp, TableSetOp, TernaryOp, TernaryOpKind, Ty, UnaryOp, UnaryOpKind, V128ExtractLaneOp, V128LoadLaneOp, V128ReplaceLaneOp
     },
 };
 
@@ -56,6 +31,7 @@ pub fn wasmi_isa(config: &Config) -> Isa {
     add_binary_ops(&mut isa);
     add_cmp_branch_ops(&mut isa);
     add_cmp_select_ops(&mut isa);
+    add_select_ops(&mut isa);
     add_load_ops(&mut isa);
     add_store_ops(&mut isa);
     add_control_ops(&mut isa);
@@ -282,6 +258,22 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
                 OperandKind::Immediate,
                 OperandKind::Slot,
             ));
+        }
+    }
+}
+
+fn add_select_ops(isa: &mut Isa) {
+    isa.push_op(
+        SelectOp::new(SelectWidth::None, OperandKind::Slot, OperandKind::Slot)
+    );
+    for width in [SelectWidth::Bits32, SelectWidth::Bits64] {
+        for true_val in [OperandKind::Slot, OperandKind::Immediate] {
+            for false_val in [OperandKind::Slot, OperandKind::Immediate] {
+                if matches!(true_val, OperandKind::Slot) && matches!(false_val, OperandKind::Slot) {
+                    continue
+                }
+                isa.push_op(SelectOp::new(width, true_val, false_val));
+            }
         }
     }
 }
