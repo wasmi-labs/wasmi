@@ -1,11 +1,26 @@
 use core::{ffi, mem::MaybeUninit, ptr, slice};
 
 /// Wrapper for running a C-defined finalizer over foreign data upon [`Drop`].
+///
+/// # Safety
+///
+/// The [`Send`] and [`Sync`] implementations for this type are only safe if
+/// the C caller ensures the following invariants:
+///
+/// - The `data` pointer must remain valid for the lifetime of this value and
+///   must be safe to access from any thread.
+/// - The `finalizer` function (if provided) must be safe to call from any
+///   thread when this value is dropped.
+/// - The data pointed to by `data` must not be concurrently mutated without
+///   proper synchronization on the C side.
 pub struct ForeignData {
     pub(crate) data: *mut ffi::c_void,
     pub(crate) finalizer: Option<extern "C" fn(*mut ffi::c_void)>,
 }
 
+// SAFETY: The C caller is responsible for ensuring that `data` and
+// `finalizer` are safe to send across thread boundaries and access
+// from multiple threads. See the struct-level safety documentation.
 unsafe impl Send for ForeignData {}
 unsafe impl Sync for ForeignData {}
 
