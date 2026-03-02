@@ -1556,6 +1556,51 @@ handler_cmp_branch! {
     fn branch_f64_not_lt_is(BranchF64NotLt_Is) = eval::wasmi_f64_not_lt;
 }
 
+macro_rules! handler_select {
+    ( $( fn $handler:ident($decode:ident) = $width:ty );* $(;)? ) => {
+        $(
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                ) -> Done = {
+                    let (
+                        ip,
+                        $crate::ir::decode::$decode {
+                            result,
+                            condition,
+                            true_val,
+                            false_val,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let condition: i32 = get_value(condition, sp);
+                    let true_val: $width = get_value(true_val, sp);
+                    let false_val: $width = get_value(false_val, sp);
+                    let selected = match condition {
+                        0 => get_value(false_val, sp),
+                        _ => get_value(true_val, sp),
+                    };
+                    set_value(sp, result, selected);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                }
+            }
+        )*
+    };
+}
+handler_select! {
+    fn select_ssss(Select_Ssss) = u64;
+    fn select32_sssi(Select32_Sssi) = u32;
+    fn select32_ssis(Select32_Ssis) = u32;
+    fn select32_ssii(Select32_Ssii) = u32;
+    fn select64_sssi(Select64_Sssi) = u64;
+    fn select64_ssis(Select64_Ssis) = u64;
+    fn select64_ssii(Select64_Ssii) = u64;
+}
+
 macro_rules! handler_cmp_select {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(
