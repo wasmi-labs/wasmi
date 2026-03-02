@@ -4,10 +4,10 @@ use crate::build::{
     op::{
         BinaryOp,
         CmpBranchOp,
-        CmpSelectOp,
         GenericOp,
         LoadOp,
         OperandKind,
+        SelectOp,
         StoreOp,
         TableGetOp,
         TableSetOp,
@@ -124,20 +124,18 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
     }
 }
 
-impl Display for DisplayIdent<&'_ CmpSelectOp> {
+impl Display for DisplayIdent<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
-        let cmp = self.value.cmp;
-        let sep = case.wrap(Sep);
         let select = case.wrap(Ident::Select);
-        let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(cmp.ident_prefix());
+        let width = self.value.width;
         let result_suffix = case.wrap(OperandKind::Slot);
-        let lhs_suffix = SnakeCase(self.value.lhs);
-        let rhs_suffix = SnakeCase(self.value.rhs);
+        let condition_suffix = SnakeCase(OperandKind::Slot);
+        let tval_suffix = SnakeCase(self.value.true_val);
+        let fval_suffix = SnakeCase(self.value.false_val);
         write!(
             f,
-            "{select}{sep}{input_ident}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
+            "{select}{width}_{result_suffix}{condition_suffix}{tval_suffix}{fval_suffix}"
         )
     }
 }

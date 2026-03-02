@@ -7,7 +7,6 @@ use crate::build::{
         BinaryOpKind,
         CmpBranchOp,
         CmpOpKind,
-        CmpSelectOp,
         Commutativity,
         Field,
         FieldTy,
@@ -16,6 +15,8 @@ use crate::build::{
         LoadOp,
         LoadOpKind,
         OperandKind,
+        SelectOp,
+        SelectWidth,
         SimdTy,
         StoreOp,
         StoreOpKind,
@@ -23,7 +24,6 @@ use crate::build::{
         TableSetOp,
         TernaryOp,
         TernaryOpKind,
-        Ty,
         UnaryOp,
         UnaryOpKind,
         V128ExtractLaneOp,
@@ -55,7 +55,7 @@ pub fn wasmi_isa(config: &Config) -> Isa {
     add_unary_ops(&mut isa);
     add_binary_ops(&mut isa);
     add_cmp_branch_ops(&mut isa);
-    add_cmp_select_ops(&mut isa);
+    add_select_ops(&mut isa);
     add_load_ops(&mut isa);
     add_store_ops(&mut isa);
     add_control_ops(&mut isa);
@@ -286,54 +286,20 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
     }
 }
 
-fn add_cmp_select_ops(isa: &mut Isa) {
-    let ops = [
-        // i32
-        CmpOpKind::I32Eq,
-        CmpOpKind::I32And,
-        CmpOpKind::I32Or,
-        CmpOpKind::S32Lt,
-        CmpOpKind::S32Le,
-        CmpOpKind::U32Lt,
-        CmpOpKind::U32Le,
-        // i64
-        CmpOpKind::I64Eq,
-        CmpOpKind::I64And,
-        CmpOpKind::I64Or,
-        CmpOpKind::S64Lt,
-        CmpOpKind::S64Le,
-        CmpOpKind::U64Lt,
-        CmpOpKind::U64Le,
-        // f32
-        CmpOpKind::F32Eq,
-        CmpOpKind::F32Lt,
-        CmpOpKind::F32Le,
-        // f64
-        CmpOpKind::F64Eq,
-        CmpOpKind::F64Lt,
-        CmpOpKind::F64Le,
-    ];
-    for op in ops {
-        isa.push_op(CmpSelectOp::new(op, OperandKind::Slot, OperandKind::Slot));
-        isa.push_op(CmpSelectOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-        ));
-        let is_float_op = matches!(op.ident_prefix(), Ty::F32 | Ty::F64);
-        let is_non_commutative = matches!(op.commutativity(), Commutativity::NonCommutative);
-        if is_non_commutative && is_float_op {
-            // Integer ops with `lhs` immediate can be replaced with integer ops with `rhs` immediate
-            // by also swapping `val_true` and `val_false` operands and comparison operator.
-            // For example, the following `select` expressions are the same:
-            // - `if 5 <  x then 10 else 20`
-            // - `if x <= 5 then 20 else 10`
-            // Float ops cannot simplified the same due to NaN value behavior.
-            isa.push_op(CmpSelectOp::new(
-                op,
-                OperandKind::Immediate,
-                OperandKind::Slot,
-            ));
+fn add_select_ops(isa: &mut Isa) {
+    isa.push_op(SelectOp::new(
+        SelectWidth::None,
+        OperandKind::Slot,
+        OperandKind::Slot,
+    ));
+    for width in [SelectWidth::Bits32, SelectWidth::Bits64] {
+        for true_val in [OperandKind::Slot, OperandKind::Immediate] {
+            for false_val in [OperandKind::Slot, OperandKind::Immediate] {
+                if matches!(true_val, OperandKind::Slot) && matches!(false_val, OperandKind::Slot) {
+                    continue;
+                }
+                isa.push_op(SelectOp::new(width, true_val, false_val));
+            }
         }
     }
 }

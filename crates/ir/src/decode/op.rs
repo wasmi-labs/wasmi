@@ -95,26 +95,24 @@ where
 }
 
 #[derive(Copy, Clone)]
-pub struct CmpSelectOp<Lhs, Rhs> {
+pub struct SelectOp<Tval, Fval> {
     pub result: Slot,
-    pub val_true: Slot,
-    pub val_false: Slot,
-    pub lhs: Lhs,
-    pub rhs: Rhs,
+    pub condition: Slot,
+    pub true_val: Tval,
+    pub false_val: Fval,
 }
 
-impl<Lhs, Rhs> Decode for CmpSelectOp<Lhs, Rhs>
+impl<Tval, Fval> Decode for SelectOp<Tval, Fval>
 where
-    Lhs: Decode,
-    Rhs: Decode,
+    Tval: Decode,
+    Fval: Decode,
 {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             result: Decode::decode(decoder)?,
-            val_true: Decode::decode(decoder)?,
-            val_false: Decode::decode(decoder)?,
-            lhs: Decode::decode(decoder)?,
-            rhs: Decode::decode(decoder)?,
+            condition: Decode::decode(decoder)?,
+            true_val: Decode::decode(decoder)?,
+            false_val: Decode::decode(decoder)?,
         })
     }
 }

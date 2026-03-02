@@ -1557,7 +1557,7 @@ handler_cmp_branch! {
 }
 
 macro_rules! handler_select {
-    ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($decode:ident) = $width:ty );* $(;)? ) => {
         $(
             execution_handler! {
                 fn $handler(
@@ -1572,20 +1572,19 @@ macro_rules! handler_select {
                         ip,
                         $crate::ir::decode::$decode {
                             result,
-                            val_true,
-                            val_false,
-                            lhs,
-                            rhs,
+                            condition,
+                            true_val,
+                            false_val,
                         },
                     ) = unsafe { decode_op(ip) };
-                    let lhs = get_value(lhs, sp);
-                    let rhs = get_value(rhs, sp);
-                    let src = match $eval(lhs, rhs) {
-                        true => val_true,
-                        false => val_false,
+                    let condition: i32 = get_value(condition, sp);
+                    let true_val: $width = get_value(true_val, sp);
+                    let false_val: $width = get_value(false_val, sp);
+                    let selected = match condition {
+                        0 => get_value(false_val, sp),
+                        _ => get_value(true_val, sp),
                     };
-                    let src: u64 = get_value(src, sp);
-                    set_value(sp, result, src);
+                    set_value(sp, result, selected);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance)
                 }
             }
@@ -1593,54 +1592,13 @@ macro_rules! handler_select {
     };
 }
 handler_select! {
-    // i32
-    fn select_i32_eq_sss(SelectI32Eq_Sss) = wasm::i32_eq;
-    fn select_i32_eq_ssi(SelectI32Eq_Ssi) = wasm::i32_eq;
-    fn select_i32_and_sss(SelectI32And_Sss) = eval::wasmi_i32_and;
-    fn select_i32_and_ssi(SelectI32And_Ssi) = eval::wasmi_i32_and;
-    fn select_i32_or_sss(SelectI32Or_Sss) = eval::wasmi_i32_or;
-    fn select_i32_or_ssi(SelectI32Or_Ssi) = eval::wasmi_i32_or;
-    fn select_i32_le_sss(SelectI32Le_Sss) = wasm::i32_le_s;
-    fn select_i32_le_ssi(SelectI32Le_Ssi) = wasm::i32_le_s;
-    fn select_i32_lt_sss(SelectI32Lt_Sss) = wasm::i32_lt_s;
-    fn select_i32_lt_ssi(SelectI32Lt_Ssi) = wasm::i32_lt_s;
-    fn select_u32_le_sss(SelectU32Le_Sss) = wasm::i32_le_u;
-    fn select_u32_le_ssi(SelectU32Le_Ssi) = wasm::i32_le_u;
-    fn select_u32_lt_sss(SelectU32Lt_Sss) = wasm::i32_lt_u;
-    fn select_u32_lt_ssi(SelectU32Lt_Ssi) = wasm::i32_lt_u;
-    // i64
-    fn select_i64_eq_sss(SelectI64Eq_Sss) = wasm::i64_eq;
-    fn select_i64_eq_ssi(SelectI64Eq_Ssi) = wasm::i64_eq;
-    fn select_i64_and_sss(SelectI64And_Sss) = eval::wasmi_i64_and;
-    fn select_i64_and_ssi(SelectI64And_Ssi) = eval::wasmi_i64_and;
-    fn select_i64_or_sss(SelectI64Or_Sss) = eval::wasmi_i64_or;
-    fn select_i64_or_ssi(SelectI64Or_Ssi) = eval::wasmi_i64_or;
-    fn select_i64_le_sss(SelectI64Le_Sss) = wasm::i64_le_s;
-    fn select_i64_le_ssi(SelectI64Le_Ssi) = wasm::i64_le_s;
-    fn select_i64_lt_sss(SelectI64Lt_Sss) = wasm::i64_lt_s;
-    fn select_i64_lt_ssi(SelectI64Lt_Ssi) = wasm::i64_lt_s;
-    fn select_u64_le_sss(SelectU64Le_Sss) = wasm::i64_le_u;
-    fn select_u64_le_ssi(SelectU64Le_Ssi) = wasm::i64_le_u;
-    fn select_u64_lt_sss(SelectU64Lt_Sss) = wasm::i64_lt_u;
-    fn select_u64_lt_ssi(SelectU64Lt_Ssi) = wasm::i64_lt_u;
-    // f32
-    fn select_f32_eq_sss(SelectF32Eq_Sss) = wasm::f32_eq;
-    fn select_f32_eq_ssi(SelectF32Eq_Ssi) = wasm::f32_eq;
-    fn select_f32_le_sss(SelectF32Le_Sss) = wasm::f32_le;
-    fn select_f32_le_ssi(SelectF32Le_Ssi) = wasm::f32_le;
-    fn select_f32_le_sis(SelectF32Le_Sis) = wasm::f32_le;
-    fn select_f32_lt_sss(SelectF32Lt_Sss) = wasm::f32_lt;
-    fn select_f32_lt_ssi(SelectF32Lt_Ssi) = wasm::f32_lt;
-    fn select_f32_lt_sis(SelectF32Lt_Sis) = wasm::f32_lt;
-    // f64
-    fn select_f64_eq_sss(SelectF64Eq_Sss) = wasm::f64_eq;
-    fn select_f64_eq_ssi(SelectF64Eq_Ssi) = wasm::f64_eq;
-    fn select_f64_le_sss(SelectF64Le_Sss) = wasm::f64_le;
-    fn select_f64_le_ssi(SelectF64Le_Ssi) = wasm::f64_le;
-    fn select_f64_le_sis(SelectF64Le_Sis) = wasm::f64_le;
-    fn select_f64_lt_sss(SelectF64Lt_Sss) = wasm::f64_lt;
-    fn select_f64_lt_ssi(SelectF64Lt_Ssi) = wasm::f64_lt;
-    fn select_f64_lt_sis(SelectF64Lt_Sis) = wasm::f64_lt;
+    fn select_ssss(Select_Ssss) = u64;
+    fn select32_sssi(Select32_Sssi) = u32;
+    fn select32_ssis(Select32_Ssis) = u32;
+    fn select32_ssii(Select32_Ssii) = u32;
+    fn select64_sssi(Select64_Sssi) = u64;
+    fn select64_ssis(Select64_Ssis) = u64;
+    fn select64_ssii(Select64_Ssii) = u64;
 }
 
 handler_load_ss! {

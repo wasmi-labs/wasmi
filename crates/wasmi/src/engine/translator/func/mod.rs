@@ -50,11 +50,9 @@ use crate::{
         translator::{
             WasmTranslator,
             comparator::{
-                CmpSelectFusion,
                 LogicalizeCmpInstr,
                 NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
-                TryIntoCmpSelectInstr as _,
                 UpdateBranchOffset as _,
             },
             func::stack::TempOperand,
@@ -77,7 +75,7 @@ use crate::{
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
 };
 use alloc::vec::Vec;
-use core::convert::identity;
+use core::{convert::identity, mem};
 use wasmparser::{MemArg, WasmFeatures};
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
@@ -2005,7 +2003,7 @@ impl FuncTranslator {
     /// - Fuses compare instructions with the associated select instructions if possible.
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (true_val, false_val, condition) = self.stack.pop3();
+        let (mut true_val, mut false_val, condition) = self.stack.pop3();
         if let Some(type_hint) = type_hint {
             debug_assert_eq!(true_val.ty(), type_hint);
             debug_assert_eq!(false_val.ty(), type_hint);
@@ -2046,12 +2044,12 @@ impl FuncTranslator {
             Operand::Local(condition) => self.layout.local_to_slot(condition)?,
             Operand::Temp(condition) => condition.temp_slots().head(),
         };
-        let true_val = self.copy_if_immediate(true_val)?;
-        let false_val = self.copy_if_immediate(false_val)?;
         #[cfg(feature = "simd")]
         if matches!(ty, ValType::V128) {
             // Case: for `v128` values the `select128` instruction must be used.
             // Unlike normal `select` instructions the `select128` cannot be fused.
+            let true_val = self.copy_if_immediate(true_val)?;
+            let false_val = self.copy_if_immediate(false_val)?;
             self.push_instr_with_result(
                 ty,
                 |result| Op::select128(result, condition, false_val, true_val),
@@ -2059,57 +2057,142 @@ impl FuncTranslator {
             )?;
             return Ok(());
         }
-        if !self.try_fuse_select(ty, condition, true_val, false_val)? {
-            self.push_instr_with_result(
-                ty,
-                |result| Op::select_i32_eq_ssi(result, false_val, true_val, condition, 0_i32),
-                FuelCostsProvider::base,
-            )?;
+        let fusion = self.try_fuse_select(condition)?;
+        if fusion.is_fused() {
+            self.instrs.drop_staged();
+            if matches!(fusion, SelectFusion::FusedSwap) {
+                mem::swap(&mut true_val, &mut false_val);
+            }
+        }
+        match ty {
+            ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef => {
+                self.encode_select32(ty, condition, true_val, false_val)
+            }
+            ValType::I64 | ValType::F64 => self.encode_select64(ty, condition, true_val, false_val),
+            ValType::V128 => unreachable!("v128 case is handled elsewhere"),
+        }
+    }
+
+    /// Encodes `select32` operator variants.
+    fn encode_select32(
+        &mut self,
+        ty: ValType,
+        condition: Slot,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<(), Error> {
+        debug_assert!(matches!(
+            ty,
+            ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef
+        ));
+        let extract_bits = |v: TypedRawVal| -> Result<Input<u32>, Error> {
+            Ok(Input::Immediate(u32::from(v.raw())))
         };
+        let true_val = self.make_input(true_val, |_, v| extract_bits(v))?;
+        let false_val = self.make_input(false_val, |_, v| extract_bits(v))?;
+        self.push_instr_with_result(
+            ty,
+            |result| match (true_val, false_val) {
+                (Input::Slot(true_val), Input::Slot(false_val)) => {
+                    Op::select_ssss(result, condition, true_val, false_val)
+                }
+                (Input::Slot(true_val), Input::Immediate(false_val)) => {
+                    Op::select32_sssi(result, condition, true_val, false_val)
+                }
+                (Input::Immediate(true_val), Input::Slot(false_val)) => {
+                    Op::select32_ssis(result, condition, true_val, false_val)
+                }
+                (Input::Immediate(true_val), Input::Immediate(false_val)) => {
+                    Op::select32_ssii(result, condition, true_val, false_val)
+                }
+            },
+            FuelCostsProvider::base,
+        )?;
         Ok(())
     }
 
+    /// Encodes `select32` operator variants.
+    fn encode_select64(
+        &mut self,
+        ty: ValType,
+        condition: Slot,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<(), Error> {
+        debug_assert!(matches!(ty, ValType::I64 | ValType::F64));
+        let extract_bits = |v: TypedRawVal| -> Result<Input<u64>, Error> {
+            Ok(Input::Immediate(u64::from(v.raw())))
+        };
+        let true_val = self.make_input(true_val, |_, v| extract_bits(v))?;
+        let false_val = self.make_input(false_val, |_, v| extract_bits(v))?;
+        self.push_instr_with_result(
+            ty,
+            |result| match (true_val, false_val) {
+                (Input::Slot(true_val), Input::Slot(false_val)) => {
+                    Op::select_ssss(result, condition, true_val, false_val)
+                }
+                (Input::Slot(true_val), Input::Immediate(false_val)) => {
+                    Op::select64_sssi(result, condition, true_val, false_val)
+                }
+                (Input::Immediate(true_val), Input::Slot(false_val)) => {
+                    Op::select64_ssis(result, condition, true_val, false_val)
+                }
+                (Input::Immediate(true_val), Input::Immediate(false_val)) => {
+                    Op::select64_ssii(result, condition, true_val, false_val)
+                }
+            },
+            FuelCostsProvider::base,
+        )?;
+        Ok(())
+    }
+}
+
+#[derive(Copy, Clone)]
+enum SelectFusion {
+    None,
+    Fused,
+    FusedSwap,
+}
+
+impl SelectFusion {
+    pub fn is_fused(self) -> bool {
+        matches!(self, Self::Fused | Self::FusedSwap)
+    }
+}
+
+impl FuncTranslator {
     /// Tries to fuse a compare instruction with a Wasm `select` instruction.
     ///
     /// # Returns
     ///
-    /// - Returns `Some` if fusion was successful.
-    /// - Returns `None` if fusion could not be applied.
-    pub fn try_fuse_select(
-        &mut self,
-        ty: ValType,
-        condition: Slot,
-        true_val: Slot,
-        false_val: Slot,
-    ) -> Result<bool, Error> {
+    /// - Returns [`SelectFusion::Fused`] or [`SelectFusion::FusedSwap`] if fusion was successful.
+    ///     - If [`SelectFusion::FusedSwap`] was returned, true and false operands need to be swapped.
+    /// - Returns [`SelectFusion::None`] if fusion could not be applied.
+    fn try_fuse_select(&self, condition: Slot) -> Result<SelectFusion, Error> {
         let Some(staged) = self.instrs.peek_staged() else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return Ok(false);
+            return Ok(SelectFusion::None);
         };
         let Some(staged_result) = staged.result_ref().copied() else {
             // All negatable instructions have a single result register.
-            return Ok(false);
+            return Ok(SelectFusion::None);
         };
         if matches!(self.layout.stack_space(staged_result), StackSpace::Local) {
             // The operator stores its result into a local variable which
             // is an observable side effect which we are not allowed to mutate.
-            return Ok(false);
+            return Ok(SelectFusion::None);
         }
         if staged_result != condition {
             // The result of the last instruction and the select's `condition`
             // are not equal thus indicating that we cannot fuse the instructions.
-            return Ok(false);
+            return Ok(SelectFusion::None);
         }
-        let CmpSelectFusion::Applied(fused_select) =
-            staged.try_into_cmp_select_instr(true_val, false_val, || {
-                let select_result = self.stack.push_temp(ty)?.temp_slots().head();
-                Ok(select_result)
-            })?
-        else {
-            return Ok(false);
+        let fusion = match staged {
+            Op::I32Eq_Ssi { rhs: 0, .. } => SelectFusion::FusedSwap,
+            Op::I32NotEq_Ssi { rhs: 0, .. } => SelectFusion::Fused,
+            _ => SelectFusion::None,
         };
-        self.instrs.replace_staged(fused_select)?;
-        Ok(true)
+        Ok(fusion)
     }
 
     /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
