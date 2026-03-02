@@ -2085,8 +2085,10 @@ impl FuncTranslator {
             ty,
             ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef
         ));
-        let true_val = self.make_input(true_val, |_, v| Ok(Input::Immediate(u32::from(v))))?;
-        let false_val = self.make_input(false_val, |_, v| Ok(Input::Immediate(u32::from(v))))?;
+        let true_val =
+            self.make_input(true_val, |_, v| Ok(Input::Immediate(u32::from(v.raw()))))?;
+        let false_val =
+            self.make_input(false_val, |_, v| Ok(Input::Immediate(u32::from(v.raw()))))?;
         self.push_instr_with_result(
             ty,
             |result| match (true_val, false_val) {
@@ -2117,8 +2119,10 @@ impl FuncTranslator {
         false_val: Operand,
     ) -> Result<(), Error> {
         debug_assert!(matches!(ty, ValType::I64 | ValType::F64));
-        let true_val = self.make_input(true_val, |_, v| Ok(Input::Immediate(u64::from(v))))?;
-        let false_val = self.make_input(false_val, |_, v| Ok(Input::Immediate(u64::from(v))))?;
+        let true_val =
+            self.make_input(true_val, |_, v| Ok(Input::Immediate(u64::from(v.raw()))))?;
+        let false_val =
+            self.make_input(false_val, |_, v| Ok(Input::Immediate(u64::from(v.raw()))))?;
         self.push_instr_with_result(
             ty,
             |result| match (true_val, false_val) {
