@@ -267,7 +267,7 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert!(dst.head() <= src.head());
     let dst = dst.iter(len);
     let src = src.iter(len);
-    for (dst, src) in dst.into_iter().zip(src.into_iter()) {
+    for (dst, src) in dst.into_iter().zip(src) {
         let value: u64 = get_value(src, sp);
         set_value(sp, dst, value);
     }
@@ -277,7 +277,7 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert!(dst.head() >= src.head());
     let dst = dst.iter(len);
     let src = src.iter(len);
-    for (dst, src) in dst.into_iter().zip(src.into_iter()).rev() {
+    for (dst, src) in dst.into_iter().zip(src).rev() {
         let value: u64 = get_value(src, sp);
         set_value(sp, dst, value);
     }
