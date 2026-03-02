@@ -2003,7 +2003,7 @@ impl FuncTranslator {
     /// - This applies constant propagation in case `condition` is a constant value.
     /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
     /// - Fuses compare instructions with the associated select instructions if possible.
-    fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
+    fn translate_cmp_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
         let (true_val, false_val, condition) = self.stack.pop3();
         if let Some(type_hint) = type_hint {

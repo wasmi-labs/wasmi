@@ -358,7 +358,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_select(&mut self) -> Self::Output {
-        self.translate_select(None)
+        self.translate_cmp_select(None)
     }
 
     #[inline(never)]
@@ -1813,7 +1813,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
         let type_hint = WasmiValueType::from(ty).into_inner();
-        self.translate_select(Some(type_hint))
+        self.translate_cmp_select(Some(type_hint))
     }
 
     #[inline(never)]
