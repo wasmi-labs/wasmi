@@ -35,7 +35,7 @@ assert_matches = "1.5"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["std", "wat"]
+default = ["stable", "std", "wat"]
 std = [
     "wasmi_core/std",
     "wasmi_collections/std",
@@ -52,6 +52,8 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
+stable = []
+unstable = []
 
 # Enables a portable dispatch scheme that avoids tail-call reliance.
 # Recommended for targets without stable or guaranteed tail-call support.
