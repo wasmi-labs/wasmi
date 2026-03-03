@@ -49,7 +49,7 @@ macro_rules! expand_op_code_to_handler {
 }
 ir::for_each_op!(expand_op_code_to_handler);
 
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(all(feature = "unstable", not(feature = "stable"))))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let handler = $crate::engine::executor::handler::dispatch::backend::fetch_handler($ip);
@@ -57,7 +57,7 @@ macro_rules! dispatch {
     }};
 }
 
-#[cfg(feature = "unstable")]
+#[cfg(all(feature = "unstable", not(feature = "stable")))]
 macro_rules! dispatch {
     ($state:expr, $ip:expr, $sp:expr, $mem0:expr, $mem0_len:expr, $instance:expr) => {{
         let handler = $crate::engine::executor::handler::dispatch::backend::fetch_handler($ip);
