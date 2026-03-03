@@ -1,5 +1,64 @@
 use crate::{Error, SlotSpan};
-use core::marker::PhantomData;
+use core::{
+    fmt::{Debug, Formatter},
+    marker::PhantomData,
+};
+
+/// A generic register type.
+pub struct Reg<T> {
+    /// Tells the compiler that `T` is not used within.
+    marker: PhantomData<fn() -> T>,
+}
+
+impl<T> Copy for Reg<T> {}
+impl<T> Clone for Reg<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<T> Default for Reg<T> {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            marker: PhantomData,
+        }
+    }
+}
+
+mod marker {
+    /// Marker for the integer GPR register.
+    pub enum Int {}
+
+    /// Marker for the `f32` register.
+    pub enum F32 {}
+
+    /// Marker for the `f64` register.
+    pub enum F64 {}
+}
+
+/// The general purpose (integer) register.
+pub type Ireg = Reg<marker::Int>;
+impl Debug for Ireg {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.write_str("Ireg")
+    }
+}
+
+/// The `f32` register.
+pub type Freg32 = Reg<marker::F32>;
+impl Debug for Freg32 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.write_str("Freg32")
+    }
+}
+
+/// The `f64` register.
+pub type Freg64 = Reg<marker::F64>;
+impl Debug for Freg64 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.write_str("Freg64")
+    }
+}
 
 /// An [`Op::BranchTableSpan`](crate::Op::BranchTableSpan) branching target.
 #[derive(Debug, Copy, Clone)]
