@@ -18,7 +18,6 @@ For details about the Wasmi project itself (architecture, design goals, embeddin
 - Embedded and constrained environments
 - WASI-compatible execution
 
-
 ## Build & Install
 
 Build from source:
