@@ -39,6 +39,7 @@ run = []
 wast = ["wasmi_wast"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
+unstable = ["wasmi/unstable"]
 
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264
