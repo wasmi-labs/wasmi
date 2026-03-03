@@ -79,6 +79,8 @@ wasmi foo.wasm --invoke bar a b c
 
 ## WASI Integration
 
+Wasmi provides support for WASI 0.1 (preview 1).
+
 ### Pre-open Directories
 
 Preopens a host directory for guest access.
