@@ -79,6 +79,8 @@
     clippy::default_trait_access,
     clippy::items_after_statements
 )]
+#![cfg_attr(feature = "unstable", feature(explicit_tail_calls))]
+#![cfg_attr(feature = "unstable", expect(incomplete_features))]
 #![recursion_limit = "1000"]
 
 extern crate alloc;

@@ -424,13 +424,13 @@ execution_handler! {
 execution_handler! {
     fn r#return(
         state: &mut VmState,
-        _ip: Ip,
+        ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
     ) -> Done = {
-        exec_return(state, sp, mem0, mem0_len, instance)
+        exec_return(state, ip, sp, mem0, mem0_len, instance)
     }
 }
 
@@ -448,7 +448,7 @@ execution_handler! {
         let src = values.span();
         let len = values.len();
         exec_copy_span_asc(sp, dst, src, len);
-        exec_return(state, sp, mem0, mem0_len, instance)
+        exec_return(state, ip, sp, mem0, mem0_len, instance)
     }
 }
 
@@ -467,7 +467,7 @@ macro_rules! handler_return {
                     let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                     let value = get_value(value, sp);
                     set_value(sp, Slot::from(0), $eval(value));
-                    exec_return(state, sp, mem0, mem0_len, instance)
+                    exec_return(state, ip, sp, mem0, mem0_len, instance)
                 }
             }
         )*
