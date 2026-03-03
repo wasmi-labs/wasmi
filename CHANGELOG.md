@@ -8,6 +8,47 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.2` - 2026-03-03
+
+### Added
+
+- Added `unstable` crate feature to `wasmi`, `wasmi_wast` and `wasmi_cli` crates. [#1825]
+  - This enables unstable `rustc` features available in nightly Rust releases.
+  - Concretely, this enables usage of Rust's unstable [`become` keyword] to enforce
+    tail-calls in its instruction dispatch when `portable-dispatch` is disabled.
+  - Enable `become` with `cargo build --no-default-features --features unstable`.
+- Added proper `README.md` to Wasmi's CLI application. [#1824]
+
+[`become` keyword]: https://doc.rust-lang.org/std/keyword.become.html
+
+### Changed
+
+- Clean-up `ResourceLimiter` API. [#1817]
+  - `StoreLimits` now properly enforce panics if `trap_on_grow_failure` was enabled.
+  - `memory_grow_failed` and `table_grow_failed` now take `MemoryError` and `TableError` respectively.
+  - `LimiterError` is now a single variant `enum` making its use much simpler.
+
+### Fixed
+
+- CLI: fixed a panic when using the `run` command without arguments. [#1810]
+  - Thanks to [polarathene](https://github.com/polarathene) for reporting the issue.
+- Fixed an integer-overflow bug in the internal `Table::set_raw` API. [#1818]
+  - Thanks to [sumleo](https://github.com/sumleo) for reporting the issue.
+- Fixed a potential bug with `local.set` translation and SIMD. [#1821]
+
+### Internal
+
+- Redesigned Wasmi's internal `select` operators. [#1823]
+  - The new design is simpler, performs similarly and requires fewer `select` operators.
+
+[#1810]: https://github.com/wasmi-labs/wasmi/pull/1810
+[#1817]: https://github.com/wasmi-labs/wasmi/pull/1817
+[#1818]: https://github.com/wasmi-labs/wasmi/pull/1818
+[#1821]: https://github.com/wasmi-labs/wasmi/pull/1821
+[#1823]: https://github.com/wasmi-labs/wasmi/pull/1823
+[#1824]: https://github.com/wasmi-labs/wasmi/pull/1824
+[#1825]: https://github.com/wasmi-labs/wasmi/pull/1825
+
 ## `2.0.0-beta.1` - 2026-02-19
 
 ### Changed
