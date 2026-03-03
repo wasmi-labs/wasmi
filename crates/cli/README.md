@@ -141,7 +141,7 @@ conformance validation and regression testing of the Wasmi interpreter.
 | `wast` | ✅ | Enables execution of WebAssembly Script (`.wast`) files. Primarily intended for specification testing and interpreter debugging. Enabled by default for CLI parity with other WebAssembly runtimes. |
 | `wasi` | ✅ | Enables WASI support when executing modules via `run`, including environment variables, preopened directories, and socket support. |
 | `simd` | ❌ | Enables support for WebAssembly SIMD proposal for both module execution and script testing. Disabled by default due to significant bloat. |
-| `portable-dispatch` | ❌ | Allows to compile Wasmi universally at the cost of execution performance. |
+| `portable-dispatch` | ❌ | Allows to compile Wasmi universally at the cost of execution performance. Use `--profile bench` to counteract performance regressions to some extend. |
 | `indirect-dispatch` | ❌ | Uses a slightly more compact IR encoding at the cost of execution performance. |
 
 ## License
