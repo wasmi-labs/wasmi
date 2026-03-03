@@ -143,6 +143,7 @@ conformance validation and regression testing of the Wasmi interpreter.
 | `simd` | ❌ | Enables support for WebAssembly SIMD proposal for both module execution and script testing. Disabled by default due to significant bloat. |
 | `portable-dispatch` | ❌ | Allows to compile Wasmi universally at the cost of execution performance. Use `--profile bench` to counteract performance regressions to some extend. |
 | `indirect-dispatch` | ❌ | Uses a slightly more compact IR encoding at the cost of execution performance. |
+| `unstable` | ❌ | Enables unstable Rust compiler features in Wasmi. (e.g. `become`) Only usable when disabling default features via `--no-default-features` and requires a nightly Rust compiler. |
 
 ## License
 
