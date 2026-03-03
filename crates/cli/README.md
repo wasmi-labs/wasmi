@@ -18,7 +18,6 @@ For details about the Wasmi project itself (architecture, design goals, embeddin
 - Embedded and constrained environments
 - WASI-compatible execution
 
-If no subcommand is specified, `run` is used implicitly.
 
 ## Build & Install
 
