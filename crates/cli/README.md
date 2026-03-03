@@ -83,27 +83,27 @@ wasmi foo.wasm --invoke bar a b c
 
 ### Pre-open Directories
 
+Preopens a host directory for guest access.
+
 ```bash
 wasmi foo.wasm --dir ./data
 ```
 
-Preopens a host directory for guest access.
-
 ### Environment Variables
+
+Adds an environment variable visible to the guest.
 
 ```bash
 wasmi foo.wasm --env FOO=bar
 ```
 
-Adds an environment variable visible to the guest.
-
 ### TCP Listening Socket
+
+Provides a listening socket to the module for WASI socket operations.
 
 ```bash
 wasmi foo.wasm --tcplisten 127.0.0.1:8080
 ```
-
-Provides a listening socket to the module for WASI socket operations.
 
 ## Compilation Modes
 
