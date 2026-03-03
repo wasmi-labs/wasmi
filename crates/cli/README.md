@@ -36,7 +36,7 @@ target/release/wasmi
 Install from crates.io:
 
 ```bash
-cargo install -p wasmi_cli
+cargo install wasmi_cli
 ```
 
 This installs the `wasmi` binary.
