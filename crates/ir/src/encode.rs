@@ -10,6 +10,7 @@ use crate::{
     Offset16,
     Op,
     OpCode,
+    Reg,
     Sign,
     Slot,
     SlotSpan,
@@ -229,3 +230,13 @@ impl<const N: usize, T: Encode> Encode for [T; N] {
 }
 
 include!(concat!(env!("OUT_DIR"), "/encode.rs"));
+
+impl<T> Encode for Reg<T> {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.write_bytes(&[])
+    }
+}
