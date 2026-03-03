@@ -16,6 +16,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - This enables unstable `rustc` features available in nightly Rust releases.
   - Concretely, this enables usage of Rust's unstable `become` keyword to enforce
     tail-calls in its instruction dispatch when `portable-dispatch` is disabled.
+  - Enable `become` with `cargo build --no-default-features --features unstable`.
 - Added proper `README.md` to Wasmi's CLI application. [#1824]
 
 ### Changed
