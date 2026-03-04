@@ -78,26 +78,6 @@ pub enum OperandKind {
     Immediate,
 }
 
-impl Display for CamelCase<OperandKind> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0 {
-            OperandKind::Slot => "S",
-            OperandKind::Immediate => "I",
-        };
-        f.write_str(s)
-    }
-}
-
-impl Display for SnakeCase<OperandKind> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0 {
-            OperandKind::Slot => "s",
-            OperandKind::Immediate => "i",
-        };
-        f.write_str(s)
-    }
-}
-
 #[derive(Copy, Clone)]
 pub struct GenericOp<const N: usize> {
     pub ident: Ident,

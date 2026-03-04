@@ -2,6 +2,7 @@ use crate::build::{
     Isa,
     display::{
         Indent,
+        Suffix,
         ident::DisplayIdent,
         utils::{DisplayConcat, DisplaySequence, IntoDisplayMaybe as _},
     },
@@ -114,8 +115,8 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();
-        let result_suffix = CamelCase(OperandKind::Slot);
-        let ptr_suffix = SnakeCase(op.ptr);
+        let result_suffix = CamelCase(Suffix(OperandKind::Slot));
+        let ptr_suffix = SnakeCase(Suffix(op.ptr));
         writeln!(
             f,
             "pub type {camel_ident} = LoadOp{mem0_offset16}_{result_suffix}{ptr_suffix};"
@@ -134,7 +135,7 @@ impl Display for DisplayDecode<&'_ StoreOp> {
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();
-        let ptr_suffix = CamelCase(op.ptr);
+        let ptr_suffix = CamelCase(Suffix(op.ptr));
         let value_ty = op.value_field().ty;
         let laneidx_ty = op
             .laneidx_field()
@@ -242,11 +243,11 @@ impl Display for DisplayDecode<&'_ V128LoadLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
-        let result_suffix = CamelCase(OperandKind::Slot);
+        let result_suffix = CamelCase(Suffix(OperandKind::Slot));
         let mem0_offset16 = (op.mem0 && op.offset16)
             .then_some("Mem0Offset16")
             .display_maybe();
-        let ptr_suffix = SnakeCase(op.ptr);
+        let ptr_suffix = SnakeCase(Suffix(op.ptr));
         let laneidx = op.width.to_laneidx();
         writeln!(
             f,
