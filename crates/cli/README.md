@@ -18,27 +18,23 @@ For details about the Wasmi project itself (architecture, design goals, embeddin
 - Embedded and constrained environments
 - WASI-compatible execution
 
-## Build & Install
+## Build / Install
 
 Build from source:
 
 ```bash
-cargo build --release
+cargo build --release --package wasmi_cli
 ```
 
-The resulting binary will be located at:
+The resulting binary will be located at `target/release/wasmi` (from the root of the git repository).
 
-```bash
-target/release/wasmi
-```
-
-Install from crates.io:
+Alternatively, build and install the `wasmi` binary from the latest release on `crates.io`:
 
 ```bash
 cargo install wasmi_cli
 ```
 
-This installs the `wasmi` binary.
+**NOTE:** `codegen-units = 1` (_added into `wasmi`'s release profile config_) is required to avoid stack overflows when _not_ using `wasmi`'s [`portable-dispatch` feature](#crate-features).
 
 ## Usage
 
@@ -79,11 +75,11 @@ wasmi foo.wasm --invoke bar a b c
 
 ## WASI Integration
 
-Wasmi provides support for WASI 0.1 (preview 1).
+Wasmi provides support for WASI 0.1 (preview 1, released in 2019). There is presently no plan to officially add support for WASI 0.2 or newer.
 
 ### Pre-open Directories
 
-Preopens a host directory for guest access.
+Preopen a host directory for guest access.
 
 ```bash
 wasmi foo.wasm --dir ./data
@@ -91,7 +87,7 @@ wasmi foo.wasm --dir ./data
 
 ### Environment Variables
 
-Adds an environment variable visible to the guest.
+Add an environment variable visible to the guest.
 
 ```bash
 wasmi foo.wasm --env FOO=bar
@@ -99,7 +95,7 @@ wasmi foo.wasm --env FOO=bar
 
 ### TCP Listening Socket
 
-Provides a listening socket to the module for WASI socket operations.
+Provide a listening socket to the module for WASI socket operations.
 
 ```bash
 wasmi foo.wasm --tcplisten 127.0.0.1:8080
