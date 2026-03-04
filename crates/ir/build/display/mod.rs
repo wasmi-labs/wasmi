@@ -11,6 +11,7 @@ pub use self::{
     constructors::DisplayConstructor,
     decode::DisplayDecode,
     encode::DisplayEncode,
+    ident::Suffix,
     op::DisplayOp,
     op_code::DisplayOpCode,
     result::DisplayResultMut,
