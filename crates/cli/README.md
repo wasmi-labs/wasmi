@@ -26,7 +26,7 @@ Build from source:
 cargo build --release --package wasmi_cli
 ```
 
-The resulting binary will be located at `target/release/wasmi` (from the root of the git repository).
+The resulting binary will be located at `target/release/wasmi` from the root of the git repository.
 
 Alternatively, build and install the `wasmi` binary from the latest release on `crates.io`:
 
