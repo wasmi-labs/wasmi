@@ -51,7 +51,7 @@ wasmi <COMMAND>
 | `wast`  | Executes a WebAssembly Script (`.wast`) file |
 | `help`  | Prints help information |
 
-If no command is provided, `run` is assumed (_unless you opt-out of the default `run` crate feature_).
+When no command is provided, the `run` command is used if the `run` crate feature is enabled. This feature is enabled by default.
 
 ## Running a WebAssembly Module
 
