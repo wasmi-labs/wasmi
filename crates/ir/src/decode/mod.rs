@@ -39,6 +39,7 @@ use crate::{
     FixedSlotSpan,
     Offset16,
     OpCode,
+    Reg,
     Sign,
     Slot,
     SlotSpan,
@@ -226,3 +227,10 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
 }
 
 include!(concat!(env!("OUT_DIR"), "/decode.rs"));
+
+impl<T> Decode for Reg<T> {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
+    }
+}
