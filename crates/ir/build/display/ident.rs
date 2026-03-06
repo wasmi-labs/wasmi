@@ -160,9 +160,7 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
             false => Some(IdentSuffix(op.value_ty)),
             true => None,
         };
-        let ident_suffix = ident_suffix
-            .map(|i| case.wrap(i))
-            .display_maybe();
+        let ident_suffix = ident_suffix.map(|i| case.wrap(i)).display_maybe();
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let value_suffix = SnakeCase(Suffix(op.value));
         write!(
