@@ -49,6 +49,81 @@ impl<T> DisplayIdent<T> {
     }
 }
 
+/// [`Display`] wrapper for types that can act as operator identifier suffices.
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+pub struct IdentSuffix<T>(pub T);
+
+impl Display for CamelCase<IdentSuffix<Ty>> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0.0 {
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
+            Ty::I32 => "I32",
+            Ty::I64 => "I64",
+            Ty::S32 => "I32",
+            Ty::S64 => "I64",
+            Ty::U32 => "U32",
+            Ty::U64 => "U64",
+            Ty::F32 => "F32",
+            Ty::F64 => "F64",
+            Ty::V128 => "V128",
+            Ty::I8x16 => "I8x16",
+            Ty::I16x8 => "I16x8",
+            Ty::I32x4 => "I32x4",
+            Ty::I64x2 => "I64x2",
+            Ty::U8x16 => "U8x16",
+            Ty::U16x8 => "U16x8",
+            Ty::U32x4 => "U32x4",
+            Ty::U64x2 => "U64x2",
+            Ty::S8x16 => "I8x16",
+            Ty::S16x8 => "I16x8",
+            Ty::S32x4 => "I32x4",
+            Ty::S64x2 => "I64x2",
+            Ty::F32x4 => "F32x4",
+            Ty::F64x2 => "F64x2",
+        };
+        f.write_str(s)
+    }
+}
+
+impl Display for SnakeCase<IdentSuffix<Ty>> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0.0 {
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
+            Ty::I32 => "_i32",
+            Ty::I64 => "_i64",
+            Ty::S32 => "_i32",
+            Ty::S64 => "_i64",
+            Ty::U32 => "_u32",
+            Ty::U64 => "_u64",
+            Ty::F32 => "_f32",
+            Ty::F64 => "_f64",
+            Ty::V128 => "_v128",
+            Ty::I8x16 => "_i8x16",
+            Ty::I16x8 => "_i16x8",
+            Ty::I32x4 => "_i32x4",
+            Ty::I64x2 => "_i64x2",
+            Ty::U8x16 => "_u8x16",
+            Ty::U16x8 => "_u16x8",
+            Ty::U32x4 => "_u32x4",
+            Ty::U64x2 => "_u64x2",
+            Ty::S8x16 => "_i8x16",
+            Ty::S16x8 => "_i16x8",
+            Ty::S32x4 => "_i32x4",
+            Ty::S64x2 => "_i64x2",
+            Ty::F32x4 => "_f32x4",
+            Ty::F64x2 => "_f64x2",
+        };
+        f.write_str(s)
+    }
+}
+
 /// [`Display`] wrapper for types that can act as suffices for operator identifiers.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
@@ -78,15 +153,14 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let op = self.value;
-        let kind = op.kind;
-        let ident = case.wrap(kind.ident());
+        let ident = case.wrap(op.ident);
         let sep = case.wrap(Sep);
-        let ident_prefix = DisplayConcat((case.wrap(kind.ident_prefix()), sep));
-        let ident_suffix = kind
-            .ident_suffix()
-            .map(|i| (sep, case.wrap(i)))
-            .map(DisplayConcat)
-            .display_maybe();
+        let ident_prefix = DisplayConcat((case.wrap(op.result_ty), sep));
+        let ident_suffix = match op.value_ty == op.result_ty {
+            false => Some(IdentSuffix(op.value_ty)),
+            true => None,
+        };
+        let ident_suffix = ident_suffix.map(|i| case.wrap(i)).display_maybe();
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let value_suffix = SnakeCase(Suffix(op.value));
         write!(

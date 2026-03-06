@@ -78,6 +78,43 @@ pub enum OperandKind {
     Immediate,
 }
 
+impl OperandKind {
+    pub fn field_ty(self, hint: Ty) -> FieldTy {
+        match self {
+            OperandKind::Slot => FieldTy::Slot,
+            OperandKind::Immediate => match hint {
+                | Ty::Bits8 => FieldTy::U8,
+                | Ty::Bits16 => FieldTy::U16,
+                | Ty::Bits32 => FieldTy::U32,
+                | Ty::Bits64 => FieldTy::U64,
+                | Ty::I32 => FieldTy::I32,
+                | Ty::I64 => FieldTy::I64,
+                | Ty::S32 => FieldTy::I32,
+                | Ty::S64 => FieldTy::I64,
+                | Ty::U32 => FieldTy::U32,
+                | Ty::U64 => FieldTy::U64,
+                | Ty::F32 => FieldTy::F32,
+                | Ty::F64 => FieldTy::F64,
+                | Ty::V128
+                | Ty::I8x16
+                | Ty::I16x8
+                | Ty::I32x4
+                | Ty::I64x2
+                | Ty::U8x16
+                | Ty::U16x8
+                | Ty::U32x4
+                | Ty::U64x2
+                | Ty::S8x16
+                | Ty::S16x8
+                | Ty::S32x4
+                | Ty::S64x2
+                | Ty::F32x4
+                | Ty::F64x2 => FieldTy::V128,
+            },
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct GenericOp<const N: usize> {
     pub ident: Ident,
@@ -98,13 +135,20 @@ impl<const N: usize> GenericOp<N> {
 
 #[derive(Copy, Clone)]
 pub struct UnaryOp {
-    pub kind: UnaryOpKind,
+    pub ident: Ident,
+    pub result_ty: Ty,
+    pub value_ty: Ty,
     pub value: OperandKind,
 }
 
 impl UnaryOp {
-    pub fn new(kind: UnaryOpKind, value: OperandKind) -> Self {
-        Self { kind, value }
+    pub fn new(ident: Ident, result_ty: Ty, value_ty: Ty, value: OperandKind) -> Self {
+        Self {
+            ident,
+            result_ty,
+            value_ty,
+            value,
+        }
     }
 
     pub fn result_field(&self) -> Field {
@@ -112,458 +156,12 @@ impl UnaryOp {
     }
 
     pub fn value_field(&self) -> Field {
-        let Some(ty) = self.kind.value_field(self.value) else {
-            panic!("unexpected missing value field")
-        };
-        Field::new(Ident::Value, ty)
+        let field_ty = self.value.field_ty(self.value_ty);
+        Field::new(Ident::Value, field_ty)
     }
 
     pub fn fields(&self) -> [Field; 2] {
         [self.result_field(), self.value_field()]
-    }
-}
-
-#[derive(Copy, Clone)]
-pub enum UnaryOpKind {
-    I32Clz,
-    I32Ctz,
-    I32Popcnt,
-
-    I64Clz,
-    I64Ctz,
-    I64Popcnt,
-
-    I32WrapI64,
-
-    I32Sext8,
-    I32Sext16,
-    I64Sext8,
-    I64Sext16,
-    I64Sext32,
-
-    F32Abs,
-    F32Neg,
-    F32Ceil,
-    F32Floor,
-    F32Trunc,
-    F32Nearest,
-    F32Sqrt,
-
-    F64Abs,
-    F64Neg,
-    F64Ceil,
-    F64Floor,
-    F64Trunc,
-    F64Nearest,
-    F64Sqrt,
-
-    S32TruncF32,
-    U32TruncF32,
-    S32TruncF64,
-    U32TruncF64,
-    S64TruncF32,
-    U64TruncF32,
-    S64TruncF64,
-    U64TruncF64,
-
-    S32TruncSatF32,
-    U32TruncSatF32,
-    S32TruncSatF64,
-    U32TruncSatF64,
-    S64TruncSatF32,
-    U64TruncSatF32,
-    S64TruncSatF64,
-    U64TruncSatF64,
-
-    F32DemoteF64,
-    F64PromoteF32,
-
-    F32ConvertS32,
-    F32ConvertU32,
-    F32ConvertS64,
-    F32ConvertU64,
-
-    F64ConvertS32,
-    F64ConvertU32,
-    F64ConvertS64,
-    F64ConvertU64,
-
-    // SIMD: Generic Unary Ops
-    V128Splat8,
-    V128Splat16,
-    V128Splat32,
-    V128Splat64,
-    V128Not,
-    V128AnyTrue,
-    // SIMD: `i8x16` Unary Ops
-    I8x16Abs,
-    I8x16Neg,
-    I8x16Popcnt,
-    I8x16AllTrue,
-    I8x16Bitmask,
-    // SIMD: `i16x8` Unary Ops
-    I16x8Abs,
-    I16x8Neg,
-    I16x8AllTrue,
-    I16x8Bitmask,
-    S16x8ExtaddPairwiseI8x16,
-    U16x8ExtaddPairwiseI8x16,
-    S16x8ExtendLowI8x16,
-    U16x8ExtendLowI8x16,
-    S16x8ExtendHighI8x16,
-    U16x8ExtendHighI8x16,
-    // SIMD: `i32x4` Unary Ops
-    I32x4Abs,
-    I32x4Neg,
-    I32x4AllTrue,
-    I32x4Bitmask,
-    S32x4ExtaddPairwiseI16x8,
-    U32x4ExtaddPairwiseI16x8,
-    S32x4ExtendLowI16x8,
-    U32x4ExtendLowI16x8,
-    S32x4ExtendHighI16x8,
-    U32x4ExtendHighI16x8,
-    // SIMD: `i64x2` Unary Ops
-    I64x2Abs,
-    I64x2Neg,
-    I64x2AllTrue,
-    I64x2Bitmask,
-    S64x2ExtendLowI32x4,
-    U64x2ExtendLowI32x4,
-    S64x2ExtendHighI32x4,
-    U64x2ExtendHighI32x4,
-    // SIMD: `f32x4` Unary Ops
-    F32x4DemoteZeroF64x2,
-    F32x4Ceil,
-    F32x4Floor,
-    F32x4Trunc,
-    F32x4Nearest,
-    F32x4Abs,
-    F32x4Neg,
-    F32x4Sqrt,
-    // SIMD: `f64x2` Unary Ops
-    F64x2PromoteLowF32x4,
-    F64x2Ceil,
-    F64x2Floor,
-    F64x2Trunc,
-    F64x2Nearest,
-    F64x2Abs,
-    F64x2Neg,
-    F64x2Sqrt,
-    // SIMD: Conversions
-    S32x4TruncSatF32x4,
-    U32x4TruncSatF32x4,
-    S32x4TruncSatZeroF64x2,
-    U32x4TruncSatZeroF64x2,
-    F32x4ConvertS32x4,
-    F32x4ConvertU32x4,
-    F64x2ConvertLowS32x4,
-    F64x2ConvertLowU32x4,
-}
-
-impl UnaryOpKind {
-    pub fn value_field(&self, kind: OperandKind) -> Option<FieldTy> {
-        match kind {
-            OperandKind::Slot => Some(FieldTy::Slot),
-            OperandKind::Immediate => match self {
-                Self::V128Splat8 => Some(FieldTy::U8),
-                Self::V128Splat16 => Some(FieldTy::U16),
-                Self::V128Splat32 => Some(FieldTy::U32),
-                Self::V128Splat64 => Some(FieldTy::U64),
-                _ => None,
-            },
-        }
-    }
-
-    pub fn ident_prefix(&self) -> Ty {
-        match self {
-            | Self::I32Clz | Self::I32Ctz | Self::I32Popcnt => Ty::I32,
-            | Self::I64Clz | Self::I64Ctz | Self::I64Popcnt => Ty::I64,
-            | Self::I32WrapI64 | Self::I32Sext8 | Self::I32Sext16 => Ty::I32,
-            | Self::I64Sext8 | Self::I64Sext16 | Self::I64Sext32 => Ty::I64,
-            | Self::F32Abs
-            | Self::F32Neg
-            | Self::F32Ceil
-            | Self::F32Floor
-            | Self::F32Trunc
-            | Self::F32Nearest
-            | Self::F32Sqrt => Ty::F32,
-            | Self::F64Abs
-            | Self::F64Neg
-            | Self::F64Ceil
-            | Self::F64Floor
-            | Self::F64Trunc
-            | Self::F64Nearest
-            | Self::F64Sqrt => Ty::F64,
-            | Self::S32TruncF32 | Self::S32TruncF64 => Ty::I32,
-            | Self::U32TruncF32 | Self::U32TruncF64 => Ty::U32,
-            | Self::S64TruncF32 | Self::S64TruncF64 => Ty::I64,
-            | Self::U64TruncF32 | Self::U64TruncF64 => Ty::U64,
-            | Self::S32TruncSatF32 | Self::S32TruncSatF64 => Ty::I32,
-            | Self::U32TruncSatF32 | Self::U32TruncSatF64 => Ty::U32,
-            | Self::S64TruncSatF32 | Self::S64TruncSatF64 => Ty::I64,
-            | Self::U64TruncSatF32 | Self::U64TruncSatF64 => Ty::U64,
-            | Self::F32DemoteF64 => Ty::F32,
-            | Self::F64PromoteF32 => Ty::F64,
-            | Self::F32ConvertS32
-            | Self::F32ConvertU32
-            | Self::F32ConvertS64
-            | Self::F32ConvertU64 => Ty::F32,
-            | Self::F64ConvertS32
-            | Self::F64ConvertU32
-            | Self::F64ConvertS64
-            | Self::F64ConvertU64 => Ty::F64,
-
-            // SIMD: Generic Unary Ops
-            | Self::V128Splat8
-            | Self::V128Splat16
-            | Self::V128Splat32
-            | Self::V128Splat64
-            | Self::V128Not
-            | Self::V128AnyTrue => Ty::V128,
-            // SIMD: `i8x16` Unary Ops
-            | Self::I8x16Abs
-            | Self::I8x16Neg
-            | Self::I8x16Popcnt
-            | Self::I8x16AllTrue
-            | Self::I8x16Bitmask => Ty::I8x16,
-            // SIMD: `i16x8` Unary Ops
-            | Self::I16x8Abs => Ty::I16x8,
-            | Self::I16x8Neg => Ty::I16x8,
-            | Self::I16x8AllTrue => Ty::I16x8,
-            | Self::I16x8Bitmask => Ty::I16x8,
-            | Self::S16x8ExtaddPairwiseI8x16
-            | Self::S16x8ExtendLowI8x16
-            | Self::S16x8ExtendHighI8x16 => Ty::S16x8,
-            | Self::U16x8ExtaddPairwiseI8x16
-            | Self::U16x8ExtendLowI8x16
-            | Self::U16x8ExtendHighI8x16 => Ty::U16x8,
-            // SIMD: `i32x4` Unary Ops
-            | Self::I32x4Abs | Self::I32x4Neg | Self::I32x4AllTrue | Self::I32x4Bitmask => {
-                Ty::I32x4
-            }
-            | Self::S32x4ExtaddPairwiseI16x8
-            | Self::S32x4ExtendLowI16x8
-            | Self::S32x4ExtendHighI16x8 => Ty::S32x4,
-            | Self::U32x4ExtaddPairwiseI16x8
-            | Self::U32x4ExtendLowI16x8
-            | Self::U32x4ExtendHighI16x8 => Ty::U32x4,
-            // SIMD: `i64x2` Unary Ops
-            | Self::I64x2Abs | Self::I64x2Neg | Self::I64x2AllTrue | Self::I64x2Bitmask => {
-                Ty::I64x2
-            }
-            | Self::S64x2ExtendLowI32x4 | Self::S64x2ExtendHighI32x4 => Ty::S64x2,
-            | Self::U64x2ExtendLowI32x4 | Self::U64x2ExtendHighI32x4 => Ty::U64x2,
-            // SIMD: `f32x4` Unary Ops
-            | Self::F32x4DemoteZeroF64x2
-            | Self::F32x4Ceil
-            | Self::F32x4Floor
-            | Self::F32x4Trunc
-            | Self::F32x4Nearest
-            | Self::F32x4Abs
-            | Self::F32x4Neg
-            | Self::F32x4Sqrt => Ty::F32x4,
-            // SIMD: `f64x2` Unary Ops
-            | Self::F64x2PromoteLowF32x4
-            | Self::F64x2Ceil
-            | Self::F64x2Floor
-            | Self::F64x2Trunc
-            | Self::F64x2Nearest
-            | Self::F64x2Abs
-            | Self::F64x2Neg
-            | Self::F64x2Sqrt => Ty::F64x2,
-            // SIMD: Conversions
-            | Self::S32x4TruncSatF32x4 | Self::S32x4TruncSatZeroF64x2 => Ty::S32x4,
-            | Self::U32x4TruncSatF32x4 | Self::U32x4TruncSatZeroF64x2 => Ty::U32x4,
-            | Self::F32x4ConvertS32x4 | Self::F32x4ConvertU32x4 => Ty::F32x4,
-            | Self::F64x2ConvertLowS32x4 | Self::F64x2ConvertLowU32x4 => Ty::F64x2,
-        }
-    }
-
-    pub fn ident(&self) -> Ident {
-        match self {
-            Self::I32Clz => Ident::Clz,
-            Self::I32Ctz => Ident::Ctz,
-            Self::I32Popcnt => Ident::Popcnt,
-            Self::I64Clz => Ident::Clz,
-            Self::I64Ctz => Ident::Ctz,
-            Self::I64Popcnt => Ident::Popcnt,
-            Self::I32WrapI64 => Ident::Wrap,
-            Self::I32Sext8 => Ident::Sext8,
-            Self::I32Sext16 => Ident::Sext16,
-            Self::I64Sext8 => Ident::Sext8,
-            Self::I64Sext16 => Ident::Sext16,
-            Self::I64Sext32 => Ident::Sext32,
-            Self::F32Abs => Ident::Abs,
-            Self::F32Neg => Ident::Neg,
-            Self::F32Ceil => Ident::Ceil,
-            Self::F32Floor => Ident::Floor,
-            Self::F32Trunc => Ident::Trunc,
-            Self::F32Nearest => Ident::Nearest,
-            Self::F32Sqrt => Ident::Sqrt,
-            Self::F64Abs => Ident::Abs,
-            Self::F64Neg => Ident::Neg,
-            Self::F64Ceil => Ident::Ceil,
-            Self::F64Floor => Ident::Floor,
-            Self::F64Trunc => Ident::Trunc,
-            Self::F64Nearest => Ident::Nearest,
-            Self::F64Sqrt => Ident::Sqrt,
-            Self::S32TruncF32 => Ident::Trunc,
-            Self::U32TruncF32 => Ident::Trunc,
-            Self::S32TruncF64 => Ident::Trunc,
-            Self::U32TruncF64 => Ident::Trunc,
-            Self::S64TruncF32 => Ident::Trunc,
-            Self::U64TruncF32 => Ident::Trunc,
-            Self::S64TruncF64 => Ident::Trunc,
-            Self::U64TruncF64 => Ident::Trunc,
-            Self::S32TruncSatF32 => Ident::TruncSat,
-            Self::U32TruncSatF32 => Ident::TruncSat,
-            Self::S32TruncSatF64 => Ident::TruncSat,
-            Self::U32TruncSatF64 => Ident::TruncSat,
-            Self::S64TruncSatF32 => Ident::TruncSat,
-            Self::U64TruncSatF32 => Ident::TruncSat,
-            Self::S64TruncSatF64 => Ident::TruncSat,
-            Self::U64TruncSatF64 => Ident::TruncSat,
-            Self::F32DemoteF64 => Ident::Demote,
-            Self::F64PromoteF32 => Ident::Promote,
-            Self::F32ConvertS32 => Ident::Convert,
-            Self::F32ConvertU32 => Ident::Convert,
-            Self::F32ConvertS64 => Ident::Convert,
-            Self::F32ConvertU64 => Ident::Convert,
-            Self::F64ConvertS32 => Ident::Convert,
-            Self::F64ConvertU32 => Ident::Convert,
-            Self::F64ConvertS64 => Ident::Convert,
-            Self::F64ConvertU64 => Ident::Convert,
-
-            // SIMD: Generic Unary Ops
-            Self::V128Splat8 => Ident::Splat8,
-            Self::V128Splat16 => Ident::Splat16,
-            Self::V128Splat32 => Ident::Splat32,
-            Self::V128Splat64 => Ident::Splat64,
-            Self::V128Not => Ident::Not,
-            Self::V128AnyTrue => Ident::AnyTrue,
-            // SIMD: `i8x16` Unary Ops
-            Self::I8x16Abs => Ident::Abs,
-            Self::I8x16Neg => Ident::Neg,
-            Self::I8x16Popcnt => Ident::Popcnt,
-            Self::I8x16AllTrue => Ident::AllTrue,
-            Self::I8x16Bitmask => Ident::Bitmask,
-            // SIMD: `i16x8` Unary Ops
-            Self::I16x8Abs => Ident::Abs,
-            Self::I16x8Neg => Ident::Neg,
-            Self::I16x8AllTrue => Ident::AllTrue,
-            Self::I16x8Bitmask => Ident::Bitmask,
-            Self::S16x8ExtaddPairwiseI8x16 => Ident::ExtaddPairwise,
-            Self::U16x8ExtaddPairwiseI8x16 => Ident::ExtaddPairwise,
-            Self::S16x8ExtendLowI8x16 => Ident::ExtendLow,
-            Self::U16x8ExtendLowI8x16 => Ident::ExtendLow,
-            Self::S16x8ExtendHighI8x16 => Ident::ExtendHigh,
-            Self::U16x8ExtendHighI8x16 => Ident::ExtendHigh,
-            // SIMD: `i32x4` Unary Ops
-            Self::I32x4Abs => Ident::Abs,
-            Self::I32x4Neg => Ident::Neg,
-            Self::I32x4AllTrue => Ident::AllTrue,
-            Self::I32x4Bitmask => Ident::Bitmask,
-            Self::S32x4ExtaddPairwiseI16x8 => Ident::ExtaddPairwise,
-            Self::U32x4ExtaddPairwiseI16x8 => Ident::ExtaddPairwise,
-            Self::S32x4ExtendLowI16x8 => Ident::ExtendLow,
-            Self::U32x4ExtendLowI16x8 => Ident::ExtendLow,
-            Self::S32x4ExtendHighI16x8 => Ident::ExtendHigh,
-            Self::U32x4ExtendHighI16x8 => Ident::ExtendHigh,
-            // SIMD: `i64x2` Unary Ops
-            Self::I64x2Abs => Ident::Abs,
-            Self::I64x2Neg => Ident::Neg,
-            Self::I64x2AllTrue => Ident::AllTrue,
-            Self::I64x2Bitmask => Ident::Bitmask,
-            Self::S64x2ExtendLowI32x4 => Ident::ExtendLow,
-            Self::U64x2ExtendLowI32x4 => Ident::ExtendLow,
-            Self::S64x2ExtendHighI32x4 => Ident::ExtendHigh,
-            Self::U64x2ExtendHighI32x4 => Ident::ExtendHigh,
-            // SIMD: `f32x4` Unary Ops
-            Self::F32x4DemoteZeroF64x2 => Ident::DemoteZero,
-            Self::F32x4Ceil => Ident::Ceil,
-            Self::F32x4Floor => Ident::Floor,
-            Self::F32x4Trunc => Ident::Trunc,
-            Self::F32x4Nearest => Ident::Nearest,
-            Self::F32x4Abs => Ident::Abs,
-            Self::F32x4Neg => Ident::Neg,
-            Self::F32x4Sqrt => Ident::Sqrt,
-            // SIMD: `f64x2` Unary Ops
-            Self::F64x2PromoteLowF32x4 => Ident::PromoteLow,
-            Self::F64x2Ceil => Ident::Ceil,
-            Self::F64x2Floor => Ident::Floor,
-            Self::F64x2Trunc => Ident::Trunc,
-            Self::F64x2Nearest => Ident::Nearest,
-            Self::F64x2Abs => Ident::Abs,
-            Self::F64x2Neg => Ident::Neg,
-            Self::F64x2Sqrt => Ident::Sqrt,
-            // SIMD: Conversions
-            Self::S32x4TruncSatF32x4 => Ident::TruncSat,
-            Self::U32x4TruncSatF32x4 => Ident::TruncSat,
-            Self::S32x4TruncSatZeroF64x2 => Ident::TruncSatZero,
-            Self::U32x4TruncSatZeroF64x2 => Ident::TruncSatZero,
-            Self::F32x4ConvertS32x4 => Ident::Convert,
-            Self::F32x4ConvertU32x4 => Ident::Convert,
-            Self::F64x2ConvertLowS32x4 => Ident::ConvertLow,
-            Self::F64x2ConvertLowU32x4 => Ident::ConvertLow,
-        }
-    }
-
-    pub fn ident_suffix(&self) -> Option<Ty> {
-        let suffix = match self {
-            | Self::I32WrapI64 => Ty::I64,
-            | Self::S32TruncF32 | Self::U32TruncF32 => Ty::F32,
-            | Self::S32TruncF64 | Self::U32TruncF64 => Ty::F64,
-            | Self::S64TruncF32 | Self::U64TruncF32 => Ty::F32,
-            | Self::S64TruncF64 | Self::U64TruncF64 => Ty::F64,
-            | Self::S32TruncSatF32 | Self::U32TruncSatF32 => Ty::F32,
-            | Self::S32TruncSatF64 | Self::U32TruncSatF64 => Ty::F64,
-            | Self::S64TruncSatF32 | Self::U64TruncSatF32 => Ty::F32,
-            | Self::S64TruncSatF64 | Self::U64TruncSatF64 | Self::F32DemoteF64 => Ty::F64,
-            | Self::F64PromoteF32 => Ty::F32,
-            | Self::F32ConvertS32 => Ty::S32,
-            | Self::F32ConvertU32 => Ty::U32,
-            | Self::F32ConvertS64 => Ty::S64,
-            | Self::F32ConvertU64 => Ty::U64,
-            | Self::F64ConvertS32 => Ty::S32,
-            | Self::F64ConvertU32 => Ty::U32,
-            | Self::F64ConvertS64 => Ty::S64,
-            | Self::F64ConvertU64 => Ty::U64,
-            // SIMD: `i16x8` Unary Ops
-            | Self::S16x8ExtaddPairwiseI8x16
-            | Self::S16x8ExtendLowI8x16
-            | Self::S16x8ExtendHighI8x16
-            | Self::U16x8ExtaddPairwiseI8x16
-            | Self::U16x8ExtendLowI8x16
-            | Self::U16x8ExtendHighI8x16 => Ty::I8x16,
-            // SIMD: `i32x4` Unary Ops
-            | Self::S32x4ExtaddPairwiseI16x8
-            | Self::S32x4ExtendLowI16x8
-            | Self::S32x4ExtendHighI16x8
-            | Self::U32x4ExtaddPairwiseI16x8
-            | Self::U32x4ExtendLowI16x8
-            | Self::U32x4ExtendHighI16x8 => Ty::I16x8,
-            // SIMD: `i64x2` Unary Ops
-            | Self::S64x2ExtendLowI32x4
-            | Self::S64x2ExtendHighI32x4
-            | Self::U64x2ExtendLowI32x4
-            | Self::U64x2ExtendHighI32x4 => Ty::I32x4,
-            // SIMD: `f32x4` Unary Ops
-            | Self::F32x4DemoteZeroF64x2 => Ty::F64x2,
-            // SIMD: `f64x2` Unary Ops
-            | Self::F64x2PromoteLowF32x4 => Ty::F32x4,
-            // SIMD: Conversions
-            | Self::S32x4TruncSatF32x4 => Ty::F32x4,
-            | Self::S32x4TruncSatZeroF64x2 => Ty::F64x2,
-            | Self::U32x4TruncSatF32x4 => Ty::F32x4,
-            | Self::U32x4TruncSatZeroF64x2 => Ty::F64x2,
-            | Self::F32x4ConvertS32x4 => Ty::S32x4,
-            | Self::F32x4ConvertU32x4 => Ty::U32x4,
-            | Self::F64x2ConvertLowS32x4 => Ty::S32x4,
-            | Self::F64x2ConvertLowU32x4 => Ty::U32x4,
-            | _ => return None,
-        };
-        Some(suffix)
     }
 }
 
@@ -1396,6 +994,14 @@ impl SelectOp {
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Ty {
+    /// A generic 8-bit value.
+    Bits8,
+    /// A generic 16-bit value.
+    Bits16,
+    /// A generic 32-bit value.
+    Bits32,
+    /// A generic 64-bit value.
+    Bits64,
     /// A general 32-bit integer type.
     I32,
     /// A general 64-bit integer type.
@@ -1447,6 +1053,10 @@ pub enum Ty {
 impl Display for Ty {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
             Ty::I32 => "i32",
             Ty::I64 => "i64",
             Ty::S32 => "i32",
@@ -1484,6 +1094,10 @@ impl Display for SnakeCase<Ty> {
 impl Display for CamelCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self.0 {
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
             Ty::I32 => "I32",
             Ty::I64 => "I64",
             Ty::S32 => "I32",
