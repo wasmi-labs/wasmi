@@ -1073,11 +1073,11 @@ fn add_simd_unary_ops(isa: &mut Isa) {
 fn add_simd_load_ops(isa: &mut Isa) {
     let ops = [
         LoadOpKind::V128Load,
-        LoadOpKind::S16x8Load8x8,
+        LoadOpKind::I16x8Load8x8,
         LoadOpKind::U16x8Load8x8,
-        LoadOpKind::S32x4Load16x4,
+        LoadOpKind::I32x4Load16x4,
         LoadOpKind::U32x4Load16x4,
-        LoadOpKind::S64x2Load32x2,
+        LoadOpKind::I64x2Load32x2,
         LoadOpKind::U64x2Load32x2,
         LoadOpKind::V128Load8Splat,
         LoadOpKind::V128Load16Splat,
