@@ -112,10 +112,6 @@ impl OperandKind {
                 | Ty::U16x8
                 | Ty::U32x4
                 | Ty::U64x2
-                | Ty::S8x16
-                | Ty::S16x8
-                | Ty::S32x4
-                | Ty::S64x2
                 | Ty::F32x4
                 | Ty::F64x2 => FieldTy::V128,
             },
@@ -486,14 +482,6 @@ pub enum Ty {
     U32x4,
     /// A `u64x2` vector type for `simd`.
     U64x2,
-    /// A `s8x16` vector type for `simd`.
-    S8x16,
-    /// A `s16x8` vector type for `simd`.
-    S16x8,
-    /// A `s32x4` vector type for `simd`.
-    S32x4,
-    /// A `s64x2` vector type for `simd`.
-    S64x2,
     /// A `f32x4` vector type for `simd`.
     F32x4,
     /// A `f64x2` vector type for `simd`.
@@ -901,11 +889,11 @@ impl LoadOpKind {
             | Self::S64Load32 => Ty::I64,
             | Self::U64Load32 => Ty::U64,
             | Self::V128Load => Ty::V128,
-            | Self::S16x8Load8x8 => Ty::S16x8,
+            | Self::S16x8Load8x8 => Ty::I16x8,
             | Self::U16x8Load8x8 => Ty::U16x8,
-            | Self::S32x4Load16x4 => Ty::S32x4,
+            | Self::S32x4Load16x4 => Ty::I32x4,
             | Self::U32x4Load16x4 => Ty::U32x4,
-            | Self::S64x2Load32x2 => Ty::S64x2,
+            | Self::S64x2Load32x2 => Ty::I64x2,
             | Self::U64x2Load32x2 => Ty::U64x2,
             | Self::V128Load8Splat => Ty::V128,
             | Self::V128Load16Splat => Ty::V128,
