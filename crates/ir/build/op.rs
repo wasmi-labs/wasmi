@@ -406,17 +406,26 @@ pub struct LoadOp {
     /// The `ptr` field type.
     pub ptr: OperandKind,
     /// True, if the operator is always operating on (`memory 0`).
-    pub mem0: bool,
+    pub mem: MemoryOperand,
     /// True, if the operator uses a 16-bit offset field.
     pub offset16: bool,
 }
 
+/// Describes the memory operand for `load` and `store` operators.
+#[derive(Copy, Clone)]
+pub enum MemoryOperand {
+    /// The `(memory $m)` is provided via immediate operand.
+    Immediate,
+    /// The operator only operates on `(memory 0)`.
+    Mem0,
+}
+
 impl LoadOp {
-    pub fn new(kind: LoadOpKind, ptr: OperandKind, mem0: bool, offset16: bool) -> Self {
+    pub fn new(kind: LoadOpKind, ptr: OperandKind, mem: MemoryOperand, offset16: bool) -> Self {
         Self {
             kind,
             ptr,
-            mem0,
+            mem,
             offset16,
         }
     }
@@ -445,10 +454,10 @@ impl LoadOp {
     }
 
     pub fn memory_field(&self) -> Option<Field> {
-        if self.mem0 {
-            return None;
+        match self.mem {
+            MemoryOperand::Immediate => Some(Field::new(Ident::Memory, FieldTy::Memory)),
+            MemoryOperand::Mem0 => None,
         }
-        Some(Field::new(Ident::Memory, FieldTy::Memory))
     }
 
     pub fn fields(&self) -> [Option<Field>; 4] {

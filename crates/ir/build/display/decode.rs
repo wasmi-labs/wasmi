@@ -13,6 +13,7 @@ use crate::build::{
         GenericOp,
         LaneWidth,
         LoadOp,
+        MemoryOperand,
         OperandKind,
         SelectOp,
         StoreOp,
@@ -112,14 +113,19 @@ impl Display for DisplayDecode<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
-        let mem0_offset16 = (op.mem0 && op.offset16)
-            .then_some("Mem0Offset16")
-            .display_maybe();
+        let mem0_suffix = match op.mem {
+            MemoryOperand::Immediate => "",
+            MemoryOperand::Mem0 => "Mem0",
+        };
+        let offset16_suffix = match op.offset16 {
+            true => "Offset16",
+            false => "",
+        };
         let result_suffix = CamelCase(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
         writeln!(
             f,
-            "pub type {camel_ident} = LoadOp{mem0_offset16}_{result_suffix}{ptr_suffix};"
+            "pub type {camel_ident} = LoadOp{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix};"
         )
     }
 }

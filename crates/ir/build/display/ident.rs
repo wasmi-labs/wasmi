@@ -6,6 +6,7 @@ use crate::build::{
         CmpBranchOp,
         GenericOp,
         LoadOp,
+        MemoryOperand,
         OperandKind,
         SelectOp,
         StoreOp,
@@ -285,6 +286,17 @@ impl Display for DisplayIdent<&'_ SelectOp> {
     }
 }
 
+impl Display for DisplayIdent<MemoryOperand> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let MemoryOperand::Mem0 = self.value {
+            let case = self.case;
+            case.wrap(Sep).fmt(f)?;
+            case.wrap(Ident::Mem0).fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
 impl Display for DisplayIdent<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
@@ -300,13 +312,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
             .map(IdentPrefix)
             .map(|v| case.wrap(v))
             .display_maybe();
-        let mem0_ident = self
-            .value
-            .mem0
-            .then_some(Ident::Mem0)
-            .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat)
-            .display_maybe();
+        let mem0_ident = self.map(self.value.mem);
         let offset16_ident = self
             .value
             .offset16

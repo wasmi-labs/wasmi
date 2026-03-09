@@ -11,6 +11,7 @@ use crate::build::{
         LaneWidth,
         LoadOp,
         LoadOpKind,
+        MemoryOperand,
         OperandKind,
         SelectOp,
         SelectWidth,
@@ -343,9 +344,24 @@ fn add_load_ops(isa: &mut Isa) {
         LoadOpKind::U64Load32,
     ];
     for op in ops {
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Immediate, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, true, true));
+        isa.push_op(LoadOp::new(
+            op,
+            OperandKind::Slot,
+            MemoryOperand::Immediate,
+            false,
+        ));
+        isa.push_op(LoadOp::new(
+            op,
+            OperandKind::Immediate,
+            MemoryOperand::Immediate,
+            false,
+        ));
+        isa.push_op(LoadOp::new(
+            op,
+            OperandKind::Slot,
+            MemoryOperand::Mem0,
+            true,
+        ));
     }
 }
 
@@ -1070,8 +1086,18 @@ fn add_simd_load_ops(isa: &mut Isa) {
         LoadOpKind::V128Load64Zero,
     ];
     for op in ops {
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, true, true));
+        isa.push_op(LoadOp::new(
+            op,
+            OperandKind::Slot,
+            MemoryOperand::Immediate,
+            false,
+        ));
+        isa.push_op(LoadOp::new(
+            op,
+            OperandKind::Slot,
+            MemoryOperand::Mem0,
+            true,
+        ));
     }
     let widths = [
         LaneWidth::W8,
