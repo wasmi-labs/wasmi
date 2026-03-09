@@ -92,8 +92,6 @@ impl OperandKind {
                 | Ty::Bits64 => FieldTy::U64,
                 | Ty::I32 => FieldTy::I32,
                 | Ty::I64 => FieldTy::I64,
-                | Ty::S32 => FieldTy::I32,
-                | Ty::S64 => FieldTy::I64,
                 | Ty::U8 => FieldTy::U8,
                 | Ty::U32 => FieldTy::U32,
                 | Ty::U64 => FieldTy::U64,
@@ -448,10 +446,6 @@ pub enum Ty {
     I32,
     /// A general 64-bit integer type.
     I64,
-    /// A signed 32-bit integer type.
-    S32,
-    /// A signed 64-bit integer type.
-    S64,
     /// A unsigned 8-bit integer type.
     U8,
     /// A unsigned 32-bit integer type.
@@ -515,8 +509,6 @@ impl Display for Ty {
             Ty::Bits64 => "64",
             Ty::I32 => "i32",
             Ty::I64 => "i64",
-            Ty::S32 => "i32",
-            Ty::S64 => "i64",
             Ty::U8 => "u8",
             Ty::U32 => "u32",
             Ty::U64 => "u64",
@@ -563,8 +555,6 @@ impl Display for CamelCase<Ty> {
             Ty::Bits64 => "64",
             Ty::I32 => "I32",
             Ty::I64 => "I64",
-            Ty::S32 => "I32",
-            Ty::S64 => "I64",
             Ty::NonZeroI32 => "NonZero<i32>",
             Ty::NonZeroI64 => "NonZero<i64>",
             Ty::NonZeroU32 => "NonZero<u32>",
@@ -796,7 +786,7 @@ impl CmpOpKind {
             | Self::I32NotAnd
             | Self::I32Or
             | Self::I32NotOr => Ty::I32,
-            | Self::S32Lt | Self::S32Le => Ty::S32,
+            | Self::S32Lt | Self::S32Le => Ty::I32,
             | Self::U32Lt | Self::U32Le => Ty::U32,
             | Self::I64Eq
             | Self::I64NotEq
@@ -804,7 +794,7 @@ impl CmpOpKind {
             | Self::I64NotAnd
             | Self::I64Or
             | Self::I64NotOr => Ty::I64,
-            | Self::S64Lt | Self::S64Le => Ty::S64,
+            | Self::S64Lt | Self::S64Le => Ty::I64,
             | Self::U64Lt | Self::U64Le => Ty::U64,
             | Self::F32Eq
             | Self::F32NotEq
@@ -986,15 +976,15 @@ impl LoadOpKind {
     pub fn ident_prefix(&self) -> Option<Ty> {
         let prefix = match self {
             | Self::Load32 | Self::Load64 => return None,
-            | Self::S32Load8 => Ty::S32,
+            | Self::S32Load8 => Ty::I32,
             | Self::U32Load8 => Ty::U32,
-            | Self::S32Load16 => Ty::S32,
+            | Self::S32Load16 => Ty::I32,
             | Self::U32Load16 => Ty::U32,
-            | Self::S64Load8 => Ty::S64,
+            | Self::S64Load8 => Ty::I64,
             | Self::U64Load8 => Ty::U64,
-            | Self::S64Load16 => Ty::S64,
+            | Self::S64Load16 => Ty::I64,
             | Self::U64Load16 => Ty::U64,
-            | Self::S64Load32 => Ty::S64,
+            | Self::S64Load32 => Ty::I64,
             | Self::U64Load32 => Ty::U64,
             | Self::V128Load => Ty::V128,
             | Self::S16x8Load8x8 => Ty::S16x8,
