@@ -222,12 +222,6 @@ impl BitOr for BinaryOpCaps {
 }
 
 #[derive(Copy, Clone)]
-pub enum Commutativity {
-    Commutative,
-    NonCommutative,
-}
-
-#[derive(Copy, Clone)]
 pub struct TernaryOp {
     pub kind: TernaryOpKind,
 }
@@ -299,22 +293,28 @@ impl TernaryOpKind {
 
 #[derive(Copy, Clone)]
 pub struct CmpBranchOp {
-    pub cmp: CmpOpKind,
+    pub ident: Ident,
+    pub input_ty: Ty,
     pub lhs: OperandKind,
     pub rhs: OperandKind,
 }
 
 impl CmpBranchOp {
-    pub fn new(cmp: CmpOpKind, lhs: OperandKind, rhs: OperandKind) -> Self {
-        Self { cmp, lhs, rhs }
+    pub fn new(ident: Ident, input_ty: Ty, lhs: OperandKind, rhs: OperandKind) -> Self {
+        Self {
+            ident,
+            input_ty,
+            lhs,
+            rhs,
+        }
     }
 
     pub fn lhs_field(&self) -> Field {
-        Field::new(Ident::Lhs, self.cmp.input_field(self.lhs))
+        Field::new(Ident::Lhs, self.lhs.field_ty(self.input_ty))
     }
 
     pub fn rhs_field(&self) -> Field {
-        Field::new(Ident::Rhs, self.cmp.input_field(self.rhs))
+        Field::new(Ident::Rhs, self.rhs.field_ty(self.input_ty))
     }
 
     pub fn offset_field(&self) -> Field {
@@ -583,177 +583,6 @@ impl Display for FieldTy {
             Self::V128 => "V128",
         };
         f.write_str(s)
-    }
-}
-
-#[derive(Copy, Clone)]
-pub enum CmpOpKind {
-    I32Eq,
-    I32NotEq,
-    I32And,
-    I32NotAnd,
-    I32Or,
-    I32NotOr,
-    S32Lt,
-    U32Lt,
-    S32Le,
-    U32Le,
-
-    I64Eq,
-    I64NotEq,
-    I64And,
-    I64NotAnd,
-    I64Or,
-    I64NotOr,
-    S64Lt,
-    U64Lt,
-    S64Le,
-    U64Le,
-
-    F32Eq,
-    F32NotEq,
-    F32Lt,
-    F32NotLt,
-    F32Le,
-    F32NotLe,
-
-    F64Eq,
-    F64NotEq,
-    F64Lt,
-    F64NotLt,
-    F64Le,
-    F64NotLe,
-}
-
-impl CmpOpKind {
-    pub fn commutativity(&self) -> Commutativity {
-        match self {
-            | Self::I32Eq
-            | Self::I32NotEq
-            | Self::I32And
-            | Self::I32NotAnd
-            | Self::I32Or
-            | Self::I32NotOr
-            | Self::I64Eq
-            | Self::I64NotEq
-            | Self::I64And
-            | Self::I64NotAnd
-            | Self::I64Or
-            | Self::I64NotOr
-            | Self::F32Eq
-            | Self::F32NotEq
-            | Self::F64Eq
-            | Self::F64NotEq => Commutativity::Commutative,
-            _ => Commutativity::NonCommutative,
-        }
-    }
-
-    fn input_field(&self, input: OperandKind) -> FieldTy {
-        match input {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => match self {
-                | Self::I32Eq
-                | Self::I32NotEq
-                | Self::I32And
-                | Self::I32NotAnd
-                | Self::I32Or
-                | Self::I32NotOr
-                | Self::S32Lt
-                | Self::S32Le => FieldTy::I32,
-                | Self::U32Lt | Self::U32Le => FieldTy::U32,
-                | Self::I64Eq
-                | Self::I64NotEq
-                | Self::I64And
-                | Self::I64NotAnd
-                | Self::I64Or
-                | Self::I64NotOr
-                | Self::S64Lt
-                | Self::S64Le => FieldTy::I64,
-                | Self::U64Lt | Self::U64Le => FieldTy::U64,
-                | Self::F32Eq
-                | Self::F32NotEq
-                | Self::F32Lt
-                | Self::F32NotLt
-                | Self::F32Le
-                | Self::F32NotLe => FieldTy::F32,
-                | Self::F64Eq
-                | Self::F64NotEq
-                | Self::F64Lt
-                | Self::F64NotLt
-                | Self::F64Le
-                | Self::F64NotLe => FieldTy::F64,
-            },
-        }
-    }
-
-    pub fn ident_prefix(&self) -> Ty {
-        match self {
-            | Self::I32Eq
-            | Self::I32NotEq
-            | Self::I32And
-            | Self::I32NotAnd
-            | Self::I32Or
-            | Self::I32NotOr => Ty::I32,
-            | Self::S32Lt | Self::S32Le => Ty::I32,
-            | Self::U32Lt | Self::U32Le => Ty::U32,
-            | Self::I64Eq
-            | Self::I64NotEq
-            | Self::I64And
-            | Self::I64NotAnd
-            | Self::I64Or
-            | Self::I64NotOr => Ty::I64,
-            | Self::S64Lt | Self::S64Le => Ty::I64,
-            | Self::U64Lt | Self::U64Le => Ty::U64,
-            | Self::F32Eq
-            | Self::F32NotEq
-            | Self::F32Lt
-            | Self::F32NotLt
-            | Self::F32Le
-            | Self::F32NotLe => Ty::F32,
-            | Self::F64Eq
-            | Self::F64NotEq
-            | Self::F64Lt
-            | Self::F64NotLt
-            | Self::F64Le
-            | Self::F64NotLe => Ty::F64,
-        }
-    }
-
-    pub fn ident(&self) -> Ident {
-        match self {
-            Self::I32Eq => Ident::Eq,
-            Self::I32NotEq => Ident::NotEq,
-            Self::I32And => Ident::And,
-            Self::I32NotAnd => Ident::NotAnd,
-            Self::I32Or => Ident::Or,
-            Self::I32NotOr => Ident::NotOr,
-            Self::S32Lt => Ident::Lt,
-            Self::U32Lt => Ident::Lt,
-            Self::S32Le => Ident::Le,
-            Self::U32Le => Ident::Le,
-            Self::I64Eq => Ident::Eq,
-            Self::I64NotEq => Ident::NotEq,
-            Self::I64And => Ident::And,
-            Self::I64NotAnd => Ident::NotAnd,
-            Self::I64Or => Ident::Or,
-            Self::I64NotOr => Ident::NotOr,
-            Self::S64Lt => Ident::Lt,
-            Self::U64Lt => Ident::Lt,
-            Self::S64Le => Ident::Le,
-            Self::U64Le => Ident::Le,
-            Self::F32Eq => Ident::Eq,
-            Self::F32Lt => Ident::Lt,
-            Self::F32Le => Ident::Le,
-            Self::F32NotEq => Ident::NotEq,
-            Self::F32NotLt => Ident::NotLt,
-            Self::F32NotLe => Ident::NotLe,
-            Self::F64Eq => Ident::Eq,
-            Self::F64Lt => Ident::Lt,
-            Self::F64Le => Ident::Le,
-            Self::F64NotEq => Ident::NotEq,
-            Self::F64NotLt => Ident::NotLt,
-            Self::F64NotLe => Ident::NotLe,
-        }
     }
 }
 

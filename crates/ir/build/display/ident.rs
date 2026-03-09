@@ -256,10 +256,10 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let sep = case.wrap(Sep);
-        let cmp = self.value.cmp;
+        let op = self.value;
         let branch = case.wrap(Ident::Branch);
-        let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(IdentPrefix(cmp.ident_prefix()));
+        let ident = case.wrap(op.ident);
+        let input_ident = case.wrap(IdentPrefix(op.input_ty));
         let lhs_suffix = case.wrap(Suffix(self.value.lhs));
         let rhs_suffix = SnakeCase(Suffix(self.value.rhs));
         write!(

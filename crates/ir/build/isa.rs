@@ -6,8 +6,6 @@ use crate::build::{
         BinaryOp,
         BinaryOpCaps,
         CmpBranchOp,
-        CmpOpKind,
-        Commutativity,
         Field,
         FieldTy,
         GenericOp,
@@ -258,52 +256,50 @@ fn add_binary_ops(isa: &mut Isa) {
 fn add_cmp_branch_ops(isa: &mut Isa) {
     let ops = [
         // i32
-        CmpOpKind::I32Eq,
-        CmpOpKind::I32NotEq,
-        CmpOpKind::I32And,
-        CmpOpKind::I32NotAnd,
-        CmpOpKind::I32Or,
-        CmpOpKind::I32NotOr,
-        CmpOpKind::S32Lt,
-        CmpOpKind::S32Le,
-        CmpOpKind::U32Lt,
-        CmpOpKind::U32Le,
+        (Ident::Eq, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::And, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotAnd, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotOr, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I32, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::I32, BinaryOpCaps::NONE),
+        (Ident::Lt, Ty::U32, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::U32, BinaryOpCaps::NONE),
         // i64
-        CmpOpKind::I64Eq,
-        CmpOpKind::I64NotEq,
-        CmpOpKind::I64And,
-        CmpOpKind::I64NotAnd,
-        CmpOpKind::I64Or,
-        CmpOpKind::I64NotOr,
-        CmpOpKind::S64Lt,
-        CmpOpKind::S64Le,
-        CmpOpKind::U64Lt,
-        CmpOpKind::U64Le,
+        (Ident::Eq, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::And, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotAnd, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotOr, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I64, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::I64, BinaryOpCaps::NONE),
+        (Ident::Lt, Ty::U64, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::U64, BinaryOpCaps::NONE),
         // f32
-        CmpOpKind::F32Eq,
-        CmpOpKind::F32NotEq,
-        CmpOpKind::F32Lt,
-        CmpOpKind::F32NotLt,
-        CmpOpKind::F32Le,
-        CmpOpKind::F32NotLe,
+        (Ident::Eq, Ty::F32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::F32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::NotLt, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::NotLe, Ty::F32, BinaryOpCaps::NONE),
         // f64
-        CmpOpKind::F64Eq,
-        CmpOpKind::F64NotEq,
-        CmpOpKind::F64Lt,
-        CmpOpKind::F64NotLt,
-        CmpOpKind::F64Le,
-        CmpOpKind::F64NotLe,
+        (Ident::Eq, Ty::F64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::F64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::NotLt, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::NotLe, Ty::F64, BinaryOpCaps::NONE),
     ];
-    for op in ops {
-        isa.push_op(CmpBranchOp::new(op, OperandKind::Slot, OperandKind::Slot));
-        isa.push_op(CmpBranchOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-        ));
-        if matches!(op.commutativity(), Commutativity::NonCommutative) {
+    for (ident, input_ty, caps) in ops {
+        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(CmpBranchOp::new(ident, input_ty, OperandKind::Slot, rhs));
+        }
+        if !caps.is_commutative() {
             isa.push_op(CmpBranchOp::new(
-                op,
+                ident,
+                input_ty,
                 OperandKind::Immediate,
                 OperandKind::Slot,
             ));
