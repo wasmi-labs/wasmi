@@ -12,6 +12,7 @@ use crate::build::{
         LoadOp,
         LoadOpKind,
         MemoryOperand,
+        OffsetOperand,
         OperandKind,
         SelectOp,
         SelectWidth,
@@ -348,19 +349,19 @@ fn add_load_ops(isa: &mut Isa) {
             op,
             OperandKind::Slot,
             MemoryOperand::Immediate,
-            false,
+            OffsetOperand::Offset,
         ));
         isa.push_op(LoadOp::new(
             op,
             OperandKind::Immediate,
             MemoryOperand::Immediate,
-            false,
+            OffsetOperand::Offset,
         ));
         isa.push_op(LoadOp::new(
             op,
             OperandKind::Slot,
             MemoryOperand::Mem0,
-            true,
+            OffsetOperand::Offset16,
         ));
     }
 }
@@ -1090,13 +1091,13 @@ fn add_simd_load_ops(isa: &mut Isa) {
             op,
             OperandKind::Slot,
             MemoryOperand::Immediate,
-            false,
+            OffsetOperand::Offset,
         ));
         isa.push_op(LoadOp::new(
             op,
             OperandKind::Slot,
             MemoryOperand::Mem0,
-            true,
+            OffsetOperand::Offset16,
         ));
     }
     let widths = [

@@ -408,7 +408,7 @@ pub struct LoadOp {
     /// True, if the operator is always operating on (`memory 0`).
     pub mem: MemoryOperand,
     /// True, if the operator uses a 16-bit offset field.
-    pub offset16: bool,
+    pub offset: OffsetOperand,
 }
 
 /// Describes the memory operand for `load` and `store` operators.
@@ -420,13 +420,27 @@ pub enum MemoryOperand {
     Mem0,
 }
 
+/// Describes the offset operand for `load` and `store` operators.
+#[derive(Copy, Clone)]
+pub enum OffsetOperand {
+    /// A full 64-bit encoded immediate `offset` operand.
+    Offset,
+    /// An optimized 16-bit encoded immediate `offset`operand.
+    Offset16,
+}
+
 impl LoadOp {
-    pub fn new(kind: LoadOpKind, ptr: OperandKind, mem: MemoryOperand, offset16: bool) -> Self {
+    pub fn new(
+        kind: LoadOpKind,
+        ptr: OperandKind,
+        mem: MemoryOperand,
+        offset: OffsetOperand,
+    ) -> Self {
         Self {
             kind,
             ptr,
             mem,
-            offset16,
+            offset,
         }
     }
 
@@ -444,9 +458,9 @@ impl LoadOp {
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Slot => match self.offset16 {
-                true => FieldTy::Offset16,
-                false => FieldTy::U64,
+            OperandKind::Slot => match self.offset {
+                OffsetOperand::Offset => FieldTy::U64,
+                OffsetOperand::Offset16 => FieldTy::Offset16,
             },
             OperandKind::Immediate => return None,
         };

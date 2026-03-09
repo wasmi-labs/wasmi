@@ -14,6 +14,7 @@ use crate::build::{
         LaneWidth,
         LoadOp,
         MemoryOperand,
+        OffsetOperand,
         OperandKind,
         SelectOp,
         StoreOp,
@@ -117,9 +118,9 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             MemoryOperand::Immediate => "",
             MemoryOperand::Mem0 => "Mem0",
         };
-        let offset16_suffix = match op.offset16 {
-            true => "Offset16",
-            false => "",
+        let offset16_suffix = match op.offset {
+            OffsetOperand::Offset16 => "Offset16",
+            OffsetOperand::Offset => "",
         };
         let result_suffix = CamelCase(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));

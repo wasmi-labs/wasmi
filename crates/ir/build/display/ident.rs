@@ -7,6 +7,7 @@ use crate::build::{
         GenericOp,
         LoadOp,
         MemoryOperand,
+        OffsetOperand,
         OperandKind,
         SelectOp,
         StoreOp,
@@ -297,6 +298,17 @@ impl Display for DisplayIdent<MemoryOperand> {
     }
 }
 
+impl Display for DisplayIdent<OffsetOperand> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let OffsetOperand::Offset16 = self.value {
+            let case = self.case;
+            case.wrap(Sep).fmt(f)?;
+            case.wrap(Ident::Offset16).fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
 impl Display for DisplayIdent<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
@@ -304,7 +316,6 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let ident = case.wrap(kind.ident());
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(self.value.ptr));
-        let sep = case.wrap(Sep);
         let ident_prefix = self
             .value
             .kind
@@ -312,17 +323,11 @@ impl Display for DisplayIdent<&'_ LoadOp> {
             .map(IdentPrefix)
             .map(|v| case.wrap(v))
             .display_maybe();
-        let mem0_ident = self.map(self.value.mem);
-        let offset16_ident = self
-            .value
-            .offset16
-            .then_some(Ident::Offset16)
-            .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat)
-            .display_maybe();
+        let mem_suffix = self.map(self.value.mem);
+        let offset_suffix = self.map(self.value.offset);
         write!(
             f,
-            "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}",
+            "{ident_prefix}{ident}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}",
         )
     }
 }
