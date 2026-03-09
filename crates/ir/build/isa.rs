@@ -7,7 +7,6 @@ use crate::build::{
         BinaryOpCaps,
         CmpBranchOp,
         Field,
-        FieldTy,
         GenericOp,
         LaneWidth,
         LoadOp,
@@ -22,12 +21,12 @@ use crate::build::{
         TableSetOp,
         TernaryOp,
         TernaryOpKind,
-        Ty,
         UnaryOp,
         V128ExtractLaneOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
+    ty::{FieldTy, Ty},
 };
 
 #[derive(Default)]

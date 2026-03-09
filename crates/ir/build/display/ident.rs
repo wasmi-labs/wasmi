@@ -12,12 +12,12 @@ use crate::build::{
         TableGetOp,
         TableSetOp,
         TernaryOp,
-        Ty,
         UnaryOp,
         V128ExtractLaneOp,
         V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
+    ty::Ty,
 };
 use core::fmt::{self, Display};
 

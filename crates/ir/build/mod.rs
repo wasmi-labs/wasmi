@@ -3,6 +3,7 @@ mod op;
 mod display;
 pub mod ident;
 mod isa;
+mod ty;
 
 use self::{
     display::{
@@ -17,6 +18,7 @@ use self::{
     ident::{Ident, SnakeCase},
     isa::Isa,
     op::Op,
+    ty::{FieldTy, Ty},
 };
 use core::fmt::{self, Display, Error as FmtError, Write as _};
 use std::{env, fs, io::Error as IoError, path::PathBuf};
