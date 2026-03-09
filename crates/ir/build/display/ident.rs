@@ -49,6 +49,89 @@ impl<T> DisplayIdent<T> {
     }
 }
 
+/// [`Display`] wrapper for types that can act as operator identifier prefices.
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+pub struct IdentPrefix<T>(pub T);
+
+impl Display for CamelCase<IdentPrefix<Ty>> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0.0 {
+            Ty::I32 => "I32",
+            Ty::I64 => "I64",
+            Ty::S32 => "I32",
+            Ty::S64 => "I64",
+            Ty::U8 => "U8",
+            Ty::U32 => "U32",
+            Ty::U64 => "U64",
+            Ty::NonZeroI32 => "I32",
+            Ty::NonZeroI64 => "I64",
+            Ty::NonZeroU32 => "U32",
+            Ty::NonZeroU64 => "U64",
+            Ty::F32 => "F32",
+            Ty::F64 => "F64",
+            Ty::SignF32 => "F32",
+            Ty::SignF64 => "F64",
+            Ty::V128 => "V128",
+            Ty::I8x16 => "I8x16",
+            Ty::I16x8 => "I16x8",
+            Ty::I32x4 => "I32x4",
+            Ty::I64x2 => "I64x2",
+            Ty::U8x16 => "U8x16",
+            Ty::U16x8 => "U16x8",
+            Ty::U32x4 => "U32x4",
+            Ty::U64x2 => "U64x2",
+            Ty::S8x16 => "I8x16",
+            Ty::S16x8 => "I16x8",
+            Ty::S32x4 => "I32x4",
+            Ty::S64x2 => "I64x2",
+            Ty::F32x4 => "F32x4",
+            Ty::F64x2 => "F64x2",
+            _ => panic!("invalid identifier prefix"),
+        };
+        f.write_str(s)
+    }
+}
+
+impl Display for SnakeCase<IdentPrefix<Ty>> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0.0 {
+            Ty::I32 => "i32_",
+            Ty::I64 => "i64_",
+            Ty::S32 => "i32_",
+            Ty::S64 => "i64_",
+            Ty::U8 => "u8_",
+            Ty::U32 => "u32_",
+            Ty::U64 => "u64_",
+            Ty::NonZeroI32 => "i32_",
+            Ty::NonZeroI64 => "i64_",
+            Ty::NonZeroU32 => "u32_",
+            Ty::NonZeroU64 => "u64_",
+            Ty::F32 => "f32_",
+            Ty::F64 => "f64_",
+            Ty::SignF32 => "f32_",
+            Ty::SignF64 => "f64_",
+            Ty::V128 => "v128_",
+            Ty::I8x16 => "i8x16_",
+            Ty::I16x8 => "i16x8_",
+            Ty::I32x4 => "i32x4_",
+            Ty::I64x2 => "i64x2_",
+            Ty::U8x16 => "u8x16_",
+            Ty::U16x8 => "u16x8_",
+            Ty::U32x4 => "u32x4_",
+            Ty::U64x2 => "u64x2_",
+            Ty::S8x16 => "i8x16_",
+            Ty::S16x8 => "i16x8_",
+            Ty::S32x4 => "i32x4_",
+            Ty::S64x2 => "i64x2_",
+            Ty::F32x4 => "f32x4_",
+            Ty::F64x2 => "f64x2_",
+            _ => panic!("invalid identifier prefix"),
+        };
+        f.write_str(s)
+    }
+}
+
 /// [`Display`] wrapper for types that can act as operator identifier suffices.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
@@ -65,10 +148,17 @@ impl Display for CamelCase<IdentSuffix<Ty>> {
             Ty::I64 => "I64",
             Ty::S32 => "I32",
             Ty::S64 => "I64",
+            Ty::U8 => "U8",
             Ty::U32 => "U32",
             Ty::U64 => "U64",
+            Ty::NonZeroI32 => "I32",
+            Ty::NonZeroI64 => "I64",
+            Ty::NonZeroU32 => "U32",
+            Ty::NonZeroU64 => "U64",
             Ty::F32 => "F32",
             Ty::F64 => "F64",
+            Ty::SignF32 => "F32",
+            Ty::SignF64 => "F64",
             Ty::V128 => "V128",
             Ty::I8x16 => "I8x16",
             Ty::I16x8 => "I16x8",
@@ -100,10 +190,17 @@ impl Display for SnakeCase<IdentSuffix<Ty>> {
             Ty::I64 => "_i64",
             Ty::S32 => "_i32",
             Ty::S64 => "_i64",
+            Ty::U8 => "_u8",
             Ty::U32 => "_u32",
             Ty::U64 => "_u64",
+            Ty::NonZeroI32 => "_i32",
+            Ty::NonZeroI64 => "_i64",
+            Ty::NonZeroU32 => "_u32",
+            Ty::NonZeroU64 => "_u64",
             Ty::F32 => "_f32",
             Ty::F64 => "_f64",
+            Ty::SignF32 => "_f32",
+            Ty::SignF64 => "_f64",
             Ty::V128 => "_v128",
             Ty::I8x16 => "_i8x16",
             Ty::I16x8 => "_i16x8",
@@ -156,9 +253,9 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
         let ident = case.wrap(op.ident);
         let sep = case.wrap(Sep);
         let ident_prefix = DisplayConcat((case.wrap(op.result_ty), sep));
-        let ident_suffix = match op.value_ty == op.result_ty {
-            false => Some(IdentSuffix(op.value_ty)),
-            true => None,
+        let ident_suffix = match op.value_ty != op.result_ty {
+            true => Some(IdentSuffix(op.value_ty)),
+            false => None,
         };
         let ident_suffix = ident_suffix.map(|i| case.wrap(i)).display_maybe();
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
@@ -173,16 +270,27 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
 impl Display for DisplayIdent<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
-        let sep = case.wrap(Sep);
-        let kind = self.value.kind;
-        let ident = case.wrap(kind.ident());
-        let ident_prefix = case.wrap(kind.ident_prefix());
+        let op = self.value;
+        let ident = case.wrap(op.ident);
+        let is_cmp = op.caps.is_cmp();
+        let ident_prefix = match is_cmp {
+            true => case.wrap(IdentPrefix(op.lhs_ty)),
+            false => case.wrap(IdentPrefix(op.result_ty)),
+        };
+        let ident_suffix = match op.result_ty != op.lhs_ty {
+            true => Some(IdentSuffix(op.rhs_ty)),
+            false => None,
+        };
+        let ident_suffix = ident_suffix
+            .filter(|_| !is_cmp)
+            .map(|i| case.wrap(i))
+            .display_maybe();
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
-        let lhs_suffix = SnakeCase(Suffix(self.value.lhs));
-        let rhs_suffix = SnakeCase(Suffix(self.value.rhs));
+        let lhs_suffix = SnakeCase(Suffix(op.lhs));
+        let rhs_suffix = SnakeCase(Suffix(op.rhs));
         write!(
             f,
-            "{ident_prefix}{sep}{ident}_{result_suffix}{lhs_suffix}{rhs_suffix}"
+            "{ident_prefix}{ident}{ident_suffix}_{result_suffix}{lhs_suffix}{rhs_suffix}"
         )
     }
 }
