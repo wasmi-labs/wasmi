@@ -54,9 +54,13 @@ impl<T> DisplayIdent<T> {
 #[repr(transparent)]
 pub struct IdentPrefix<T>(pub T);
 
-impl Display for CamelCase<IdentPrefix<Ty>> {
+impl Display for CamelCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0.0 {
+        let s = match self.0 {
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
             Ty::I32 => "I32",
             Ty::I64 => "I64",
             Ty::U8 => "U8",
@@ -81,42 +85,58 @@ impl Display for CamelCase<IdentPrefix<Ty>> {
             Ty::U64x2 => "U64x2",
             Ty::F32x4 => "F32x4",
             Ty::F64x2 => "F64x2",
-            _ => panic!("invalid identifier prefix"),
         };
         f.write_str(s)
     }
 }
 
-impl Display for SnakeCase<IdentPrefix<Ty>> {
+impl Display for SnakeCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0.0 {
-            Ty::I32 => "i32_",
-            Ty::I64 => "i64_",
-            Ty::U8 => "u8_",
-            Ty::U32 => "u32_",
-            Ty::U64 => "u64_",
-            Ty::NonZeroI32 => "i32_",
-            Ty::NonZeroI64 => "i64_",
-            Ty::NonZeroU32 => "u32_",
-            Ty::NonZeroU64 => "u64_",
-            Ty::F32 => "f32_",
-            Ty::F64 => "f64_",
-            Ty::SignF32 => "f32_",
-            Ty::SignF64 => "f64_",
-            Ty::V128 => "v128_",
-            Ty::I8x16 => "i8x16_",
-            Ty::I16x8 => "i16x8_",
-            Ty::I32x4 => "i32x4_",
-            Ty::I64x2 => "i64x2_",
-            Ty::U8x16 => "u8x16_",
-            Ty::U16x8 => "u16x8_",
-            Ty::U32x4 => "u32x4_",
-            Ty::U64x2 => "u64x2_",
-            Ty::F32x4 => "f32x4_",
-            Ty::F64x2 => "f64x2_",
-            _ => panic!("invalid identifier prefix"),
+        let s = match self.0 {
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
+            Ty::I32 => "i32",
+            Ty::I64 => "i64",
+            Ty::U8 => "u8",
+            Ty::U32 => "u32",
+            Ty::U64 => "u64",
+            Ty::NonZeroI32 => "i32",
+            Ty::NonZeroI64 => "i64",
+            Ty::NonZeroU32 => "u32",
+            Ty::NonZeroU64 => "u64",
+            Ty::F32 => "f32",
+            Ty::F64 => "f64",
+            Ty::SignF32 => "f32",
+            Ty::SignF64 => "f64",
+            Ty::V128 => "v128",
+            Ty::I8x16 => "i8x16",
+            Ty::I16x8 => "i16x8",
+            Ty::I32x4 => "i32x4",
+            Ty::I64x2 => "i64x2",
+            Ty::U8x16 => "u8x16",
+            Ty::U16x8 => "u16x8",
+            Ty::U32x4 => "u32x4",
+            Ty::U64x2 => "u64x2",
+            Ty::F32x4 => "f32x4",
+            Ty::F64x2 => "f64x2",
         };
         f.write_str(s)
+    }
+}
+
+impl Display for CamelCase<IdentPrefix<Ty>> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        CamelCase(self.0.0).fmt(f)
+    }
+}
+
+impl Display for SnakeCase<IdentPrefix<Ty>> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        SnakeCase(self.0.0).fmt(f)?;
+        SnakeCase(Sep).fmt(f)?;
+        Ok(())
     }
 }
 
@@ -127,73 +147,17 @@ pub struct IdentSuffix<T>(pub T);
 
 impl Display for CamelCase<IdentSuffix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0.0 {
-            Ty::Bits8 => "8",
-            Ty::Bits16 => "16",
-            Ty::Bits32 => "32",
-            Ty::Bits64 => "64",
-            Ty::I32 => "I32",
-            Ty::I64 => "I64",
-            Ty::U8 => "U8",
-            Ty::U32 => "U32",
-            Ty::U64 => "U64",
-            Ty::NonZeroI32 => "I32",
-            Ty::NonZeroI64 => "I64",
-            Ty::NonZeroU32 => "U32",
-            Ty::NonZeroU64 => "U64",
-            Ty::F32 => "F32",
-            Ty::F64 => "F64",
-            Ty::SignF32 => "F32",
-            Ty::SignF64 => "F64",
-            Ty::V128 => "V128",
-            Ty::I8x16 => "I8x16",
-            Ty::I16x8 => "I16x8",
-            Ty::I32x4 => "I32x4",
-            Ty::I64x2 => "I64x2",
-            Ty::U8x16 => "U8x16",
-            Ty::U16x8 => "U16x8",
-            Ty::U32x4 => "U32x4",
-            Ty::U64x2 => "U64x2",
-            Ty::F32x4 => "F32x4",
-            Ty::F64x2 => "F64x2",
-        };
-        f.write_str(s)
+        CamelCase(self.0.0).fmt(f)
     }
 }
 
 impl Display for SnakeCase<IdentSuffix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self.0.0 {
-            Ty::Bits8 => "8",
-            Ty::Bits16 => "16",
-            Ty::Bits32 => "32",
-            Ty::Bits64 => "64",
-            Ty::I32 => "_i32",
-            Ty::I64 => "_i64",
-            Ty::U8 => "_u8",
-            Ty::U32 => "_u32",
-            Ty::U64 => "_u64",
-            Ty::NonZeroI32 => "_i32",
-            Ty::NonZeroI64 => "_i64",
-            Ty::NonZeroU32 => "_u32",
-            Ty::NonZeroU64 => "_u64",
-            Ty::F32 => "_f32",
-            Ty::F64 => "_f64",
-            Ty::SignF32 => "_f32",
-            Ty::SignF64 => "_f64",
-            Ty::V128 => "_v128",
-            Ty::I8x16 => "_i8x16",
-            Ty::I16x8 => "_i16x8",
-            Ty::I32x4 => "_i32x4",
-            Ty::I64x2 => "_i64x2",
-            Ty::U8x16 => "_u8x16",
-            Ty::U16x8 => "_u16x8",
-            Ty::U32x4 => "_u32x4",
-            Ty::U64x2 => "_u64x2",
-            Ty::F32x4 => "_f32x4",
-            Ty::F64x2 => "_f64x2",
-        };
-        f.write_str(s)
+        match self.0.0 {
+            Ty::Bits8 | Ty::Bits16 | Ty::Bits32 | Ty::Bits64 => {}
+            _ => SnakeCase(Sep).fmt(f)?,
+        }
+        SnakeCase(self.0.0).fmt(f)
     }
 }
 
