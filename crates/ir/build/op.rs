@@ -85,36 +85,7 @@ impl OperandKind {
     pub fn field_ty(self, hint: Ty) -> FieldTy {
         match self {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => match hint {
-                | Ty::Bits8 => FieldTy::U8,
-                | Ty::Bits16 => FieldTy::U16,
-                | Ty::Bits32 => FieldTy::U32,
-                | Ty::Bits64 => FieldTy::U64,
-                | Ty::I32 => FieldTy::I32,
-                | Ty::I64 => FieldTy::I64,
-                | Ty::U8 => FieldTy::U8,
-                | Ty::U32 => FieldTy::U32,
-                | Ty::U64 => FieldTy::U64,
-                | Ty::NonZeroI32 => FieldTy::NonZeroI32,
-                | Ty::NonZeroI64 => FieldTy::NonZeroI64,
-                | Ty::NonZeroU32 => FieldTy::NonZeroU32,
-                | Ty::NonZeroU64 => FieldTy::NonZeroU64,
-                | Ty::F32 => FieldTy::F32,
-                | Ty::F64 => FieldTy::F64,
-                | Ty::SignF32 => FieldTy::SignF32,
-                | Ty::SignF64 => FieldTy::SignF64,
-                | Ty::V128
-                | Ty::I8x16
-                | Ty::I16x8
-                | Ty::I32x4
-                | Ty::I64x2
-                | Ty::U8x16
-                | Ty::U16x8
-                | Ty::U32x4
-                | Ty::U64x2
-                | Ty::F32x4
-                | Ty::F64x2 => FieldTy::V128,
-            },
+            OperandKind::Immediate => FieldTy::from(hint),
         }
     }
 }
@@ -530,6 +501,41 @@ pub enum FieldTy {
     ImmLaneIdx2,
     Bytes16,
     V128,
+}
+
+impl From<Ty> for FieldTy {
+    fn from(ty: Ty) -> Self {
+        match ty {
+            | Ty::Bits8 => FieldTy::U8,
+            | Ty::Bits16 => FieldTy::U16,
+            | Ty::Bits32 => FieldTy::U32,
+            | Ty::Bits64 => FieldTy::U64,
+            | Ty::I32 => FieldTy::I32,
+            | Ty::I64 => FieldTy::I64,
+            | Ty::U8 => FieldTy::U8,
+            | Ty::U32 => FieldTy::U32,
+            | Ty::U64 => FieldTy::U64,
+            | Ty::NonZeroI32 => FieldTy::NonZeroI32,
+            | Ty::NonZeroI64 => FieldTy::NonZeroI64,
+            | Ty::NonZeroU32 => FieldTy::NonZeroU32,
+            | Ty::NonZeroU64 => FieldTy::NonZeroU64,
+            | Ty::F32 => FieldTy::F32,
+            | Ty::F64 => FieldTy::F64,
+            | Ty::SignF32 => FieldTy::SignF32,
+            | Ty::SignF64 => FieldTy::SignF64,
+            | Ty::V128
+            | Ty::I8x16
+            | Ty::I16x8
+            | Ty::I32x4
+            | Ty::I64x2
+            | Ty::U8x16
+            | Ty::U16x8
+            | Ty::U32x4
+            | Ty::U64x2
+            | Ty::F32x4
+            | Ty::F64x2 => FieldTy::V128,
+        }
+    }
 }
 
 impl Display for FieldTy {
