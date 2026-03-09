@@ -14,7 +14,7 @@ use self::{
         DisplayResultMut,
         Indent,
     },
-    ident::{CamelCase, Ident, SnakeCase},
+    ident::{Ident, SnakeCase},
     isa::Isa,
     op::Op,
 };

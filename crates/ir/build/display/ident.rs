@@ -243,8 +243,7 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
         let case = self.case;
         let op = self.value;
         let ident = case.wrap(op.ident);
-        let sep = case.wrap(Sep);
-        let ident_prefix = DisplayConcat((case.wrap(op.result_ty), sep));
+        let ident_prefix = case.wrap(IdentPrefix(op.result_ty));
         let ident_suffix = match op.value_ty != op.result_ty {
             true => Some(IdentSuffix(op.value_ty)),
             false => None,
@@ -290,18 +289,17 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
 impl Display for DisplayIdent<&'_ TernaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
-        let sep = case.wrap(Sep);
         let op = self.value;
         let kind = op.kind;
         let ident = case.wrap(kind.ident());
-        let ident_prefix = case.wrap(kind.ident_prefix());
+        let ident_prefix = case.wrap(IdentPrefix(kind.ident_prefix()));
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let a_suffix = SnakeCase(Suffix(OperandKind::Slot));
         let b_suffix = SnakeCase(Suffix(OperandKind::Slot));
         let c_suffix = SnakeCase(Suffix(OperandKind::Slot));
         write!(
             f,
-            "{ident_prefix}{sep}{ident}_{result_suffix}{a_suffix}{b_suffix}{c_suffix}"
+            "{ident_prefix}{ident}_{result_suffix}{a_suffix}{b_suffix}{c_suffix}"
         )
     }
 }
@@ -313,12 +311,12 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
         let cmp = self.value.cmp;
         let branch = case.wrap(Ident::Branch);
         let ident = case.wrap(cmp.ident());
-        let input_ident = case.wrap(cmp.ident_prefix());
+        let input_ident = case.wrap(IdentPrefix(cmp.ident_prefix()));
         let lhs_suffix = case.wrap(Suffix(self.value.lhs));
         let rhs_suffix = SnakeCase(Suffix(self.value.rhs));
         write!(
             f,
-            "{branch}{sep}{input_ident}{sep}{ident}_{lhs_suffix}{rhs_suffix}"
+            "{branch}{sep}{input_ident}{ident}_{lhs_suffix}{rhs_suffix}"
         )
     }
 }
@@ -351,8 +349,8 @@ impl Display for DisplayIdent<&'_ LoadOp> {
             .value
             .kind
             .ident_prefix()
-            .map(|v| (case.wrap(v), sep))
-            .map(DisplayConcat)
+            .map(IdentPrefix)
+            .map(|v| case.wrap(v))
             .display_maybe();
         let mem0_ident = self
             .value
@@ -441,12 +439,11 @@ impl Display for DisplayIdent<&'_ V128ExtractLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let op = self.value;
-        let sep = case.wrap(Sep);
         let ident = case.wrap(Ident::ExtractLane);
-        let lane_ty = case.wrap(Ty::from(op.ty));
+        let lane_ty = case.wrap(IdentPrefix(Ty::from(op.ty)));
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let v128_suffix = SnakeCase(Suffix(OperandKind::Slot));
-        write!(f, "{lane_ty}{sep}{ident}_{result_suffix}{v128_suffix}")
+        write!(f, "{lane_ty}{ident}_{result_suffix}{v128_suffix}")
     }
 }
 
