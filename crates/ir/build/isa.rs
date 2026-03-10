@@ -1080,18 +1080,18 @@ fn add_simd_load_ops(isa: &mut Isa) {
         (LoadKind::Widen { result_ty: Ty::I64x2 }, Ty::Bits32x2),
         (LoadKind::Widen { result_ty: Ty::U64x2 }, Ty::Bits32x2),
         // load-splat
-        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits8),
-        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits16),
-        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits32),
-        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits64),
+        (LoadKind::Splat, Ty::Bits8),
+        (LoadKind::Splat, Ty::Bits16),
+        (LoadKind::Splat, Ty::Bits32),
+        (LoadKind::Splat, Ty::Bits64),
         // load-low
-        (LoadKind::Low { result_ty: Ty::V128 }, Ty::Bits32),
-        (LoadKind::Low { result_ty: Ty::V128 }, Ty::Bits64),
+        (LoadKind::Low, Ty::Bits32),
+        (LoadKind::Low, Ty::Bits64),
         // load-lane
-        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W8 }, Ty::Bits8),
-        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W16 }, Ty::Bits16),
-        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W32 }, Ty::Bits32),
-        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W64 }, Ty::Bits64),
+        (LoadKind::Lane { width: LaneWidth::W8 }, Ty::Bits8),
+        (LoadKind::Lane { width: LaneWidth::W16 }, Ty::Bits16),
+        (LoadKind::Lane { width: LaneWidth::W32 }, Ty::Bits32),
+        (LoadKind::Lane { width: LaneWidth::W64 }, Ty::Bits64),
     ];
     for (kind, loaded_ty) in ops {
         isa.push_op(LoadOp::new(

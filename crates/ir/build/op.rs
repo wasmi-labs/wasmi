@@ -513,11 +513,11 @@ pub enum LoadKind {
     /// Loads a value and splats it to a `v128` value.
     Widen { result_ty: Ty },
     /// Loads a value and splats it to a `v128` value.
-    Splat { result_ty: Ty },
+    Splat,
     /// Loads the low bits of a `v128` value.
-    Low { result_ty: Ty },
+    Low,
     /// Loads and replaces a lane from a `v128` value.
-    Lane { result_ty: Ty, width: LaneWidth },
+    Lane { width: LaneWidth },
 }
 
 impl LoadKind {
@@ -527,8 +527,8 @@ impl LoadKind {
             LoadKind::Value => return None,
             LoadKind::Extend { .. } => Ident::Extend,
             LoadKind::Widen { .. } => Ident::Widen,
-            LoadKind::Splat { .. } => Ident::Splat,
-            LoadKind::Low { .. } => Ident::Low,
+            LoadKind::Splat => Ident::Splat,
+            LoadKind::Low => Ident::Low,
             LoadKind::Lane { .. } => Ident::Lane,
         };
         Some(suffix)
@@ -537,11 +537,8 @@ impl LoadKind {
     /// Returns the result type of the load operator given the loaded type.
     pub fn result_ty(&self) -> Option<Ty> {
         match self {
-            | LoadKind::Lane { result_ty, .. }
-            | LoadKind::Extend { result_ty }
-            | LoadKind::Widen { result_ty }
-            | LoadKind::Splat { result_ty }
-            | LoadKind::Low { result_ty } => Some(*result_ty),
+            | LoadKind::Lane { .. } | LoadKind::Splat | LoadKind::Low => Some(Ty::V128),
+            | LoadKind::Extend { result_ty } | LoadKind::Widen { result_ty } => Some(*result_ty),
             | LoadKind::Value => None,
         }
     }
