@@ -429,37 +429,37 @@ handler_ternary! {
 handler_load_ss! {
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
 
-    fn i16x8_load8x8_ss(I16x8Load8x8_Ss) = simd::v128_load8x8_s;
-    fn u16x8_load8x8_ss(U16x8Load8x8_Ss) = simd::v128_load8x8_u;
-    fn i32x4_load16x4_ss(I32x4Load16x4_Ss) = simd::v128_load16x4_s;
-    fn u32x4_load16x4_ss(U32x4Load16x4_Ss) = simd::v128_load16x4_u;
-    fn i64x2_load32x2_ss(I64x2Load32x2_Ss) = simd::v128_load32x2_s;
-    fn u64x2_load32x2_ss(U64x2Load32x2_Ss) = simd::v128_load32x2_u;
+    fn i16x8_load_widen8x8_ss(I16x8LoadWiden8x8_Ss) = simd::v128_load8x8_s;
+    fn u16x8_load_widen8x8_ss(U16x8LoadWiden8x8_Ss) = simd::v128_load8x8_u;
+    fn i32x4_load_widen16x4_ss(I32x4LoadWiden16x4_Ss) = simd::v128_load16x4_s;
+    fn u32x4_load_widen16x4_ss(U32x4LoadWiden16x4_Ss) = simd::v128_load16x4_u;
+    fn i64x2_load_widen32x2_ss(I64x2LoadWiden32x2_Ss) = simd::v128_load32x2_s;
+    fn u64x2_load_widen32x2_ss(U64x2LoadWiden32x2_Ss) = simd::v128_load32x2_u;
 
-    fn v128_load8_splat_ss(V128Load8Splat_Ss) = simd::v128_load8_splat;
-    fn v128_load16_splat_ss(V128Load16Splat_Ss) = simd::v128_load16_splat;
-    fn v128_load32_splat_ss(V128Load32Splat_Ss) = simd::v128_load32_splat;
-    fn v128_load64_splat_ss(V128Load64Splat_Ss) = simd::v128_load64_splat;
-    fn v128_load32_zero_ss(V128Load32Zero_Ss) = simd::v128_load32_zero;
-    fn v128_load64_zero_ss(V128Load64Zero_Ss) = simd::v128_load64_zero;
+    fn v128_load_splat8_ss(V128LoadSplat8_Ss) = simd::v128_load8_splat;
+    fn v128_load_splat16_ss(V128LoadSplat16_Ss) = simd::v128_load16_splat;
+    fn v128_load_splat32_ss(V128LoadSplat32_Ss) = simd::v128_load32_splat;
+    fn v128_load_splat64_ss(V128LoadSplat64_Ss) = simd::v128_load64_splat;
+    fn v128_load_low32_ss(V128LoadLow32_Ss) = simd::v128_load32_zero;
+    fn v128_load_low64_ss(V128LoadLow64_Ss) = simd::v128_load64_zero;
 }
 
 handler_load_mem0_offset16_ss! {
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
 
-    fn i16x8_load8x8_mem0_offset16_ss(I16x8Load8x8Mem0Offset16_Ss) = simd::v128_load8x8_s;
-    fn u16x8_load8x8_mem0_offset16_ss(U16x8Load8x8Mem0Offset16_Ss) = simd::v128_load8x8_u;
-    fn i32x4_load16x4_mem0_offset16_ss(I32x4Load16x4Mem0Offset16_Ss) = simd::v128_load16x4_s;
-    fn u32x4_load16x4_mem0_offset16_ss(U32x4Load16x4Mem0Offset16_Ss) = simd::v128_load16x4_u;
-    fn i64x2_load32x2_mem0_offset16_ss(I64x2Load32x2Mem0Offset16_Ss) = simd::v128_load32x2_s;
-    fn u64x2_load32x2_mem0_offset16_ss(U64x2Load32x2Mem0Offset16_Ss) = simd::v128_load32x2_u;
+    fn i16x8_load_widen8x8_mem0_offset16_ss(I16x8LoadWiden8x8Mem0Offset16_Ss) = simd::v128_load8x8_s;
+    fn u16x8_load_widen8x8_mem0_offset16_ss(U16x8LoadWiden8x8Mem0Offset16_Ss) = simd::v128_load8x8_u;
+    fn i32x4_load_widen16x4_mem0_offset16_ss(I32x4LoadWiden16x4Mem0Offset16_Ss) = simd::v128_load16x4_s;
+    fn u32x4_load_widen16x4_mem0_offset16_ss(U32x4LoadWiden16x4Mem0Offset16_Ss) = simd::v128_load16x4_u;
+    fn i64x2_load_widen32x2_mem0_offset16_ss(I64x2LoadWiden32x2Mem0Offset16_Ss) = simd::v128_load32x2_s;
+    fn u64x2_load_widen32x2_mem0_offset16_ss(U64x2LoadWiden32x2Mem0Offset16_Ss) = simd::v128_load32x2_u;
 
-    fn v128_load8_splat_mem0_offset16_ss(V128Load8SplatMem0Offset16_Ss) = simd::v128_load8_splat;
-    fn v128_load16_splat_mem0_offset16_ss(V128Load16SplatMem0Offset16_Ss) = simd::v128_load16_splat;
-    fn v128_load32_splat_mem0_offset16_ss(V128Load32SplatMem0Offset16_Ss) = simd::v128_load32_splat;
-    fn v128_load64_splat_mem0_offset16_ss(V128Load64SplatMem0Offset16_Ss) = simd::v128_load64_splat;
-    fn v128_load32_zero_mem0_offset16_ss(V128Load32ZeroMem0Offset16_Ss) = simd::v128_load32_zero;
-    fn v128_load64_zero_mem0_offset16_ss(V128Load64ZeroMem0Offset16_Ss) = simd::v128_load64_zero;
+    fn v128_load_splat8_mem0_offset16_ss(V128LoadSplat8Mem0Offset16_Ss) = simd::v128_load8_splat;
+    fn v128_load_splat16_mem0_offset16_ss(V128LoadSplat16Mem0Offset16_Ss) = simd::v128_load16_splat;
+    fn v128_load_splat32_mem0_offset16_ss(V128LoadSplat32Mem0Offset16_Ss) = simd::v128_load32_splat;
+    fn v128_load_splat64_mem0_offset16_ss(V128LoadSplat64Mem0Offset16_Ss) = simd::v128_load64_splat;
+    fn v128_load_low32_mem0_offset16_ss(V128LoadLow32Mem0Offset16_Ss) = simd::v128_load32_zero;
+    fn v128_load_low64_mem0_offset16_ss(V128LoadLow64Mem0Offset16_Ss) = simd::v128_load64_zero;
 }
 
 macro_rules! handler_load_lane {

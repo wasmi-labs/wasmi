@@ -399,18 +399,6 @@ impl SelectOp {
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct LoadOp {
-    /// The kind of the load operator.
-    pub kind: LoadOpKind,
-    /// The `ptr` field type.
-    pub ptr: OperandKind,
-    /// True, if the operator is always operating on (`memory 0`).
-    pub mem: MemoryOperand,
-    /// True, if the operator uses a 16-bit offset field.
-    pub offset: OffsetOperand,
-}
-
 /// Describes the memory operand for `load` and `store` operators.
 #[derive(Copy, Clone)]
 pub enum MemoryOperand {
@@ -429,15 +417,31 @@ pub enum OffsetOperand {
     Offset16,
 }
 
+#[derive(Copy, Clone)]
+pub struct LoadOp {
+    /// The kind of the load operator.
+    pub kind: LoadKind,
+    /// The type of the loaded value.
+    pub loaded_ty: Ty,
+    /// The `ptr` field type.
+    pub ptr: OperandKind,
+    /// True, if the operator is always operating on (`memory 0`).
+    pub mem: MemoryOperand,
+    /// True, if the operator uses a 16-bit offset field.
+    pub offset: OffsetOperand,
+}
+
 impl LoadOp {
     pub fn new(
-        kind: LoadOpKind,
+        kind: LoadKind,
+        loaded_ty: Ty,
         ptr: OperandKind,
         mem: MemoryOperand,
         offset: OffsetOperand,
     ) -> Self {
         Self {
             kind,
+            loaded_ty,
             ptr,
             mem,
             offset,
@@ -484,96 +488,43 @@ impl LoadOp {
     }
 }
 
+/// The kind of a load operation.
 #[derive(Copy, Clone)]
-pub enum LoadOpKind {
-    // Scalar
-    Load32,
-    Load64,
-    I32Load8,
-    U32Load8,
-    I32Load16,
-    U32Load16,
-    I64Load8,
-    U64Load8,
-    I64Load16,
-    U64Load16,
-    I64Load32,
-    U64Load32,
-    // Simd
-    V128Load,
-    I16x8Load8x8,
-    U16x8Load8x8,
-    I32x4Load16x4,
-    U32x4Load16x4,
-    I64x2Load32x2,
-    U64x2Load32x2,
-    V128Load8Splat,
-    V128Load16Splat,
-    V128Load32Splat,
-    V128Load64Splat,
-    V128Load32Zero,
-    V128Load64Zero,
+pub enum LoadKind {
+    /// Loads a value.
+    Value,
+    /// Loads a value and extends it to a larger integer value.
+    Extend { result_ty: Ty },
+    /// Loads a value and splats it to a SIMD value.
+    Widen { result_ty: Ty },
+    /// Loads a value and splats it to a SIMD value.
+    Splat { result_ty: Ty },
+    /// Loads the low bits of a SIMD value.
+    Low { result_ty: Ty },
 }
 
-impl LoadOpKind {
-    pub fn ident(&self) -> Ident {
-        match self {
-            Self::Load32 => Ident::Load32,
-            Self::Load64 => Ident::Load64,
-            Self::I32Load8 => Ident::Load8,
-            Self::U32Load8 => Ident::Load8,
-            Self::I32Load16 => Ident::Load16,
-            Self::U32Load16 => Ident::Load16,
-            Self::I64Load8 => Ident::Load8,
-            Self::U64Load8 => Ident::Load8,
-            Self::I64Load16 => Ident::Load16,
-            Self::U64Load16 => Ident::Load16,
-            Self::I64Load32 => Ident::Load32,
-            Self::U64Load32 => Ident::Load32,
-            Self::V128Load => Ident::Load,
-            Self::I16x8Load8x8 => Ident::Load8x8,
-            Self::U16x8Load8x8 => Ident::Load8x8,
-            Self::I32x4Load16x4 => Ident::Load16x4,
-            Self::U32x4Load16x4 => Ident::Load16x4,
-            Self::I64x2Load32x2 => Ident::Load32x2,
-            Self::U64x2Load32x2 => Ident::Load32x2,
-            Self::V128Load8Splat => Ident::Load8Splat,
-            Self::V128Load16Splat => Ident::Load16Splat,
-            Self::V128Load32Splat => Ident::Load32Splat,
-            Self::V128Load64Splat => Ident::Load64Splat,
-            Self::V128Load32Zero => Ident::Load32Zero,
-            Self::V128Load64Zero => Ident::Load64Zero,
-        }
+impl LoadKind {
+    /// Returns the load operation identifier suffix.
+    pub fn ident_suffix(&self) -> Option<Ident> {
+        let suffix = match self {
+            LoadKind::Value => return None,
+            LoadKind::Extend { .. } => Ident::Extend,
+            LoadKind::Widen { .. } => Ident::Widen,
+            LoadKind::Splat { .. } => Ident::Splat,
+            LoadKind::Low { .. } => Ident::Low,
+        };
+        Some(suffix)
     }
 
-    pub fn ident_prefix(&self) -> Option<Ty> {
-        let prefix = match self {
-            | Self::Load32 | Self::Load64 => return None,
-            | Self::I32Load8 => Ty::I32,
-            | Self::U32Load8 => Ty::U32,
-            | Self::I32Load16 => Ty::I32,
-            | Self::U32Load16 => Ty::U32,
-            | Self::I64Load8 => Ty::I64,
-            | Self::U64Load8 => Ty::U64,
-            | Self::I64Load16 => Ty::I64,
-            | Self::U64Load16 => Ty::U64,
-            | Self::I64Load32 => Ty::I64,
-            | Self::U64Load32 => Ty::U64,
-            | Self::V128Load => Ty::V128,
-            | Self::I16x8Load8x8 => Ty::I16x8,
-            | Self::U16x8Load8x8 => Ty::U16x8,
-            | Self::I32x4Load16x4 => Ty::I32x4,
-            | Self::U32x4Load16x4 => Ty::U32x4,
-            | Self::I64x2Load32x2 => Ty::I64x2,
-            | Self::U64x2Load32x2 => Ty::U64x2,
-            | Self::V128Load8Splat => Ty::V128,
-            | Self::V128Load16Splat => Ty::V128,
-            | Self::V128Load32Splat => Ty::V128,
-            | Self::V128Load64Splat => Ty::V128,
-            | Self::V128Load32Zero => Ty::V128,
-            | Self::V128Load64Zero => Ty::V128,
-        };
-        Some(prefix)
+    /// Returns the result type of the load operator given the loaded type.
+    pub fn result_ty(&self) -> Option<Ty> {
+        match self {
+            | LoadKind::Extend { result_ty }
+            | LoadKind::Widen { result_ty }
+            | LoadKind::Splat { result_ty }
+            | LoadKind::Low { result_ty } => Some(*result_ty),
+            | LoadKind::Value => None,
+        }
     }
 }
 

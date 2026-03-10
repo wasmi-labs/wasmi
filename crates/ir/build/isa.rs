@@ -9,8 +9,8 @@ use crate::build::{
         Field,
         GenericOp,
         LaneWidth,
+        LoadKind,
         LoadOp,
-        LoadOpKind,
         MemoryOperand,
         OffsetOperand,
         OperandKind,
@@ -327,38 +327,37 @@ fn add_select_ops(isa: &mut Isa) {
 }
 
 fn add_load_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
         // Generic
-        LoadOpKind::Load32,
-        LoadOpKind::Load64,
+        (LoadKind::Value, Ty::U32),
+        (LoadKind::Value, Ty::U64),
         // i32
-        LoadOpKind::I32Load8,
-        LoadOpKind::I32Load16,
-        LoadOpKind::U32Load8,
-        LoadOpKind::U32Load16,
+        (LoadKind::Extend { result_ty: Ty::I32 }, Ty::Bits8),
+        (LoadKind::Extend { result_ty: Ty::I32 }, Ty::Bits16),
+        (LoadKind::Extend { result_ty: Ty::U32 }, Ty::Bits8),
+        (LoadKind::Extend { result_ty: Ty::U32 }, Ty::Bits16),
         // i64
-        LoadOpKind::I64Load8,
-        LoadOpKind::I64Load16,
-        LoadOpKind::I64Load32,
-        LoadOpKind::U64Load8,
-        LoadOpKind::U64Load16,
-        LoadOpKind::U64Load32,
+        (LoadKind::Extend { result_ty: Ty::I64 }, Ty::Bits8),
+        (LoadKind::Extend { result_ty: Ty::I64 }, Ty::Bits16),
+        (LoadKind::Extend { result_ty: Ty::I64 }, Ty::Bits32),
+        (LoadKind::Extend { result_ty: Ty::U64 }, Ty::Bits8),
+        (LoadKind::Extend { result_ty: Ty::U64 }, Ty::Bits16),
+        (LoadKind::Extend { result_ty: Ty::U64 }, Ty::Bits32),
     ];
-    for op in ops {
+    for (kind, loaded_ty) in ops {
+        for ptr in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(LoadOp::new(
+                kind,
+                loaded_ty,
+                ptr,
+                MemoryOperand::Immediate,
+                OffsetOperand::Offset,
+            ));
+        }
         isa.push_op(LoadOp::new(
-            op,
-            OperandKind::Slot,
-            MemoryOperand::Immediate,
-            OffsetOperand::Offset,
-        ));
-        isa.push_op(LoadOp::new(
-            op,
-            OperandKind::Immediate,
-            MemoryOperand::Immediate,
-            OffsetOperand::Offset,
-        ));
-        isa.push_op(LoadOp::new(
-            op,
+            kind,
+            loaded_ty,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,
@@ -1071,30 +1070,36 @@ fn add_simd_unary_ops(isa: &mut Isa) {
 }
 
 fn add_simd_load_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
-        LoadOpKind::V128Load,
-        LoadOpKind::I16x8Load8x8,
-        LoadOpKind::U16x8Load8x8,
-        LoadOpKind::I32x4Load16x4,
-        LoadOpKind::U32x4Load16x4,
-        LoadOpKind::I64x2Load32x2,
-        LoadOpKind::U64x2Load32x2,
-        LoadOpKind::V128Load8Splat,
-        LoadOpKind::V128Load16Splat,
-        LoadOpKind::V128Load32Splat,
-        LoadOpKind::V128Load64Splat,
-        LoadOpKind::V128Load32Zero,
-        LoadOpKind::V128Load64Zero,
+        (LoadKind::Value, Ty::V128),
+        // load-widen
+        (LoadKind::Widen { result_ty: Ty::I16x8 }, Ty::Bits8x8),
+        (LoadKind::Widen { result_ty: Ty::U16x8 }, Ty::Bits8x8),
+        (LoadKind::Widen { result_ty: Ty::I32x4 }, Ty::Bits16x4),
+        (LoadKind::Widen { result_ty: Ty::U32x4 }, Ty::Bits16x4),
+        (LoadKind::Widen { result_ty: Ty::I64x2 }, Ty::Bits32x2),
+        (LoadKind::Widen { result_ty: Ty::U64x2 }, Ty::Bits32x2),
+        // load-splat
+        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits8),
+        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits16),
+        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits32),
+        (LoadKind::Splat { result_ty: Ty::V128 }, Ty::Bits64),
+        // load-low
+        (LoadKind::Low { result_ty: Ty::V128 }, Ty::Bits32),
+        (LoadKind::Low { result_ty: Ty::V128 }, Ty::Bits64),
     ];
-    for op in ops {
+    for (kind, loaded_ty) in ops {
         isa.push_op(LoadOp::new(
-            op,
+            kind,
+            loaded_ty,
             OperandKind::Slot,
             MemoryOperand::Immediate,
             OffsetOperand::Offset,
         ));
         isa.push_op(LoadOp::new(
-            op,
+            kind,
+            loaded_ty,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,
