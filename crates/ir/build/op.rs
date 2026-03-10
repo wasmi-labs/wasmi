@@ -524,12 +524,12 @@ impl LoadKind {
     /// Returns the load operation identifier suffix.
     pub fn ident_suffix(&self) -> Option<Ident> {
         let suffix = match self {
-            LoadKind::Value => return None,
-            LoadKind::Extend { .. } => Ident::Extend,
-            LoadKind::Widen { .. } => Ident::Widen,
-            LoadKind::Splat => Ident::Splat,
-            LoadKind::Low => Ident::Low,
-            LoadKind::Lane { .. } => Ident::Lane,
+            Self::Value => return None,
+            Self::Extend { .. } => Ident::Extend,
+            Self::Widen { .. } => Ident::Widen,
+            Self::Splat => Ident::Splat,
+            Self::Low => Ident::Low,
+            Self::Lane { .. } => Ident::Lane,
         };
         Some(suffix)
     }
@@ -537,9 +537,9 @@ impl LoadKind {
     /// Returns the result type of the load operator given the loaded type.
     pub fn result_ty(&self) -> Option<Ty> {
         match self {
-            | LoadKind::Lane { .. } | LoadKind::Splat | LoadKind::Low => Some(Ty::V128),
-            | LoadKind::Extend { result_ty } | LoadKind::Widen { result_ty } => Some(*result_ty),
-            | LoadKind::Value => None,
+            | Self::Lane { .. } | LoadKind::Splat | LoadKind::Low => Some(Ty::V128),
+            | Self::Extend { result_ty } | LoadKind::Widen { result_ty } => Some(*result_ty),
+            | Self::Value => None,
         }
     }
 }
