@@ -380,9 +380,21 @@ fn add_store_ops(isa: &mut Isa) {
     for op in ops {
         for value in [OperandKind::Slot, OperandKind::Immediate] {
             for ptr in [OperandKind::Slot, OperandKind::Immediate] {
-                isa.push_op(StoreOp::new(op, ptr, value, false, false));
+                isa.push_op(StoreOp::new(
+                    op,
+                    ptr,
+                    value,
+                    MemoryOperand::Immediate,
+                    OffsetOperand::Offset,
+                ));
             }
-            isa.push_op(StoreOp::new(op, OperandKind::Slot, value, true, true));
+            isa.push_op(StoreOp::new(
+                op,
+                OperandKind::Slot,
+                value,
+                MemoryOperand::Mem0,
+                OffsetOperand::Offset16,
+            ));
         }
     }
 }
@@ -1124,15 +1136,15 @@ fn add_simd_store_ops(isa: &mut Isa) {
             kind,
             OperandKind::Slot,
             OperandKind::Slot,
-            false,
-            false,
+            MemoryOperand::Immediate,
+            OffsetOperand::Offset,
         ));
         isa.push_op(StoreOp::new(
             kind,
             OperandKind::Slot,
             OperandKind::Slot,
-            true,
-            true,
+            MemoryOperand::Mem0,
+            OffsetOperand::Offset16,
         ));
     }
 }

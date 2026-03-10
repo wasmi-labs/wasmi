@@ -424,9 +424,9 @@ pub struct LoadOp {
     pub loaded_ty: Ty,
     /// The `ptr` field type.
     pub ptr: OperandKind,
-    /// True, if the operator is always operating on (`memory 0`).
+    /// The representation of the memory operand.
     pub mem: MemoryOperand,
-    /// True, if the operator uses a 16-bit offset field.
+    /// The representation of the offset operand.
     pub offset: OffsetOperand,
 }
 
@@ -552,10 +552,10 @@ pub struct StoreOp {
     pub ptr: OperandKind,
     /// The `value` input type.
     pub value: OperandKind,
-    /// True, if the operator is always operating on (`memory 0`).
-    pub mem0: bool,
-    /// True, if the operator uses a 16-bit offset field.
-    pub offset16: bool,
+    /// The representation of the memory operand.
+    pub mem: MemoryOperand,
+    /// The representation of the offset operand.
+    pub offset: OffsetOperand,
 }
 
 impl StoreOp {
@@ -563,15 +563,15 @@ impl StoreOp {
         kind: StoreOpKind,
         ptr: OperandKind,
         value: OperandKind,
-        mem0: bool,
-        offset16: bool,
+        mem: MemoryOperand,
+        offset: OffsetOperand,
     ) -> Self {
         Self {
             kind,
             ptr,
             value,
-            mem0,
-            offset16,
+            mem,
+            offset,
         }
     }
 
@@ -585,9 +585,9 @@ impl StoreOp {
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Slot => match self.offset16 {
-                true => FieldTy::Offset16,
-                false => FieldTy::U64,
+            OperandKind::Slot => match self.offset {
+                OffsetOperand::Offset16 => FieldTy::Offset16,
+                OffsetOperand::Offset => FieldTy::U64,
             },
             OperandKind::Immediate => return None,
         };
@@ -600,7 +600,7 @@ impl StoreOp {
     }
 
     pub fn memory_field(&self) -> Option<Field> {
-        if self.mem0 {
+        if matches!(self.mem, MemoryOperand::Mem0) {
             return None;
         }
         Some(Field::new(Ident::Memory, FieldTy::Memory))

@@ -361,35 +361,23 @@ impl Display for DisplayIdent<&'_ LoadOp> {
 impl Display for DisplayIdent<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
-        let kind = self.value.kind;
+        let op = self.value;
+        let kind = op.kind;
         let ident = case.wrap(kind.ident());
-        let ptr_suffix = case.wrap(Suffix(self.value.ptr));
-        let value_suffix = SnakeCase(Suffix(self.value.value));
+        let ptr_suffix = case.wrap(Suffix(op.ptr));
+        let value_suffix = SnakeCase(Suffix(op.value));
         let sep = case.wrap(Sep);
-        let ident_prefix = self
-            .value
+        let ident_prefix = op
             .kind
             .ident_prefix()
             .map(|v| (case.wrap(v), sep))
             .map(DisplayConcat)
             .display_maybe();
-        let mem0_ident = self
-            .value
-            .mem0
-            .then_some(Ident::Mem0)
-            .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat)
-            .display_maybe();
-        let offset16_ident = self
-            .value
-            .offset16
-            .then_some(Ident::Offset16)
-            .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat)
-            .display_maybe();
+        let mem_suffix = self.map(op.mem);
+        let offset_suffix = self.map(op.offset);
         write!(
             f,
-            "{ident_prefix}{ident}{mem0_ident}{offset16_ident}_{ptr_suffix}{value_suffix}",
+            "{ident_prefix}{ident}{mem_suffix}{offset_suffix}_{ptr_suffix}{value_suffix}",
         )
     }
 }

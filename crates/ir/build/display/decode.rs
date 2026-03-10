@@ -120,8 +120,8 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             MemoryOperand::Mem0 => "Mem0",
         };
         let offset16_suffix = match op.offset {
-            OffsetOperand::Offset16 => "Offset16",
             OffsetOperand::Offset => "",
+            OffsetOperand::Offset16 => "Offset16",
         };
         let (lane_suffix, lane_param) = match op.kind {
             LoadKind::Lane { width, .. } => {
@@ -151,9 +151,14 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .laneidx_field()
             .map(|_| CamelCase(Ident::Lane))
             .display_maybe();
-        let mem0_offset16 = (op.mem0 && op.offset16)
-            .then_some("Mem0Offset16")
-            .display_maybe();
+        let mem0_suffix = match op.mem {
+            MemoryOperand::Immediate => "",
+            MemoryOperand::Mem0 => "Mem0",
+        };
+        let offset16_suffix = match op.offset {
+            OffsetOperand::Offset => "",
+            OffsetOperand::Offset16 => "Offset16",
+        };
         let ptr_suffix = CamelCase(Suffix(op.ptr));
         let value_ty = op.value_field().ty;
         let laneidx_ty = op
@@ -163,7 +168,7 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .display_maybe();
         writeln!(
             f,
-            "pub type {camel_ident} = Store{lane_ident}Op{mem0_offset16}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
+            "pub type {camel_ident} = Store{lane_ident}Op{mem0_suffix}{offset16_suffix}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
         )
     }
 }
