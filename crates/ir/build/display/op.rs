@@ -19,7 +19,6 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
 };
@@ -179,7 +178,6 @@ impl_display_variant! {
     TableSetOp,
     V128ReplaceLaneOp,
     V128ExtractLaneOp,
-    V128LoadLaneOp,
 }
 
 impl<const N: usize> Display for DisplayOp<&'_ GenericOp<N>> {

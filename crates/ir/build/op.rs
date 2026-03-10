@@ -25,7 +25,6 @@ macro_rules! apply_macro_for_ops {
             Generic5(GenericOp<5>),
             V128ReplaceLane(V128ReplaceLaneOp),
             V128ExtractLane(V128ExtractLaneOp),
-            V128LoadLane(V128LoadLaneOp),
         }
     };
 }
@@ -478,12 +477,28 @@ impl LoadOp {
         }
     }
 
-    pub fn fields(&self) -> [Option<Field>; 4] {
+    pub fn v128_field(&self) -> Option<Field> {
+        match self.kind {
+            LoadKind::Lane { .. } => Some(Field::new(Ident::V128, FieldTy::Slot)),
+            _ => None,
+        }
+    }
+
+    pub fn lane_field(&self) -> Option<Field> {
+        match self.kind {
+            LoadKind::Lane { width, .. } => Some(Field::new(Ident::Lane, FieldTy::from(width))),
+            _ => None,
+        }
+    }
+
+    pub fn fields(&self) -> [Option<Field>; 6] {
         [
             Some(self.result_field()),
             Some(self.ptr_field()),
             self.offset_field(),
             self.memory_field(),
+            self.v128_field(),
+            self.lane_field(),
         ]
     }
 }
@@ -495,12 +510,14 @@ pub enum LoadKind {
     Value,
     /// Loads a value and extends it to a larger integer value.
     Extend { result_ty: Ty },
-    /// Loads a value and splats it to a SIMD value.
+    /// Loads a value and splats it to a `v128` value.
     Widen { result_ty: Ty },
-    /// Loads a value and splats it to a SIMD value.
+    /// Loads a value and splats it to a `v128` value.
     Splat { result_ty: Ty },
-    /// Loads the low bits of a SIMD value.
+    /// Loads the low bits of a `v128` value.
     Low { result_ty: Ty },
+    /// Loads and replaces a lane from a `v128` value.
+    Lane { result_ty: Ty, width: LaneWidth },
 }
 
 impl LoadKind {
@@ -512,6 +529,7 @@ impl LoadKind {
             LoadKind::Widen { .. } => Ident::Widen,
             LoadKind::Splat { .. } => Ident::Splat,
             LoadKind::Low { .. } => Ident::Low,
+            LoadKind::Lane { .. } => Ident::Lane,
         };
         Some(suffix)
     }
@@ -519,6 +537,7 @@ impl LoadKind {
     /// Returns the result type of the load operator given the loaded type.
     pub fn result_ty(&self) -> Option<Ty> {
         match self {
+            | LoadKind::Lane { result_ty, .. }
             | LoadKind::Extend { result_ty }
             | LoadKind::Widen { result_ty }
             | LoadKind::Splat { result_ty }
@@ -771,6 +790,17 @@ pub enum LaneWidth {
     W64,
 }
 
+impl From<LaneWidth> for FieldTy {
+    fn from(value: LaneWidth) -> Self {
+        match value {
+            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
+            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
+            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
+            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
+        }
+    }
+}
+
 impl Display for LaneWidth {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let width = u8::from(*self);
@@ -936,84 +966,6 @@ impl V128ReplaceLaneOp {
             self.v128_field(),
             self.value_field(),
             self.lane_field(),
-        ]
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct V128LoadLaneOp {
-    /// The type of the value to be splatted.
-    pub width: LaneWidth,
-    /// The `value` used for replacing.
-    pub ptr: OperandKind,
-    /// True, if the operator is always operating on (`memory 0`).
-    pub mem0: bool,
-    /// True, if the operator uses a 16-bit offset field.
-    pub offset16: bool,
-}
-
-impl V128LoadLaneOp {
-    pub fn new(width: LaneWidth, ptr: OperandKind, mem0: bool, offset16: bool) -> Self {
-        Self {
-            width,
-            ptr,
-            mem0,
-            offset16,
-        }
-    }
-
-    pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
-    }
-
-    pub fn ptr_field(&self) -> Field {
-        let ptr_ty = match self.ptr {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => FieldTy::Address,
-        };
-        Field::new(Ident::Ptr, ptr_ty)
-    }
-
-    pub fn offset_field(&self) -> Option<Field> {
-        let offset_ty = match self.ptr {
-            OperandKind::Slot => match self.offset16 {
-                true => FieldTy::Offset16,
-                false => FieldTy::U64,
-            },
-            OperandKind::Immediate => return None,
-        };
-        Some(Field::new(Ident::Offset, offset_ty))
-    }
-
-    pub fn v128_field(&self) -> Field {
-        Field::new(Ident::V128, FieldTy::Slot)
-    }
-
-    pub fn memory_field(&self) -> Option<Field> {
-        if self.mem0 {
-            return None;
-        }
-        Some(Field::new(Ident::Memory, FieldTy::Memory))
-    }
-
-    pub fn laneidx_field(&self) -> Field {
-        let ty = match self.width {
-            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
-            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
-            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
-            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
-        };
-        Field::new(Ident::Lane, ty)
-    }
-
-    pub fn fields(&self) -> [Option<Field>; 6] {
-        [
-            Some(self.result_field()),
-            Some(self.ptr_field()),
-            self.offset_field(),
-            self.memory_field(),
-            Some(self.v128_field()),
-            Some(self.laneidx_field()),
         ]
     }
 }

@@ -16,7 +16,6 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
     ty::Ty,
@@ -332,6 +331,12 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let ident = case.wrap(Ident::Load);
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
+        let v128_suffix = op
+            .v128_field()
+            .map(|_| OperandKind::Slot)
+            .map(Suffix)
+            .map(SnakeCase)
+            .display_maybe();
         let loaded_suffix = op
             .kind
             .result_ty()
@@ -348,7 +353,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let offset_suffix = self.map(op.offset);
         write!(
             f,
-            "{ident_prefix}{ident}{ident_suffix}{loaded_suffix}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}",
+            "{ident_prefix}{ident}{ident_suffix}{loaded_suffix}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}{v128_suffix}",
         )
     }
 }
@@ -441,38 +446,6 @@ impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
         write!(
             f,
             "{v128}{sep}{ident}{width}_{result_suffix}{v128_suffix}{value_suffix}"
-        )
-    }
-}
-
-impl Display for DisplayIdent<&'_ V128LoadLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let case = self.case;
-        let op = self.value;
-        let sep = case.wrap(Sep);
-        let v128 = case.wrap(Ident::V128);
-        let ident = case.wrap(Ident::LoadLane);
-        let width = u8::from(op.width);
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
-        let ptr_suffix = SnakeCase(Suffix(op.ptr));
-        let v128_suffix = SnakeCase(Suffix(OperandKind::Slot));
-        let mem0_ident = self
-            .value
-            .mem0
-            .then_some(Ident::Mem0)
-            .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat)
-            .display_maybe();
-        let offset16_ident = self
-            .value
-            .offset16
-            .then_some(Ident::Offset16)
-            .map(|v| (sep, case.wrap(v)))
-            .map(DisplayConcat)
-            .display_maybe();
-        write!(
-            f,
-            "{v128}{sep}{ident}{width}{mem0_ident}{offset16_ident}_{result_suffix}{ptr_suffix}{v128_suffix}"
         )
     }
 }

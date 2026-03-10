@@ -25,7 +25,6 @@ use crate::build::{
         TernaryOpKind,
         UnaryOp,
         V128ExtractLaneOp,
-        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
     ty::{FieldTy, Ty},
@@ -1088,6 +1087,11 @@ fn add_simd_load_ops(isa: &mut Isa) {
         // load-low
         (LoadKind::Low { result_ty: Ty::V128 }, Ty::Bits32),
         (LoadKind::Low { result_ty: Ty::V128 }, Ty::Bits64),
+        // load-lane
+        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W8 }, Ty::Bits8),
+        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W16 }, Ty::Bits16),
+        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W32 }, Ty::Bits32),
+        (LoadKind::Lane { result_ty: Ty::V128, width: LaneWidth::W64 }, Ty::Bits64),
     ];
     for (kind, loaded_ty) in ops {
         isa.push_op(LoadOp::new(
@@ -1104,16 +1108,6 @@ fn add_simd_load_ops(isa: &mut Isa) {
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,
         ));
-    }
-    let widths = [
-        LaneWidth::W8,
-        LaneWidth::W16,
-        LaneWidth::W32,
-        LaneWidth::W64,
-    ];
-    for width in widths {
-        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Slot, false, false));
-        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Slot, true, true));
     }
 }
 

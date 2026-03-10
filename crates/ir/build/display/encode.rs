@@ -15,7 +15,6 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
 };
@@ -114,7 +113,6 @@ impl_display_encode! {
     TableSetOp,
     V128ReplaceLaneOp,
     V128ExtractLaneOp,
-    V128LoadLaneOp,
 }
 
 impl<const N: usize> Display for DisplayEncode<&'_ GenericOp<N>> {

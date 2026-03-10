@@ -264,7 +264,6 @@ define_ident!(
     Low: low,
     ExtractLane: extract_lane,
     ReplaceLane: replace_lane,
-    LoadLane: load_lane,
     Swizzle: swizzle,
     I8x16Shuffle: i8x16_shuffle,
     Q15MulrSat: q15_mulr_sat,
