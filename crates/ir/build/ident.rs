@@ -135,12 +135,8 @@ define_ident!(
     BranchTableSpan: branch_table_span,
     Select: select,
     Select128: select128,
-    Store8: store8,
-    Store16: store16,
-    Store32: store32,
-    Store64: store64,
-    Store128: store128,
     Load: load,
+    Store: store,
 
     CopySlot: copy_slot,
     CopyImm32: copy_imm32,
@@ -163,9 +159,6 @@ define_ident!(
     ReturnCallInternal: return_call_internal,
     ReturnCallImported: return_call_imported,
     ReturnCallIndirect: return_call_indirect,
-
-    I32: i32,
-    I64: i64,
 
     Clz: clz,
     Ctz: ctz,
@@ -282,10 +275,6 @@ define_ident!(
     PromoteLow: promote_low,
     TruncSatZero: trunc_sat_zero,
     ConvertLow: convert_low,
-    Store8Lane: store8_lane,
-    Store16Lane: store16_lane,
-    Store32Lane: store32_lane,
-    Store64Lane: store64_lane,
 
     Bitselect: bitselect,
     RelaxedDotI8x16I7x16: relaxed_dot_i8x16_i7x16,

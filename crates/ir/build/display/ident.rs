@@ -58,6 +58,10 @@ pub struct IdentPrefix<T>(pub T);
 impl Display for CamelCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
+            | Ty::SignedBits8 => "8",
+            | Ty::SignedBits16 => "16",
+            | Ty::SignedBits32 => "32",
+            | Ty::SignedBits64 => "64",
             | Ty::Bits8 => "8",
             | Ty::Bits16 => "16",
             | Ty::Bits32 => "32",
@@ -98,6 +102,10 @@ impl Display for CamelCase<Ty> {
 impl Display for SnakeCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
+            Ty::SignedBits8 => "8",
+            Ty::SignedBits16 => "16",
+            Ty::SignedBits32 => "32",
+            Ty::SignedBits64 => "64",
             Ty::Bits8 => "8",
             Ty::Bits16 => "16",
             Ty::Bits32 => "32",
@@ -163,7 +171,11 @@ impl Display for CamelCase<IdentSuffix<Ty>> {
 impl Display for SnakeCase<IdentSuffix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0.0 {
-            Ty::Bits8
+            | Ty::SignedBits8
+            | Ty::SignedBits16
+            | Ty::SignedBits32
+            | Ty::SignedBits64
+            | Ty::Bits8
             | Ty::Bits16
             | Ty::Bits32
             | Ty::Bits64
@@ -361,23 +373,29 @@ impl Display for DisplayIdent<&'_ LoadOp> {
 impl Display for DisplayIdent<&'_ StoreOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
-        let op = self.value;
-        let kind = op.kind;
-        let ident = case.wrap(kind.ident());
-        let ptr_suffix = case.wrap(Suffix(op.ptr));
-        let value_suffix = SnakeCase(Suffix(op.value));
         let sep = case.wrap(Sep);
-        let ident_prefix = op
+        let op = self.value;
+        let ident = case.wrap(Ident::Store);
+        let ident_suffix = op
             .kind
-            .ident_prefix()
-            .map(|v| (case.wrap(v), sep))
+            .ident_suffix()
+            .map(|v| (sep, case.wrap(v)))
             .map(DisplayConcat)
             .display_maybe();
+        let stored_suffix = op
+            .kind
+            .stored_ty()
+            .map(IdentSuffix)
+            .map(|suffix| case.wrap(suffix))
+            .display_maybe();
+        let ptr_suffix = case.wrap(Suffix(op.ptr));
+        let value_suffix = SnakeCase(Suffix(op.value));
+        let ident_prefix = case.wrap(op.value_ty);
         let mem_suffix = self.map(op.mem);
         let offset_suffix = self.map(op.offset);
         write!(
             f,
-            "{ident_prefix}{ident}{mem_suffix}{offset_suffix}_{ptr_suffix}{value_suffix}",
+            "{ident_prefix}{sep}{ident}{ident_suffix}{stored_suffix}{mem_suffix}{offset_suffix}_{ptr_suffix}{value_suffix}",
         )
     }
 }

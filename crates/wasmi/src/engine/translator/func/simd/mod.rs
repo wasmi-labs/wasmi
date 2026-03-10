@@ -346,7 +346,7 @@ impl FuncTranslator {
             return Ok(false);
         };
         self.push_instr(
-            Op::store128_mem0_offset16_ss(ptr, offset16, value),
+            Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
             FuelCostsProvider::store,
         )?;
         Ok(true)

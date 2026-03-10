@@ -547,7 +547,9 @@ impl LoadKind {
 #[derive(Copy, Clone)]
 pub struct StoreOp {
     /// The kind of the load operator.
-    pub kind: StoreOpKind,
+    pub kind: StoreKind,
+    /// The type of the value.
+    pub value_ty: Ty,
     /// The `ptr` input type.
     pub ptr: OperandKind,
     /// The `value` input type.
@@ -560,7 +562,8 @@ pub struct StoreOp {
 
 impl StoreOp {
     pub fn new(
-        kind: StoreOpKind,
+        kind: StoreKind,
+        value_ty: Ty,
         ptr: OperandKind,
         value: OperandKind,
         mem: MemoryOperand,
@@ -568,6 +571,7 @@ impl StoreOp {
     ) -> Self {
         Self {
             kind,
+            value_ty,
             ptr,
             value,
             mem,
@@ -595,8 +599,15 @@ impl StoreOp {
     }
 
     pub fn value_field(&self) -> Field {
-        let value_ty = self.kind.value_ty(self.value);
-        Field::new(Ident::Value, value_ty)
+        let field_ty = match self.value {
+            OperandKind::Slot => FieldTy::Slot,
+            OperandKind::Immediate => match self.kind {
+                StoreKind::Value => FieldTy::from(self.value_ty),
+                StoreKind::Wrap { stored_ty } => FieldTy::from(stored_ty),
+                StoreKind::Lane { width } => FieldTy::from(width),
+            },
+        };
+        Field::new(Ident::Value, field_ty)
     }
 
     pub fn memory_field(&self) -> Option<Field> {
@@ -607,8 +618,10 @@ impl StoreOp {
     }
 
     pub fn laneidx_field(&self) -> Option<Field> {
-        let ty = self.kind.laneidx_ty()?;
-        Some(Field::new(Ident::Lane, ty))
+        match self.kind {
+            StoreKind::Lane { width } => Some(Field::new(Ident::Lane, FieldTy::from(width))),
+            _ => None,
+        }
     }
 
     pub fn fields(&self) -> [Option<Field>; 5] {
@@ -622,90 +635,44 @@ impl StoreOp {
     }
 }
 
+/// The kind of a store operation.
 #[derive(Copy, Clone)]
-pub enum StoreOpKind {
-    // Generic
-    Store32,
-    Store64,
-    // i32
-    I32Store8,
-    I32Store16,
-    // i64
-    I64Store8,
-    I64Store16,
-    I64Store32,
-    // v128
-    Store128,
-    V128Store8Lane,
-    V128Store16Lane,
-    V128Store32Lane,
-    V128Store64Lane,
+pub enum StoreKind {
+    /// Stores a value.
+    Value,
+    /// Stores a wrapped integer value.
+    Wrap {
+        /// The type that is stored after wrapping.
+        stored_ty: Ty,
+    },
+    /// Stores a single lane of a `v128` value.
+    Lane { width: LaneWidth },
 }
 
-impl StoreOpKind {
-    pub fn ident(&self) -> Ident {
-        match self {
-            Self::Store32 => Ident::Store32,
-            Self::Store64 => Ident::Store64,
-            Self::I32Store8 => Ident::Store8,
-            Self::I32Store16 => Ident::Store16,
-            Self::I64Store8 => Ident::Store8,
-            Self::I64Store16 => Ident::Store16,
-            Self::I64Store32 => Ident::Store32,
-            Self::Store128 => Ident::Store128,
-            Self::V128Store8Lane => Ident::Store8Lane,
-            Self::V128Store16Lane => Ident::Store16Lane,
-            Self::V128Store32Lane => Ident::Store32Lane,
-            Self::V128Store64Lane => Ident::Store64Lane,
-        }
-    }
-
-    pub fn ident_prefix(&self) -> Option<Ident> {
-        match self {
-            Self::Store32 => None,
-            Self::Store64 => None,
-            Self::I32Store8 => Some(Ident::I32),
-            Self::I32Store16 => Some(Ident::I32),
-            Self::I64Store8 => Some(Ident::I64),
-            Self::I64Store16 => Some(Ident::I64),
-            Self::I64Store32 => Some(Ident::I64),
-            Self::Store128 => None,
-            Self::V128Store8Lane => Some(Ident::V128),
-            Self::V128Store16Lane => Some(Ident::V128),
-            Self::V128Store32Lane => Some(Ident::V128),
-            Self::V128Store64Lane => Some(Ident::V128),
-        }
-    }
-
-    fn value_ty(&self, input: OperandKind) -> FieldTy {
-        match input {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => match self {
-                Self::Store32 => FieldTy::U32,
-                Self::Store64 => FieldTy::U64,
-                Self::I32Store8 => FieldTy::I8,
-                Self::I32Store16 => FieldTy::I16,
-                Self::I64Store8 => FieldTy::I8,
-                Self::I64Store16 => FieldTy::I16,
-                Self::I64Store32 => FieldTy::I32,
-                Self::Store128 => FieldTy::Bytes16,
-                Self::V128Store8Lane => FieldTy::V128,
-                Self::V128Store16Lane => FieldTy::V128,
-                Self::V128Store32Lane => FieldTy::V128,
-                Self::V128Store64Lane => FieldTy::V128,
-            },
-        }
-    }
-
-    fn laneidx_ty(&self) -> Option<FieldTy> {
-        let ty = match self {
-            Self::V128Store8Lane => FieldTy::ImmLaneIdx16,
-            Self::V128Store16Lane => FieldTy::ImmLaneIdx8,
-            Self::V128Store32Lane => FieldTy::ImmLaneIdx4,
-            Self::V128Store64Lane => FieldTy::ImmLaneIdx2,
-            _ => return None,
+impl StoreKind {
+    /// Returns the store operation identifier suffix.
+    pub fn ident_suffix(&self) -> Option<Ident> {
+        let suffix = match self {
+            Self::Value => return None,
+            Self::Wrap { .. } => Ident::Wrap,
+            Self::Lane { .. } => Ident::Lane,
         };
-        Some(ty)
+        Some(suffix)
+    }
+
+    /// Returns the stored [`Ty`] of `None` if not enforced by `self`.
+    pub fn stored_ty(&self) -> Option<Ty> {
+        let stored_ty = match self {
+            Self::Value => return None,
+            Self::Wrap { stored_ty } => *stored_ty,
+            Self::Lane { width } => match width {
+                LaneWidth::W8 => Ty::Bits8,
+                LaneWidth::W16 => Ty::Bits16,
+                LaneWidth::W32 => Ty::Bits32,
+                LaneWidth::W64 => Ty::Bits64,
+            },
+        };
+        Some(stored_ty)
     }
 }
 

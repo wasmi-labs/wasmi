@@ -17,8 +17,8 @@ use crate::build::{
         SelectOp,
         SelectWidth,
         SimdTy,
+        StoreKind,
         StoreOp,
-        StoreOpKind,
         TableGetOp,
         TableSetOp,
         TernaryOp,
@@ -365,23 +365,25 @@ fn add_load_ops(isa: &mut Isa) {
 }
 
 fn add_store_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
         // Generic
-        StoreOpKind::Store32,
-        StoreOpKind::Store64,
+        (StoreKind::Value, Ty::U32),
+        (StoreKind::Value, Ty::U64),
         // i32
-        StoreOpKind::I32Store8,
-        StoreOpKind::I32Store16,
+        (StoreKind::Wrap { stored_ty: Ty::SignedBits8 }, Ty::I32),
+        (StoreKind::Wrap { stored_ty: Ty::SignedBits16 }, Ty::I32),
         // i64
-        StoreOpKind::I64Store8,
-        StoreOpKind::I64Store16,
-        StoreOpKind::I64Store32,
+        (StoreKind::Wrap { stored_ty: Ty::SignedBits8 }, Ty::I64),
+        (StoreKind::Wrap { stored_ty: Ty::SignedBits16 }, Ty::I64),
+        (StoreKind::Wrap { stored_ty: Ty::SignedBits32 }, Ty::I64),
     ];
-    for op in ops {
+    for (kind, value_ty) in ops {
         for value in [OperandKind::Slot, OperandKind::Immediate] {
             for ptr in [OperandKind::Slot, OperandKind::Immediate] {
                 isa.push_op(StoreOp::new(
-                    op,
+                    kind,
+                    value_ty,
                     ptr,
                     value,
                     MemoryOperand::Immediate,
@@ -389,7 +391,8 @@ fn add_store_ops(isa: &mut Isa) {
                 ));
             }
             isa.push_op(StoreOp::new(
-                op,
+                kind,
+                value_ty,
                 OperandKind::Slot,
                 value,
                 MemoryOperand::Mem0,
@@ -1124,16 +1127,18 @@ fn add_simd_load_ops(isa: &mut Isa) {
 }
 
 fn add_simd_store_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let kinds = [
-        StoreOpKind::Store128,
-        StoreOpKind::V128Store8Lane,
-        StoreOpKind::V128Store16Lane,
-        StoreOpKind::V128Store32Lane,
-        StoreOpKind::V128Store64Lane,
+        (StoreKind::Value, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W8 }, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W16 }, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W32 }, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
-    for kind in kinds {
+    for (kind, value_ty) in kinds {
         isa.push_op(StoreOp::new(
             kind,
+            value_ty,
             OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Immediate,
@@ -1141,6 +1146,7 @@ fn add_simd_store_ops(isa: &mut Isa) {
         ));
         isa.push_op(StoreOp::new(
             kind,
+            value_ty,
             OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Mem0,

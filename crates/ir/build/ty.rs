@@ -2,6 +2,14 @@ use core::fmt::{self, Display};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Ty {
+    /// A generic signed 8-bit value.
+    SignedBits8,
+    /// A generic signed 16-bit value.
+    SignedBits16,
+    /// A generic signed 32-bit value.
+    SignedBits32,
+    /// A generic signed 64-bit value.
+    SignedBits64,
     /// A generic 8-bit value.
     Bits8,
     /// A generic 16-bit value.
@@ -115,6 +123,10 @@ pub enum FieldTy {
 impl From<Ty> for FieldTy {
     fn from(ty: Ty) -> Self {
         match ty {
+            | Ty::SignedBits8 => FieldTy::I8,
+            | Ty::SignedBits16 => FieldTy::I16,
+            | Ty::SignedBits32 => FieldTy::I32,
+            | Ty::SignedBits64 => FieldTy::I64,
             | Ty::Bits8 => FieldTy::U8,
             | Ty::Bits16 => FieldTy::U16,
             | Ty::Bits32 => FieldTy::U32,
