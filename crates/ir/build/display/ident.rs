@@ -53,9 +53,6 @@ impl<T> DisplayIdent<T> {
 impl Display for CamelCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            | Ty::SignedBits8 => "8",
-            | Ty::SignedBits16 => "16",
-            | Ty::SignedBits32 => "32",
             | Ty::Bits8 => "8",
             | Ty::Bits16 => "16",
             | Ty::Bits32 => "32",
@@ -92,9 +89,6 @@ impl Display for CamelCase<Ty> {
 impl Display for SnakeCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            Ty::SignedBits8 => "8",
-            Ty::SignedBits16 => "16",
-            Ty::SignedBits32 => "32",
             Ty::Bits8 => "8",
             Ty::Bits16 => "16",
             Ty::Bits32 => "32",
@@ -177,13 +171,7 @@ impl Display for CamelCase<IdentSuffix<Ty>> {
 impl Display for SnakeCase<IdentSuffix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0.0 {
-            | Ty::SignedBits8
-            | Ty::SignedBits16
-            | Ty::SignedBits32
-            | Ty::Bits8
-            | Ty::Bits16
-            | Ty::Bits32
-            | Ty::Bits64 => {}
+            | Ty::Bits8 | Ty::Bits16 | Ty::Bits32 | Ty::Bits64 => {}
             _ => SnakeCase(Sep).fmt(f)?,
         }
         SnakeCase(self.0.0).fmt(f)
