@@ -5,7 +5,7 @@ pub struct Indent(usize);
 
 impl Indent {
     pub fn inc(self) -> Self {
-        Self(self.0 + 1)
+        self.inc_by(1)
     }
 
     pub fn inc_by(self, delta: usize) -> Self {
