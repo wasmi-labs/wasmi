@@ -4,32 +4,31 @@ use crate::build::{
     ident::Ident,
     op::{
         BinaryOp,
-        BinaryOpKind,
+        BinaryOpCaps,
         CmpBranchOp,
-        CmpOpKind,
-        Commutativity,
         Field,
-        FieldTy,
         GenericOp,
         LaneWidth,
+        LoadKind,
         LoadOp,
-        LoadOpKind,
+        MemoryOperand,
+        OffsetOperand,
         OperandKind,
         SelectOp,
         SelectWidth,
         SimdTy,
+        StoreKind,
         StoreOp,
-        StoreOpKind,
         TableGetOp,
         TableSetOp,
         TernaryOp,
         TernaryOpKind,
         UnaryOp,
-        UnaryOpKind,
         V128ExtractLaneOp,
-        V128LoadLaneOp,
         V128ReplaceLaneOp,
+        Wrapped,
     },
+    ty::{FieldTy, Layout, Ty},
 };
 
 #[derive(Default)]
@@ -72,160 +71,185 @@ pub fn wasmi_isa(config: &Config) -> Isa {
 fn add_unary_ops(isa: &mut Isa) {
     let ops = [
         // i32
-        UnaryOpKind::I32Clz,
-        UnaryOpKind::I32Ctz,
-        UnaryOpKind::I32Popcnt,
-        UnaryOpKind::I32Sext8,
-        UnaryOpKind::I32Sext16,
-        UnaryOpKind::I32WrapI64,
+        (Ident::Clz, Ty::I32, Ty::I32),
+        (Ident::Ctz, Ty::I32, Ty::I32),
+        (Ident::Popcnt, Ty::I32, Ty::I32),
+        (Ident::Sext, Ty::I32, Ty::Bits8),
+        (Ident::Sext, Ty::I32, Ty::Bits16),
+        (Ident::Wrap, Ty::I32, Ty::I64),
         // i64
-        UnaryOpKind::I64Clz,
-        UnaryOpKind::I64Ctz,
-        UnaryOpKind::I64Popcnt,
-        UnaryOpKind::I64Sext8,
-        UnaryOpKind::I64Sext16,
-        UnaryOpKind::I64Sext32,
+        (Ident::Clz, Ty::I64, Ty::I64),
+        (Ident::Ctz, Ty::I64, Ty::I64),
+        (Ident::Popcnt, Ty::I64, Ty::I64),
+        (Ident::Sext, Ty::I64, Ty::Bits8),
+        (Ident::Sext, Ty::I64, Ty::Bits16),
+        (Ident::Sext, Ty::I64, Ty::Bits32),
         // f32
-        UnaryOpKind::F32Abs,
-        UnaryOpKind::F32Neg,
-        UnaryOpKind::F32Ceil,
-        UnaryOpKind::F32Floor,
-        UnaryOpKind::F32Trunc,
-        UnaryOpKind::F32Nearest,
-        UnaryOpKind::F32Sqrt,
-        UnaryOpKind::F32ConvertS32,
-        UnaryOpKind::F32ConvertU32,
-        UnaryOpKind::F32ConvertS64,
-        UnaryOpKind::F32ConvertU64,
-        UnaryOpKind::F32DemoteF64,
+        (Ident::Abs, Ty::F32, Ty::F32),
+        (Ident::Neg, Ty::F32, Ty::F32),
+        (Ident::Ceil, Ty::F32, Ty::F32),
+        (Ident::Floor, Ty::F32, Ty::F32),
+        (Ident::Trunc, Ty::F32, Ty::F32),
+        (Ident::Nearest, Ty::F32, Ty::F32),
+        (Ident::Sqrt, Ty::F32, Ty::F32),
+        (Ident::Convert, Ty::F32, Ty::I32),
+        (Ident::Convert, Ty::F32, Ty::U32),
+        (Ident::Convert, Ty::F32, Ty::I64),
+        (Ident::Convert, Ty::F32, Ty::U64),
+        (Ident::Demote, Ty::F32, Ty::F64),
         // f64
-        UnaryOpKind::F64Abs,
-        UnaryOpKind::F64Neg,
-        UnaryOpKind::F64Ceil,
-        UnaryOpKind::F64Floor,
-        UnaryOpKind::F64Trunc,
-        UnaryOpKind::F64Nearest,
-        UnaryOpKind::F64Sqrt,
-        UnaryOpKind::F64ConvertS32,
-        UnaryOpKind::F64ConvertU32,
-        UnaryOpKind::F64ConvertS64,
-        UnaryOpKind::F64ConvertU64,
-        UnaryOpKind::F64PromoteF32,
+        (Ident::Abs, Ty::F64, Ty::F64),
+        (Ident::Neg, Ty::F64, Ty::F64),
+        (Ident::Ceil, Ty::F64, Ty::F64),
+        (Ident::Floor, Ty::F64, Ty::F64),
+        (Ident::Trunc, Ty::F64, Ty::F64),
+        (Ident::Nearest, Ty::F64, Ty::F64),
+        (Ident::Sqrt, Ty::F64, Ty::F64),
+        (Ident::Convert, Ty::F64, Ty::I32),
+        (Ident::Convert, Ty::F64, Ty::U32),
+        (Ident::Convert, Ty::F64, Ty::I64),
+        (Ident::Convert, Ty::F64, Ty::U64),
+        (Ident::Promote, Ty::F64, Ty::F32),
         // f2i conversions
-        UnaryOpKind::S32TruncF32,
-        UnaryOpKind::U32TruncF32,
-        UnaryOpKind::S32TruncF64,
-        UnaryOpKind::U32TruncF64,
-        UnaryOpKind::S64TruncF32,
-        UnaryOpKind::U64TruncF32,
-        UnaryOpKind::S64TruncF64,
-        UnaryOpKind::U64TruncF64,
-        UnaryOpKind::S32TruncSatF32,
-        UnaryOpKind::U32TruncSatF32,
-        UnaryOpKind::S32TruncSatF64,
-        UnaryOpKind::U32TruncSatF64,
-        UnaryOpKind::S64TruncSatF32,
-        UnaryOpKind::U64TruncSatF32,
-        UnaryOpKind::S64TruncSatF64,
-        UnaryOpKind::U64TruncSatF64,
+        (Ident::Trunc, Ty::I32, Ty::F32),
+        (Ident::Trunc, Ty::U32, Ty::F32),
+        (Ident::Trunc, Ty::I32, Ty::F64),
+        (Ident::Trunc, Ty::U32, Ty::F64),
+        (Ident::Trunc, Ty::I64, Ty::F32),
+        (Ident::Trunc, Ty::U64, Ty::F32),
+        (Ident::Trunc, Ty::I64, Ty::F64),
+        (Ident::Trunc, Ty::U64, Ty::F64),
+        (Ident::TruncSat, Ty::I32, Ty::F32),
+        (Ident::TruncSat, Ty::U32, Ty::F32),
+        (Ident::TruncSat, Ty::I32, Ty::F64),
+        (Ident::TruncSat, Ty::U32, Ty::F64),
+        (Ident::TruncSat, Ty::I64, Ty::F32),
+        (Ident::TruncSat, Ty::U64, Ty::F32),
+        (Ident::TruncSat, Ty::I64, Ty::F64),
+        (Ident::TruncSat, Ty::U64, Ty::F64),
     ];
-    for op in ops {
-        isa.push_op(UnaryOp::new(op, OperandKind::Slot));
+    for (ident, result_ty, value_ty) in ops {
+        isa.push_op(UnaryOp::new(ident, result_ty, value_ty, OperandKind::Slot))
     }
 }
 
 fn add_binary_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
         // comparisons: i32
-        BinaryOpKind::Cmp(CmpOpKind::I32Eq),
-        BinaryOpKind::Cmp(CmpOpKind::I32And),
-        BinaryOpKind::Cmp(CmpOpKind::I32Or),
-        BinaryOpKind::Cmp(CmpOpKind::I32NotEq),
-        BinaryOpKind::Cmp(CmpOpKind::I32NotAnd),
-        BinaryOpKind::Cmp(CmpOpKind::I32NotOr),
-        BinaryOpKind::Cmp(CmpOpKind::S32Lt),
-        BinaryOpKind::Cmp(CmpOpKind::S32Le),
-        BinaryOpKind::Cmp(CmpOpKind::U32Lt),
-        BinaryOpKind::Cmp(CmpOpKind::U32Le),
+        (Ident::Eq, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::And, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotAnd, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotOr, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::U32, Ty::U32, Ty::U32, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::U32, Ty::U32, Ty::U32, BinaryOpCaps::CMP),
         // comparisons: i64
-        BinaryOpKind::Cmp(CmpOpKind::I64Eq),
-        BinaryOpKind::Cmp(CmpOpKind::I64And),
-        BinaryOpKind::Cmp(CmpOpKind::I64Or),
-        BinaryOpKind::Cmp(CmpOpKind::I64NotEq),
-        BinaryOpKind::Cmp(CmpOpKind::I64NotAnd),
-        BinaryOpKind::Cmp(CmpOpKind::I64NotOr),
-        BinaryOpKind::Cmp(CmpOpKind::S64Lt),
-        BinaryOpKind::Cmp(CmpOpKind::S64Le),
-        BinaryOpKind::Cmp(CmpOpKind::U64Lt),
-        BinaryOpKind::Cmp(CmpOpKind::U64Le),
+        (Ident::Eq, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::And, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotAnd, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotOr, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I32, Ty::I64, Ty::I64, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::U32, Ty::U64, Ty::U64, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::U32, Ty::U64, Ty::U64, BinaryOpCaps::CMP),
         // comparisons: f32
-        BinaryOpKind::Cmp(CmpOpKind::F32Eq),
-        BinaryOpKind::Cmp(CmpOpKind::F32Lt),
-        BinaryOpKind::Cmp(CmpOpKind::F32Le),
-        BinaryOpKind::Cmp(CmpOpKind::F32NotEq),
-        BinaryOpKind::Cmp(CmpOpKind::F32NotLt),
-        BinaryOpKind::Cmp(CmpOpKind::F32NotLe),
+        (Ident::Eq, Ty::I32, Ty::F32, Ty::F32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I32, Ty::F32, Ty::F32, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I32, Ty::F32, Ty::F32, BinaryOpCaps::CMP),
+        (Ident::NotEq, Ty::I32, Ty::F32, Ty::F32, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotLt, Ty::I32, Ty::F32, Ty::F32, BinaryOpCaps::CMP),
+        (Ident::NotLe, Ty::I32, Ty::F32, Ty::F32, BinaryOpCaps::CMP),
         // comparisons: f64
-        BinaryOpKind::Cmp(CmpOpKind::F64Eq),
-        BinaryOpKind::Cmp(CmpOpKind::F64Lt),
-        BinaryOpKind::Cmp(CmpOpKind::F64Le),
-        BinaryOpKind::Cmp(CmpOpKind::F64NotEq),
-        BinaryOpKind::Cmp(CmpOpKind::F64NotLt),
-        BinaryOpKind::Cmp(CmpOpKind::F64NotLe),
+        (Ident::Eq, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP),
+        (Ident::NotEq, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotLt, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP),
+        (Ident::NotLe, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP),
         // i32
-        BinaryOpKind::I32Add,
-        BinaryOpKind::I32Sub,
-        BinaryOpKind::I32Mul,
-        BinaryOpKind::S32Div,
-        BinaryOpKind::U32Div,
-        BinaryOpKind::S32Rem,
-        BinaryOpKind::U32Rem,
-        BinaryOpKind::I32BitAnd,
-        BinaryOpKind::I32BitOr,
-        BinaryOpKind::I32BitXor,
-        BinaryOpKind::I32Shl,
-        BinaryOpKind::S32Shr,
-        BinaryOpKind::U32Shr,
-        BinaryOpKind::I32Rotl,
-        BinaryOpKind::I32Rotr,
+        (Ident::Add, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Sub, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Div, Ty::I32, Ty::I32, Ty::NonZeroI32, BinaryOpCaps::NONE),
+        (Ident::Div, Ty::U32, Ty::U32, Ty::NonZeroU32, BinaryOpCaps::NONE),
+        (Ident::Rem, Ty::I32, Ty::I32, Ty::NonZeroI32, BinaryOpCaps::NONE),
+        (Ident::Rem, Ty::U32, Ty::U32, Ty::NonZeroU32, BinaryOpCaps::NONE),
+        (Ident::BitAnd, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::BitOr, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::BitXor, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Shl, Ty::I32, Ty::I32, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Shr, Ty::I32, Ty::I32, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Shr, Ty::U32, Ty::U32, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Rotl, Ty::I32, Ty::I32, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Rotr, Ty::I32, Ty::I32, Ty::U8, BinaryOpCaps::NONE),
         // i64
-        BinaryOpKind::I64Add,
-        BinaryOpKind::I64Sub,
-        BinaryOpKind::I64Mul,
-        BinaryOpKind::S64Div,
-        BinaryOpKind::U64Div,
-        BinaryOpKind::S64Rem,
-        BinaryOpKind::U64Rem,
-        BinaryOpKind::I64BitAnd,
-        BinaryOpKind::I64BitOr,
-        BinaryOpKind::I64BitXor,
-        BinaryOpKind::I64Shl,
-        BinaryOpKind::S64Shr,
-        BinaryOpKind::U64Shr,
-        BinaryOpKind::I64Rotl,
-        BinaryOpKind::I64Rotr,
+        (Ident::Add, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Sub, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Div, Ty::I64, Ty::I64, Ty::NonZeroI64, BinaryOpCaps::NONE),
+        (Ident::Div, Ty::U64, Ty::U64, Ty::NonZeroU64, BinaryOpCaps::NONE),
+        (Ident::Rem, Ty::I64, Ty::I64, Ty::NonZeroI64, BinaryOpCaps::NONE),
+        (Ident::Rem, Ty::U64, Ty::U64, Ty::NonZeroU64, BinaryOpCaps::NONE),
+        (Ident::BitAnd, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::BitOr, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::BitXor, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Shl, Ty::I64, Ty::I64, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Shr, Ty::I64, Ty::I64, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Shr, Ty::U64, Ty::U64, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Rotl, Ty::I64, Ty::I64, Ty::U8, BinaryOpCaps::NONE),
+        (Ident::Rotr, Ty::I64, Ty::I64, Ty::U8, BinaryOpCaps::NONE),
         // f32
-        BinaryOpKind::F32Add,
-        BinaryOpKind::F32Sub,
-        BinaryOpKind::F32Mul,
-        BinaryOpKind::F32Div,
-        BinaryOpKind::F32Min,
-        BinaryOpKind::F32Max,
-        BinaryOpKind::F32Copysign,
-        // f64
-        BinaryOpKind::F64Add,
-        BinaryOpKind::F64Sub,
-        BinaryOpKind::F64Mul,
-        BinaryOpKind::F64Div,
-        BinaryOpKind::F64Min,
-        BinaryOpKind::F64Max,
-        BinaryOpKind::F64Copysign,
+        (Ident::Add, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Sub, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Div, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Min, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Max, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Copysign, Ty::F32, Ty::F32, Ty::SignF32, BinaryOpCaps::NONE),
+        // // f64
+        (Ident::Add, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Sub, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Div, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Min, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Max, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Copysign, Ty::F64, Ty::F64, Ty::SignF64, BinaryOpCaps::NONE),
     ];
-    for op in ops {
-        isa.push_op(BinaryOp::new(op, OperandKind::Slot, OperandKind::Slot));
-        isa.push_op(BinaryOp::new(op, OperandKind::Slot, OperandKind::Immediate));
-        if matches!(op.commutativity(), Commutativity::NonCommutative) {
-            isa.push_op(BinaryOp::new(op, OperandKind::Immediate, OperandKind::Slot));
+    for (ident, result_ty, lhs_ty, rhs_ty, caps) in ops {
+        isa.push_op(BinaryOp::new(
+            ident,
+            result_ty,
+            lhs_ty,
+            rhs_ty,
+            OperandKind::Slot,
+            OperandKind::Slot,
+            caps,
+        ));
+        isa.push_op(BinaryOp::new(
+            ident,
+            result_ty,
+            lhs_ty,
+            rhs_ty,
+            OperandKind::Slot,
+            OperandKind::Immediate,
+            caps,
+        ));
+        if !caps.is_commutative() {
+            isa.push_op(BinaryOp::new(
+                ident,
+                result_ty,
+                lhs_ty,
+                rhs_ty,
+                OperandKind::Immediate,
+                OperandKind::Slot,
+                caps,
+            ));
         }
     }
 }
@@ -233,52 +257,50 @@ fn add_binary_ops(isa: &mut Isa) {
 fn add_cmp_branch_ops(isa: &mut Isa) {
     let ops = [
         // i32
-        CmpOpKind::I32Eq,
-        CmpOpKind::I32NotEq,
-        CmpOpKind::I32And,
-        CmpOpKind::I32NotAnd,
-        CmpOpKind::I32Or,
-        CmpOpKind::I32NotOr,
-        CmpOpKind::S32Lt,
-        CmpOpKind::S32Le,
-        CmpOpKind::U32Lt,
-        CmpOpKind::U32Le,
+        (Ident::Eq, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::And, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotAnd, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotOr, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I32, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::I32, BinaryOpCaps::NONE),
+        (Ident::Lt, Ty::U32, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::U32, BinaryOpCaps::NONE),
         // i64
-        CmpOpKind::I64Eq,
-        CmpOpKind::I64NotEq,
-        CmpOpKind::I64And,
-        CmpOpKind::I64NotAnd,
-        CmpOpKind::I64Or,
-        CmpOpKind::I64NotOr,
-        CmpOpKind::S64Lt,
-        CmpOpKind::S64Le,
-        CmpOpKind::U64Lt,
-        CmpOpKind::U64Le,
+        (Ident::Eq, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::And, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotAnd, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotOr, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I64, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::I64, BinaryOpCaps::NONE),
+        (Ident::Lt, Ty::U64, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::U64, BinaryOpCaps::NONE),
         // f32
-        CmpOpKind::F32Eq,
-        CmpOpKind::F32NotEq,
-        CmpOpKind::F32Lt,
-        CmpOpKind::F32NotLt,
-        CmpOpKind::F32Le,
-        CmpOpKind::F32NotLe,
+        (Ident::Eq, Ty::F32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::F32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::NotLt, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::F32, BinaryOpCaps::NONE),
+        (Ident::NotLe, Ty::F32, BinaryOpCaps::NONE),
         // f64
-        CmpOpKind::F64Eq,
-        CmpOpKind::F64NotEq,
-        CmpOpKind::F64Lt,
-        CmpOpKind::F64NotLt,
-        CmpOpKind::F64Le,
-        CmpOpKind::F64NotLe,
+        (Ident::Eq, Ty::F64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::F64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::NotLt, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::Le, Ty::F64, BinaryOpCaps::NONE),
+        (Ident::NotLe, Ty::F64, BinaryOpCaps::NONE),
     ];
-    for op in ops {
-        isa.push_op(CmpBranchOp::new(op, OperandKind::Slot, OperandKind::Slot));
-        isa.push_op(CmpBranchOp::new(
-            op,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-        ));
-        if matches!(op.commutativity(), Commutativity::NonCommutative) {
+    for (ident, input_ty, caps) in ops {
+        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(CmpBranchOp::new(ident, input_ty, OperandKind::Slot, rhs));
+        }
+        if !caps.is_commutative() {
             isa.push_op(CmpBranchOp::new(
-                op,
+                ident,
+                input_ty,
                 OperandKind::Immediate,
                 OperandKind::Slot,
             ));
@@ -305,49 +327,78 @@ fn add_select_ops(isa: &mut Isa) {
 }
 
 fn add_load_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
         // Generic
-        LoadOpKind::Load32,
-        LoadOpKind::Load64,
+        (LoadKind::Value, Ty::U32),
+        (LoadKind::Value, Ty::U64),
         // i32
-        LoadOpKind::S32Load8,
-        LoadOpKind::S32Load16,
-        LoadOpKind::U32Load8,
-        LoadOpKind::U32Load16,
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::I32),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::I32),
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::U32),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::U32),
         // i64
-        LoadOpKind::S64Load8,
-        LoadOpKind::S64Load16,
-        LoadOpKind::S64Load32,
-        LoadOpKind::U64Load8,
-        LoadOpKind::U64Load16,
-        LoadOpKind::U64Load32,
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::I64),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::I64),
+        (LoadKind::Extend { layout: Layout::Bits32 }, Ty::I64),
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::U64),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::U64),
+        (LoadKind::Extend { layout: Layout::Bits32 }, Ty::U64),
     ];
-    for op in ops {
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Immediate, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, true, true));
+    for (kind, result_ty) in ops {
+        for ptr in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(LoadOp::new(
+                kind,
+                result_ty,
+                ptr,
+                MemoryOperand::Immediate,
+                OffsetOperand::Offset,
+            ));
+        }
+        isa.push_op(LoadOp::new(
+            kind,
+            result_ty,
+            OperandKind::Slot,
+            MemoryOperand::Mem0,
+            OffsetOperand::Offset16,
+        ));
     }
 }
 
 fn add_store_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
         // Generic
-        StoreOpKind::Store32,
-        StoreOpKind::Store64,
+        (StoreKind::Value, Ty::U32),
+        (StoreKind::Value, Ty::U64),
         // i32
-        StoreOpKind::I32Store8,
-        StoreOpKind::I32Store16,
+        (StoreKind::Wrap { wrapped: Wrapped::I8 }, Ty::I32),
+        (StoreKind::Wrap { wrapped: Wrapped::I16 }, Ty::I32),
         // i64
-        StoreOpKind::I64Store8,
-        StoreOpKind::I64Store16,
-        StoreOpKind::I64Store32,
+        (StoreKind::Wrap { wrapped: Wrapped::I8 }, Ty::I64),
+        (StoreKind::Wrap { wrapped: Wrapped::I16 }, Ty::I64),
+        (StoreKind::Wrap { wrapped: Wrapped::I32 }, Ty::I64),
     ];
-    for op in ops {
+    for (kind, value_ty) in ops {
         for value in [OperandKind::Slot, OperandKind::Immediate] {
             for ptr in [OperandKind::Slot, OperandKind::Immediate] {
-                isa.push_op(StoreOp::new(op, ptr, value, false, false));
+                isa.push_op(StoreOp::new(
+                    kind,
+                    value_ty,
+                    ptr,
+                    value,
+                    MemoryOperand::Immediate,
+                    OffsetOperand::Offset,
+                ));
             }
-            isa.push_op(StoreOp::new(op, OperandKind::Slot, value, true, true));
+            isa.push_op(StoreOp::new(
+                kind,
+                value_ty,
+                OperandKind::Slot,
+                value,
+                MemoryOperand::Mem0,
+                OffsetOperand::Offset16,
+            ));
         }
     }
 }
@@ -756,14 +807,19 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
 
 fn add_simd_splat_ops(isa: &mut Isa) {
     let kinds = [
-        UnaryOpKind::V128Splat8,
-        UnaryOpKind::V128Splat16,
-        UnaryOpKind::V128Splat32,
-        UnaryOpKind::V128Splat64,
+        (Ident::Splat, Ty::Bits8),
+        (Ident::Splat, Ty::Bits16),
+        (Ident::Splat, Ty::Bits32),
+        (Ident::Splat, Ty::Bits64),
     ];
-    for kind in kinds {
-        isa.push_op(UnaryOp::new(kind, OperandKind::Slot));
-        isa.push_op(UnaryOp::new(kind, OperandKind::Immediate));
+    for (ident, value_ty) in kinds {
+        isa.push_op(UnaryOp::new(ident, Ty::V128, value_ty, OperandKind::Slot));
+        isa.push_op(UnaryOp::new(
+            ident,
+            Ty::V128,
+            value_ty,
+            OperandKind::Immediate,
+        ));
     }
 }
 
@@ -794,280 +850,308 @@ fn add_simd_replace_lane_ops(isa: &mut Isa) {
 }
 
 fn add_simd_binary_ops(isa: &mut Isa) {
-    let kinds = [
+    #[rustfmt::skip]
+    let ops = [
         // Miscellaneous
-        BinaryOpKind::I8x16Swizzle,
+        (Ident::Swizzle, Ty::I8x16, Ty::I8x16, BinaryOpCaps::NONE),
         // Integer Comparisons
-        BinaryOpKind::I8x16Eq,
-        BinaryOpKind::I8x16NotEq,
-        BinaryOpKind::I16x8Eq,
-        BinaryOpKind::I16x8NotEq,
-        BinaryOpKind::I32x4Eq,
-        BinaryOpKind::I32x4NotEq,
-        BinaryOpKind::I64x2Eq,
-        BinaryOpKind::I64x2NotEq,
-        BinaryOpKind::S8x16Lt,
-        BinaryOpKind::S8x16Le,
-        BinaryOpKind::S16x8Lt,
-        BinaryOpKind::S16x8Le,
-        BinaryOpKind::S32x4Lt,
-        BinaryOpKind::S32x4Le,
-        BinaryOpKind::S64x2Lt,
-        BinaryOpKind::S64x2Le,
-        BinaryOpKind::U8x16Lt,
-        BinaryOpKind::U8x16Le,
-        BinaryOpKind::U16x8Lt,
-        BinaryOpKind::U16x8Le,
-        BinaryOpKind::U32x4Lt,
-        BinaryOpKind::U32x4Le,
+        (Ident::Eq, Ty::I8x16, Ty::I8x16, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I8x16, Ty::I8x16, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Eq, Ty::I16x8, Ty::I16x8, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I16x8, Ty::I16x8, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Eq, Ty::I32x4, Ty::I32x4, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I32x4, Ty::I32x4, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Eq, Ty::I64x2, Ty::I64x2, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::I64x2, Ty::I64x2, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::I8x16, Ty::I8x16, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I8x16, Ty::I8x16, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::I16x8, Ty::I16x8, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I16x8, Ty::I16x8, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::I32x4, Ty::I32x4, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I32x4, Ty::I32x4, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::I64x2, Ty::I64x2, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::I64x2, Ty::I64x2, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::U8x16, Ty::U8x16, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::U8x16, Ty::U8x16, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::U16x8, Ty::U16x8, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::U16x8, Ty::U16x8, BinaryOpCaps::CMP),
+        (Ident::Lt, Ty::U32x4, Ty::U32x4, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::U32x4, Ty::U32x4, BinaryOpCaps::CMP),
         // Float Comparisons
-        BinaryOpKind::F32x4Eq,
-        BinaryOpKind::F32x4NotEq,
-        BinaryOpKind::F32x4Lt,
-        BinaryOpKind::F32x4Le,
-        BinaryOpKind::F64x2Eq,
-        BinaryOpKind::F64x2NotEq,
-        BinaryOpKind::F64x2Lt,
-        BinaryOpKind::F64x2Le,
+        (Ident::Eq, Ty::F32x4, Ty::F32x4, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::F32x4, Ty::F32x4, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::F32x4, Ty::F32x4, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::F32x4, Ty::F32x4, BinaryOpCaps::CMP),
+        (Ident::Eq, Ty::F64x2, Ty::F64x2, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::NotEq, Ty::F64x2, Ty::F64x2, BinaryOpCaps::CMP | BinaryOpCaps::COMMUTATIVE),
+        (Ident::Lt, Ty::F64x2, Ty::F64x2, BinaryOpCaps::CMP),
+        (Ident::Le, Ty::F64x2, Ty::F64x2, BinaryOpCaps::CMP),
         // Bitwise
-        BinaryOpKind::V128And,
-        BinaryOpKind::V128AndNot,
-        BinaryOpKind::V128Or,
-        BinaryOpKind::V128Xor,
+        (Ident::And, Ty::V128, Ty::V128, BinaryOpCaps::COMMUTATIVE),
+        (Ident::AndNot, Ty::V128, Ty::V128, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Or, Ty::V128, Ty::V128, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Xor, Ty::V128, Ty::V128, BinaryOpCaps::COMMUTATIVE),
         // i8x16 Ops
-        BinaryOpKind::S8x16NarrowI16x8,
-        BinaryOpKind::U8x16NarrowI16x8,
-        BinaryOpKind::I8x16Add,
-        BinaryOpKind::S8x16AddSat,
-        BinaryOpKind::U8x16AddSat,
-        BinaryOpKind::I8x16Sub,
-        BinaryOpKind::S8x16SubSat,
-        BinaryOpKind::U8x16SubSat,
-        BinaryOpKind::S8x16Min,
-        BinaryOpKind::U8x16Min,
-        BinaryOpKind::S8x16Max,
-        BinaryOpKind::U8x16Max,
-        BinaryOpKind::U8x16Avgr,
+        (Ident::Narrow, Ty::I8x16, Ty::I16x8, BinaryOpCaps::NONE),
+        (Ident::Narrow, Ty::U8x16, Ty::I16x8, BinaryOpCaps::NONE),
+        (Ident::Add, Ty::I8x16, Ty::I8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::AddSat, Ty::I8x16, Ty::I8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::AddSat, Ty::U8x16, Ty::U8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Sub, Ty::I8x16, Ty::I8x16, BinaryOpCaps::NONE),
+        (Ident::SubSat, Ty::I8x16, Ty::I8x16, BinaryOpCaps::NONE),
+        (Ident::SubSat, Ty::U8x16, Ty::U8x16, BinaryOpCaps::NONE),
+        (Ident::Min, Ty::I8x16, Ty::I8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Min, Ty::U8x16, Ty::U8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Max, Ty::I8x16, Ty::I8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Max, Ty::U8x16, Ty::U8x16, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Avgr, Ty::U8x16, Ty::U8x16, BinaryOpCaps::COMMUTATIVE),
         // i16x8 Ops
-        BinaryOpKind::S16x8RelaxedDotI8x16I7x16,
-        BinaryOpKind::S16x8Q15MulrSat,
-        BinaryOpKind::S16x8NarrowI32x4,
-        BinaryOpKind::U16x8NarrowI32x4,
-        BinaryOpKind::S16x8ExtmulLowI8x16,
-        BinaryOpKind::U16x8ExtmulLowI8x16,
-        BinaryOpKind::S16x8ExtmulHighI8x16,
-        BinaryOpKind::U16x8ExtmulHighI8x16,
-        BinaryOpKind::I16x8Add,
-        BinaryOpKind::S16x8AddSat,
-        BinaryOpKind::U16x8AddSat,
-        BinaryOpKind::I16x8Sub,
-        BinaryOpKind::S16x8SubSat,
-        BinaryOpKind::U16x8SubSat,
-        BinaryOpKind::I16x8Mul,
-        BinaryOpKind::S16x8Min,
-        BinaryOpKind::U16x8Min,
-        BinaryOpKind::S16x8Max,
-        BinaryOpKind::U16x8Max,
-        BinaryOpKind::U16x8Avgr,
+        (Ident::RelaxedDotI8x16I7x16, Ty::I16x8, Ty::I16x8, BinaryOpCaps::NONE), // TODO: what to do for `input_ty`?
+        (Ident::Q15MulrSat, Ty::I16x8, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Narrow, Ty::I16x8, Ty::I32x4, BinaryOpCaps::NONE),
+        (Ident::Narrow, Ty::U16x8, Ty::I32x4, BinaryOpCaps::NONE),
+        (Ident::ExtmulLow, Ty::I16x8, Ty::I8x16, BinaryOpCaps::NONE),
+        (Ident::ExtmulLow, Ty::U16x8, Ty::I8x16, BinaryOpCaps::NONE),
+        (Ident::ExtmulHigh, Ty::I16x8, Ty::I8x16, BinaryOpCaps::NONE),
+        (Ident::ExtmulHigh, Ty::U16x8, Ty::I8x16, BinaryOpCaps::NONE),
+        (Ident::Add, Ty::I16x8, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::AddSat, Ty::I16x8, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::AddSat, Ty::U16x8, Ty::U16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Sub, Ty::I16x8, Ty::I16x8, BinaryOpCaps::NONE),
+        (Ident::SubSat, Ty::I16x8, Ty::I16x8, BinaryOpCaps::NONE),
+        (Ident::SubSat, Ty::U16x8, Ty::U16x8, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::I16x8, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Min, Ty::I16x8, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Min, Ty::U16x8, Ty::U16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Max, Ty::I16x8, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Max, Ty::U16x8, Ty::U16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Avgr, Ty::U16x8, Ty::U16x8, BinaryOpCaps::COMMUTATIVE),
         // i32x4 Ops
-        BinaryOpKind::I32x4Add,
-        BinaryOpKind::I32x4Sub,
-        BinaryOpKind::I32x4Mul,
-        BinaryOpKind::S32x4Min,
-        BinaryOpKind::U32x4Min,
-        BinaryOpKind::S32x4Max,
-        BinaryOpKind::U32x4Max,
-        BinaryOpKind::S32x4DotI16x8,
-        BinaryOpKind::S32x4ExtmulLowI16x8,
-        BinaryOpKind::U32x4ExtmulLowI16x8,
-        BinaryOpKind::S32x4ExtmulHighI16x8,
-        BinaryOpKind::U32x4ExtmulHighI16x8,
+        (Ident::Add, Ty::I32x4, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Sub, Ty::I32x4, Ty::I32x4, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::I32x4, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Min, Ty::I32x4, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Min, Ty::U32x4, Ty::U32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Max, Ty::I32x4, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Max, Ty::U32x4, Ty::U32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Dot, Ty::I32x4, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulLow, Ty::I32x4, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulLow, Ty::U32x4, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulHigh, Ty::I32x4, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulHigh, Ty::U32x4, Ty::I16x8, BinaryOpCaps::COMMUTATIVE),
         // i64x2 Ops
-        BinaryOpKind::I64x2Add,
-        BinaryOpKind::I64x2Sub,
-        BinaryOpKind::I64x2Mul,
-        BinaryOpKind::S64x2ExtmulLowI32x4,
-        BinaryOpKind::U64x2ExtmulLowI32x4,
-        BinaryOpKind::S64x2ExtmulHighI32x4,
-        BinaryOpKind::U64x2ExtmulHighI32x4,
+        (Ident::Add, Ty::I64x2, Ty::I64x2, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Sub, Ty::I64x2, Ty::I64x2, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::I64x2, Ty::I64x2, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulLow, Ty::I64x2, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulLow, Ty::U64x2, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulHigh, Ty::I64x2, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
+        (Ident::ExtmulHigh, Ty::U64x2, Ty::I32x4, BinaryOpCaps::COMMUTATIVE),
         // f32x4 Ops
-        BinaryOpKind::F32x4Add,
-        BinaryOpKind::F32x4Sub,
-        BinaryOpKind::F32x4Mul,
-        BinaryOpKind::F32x4Div,
-        BinaryOpKind::F32x4Min,
-        BinaryOpKind::F32x4Max,
-        BinaryOpKind::F32x4Pmin,
-        BinaryOpKind::F32x4Pmax,
+        (Ident::Add, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Sub, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Div, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Min, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Max, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Pmin, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
+        (Ident::Pmax, Ty::F32x4, Ty::F32x4, BinaryOpCaps::NONE),
         // f64x2 Ops
-        BinaryOpKind::F64x2Add,
-        BinaryOpKind::F64x2Sub,
-        BinaryOpKind::F64x2Mul,
-        BinaryOpKind::F64x2Div,
-        BinaryOpKind::F64x2Min,
-        BinaryOpKind::F64x2Max,
-        BinaryOpKind::F64x2Pmin,
-        BinaryOpKind::F64x2Pmax,
+        (Ident::Add, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Sub, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Mul, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Div, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Min, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Max, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Pmin, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
+        (Ident::Pmax, Ty::F64x2, Ty::F64x2, BinaryOpCaps::NONE),
     ];
-    for kind in kinds {
-        isa.push_op(BinaryOp::new(kind, OperandKind::Slot, OperandKind::Slot));
+    for (ident, result_ty, input_ty, caps) in ops {
+        isa.push_op(BinaryOp::new(
+            ident,
+            result_ty,
+            input_ty,
+            input_ty,
+            OperandKind::Slot,
+            OperandKind::Slot,
+            caps,
+        ));
     }
 }
 
 fn add_simd_shift_ops(isa: &mut Isa) {
-    let kinds = [
-        BinaryOpKind::I8x16Shl,
-        BinaryOpKind::S8x16Shr,
-        BinaryOpKind::U8x16Shr,
-        BinaryOpKind::I16x8Shl,
-        BinaryOpKind::S16x8Shr,
-        BinaryOpKind::U16x8Shr,
-        BinaryOpKind::I32x4Shl,
-        BinaryOpKind::S32x4Shr,
-        BinaryOpKind::U32x4Shr,
-        BinaryOpKind::I64x2Shl,
-        BinaryOpKind::S64x2Shr,
-        BinaryOpKind::U64x2Shr,
+    let ops = [
+        (Ident::Shl, Ty::I8x16, Ty::I8x16),
+        (Ident::Shr, Ty::I8x16, Ty::I8x16),
+        (Ident::Shr, Ty::U8x16, Ty::U8x16),
+        (Ident::Shl, Ty::I16x8, Ty::I16x8),
+        (Ident::Shr, Ty::I16x8, Ty::I16x8),
+        (Ident::Shr, Ty::U16x8, Ty::U16x8),
+        (Ident::Shl, Ty::I32x4, Ty::I32x4),
+        (Ident::Shr, Ty::I32x4, Ty::I32x4),
+        (Ident::Shr, Ty::U32x4, Ty::U32x4),
+        (Ident::Shl, Ty::I64x2, Ty::I64x2),
+        (Ident::Shr, Ty::I64x2, Ty::I64x2),
+        (Ident::Shr, Ty::U64x2, Ty::U64x2),
     ];
-    for kind in kinds {
-        isa.push_op(BinaryOp::new(kind, OperandKind::Slot, OperandKind::Slot));
-        isa.push_op(BinaryOp::new(
-            kind,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-        ));
+    for (ident, result_ty, lhs_ty) in ops {
+        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(BinaryOp::new(
+                ident,
+                result_ty,
+                lhs_ty,
+                Ty::U8,
+                OperandKind::Slot,
+                rhs,
+                BinaryOpCaps::NONE,
+            ));
+        }
     }
 }
 
 fn add_simd_unary_ops(isa: &mut Isa) {
     let kinds = [
         // SIMD: Generic Unary Ops
-        UnaryOpKind::V128Not,
-        UnaryOpKind::V128AnyTrue,
+        (Ident::Not, Ty::V128, Ty::V128),
+        (Ident::AnyTrue, Ty::V128, Ty::V128),
         // SIMD: `i8x16` Unary Ops
-        UnaryOpKind::I8x16Abs,
-        UnaryOpKind::I8x16Neg,
-        UnaryOpKind::I8x16Popcnt,
-        UnaryOpKind::I8x16AllTrue,
-        UnaryOpKind::I8x16Bitmask,
+        (Ident::Abs, Ty::I8x16, Ty::I8x16),
+        (Ident::Neg, Ty::I8x16, Ty::I8x16),
+        (Ident::Popcnt, Ty::I8x16, Ty::I8x16),
+        (Ident::AllTrue, Ty::I8x16, Ty::I8x16),
+        (Ident::Bitmask, Ty::I8x16, Ty::I8x16),
         // SIMD: `i16x8` Unary Ops
-        UnaryOpKind::I16x8Abs,
-        UnaryOpKind::I16x8Neg,
-        UnaryOpKind::I16x8AllTrue,
-        UnaryOpKind::I16x8Bitmask,
-        UnaryOpKind::S16x8ExtaddPairwiseI8x16,
-        UnaryOpKind::U16x8ExtaddPairwiseI8x16,
-        UnaryOpKind::S16x8ExtendLowI8x16,
-        UnaryOpKind::U16x8ExtendLowI8x16,
-        UnaryOpKind::S16x8ExtendHighI8x16,
-        UnaryOpKind::U16x8ExtendHighI8x16,
+        (Ident::Abs, Ty::I16x8, Ty::I16x8),
+        (Ident::Neg, Ty::I16x8, Ty::I16x8),
+        (Ident::AllTrue, Ty::I16x8, Ty::I16x8),
+        (Ident::Bitmask, Ty::I16x8, Ty::I16x8),
+        (Ident::ExtaddPairwise, Ty::I16x8, Ty::I8x16),
+        (Ident::ExtaddPairwise, Ty::U16x8, Ty::I8x16),
+        (Ident::ExtendLow, Ty::I16x8, Ty::I8x16),
+        (Ident::ExtendLow, Ty::U16x8, Ty::I8x16),
+        (Ident::ExtendHigh, Ty::I16x8, Ty::I8x16),
+        (Ident::ExtendHigh, Ty::U16x8, Ty::I8x16),
         // SIMD: `i32x4` Unary Ops
-        UnaryOpKind::I32x4Abs,
-        UnaryOpKind::I32x4Neg,
-        UnaryOpKind::I32x4AllTrue,
-        UnaryOpKind::I32x4Bitmask,
-        UnaryOpKind::S32x4ExtaddPairwiseI16x8,
-        UnaryOpKind::U32x4ExtaddPairwiseI16x8,
-        UnaryOpKind::S32x4ExtendLowI16x8,
-        UnaryOpKind::U32x4ExtendLowI16x8,
-        UnaryOpKind::S32x4ExtendHighI16x8,
-        UnaryOpKind::U32x4ExtendHighI16x8,
+        (Ident::Abs, Ty::I32x4, Ty::I32x4),
+        (Ident::Neg, Ty::I32x4, Ty::I32x4),
+        (Ident::AllTrue, Ty::I32x4, Ty::I32x4),
+        (Ident::Bitmask, Ty::I32x4, Ty::I32x4),
+        (Ident::ExtaddPairwise, Ty::I32x4, Ty::I16x8),
+        (Ident::ExtaddPairwise, Ty::U32x4, Ty::I16x8),
+        (Ident::ExtendLow, Ty::I32x4, Ty::I16x8),
+        (Ident::ExtendLow, Ty::U32x4, Ty::I16x8),
+        (Ident::ExtendHigh, Ty::I32x4, Ty::I16x8),
+        (Ident::ExtendHigh, Ty::U32x4, Ty::I16x8),
         // SIMD: `i64x2` Unary Ops
-        UnaryOpKind::I64x2Abs,
-        UnaryOpKind::I64x2Neg,
-        UnaryOpKind::I64x2AllTrue,
-        UnaryOpKind::I64x2Bitmask,
-        UnaryOpKind::S64x2ExtendLowI32x4,
-        UnaryOpKind::U64x2ExtendLowI32x4,
-        UnaryOpKind::S64x2ExtendHighI32x4,
-        UnaryOpKind::U64x2ExtendHighI32x4,
+        (Ident::Abs, Ty::I64x2, Ty::I64x2),
+        (Ident::Neg, Ty::I64x2, Ty::I64x2),
+        (Ident::AllTrue, Ty::I64x2, Ty::I64x2),
+        (Ident::Bitmask, Ty::I64x2, Ty::I64x2),
+        (Ident::ExtendLow, Ty::I64x2, Ty::I32x4),
+        (Ident::ExtendLow, Ty::U64x2, Ty::I32x4),
+        (Ident::ExtendHigh, Ty::I64x2, Ty::I32x4),
+        (Ident::ExtendHigh, Ty::U64x2, Ty::I32x4),
         // SIMD: `f32x4` Unary Ops
-        UnaryOpKind::F32x4DemoteZeroF64x2,
-        UnaryOpKind::F32x4Ceil,
-        UnaryOpKind::F32x4Floor,
-        UnaryOpKind::F32x4Trunc,
-        UnaryOpKind::F32x4Nearest,
-        UnaryOpKind::F32x4Abs,
-        UnaryOpKind::F32x4Neg,
-        UnaryOpKind::F32x4Sqrt,
+        (Ident::DemoteZero, Ty::F32x4, Ty::F64x2),
+        (Ident::Ceil, Ty::F32x4, Ty::F32x4),
+        (Ident::Floor, Ty::F32x4, Ty::F32x4),
+        (Ident::Trunc, Ty::F32x4, Ty::F32x4),
+        (Ident::Nearest, Ty::F32x4, Ty::F32x4),
+        (Ident::Abs, Ty::F32x4, Ty::F32x4),
+        (Ident::Neg, Ty::F32x4, Ty::F32x4),
+        (Ident::Sqrt, Ty::F32x4, Ty::F32x4),
         // SIMD: `f64x2` Unary Ops
-        UnaryOpKind::F64x2PromoteLowF32x4,
-        UnaryOpKind::F64x2Ceil,
-        UnaryOpKind::F64x2Floor,
-        UnaryOpKind::F64x2Trunc,
-        UnaryOpKind::F64x2Nearest,
-        UnaryOpKind::F64x2Abs,
-        UnaryOpKind::F64x2Neg,
-        UnaryOpKind::F64x2Sqrt,
+        (Ident::PromoteLow, Ty::F64x2, Ty::F32x4),
+        (Ident::Ceil, Ty::F64x2, Ty::F64x2),
+        (Ident::Floor, Ty::F64x2, Ty::F64x2),
+        (Ident::Trunc, Ty::F64x2, Ty::F64x2),
+        (Ident::Nearest, Ty::F64x2, Ty::F64x2),
+        (Ident::Abs, Ty::F64x2, Ty::F64x2),
+        (Ident::Neg, Ty::F64x2, Ty::F64x2),
+        (Ident::Sqrt, Ty::F64x2, Ty::F64x2),
         // SIMD: Conversions
-        UnaryOpKind::S32x4TruncSatF32x4,
-        UnaryOpKind::U32x4TruncSatF32x4,
-        UnaryOpKind::S32x4TruncSatZeroF64x2,
-        UnaryOpKind::U32x4TruncSatZeroF64x2,
-        UnaryOpKind::F32x4ConvertS32x4,
-        UnaryOpKind::F32x4ConvertU32x4,
-        UnaryOpKind::F64x2ConvertLowS32x4,
-        UnaryOpKind::F64x2ConvertLowU32x4,
+        (Ident::TruncSat, Ty::I32x4, Ty::F32x4),
+        (Ident::TruncSat, Ty::U32x4, Ty::F32x4),
+        (Ident::TruncSatZero, Ty::I32x4, Ty::F64x2),
+        (Ident::TruncSatZero, Ty::U32x4, Ty::F64x2),
+        (Ident::Convert, Ty::F32x4, Ty::I32x4),
+        (Ident::Convert, Ty::F32x4, Ty::U32x4),
+        (Ident::ConvertLow, Ty::F64x2, Ty::I32x4),
+        (Ident::ConvertLow, Ty::F64x2, Ty::U32x4),
     ];
-    for kind in kinds {
-        isa.push_op(UnaryOp::new(kind, OperandKind::Slot));
+    for (ident, result_ty, value_ty) in kinds {
+        isa.push_op(UnaryOp::new(ident, result_ty, value_ty, OperandKind::Slot));
     }
 }
 
 fn add_simd_load_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let ops = [
-        LoadOpKind::V128Load,
-        LoadOpKind::S16x8Load8x8,
-        LoadOpKind::U16x8Load8x8,
-        LoadOpKind::S32x4Load16x4,
-        LoadOpKind::U32x4Load16x4,
-        LoadOpKind::S64x2Load32x2,
-        LoadOpKind::U64x2Load32x2,
-        LoadOpKind::V128Load8Splat,
-        LoadOpKind::V128Load16Splat,
-        LoadOpKind::V128Load32Splat,
-        LoadOpKind::V128Load64Splat,
-        LoadOpKind::V128Load32Zero,
-        LoadOpKind::V128Load64Zero,
+        (LoadKind::Value, Ty::V128),
+        // load-widen
+        (LoadKind::Widen { layout: Layout::Bits8x8 }, Ty::I16x8),
+        (LoadKind::Widen { layout: Layout::Bits8x8 }, Ty::U16x8),
+        (LoadKind::Widen { layout: Layout::Bits16x4 }, Ty::I32x4),
+        (LoadKind::Widen { layout: Layout::Bits16x4 }, Ty::U32x4),
+        (LoadKind::Widen { layout: Layout::Bits32x2 }, Ty::I64x2),
+        (LoadKind::Widen { layout: Layout::Bits32x2 }, Ty::U64x2),
+        // load-splat
+        (LoadKind::Splat { layout: Layout::Bits8 }, Ty::V128),
+        (LoadKind::Splat { layout: Layout::Bits16 }, Ty::V128),
+        (LoadKind::Splat { layout: Layout::Bits32 }, Ty::V128),
+        (LoadKind::Splat { layout: Layout::Bits64 }, Ty::V128),
+        // load-low
+        (LoadKind::Low { layout: Layout::Bits32 }, Ty::V128),
+        (LoadKind::Low { layout: Layout::Bits64 }, Ty::V128),
+        // load-lane
+        (LoadKind::Lane { width: LaneWidth::W8 }, Ty::V128),
+        (LoadKind::Lane { width: LaneWidth::W16 }, Ty::V128),
+        (LoadKind::Lane { width: LaneWidth::W32 }, Ty::V128),
+        (LoadKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
-    for op in ops {
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, false, false));
-        isa.push_op(LoadOp::new(op, OperandKind::Slot, true, true));
-    }
-    let widths = [
-        LaneWidth::W8,
-        LaneWidth::W16,
-        LaneWidth::W32,
-        LaneWidth::W64,
-    ];
-    for width in widths {
-        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Slot, false, false));
-        isa.push_op(V128LoadLaneOp::new(width, OperandKind::Slot, true, true));
+    for (kind, loaded_ty) in ops {
+        isa.push_op(LoadOp::new(
+            kind,
+            loaded_ty,
+            OperandKind::Slot,
+            MemoryOperand::Immediate,
+            OffsetOperand::Offset,
+        ));
+        isa.push_op(LoadOp::new(
+            kind,
+            loaded_ty,
+            OperandKind::Slot,
+            MemoryOperand::Mem0,
+            OffsetOperand::Offset16,
+        ));
     }
 }
 
 fn add_simd_store_ops(isa: &mut Isa) {
+    #[rustfmt::skip]
     let kinds = [
-        StoreOpKind::Store128,
-        StoreOpKind::V128Store8Lane,
-        StoreOpKind::V128Store16Lane,
-        StoreOpKind::V128Store32Lane,
-        StoreOpKind::V128Store64Lane,
+        (StoreKind::Value, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W8 }, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W16 }, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W32 }, Ty::V128),
+        (StoreKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
-    for kind in kinds {
+    for (kind, value_ty) in kinds {
         isa.push_op(StoreOp::new(
             kind,
+            value_ty,
             OperandKind::Slot,
             OperandKind::Slot,
-            false,
-            false,
+            MemoryOperand::Immediate,
+            OffsetOperand::Offset,
         ));
         isa.push_op(StoreOp::new(
             kind,
+            value_ty,
             OperandKind::Slot,
             OperandKind::Slot,
-            true,
-            true,
+            MemoryOperand::Mem0,
+            OffsetOperand::Offset16,
         ));
     }
 }

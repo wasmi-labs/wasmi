@@ -92,7 +92,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             return Ok(());
         }
         self.push_instr(
-            Op::store128_ss(ptr, offset, value, memory),
+            Op::v128_store_ss(ptr, offset, value, memory),
             FuelCostsProvider::store,
         )?;
         Ok(())
@@ -138,8 +138,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_store_lane::<i8>(
             memarg,
             lane,
-            Op::v128_store8_lane_ss,
-            Op::v128_store8_lane_mem0_offset16_ss,
+            Op::v128_store_lane8_ss,
+            Op::v128_store_lane8_mem0_offset16_ss,
             |this, memarg, ptr, lane, v128| {
                 let value = simd::i8x16_extract_lane_s(v128, lane);
                 let value = this.immediate_to_operand(value)?;
@@ -152,8 +152,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_store_lane::<i16>(
             memarg,
             lane,
-            Op::v128_store16_lane_ss,
-            Op::v128_store16_lane_mem0_offset16_ss,
+            Op::v128_store_lane16_ss,
+            Op::v128_store_lane16_mem0_offset16_ss,
             |this, memarg, ptr, lane, v128| {
                 let value = simd::i16x8_extract_lane_s(v128, lane);
                 let value = this.immediate_to_operand(value)?;
@@ -166,8 +166,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_store_lane::<i32>(
             memarg,
             lane,
-            Op::v128_store32_lane_ss,
-            Op::v128_store32_lane_mem0_offset16_ss,
+            Op::v128_store_lane32_ss,
+            Op::v128_store_lane32_mem0_offset16_ss,
             |this, memarg, ptr, lane, v128| {
                 let value = simd::i32x4_extract_lane(v128, lane);
                 let value = this.immediate_to_operand(value)?;
@@ -180,8 +180,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_v128_store_lane::<i64>(
             memarg,
             lane,
-            Op::v128_store64_lane_ss,
-            Op::v128_store64_lane_mem0_offset16_ss,
+            Op::v128_store_lane64_ss,
+            Op::v128_store_lane64_mem0_offset16_ss,
             |this, memarg, ptr, lane, v128| {
                 let value = simd::i64x2_extract_lane(v128, lane);
                 let value = this.immediate_to_operand(value)?;

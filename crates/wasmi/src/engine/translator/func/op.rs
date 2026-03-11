@@ -87,12 +87,12 @@ impl_store_wrap! {
         type Immediate = u32;
 
         fn into_immediate = <i32 as ToBits>::to_bits;
-        fn store_ss = Op::store32_ss;
-        fn store_si = Op::store32_si;
-        fn store_is = Op::store32_is;
-        fn store_ii = Op::store32_ii;
-        fn store_mem0_offset16_ss = Op::store32_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::store32_mem0_offset16_si;
+        fn store_ss = Op::u32_store_ss;
+        fn store_si = Op::u32_store_si;
+        fn store_is = Op::u32_store_is;
+        fn store_ii = Op::u32_store_ii;
+        fn store_mem0_offset16_ss = Op::u32_store_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::u32_store_mem0_offset16_si;
     }
 
     impl StoreOperator for I64Store {
@@ -100,12 +100,12 @@ impl_store_wrap! {
         type Immediate = u64;
 
         fn into_immediate = <i64 as ToBits>::to_bits;
-        fn store_ss = Op::store64_ss;
-        fn store_si = Op::store64_si;
-        fn store_is = Op::store64_is;
-        fn store_ii = Op::store64_ii;
-        fn store_mem0_offset16_ss = Op::store64_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::store64_mem0_offset16_si;
+        fn store_ss = Op::u64_store_ss;
+        fn store_si = Op::u64_store_si;
+        fn store_is = Op::u64_store_is;
+        fn store_ii = Op::u64_store_ii;
+        fn store_mem0_offset16_ss = Op::u64_store_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::u64_store_mem0_offset16_si;
     }
 
     impl StoreOperator for F32Store {
@@ -113,12 +113,12 @@ impl_store_wrap! {
         type Immediate = u32;
 
         fn into_immediate = <f32 as ToBits>::to_bits;
-        fn store_ss = Op::store32_ss;
-        fn store_si = Op::store32_si;
-        fn store_is = Op::store32_is;
-        fn store_ii = Op::store32_ii;
-        fn store_mem0_offset16_ss = Op::store32_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::store32_mem0_offset16_si;
+        fn store_ss = Op::u32_store_ss;
+        fn store_si = Op::u32_store_si;
+        fn store_is = Op::u32_store_is;
+        fn store_ii = Op::u32_store_ii;
+        fn store_mem0_offset16_ss = Op::u32_store_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::u32_store_mem0_offset16_si;
     }
 
     impl StoreOperator for F64Store {
@@ -126,77 +126,77 @@ impl_store_wrap! {
         type Immediate = u64;
 
         fn into_immediate = <f64 as ToBits>::to_bits;
-        fn store_ss = Op::store64_ss;
-        fn store_si = Op::store64_si;
-        fn store_is = Op::store64_is;
-        fn store_ii = Op::store64_ii;
-        fn store_mem0_offset16_ss = Op::store64_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::store64_mem0_offset16_si;
+        fn store_ss = Op::u64_store_ss;
+        fn store_si = Op::u64_store_si;
+        fn store_is = Op::u64_store_is;
+        fn store_ii = Op::u64_store_ii;
+        fn store_mem0_offset16_ss = Op::u64_store_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::u64_store_mem0_offset16_si;
     }
 
     impl StoreOperator for I32Store8 {
         type Value = i32;
         type Immediate = i8;
 
-        fn into_immediate = <i32 as Wrap<i8>>::wrap;
-        fn store_ss = Op::i32_store8_ss;
-        fn store_si = Op::i32_store8_si;
-        fn store_is = Op::i32_store8_is;
-        fn store_ii = Op::i32_store8_ii;
-        fn store_mem0_offset16_ss = Op::i32_store8_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::i32_store8_mem0_offset16_si;
+        fn into_immediate = <i32 as Wrap<Self::Immediate>>::wrap;
+        fn store_ss = Op::i32_store_wrap8_ss;
+        fn store_si = Op::i32_store_wrap8_si;
+        fn store_is = Op::i32_store_wrap8_is;
+        fn store_ii = Op::i32_store_wrap8_ii;
+        fn store_mem0_offset16_ss = Op::i32_store_wrap8_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::i32_store_wrap8_mem0_offset16_si;
     }
 
     impl StoreOperator for I32Store16 {
         type Value = i32;
         type Immediate = i16;
 
-        fn into_immediate = <i32 as Wrap<i16>>::wrap;
-        fn store_ss = Op::i32_store16_ss;
-        fn store_si = Op::i32_store16_si;
-        fn store_is = Op::i32_store16_is;
-        fn store_ii = Op::i32_store16_ii;
-        fn store_mem0_offset16_ss = Op::i32_store16_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::i32_store16_mem0_offset16_si;
+        fn into_immediate = <i32 as Wrap<Self::Immediate>>::wrap;
+        fn store_ss = Op::i32_store_wrap16_ss;
+        fn store_si = Op::i32_store_wrap16_si;
+        fn store_is = Op::i32_store_wrap16_is;
+        fn store_ii = Op::i32_store_wrap16_ii;
+        fn store_mem0_offset16_ss = Op::i32_store_wrap16_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::i32_store_wrap16_mem0_offset16_si;
     }
 
     impl StoreOperator for I64Store8 {
         type Value = i64;
         type Immediate = i8;
 
-        fn into_immediate = <i64 as Wrap<i8>>::wrap;
-        fn store_ss = Op::i64_store8_ss;
-        fn store_si = Op::i64_store8_si;
-        fn store_is = Op::i64_store8_is;
-        fn store_ii = Op::i64_store8_ii;
-        fn store_mem0_offset16_ss = Op::i64_store8_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::i64_store8_mem0_offset16_si;
+        fn into_immediate = <i64 as Wrap<Self::Immediate>>::wrap;
+        fn store_ss = Op::i64_store_wrap8_ss;
+        fn store_si = Op::i64_store_wrap8_si;
+        fn store_is = Op::i64_store_wrap8_is;
+        fn store_ii = Op::i64_store_wrap8_ii;
+        fn store_mem0_offset16_ss = Op::i64_store_wrap8_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::i64_store_wrap8_mem0_offset16_si;
     }
 
     impl StoreOperator for I64Store16 {
         type Value = i64;
         type Immediate = i16;
 
-        fn into_immediate = <i64 as Wrap<i16>>::wrap;
-        fn store_ss = Op::i64_store16_ss;
-        fn store_si = Op::i64_store16_si;
-        fn store_is = Op::i64_store16_is;
-        fn store_ii = Op::i64_store16_ii;
-        fn store_mem0_offset16_ss = Op::i64_store16_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::i64_store16_mem0_offset16_si;
+        fn into_immediate = <i64 as Wrap<Self::Immediate>>::wrap;
+        fn store_ss = Op::i64_store_wrap16_ss;
+        fn store_si = Op::i64_store_wrap16_si;
+        fn store_is = Op::i64_store_wrap16_is;
+        fn store_ii = Op::i64_store_wrap16_ii;
+        fn store_mem0_offset16_ss = Op::i64_store_wrap16_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::i64_store_wrap16_mem0_offset16_si;
     }
 
     impl StoreOperator for I64Store32 {
         type Value = i64;
         type Immediate = i32;
 
-        fn into_immediate = <i64 as Wrap<i32>>::wrap;
-        fn store_ss = Op::i64_store32_ss;
-        fn store_si = Op::i64_store32_si;
-        fn store_is = Op::i64_store32_is;
-        fn store_ii = Op::i64_store32_ii;
-        fn store_mem0_offset16_ss = Op::i64_store32_mem0_offset16_ss;
-        fn store_mem0_offset16_si = Op::i64_store32_mem0_offset16_si;
+        fn into_immediate = <i64 as Wrap<Self::Immediate>>::wrap;
+        fn store_ss = Op::i64_store_wrap32_ss;
+        fn store_si = Op::i64_store_wrap32_si;
+        fn store_is = Op::i64_store_wrap32_is;
+        fn store_ii = Op::i64_store_wrap32_ii;
+        fn store_mem0_offset16_ss = Op::i64_store_wrap32_mem0_offset16_ss;
+        fn store_mem0_offset16_si = Op::i64_store_wrap32_mem0_offset16_si;
     }
 }
 
@@ -248,112 +248,112 @@ impl_load_extend! {
     impl LoadOperator for I32Load {
         const LOADED_TY: ValType = ValType::I32;
 
-        fn load_ss = Op::load32_ss;
-        fn load_si = Op::load32_si;
-        fn load_mem0_offset16_ss = Op::load32_mem0_offset16_ss;
+        fn load_ss = Op::u32_load_ss;
+        fn load_si = Op::u32_load_si;
+        fn load_mem0_offset16_ss = Op::u32_load_mem0_offset16_ss;
     }
 
     impl LoadOperator for I32Load8 {
         const LOADED_TY: ValType = ValType::I32;
 
-        fn load_ss = Op::i32_load8_ss;
-        fn load_si = Op::i32_load8_si;
-        fn load_mem0_offset16_ss = Op::i32_load8_mem0_offset16_ss;
+        fn load_ss = Op::i32_load_extend8_ss;
+        fn load_si = Op::i32_load_extend8_si;
+        fn load_mem0_offset16_ss = Op::i32_load_extend8_mem0_offset16_ss;
     }
 
     impl LoadOperator for U32Load8 {
         const LOADED_TY: ValType = ValType::I32;
 
-        fn load_ss = Op::u32_load8_ss;
-        fn load_si = Op::u32_load8_si;
-        fn load_mem0_offset16_ss = Op::u32_load8_mem0_offset16_ss;
+        fn load_ss = Op::u32_load_extend8_ss;
+        fn load_si = Op::u32_load_extend8_si;
+        fn load_mem0_offset16_ss = Op::u32_load_extend8_mem0_offset16_ss;
     }
 
     impl LoadOperator for I32Load16 {
         const LOADED_TY: ValType = ValType::I32;
 
-        fn load_ss = Op::i32_load16_ss;
-        fn load_si = Op::i32_load16_si;
-        fn load_mem0_offset16_ss = Op::i32_load16_mem0_offset16_ss;
+        fn load_ss = Op::i32_load_extend16_ss;
+        fn load_si = Op::i32_load_extend16_si;
+        fn load_mem0_offset16_ss = Op::i32_load_extend16_mem0_offset16_ss;
     }
 
     impl LoadOperator for U32Load16 {
         const LOADED_TY: ValType = ValType::I32;
 
-        fn load_ss = Op::u32_load16_ss;
-        fn load_si = Op::u32_load16_si;
-        fn load_mem0_offset16_ss = Op::u32_load16_mem0_offset16_ss;
+        fn load_ss = Op::u32_load_extend16_ss;
+        fn load_si = Op::u32_load_extend16_si;
+        fn load_mem0_offset16_ss = Op::u32_load_extend16_mem0_offset16_ss;
     }
 
     impl LoadOperator for I64Load {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::load64_ss;
-        fn load_si = Op::load64_si;
-        fn load_mem0_offset16_ss = Op::load64_mem0_offset16_ss;
+        fn load_ss = Op::u64_load_ss;
+        fn load_si = Op::u64_load_si;
+        fn load_mem0_offset16_ss = Op::u64_load_mem0_offset16_ss;
     }
 
     impl LoadOperator for I64Load8 {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::i64_load8_ss;
-        fn load_si = Op::i64_load8_si;
-        fn load_mem0_offset16_ss = Op::i64_load8_mem0_offset16_ss;
+        fn load_ss = Op::i64_load_extend8_ss;
+        fn load_si = Op::i64_load_extend8_si;
+        fn load_mem0_offset16_ss = Op::i64_load_extend8_mem0_offset16_ss;
     }
 
     impl LoadOperator for U64Load8 {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::u64_load8_ss;
-        fn load_si = Op::u64_load8_si;
-        fn load_mem0_offset16_ss = Op::u64_load8_mem0_offset16_ss;
+        fn load_ss = Op::u64_load_extend8_ss;
+        fn load_si = Op::u64_load_extend8_si;
+        fn load_mem0_offset16_ss = Op::u64_load_extend8_mem0_offset16_ss;
     }
 
     impl LoadOperator for I64Load16 {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::i64_load16_ss;
-        fn load_si = Op::i64_load16_si;
-        fn load_mem0_offset16_ss = Op::i64_load16_mem0_offset16_ss;
+        fn load_ss = Op::i64_load_extend16_ss;
+        fn load_si = Op::i64_load_extend16_si;
+        fn load_mem0_offset16_ss = Op::i64_load_extend16_mem0_offset16_ss;
     }
 
     impl LoadOperator for U64Load16 {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::u64_load16_ss;
-        fn load_si = Op::u64_load16_si;
-        fn load_mem0_offset16_ss = Op::u64_load16_mem0_offset16_ss;
+        fn load_ss = Op::u64_load_extend16_ss;
+        fn load_si = Op::u64_load_extend16_si;
+        fn load_mem0_offset16_ss = Op::u64_load_extend16_mem0_offset16_ss;
     }
 
     impl LoadOperator for I64Load32 {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::i64_load32_ss;
-        fn load_si = Op::i64_load32_si;
-        fn load_mem0_offset16_ss = Op::i64_load32_mem0_offset16_ss;
+        fn load_ss = Op::i64_load_extend32_ss;
+        fn load_si = Op::i64_load_extend32_si;
+        fn load_mem0_offset16_ss = Op::i64_load_extend32_mem0_offset16_ss;
     }
 
     impl LoadOperator for U64Load32 {
         const LOADED_TY: ValType = ValType::I64;
 
-        fn load_ss = Op::u64_load32_ss;
-        fn load_si = Op::u64_load32_si;
-        fn load_mem0_offset16_ss = Op::u64_load32_mem0_offset16_ss;
+        fn load_ss = Op::u64_load_extend32_ss;
+        fn load_si = Op::u64_load_extend32_si;
+        fn load_mem0_offset16_ss = Op::u64_load_extend32_mem0_offset16_ss;
     }
 
     impl LoadOperator for F32Load {
         const LOADED_TY: ValType = ValType::F32;
 
-        fn load_ss = Op::load32_ss;
-        fn load_si = Op::load32_si;
-        fn load_mem0_offset16_ss = Op::load32_mem0_offset16_ss;
+        fn load_ss = Op::u32_load_ss;
+        fn load_si = Op::u32_load_si;
+        fn load_mem0_offset16_ss = Op::u32_load_mem0_offset16_ss;
     }
 
     impl LoadOperator for F64Load {
         const LOADED_TY: ValType = ValType::F64;
 
-        fn load_ss = Op::load64_ss;
-        fn load_si = Op::load64_si;
-        fn load_mem0_offset16_ss = Op::load64_mem0_offset16_ss;
+        fn load_ss = Op::u64_load_ss;
+        fn load_si = Op::u64_load_si;
+        fn load_mem0_offset16_ss = Op::u64_load_mem0_offset16_ss;
     }
 }

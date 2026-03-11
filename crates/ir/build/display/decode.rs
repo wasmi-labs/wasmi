@@ -4,7 +4,7 @@ use crate::build::{
         Indent,
         Suffix,
         ident::DisplayIdent,
-        utils::{DisplayConcat, DisplaySequence, IntoDisplayMaybe as _},
+        utils::{DisplayConcat, DisplayMaybe, DisplaySequence, IntoDisplayMaybe as _},
     },
     ident::{CamelCase, Ident, SnakeCase},
     op::{
@@ -12,7 +12,10 @@ use crate::build::{
         CmpBranchOp,
         GenericOp,
         LaneWidth,
+        LoadKind,
         LoadOp,
+        MemoryOperand,
+        OffsetOperand,
         OperandKind,
         SelectOp,
         StoreOp,
@@ -21,9 +24,9 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128LoadLaneOp,
         V128ReplaceLaneOp,
     },
+    ty::FieldTy,
 };
 use core::fmt::{self, Display};
 
@@ -112,14 +115,30 @@ impl Display for DisplayDecode<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
-        let mem0_offset16 = (op.mem0 && op.offset16)
-            .then_some("Mem0Offset16")
-            .display_maybe();
+        let mem0_suffix = match op.mem {
+            MemoryOperand::Immediate => "",
+            MemoryOperand::Mem0 => "Mem0",
+        };
+        let offset16_suffix = match op.offset {
+            OffsetOperand::Offset => "",
+            OffsetOperand::Offset16 => "Offset16",
+        };
+        let (lane_suffix, lane_param) = match op.kind {
+            LoadKind::Lane { width } => {
+                let lane_param = DisplayConcat(('<', FieldTy::from(width), '>'));
+                (
+                    Some(CamelCase(Ident::Lane)),
+                    Some(lane_param).display_maybe(),
+                )
+            }
+            _ => (None, DisplayMaybe::None),
+        };
+        let lane_suffix = lane_suffix.display_maybe();
         let result_suffix = CamelCase(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
         writeln!(
             f,
-            "pub type {camel_ident} = LoadOp{mem0_offset16}_{result_suffix}{ptr_suffix};"
+            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{lane_param};"
         )
     }
 }
@@ -132,9 +151,14 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .laneidx_field()
             .map(|_| CamelCase(Ident::Lane))
             .display_maybe();
-        let mem0_offset16 = (op.mem0 && op.offset16)
-            .then_some("Mem0Offset16")
-            .display_maybe();
+        let mem0_suffix = match op.mem {
+            MemoryOperand::Immediate => "",
+            MemoryOperand::Mem0 => "Mem0",
+        };
+        let offset16_suffix = match op.offset {
+            OffsetOperand::Offset => "",
+            OffsetOperand::Offset16 => "Offset16",
+        };
         let ptr_suffix = CamelCase(Suffix(op.ptr));
         let value_ty = op.value_field().ty;
         let laneidx_ty = op
@@ -144,7 +168,7 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .display_maybe();
         writeln!(
             f,
-            "pub type {camel_ident} = Store{lane_ident}Op{mem0_offset16}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
+            "pub type {camel_ident} = Store{lane_ident}Op{mem0_suffix}{offset16_suffix}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
         )
     }
 }
@@ -235,23 +259,6 @@ impl Display for DisplayDecode<&'_ V128ExtractLaneOp> {
         writeln!(
             f,
             "pub type {camel_ident} = V128ExtractLaneOp<{len_lanes}>;"
-        )
-    }
-}
-
-impl Display for DisplayDecode<&'_ V128LoadLaneOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let op = self.value;
-        let camel_ident = DisplayIdent::camel(op);
-        let result_suffix = CamelCase(Suffix(OperandKind::Slot));
-        let mem0_offset16 = (op.mem0 && op.offset16)
-            .then_some("Mem0Offset16")
-            .display_maybe();
-        let ptr_suffix = SnakeCase(Suffix(op.ptr));
-        let laneidx = op.width.to_laneidx();
-        writeln!(
-            f,
-            "pub type {camel_ident} = V128LoadLaneOp{mem0_offset16}_{result_suffix}{ptr_suffix}<{laneidx}>;"
         )
     }
 }

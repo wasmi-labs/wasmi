@@ -20,12 +20,12 @@ use self::op::{
 };
 #[cfg(feature = "simd")]
 use self::op::{
+    LoadLaneOp_Ss,
+    LoadLaneOpMem0Offset16_Ss,
     StoreLaneOp_S,
     StoreLaneOpMem0Offset16_S,
     TernaryOp,
     V128ExtractLaneOp,
-    V128LoadLaneOp_Ss,
-    V128LoadLaneOpMem0Offset16_Ss,
     V128ReplaceLaneOp,
 };
 #[cfg(feature = "simd")]
