@@ -48,8 +48,6 @@ pub enum Ty {
     SignedBits16,
     /// A generic signed 32-bit value.
     SignedBits32,
-    /// A generic signed 64-bit value.
-    SignedBits64,
     /// A generic 8-bit value.
     Bits8,
     /// A generic 16-bit value.
@@ -58,26 +56,12 @@ pub enum Ty {
     Bits32,
     /// A generic 64-bit value.
     Bits64,
-    /// A generic 128-bit value.
-    Bits128,
-    /// A generic 64-bit (8x8) half-vector value.
-    Bits8x8,
-    /// A generic 64-bit (16x4) half-vector value.
-    Bits16x4,
-    /// A generic 64-bit (32x2) half-vector value.
-    Bits32x2,
-    /// A general 8-bit integer type.
-    I8,
-    /// A general 16-bit integer type.
-    I16,
     /// A general 32-bit integer type.
     I32,
     /// A general 64-bit integer type.
     I64,
     /// A unsigned 8-bit integer type.
     U8,
-    /// A unsigned 16-bit integer type.
-    U16,
     /// A unsigned 32-bit integer type.
     U32,
     /// A unsigned 64-bit integer type.
@@ -172,21 +156,13 @@ impl From<Ty> for FieldTy {
             | Ty::SignedBits8 => FieldTy::I8,
             | Ty::SignedBits16 => FieldTy::I16,
             | Ty::SignedBits32 => FieldTy::I32,
-            | Ty::SignedBits64 => FieldTy::I64,
             | Ty::Bits8 => FieldTy::U8,
             | Ty::Bits16 => FieldTy::U16,
             | Ty::Bits32 => FieldTy::U32,
             | Ty::Bits64 => FieldTy::U64,
-            | Ty::Bits128 => FieldTy::V128,
-            | Ty::Bits8x8 => FieldTy::U64,
-            | Ty::Bits16x4 => FieldTy::U64,
-            | Ty::Bits32x2 => FieldTy::U64,
-            | Ty::I8 => FieldTy::I8,
-            | Ty::I16 => FieldTy::I16,
             | Ty::I32 => FieldTy::I32,
             | Ty::I64 => FieldTy::I64,
             | Ty::U8 => FieldTy::U8,
-            | Ty::U16 => FieldTy::U16,
             | Ty::U32 => FieldTy::U32,
             | Ty::U64 => FieldTy::U64,
             | Ty::NonZeroI32 => FieldTy::NonZeroI32,

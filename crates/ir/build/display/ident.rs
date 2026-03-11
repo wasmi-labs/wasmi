@@ -56,21 +56,13 @@ impl Display for CamelCase<Ty> {
             | Ty::SignedBits8 => "8",
             | Ty::SignedBits16 => "16",
             | Ty::SignedBits32 => "32",
-            | Ty::SignedBits64 => "64",
             | Ty::Bits8 => "8",
             | Ty::Bits16 => "16",
             | Ty::Bits32 => "32",
             | Ty::Bits64 => "64",
-            | Ty::Bits128 => "128",
-            | Ty::Bits8x8 => "8x8",
-            | Ty::Bits16x4 => "16x4",
-            | Ty::Bits32x2 => "32x2",
-            | Ty::I8 => "I8",
-            | Ty::I16 => "I16",
             | Ty::I32 => "I32",
             | Ty::I64 => "I64",
             | Ty::U8 => "U8",
-            | Ty::U16 => "U16",
             | Ty::U32 => "U32",
             | Ty::U64 => "U64",
             | Ty::NonZeroI32 => "I32",
@@ -103,21 +95,13 @@ impl Display for SnakeCase<Ty> {
             Ty::SignedBits8 => "8",
             Ty::SignedBits16 => "16",
             Ty::SignedBits32 => "32",
-            Ty::SignedBits64 => "64",
             Ty::Bits8 => "8",
             Ty::Bits16 => "16",
             Ty::Bits32 => "32",
             Ty::Bits64 => "64",
-            Ty::Bits128 => "128",
-            Ty::Bits8x8 => "8x8",
-            Ty::Bits16x4 => "16x4",
-            Ty::Bits32x2 => "32x2",
-            Ty::I8 => "i8",
-            Ty::I16 => "i16",
             Ty::I32 => "i32",
             Ty::I64 => "i64",
             Ty::U8 => "u8",
-            Ty::U16 => "u16",
             Ty::U32 => "u32",
             Ty::U64 => "u64",
             Ty::NonZeroI32 => "i32",
@@ -196,15 +180,10 @@ impl Display for SnakeCase<IdentSuffix<Ty>> {
             | Ty::SignedBits8
             | Ty::SignedBits16
             | Ty::SignedBits32
-            | Ty::SignedBits64
             | Ty::Bits8
             | Ty::Bits16
             | Ty::Bits32
-            | Ty::Bits64
-            | Ty::Bits128
-            | Ty::Bits8x8
-            | Ty::Bits16x4
-            | Ty::Bits32x2 => {}
+            | Ty::Bits64 => {}
             _ => SnakeCase(Sep).fmt(f)?,
         }
         SnakeCase(self.0.0).fmt(f)
