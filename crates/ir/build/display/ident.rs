@@ -187,6 +187,7 @@ impl Display for CamelCase<Suffix<OperandKind>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0.0 {
             OperandKind::Slot => "S",
+            OperandKind::Reg => "R",
             OperandKind::Immediate => "I",
         };
         f.write_str(s)
@@ -197,6 +198,7 @@ impl Display for SnakeCase<Suffix<OperandKind>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0.0 {
             OperandKind::Slot => "s",
+            OperandKind::Reg => "r",
             OperandKind::Immediate => "i",
         };
         f.write_str(s)
