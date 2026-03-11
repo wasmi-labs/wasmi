@@ -27,7 +27,7 @@ use crate::build::{
         V128ExtractLaneOp,
         V128ReplaceLaneOp,
     },
-    ty::{FieldTy, Ty},
+    ty::{FieldTy, Layout, Ty},
 };
 
 #[derive(Default)]
@@ -332,23 +332,23 @@ fn add_load_ops(isa: &mut Isa) {
         (LoadKind::Value, Ty::U32),
         (LoadKind::Value, Ty::U64),
         // i32
-        (LoadKind::Extend { result_ty: Ty::I32 }, Ty::Bits8),
-        (LoadKind::Extend { result_ty: Ty::I32 }, Ty::Bits16),
-        (LoadKind::Extend { result_ty: Ty::U32 }, Ty::Bits8),
-        (LoadKind::Extend { result_ty: Ty::U32 }, Ty::Bits16),
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::I32),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::I32),
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::U32),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::U32),
         // i64
-        (LoadKind::Extend { result_ty: Ty::I64 }, Ty::Bits8),
-        (LoadKind::Extend { result_ty: Ty::I64 }, Ty::Bits16),
-        (LoadKind::Extend { result_ty: Ty::I64 }, Ty::Bits32),
-        (LoadKind::Extend { result_ty: Ty::U64 }, Ty::Bits8),
-        (LoadKind::Extend { result_ty: Ty::U64 }, Ty::Bits16),
-        (LoadKind::Extend { result_ty: Ty::U64 }, Ty::Bits32),
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::I64),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::I64),
+        (LoadKind::Extend { layout: Layout::Bits32 }, Ty::I64),
+        (LoadKind::Extend { layout: Layout::Bits8 }, Ty::U64),
+        (LoadKind::Extend { layout: Layout::Bits16 }, Ty::U64),
+        (LoadKind::Extend { layout: Layout::Bits32 }, Ty::U64),
     ];
-    for (kind, loaded_ty) in ops {
+    for (kind, result_ty) in ops {
         for ptr in [OperandKind::Slot, OperandKind::Immediate] {
             isa.push_op(LoadOp::new(
                 kind,
-                loaded_ty,
+                result_ty,
                 ptr,
                 MemoryOperand::Immediate,
                 OffsetOperand::Offset,
@@ -356,7 +356,7 @@ fn add_load_ops(isa: &mut Isa) {
         }
         isa.push_op(LoadOp::new(
             kind,
-            loaded_ty,
+            result_ty,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,
@@ -1088,25 +1088,25 @@ fn add_simd_load_ops(isa: &mut Isa) {
     let ops = [
         (LoadKind::Value, Ty::V128),
         // load-widen
-        (LoadKind::Widen { result_ty: Ty::I16x8 }, Ty::Bits8x8),
-        (LoadKind::Widen { result_ty: Ty::U16x8 }, Ty::Bits8x8),
-        (LoadKind::Widen { result_ty: Ty::I32x4 }, Ty::Bits16x4),
-        (LoadKind::Widen { result_ty: Ty::U32x4 }, Ty::Bits16x4),
-        (LoadKind::Widen { result_ty: Ty::I64x2 }, Ty::Bits32x2),
-        (LoadKind::Widen { result_ty: Ty::U64x2 }, Ty::Bits32x2),
+        (LoadKind::Widen { layout: Layout::Bits8x8 }, Ty::I16x8),
+        (LoadKind::Widen { layout: Layout::Bits8x8 }, Ty::U16x8),
+        (LoadKind::Widen { layout: Layout::Bits16x4 }, Ty::I32x4),
+        (LoadKind::Widen { layout: Layout::Bits16x4 }, Ty::U32x4),
+        (LoadKind::Widen { layout: Layout::Bits32x2 }, Ty::I64x2),
+        (LoadKind::Widen { layout: Layout::Bits32x2 }, Ty::U64x2),
         // load-splat
-        (LoadKind::Splat, Ty::Bits8),
-        (LoadKind::Splat, Ty::Bits16),
-        (LoadKind::Splat, Ty::Bits32),
-        (LoadKind::Splat, Ty::Bits64),
+        (LoadKind::Splat { layout: Layout::Bits8 }, Ty::V128),
+        (LoadKind::Splat { layout: Layout::Bits16 }, Ty::V128),
+        (LoadKind::Splat { layout: Layout::Bits32 }, Ty::V128),
+        (LoadKind::Splat { layout: Layout::Bits64 }, Ty::V128),
         // load-low
-        (LoadKind::Low, Ty::Bits32),
-        (LoadKind::Low, Ty::Bits64),
+        (LoadKind::Low { layout: Layout::Bits32 }, Ty::V128),
+        (LoadKind::Low { layout: Layout::Bits64 }, Ty::V128),
         // load-lane
-        (LoadKind::Lane { width: LaneWidth::W8 }, Ty::Bits8),
-        (LoadKind::Lane { width: LaneWidth::W16 }, Ty::Bits16),
-        (LoadKind::Lane { width: LaneWidth::W32 }, Ty::Bits32),
-        (LoadKind::Lane { width: LaneWidth::W64 }, Ty::Bits64),
+        (LoadKind::Lane { width: LaneWidth::W8 }, Ty::V128),
+        (LoadKind::Lane { width: LaneWidth::W16 }, Ty::V128),
+        (LoadKind::Lane { width: LaneWidth::W32 }, Ty::V128),
+        (LoadKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
     for (kind, loaded_ty) in ops {
         isa.push_op(LoadOp::new(

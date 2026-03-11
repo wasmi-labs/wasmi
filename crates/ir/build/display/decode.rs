@@ -124,7 +124,7 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             OffsetOperand::Offset16 => "Offset16",
         };
         let (lane_suffix, lane_param) = match op.kind {
-            LoadKind::Lane { width, .. } => {
+            LoadKind::Lane { width } => {
                 let lane_param = DisplayConcat(('<', FieldTy::from(width), '>'));
                 (
                     Some(CamelCase(Ident::Lane)),

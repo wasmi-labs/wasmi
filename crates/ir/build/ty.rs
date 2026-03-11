@@ -1,5 +1,45 @@
 use core::fmt::{self, Display};
 
+use crate::build::op::LaneWidth;
+
+#[derive(Copy, Clone)]
+pub enum Layout {
+    Bits8,
+    Bits16,
+    Bits32,
+    Bits64,
+    Bits128,
+    Bits8x8,
+    Bits16x4,
+    Bits32x2,
+}
+
+impl From<LaneWidth> for Layout {
+    fn from(value: LaneWidth) -> Self {
+        match value {
+            LaneWidth::W8 => Self::Bits8,
+            LaneWidth::W16 => Self::Bits16,
+            LaneWidth::W32 => Self::Bits32,
+            LaneWidth::W64 => Self::Bits64,
+        }
+    }
+}
+
+impl From<Layout> for FieldTy {
+    fn from(value: Layout) -> Self {
+        match value {
+            Layout::Bits8 => Self::U8,
+            Layout::Bits16 => Self::U16,
+            Layout::Bits32 => Self::U32,
+            Layout::Bits64 => Self::U64,
+            Layout::Bits128 => Self::V128,
+            Layout::Bits8x8 => Self::U64,
+            Layout::Bits16x4 => Self::U64,
+            Layout::Bits32x2 => Self::U64,
+        }
+    }
+}
+
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Ty {
     /// A generic signed 8-bit value.
@@ -26,12 +66,18 @@ pub enum Ty {
     Bits16x4,
     /// A generic 64-bit (32x2) half-vector value.
     Bits32x2,
+    /// A general 8-bit integer type.
+    I8,
+    /// A general 16-bit integer type.
+    I16,
     /// A general 32-bit integer type.
     I32,
     /// A general 64-bit integer type.
     I64,
     /// A unsigned 8-bit integer type.
     U8,
+    /// A unsigned 16-bit integer type.
+    U16,
     /// A unsigned 32-bit integer type.
     U32,
     /// A unsigned 64-bit integer type.
@@ -135,9 +181,12 @@ impl From<Ty> for FieldTy {
             | Ty::Bits8x8 => FieldTy::U64,
             | Ty::Bits16x4 => FieldTy::U64,
             | Ty::Bits32x2 => FieldTy::U64,
+            | Ty::I8 => FieldTy::I8,
+            | Ty::I16 => FieldTy::I16,
             | Ty::I32 => FieldTy::I32,
             | Ty::I64 => FieldTy::I64,
             | Ty::U8 => FieldTy::U8,
+            | Ty::U16 => FieldTy::U16,
             | Ty::U32 => FieldTy::U32,
             | Ty::U64 => FieldTy::U64,
             | Ty::NonZeroI32 => FieldTy::NonZeroI32,

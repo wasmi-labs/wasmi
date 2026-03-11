@@ -18,7 +18,7 @@ use crate::build::{
         V128ExtractLaneOp,
         V128ReplaceLaneOp,
     },
-    ty::Ty,
+    ty::{Layout, Ty},
 };
 use core::fmt::{self, Display};
 
@@ -50,11 +50,6 @@ impl<T> DisplayIdent<T> {
     }
 }
 
-/// [`Display`] wrapper for types that can act as operator identifier prefices.
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct IdentPrefix<T>(pub T);
-
 impl Display for CamelCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
@@ -70,9 +65,12 @@ impl Display for CamelCase<Ty> {
             | Ty::Bits8x8 => "8x8",
             | Ty::Bits16x4 => "16x4",
             | Ty::Bits32x2 => "32x2",
+            | Ty::I8 => "I8",
+            | Ty::I16 => "I16",
             | Ty::I32 => "I32",
             | Ty::I64 => "I64",
             | Ty::U8 => "U8",
+            | Ty::U16 => "U16",
             | Ty::U32 => "U32",
             | Ty::U64 => "U64",
             | Ty::NonZeroI32 => "I32",
@@ -114,9 +112,12 @@ impl Display for SnakeCase<Ty> {
             Ty::Bits8x8 => "8x8",
             Ty::Bits16x4 => "16x4",
             Ty::Bits32x2 => "32x2",
+            Ty::I8 => "i8",
+            Ty::I16 => "i16",
             Ty::I32 => "i32",
             Ty::I64 => "i64",
             Ty::U8 => "u8",
+            Ty::U16 => "u16",
             Ty::U32 => "u32",
             Ty::U64 => "u64",
             Ty::NonZeroI32 => "i32",
@@ -143,6 +144,11 @@ impl Display for SnakeCase<Ty> {
     }
 }
 
+/// [`Display`] wrapper for types that can act as operator identifier prefices.
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+pub struct IdentPrefix<T>(pub T);
+
 impl Display for CamelCase<IdentPrefix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         CamelCase(self.0.0).fmt(f)
@@ -154,6 +160,22 @@ impl Display for SnakeCase<IdentPrefix<Ty>> {
         SnakeCase(self.0.0).fmt(f)?;
         SnakeCase(Sep).fmt(f)?;
         Ok(())
+    }
+}
+
+impl Display for IdentSuffix<Layout> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self.0 {
+            Layout::Bits8 => "8",
+            Layout::Bits16 => "16",
+            Layout::Bits32 => "32",
+            Layout::Bits64 => "64",
+            Layout::Bits128 => "128",
+            Layout::Bits8x8 => "8x8",
+            Layout::Bits16x4 => "16x4",
+            Layout::Bits32x2 => "32x2",
+        };
+        f.write_str(s)
     }
 }
 
@@ -349,12 +371,8 @@ impl Display for DisplayIdent<&'_ LoadOp> {
             .map(Suffix)
             .map(SnakeCase)
             .display_maybe();
-        let loaded_suffix = op
-            .kind
-            .result_ty()
-            .map(|_| case.wrap(IdentSuffix(op.loaded_ty)))
-            .display_maybe();
-        let ident_prefix = case.wrap(IdentPrefix(op.kind.result_ty().unwrap_or(op.loaded_ty)));
+        let loaded_suffix = op.kind.loaded_layout().map(IdentSuffix).display_maybe();
+        let ident_prefix = case.wrap(IdentPrefix(op.result_ty));
         let ident_suffix = op
             .kind
             .ident_suffix()

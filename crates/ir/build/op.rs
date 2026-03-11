@@ -1,4 +1,4 @@
-use crate::build::{FieldTy, Ident, SnakeCase, Ty};
+use crate::build::{FieldTy, Ident, Layout, SnakeCase, Ty};
 use core::{
     fmt::{self, Display},
     ops::{BitAnd, BitOr},
@@ -421,7 +421,7 @@ pub struct LoadOp {
     /// The kind of the load operator.
     pub kind: LoadKind,
     /// The type of the loaded value.
-    pub loaded_ty: Ty,
+    pub result_ty: Ty,
     /// The `ptr` field type.
     pub ptr: OperandKind,
     /// The representation of the memory operand.
@@ -433,14 +433,14 @@ pub struct LoadOp {
 impl LoadOp {
     pub fn new(
         kind: LoadKind,
-        loaded_ty: Ty,
+        result_ty: Ty,
         ptr: OperandKind,
         mem: MemoryOperand,
         offset: OffsetOperand,
     ) -> Self {
         Self {
             kind,
-            loaded_ty,
+            result_ty,
             ptr,
             mem,
             offset,
@@ -486,7 +486,7 @@ impl LoadOp {
 
     pub fn lane_field(&self) -> Option<Field> {
         match self.kind {
-            LoadKind::Lane { width, .. } => Some(Field::new(Ident::Lane, FieldTy::from(width))),
+            LoadKind::Lane { width } => Some(Field::new(Ident::Lane, FieldTy::from(width))),
             _ => None,
         }
     }
@@ -509,13 +509,13 @@ pub enum LoadKind {
     /// Loads a value.
     Value,
     /// Loads a value and extends it to a larger integer value.
-    Extend { result_ty: Ty },
+    Extend { layout: Layout },
     /// Loads a value and splats it to a `v128` value.
-    Widen { result_ty: Ty },
+    Widen { layout: Layout },
     /// Loads a value and splats it to a `v128` value.
-    Splat,
+    Splat { layout: Layout },
     /// Loads the low bits of a `v128` value.
-    Low,
+    Low { layout: Layout },
     /// Loads and replaces a lane from a `v128` value.
     Lane { width: LaneWidth },
 }
@@ -527,20 +527,24 @@ impl LoadKind {
             Self::Value => return None,
             Self::Extend { .. } => Ident::Extend,
             Self::Widen { .. } => Ident::Widen,
-            Self::Splat => Ident::Splat,
-            Self::Low => Ident::Low,
+            Self::Splat { .. } => Ident::Splat,
+            Self::Low { .. } => Ident::Low,
             Self::Lane { .. } => Ident::Lane,
         };
         Some(suffix)
     }
 
     /// Returns the result type of the load operator given the loaded type.
-    pub fn result_ty(&self) -> Option<Ty> {
-        match self {
-            | Self::Lane { .. } | LoadKind::Splat | LoadKind::Low => Some(Ty::V128),
-            | Self::Extend { result_ty } | LoadKind::Widen { result_ty } => Some(*result_ty),
-            | Self::Value => None,
-        }
+    pub fn loaded_layout(&self) -> Option<Layout> {
+        let layout = match self {
+            LoadKind::Value => return None,
+            LoadKind::Extend { layout } => *layout,
+            LoadKind::Widen { layout } => *layout,
+            LoadKind::Splat { layout } => *layout,
+            LoadKind::Low { layout } => *layout,
+            LoadKind::Lane { width } => Layout::from(*width),
+        };
+        Some(layout)
     }
 }
 
