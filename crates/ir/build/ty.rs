@@ -1,6 +1,5 @@
+use crate::build::op::{LaneWidth, Wrapped};
 use core::fmt::{self, Display};
-
-use crate::build::op::LaneWidth;
 
 #[derive(Copy, Clone)]
 pub enum Layout {
@@ -14,6 +13,16 @@ pub enum Layout {
     Bits32x2,
 }
 
+impl From<Wrapped> for Layout {
+    fn from(value: Wrapped) -> Self {
+        match value {
+            Wrapped::I8 => Self::Bits8,
+            Wrapped::I16 => Self::Bits16,
+            Wrapped::I32 => Self::Bits32,
+        }
+    }
+}
+
 impl From<LaneWidth> for Layout {
     fn from(value: LaneWidth) -> Self {
         match value {
@@ -21,6 +30,16 @@ impl From<LaneWidth> for Layout {
             LaneWidth::W16 => Self::Bits16,
             LaneWidth::W32 => Self::Bits32,
             LaneWidth::W64 => Self::Bits64,
+        }
+    }
+}
+
+impl From<Wrapped> for FieldTy {
+    fn from(value: Wrapped) -> Self {
+        match value {
+            Wrapped::I8 => Self::I8,
+            Wrapped::I16 => Self::I16,
+            Wrapped::I32 => Self::I32,
         }
     }
 }

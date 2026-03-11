@@ -26,6 +26,7 @@ use crate::build::{
         UnaryOp,
         V128ExtractLaneOp,
         V128ReplaceLaneOp,
+        Wrapped,
     },
     ty::{FieldTy, Layout, Ty},
 };
@@ -371,12 +372,12 @@ fn add_store_ops(isa: &mut Isa) {
         (StoreKind::Value, Ty::U32),
         (StoreKind::Value, Ty::U64),
         // i32
-        (StoreKind::Wrap { stored_ty: Ty::SignedBits8 }, Ty::I32),
-        (StoreKind::Wrap { stored_ty: Ty::SignedBits16 }, Ty::I32),
+        (StoreKind::Wrap { wrapped: Wrapped::I8 }, Ty::I32),
+        (StoreKind::Wrap { wrapped: Wrapped::I16 }, Ty::I32),
         // i64
-        (StoreKind::Wrap { stored_ty: Ty::SignedBits8 }, Ty::I64),
-        (StoreKind::Wrap { stored_ty: Ty::SignedBits16 }, Ty::I64),
-        (StoreKind::Wrap { stored_ty: Ty::SignedBits32 }, Ty::I64),
+        (StoreKind::Wrap { wrapped: Wrapped::I8 }, Ty::I64),
+        (StoreKind::Wrap { wrapped: Wrapped::I16 }, Ty::I64),
+        (StoreKind::Wrap { wrapped: Wrapped::I32 }, Ty::I64),
     ];
     for (kind, value_ty) in ops {
         for value in [OperandKind::Slot, OperandKind::Immediate] {

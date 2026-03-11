@@ -607,7 +607,7 @@ impl StoreOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => match self.kind {
                 StoreKind::Value => FieldTy::from(self.value_ty),
-                StoreKind::Wrap { stored_ty } => FieldTy::from(stored_ty),
+                StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
                 StoreKind::Lane { width } => FieldTy::from(width),
             },
         };
@@ -639,6 +639,13 @@ impl StoreOp {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum Wrapped {
+    I8,
+    I16,
+    I32,
+}
+
 /// The kind of a store operation.
 #[derive(Copy, Clone)]
 pub enum StoreKind {
@@ -647,7 +654,7 @@ pub enum StoreKind {
     /// Stores a wrapped integer value.
     Wrap {
         /// The type that is stored after wrapping.
-        stored_ty: Ty,
+        wrapped: Wrapped,
     },
     /// Stores a single lane of a `v128` value.
     Lane { width: LaneWidth },
@@ -668,7 +675,11 @@ impl StoreKind {
     pub fn stored_ty(&self) -> Option<Ty> {
         let stored_ty = match self {
             Self::Value => return None,
-            Self::Wrap { stored_ty } => *stored_ty,
+            Self::Wrap { wrapped } => match wrapped {
+                Wrapped::I8 => Ty::Bits8,
+                Wrapped::I16 => Ty::Bits16,
+                Wrapped::I32 => Ty::Bits32,
+            },
             Self::Lane { width } => match width {
                 LaneWidth::W8 => Ty::Bits8,
                 LaneWidth::W16 => Ty::Bits16,
