@@ -10,7 +10,7 @@ pub use self::simd::*;
 use super::{
     dispatch::Done,
     eval,
-    state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState},
+    state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
 };
 #[cfg(feature = "simd")]
@@ -84,6 +84,9 @@ execution_handler! {
         _mem0: Mem0Ptr,
         _mem0_len: Mem0Len,
         _instance: Inst,
+        _ireg: Ireg,
+        _freg32: Freg32,
+        _freg64: Freg64,
     ) -> Done = {
         let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
         trap!(trap_code)
@@ -98,6 +101,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (next_ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
         let consumption_result = state
@@ -108,7 +114,7 @@ execution_handler! {
         if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
             out_of_fuel!(state, ip, required_fuel)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -120,6 +126,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             ip,
@@ -130,7 +139,7 @@ execution_handler! {
             },
         ) = unsafe { decode_op(ip) };
         exec_copy_span_asc(sp, results, values, len);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -142,6 +151,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             ip,
@@ -152,7 +164,7 @@ execution_handler! {
             },
         ) = unsafe { decode_op(ip) };
         exec_copy_span_des(sp, results, values, len);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -164,10 +176,13 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
         let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -179,13 +194,16 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
         let global = fetch_global(instance, global);
         let global = resolve_global(state.store, &global);
         let value: u64 = global.get_raw().read_as();
         set_value(sp, result, value);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -198,13 +216,16 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
         let global = fetch_global(instance, global);
         let global = resolve_global(state.store, &global);
         let value: V128 = global.get_raw().read_as();
         set_value(sp, result, value);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -216,11 +237,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet64S { global, value }) = unsafe { decode_op(ip) };
         let value: u64 = get_value(value, sp);
         set_global(global, value, state, instance);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -233,11 +257,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet128S { global, value }) = unsafe { decode_op(ip) };
         let value: V128 = get_value(value, sp);
         set_global(global, value, state, instance);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -249,11 +276,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
         let value: u32 = get_value(value, sp);
         set_global(global, value, state, instance);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -265,11 +295,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
         let value: u64 = get_value(value, sp);
         set_global(global, value, state, instance);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -281,11 +314,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
         let func = EngineFunc::from(func);
         let (callee_ip, callee_sp) = call_wasm(state, caller_ip, params, func, None)?;
-        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -297,12 +333,15 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
         let (ip, sp, mem0, mem0_len, instance) =
             call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -314,6 +353,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             caller_ip,
@@ -328,7 +370,7 @@ execution_handler! {
             resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
         let (callee_ip, sp, mem0, mem0_len, instance) =
             call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -340,11 +382,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
         let func = EngineFunc::from(func);
         let (callee_ip, callee_sp) = return_call_wasm(state, params, func, None)?;
-        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance)
+        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -356,6 +401,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
@@ -376,7 +424,7 @@ execution_handler! {
         };
         let (instance, mem0, mem0_len) =
             update_instance(state.store, instance, new_instance, mem0, mem0_len);
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -388,6 +436,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             _,
@@ -417,7 +468,7 @@ execution_handler! {
         };
         let (instance, mem0, mem0_len) =
             update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -429,8 +480,11 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
-        exec_return(state, ip, sp, mem0, mem0_len, instance)
+        exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -442,13 +496,16 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { decode_op(ip) };
         let dst = SlotSpan::new(Slot::from(0));
         let src = values.span();
         let len = values.len();
         exec_copy_span_asc(sp, dst, src, len);
-        exec_return(state, ip, sp, mem0, mem0_len, instance)
+        exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -463,11 +520,14 @@ macro_rules! handler_return {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                     let value = get_value(value, sp);
                     set_value(sp, Slot::from(0), $eval(value));
-                    exec_return(state, ip, sp, mem0, mem0_len, instance)
+                    exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -487,12 +547,15 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
         let memory = fetch_memory(instance, memory);
         let size = resolve_memory(state.store, &memory).size();
         set_value(sp, result, size);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -504,6 +567,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -550,7 +616,7 @@ execution_handler! {
             }
         };
         set_value(sp, result, return_value);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -562,6 +628,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -587,7 +656,7 @@ execution_handler! {
         };
         if dst_memory == src_memory {
             memory_copy_within(state, ip, instance, dst_memory, dst_index, src_index, len)?;
-            dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+            dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
         }
         let dst_memory = fetch_memory(instance, dst_memory);
         let src_memory = fetch_memory(instance, src_memory);
@@ -601,7 +670,7 @@ execution_handler! {
         consume_fuel!(state, ip, fuel, |costs| costs
             .fuel_for_copying_values::<u8>(len as u64));
         dst_bytes.copy_from_slice(src_bytes);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -635,6 +704,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -660,7 +732,7 @@ execution_handler! {
         consume_fuel!(state, ip, fuel, |costs| costs
             .fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -672,6 +744,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -710,7 +785,7 @@ execution_handler! {
         consume_fuel!(state, ip, fuel, |costs| costs
             .fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -722,11 +797,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::DataDrop { data }) = unsafe { decode_op(ip) };
         let data = fetch_data(instance, data);
         resolve_data_mut(state.store, &data).drop_bytes();
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -738,12 +816,15 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
         let table = fetch_table(instance, table);
         let size = resolve_table(state.store, &table).size();
         set_value(sp, result, size);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -755,6 +836,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             ip,
@@ -791,7 +875,7 @@ execution_handler! {
             }
         };
         set_value(sp, result, return_value);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -803,6 +887,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -832,7 +919,7 @@ execution_handler! {
                 };
                 trap!(trap_code)
             }
-            dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+            dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
         }
         // Case: copy between two different tables
         let dst_table = fetch_table(instance, dst_table);
@@ -852,7 +939,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -864,6 +951,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -890,7 +980,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -902,6 +992,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             next_ip,
@@ -933,7 +1026,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -945,11 +1038,14 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::ElemDrop { elem }) = unsafe { decode_op(ip) };
         let elem = fetch_elem(instance, elem);
         resolve_elem_mut(state.store, &elem).drop_items();
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -964,6 +1060,9 @@ macro_rules! impl_table_get {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
                     let table = fetch_table(instance, table);
@@ -974,7 +1073,7 @@ macro_rules! impl_table_get {
                         None => trap!(TrapCode::TableOutOfBounds)
                     };
                     set_value(sp, result, value);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -996,6 +1095,9 @@ macro_rules! impl_table_set {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
                     let table = fetch_table(instance, table);
@@ -1005,7 +1107,7 @@ macro_rules! impl_table_set {
                     if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                         trap!(TrapCode::TableOutOfBounds)
                     };
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -1026,6 +1128,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
@@ -1033,7 +1138,7 @@ execution_handler! {
             unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
         };
         set_value(sp, result, rawref);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -1050,6 +1155,9 @@ macro_rules! impl_i64_binop128 {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
                     let lhs_lo: i64 = get_value(lhs_lo, sp);
@@ -1060,7 +1168,7 @@ macro_rules! impl_i64_binop128 {
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
                     set_value(sp, results[0], result_lo);
                     set_value(sp, results[1], result_hi);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -1084,6 +1192,9 @@ macro_rules! impl_i64_mul_wide {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
                     let lhs: i64 = get_value(lhs, sp);
@@ -1092,7 +1203,7 @@ macro_rules! impl_i64_mul_wide {
                     let results = results.to_array();
                     set_value(sp, results[0], result_lo);
                     set_value(sp, results[1], result_hi);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -1118,6 +1229,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::BranchTable { len_targets, index }) = unsafe { decode_op(ip) };
         let chosen_target = fetch_branch_table_target(sp, index, len_targets);
@@ -1125,7 +1239,7 @@ execution_handler! {
         let ip = unsafe { ip.add(target_offset) };
         let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
         let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -1137,6 +1251,9 @@ execution_handler! {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
         let (
             ip,
@@ -1155,7 +1272,7 @@ execution_handler! {
         // TODO: maybe provide 2 `br_table_span` operation variants if needed: `br_table_span_{asc,des}`
         exec_copy_span(sp, results, values, len_values);
         let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance)
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
@@ -1455,6 +1572,9 @@ macro_rules! handler_cmp_branch {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
                     let lhs = get_value(lhs, sp);
@@ -1463,7 +1583,7 @@ macro_rules! handler_cmp_branch {
                         true => offset_ip(ip, offset),
                         false => next_ip,
                     };
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -1567,6 +1687,9 @@ macro_rules! handler_select {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (
                         ip,
@@ -1585,7 +1708,7 @@ macro_rules! handler_select {
                         _ => get_value(true_val, sp),
                     };
                     set_value(sp, result, selected);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -1627,6 +1750,9 @@ macro_rules! handler_load_si {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (
                         ip,
@@ -1640,7 +1766,7 @@ macro_rules! handler_load_si {
                     let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                     let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
                     set_value(sp, result, loaded);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*
@@ -1704,6 +1830,9 @@ macro_rules! handler_store_ix {
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
                     instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
                 ) -> Done = {
                     let (
                         ip,
@@ -1717,7 +1846,7 @@ macro_rules! handler_store_ix {
                     let value: $hint = get_value(value, sp);
                     let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                     $store(mem_bytes, usize::from(address), value.into()).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
         )*

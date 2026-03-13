@@ -1,4 +1,4 @@
-use super::state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
+use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
@@ -239,6 +239,7 @@ where
     <T as SetValue<V>>::set_value(dst, value, sp)
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn exec_return(
     state: &mut VmState,
     _ip: Ip,
@@ -246,6 +247,9 @@ pub fn exec_return(
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 ) -> Done {
     let Some((ip, sp, mem0, mem0_len, instance)) =
         state.stack.pop_frame(state.store, mem0, mem0_len, instance)
@@ -253,7 +257,9 @@ pub fn exec_return(
         // No more frames on the call stack -> break out of execution!
         done!(state, DoneReason::Return(sp))
     };
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(
+        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
+    )
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
