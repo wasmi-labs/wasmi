@@ -511,6 +511,123 @@ impl Sp {
     }
 }
 
+/// A general purpose register (GPR).
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Ireg(f64);
+
+/// A single-precision `f32` register.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Freg32(f32);
+
+/// A double-precision `f64` register.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Freg64(f64);
+
+/// Types implementing this trait act as registers in the Wasmi executor.
+trait Register {
+    /// The underlying base type of the register.
+    type Base;
+
+    /// The underlying array of bytes representing the register.
+    type Bytes;
+
+    /// Converts an array of `bytes` to a value of `Self`.
+    fn from_bytes(bytes: Self::Bytes) -> Self;
+
+    /// Converts `self` to its array of bytes representation.
+    fn to_bytes(self) -> Self::Bytes;
+}
+
+macro_rules! impl_register_for {
+    ( $( $ty:ty as $base:ty ),* $(,)? ) => {
+        $(
+            impl Register for $ty {
+                type Base = $base;
+                type Bytes = [u8; core::mem::size_of::<$base>()];
+
+                #[inline]
+                fn from_bytes(bytes: Self::Bytes) -> Self {
+                    Self(<Self::Base>::from_ne_bytes(bytes))
+                }
+
+                #[inline]
+                fn to_bytes(self) -> Self::Bytes {
+                    self.0.to_ne_bytes()
+                }
+            }
+
+            const _: () = {
+                assert!(mem::size_of::<$ty>() == mem::size_of::<$base>());
+                assert!(mem::align_of::<$ty>() == mem::align_of::<$base>());
+            };
+        )*
+    };
+}
+impl_register_for! {
+    Ireg as f64,
+    Freg32 as f32,
+    Freg64 as f64,
+}
+
+macro_rules! impl_reg_lossless_conversions {
+    ( $( ($ty:ty, $reg:ty) ),* $(,)? ) => {
+        $(
+            impl From<$reg> for $ty {
+                #[inline]
+                fn from(value: $reg) -> Self {
+                    <$ty>::from_ne_bytes(<$reg as Register>::to_bytes(value))
+                }
+            }
+
+            impl From<$ty> for $reg {
+                #[inline]
+                fn from(value: $ty) -> Self {
+                    Self::from_bytes(value.to_ne_bytes())
+                }
+            }
+        )*
+    };
+}
+impl_reg_lossless_conversions! {
+    (u64, Ireg),
+    (i64, Ireg),
+    (f32, Freg32),
+    (f64, Freg64),
+}
+
+macro_rules! impl_reg_lossy_conversions {
+    ( $($ty:ty as $reg:ty: $base:ty),* $(,)? ) => {
+        $(
+            impl From<$ty> for $reg {
+                #[inline]
+                fn from(value: $ty) -> Self {
+                    Self::from(value as $base)
+                }
+            }
+
+            impl From<$reg> for $ty {
+                #[inline]
+                fn from(value: $reg) -> Self {
+                    <$base>::from(value) as Self
+                }
+            }
+        )*
+    };
+}
+impl_reg_lossy_conversions! {
+    // unsigned
+    u8 as Ireg: u64,
+    u16 as Ireg: u64,
+    u32 as Ireg: u64,
+    // signed
+    i8 as Ireg: i64,
+    i16 as Ireg: i64,
+    i32 as Ireg: i64,
+}
+
 /// The Wasmi stack.
 ///
 /// This combines both value stack and call stack and provides a common API
