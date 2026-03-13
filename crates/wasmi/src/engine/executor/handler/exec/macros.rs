@@ -15,7 +15,7 @@ macro_rules! execution_handler {
     ) => {
         #[cfg_attr(feature = "portable-dispatch", inline(always))]
         #[allow(improper_ctypes_definitions)] // not used in FFI
-        #[expect(clippy::too_many_arguments)]
+        #[allow(clippy::too_many_arguments)] // extern fns are ignored
         pub extern "sysv64" fn $name(
             $state: $state_ty,
             $ip: $ip_ty,
