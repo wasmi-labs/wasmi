@@ -250,14 +250,14 @@ where
 }
 
 pub trait SetValue<T> {
-    fn set_value(dst: Self, value: T, sp: Sp);
+    fn set_value(dst: Self, src: T, sp: Sp);
 }
 
 impl<T> SetValue<T> for Slot
 where
     T: StoreToCells,
 {
-    fn set_value(dst: Self, value: T, sp: Sp) {
+    fn set_value(dst: Self, src: T, sp: Sp) {
         // # Safety
         //
         // This implementation's correctness relies on the caller's inputs.
@@ -274,16 +274,16 @@ where
         // - Marking all execution handlers as `unsafe` was another option that has been
         //   ruled out because it would yield `unsafe` blocks way too large to be effective.
         // - Therefore: this method not being marked `unsafe` was a design trade-off.
-        unsafe { sp.set::<T>(dst, value) }
+        unsafe { sp.set::<T>(dst, src) }
     }
 }
 
-/// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = value`
-pub fn set_value<T, V>(sp: Sp, dst: T, value: V)
+/// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = src`
+pub fn set_value<T, V>(sp: Sp, dst: T, src: V)
 where
     T: SetValue<V>,
 {
-    <T as SetValue<V>>::set_value(dst, value, sp)
+    <T as SetValue<V>>::set_value(dst, src, sp)
 }
 
 #[expect(clippy::too_many_arguments)]
