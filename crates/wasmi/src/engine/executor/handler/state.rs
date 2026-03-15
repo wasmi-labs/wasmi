@@ -511,6 +511,7 @@ impl Sp {
         };
     }
 }
+
 /// The 64-bits of a general purpose register (GPR).
 ///
 /// # Note
