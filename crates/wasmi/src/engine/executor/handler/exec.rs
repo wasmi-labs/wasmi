@@ -11,7 +11,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_slot_value, get_value, memory_bytes, offset_ip, set_value},
+    utils::{fetch_func, get_slot_value, get_value, memory_bytes, offset_ip},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -202,7 +202,7 @@ execution_handler! {
         let global = fetch_global(instance, global);
         let global = resolve_global(state.store, &global);
         let value: u64 = global.get_raw().read_as();
-        set_value(result, value, sp);
+        set_value!(result, value, sp, ireg, freg32, freg64);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -224,7 +224,7 @@ execution_handler! {
         let global = fetch_global(instance, global);
         let global = resolve_global(state.store, &global);
         let value: V128 = global.get_raw().read_as();
-        set_value(result, value, sp);
+        set_value!(result, value, sp, ireg, freg32, freg64);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -526,7 +526,7 @@ macro_rules! handler_return {
                 ) -> Done = {
                     let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                     let value = get_value(value, sp, ireg, freg32, freg64);
-                    set_value(Slot::from(0), $eval(value), sp);
+                    set_value!(Slot::from(0), $eval(value), sp, ireg, freg32, freg64);
                     exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -554,7 +554,7 @@ execution_handler! {
         let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
         let memory = fetch_memory(instance, memory);
         let size = resolve_memory(state.store, &memory).size();
-        set_value(result, size, sp);
+        set_value!(result, size, sp, ireg, freg32, freg64);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -615,7 +615,7 @@ execution_handler! {
                 panic!("`memory.grow`: internal interpreter error: {error}")
             }
         };
-        set_value(result, return_value, sp);
+        set_value!(result, return_value, sp, ireg, freg32, freg64);
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -823,7 +823,7 @@ execution_handler! {
         let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
         let table = fetch_table(instance, table);
         let size = resolve_table(state.store, &table).size();
-        set_value(result, size, sp);
+        set_value!(result, size, sp, ireg, freg32, freg64);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -874,7 +874,7 @@ execution_handler! {
                 panic!("`table.grow`: internal interpreter error: {error}")
             }
         };
-        set_value(result, return_value, sp);
+        set_value!(result, return_value, sp, ireg, freg32, freg64);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -1072,7 +1072,7 @@ macro_rules! impl_table_get {
                         Some(value) => value.raw(),
                         None => trap!(TrapCode::TableOutOfBounds)
                     };
-                    set_value(result, value, sp);
+                    set_value!(result, value, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -1137,7 +1137,7 @@ execution_handler! {
         let Some(rawref) = func.unwrap_raw(&*state.store) else {
             unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
         };
-        set_value(result, rawref, sp);
+        set_value!(result, rawref, sp, ireg, freg32, freg64);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -1166,8 +1166,8 @@ macro_rules! impl_i64_binop128 {
                     let rhs_hi: i64 = get_value(rhs_hi, sp, ireg, freg32, freg64);
                     let results = results.to_array();
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
-                    set_value(results[0], result_lo, sp);
-                    set_value(results[1], result_hi, sp);
+                    set_value!(results[0], result_lo, sp, ireg, freg32, freg64);
+                    set_value!(results[1], result_hi, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -1201,8 +1201,8 @@ macro_rules! impl_i64_mul_wide {
                     let rhs: i64 = get_value(rhs, sp, ireg, freg32, freg64);
                     let (result_lo, result_hi) = $eval(lhs, rhs);
                     let results = results.to_array();
-                    set_value(results[0], result_lo, sp);
-                    set_value(results[1], result_hi, sp);
+                    set_value!(results[0], result_lo, sp, ireg, freg32, freg64);
+                    set_value!(results[1], result_hi, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -1707,7 +1707,7 @@ macro_rules! handler_select {
                         0 => get_value(false_val, sp, ireg, freg32, freg64),
                         _ => get_value(true_val, sp, ireg, freg32, freg64),
                     };
-                    set_value(result, selected, sp);
+                    set_value!(result, selected, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -1765,7 +1765,7 @@ macro_rules! handler_load_si {
                     let address = get_value(address, sp, ireg, freg32, freg64);
                     let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                     let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
-                    set_value(result, loaded, sp);
+                    set_value!(result, loaded, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
