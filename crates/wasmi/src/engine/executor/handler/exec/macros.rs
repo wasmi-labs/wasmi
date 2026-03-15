@@ -80,7 +80,7 @@ macro_rules! handler_unary {
                     let (ip, $crate::ir::decode::$op { result, value }) = unsafe { decode_op(ip) };
                     let value = get_value(value, sp, ireg, freg32, freg64);
                     let value = $eval(value).into_control()?;
-                    set_value(sp, result, value);
+                    set_value(result, value, sp);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -107,7 +107,7 @@ macro_rules! handler_binary {
                     let lhs = get_value(lhs, sp, ireg, freg32, freg64);
                     let rhs = get_value(rhs, sp, ireg, freg32, freg64);
                     let value = $eval(lhs, rhs).into_control()?;
-                    set_value(sp, result, value);
+                    set_value(result, value, sp);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -143,7 +143,7 @@ macro_rules! handler_load_ss {
                     let offset: u64 = get_value(offset, sp, ireg, freg32, freg64);
                     let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(memory, mem0, mem0_len, instance, state);
                     let loaded = $load(mem_bytes, ptr, offset).into_control()?;
-                    set_value(sp, result, loaded);
+                    set_value(result, loaded, sp);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -178,7 +178,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                     let offset = get_value(offset, sp, ireg, freg32, freg64);
                     let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
                     let loaded = $load(mem_bytes, ptr, u64::from(u16::from(offset))).into_control()?;
-                    set_value(sp, result, loaded);
+                    set_value(result, loaded, sp);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }

@@ -279,7 +279,8 @@ where
 }
 
 /// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = src`
-pub fn set_value<T, V>(sp: Sp, dst: T, src: V)
+#[inline]
+pub fn set_value<T, V>(dst: T, src: V, sp: Sp)
 where
     T: SetValue<V>,
 {
@@ -322,8 +323,8 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src) {
-        let value: u64 = get_slot_value(src, sp);
-        set_value(sp, dst, value);
+        let src: u64 = get_slot_value(src, sp);
+        set_value(dst, src, sp);
     }
 }
 
@@ -332,8 +333,8 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src).rev() {
-        let value: u64 = get_slot_value(src, sp);
-        set_value(sp, dst, value);
+        let src: u64 = get_slot_value(src, sp);
+        set_value(dst, src, sp);
     }
 }
 
