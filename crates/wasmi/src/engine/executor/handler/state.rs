@@ -526,11 +526,13 @@ pub struct Bits64(f64);
 
 impl Bits64 {
     /// Constructs `Self` from `bytes` in native-endian order.
+    #[inline]
     pub fn from_ne_bytes(bytes: [u8; 8]) -> Self {
         Self(f64::from_ne_bytes(bytes))
     }
 
     /// Converts `self` to its bytes in native-endian order.
+    #[inline]
     pub fn to_ne_bytes(self) -> [u8; 8] {
         self.0.to_ne_bytes()
     }
