@@ -128,7 +128,7 @@ impl_into_control! {
 }
 
 pub trait GetValue<T> {
-    fn get_value(src: Self, sp: Sp) -> T;
+    fn get_value(src: Self, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> T;
 }
 
 macro_rules! impl_get_value {
@@ -136,7 +136,7 @@ macro_rules! impl_get_value {
         $(
             impl GetValue<$ty> for $ty {
                 #[inline(always)]
-                fn get_value(src: Self, _sp: Sp) -> $ty {
+                fn get_value(src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $ty {
                     src
                 }
             }
@@ -166,11 +166,39 @@ impl_get_value!(
 #[cfg(feature = "simd")]
 impl_get_value!([ImmLaneIdx<32>; 16]);
 
+macro_rules! impl_get_value_for_ireg {
+    ( $($prim:ty),* $(,)? ) => {
+        $(
+            impl GetValue<$prim> for Ireg {
+                #[inline]
+                fn get_value(_src: Self, _sp: Sp, ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $prim {
+                    <$prim as From<Ireg>>::from(ireg)
+                }
+            }
+        )*
+    };
+}
+impl_get_value_for_ireg!(i8, i16, i32, i64, u8, u16, u32, u64);
+
+impl GetValue<f32> for Freg32 {
+    #[inline]
+    fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, freg32: Freg32, _freg64: Freg64) -> f32 {
+        f32::from(freg32)
+    }
+}
+
+impl GetValue<f64> for Freg64 {
+    #[inline]
+    fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, freg64: Freg64) -> f64 {
+        f64::from(freg64)
+    }
+}
+
 impl<T> GetValue<T> for Slot
 where
     T: LoadFromCellsByValue,
 {
-    fn get_value(src: Self, sp: Sp) -> T {
+    fn get_value(src: Self, sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> T {
         // # Safety
         //
         // This implementation's correctness relies on the caller's inputs.
@@ -191,15 +219,34 @@ where
     }
 }
 
-/// Returns the value at `sp`:
+/// Returns the value at `sp[src]`.
+#[inline]
+pub fn get_slot_value<L>(src: Slot, sp: Sp) -> L
+where
+    Slot: GetValue<L>,
+{
+    <Slot as GetValue<L>>::get_value(
+        src,
+        sp,
+        Ireg::default(),
+        Freg32::default(),
+        Freg64::default(),
+    )
+}
+
+/// Returns the `src` value from its destination:
 ///
-/// - `sp[src]` if `src` is a value of type `Slot`
+/// - `sp[src]` if `src` is `Slot`
 /// - `src` if `src` is a primitive type, such as `i32`
-pub fn get_value<T, L>(src: T, sp: Sp) -> L
+/// - `ireg` if `src` is `Ireg`
+/// - `freg32` if `src` is `Freg32`
+/// - `freg64` if `src` is `Freg64`
+#[inline]
+pub fn get_value<T, L>(src: T, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> L
 where
     T: GetValue<L>,
 {
-    <T as GetValue<L>>::get_value(src, sp)
+    <T as GetValue<L>>::get_value(src, sp, ireg, freg32, freg64)
 }
 
 pub trait SetValue<T> {
@@ -275,7 +322,7 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src) {
-        let value: u64 = get_value(src, sp);
+        let value: u64 = get_slot_value(src, sp);
         set_value(sp, dst, value);
     }
 }
@@ -285,7 +332,7 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src).rev() {
-        let value: u64 = get_value(src, sp);
+        let value: u64 = get_slot_value(src, sp);
         set_value(sp, dst, value);
     }
 }
@@ -415,7 +462,7 @@ pub fn resolve_indirect_func(
     sp: Sp,
     instance: Inst,
 ) -> Result<Func, TrapCode> {
-    let index = get_value(index, sp);
+    let index = get_slot_value(index, sp);
     let table = fetch_table(instance, table);
     let table = resolve_table(state.store, &table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;

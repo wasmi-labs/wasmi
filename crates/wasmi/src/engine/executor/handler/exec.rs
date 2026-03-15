@@ -11,7 +11,7 @@ use super::{
     dispatch::Done,
     eval,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_value, memory_bytes, offset_ip, set_value},
+    utils::{fetch_func, get_slot_value, get_value, memory_bytes, offset_ip, set_value},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -242,7 +242,7 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet64S { global, value }) = unsafe { decode_op(ip) };
-        let value: u64 = get_value(value, sp);
+        let value: u64 = get_value(value, sp, ireg, freg32, freg64);
         set_global(global, value, state, instance);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
@@ -262,7 +262,7 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet128S { global, value }) = unsafe { decode_op(ip) };
-        let value: V128 = get_value(value, sp);
+        let value: V128 = get_value(value, sp, ireg, freg32, freg64);
         set_global(global, value, state, instance);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
@@ -281,7 +281,7 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet32I { global, value }) = unsafe { decode_op(ip) };
-        let value: u32 = get_value(value, sp);
+        let value: u32 = get_value(value, sp, ireg, freg32, freg64);
         set_global(global, value, state, instance);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
@@ -300,7 +300,7 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (ip, crate::ir::decode::GlobalSet64I { global, value }) = unsafe { decode_op(ip) };
-        let value: u64 = get_value(value, sp);
+        let value: u64 = get_value(value, sp, ireg, freg32, freg64);
         set_global(global, value, state, instance);
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
@@ -525,7 +525,7 @@ macro_rules! handler_return {
                     freg64: Freg64,
                 ) -> Done = {
                     let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
-                    let value = get_value(value, sp);
+                    let value = get_value(value, sp, ireg, freg32, freg64);
                     set_value(sp, Slot::from(0), $eval(value));
                     exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
@@ -579,7 +579,7 @@ execution_handler! {
                 delta,
             },
         ) = unsafe { decode_op(ip) };
-        let delta: u64 = get_value(delta, sp);
+        let delta: u64 = get_value(delta, sp, ireg, freg32, freg64);
         let memref = fetch_memory(instance, memory);
         let mut mem0 = mem0;
         let mut mem0_len = mem0_len;
@@ -642,9 +642,9 @@ execution_handler! {
                 len,
             },
         ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp);
-        let src: u64 = get_value(src, sp);
-        let len: u64 = get_value(len, sp);
+        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
+        let src: u64 = get_value(src, sp, ireg, freg32, freg64);
+        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
         let Ok(dst_index) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -717,9 +717,9 @@ execution_handler! {
                 value,
             },
         ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp);
-        let len: u64 = get_value(len, sp);
-        let value: u8 = get_value(value, sp);
+        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
+        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
+        let value: u8 = get_value(value, sp, ireg, freg32, freg64);
         let Ok(dst) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -758,9 +758,9 @@ execution_handler! {
                 len,
             },
         ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp);
-        let src: u32 = get_value(src, sp);
-        let len: u32 = get_value(len, sp);
+        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
+        let src: u32 = get_value(src, sp, ireg, freg32, freg64);
+        let len: u32 = get_value(len, sp, ireg, freg32, freg64);
         let Ok(dst_index) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -850,8 +850,8 @@ execution_handler! {
             },
         ) = unsafe { decode_op(ip) };
         let table = fetch_table(instance, table);
-        let delta = get_value(delta, sp);
-        let value = get_value(value, sp);
+        let delta = get_value(delta, sp, ireg, freg32, freg64);
+        let value = get_value(value, sp, ireg, freg32, freg64);
         let return_value = match state.store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
@@ -901,9 +901,9 @@ execution_handler! {
                 len,
             },
         ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp);
-        let src: u64 = get_value(src, sp);
-        let len: u64 = get_value(len, sp);
+        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
+        let src: u64 = get_value(src, sp, ireg, freg32, freg64);
+        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
         if dst_table == src_table {
             // Case: copy within the same table
             let table = fetch_table(instance, dst_table);
@@ -964,9 +964,9 @@ execution_handler! {
                 value,
             },
         ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp);
-        let len: u64 = get_value(len, sp);
-        let value: RawRef = get_value(value, sp);
+        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
+        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
+        let value: RawRef = get_value(value, sp, ireg, freg32, freg64);
         let table = fetch_table(instance, table);
         let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
@@ -1006,9 +1006,9 @@ execution_handler! {
                 len,
             },
         ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp);
-        let src: u32 = get_value(src, sp);
-        let len: u32 = get_value(len, sp);
+        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
+        let src: u32 = get_value(src, sp, ireg, freg32, freg64);
+        let len: u32 = get_value(len, sp, ireg, freg32, freg64);
         let table = fetch_table(instance, table);
         let elem = fetch_elem(instance, elem);
         let (table, element, fuel) = state
@@ -1067,7 +1067,7 @@ macro_rules! impl_table_get {
                     let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
                     let table = fetch_table(instance, table);
                     let table = resolve_table(state.store, &table);
-                    let index = $ext(get_value(index, sp));
+                    let index = $ext(get_value(index, sp, ireg, freg32, freg64));
                     let value = match table.get(index) {
                         Some(value) => value.raw(),
                         None => trap!(TrapCode::TableOutOfBounds)
@@ -1102,8 +1102,8 @@ macro_rules! impl_table_set {
                     let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
                     let table = fetch_table(instance, table);
                     let table = resolve_table_mut(state.store, &table);
-                    let index = $ext(get_value(index, sp));
-                    let value: u32 = get_value(value, sp);
+                    let index = $ext(get_value(index, sp, ireg, freg32, freg64));
+                    let value: u32 = get_value(value, sp, ireg, freg32, freg64);
                     if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                         trap!(TrapCode::TableOutOfBounds)
                     };
@@ -1160,10 +1160,10 @@ macro_rules! impl_i64_binop128 {
                     freg64: Freg64,
                 ) -> Done = {
                     let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
-                    let lhs_lo: i64 = get_value(lhs_lo, sp);
-                    let lhs_hi: i64 = get_value(lhs_hi, sp);
-                    let rhs_lo: i64 = get_value(rhs_lo, sp);
-                    let rhs_hi: i64 = get_value(rhs_hi, sp);
+                    let lhs_lo: i64 = get_value(lhs_lo, sp, ireg, freg32, freg64);
+                    let lhs_hi: i64 = get_value(lhs_hi, sp, ireg, freg32, freg64);
+                    let rhs_lo: i64 = get_value(rhs_lo, sp, ireg, freg32, freg64);
+                    let rhs_hi: i64 = get_value(rhs_hi, sp, ireg, freg32, freg64);
                     let results = results.to_array();
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
                     set_value(sp, results[0], result_lo);
@@ -1197,8 +1197,8 @@ macro_rules! impl_i64_mul_wide {
                     freg64: Freg64,
                 ) -> Done = {
                     let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs: i64 = get_value(lhs, sp);
-                    let rhs: i64 = get_value(rhs, sp);
+                    let lhs: i64 = get_value(lhs, sp, ireg, freg32, freg64);
+                    let rhs: i64 = get_value(rhs, sp, ireg, freg32, freg64);
                     let (result_lo, result_hi) = $eval(lhs, rhs);
                     let results = results.to_array();
                     set_value(sp, results[0], result_lo);
@@ -1216,7 +1216,7 @@ impl_i64_mul_wide! {
 
 /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
 fn fetch_branch_table_target(sp: Sp, index: Slot, len_targets: u32) -> usize {
-    let index: u32 = get_value(index, sp);
+    let index: u32 = get_slot_value(index, sp);
     let max_index = len_targets - 1;
     cmp::min(index, max_index) as usize
 }
@@ -1577,8 +1577,8 @@ macro_rules! handler_cmp_branch {
                     freg64: Freg64,
                 ) -> Done = {
                     let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs = get_value(lhs, sp);
-                    let rhs = get_value(rhs, sp);
+                    let lhs = get_value(lhs, sp, ireg, freg32, freg64);
+                    let rhs = get_value(rhs, sp, ireg, freg32, freg64);
                     let ip = match $eval(lhs, rhs) {
                         true => offset_ip(ip, offset),
                         false => next_ip,
@@ -1700,12 +1700,12 @@ macro_rules! handler_select {
                             false_val,
                         },
                     ) = unsafe { decode_op(ip) };
-                    let condition: i32 = get_value(condition, sp);
-                    let true_val: $width = get_value(true_val, sp);
-                    let false_val: $width = get_value(false_val, sp);
+                    let condition: i32 = get_value(condition, sp, ireg, freg32, freg64);
+                    let true_val: $width = get_value(true_val, sp, ireg, freg32, freg64);
+                    let false_val: $width = get_value(false_val, sp, ireg, freg32, freg64);
                     let selected = match condition {
-                        0 => get_value(false_val, sp),
-                        _ => get_value(true_val, sp),
+                        0 => get_value(false_val, sp, ireg, freg32, freg64),
+                        _ => get_value(true_val, sp, ireg, freg32, freg64),
                     };
                     set_value(sp, result, selected);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
@@ -1762,7 +1762,7 @@ macro_rules! handler_load_si {
                             memory,
                         },
                     ) = unsafe { decode_op(ip) };
-                    let address = get_value(address, sp);
+                    let address = get_value(address, sp, ireg, freg32, freg64);
                     let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                     let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
                     set_value(sp, result, loaded);
@@ -1842,8 +1842,8 @@ macro_rules! handler_store_ix {
                             memory,
                         },
                     ) = unsafe { decode_op(ip) };
-                    let address = get_value(address, sp);
-                    let value: $hint = get_value(value, sp);
+                    let address = get_value(address, sp, ireg, freg32, freg64);
+                    let value: $hint = get_value(value, sp, ireg, freg32, freg64);
                     let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
                     $store(mem_bytes, usize::from(address), value.into()).into_control()?;
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)

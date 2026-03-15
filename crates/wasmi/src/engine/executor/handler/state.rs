@@ -2,6 +2,7 @@ use crate::{
     Error,
     Func,
     TrapCode,
+    core::RawRef,
     engine::{
         ResumableHostTrapError,
         ResumableOutOfFuelError,
@@ -516,15 +517,16 @@ impl Sp {
 #[repr(transparent)]
 pub struct Ireg(f64);
 
-/// A single-precision `f32` register.
+/// A generic typed register.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct Freg32(f32);
+pub struct Reg<T>(T);
+
+/// A single-precision `f32` register.
+pub type Freg32 = Reg<f32>;
 
 /// A double-precision `f64` register.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct Freg64(f64);
+pub type Freg64 = Reg<f64>;
 
 /// Types implementing this trait act as registers in the Wasmi executor.
 trait Register {
@@ -563,6 +565,13 @@ macro_rules! impl_register_for {
                 assert!(mem::size_of::<$ty>() == mem::size_of::<$base>());
                 assert!(mem::align_of::<$ty>() == mem::align_of::<$base>());
             };
+
+            impl Default for $ty {
+                #[inline]
+                fn default() -> Self {
+                    Self(<$base>::default())
+                }
+            }
         )*
     };
 }
@@ -626,6 +635,20 @@ impl_reg_lossy_conversions! {
     i8 as Ireg: i64,
     i16 as Ireg: i64,
     i32 as Ireg: i64,
+}
+
+impl From<RawRef> for Ireg {
+    #[inline]
+    fn from(value: RawRef) -> Self {
+        Ireg::from(u32::from(value))
+    }
+}
+
+impl From<Ireg> for RawRef {
+    #[inline]
+    fn from(value: Ireg) -> Self {
+        RawRef::from(u32::from(value))
+    }
 }
 
 /// The Wasmi stack.
