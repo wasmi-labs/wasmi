@@ -511,16 +511,38 @@ impl Sp {
         };
     }
 }
-
-/// A general purpose register (GPR).
-#[derive(Debug, Copy, Clone)]
+/// The 64-bits of a general purpose register (GPR).
+///
+/// # Note
+///
+/// We use `f64` as underlying type for bytes for technical reasons.
+/// Using `f64` makes the compiler put values of this type into the floating
+/// point or vector registers on common platforms which is important since
+/// caller-saved general purpose registers (e.g. integer registers) are limited
+/// and already occupied by other execution handler parameters.
+#[derive(Debug, Copy, Clone, Default)]
 #[repr(transparent)]
-pub struct Ireg(f64);
+pub struct Bits64(f64);
+
+impl Bits64 {
+    /// Constructs `Self` from `bytes` in native-endian order.
+    pub fn from_ne_bytes(bytes: [u8; 8]) -> Self {
+        Self(f64::from_ne_bytes(bytes))
+    }
+
+    /// Converts `self` to its bytes in native-endian order.
+    pub fn to_ne_bytes(self) -> [u8; 8] {
+        self.0.to_ne_bytes()
+    }
+}
 
 /// A generic typed register.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Reg<T>(T);
+
+/// A general purpose register (GPR).
+pub type Ireg = Reg<Bits64>;
 
 /// A single-precision `f32` register.
 pub type Freg32 = Reg<f32>;
@@ -576,7 +598,7 @@ macro_rules! impl_register_for {
     };
 }
 impl_register_for! {
-    Ireg as f64,
+    Ireg as Bits64,
     Freg32 as f32,
     Freg64 as f64,
 }
