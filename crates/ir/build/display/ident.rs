@@ -216,7 +216,7 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
             false => None,
         };
         let ident_suffix = ident_suffix.map(|i| case.wrap(i)).display_maybe();
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(op.result));
         let value_suffix = SnakeCase(Suffix(op.value));
         write!(
             f,

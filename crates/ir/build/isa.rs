@@ -129,7 +129,13 @@ fn add_unary_ops(isa: &mut Isa) {
         (Ident::TruncSat, Ty::U64, Ty::F64),
     ];
     for (ident, result_ty, value_ty) in ops {
-        isa.push_op(UnaryOp::new(ident, result_ty, value_ty, OperandKind::Slot))
+        isa.push_op(UnaryOp::new(
+            ident,
+            result_ty,
+            value_ty,
+            OperandKind::Slot,
+            OperandKind::Slot,
+        ))
     }
 }
 
@@ -813,13 +819,15 @@ fn add_simd_splat_ops(isa: &mut Isa) {
         (Ident::Splat, Ty::Bits64),
     ];
     for (ident, value_ty) in kinds {
-        isa.push_op(UnaryOp::new(ident, Ty::V128, value_ty, OperandKind::Slot));
-        isa.push_op(UnaryOp::new(
-            ident,
-            Ty::V128,
-            value_ty,
-            OperandKind::Immediate,
-        ));
+        for value in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(UnaryOp::new(
+                ident,
+                Ty::V128,
+                value_ty,
+                OperandKind::Slot,
+                value,
+            ));
+        }
     }
 }
 
@@ -1080,7 +1088,13 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         (Ident::ConvertLow, Ty::F64x2, Ty::U32x4),
     ];
     for (ident, result_ty, value_ty) in kinds {
-        isa.push_op(UnaryOp::new(ident, result_ty, value_ty, OperandKind::Slot));
+        isa.push_op(UnaryOp::new(
+            ident,
+            result_ty,
+            value_ty,
+            OperandKind::Slot,
+            OperandKind::Slot,
+        ));
     }
 }
 

@@ -120,21 +120,29 @@ pub struct UnaryOp {
     pub ident: Ident,
     pub result_ty: Ty,
     pub value_ty: Ty,
+    pub result: OperandKind,
     pub value: OperandKind,
 }
 
 impl UnaryOp {
-    pub fn new(ident: Ident, result_ty: Ty, value_ty: Ty, value: OperandKind) -> Self {
+    pub fn new(
+        ident: Ident,
+        result_ty: Ty,
+        value_ty: Ty,
+        result: OperandKind,
+        value: OperandKind,
+    ) -> Self {
         Self {
             ident,
             result_ty,
             value_ty,
+            result,
             value,
         }
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn value_field(&self) -> Field {
