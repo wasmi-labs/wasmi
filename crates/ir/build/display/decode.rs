@@ -65,8 +65,12 @@ impl Display for DisplayDecode<&'_ Isa> {
 impl Display for DisplayDecode<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let camel_ident = DisplayIdent::camel(self.value);
+        let result_ty = self.value.result_field().ty;
         let value_ty = self.value.value_field().ty;
-        writeln!(f, "pub type {camel_ident} = UnaryOp<{value_ty}>;")
+        writeln!(
+            f,
+            "pub type {camel_ident} = UnaryOp<{result_ty}, {value_ty}>;"
+        )
     }
 }
 
