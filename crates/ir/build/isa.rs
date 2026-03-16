@@ -228,24 +228,17 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Copysign, Ty::F64, Ty::F64, Ty::SignF64, BinaryOpCaps::NONE),
     ];
     for (ident, result_ty, lhs_ty, rhs_ty, caps) in ops {
-        isa.push_op(BinaryOp::new(
-            ident,
-            result_ty,
-            lhs_ty,
-            rhs_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            caps,
-        ));
-        isa.push_op(BinaryOp::new(
-            ident,
-            result_ty,
-            lhs_ty,
-            rhs_ty,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-            caps,
-        ));
+        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(BinaryOp::new(
+                ident,
+                result_ty,
+                lhs_ty,
+                rhs_ty,
+                OperandKind::Slot,
+                rhs,
+                caps,
+            ));
+        }
         if !caps.is_commutative() {
             isa.push_op(BinaryOp::new(
                 ident,
