@@ -27,14 +27,15 @@ impl<R: Decode, V: Decode> Decode for UnaryOp<R, V> {
 }
 
 #[derive(Copy, Clone)]
-pub struct BinaryOp<Lhs, Rhs> {
-    pub result: Slot,
+pub struct BinaryOp<Res, Lhs, Rhs> {
+    pub result: Res,
     pub lhs: Lhs,
     pub rhs: Rhs,
 }
 
-impl<Lhs, Rhs> Decode for BinaryOp<Lhs, Rhs>
+impl<Res, Lhs, Rhs> Decode for BinaryOp<Res, Lhs, Rhs>
 where
+    Res: Decode,
     Lhs: Decode,
     Rhs: Decode,
 {

@@ -160,17 +160,20 @@ pub struct BinaryOp {
     pub result_ty: Ty,
     pub lhs_ty: Ty,
     pub rhs_ty: Ty,
+    pub result: OperandKind,
     pub lhs: OperandKind,
     pub rhs: OperandKind,
     pub caps: BinaryOpCaps,
 }
 
 impl BinaryOp {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         ident: Ident,
         result_ty: Ty,
         lhs_ty: Ty,
         rhs_ty: Ty,
+        result: OperandKind,
         lhs: OperandKind,
         rhs: OperandKind,
         caps: BinaryOpCaps,
@@ -180,6 +183,7 @@ impl BinaryOp {
             result_ty,
             lhs_ty,
             rhs_ty,
+            result,
             lhs,
             rhs,
             caps,
@@ -187,7 +191,7 @@ impl BinaryOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn lhs_field(&self) -> Field {

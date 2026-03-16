@@ -235,6 +235,7 @@ fn add_binary_ops(isa: &mut Isa) {
                 lhs_ty,
                 rhs_ty,
                 OperandKind::Slot,
+                OperandKind::Slot,
                 rhs,
                 caps,
             ));
@@ -245,6 +246,7 @@ fn add_binary_ops(isa: &mut Isa) {
                 result_ty,
                 lhs_ty,
                 rhs_ty,
+                OperandKind::Slot,
                 OperandKind::Immediate,
                 OperandKind::Slot,
                 caps,
@@ -975,6 +977,7 @@ fn add_simd_binary_ops(isa: &mut Isa) {
             input_ty,
             OperandKind::Slot,
             OperandKind::Slot,
+            OperandKind::Slot,
             caps,
         ));
     }
@@ -1002,6 +1005,7 @@ fn add_simd_shift_ops(isa: &mut Isa) {
                 result_ty,
                 lhs_ty,
                 Ty::U8,
+                OperandKind::Slot,
                 OperandKind::Slot,
                 rhs,
                 BinaryOpCaps::NONE,

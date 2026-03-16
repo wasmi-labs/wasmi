@@ -243,7 +243,7 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
             .filter(|_| !is_cmp)
             .map(|i| case.wrap(i))
             .display_maybe();
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(op.result));
         let lhs_suffix = SnakeCase(Suffix(op.lhs));
         let rhs_suffix = SnakeCase(Suffix(op.rhs));
         write!(

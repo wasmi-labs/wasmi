@@ -78,9 +78,10 @@ impl Display for DisplayDecode<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let res = self.value.result_field().ty;
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
-        writeln!(f, "pub type {camel_ident} = BinaryOp<{lhs}, {rhs}>;")
+        writeln!(f, "pub type {camel_ident} = BinaryOp<{res}, {lhs}, {rhs}>;")
     }
 }
 
