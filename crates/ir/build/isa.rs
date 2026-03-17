@@ -56,6 +56,7 @@ pub fn wasmi_isa(config: &Config) -> Isa {
     add_select_ops(&mut isa);
     add_load_ops(&mut isa);
     add_store_ops(&mut isa);
+    add_return_ops(&mut isa);
     add_control_ops(&mut isa);
     add_copy_ops(&mut isa);
     add_call_ops(&mut isa);
@@ -413,16 +414,8 @@ fn add_store_ops(isa: &mut Isa) {
     }
 }
 
-fn add_control_ops(isa: &mut Isa) {
+fn add_return_ops(isa: &mut Isa) {
     let ops = [
-        Op::from(GenericOp::new(
-            Ident::Trap,
-            [Field::new(Ident::TrapCode, FieldTy::TrapCode)],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ConsumeFuel,
-            [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
-        )),
         Op::from(GenericOp::new(Ident::Return, [])),
         Op::from(GenericOp::new(
             Ident::ReturnSlot,
@@ -439,6 +432,22 @@ fn add_control_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::ReturnSpan,
             [Field::new(Ident::Values, FieldTy::BoundedSlotSpan)],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
+fn add_control_ops(isa: &mut Isa) {
+    let ops = [
+        Op::from(GenericOp::new(
+            Ident::Trap,
+            [Field::new(Ident::TrapCode, FieldTy::TrapCode)],
+        )),
+        Op::from(GenericOp::new(
+            Ident::ConsumeFuel,
+            [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
         )),
         Op::from(GenericOp::new(
             Ident::Branch,
