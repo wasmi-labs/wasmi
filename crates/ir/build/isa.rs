@@ -466,26 +466,26 @@ fn add_control_ops(isa: &mut Isa) {
 
 fn add_copy_ops(isa: &mut Isa) {
     let ops = [
-        Op::from(GenericOp::new(
-            Ident::CopySlot,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-            ],
+        Op::from(UnaryOp::new(
+            Ident::Copy,
+            Ty::U64,
+            Ty::U64,
+            OperandKind::Slot,
+            OperandKind::Slot,
         )),
-        Op::from(GenericOp::new(
-            Ident::CopyImm32,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::U32),
-            ],
+        Op::from(UnaryOp::new(
+            Ident::Copy,
+            Ty::U32,
+            Ty::U32,
+            OperandKind::Slot,
+            OperandKind::Immediate,
         )),
-        Op::from(GenericOp::new(
-            Ident::CopyImm64,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::U64),
-            ],
+        Op::from(UnaryOp::new(
+            Ident::Copy,
+            Ty::U64,
+            Ty::U64,
+            OperandKind::Slot,
+            OperandKind::Immediate,
         )),
         Op::from(GenericOp::new(
             Ident::CopySpanAsc,

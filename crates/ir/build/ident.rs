@@ -137,9 +137,7 @@ define_ident!(
     Load: load,
     Store: store,
 
-    CopySlot: copy_slot,
-    CopyImm32: copy_imm32,
-    CopyImm64: copy_imm64,
+    Copy: copy,
     CopySpanAsc: copy_span_asc,
     CopySpanDes: copy_span_des,
 

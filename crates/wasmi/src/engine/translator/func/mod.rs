@@ -492,7 +492,7 @@ impl FuncTranslator {
                 };
                 op
             }
-            _ => Op::copy_slot(result, value),
+            _ => Op::u64_copy_ss(result, value),
         };
         Ok(Some(copy_op))
     }
@@ -518,7 +518,7 @@ impl FuncTranslator {
                 };
                 op
             }
-            _ => Op::copy_slot(result, value),
+            _ => Op::u64_copy_ss(result, value),
         };
         Ok(Some(copy_op))
     }
@@ -526,12 +526,12 @@ impl FuncTranslator {
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
     fn make_copy_imm_instr(result: Slot, value: TypedRawVal) -> Result<Op, Error> {
         let instr = match value.ty() {
-            ValType::I32 => Op::copy_imm32(result, i32::from(value).to_bits()),
-            ValType::I64 => Op::copy_imm64(result, i64::from(value).to_bits()),
-            ValType::F32 => Op::copy_imm32(result, f32::from(value).to_bits()),
-            ValType::F64 => Op::copy_imm64(result, f64::from(value).to_bits()),
+            ValType::I32 => Op::u32_copy_si(result, i32::from(value).to_bits()),
+            ValType::I64 => Op::u64_copy_si(result, i64::from(value).to_bits()),
+            ValType::F32 => Op::u32_copy_si(result, f32::from(value).to_bits()),
+            ValType::F64 => Op::u64_copy_si(result, f64::from(value).to_bits()),
             ValType::ExternRef | ValType::FuncRef => {
-                Op::copy_imm32(result, u32::from(RawRef::from(value.raw())))
+                Op::u32_copy_si(result, u32::from(RawRef::from(value.raw())))
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
