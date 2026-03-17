@@ -46,6 +46,8 @@ use crate::{
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
+#[expect(unused_imports)]
+use crate::{Freg32, Freg64, Ireg};
 use core::{
     error::Error as CoreError,
     fmt,
