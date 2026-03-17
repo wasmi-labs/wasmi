@@ -72,15 +72,14 @@ impl Display for Field {
 }
 
 /// The kind of an operand of an [`Op`].
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum OperandKind {
+    /// The operand is a register value.
+    Reg,
     /// The operand is a [`Slot`] index.
     Slot,
     /// The operand is an immediate value.
     Immediate,
-    /// The operand is a register value.
-    #[expect(dead_code)]
-    Reg,
 }
 
 impl OperandKind {
