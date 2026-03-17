@@ -110,9 +110,14 @@ impl Display for DisplayDecode<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let res = op.result_field().ty;
+        let cond = op.condition_field().ty;
         let lhs = op.true_val_field().ty;
         let rhs = op.false_val_field().ty;
-        writeln!(f, "pub type {camel_ident} = SelectOp<{lhs}, {rhs}>;")
+        writeln!(
+            f,
+            "pub type {camel_ident} = SelectOp<{res}, {cond}, {lhs}, {rhs}>;"
+        )
     }
 }
 

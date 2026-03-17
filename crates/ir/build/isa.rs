@@ -15,7 +15,6 @@ use crate::build::{
         OffsetOperand,
         OperandKind,
         SelectOp,
-        SelectWidth,
         SimdTy,
         StoreKind,
         StoreOp,
@@ -311,17 +310,25 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
 
 fn add_select_ops(isa: &mut Isa) {
     isa.push_op(SelectOp::new(
-        SelectWidth::None,
+        Ty::U64,
+        OperandKind::Slot,
+        OperandKind::Slot,
         OperandKind::Slot,
         OperandKind::Slot,
     ));
-    for width in [SelectWidth::Bits32, SelectWidth::Bits64] {
+    for result_ty in [Ty::U32, Ty::U64] {
         for true_val in [OperandKind::Slot, OperandKind::Immediate] {
             for false_val in [OperandKind::Slot, OperandKind::Immediate] {
                 if matches!(true_val, OperandKind::Slot) && matches!(false_val, OperandKind::Slot) {
                     continue;
                 }
-                isa.push_op(SelectOp::new(width, true_val, false_val));
+                isa.push_op(SelectOp::new(
+                    result_ty,
+                    OperandKind::Slot,
+                    OperandKind::Slot,
+                    true_val,
+                    false_val,
+                ));
             }
         }
     }
@@ -788,14 +795,12 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Result, FieldTy::Slot),
         ],
     )));
-    isa.push_op(Op::from(GenericOp::new(
-        Ident::Select128,
-        [
-            Field::new(Ident::Result, FieldTy::Slot),
-            Field::new(Ident::Selector, FieldTy::Slot),
-            Field::new(Ident::ValTrue, FieldTy::Slot),
-            Field::new(Ident::ValFalse, FieldTy::Slot),
-        ],
+    isa.push_op(Op::from(SelectOp::new(
+        Ty::V128,
+        OperandKind::Slot,
+        OperandKind::Slot,
+        OperandKind::Slot,
+        OperandKind::Slot,
     )));
     add_simd_splat_ops(isa);
     add_simd_extract_lane_ops(isa);

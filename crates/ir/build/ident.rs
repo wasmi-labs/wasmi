@@ -134,7 +134,6 @@ define_ident!(
     BranchTable: branch_table,
     BranchTableSpan: branch_table_span,
     Select: select,
-    Select128: select128,
     Load: load,
     Store: store,
 
@@ -241,8 +240,6 @@ define_ident!(
     RhsLo: rhs_lo,
     RhsHi: rhs_hi,
     Ptr: ptr,
-    ValTrue: val_true,
-    ValFalse: val_false,
 
     CopyImm128: copy_imm128,
     ValueLo: value_lo,

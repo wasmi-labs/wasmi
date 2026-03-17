@@ -1715,13 +1715,13 @@ macro_rules! handler_select {
     };
 }
 handler_select! {
-    fn select_ssss(Select_Ssss) = u64;
-    fn select32_sssi(Select32_Sssi) = u32;
-    fn select32_ssis(Select32_Ssis) = u32;
-    fn select32_ssii(Select32_Ssii) = u32;
-    fn select64_sssi(Select64_Sssi) = u64;
-    fn select64_ssis(Select64_Ssis) = u64;
-    fn select64_ssii(Select64_Ssii) = u64;
+    fn u64_select_ssss(U64Select_Ssss) = u64;
+    fn u32_select_sssi(U32Select_Sssi) = u32;
+    fn u32_select_ssis(U32Select_Ssis) = u32;
+    fn u32_select_ssii(U32Select_Ssii) = u32;
+    fn u64_select_sssi(U64Select_Sssi) = u64;
+    fn u64_select_ssis(U64Select_Ssis) = u64;
+    fn u64_select_ssii(U64Select_Ssii) = u64;
 }
 
 handler_load_ss! {

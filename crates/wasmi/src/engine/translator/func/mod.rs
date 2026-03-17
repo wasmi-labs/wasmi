@@ -2052,7 +2052,7 @@ impl FuncTranslator {
             let false_val = self.copy_if_immediate(false_val)?;
             self.push_instr_with_result(
                 ty,
-                |result| Op::select128(result, condition, false_val, true_val),
+                |result| Op::v128_select_ssss(result, condition, false_val, true_val),
                 FuelCostsProvider::base,
             )?;
             return Ok(());
@@ -2094,16 +2094,16 @@ impl FuncTranslator {
             ty,
             |result| match (true_val, false_val) {
                 (Input::Slot(true_val), Input::Slot(false_val)) => {
-                    Op::select_ssss(result, condition, true_val, false_val)
+                    Op::u64_select_ssss(result, condition, true_val, false_val)
                 }
                 (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::select32_sssi(result, condition, true_val, false_val)
+                    Op::u32_select_sssi(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::select32_ssis(result, condition, true_val, false_val)
+                    Op::u32_select_ssis(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::select32_ssii(result, condition, true_val, false_val)
+                    Op::u32_select_ssii(result, condition, true_val, false_val)
                 }
             },
             FuelCostsProvider::base,
@@ -2129,16 +2129,16 @@ impl FuncTranslator {
             ty,
             |result| match (true_val, false_val) {
                 (Input::Slot(true_val), Input::Slot(false_val)) => {
-                    Op::select_ssss(result, condition, true_val, false_val)
+                    Op::u64_select_ssss(result, condition, true_val, false_val)
                 }
                 (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::select64_sssi(result, condition, true_val, false_val)
+                    Op::u64_select_sssi(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::select64_ssis(result, condition, true_val, false_val)
+                    Op::u64_select_ssis(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::select64_ssii(result, condition, true_val, false_val)
+                    Op::u64_select_ssii(result, condition, true_val, false_val)
                 }
             },
             FuelCostsProvider::base,

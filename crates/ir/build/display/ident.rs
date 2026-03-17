@@ -291,15 +291,16 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
 impl Display for DisplayIdent<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
+        let op = self.value;
         let select = case.wrap(Ident::Select);
-        let width = self.value.width;
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
-        let condition_suffix = SnakeCase(Suffix(OperandKind::Slot));
-        let tval_suffix = SnakeCase(Suffix(self.value.true_val));
-        let fval_suffix = SnakeCase(Suffix(self.value.false_val));
+        let result_prefix = case.wrap(IdentPrefix(op.result_ty));
+        let result_suffix = case.wrap(Suffix(op.result));
+        let condition_suffix = SnakeCase(Suffix(op.condition));
+        let tval_suffix = SnakeCase(Suffix(op.true_val));
+        let fval_suffix = SnakeCase(Suffix(op.false_val));
         write!(
             f,
-            "{select}{width}_{result_suffix}{condition_suffix}{tval_suffix}{fval_suffix}"
+            "{result_prefix}{select}_{result_suffix}{condition_suffix}{tval_suffix}{fval_suffix}"
         )
     }
 }

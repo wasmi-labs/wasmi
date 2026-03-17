@@ -41,7 +41,7 @@ execution_handler! {
 }
 
 execution_handler! {
-    fn select128(
+    fn v128_select_ssss(
         state: &mut VmState,
         ip: Ip,
         sp: Sp,
@@ -54,17 +54,17 @@ execution_handler! {
     ) -> Done = {
         let (
             ip,
-            crate::ir::decode::Select128 {
+            crate::ir::decode::V128Select_Ssss {
                 result,
-                selector,
-                val_true,
-                val_false,
+                condition,
+                true_val,
+                false_val,
             },
         ) = unsafe { decode_op(ip) };
-        let selector: bool = get_value(selector, sp, ireg, freg32, freg64);
-        let selected = match selector {
-            true => val_true,
-            false => val_false,
+        let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
+        let selected = match condition {
+            true => true_val,
+            false => false_val,
         };
         let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
         set_value!(result, selected, sp, ireg, freg32, freg64);

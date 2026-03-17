@@ -96,15 +96,17 @@ where
 }
 
 #[derive(Copy, Clone)]
-pub struct SelectOp<Tval, Fval> {
-    pub result: Slot,
-    pub condition: Slot,
+pub struct SelectOp<Res, Cond, Tval, Fval> {
+    pub result: Res,
+    pub condition: Cond,
     pub true_val: Tval,
     pub false_val: Fval,
 }
 
-impl<Tval, Fval> Decode for SelectOp<Tval, Fval>
+impl<Res, Cond, Tval, Fval> Decode for SelectOp<Res, Cond, Tval, Fval>
 where
+    Res: Decode,
+    Cond: Decode,
     Tval: Decode,
     Fval: Decode,
 {
