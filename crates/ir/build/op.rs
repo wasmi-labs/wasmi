@@ -75,6 +75,7 @@ impl Display for Field {
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum OperandKind {
     /// The operand is a register value.
+    #[expect(dead_code)]
     Reg,
     /// The operand is a [`Slot`] index.
     Slot,
