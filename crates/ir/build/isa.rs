@@ -351,6 +351,7 @@ fn add_load_ops(isa: &mut Isa) {
             isa.push_op(LoadOp::new(
                 kind,
                 result_ty,
+                OperandKind::Slot,
                 ptr,
                 MemoryOperand::Immediate,
                 OffsetOperand::Offset,
@@ -359,6 +360,7 @@ fn add_load_ops(isa: &mut Isa) {
         isa.push_op(LoadOp::new(
             kind,
             result_ty,
+            OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,
@@ -1120,17 +1122,19 @@ fn add_simd_load_ops(isa: &mut Isa) {
         (LoadKind::Lane { width: LaneWidth::W32 }, Ty::V128),
         (LoadKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
-    for (kind, loaded_ty) in ops {
+    for (kind, result_ty) in ops {
         isa.push_op(LoadOp::new(
             kind,
-            loaded_ty,
+            result_ty,
+            OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Immediate,
             OffsetOperand::Offset,
         ));
         isa.push_op(LoadOp::new(
             kind,
-            loaded_ty,
+            result_ty,
+            OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,

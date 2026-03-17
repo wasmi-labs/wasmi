@@ -130,7 +130,7 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         };
         let (lane_suffix, lane_param) = match op.kind {
             LoadKind::Lane { width } => {
-                let lane_param = DisplayConcat(('<', FieldTy::from(width), '>'));
+                let lane_param = DisplayConcat((',', FieldTy::from(width)));
                 (
                     Some(CamelCase(Ident::Lane)),
                     Some(lane_param).display_maybe(),
@@ -141,9 +141,11 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         let lane_suffix = lane_suffix.display_maybe();
         let result_suffix = CamelCase(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
+        let result_ty = op.result.field_ty(op.result_ty);
+        let generics = DisplayConcat(('<', result_ty, lane_param, '>'));
         writeln!(
             f,
-            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{lane_param};"
+            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{generics};"
         )
     }
 }

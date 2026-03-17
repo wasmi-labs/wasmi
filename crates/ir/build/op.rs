@@ -440,6 +440,8 @@ pub struct LoadOp {
     pub kind: LoadKind,
     /// The type of the loaded value.
     pub result_ty: Ty,
+    /// The `result` operand kind.
+    pub result: OperandKind,
     /// The `ptr` field type.
     pub ptr: OperandKind,
     /// The representation of the memory operand.
@@ -452,6 +454,7 @@ impl LoadOp {
     pub fn new(
         kind: LoadKind,
         result_ty: Ty,
+        result: OperandKind,
         ptr: OperandKind,
         mem: MemoryOperand,
         offset: OffsetOperand,
@@ -459,6 +462,7 @@ impl LoadOp {
         Self {
             kind,
             result_ty,
+            result,
             ptr,
             mem,
             offset,
@@ -466,7 +470,7 @@ impl LoadOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn ptr_field(&self) -> Field {
