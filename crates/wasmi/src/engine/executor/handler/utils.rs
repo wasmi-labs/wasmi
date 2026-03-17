@@ -25,6 +25,7 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
+    ir,
     ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
@@ -169,7 +170,7 @@ impl_get_value!([ImmLaneIdx<32>; 16]);
 macro_rules! impl_get_value_for_ireg {
     ( $($prim:ty),* $(,)? ) => {
         $(
-            impl GetValue<$prim> for Ireg {
+            impl GetValue<$prim> for ir::Ireg {
                 #[inline]
                 fn get_value(_src: Self, _sp: Sp, ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $prim {
                     <$prim as From<Ireg>>::from(ireg)
@@ -180,14 +181,14 @@ macro_rules! impl_get_value_for_ireg {
 }
 impl_get_value_for_ireg!(i8, i16, i32, i64, u8, u16, u32, u64);
 
-impl GetValue<f32> for Freg32 {
+impl GetValue<f32> for ir::Freg32 {
     #[inline]
     fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, freg32: Freg32, _freg64: Freg64) -> f32 {
         f32::from(freg32)
     }
 }
 
-impl GetValue<f64> for Freg64 {
+impl GetValue<f64> for ir::Freg64 {
     #[inline]
     fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, freg64: Freg64) -> f64 {
         f64::from(freg64)
@@ -261,7 +262,7 @@ pub trait SetValue<T> {
     ) -> (Ireg, Freg32, Freg64);
 }
 
-impl<T> SetValue<T> for Ireg
+impl<T> SetValue<T> for ir::Ireg
 where
     T: Into<Ireg>,
 {
@@ -278,7 +279,7 @@ where
     }
 }
 
-impl<T> SetValue<T> for Freg32
+impl<T> SetValue<T> for ir::Freg32
 where
     T: Into<Freg32>,
 {
@@ -295,7 +296,7 @@ where
     }
 }
 
-impl<T> SetValue<T> for Freg64
+impl<T> SetValue<T> for ir::Freg64
 where
     T: Into<Freg64>,
 {
