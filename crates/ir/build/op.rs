@@ -8,6 +8,7 @@ macro_rules! apply_macro_for_ops {
     ($mac:ident $(, $param:ident)* $(,)?) => {
         $mac! {
             $($param,)*
+            Return(ReturnOp),
             Unary(UnaryOp),
             Binary(BinaryOp),
             Ternary(TernaryOp),
@@ -72,8 +73,11 @@ impl Display for Field {
 }
 
 /// The kind of an operand of an [`Op`].
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum OperandKind {
+    /// The operand is a register value.
+    #[expect(dead_code)]
+    Reg,
     /// The operand is a [`Slot`] index.
     Slot,
     /// The operand is an immediate value.
@@ -85,6 +89,11 @@ impl OperandKind {
         match self {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::from(hint),
+            OperandKind::Reg => match hint {
+                Ty::F32 | Ty::SignF32 => FieldTy::Freg32,
+                Ty::F64 | Ty::SignF64 => FieldTy::Freg64,
+                _ => FieldTy::Ireg,
+            },
         }
     }
 }
@@ -112,21 +121,29 @@ pub struct UnaryOp {
     pub ident: Ident,
     pub result_ty: Ty,
     pub value_ty: Ty,
+    pub result: OperandKind,
     pub value: OperandKind,
 }
 
 impl UnaryOp {
-    pub fn new(ident: Ident, result_ty: Ty, value_ty: Ty, value: OperandKind) -> Self {
+    pub fn new(
+        ident: Ident,
+        result_ty: Ty,
+        value_ty: Ty,
+        result: OperandKind,
+        value: OperandKind,
+    ) -> Self {
         Self {
             ident,
             result_ty,
             value_ty,
+            result,
             value,
         }
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn value_field(&self) -> Field {
@@ -144,17 +161,20 @@ pub struct BinaryOp {
     pub result_ty: Ty,
     pub lhs_ty: Ty,
     pub rhs_ty: Ty,
+    pub result: OperandKind,
     pub lhs: OperandKind,
     pub rhs: OperandKind,
     pub caps: BinaryOpCaps,
 }
 
 impl BinaryOp {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         ident: Ident,
         result_ty: Ty,
         lhs_ty: Ty,
         rhs_ty: Ty,
+        result: OperandKind,
         lhs: OperandKind,
         rhs: OperandKind,
         caps: BinaryOpCaps,
@@ -164,6 +184,7 @@ impl BinaryOp {
             result_ty,
             lhs_ty,
             rhs_ty,
+            result,
             lhs,
             rhs,
             caps,
@@ -171,7 +192,7 @@ impl BinaryOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn lhs_field(&self) -> Field {
@@ -326,66 +347,45 @@ impl CmpBranchOp {
 }
 
 #[derive(Copy, Clone)]
-pub enum SelectWidth {
-    None,
-    Bits32,
-    Bits64,
-}
-
-impl SelectWidth {
-    fn field_ty(&self, kind: OperandKind) -> FieldTy {
-        match kind {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => match self {
-                Self::Bits32 => FieldTy::U32,
-                Self::Bits64 => FieldTy::U64,
-                Self::None => panic!("must not have immediate operands"),
-            },
-        }
-    }
-}
-
-impl Display for SelectWidth {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            SelectWidth::None => "",
-            SelectWidth::Bits32 => "32",
-            SelectWidth::Bits64 => "64",
-        };
-        f.write_str(s)
-    }
-}
-
-#[derive(Copy, Clone)]
 pub struct SelectOp {
-    pub width: SelectWidth,
+    pub result_ty: Ty,
+    pub result: OperandKind,
+    pub condition: OperandKind,
     pub true_val: OperandKind,
     pub false_val: OperandKind,
 }
 
 impl SelectOp {
-    pub fn new(width: SelectWidth, true_val: OperandKind, false_val: OperandKind) -> Self {
+    pub fn new(
+        result_ty: Ty,
+        result: OperandKind,
+        condition: OperandKind,
+        true_val: OperandKind,
+        false_val: OperandKind,
+    ) -> Self {
         Self {
-            width,
+            result_ty,
+            result,
+            condition,
             true_val,
             false_val,
         }
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn condition_field(&self) -> Field {
-        Field::new(Ident::Condition, FieldTy::Slot)
+        Field::new(Ident::Condition, self.condition.field_ty(Ty::I32))
     }
 
     pub fn true_val_field(&self) -> Field {
-        Field::new(Ident::TrueVal, self.width.field_ty(self.true_val))
+        Field::new(Ident::TrueVal, self.true_val.field_ty(self.result_ty))
     }
 
     pub fn false_val_field(&self) -> Field {
-        Field::new(Ident::FalseVal, self.width.field_ty(self.false_val))
+        Field::new(Ident::FalseVal, self.false_val.field_ty(self.result_ty))
     }
 
     pub fn fields(&self) -> [Field; 4] {
@@ -395,6 +395,26 @@ impl SelectOp {
             self.true_val_field(),
             self.false_val_field(),
         ]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct ReturnOp {
+    pub value_ty: Ty,
+    pub value: OperandKind,
+}
+
+impl ReturnOp {
+    pub fn new(value_ty: Ty, value: OperandKind) -> Self {
+        Self { value_ty, value }
+    }
+
+    pub fn value_field(&self) -> Field {
+        Field::new(Ident::Value, self.value.field_ty(self.value_ty))
+    }
+
+    pub fn fields(&self) -> [Field; 1] {
+        [self.value_field()]
     }
 }
 
@@ -422,6 +442,8 @@ pub struct LoadOp {
     pub kind: LoadKind,
     /// The type of the loaded value.
     pub result_ty: Ty,
+    /// The `result` operand kind.
+    pub result: OperandKind,
     /// The `ptr` field type.
     pub ptr: OperandKind,
     /// The representation of the memory operand.
@@ -434,6 +456,7 @@ impl LoadOp {
     pub fn new(
         kind: LoadKind,
         result_ty: Ty,
+        result: OperandKind,
         ptr: OperandKind,
         mem: MemoryOperand,
         offset: OffsetOperand,
@@ -441,6 +464,7 @@ impl LoadOp {
         Self {
             kind,
             result_ty,
+            result,
             ptr,
             mem,
             offset,
@@ -448,20 +472,21 @@ impl LoadOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
     }
 
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
+            OperandKind::Reg => FieldTy::Ireg,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Slot => match self.offset {
+            OperandKind::Slot | OperandKind::Reg => match self.offset {
                 OffsetOperand::Offset => FieldTy::U64,
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
@@ -586,6 +611,7 @@ impl StoreOp {
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
             OperandKind::Slot => FieldTy::Slot,
+            OperandKind::Reg => FieldTy::Ireg,
             OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
@@ -593,7 +619,7 @@ impl StoreOp {
 
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
-            OperandKind::Slot => match self.offset {
+            OperandKind::Slot | OperandKind::Reg => match self.offset {
                 OffsetOperand::Offset16 => FieldTy::Offset16,
                 OffsetOperand::Offset => FieldTy::U64,
             },
@@ -603,8 +629,9 @@ impl StoreOp {
     }
 
     pub fn value_field(&self) -> Field {
-        let field_ty = match self.value {
-            OperandKind::Slot => FieldTy::Slot,
+        let value = self.value;
+        let field_ty = match value {
+            OperandKind::Slot | OperandKind::Reg => value.field_ty(self.value_ty),
             OperandKind::Immediate => match self.kind {
                 StoreKind::Value => FieldTy::from(self.value_ty),
                 StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
@@ -707,10 +734,7 @@ impl TableGetOp {
     }
 
     pub fn index_field(&self) -> Field {
-        let index_ty = match self.index {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => FieldTy::U32,
-        };
+        let index_ty = self.index.field_ty(Ty::U32);
         Field::new(Ident::Index, index_ty)
     }
 
@@ -737,18 +761,12 @@ impl TableSetOp {
     }
 
     pub fn index_field(&self) -> Field {
-        let index_ty = match self.index {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => FieldTy::U32,
-        };
+        let index_ty = self.index.field_ty(Ty::U32);
         Field::new(Ident::Index, index_ty)
     }
 
     pub fn value_field(&self) -> Field {
-        let value_ty = match self.value {
-            OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Immediate => FieldTy::U32,
-        };
+        let value_ty = self.value.field_ty(Ty::U32);
         Field::new(Ident::Value, value_ty)
     }
 
@@ -919,6 +937,7 @@ impl V128ReplaceLaneOp {
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
             OperandKind::Slot => FieldTy::Slot,
+            OperandKind::Reg => FieldTy::Ireg,
             OperandKind::Immediate => match self.width {
                 LaneWidth::W8 => FieldTy::U8,
                 LaneWidth::W16 => FieldTy::U16,

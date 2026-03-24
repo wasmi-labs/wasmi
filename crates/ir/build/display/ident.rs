@@ -9,6 +9,7 @@ use crate::build::{
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -187,6 +188,7 @@ impl Display for CamelCase<Suffix<OperandKind>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0.0 {
             OperandKind::Slot => "S",
+            OperandKind::Reg => "R",
             OperandKind::Immediate => "I",
         };
         f.write_str(s)
@@ -197,9 +199,21 @@ impl Display for SnakeCase<Suffix<OperandKind>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0.0 {
             OperandKind::Slot => "s",
+            OperandKind::Reg => "r",
             OperandKind::Immediate => "i",
         };
         f.write_str(s)
+    }
+}
+
+impl Display for DisplayIdent<&'_ ReturnOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::Return);
+        let ident_suffix = case.wrap(IdentSuffix(op.value_ty));
+        let value_suffix = case.wrap(Suffix(op.value));
+        write!(f, "{ident}{ident_suffix}_{value_suffix}")
     }
 }
 
@@ -214,7 +228,7 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
             false => None,
         };
         let ident_suffix = ident_suffix.map(|i| case.wrap(i)).display_maybe();
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(op.result));
         let value_suffix = SnakeCase(Suffix(op.value));
         write!(
             f,
@@ -241,7 +255,7 @@ impl Display for DisplayIdent<&'_ BinaryOp> {
             .filter(|_| !is_cmp)
             .map(|i| case.wrap(i))
             .display_maybe();
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(op.result));
         let lhs_suffix = SnakeCase(Suffix(op.lhs));
         let rhs_suffix = SnakeCase(Suffix(op.rhs));
         write!(
@@ -289,15 +303,16 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
 impl Display for DisplayIdent<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
+        let op = self.value;
         let select = case.wrap(Ident::Select);
-        let width = self.value.width;
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
-        let condition_suffix = SnakeCase(Suffix(OperandKind::Slot));
-        let tval_suffix = SnakeCase(Suffix(self.value.true_val));
-        let fval_suffix = SnakeCase(Suffix(self.value.false_val));
+        let result_prefix = case.wrap(IdentPrefix(op.result_ty));
+        let result_suffix = case.wrap(Suffix(op.result));
+        let condition_suffix = SnakeCase(Suffix(op.condition));
+        let tval_suffix = SnakeCase(Suffix(op.true_val));
+        let fval_suffix = SnakeCase(Suffix(op.false_val));
         write!(
             f,
-            "{select}{width}_{result_suffix}{condition_suffix}{tval_suffix}{fval_suffix}"
+            "{result_prefix}{select}_{result_suffix}{condition_suffix}{tval_suffix}{fval_suffix}"
         )
     }
 }

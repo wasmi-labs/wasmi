@@ -1,4 +1,4 @@
-use super::state::{Inst, Ip, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
+use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
@@ -25,6 +25,7 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
+    ir,
     ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
@@ -128,7 +129,7 @@ impl_into_control! {
 }
 
 pub trait GetValue<T> {
-    fn get_value(src: Self, sp: Sp) -> T;
+    fn get_value(src: Self, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> T;
 }
 
 macro_rules! impl_get_value {
@@ -136,7 +137,7 @@ macro_rules! impl_get_value {
         $(
             impl GetValue<$ty> for $ty {
                 #[inline(always)]
-                fn get_value(src: Self, _sp: Sp) -> $ty {
+                fn get_value(src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $ty {
                     src
                 }
             }
@@ -166,11 +167,39 @@ impl_get_value!(
 #[cfg(feature = "simd")]
 impl_get_value!([ImmLaneIdx<32>; 16]);
 
+macro_rules! impl_get_value_for_ireg {
+    ( $($prim:ty),* $(,)? ) => {
+        $(
+            impl GetValue<$prim> for ir::Ireg {
+                #[inline]
+                fn get_value(_src: Self, _sp: Sp, ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $prim {
+                    <$prim as From<Ireg>>::from(ireg)
+                }
+            }
+        )*
+    };
+}
+impl_get_value_for_ireg!(i8, i16, i32, i64, u8, u16, u32, u64);
+
+impl GetValue<f32> for ir::Freg32 {
+    #[inline]
+    fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, freg32: Freg32, _freg64: Freg64) -> f32 {
+        f32::from(freg32)
+    }
+}
+
+impl GetValue<f64> for ir::Freg64 {
+    #[inline]
+    fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, freg64: Freg64) -> f64 {
+        f64::from(freg64)
+    }
+}
+
 impl<T> GetValue<T> for Slot
 where
     T: LoadFromCellsByValue,
 {
-    fn get_value(src: Self, sp: Sp) -> T {
+    fn get_value(src: Self, sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> T {
         // # Safety
         //
         // This implementation's correctness relies on the caller's inputs.
@@ -191,26 +220,112 @@ where
     }
 }
 
-/// Returns the value at `sp`:
+/// Returns the value at `sp[src]`.
+#[inline]
+pub fn get_slot_value<L>(src: Slot, sp: Sp) -> L
+where
+    Slot: GetValue<L>,
+{
+    <Slot as GetValue<L>>::get_value(
+        src,
+        sp,
+        Ireg::default(),
+        Freg32::default(),
+        Freg64::default(),
+    )
+}
+
+/// Returns the `src` value from its destination:
 ///
-/// - `sp[src]` if `src` is a value of type `Slot`
+/// - `sp[src]` if `src` is `Slot`
 /// - `src` if `src` is a primitive type, such as `i32`
-pub fn get_value<T, L>(src: T, sp: Sp) -> L
+/// - `ireg` if `src` is `Ireg`
+/// - `freg32` if `src` is `Freg32`
+/// - `freg64` if `src` is `Freg64`
+#[inline]
+pub fn get_value<T, L>(src: T, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> L
 where
     T: GetValue<L>,
 {
-    <T as GetValue<L>>::get_value(src, sp)
+    <T as GetValue<L>>::get_value(src, sp, ireg, freg32, freg64)
 }
 
 pub trait SetValue<T> {
-    fn set_value(dst: Self, value: T, sp: Sp);
+    #[must_use]
+    fn set_value(
+        dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64);
+}
+
+impl<T> SetValue<T> for ir::Ireg
+where
+    T: Into<Ireg>,
+{
+    #[inline]
+    fn set_value(
+        _dst: Self,
+        src: T,
+        _sp: Sp,
+        _ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        (src.into(), freg32, freg64)
+    }
+}
+
+impl<T> SetValue<T> for ir::Freg32
+where
+    T: Into<Freg32>,
+{
+    #[inline]
+    fn set_value(
+        _dst: Self,
+        src: T,
+        _sp: Sp,
+        ireg: Ireg,
+        _freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        (ireg, src.into(), freg64)
+    }
+}
+
+impl<T> SetValue<T> for ir::Freg64
+where
+    T: Into<Freg64>,
+{
+    #[inline]
+    fn set_value(
+        _dst: Self,
+        src: T,
+        _sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        _freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        (ireg, freg32, src.into())
+    }
 }
 
 impl<T> SetValue<T> for Slot
 where
     T: StoreToCells,
 {
-    fn set_value(dst: Self, value: T, sp: Sp) {
+    #[inline]
+    fn set_value(
+        dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
         // # Safety
         //
         // This implementation's correctness relies on the caller's inputs.
@@ -227,18 +342,60 @@ where
         // - Marking all execution handlers as `unsafe` was another option that has been
         //   ruled out because it would yield `unsafe` blocks way too large to be effective.
         // - Therefore: this method not being marked `unsafe` was a design trade-off.
-        unsafe { sp.set::<T>(dst, value) }
+        unsafe { sp.set::<T>(dst, src) };
+        (ireg, freg32, freg64)
     }
 }
 
-/// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = value`
-pub fn set_value<T, V>(sp: Sp, dst: T, value: V)
+/// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = src`
+#[inline]
+pub fn set_slot_value<T, V>(dst: T, src: V, sp: Sp)
 where
     T: SetValue<V>,
 {
-    <T as SetValue<V>>::set_value(dst, value, sp)
+    // Note: safe to drop the return value here immediate in this case.
+    _ = <T as SetValue<V>>::set_value(
+        dst,
+        src,
+        sp,
+        Ireg::default(),
+        Freg32::default(),
+        Freg64::default(),
+    );
 }
 
+/// Sets the value at `sp` at offset `dst` to `value`: `sp[dst] = src`
+#[inline]
+#[must_use]
+pub fn set_value<T, V>(
+    dst: T,
+    src: V,
+    sp: Sp,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> (Ireg, Freg32, Freg64)
+where
+    T: SetValue<V>,
+{
+    <T as SetValue<V>>::set_value(dst, src, sp, ireg, freg32, freg64)
+}
+
+macro_rules! set_value {
+    ($dst:expr, $src:expr, $sp:expr, $ireg:ident, $freg32:ident, $freg64:ident) => {
+        let ($ireg, $freg32, $freg64): (
+            $crate::engine::executor::handler::state::Ireg,
+            $crate::engine::executor::handler::state::Freg32,
+            $crate::engine::executor::handler::state::Freg64,
+        ) = {
+            $crate::engine::executor::handler::utils::set_value(
+                $dst, $src, $sp, $ireg, $freg32, $freg64,
+            )
+        };
+    };
+}
+
+#[expect(clippy::too_many_arguments)]
 pub fn exec_return(
     state: &mut VmState,
     _ip: Ip,
@@ -246,6 +403,9 @@ pub fn exec_return(
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 ) -> Done {
     let Some((ip, sp, mem0, mem0_len, instance)) =
         state.stack.pop_frame(state.store, mem0, mem0_len, instance)
@@ -253,7 +413,9 @@ pub fn exec_return(
         // No more frames on the call stack -> break out of execution!
         done!(state, DoneReason::Return(sp))
     };
-    dispatch!(state, ip, sp, mem0, mem0_len, instance)
+    dispatch!(
+        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
+    )
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
@@ -269,8 +431,8 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src) {
-        let value: u64 = get_value(src, sp);
-        set_value(sp, dst, value);
+        let src: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, src, sp);
     }
 }
 
@@ -279,8 +441,8 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src).rev() {
-        let value: u64 = get_value(src, sp);
-        set_value(sp, dst, value);
+        let src: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, src, sp);
     }
 }
 
@@ -409,7 +571,7 @@ pub fn resolve_indirect_func(
     sp: Sp,
     instance: Inst,
 ) -> Result<Func, TrapCode> {
-    let index = get_value(index, sp);
+    let index = get_slot_value(index, sp);
     let table = fetch_table(instance, table);
     let table = resolve_table(state.store, &table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;

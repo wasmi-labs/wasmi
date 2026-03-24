@@ -2,6 +2,7 @@ use crate::{
     Error,
     Func,
     TrapCode,
+    core::RawRef,
     engine::{
         ResumableHostTrapError,
         ResumableOutOfFuelError,
@@ -508,6 +509,170 @@ impl Sp {
             // SAFETY: todo
             unsafe { unreachable_unchecked!() }
         };
+    }
+}
+
+/// The 64-bits of a general purpose register (GPR).
+///
+/// # Note
+///
+/// We use `f64` as underlying type for bytes for technical reasons.
+/// Using `f64` makes the compiler put values of this type into the floating
+/// point or vector registers on common platforms which is important since
+/// caller-saved general purpose registers (e.g. integer registers) are limited
+/// and already occupied by other execution handler parameters.
+#[derive(Debug, Copy, Clone, Default)]
+#[repr(transparent)]
+pub struct Bits64(f64);
+
+impl Bits64 {
+    /// Constructs `Self` from `bytes` in native-endian order.
+    #[inline]
+    pub fn from_ne_bytes(bytes: [u8; 8]) -> Self {
+        Self(f64::from_ne_bytes(bytes))
+    }
+
+    /// Converts `self` to its bytes in native-endian order.
+    #[inline]
+    pub fn to_ne_bytes(self) -> [u8; 8] {
+        self.0.to_ne_bytes()
+    }
+}
+
+/// A generic typed register.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Reg<T>(T);
+
+/// A general purpose register (GPR).
+pub type Ireg = Reg<Bits64>;
+
+/// A single-precision `f32` register.
+pub type Freg32 = Reg<f32>;
+
+/// A double-precision `f64` register.
+pub type Freg64 = Reg<f64>;
+
+/// Types implementing this trait act as registers in the Wasmi executor.
+trait Register {
+    /// The underlying base type of the register.
+    type Base;
+
+    /// The underlying array of bytes representing the register.
+    type Bytes;
+
+    /// Converts an array of `bytes` to a value of `Self`.
+    fn from_bytes(bytes: Self::Bytes) -> Self;
+
+    /// Converts `self` to its array of bytes representation.
+    fn to_bytes(self) -> Self::Bytes;
+}
+
+macro_rules! impl_register_for {
+    ( $( $ty:ty as $base:ty ),* $(,)? ) => {
+        $(
+            impl Register for $ty {
+                type Base = $base;
+                type Bytes = [u8; core::mem::size_of::<$base>()];
+
+                #[inline]
+                fn from_bytes(bytes: Self::Bytes) -> Self {
+                    Self(<Self::Base>::from_ne_bytes(bytes))
+                }
+
+                #[inline]
+                fn to_bytes(self) -> Self::Bytes {
+                    self.0.to_ne_bytes()
+                }
+            }
+
+            const _: () = {
+                assert!(mem::size_of::<$ty>() == mem::size_of::<$base>());
+                assert!(mem::align_of::<$ty>() == mem::align_of::<$base>());
+            };
+
+            impl Default for $ty {
+                #[inline]
+                fn default() -> Self {
+                    Self(<$base>::default())
+                }
+            }
+        )*
+    };
+}
+impl_register_for! {
+    Ireg as Bits64,
+    Freg32 as f32,
+    Freg64 as f64,
+}
+
+macro_rules! impl_reg_lossless_conversions {
+    ( $( ($ty:ty, $reg:ty) ),* $(,)? ) => {
+        $(
+            impl From<$reg> for $ty {
+                #[inline]
+                fn from(value: $reg) -> Self {
+                    <$ty>::from_ne_bytes(<$reg as Register>::to_bytes(value))
+                }
+            }
+
+            impl From<$ty> for $reg {
+                #[inline]
+                fn from(value: $ty) -> Self {
+                    Self::from_bytes(value.to_ne_bytes())
+                }
+            }
+        )*
+    };
+}
+impl_reg_lossless_conversions! {
+    (u64, Ireg),
+    (i64, Ireg),
+    (f32, Freg32),
+    (f64, Freg64),
+}
+
+macro_rules! impl_reg_lossy_conversions {
+    ( $($ty:ty as $reg:ty: $base:ty),* $(,)? ) => {
+        $(
+            impl From<$ty> for $reg {
+                #[inline]
+                fn from(value: $ty) -> Self {
+                    Self::from(value as $base)
+                }
+            }
+
+            impl From<$reg> for $ty {
+                #[inline]
+                fn from(value: $reg) -> Self {
+                    <$base>::from(value) as Self
+                }
+            }
+        )*
+    };
+}
+impl_reg_lossy_conversions! {
+    // unsigned
+    u8 as Ireg: u64,
+    u16 as Ireg: u64,
+    u32 as Ireg: u64,
+    // signed
+    i8 as Ireg: i64,
+    i16 as Ireg: i64,
+    i32 as Ireg: i64,
+}
+
+impl From<RawRef> for Ireg {
+    #[inline]
+    fn from(value: RawRef) -> Self {
+        Ireg::from(u32::from(value))
+    }
+}
+
+impl From<Ireg> for RawRef {
+    #[inline]
+    fn from(value: Ireg) -> Self {
+        RawRef::from(u32::from(value))
     }
 }
 

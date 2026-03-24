@@ -66,6 +66,7 @@ impl Op {
     /// Returns `true` if `self` has a result field.
     pub fn has_result(&self) -> bool {
         match self {
+            Op::Return(_) => false,
             Op::Unary(_) => true,
             Op::Binary(_) => true,
             Op::Ternary(_) => true,

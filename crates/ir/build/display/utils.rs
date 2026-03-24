@@ -5,7 +5,7 @@ pub struct Indent(usize);
 
 impl Indent {
     pub fn inc(self) -> Self {
-        Self(self.0 + 1)
+        self.inc_by(1)
     }
 
     pub fn inc_by(self, delta: usize) -> Self {
@@ -48,6 +48,23 @@ where
         t0.fmt(f)?;
         t1.fmt(f)?;
         t2.fmt(f)?;
+        Ok(())
+    }
+}
+
+impl<T0, T1, T2, T3> Display for DisplayConcat<(T0, T1, T2, T3)>
+where
+    T0: Display,
+    T1: Display,
+    T2: Display,
+    T3: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (t0, t1, t2, t3) = &self.0;
+        t0.fmt(f)?;
+        t1.fmt(f)?;
+        t2.fmt(f)?;
+        t3.fmt(f)?;
         Ok(())
     }
 }

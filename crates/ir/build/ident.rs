@@ -134,13 +134,10 @@ define_ident!(
     BranchTable: branch_table,
     BranchTableSpan: branch_table_span,
     Select: select,
-    Select128: select128,
     Load: load,
     Store: store,
 
-    CopySlot: copy_slot,
-    CopyImm32: copy_imm32,
-    CopyImm64: copy_imm64,
+    Copy: copy,
     CopySpanAsc: copy_span_asc,
     CopySpanDes: copy_span_des,
 
@@ -182,9 +179,6 @@ define_ident!(
     ConsumeFuel: consume_fuel,
     Fuel: fuel,
     Return: r#return,
-    ReturnImm32: return_imm32,
-    ReturnImm64: return_imm64,
-    ReturnSlot: return_slot,
     ReturnSpan: return_span,
     Values: values,
     Value: value,
@@ -241,8 +235,6 @@ define_ident!(
     RhsLo: rhs_lo,
     RhsHi: rhs_hi,
     Ptr: ptr,
-    ValTrue: val_true,
-    ValFalse: val_false,
 
     CopyImm128: copy_imm128,
     ValueLo: value_lo,

@@ -14,8 +14,8 @@ use crate::build::{
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReturnOp,
         SelectOp,
-        SelectWidth,
         SimdTy,
         StoreKind,
         StoreOp,
@@ -57,6 +57,7 @@ pub fn wasmi_isa(config: &Config) -> Isa {
     add_select_ops(&mut isa);
     add_load_ops(&mut isa);
     add_store_ops(&mut isa);
+    add_return_ops(&mut isa);
     add_control_ops(&mut isa);
     add_copy_ops(&mut isa);
     add_call_ops(&mut isa);
@@ -129,7 +130,13 @@ fn add_unary_ops(isa: &mut Isa) {
         (Ident::TruncSat, Ty::U64, Ty::F64),
     ];
     for (ident, result_ty, value_ty) in ops {
-        isa.push_op(UnaryOp::new(ident, result_ty, value_ty, OperandKind::Slot))
+        isa.push_op(UnaryOp::new(
+            ident,
+            result_ty,
+            value_ty,
+            OperandKind::Slot,
+            OperandKind::Slot,
+        ))
     }
 }
 
@@ -222,30 +229,25 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Copysign, Ty::F64, Ty::F64, Ty::SignF64, BinaryOpCaps::NONE),
     ];
     for (ident, result_ty, lhs_ty, rhs_ty, caps) in ops {
-        isa.push_op(BinaryOp::new(
-            ident,
-            result_ty,
-            lhs_ty,
-            rhs_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            caps,
-        ));
-        isa.push_op(BinaryOp::new(
-            ident,
-            result_ty,
-            lhs_ty,
-            rhs_ty,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-            caps,
-        ));
+        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(BinaryOp::new(
+                ident,
+                result_ty,
+                lhs_ty,
+                rhs_ty,
+                OperandKind::Slot,
+                OperandKind::Slot,
+                rhs,
+                caps,
+            ));
+        }
         if !caps.is_commutative() {
             isa.push_op(BinaryOp::new(
                 ident,
                 result_ty,
                 lhs_ty,
                 rhs_ty,
+                OperandKind::Slot,
                 OperandKind::Immediate,
                 OperandKind::Slot,
                 caps,
@@ -310,17 +312,25 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
 
 fn add_select_ops(isa: &mut Isa) {
     isa.push_op(SelectOp::new(
-        SelectWidth::None,
+        Ty::U64,
+        OperandKind::Slot,
+        OperandKind::Slot,
         OperandKind::Slot,
         OperandKind::Slot,
     ));
-    for width in [SelectWidth::Bits32, SelectWidth::Bits64] {
+    for result_ty in [Ty::U32, Ty::U64] {
         for true_val in [OperandKind::Slot, OperandKind::Immediate] {
             for false_val in [OperandKind::Slot, OperandKind::Immediate] {
                 if matches!(true_val, OperandKind::Slot) && matches!(false_val, OperandKind::Slot) {
                     continue;
                 }
-                isa.push_op(SelectOp::new(width, true_val, false_val));
+                isa.push_op(SelectOp::new(
+                    result_ty,
+                    OperandKind::Slot,
+                    OperandKind::Slot,
+                    true_val,
+                    false_val,
+                ));
             }
         }
     }
@@ -350,6 +360,7 @@ fn add_load_ops(isa: &mut Isa) {
             isa.push_op(LoadOp::new(
                 kind,
                 result_ty,
+                OperandKind::Slot,
                 ptr,
                 MemoryOperand::Immediate,
                 OffsetOperand::Offset,
@@ -358,6 +369,7 @@ fn add_load_ops(isa: &mut Isa) {
         isa.push_op(LoadOp::new(
             kind,
             result_ty,
+            OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,
@@ -403,6 +415,22 @@ fn add_store_ops(isa: &mut Isa) {
     }
 }
 
+fn add_return_ops(isa: &mut Isa) {
+    let ops = [
+        Op::from(GenericOp::new(Ident::Return, [])),
+        Op::from(ReturnOp::new(Ty::U64, OperandKind::Slot)),
+        Op::from(ReturnOp::new(Ty::U64, OperandKind::Immediate)),
+        Op::from(ReturnOp::new(Ty::U32, OperandKind::Immediate)),
+        Op::from(GenericOp::new(
+            Ident::ReturnSpan,
+            [Field::new(Ident::Values, FieldTy::BoundedSlotSpan)],
+        )),
+    ];
+    for op in ops {
+        isa.push_op(op);
+    }
+}
+
 fn add_control_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(
@@ -412,23 +440,6 @@ fn add_control_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::ConsumeFuel,
             [Field::new(Ident::Fuel, FieldTy::BlockFuel)],
-        )),
-        Op::from(GenericOp::new(Ident::Return, [])),
-        Op::from(GenericOp::new(
-            Ident::ReturnSlot,
-            [Field::new(Ident::Value, FieldTy::Slot)],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ReturnImm32,
-            [Field::new(Ident::Value, FieldTy::U32)],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ReturnImm64,
-            [Field::new(Ident::Value, FieldTy::U64)],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ReturnSpan,
-            [Field::new(Ident::Values, FieldTy::BoundedSlotSpan)],
         )),
         Op::from(GenericOp::new(
             Ident::Branch,
@@ -456,26 +467,26 @@ fn add_control_ops(isa: &mut Isa) {
 
 fn add_copy_ops(isa: &mut Isa) {
     let ops = [
-        Op::from(GenericOp::new(
-            Ident::CopySlot,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::Slot),
-            ],
+        Op::from(UnaryOp::new(
+            Ident::Copy,
+            Ty::U64,
+            Ty::U64,
+            OperandKind::Slot,
+            OperandKind::Slot,
         )),
-        Op::from(GenericOp::new(
-            Ident::CopyImm32,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::U32),
-            ],
+        Op::from(UnaryOp::new(
+            Ident::Copy,
+            Ty::U32,
+            Ty::U32,
+            OperandKind::Slot,
+            OperandKind::Immediate,
         )),
-        Op::from(GenericOp::new(
-            Ident::CopyImm64,
-            [
-                Field::new(Ident::Result, FieldTy::Slot),
-                Field::new(Ident::Value, FieldTy::U64),
-            ],
+        Op::from(UnaryOp::new(
+            Ident::Copy,
+            Ty::U64,
+            Ty::U64,
+            OperandKind::Slot,
+            OperandKind::Immediate,
         )),
         Op::from(GenericOp::new(
             Ident::CopySpanAsc,
@@ -785,14 +796,12 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Result, FieldTy::Slot),
         ],
     )));
-    isa.push_op(Op::from(GenericOp::new(
-        Ident::Select128,
-        [
-            Field::new(Ident::Result, FieldTy::Slot),
-            Field::new(Ident::Selector, FieldTy::Slot),
-            Field::new(Ident::ValTrue, FieldTy::Slot),
-            Field::new(Ident::ValFalse, FieldTy::Slot),
-        ],
+    isa.push_op(Op::from(SelectOp::new(
+        Ty::V128,
+        OperandKind::Slot,
+        OperandKind::Slot,
+        OperandKind::Slot,
+        OperandKind::Slot,
     )));
     add_simd_splat_ops(isa);
     add_simd_extract_lane_ops(isa);
@@ -813,13 +822,15 @@ fn add_simd_splat_ops(isa: &mut Isa) {
         (Ident::Splat, Ty::Bits64),
     ];
     for (ident, value_ty) in kinds {
-        isa.push_op(UnaryOp::new(ident, Ty::V128, value_ty, OperandKind::Slot));
-        isa.push_op(UnaryOp::new(
-            ident,
-            Ty::V128,
-            value_ty,
-            OperandKind::Immediate,
-        ));
+        for value in [OperandKind::Slot, OperandKind::Immediate] {
+            isa.push_op(UnaryOp::new(
+                ident,
+                Ty::V128,
+                value_ty,
+                OperandKind::Slot,
+                value,
+            ));
+        }
     }
 }
 
@@ -974,6 +985,7 @@ fn add_simd_binary_ops(isa: &mut Isa) {
             input_ty,
             OperandKind::Slot,
             OperandKind::Slot,
+            OperandKind::Slot,
             caps,
         ));
     }
@@ -1001,6 +1013,7 @@ fn add_simd_shift_ops(isa: &mut Isa) {
                 result_ty,
                 lhs_ty,
                 Ty::U8,
+                OperandKind::Slot,
                 OperandKind::Slot,
                 rhs,
                 BinaryOpCaps::NONE,
@@ -1080,7 +1093,13 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         (Ident::ConvertLow, Ty::F64x2, Ty::U32x4),
     ];
     for (ident, result_ty, value_ty) in kinds {
-        isa.push_op(UnaryOp::new(ident, result_ty, value_ty, OperandKind::Slot));
+        isa.push_op(UnaryOp::new(
+            ident,
+            result_ty,
+            value_ty,
+            OperandKind::Slot,
+            OperandKind::Slot,
+        ));
     }
 }
 
@@ -1109,17 +1128,19 @@ fn add_simd_load_ops(isa: &mut Isa) {
         (LoadKind::Lane { width: LaneWidth::W32 }, Ty::V128),
         (LoadKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
-    for (kind, loaded_ty) in ops {
+    for (kind, result_ty) in ops {
         isa.push_op(LoadOp::new(
             kind,
-            loaded_ty,
+            result_ty,
+            OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Immediate,
             OffsetOperand::Offset,
         ));
         isa.push_op(LoadOp::new(
             kind,
-            loaded_ty,
+            result_ty,
+            OperandKind::Slot,
             OperandKind::Slot,
             MemoryOperand::Mem0,
             OffsetOperand::Offset16,

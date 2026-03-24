@@ -492,7 +492,7 @@ impl FuncTranslator {
                 };
                 op
             }
-            _ => Op::copy_slot(result, value),
+            _ => Op::u64_copy_ss(result, value),
         };
         Ok(Some(copy_op))
     }
@@ -518,7 +518,7 @@ impl FuncTranslator {
                 };
                 op
             }
-            _ => Op::copy_slot(result, value),
+            _ => Op::u64_copy_ss(result, value),
         };
         Ok(Some(copy_op))
     }
@@ -526,12 +526,12 @@ impl FuncTranslator {
     /// Returns the copy instruction to copy the given immediate `value` to `result`.
     fn make_copy_imm_instr(result: Slot, value: TypedRawVal) -> Result<Op, Error> {
         let instr = match value.ty() {
-            ValType::I32 => Op::copy_imm32(result, i32::from(value).to_bits()),
-            ValType::I64 => Op::copy_imm64(result, i64::from(value).to_bits()),
-            ValType::F32 => Op::copy_imm32(result, f32::from(value).to_bits()),
-            ValType::F64 => Op::copy_imm64(result, f64::from(value).to_bits()),
+            ValType::I32 => Op::u32_copy_si(result, i32::from(value).to_bits()),
+            ValType::I64 => Op::u64_copy_si(result, i64::from(value).to_bits()),
+            ValType::F32 => Op::u32_copy_si(result, f32::from(value).to_bits()),
+            ValType::F64 => Op::u64_copy_si(result, f64::from(value).to_bits()),
             ValType::ExternRef | ValType::FuncRef => {
-                Op::copy_imm32(result, u32::from(RawRef::from(value.raw())))
+                Op::u32_copy_si(result, u32::from(RawRef::from(value.raw())))
             }
             #[cfg(feature = "simd")]
             ValType::V128 => {
@@ -974,7 +974,7 @@ impl FuncTranslator {
         let len_results = self.func_type_with(FuncType::len_results);
         let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
             ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
-            _ => Op::return_slot(slot),
+            _ => Op::return_u64_s(slot),
         };
         let instr = match len_results {
             0 => Op::Return {},
@@ -989,12 +989,12 @@ impl FuncTranslator {
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
-                        ValType::I32 => Op::return_imm32(i32::from(val).to_bits()),
-                        ValType::I64 => Op::return_imm64(i64::from(val).to_bits()),
-                        ValType::F32 => Op::return_imm32(f32::from(val).to_bits()),
-                        ValType::F64 => Op::return_imm64(f64::from(val).to_bits()),
+                        ValType::I32 => Op::return_u32_i(i32::from(val).to_bits()),
+                        ValType::I64 => Op::return_u64_i(i64::from(val).to_bits()),
+                        ValType::F32 => Op::return_u32_i(f32::from(val).to_bits()),
+                        ValType::F64 => Op::return_u64_i(f64::from(val).to_bits()),
                         ValType::FuncRef | ValType::ExternRef => {
-                            Op::return_imm32(u32::from(RawRef::from(val.raw())))
+                            Op::return_u32_i(u32::from(RawRef::from(val.raw())))
                         }
                         ValType::V128 => {
                             let value = self.stack.peek(0);
@@ -2052,7 +2052,7 @@ impl FuncTranslator {
             let false_val = self.copy_if_immediate(false_val)?;
             self.push_instr_with_result(
                 ty,
-                |result| Op::select128(result, condition, false_val, true_val),
+                |result| Op::v128_select_ssss(result, condition, false_val, true_val),
                 FuelCostsProvider::base,
             )?;
             return Ok(());
@@ -2094,16 +2094,16 @@ impl FuncTranslator {
             ty,
             |result| match (true_val, false_val) {
                 (Input::Slot(true_val), Input::Slot(false_val)) => {
-                    Op::select_ssss(result, condition, true_val, false_val)
+                    Op::u64_select_ssss(result, condition, true_val, false_val)
                 }
                 (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::select32_sssi(result, condition, true_val, false_val)
+                    Op::u32_select_sssi(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::select32_ssis(result, condition, true_val, false_val)
+                    Op::u32_select_ssis(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::select32_ssii(result, condition, true_val, false_val)
+                    Op::u32_select_ssii(result, condition, true_val, false_val)
                 }
             },
             FuelCostsProvider::base,
@@ -2129,16 +2129,16 @@ impl FuncTranslator {
             ty,
             |result| match (true_val, false_val) {
                 (Input::Slot(true_val), Input::Slot(false_val)) => {
-                    Op::select_ssss(result, condition, true_val, false_val)
+                    Op::u64_select_ssss(result, condition, true_val, false_val)
                 }
                 (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::select64_sssi(result, condition, true_val, false_val)
+                    Op::u64_select_sssi(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::select64_ssis(result, condition, true_val, false_val)
+                    Op::u64_select_ssis(result, condition, true_val, false_val)
                 }
                 (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::select64_ssii(result, condition, true_val, false_val)
+                    Op::u64_select_ssii(result, condition, true_val, false_val)
                 }
             },
             FuelCostsProvider::base,

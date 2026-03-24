@@ -17,6 +17,7 @@ use crate::build::{
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -62,11 +63,23 @@ impl Display for DisplayDecode<&'_ Isa> {
     }
 }
 
-impl Display for DisplayDecode<&'_ UnaryOp> {
+impl Display for DisplayDecode<&'_ ReturnOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let camel_ident = DisplayIdent::camel(self.value);
         let value_ty = self.value.value_field().ty;
-        writeln!(f, "pub type {camel_ident} = UnaryOp<{value_ty}>;")
+        writeln!(f, "pub type {camel_ident} = ReturnOp<{value_ty}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ UnaryOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let camel_ident = DisplayIdent::camel(self.value);
+        let result_ty = self.value.result_field().ty;
+        let value_ty = self.value.value_field().ty;
+        writeln!(
+            f,
+            "pub type {camel_ident} = UnaryOp<{result_ty}, {value_ty}>;"
+        )
     }
 }
 
@@ -74,9 +87,10 @@ impl Display for DisplayDecode<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let res = self.value.result_field().ty;
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
-        writeln!(f, "pub type {camel_ident} = BinaryOp<{lhs}, {rhs}>;")
+        writeln!(f, "pub type {camel_ident} = BinaryOp<{res}, {lhs}, {rhs}>;")
     }
 }
 
@@ -105,9 +119,14 @@ impl Display for DisplayDecode<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let res = op.result_field().ty;
+        let cond = op.condition_field().ty;
         let lhs = op.true_val_field().ty;
         let rhs = op.false_val_field().ty;
-        writeln!(f, "pub type {camel_ident} = SelectOp<{lhs}, {rhs}>;")
+        writeln!(
+            f,
+            "pub type {camel_ident} = SelectOp<{res}, {cond}, {lhs}, {rhs}>;"
+        )
     }
 }
 
@@ -125,7 +144,7 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         };
         let (lane_suffix, lane_param) = match op.kind {
             LoadKind::Lane { width } => {
-                let lane_param = DisplayConcat(('<', FieldTy::from(width), '>'));
+                let lane_param = DisplayConcat((',', FieldTy::from(width)));
                 (
                     Some(CamelCase(Ident::Lane)),
                     Some(lane_param).display_maybe(),
@@ -136,9 +155,11 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         let lane_suffix = lane_suffix.display_maybe();
         let result_suffix = CamelCase(Suffix(OperandKind::Slot));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
+        let result_ty = op.result.field_ty(op.result_ty);
+        let generics = DisplayConcat(('<', result_ty, lane_param, '>'));
         writeln!(
             f,
-            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{lane_param};"
+            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{generics};"
         )
     }
 }

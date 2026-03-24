@@ -10,6 +10,7 @@ use self::op::{
     LoadOp_Si,
     LoadOp_Ss,
     LoadOpMem0Offset16_Ss,
+    ReturnOp,
     SelectOp,
     StoreOp_I,
     StoreOp_S,
@@ -39,12 +40,15 @@ use crate::{
     FixedSlotSpan,
     Offset16,
     OpCode,
+    Reg,
     Sign,
     Slot,
     SlotSpan,
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
+#[expect(unused_imports)]
+use crate::{Freg32, Freg64, Ireg};
 use core::{
     error::Error as CoreError,
     fmt,
@@ -226,3 +230,10 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
 }
 
 include!(concat!(env!("OUT_DIR"), "/decode.rs"));
+
+impl<T> Decode for Reg<T> {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
+    }
+}

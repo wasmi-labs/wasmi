@@ -8,6 +8,7 @@ use crate::build::{
         Field,
         GenericOp,
         LoadOp,
+        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -102,6 +103,7 @@ macro_rules! impl_display_encode {
     };
 }
 impl_display_encode! {
+    ReturnOp,
     UnaryOp,
     BinaryOp,
     TernaryOp,

@@ -10,7 +10,7 @@ use crate::{
         LowerToCells,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
-            state::{Inst, Ip, Sp, Stack, VmState},
+            state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, Stack, VmState},
             utils::{self, resolve_instance},
         },
     },
@@ -112,6 +112,9 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
             mem0,
             mem0_len,
             self.instance,
+            Ireg::from(0_u64),
+            Freg32::from(0.0_f32),
+            Freg64::from(0.0_f64),
         )
     }
 }
