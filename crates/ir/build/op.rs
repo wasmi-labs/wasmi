@@ -8,6 +8,7 @@ macro_rules! apply_macro_for_ops {
     ($mac:ident $(, $param:ident)* $(,)?) => {
         $mac! {
             $($param,)*
+            Return(ReturnOp),
             Unary(UnaryOp),
             Binary(BinaryOp),
             Ternary(TernaryOp),
@@ -394,6 +395,26 @@ impl SelectOp {
             self.true_val_field(),
             self.false_val_field(),
         ]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct ReturnOp {
+    pub value_ty: Ty,
+    pub value: OperandKind,
+}
+
+impl ReturnOp {
+    pub fn new(value_ty: Ty, value: OperandKind) -> Self {
+        Self { value_ty, value }
+    }
+
+    pub fn value_field(&self) -> Field {
+        Field::new(Ident::Value, self.value.field_ty(self.value_ty))
+    }
+
+    pub fn fields(&self) -> [Field; 1] {
+        [self.value_field()]
     }
 }
 

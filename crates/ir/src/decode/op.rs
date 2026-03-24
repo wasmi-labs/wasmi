@@ -12,6 +12,19 @@ use crate::{
 };
 
 #[derive(Copy, Clone)]
+pub struct ReturnOp<Value> {
+    pub value: Value,
+}
+
+impl<V: Decode> Decode for ReturnOp<V> {
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            value: Decode::decode(decoder)?,
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct UnaryOp<Result, Value> {
     pub result: Result,
     pub value: Value,

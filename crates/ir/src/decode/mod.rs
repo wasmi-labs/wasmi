@@ -10,6 +10,7 @@ use self::op::{
     LoadOp_Si,
     LoadOp_Ss,
     LoadOpMem0Offset16_Ss,
+    ReturnOp,
     SelectOp,
     StoreOp_I,
     StoreOp_S,

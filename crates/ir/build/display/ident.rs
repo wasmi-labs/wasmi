@@ -9,6 +9,7 @@ use crate::build::{
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -202,6 +203,17 @@ impl Display for SnakeCase<Suffix<OperandKind>> {
             OperandKind::Immediate => "i",
         };
         f.write_str(s)
+    }
+}
+
+impl Display for DisplayIdent<&'_ ReturnOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::Return);
+        let ident_suffix = case.wrap(IdentSuffix(op.value_ty));
+        let value_suffix = case.wrap(Suffix(op.value));
+        write!(f, "{ident}{ident_suffix}_{value_suffix}")
     }
 }
 

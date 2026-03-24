@@ -14,6 +14,7 @@ use crate::build::{
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReturnOp,
         SelectOp,
         SimdTy,
         StoreKind,
@@ -417,18 +418,9 @@ fn add_store_ops(isa: &mut Isa) {
 fn add_return_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(Ident::Return, [])),
-        Op::from(GenericOp::new(
-            Ident::ReturnSlot,
-            [Field::new(Ident::Value, FieldTy::Slot)],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ReturnImm32,
-            [Field::new(Ident::Value, FieldTy::U32)],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ReturnImm64,
-            [Field::new(Ident::Value, FieldTy::U64)],
-        )),
+        Op::from(ReturnOp::new(Ty::U64, OperandKind::Slot)),
+        Op::from(ReturnOp::new(Ty::U64, OperandKind::Immediate)),
+        Op::from(ReturnOp::new(Ty::U32, OperandKind::Immediate)),
         Op::from(GenericOp::new(
             Ident::ReturnSpan,
             [Field::new(Ident::Values, FieldTy::BoundedSlotSpan)],

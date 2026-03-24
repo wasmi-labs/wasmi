@@ -974,7 +974,7 @@ impl FuncTranslator {
         let len_results = self.func_type_with(FuncType::len_results);
         let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
             ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
-            _ => Op::return_slot(slot),
+            _ => Op::return_u64_s(slot),
         };
         let instr = match len_results {
             0 => Op::Return {},
@@ -989,12 +989,12 @@ impl FuncTranslator {
                 Operand::Immediate(operand) => {
                     let val = operand.val();
                     match operand.ty() {
-                        ValType::I32 => Op::return_imm32(i32::from(val).to_bits()),
-                        ValType::I64 => Op::return_imm64(i64::from(val).to_bits()),
-                        ValType::F32 => Op::return_imm32(f32::from(val).to_bits()),
-                        ValType::F64 => Op::return_imm64(f64::from(val).to_bits()),
+                        ValType::I32 => Op::return_u32_i(i32::from(val).to_bits()),
+                        ValType::I64 => Op::return_u64_i(i64::from(val).to_bits()),
+                        ValType::F32 => Op::return_u32_i(f32::from(val).to_bits()),
+                        ValType::F64 => Op::return_u64_i(f64::from(val).to_bits()),
                         ValType::FuncRef | ValType::ExternRef => {
-                            Op::return_imm32(u32::from(RawRef::from(val.raw())))
+                            Op::return_u32_i(u32::from(RawRef::from(val.raw())))
                         }
                         ValType::V128 => {
                             let value = self.stack.peek(0);
