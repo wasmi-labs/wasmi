@@ -2052,7 +2052,7 @@ impl FuncTranslator {
             let false_val = self.copy_if_immediate(false_val)?;
             self.push_instr_with_result(
                 ty,
-                |result| Op::v128_select_ssss(result, condition, false_val, true_val),
+                |result| Op::v128_select_ssss(result, condition, true_val, false_val),
                 FuelCostsProvider::base,
             )?;
             return Ok(());
