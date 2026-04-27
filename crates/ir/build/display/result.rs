@@ -24,7 +24,7 @@ impl Display for DisplayResultMut<&'_ Isa> {
             self.value
                 .ops
                 .iter()
-                .filter(|op| op.has_result())
+                .filter(|op| op.has_result_slot())
                 .map(|op| DisplayResultMut::new(op, indent.inc_by(3))),
         );
         write!(
@@ -63,8 +63,8 @@ impl Display for DisplayResultMut<&'_ Op> {
 }
 
 impl Op {
-    /// Returns `true` if `self` has a result field.
-    pub fn has_result(&self) -> bool {
+    /// Returns `true` if `self` has a `Slot` result field.
+    pub fn has_result_slot(&self) -> bool {
         match self {
             Op::Return(_) => false,
             Op::Unary(_) => true,
