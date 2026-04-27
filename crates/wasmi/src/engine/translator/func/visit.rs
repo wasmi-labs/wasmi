@@ -1833,6 +1833,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_ref_is_null(&mut self) -> Self::Output {
         bail_unreachable!(self);
         match self.stack.pop() {
+            Operand::Reg(_input) => todo!(),
             Operand::Local(input) => {
                 // Note: `funcref` and `externref` both serialize to `RawValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`

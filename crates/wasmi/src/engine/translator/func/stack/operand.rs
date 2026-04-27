@@ -12,6 +12,8 @@ use super::Stack;
 /// An operand on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub enum Operand {
+    /// A register operand.
+    Reg(RegOperand),
     /// A local variable operand.
     Local(LocalOperand),
     /// A temporary operand.
@@ -24,6 +26,7 @@ impl Operand {
     /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`StackPos`].
     pub(super) fn new(stack_pos: StackPos, operand: StackOperand) -> Self {
         match operand {
+            StackOperand::Reg { temp_slots, ty } => Self::reg(stack_pos, temp_slots, ty),
             StackOperand::Local {
                 local_index,
                 ty,
@@ -48,6 +51,15 @@ impl Operand {
             (Self::Immediate(lhs), Self::Immediate(rhs)) => lhs.val() == rhs.val(),
             _ => false,
         }
+    }
+
+    /// Creates a register [`Operand`].
+    pub(super) fn reg(stack_pos: StackPos, temp_slots: SlotSpan, ty: ValType) -> Self {
+        Self::Reg(RegOperand {
+            temp_slots,
+            ty,
+            stack_pos,
+        })
     }
 
     /// Creates a local [`Operand`].
@@ -89,6 +101,7 @@ impl Operand {
     /// This is required to copy an span of operand to its temporary [`BoundedSlotSpan`].
     pub fn temp_slots(&self) -> BoundedSlotSpan {
         match self {
+            Self::Reg(operand) => operand.temp_slots(),
             Self::Local(operand) => operand.temp_slots(),
             Self::Temp(operand) => operand.temp_slots(),
             Self::Immediate(operand) => operand.temp_slots(),
@@ -98,6 +111,7 @@ impl Operand {
     /// Returns the type of the [`Operand`].
     pub fn ty(&self) -> ValType {
         match self {
+            Self::Reg(operand) => operand.ty(),
             Self::Local(operand) => operand.ty(),
             Self::Temp(operand) => operand.ty(),
             Self::Immediate(operand) => operand.ty(),
@@ -105,7 +119,47 @@ impl Operand {
     }
 }
 
-/// A local variable on the [`Stack`].
+/// A register operand on the stack.
+#[derive(Debug, Copy, Clone)]
+#[expect(dead_code)]
+pub struct RegOperand {
+    /// The temporary [`SlotSpan`] of the local operand.
+    temp_slots: SlotSpan,
+    /// The type of the operand.
+    ty: ValType,
+    /// The position of the operand on the operand stack.
+    stack_pos: StackPos,
+}
+
+impl From<RegOperand> for Operand {
+    fn from(operand: RegOperand) -> Self {
+        Self::Reg(operand)
+    }
+}
+
+impl RegOperand {
+    /// Creates a new [`RegOperand`] from its parts.
+    pub(super) fn new(temp_slots: SlotSpan, ty: ValType, stack_pos: StackPos) -> Self {
+        Self {
+            temp_slots,
+            ty,
+            stack_pos,
+        }
+    }
+
+    /// Returns the type of the [`RegOperand`].
+    pub fn ty(&self) -> ValType {
+        self.ty
+    }
+
+    /// Returns the temporary [`BoundedSlotSpan`] of the [`RegOperand`].
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
+        let len = required_cells_for_ty(self.ty());
+        BoundedSlotSpan::new(self.temp_slots, len)
+    }
+}
+
+/// A local variable on the stack.
 #[derive(Debug, Copy, Clone)]
 pub struct LocalOperand {
     /// The temporary [`SlotSpan`] of the local operand.
