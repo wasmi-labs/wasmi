@@ -1286,9 +1286,12 @@ execution_handler! {
 
 handler_unary! {
     // copy
-    fn u64_copy_ss(U64Copy_Ss) = identity::<u64>;
     fn u32_copy_si(U32Copy_Si) = identity::<u32>;
+    fn u64_copy_ss(U64Copy_Ss) = identity::<u64>;
     fn u64_copy_si(U64Copy_Si) = identity::<u64>;
+    fn u64_copy_sr(U64Copy_Sr) = identity::<u64>;
+    fn f32_copy_sr(F32Copy_Sr) = identity::<f32>;
+    fn f64_copy_sr(F64Copy_Sr) = identity::<f64>;
     // i32
     fn i32_popcnt_ss(I32Popcnt_Ss) = wasm::i32_popcnt;
     fn i32_ctz_ss(I32Ctz_Ss) = wasm::i32_ctz;
