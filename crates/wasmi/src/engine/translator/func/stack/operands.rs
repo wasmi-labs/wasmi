@@ -1,4 +1,13 @@
-use super::{ImmediateOperand, LocalIdx, LocalOperand, LocalsHead, Operand, Reset, TempOperand};
+use super::{
+    ImmediateOperand,
+    LocalIdx,
+    LocalOperand,
+    LocalsHead,
+    Operand,
+    RegOperand,
+    Reset,
+    TempOperand,
+};
 use crate::{
     Error,
     ValType,
@@ -34,6 +43,17 @@ impl From<usize> for StackPos {
 /// hidden to the outside.
 #[derive(Debug, Copy, Clone)]
 pub enum StackOperand {
+    /// A register operand.
+    Reg {
+        /// The temporary stack offset of the operand.
+        temp_slots: SlotSpan,
+        /// The type of the register operand.
+        ///
+        /// This does not have to be the type of the associated operand but
+        /// might be a type overwrite. This is useful for Wasm `reinterpret`
+        /// operators with local operand inputs.
+        ty: ValType,
+    },
     /// A local variable.
     Local {
         /// The temporary stack offset of the operand.
@@ -73,13 +93,17 @@ impl StackOperand {
     /// Returns the [`ValType`] of the [`StackOperand`].
     pub fn ty(&self) -> ValType {
         match self {
-            Self::Temp { ty, .. } | Self::Immediate { ty, .. } | Self::Local { ty, .. } => *ty,
+            Self::Reg { ty, .. }
+            | Self::Temp { ty, .. }
+            | Self::Immediate { ty, .. }
+            | Self::Local { ty, .. } => *ty,
         }
     }
 
     /// Returns the temporary [`SlotSpan`] of the [`StackOperand`].
     pub fn temp_slots(&self) -> SlotSpan {
         match self {
+            | Self::Reg { temp_slots, .. }
             | Self::Temp { temp_slots, .. }
             | Self::Immediate { temp_slots, .. }
             | Self::Local { temp_slots, .. } => *temp_slots,
@@ -216,6 +240,7 @@ impl OperandStack {
     #[inline]
     pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         match operand {
+            Operand::Reg(op) => self.push_reg(op.ty()).map(Operand::from),
             Operand::Local(op) => self
                 .push_local(op.local_index(), op.ty())
                 .map(Operand::from),
@@ -251,6 +276,19 @@ impl OperandStack {
         });
         self.len_locals += 1;
         Ok(LocalOperand::new(temp_slots, ty, local_index))
+    }
+
+    /// Pushes a register operand with type `ty` on the [`OperandStack`].
+    ///
+    /// # Errors
+    ///
+    /// If too many operands have been pushed onto the [`OperandStack`].
+    #[inline]
+    pub fn push_reg(&mut self, ty: ValType) -> Result<RegOperand, Error> {
+        let stack_pos = self.next_stack_pos();
+        let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
+        self.operands.push(StackOperand::Reg { temp_slots, ty });
+        Ok(RegOperand::new(temp_slots, ty, stack_pos))
     }
 
     /// Pushes a temporary with type `ty` on the [`OperandStack`].

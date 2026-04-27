@@ -138,6 +138,7 @@ impl StackLayout {
     /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
+            Operand::Reg(_operand) => todo!(),
             Operand::Local(operand) => self.local_to_slot(operand),
             Operand::Temp(operand) => Ok(operand.temp_slots().head()),
             Operand::Immediate(operand) => {
