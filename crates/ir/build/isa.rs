@@ -130,13 +130,15 @@ fn add_unary_ops(isa: &mut Isa) {
         (Ident::TruncSat, Ty::U64, Ty::F64),
     ];
     for (ident, result_ty, value_ty) in ops {
-        isa.push_op(UnaryOp::new(
-            ident,
-            result_ty,
-            value_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-        ))
+        for value in [OperandKind::Slot, OperandKind::Reg] {
+            isa.push_op(UnaryOp::new(
+                ident,
+                result_ty,
+                value_ty,
+                OperandKind::Reg,
+                value,
+            ))
+        }
     }
 }
 
