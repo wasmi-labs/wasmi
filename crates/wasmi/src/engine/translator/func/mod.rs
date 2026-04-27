@@ -55,7 +55,7 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
                 UpdateBranchOffset as _,
             },
-            func::stack::TempOperand,
+            func::stack::{RegOperand, TempOperand},
             utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger, required_cells_for_ty},
         },
     },
@@ -466,6 +466,7 @@ impl FuncTranslator {
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
         match value {
+            Operand::Reg(value) => Self::make_copy_reg_instr(result, value),
             Operand::Temp(value) => Self::make_copy_temp_instr(result, value),
             Operand::Local(value) => Self::make_copy_local_instr(result, value, layout),
             Operand::Immediate(value) => {
@@ -667,6 +668,7 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_first() {
             let ty = value.ty();
             let value = match value {
+                Operand::Reg(_value) => todo!(),
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
@@ -700,6 +702,7 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_last() {
             let ty = value.ty();
             let value = match value {
+                Operand::Reg(_value) => todo!(),
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
@@ -743,6 +746,7 @@ impl FuncTranslator {
             // Note: We only have to check the register case since constant value
             //       copies can never overlap.
             let value = match value {
+                Operand::Reg(_value) => todo!(),
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
                 Operand::Immediate(_) => {
@@ -804,6 +808,7 @@ impl FuncTranslator {
     // TODO: return `BoundedSlotSpan` instead of just `Slot`
     fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
+            Operand::Reg(_value) => todo!(),
             Operand::Local(operand) => self.layout.local_to_slot(operand),
             Operand::Temp(operand) => Ok(operand.temp_slots().head()),
             Operand::Immediate(operand) => {
@@ -981,6 +986,7 @@ impl FuncTranslator {
         let instr = match len_results {
             0 => Op::Return {},
             1 => match self.stack.peek(0) {
+                Operand::Reg(_operand) => todo!(),
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_slot(operand)?;
                     return_slot_for_ty(operand.ty(), value)
@@ -1046,6 +1052,7 @@ impl FuncTranslator {
             return Ok(None);
         };
         match head.as_ref() {
+            Operand::Reg(_operand) => todo!(),
             Operand::Local(operand) => Self::try_form_span_of_locals(operand, values, layout),
             Operand::Temp(operand) => Self::try_form_span_of_temps(operand, values),
             Operand::Immediate(_) => Ok(None),
@@ -1333,6 +1340,7 @@ impl FuncTranslator {
             StackSpace::Local
         ));
         let old_result = match old_result {
+            Operand::Reg(_old_result) => todo!(),
             Operand::Temp(old_result) => old_result.temp_slots().head(),
             Operand::Local(_) | Operand::Immediate(_) => {
                 // Case immediate: cannot replace immediate value result.
@@ -1384,6 +1392,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let condition = match condition {
+            Operand::Reg(_condition) => todo!(),
             Operand::Local(condition) => self.layout.local_to_slot(condition)?,
             Operand::Temp(condition) => condition.temp_slots().head(),
             Operand::Immediate(condition) => {
@@ -1620,6 +1629,7 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         match self.stack.pop() {
+            Operand::Reg(_input) => todo!(),
             Operand::Local(input) => {
                 debug_assert_eq!(input.ty(), <T as Typed>::TY);
                 self.stack
@@ -1644,6 +1654,7 @@ impl FuncTranslator {
         f: impl FnOnce(&mut Self, TypedRawVal) -> Result<Input<R>, Error>,
     ) -> Result<Input<R>, Error> {
         let reg = match operand {
+            Operand::Reg(_operand) => todo!(),
             Operand::Local(operand) => self.layout.local_to_slot(operand)?,
             Operand::Temp(operand) => operand.temp_slots().head(),
             Operand::Immediate(operand) => return f(self, operand.val()),
@@ -1662,6 +1673,7 @@ impl FuncTranslator {
         index_type: IndexType,
     ) -> Result<Input<u64>, Error> {
         let value = match operand {
+            Operand::Reg(_value) => todo!(),
             Operand::Immediate(value) => value.val(),
             Operand::Local(value) => {
                 debug_assert_eq!(operand.ty(), index_type.ty());
@@ -2018,6 +2030,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let condition = match condition {
+            Operand::Reg(_condition) => todo!(),
             Operand::Immediate(condition) => {
                 let condition = i32::from(condition.val()) != 0;
                 let selected = match condition {
@@ -2291,6 +2304,7 @@ impl FuncTranslator {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
         let ptr = match ptr {
+            Operand::Reg(_ptr) => todo!(),
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
             Operand::Temp(ptr) => ptr.temp_slots().head(),
             Operand::Immediate(ptr) => {
@@ -2366,6 +2380,7 @@ impl FuncTranslator {
     {
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = match ptr {
+            Operand::Reg(_ptr) => todo!(),
             Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
             Operand::Temp(ptr) => ptr.temp_slots().head(),
             Operand::Immediate(ptr) => {
@@ -2376,6 +2391,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let store_op = match value {
+            Operand::Reg(_value) => todo!(),
             Operand::Local(value) => {
                 let value = self.layout.local_to_slot(value)?;
                 T::store_ss(ptr, offset, value, memory)
@@ -2410,6 +2426,7 @@ impl FuncTranslator {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let store_op = match value {
+            Operand::Reg(_value) => todo!(),
             Operand::Local(value) => {
                 let value = self.layout.local_to_slot(value)?;
                 T::store_is(address, value, memory)
@@ -2453,6 +2470,7 @@ impl FuncTranslator {
             return Ok(false);
         };
         let store_op = match value {
+            Operand::Reg(_value) => todo!(),
             Operand::Local(value) => {
                 let value = self.layout.local_to_slot(value)?;
                 T::store_mem0_offset16_ss(ptr, offset16, value)
