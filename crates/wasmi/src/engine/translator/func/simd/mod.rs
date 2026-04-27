@@ -299,6 +299,7 @@ impl FuncTranslator {
         };
         let (ptr, v128) = self.stack.pop2();
         let v128 = match v128 {
+            Operand::Reg(_v128) => todo!(),
             Operand::Immediate(v128) => {
                 // Case: with `v128` being an immediate value we can extract its
                 //       lane value and translate as a more efficient non-SIMD operation.

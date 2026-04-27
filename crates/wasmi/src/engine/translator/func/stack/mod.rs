@@ -21,7 +21,7 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    operand::{ImmediateOperand, LocalOperand, Operand, TempOperand},
+    operand::{ImmediateOperand, LocalOperand, Operand, RegOperand, TempOperand},
     operands::{PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
