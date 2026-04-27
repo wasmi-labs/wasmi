@@ -15,6 +15,7 @@ use self::{
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
+    op::UnaryOp,
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -1574,59 +1575,36 @@ impl FuncTranslator {
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary<T, R>(
-        &mut self,
-        make_instr: fn(result: Slot, input: Slot) -> Op,
-        consteval: fn(input: T) -> R,
-    ) -> Result<(), Error>
+    fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error>
     where
-        T: From<TypedRawVal>,
-        R: Into<TypedRawVal> + Typed,
+        Op::Value: From<TypedRawVal>,
+        Op::Result: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
-        let input = self.stack.pop();
-        if let Operand::Immediate(input) = input {
-            self.stack.push_immediate(consteval(input.val().into()))?;
-            return Ok(());
-        }
-        let input = self.layout.operand_to_slot(input)?;
-        self.push_instr_with_result(
-            <R as Typed>::TY,
-            |result| make_instr(result, input),
-            FuelCostsProvider::base,
-        )
-    }
-
-    /// Translates a unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary_fallible<T, R>(
-        &mut self,
-        make_instr: fn(result: Slot, input: Slot) -> Op,
-        consteval: fn(input: T) -> Result<R, TrapCode>,
-    ) -> Result<(), Error>
-    where
-        T: From<TypedRawVal>,
-        R: Into<TypedRawVal> + Typed,
-    {
-        bail_unreachable!(self);
-        let input = self.stack.pop();
-        if let Operand::Immediate(input) = input {
-            let input = T::from(input.val());
-            match consteval(input) {
-                Ok(result) => {
-                    self.stack.push_immediate(result)?;
+        let op = match self.stack.pop() {
+            Operand::Immediate(input) => {
+                match Op::consteval(input.val().into()) {
+                    Ok(result) => {
+                        self.stack.push_immediate(result)?;
+                    }
+                    Err(trap_code) => {
+                        self.translate_trap(trap_code)?;
+                    }
                 }
-                Err(trap) => {
-                    self.translate_trap(trap)?;
-                }
+                return Ok(());
             }
-            return Ok(());
-        }
-        let input = self.layout.operand_to_slot(input)?;
-        self.push_instr_with_result(
-            <R as Typed>::TY,
-            |result| make_instr(result, input),
-            FuelCostsProvider::base,
-        )
+            Operand::Reg(_input) => Op::op_rr(),
+            Operand::Local(input) => {
+                let input = self.layout.local_to_slot(input)?;
+                Op::op_rs(input)
+            }
+            Operand::Temp(input) => {
+                let input = input.temp_slots().head();
+                Op::op_rs(input)
+            }
+        };
+        self.push_instr(op, FuelCostsProvider::base)?;
+        Ok(())
     }
 
     /// Translate a generic Wasm reinterpret-like operation.
