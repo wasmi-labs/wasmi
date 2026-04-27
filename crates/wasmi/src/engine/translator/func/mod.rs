@@ -476,6 +476,20 @@ impl FuncTranslator {
         }
     }
 
+    /// Returns the copy instruction to copy the given register `value` to `result`.
+    fn make_copy_reg_instr(result: Slot, value: RegOperand) -> Result<Option<Op>, Error> {
+        let ty = value.ty();
+        let copy_op = match ty {
+            ValType::V128 => todo!(), // this should be treated as an error for now
+            ValType::I32 | ValType::I64 | ValType::ExternRef | ValType::FuncRef => {
+                Op::u64_copy_sr(result, ir::Ireg::default())
+            }
+            ValType::F32 => Op::f32_copy_sr(result, ir::Freg32::default()),
+            ValType::F64 => Op::f64_copy_sr(result, ir::Freg64::default()),
+        };
+        Ok(Some(copy_op))
+    }
+
     /// Returns the copy instruction to copy the given temporary `value` to `result`.
     fn make_copy_temp_instr(result: Slot, value: TempOperand) -> Result<Option<Op>, Error> {
         let ty = value.ty();
