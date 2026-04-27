@@ -67,7 +67,7 @@ impl Op {
     pub fn has_result_slot(&self) -> bool {
         match self {
             Op::Return(_) => false,
-            Op::Unary(_) => true,
+            Op::Unary(_) => false,
             Op::Binary(_) => true,
             Op::Ternary(_) => true,
             Op::CmpBranch(_) => false,
