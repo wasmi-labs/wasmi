@@ -108,7 +108,7 @@ impl<const N: usize> GenericOp<N> {
         Self { ident, fields }
     }
 
-    pub fn has_result(&self) -> bool {
+    pub fn has_result_slot(&self) -> bool {
         self.fields
             .iter()
             .any(|field| matches!(field.ident, Ident::Result))
