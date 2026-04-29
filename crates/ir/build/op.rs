@@ -111,7 +111,7 @@ impl<const N: usize> GenericOp<N> {
     pub fn has_result_slot(&self) -> bool {
         self.fields
             .iter()
-            .any(|field| matches!(field.ident, Ident::Result))
+            .any(|field| matches!(field.ident, Ident::Result) && matches!(field.ty, FieldTy::Slot))
     }
 }
 
