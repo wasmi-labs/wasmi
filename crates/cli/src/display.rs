@@ -1,6 +1,6 @@
 use crate::context::Context;
 use std::fmt::{self, Display};
-use wasmi::{FuncType, Val, ValType};
+use wasmi::{FuncType, Nullable, Val, ValType};
 
 /// [`Display`]-wrapper type for [`ValType`].
 pub struct DisplayValueType<'a>(&'a ValType);
@@ -45,6 +45,7 @@ impl fmt::Display for DisplayValue<'_> {
             Val::V128(value) => {
                 write!(f, "0x{:032X}", value.as_u128())
             }
+            Val::FuncRef(Nullable::Null) | Val::ExternRef(Nullable::Null) => f.write_str("null"),
             Val::FuncRef(_) | Val::ExternRef(_) => {
                 panic!("cannot display reference values but found {:?}", self.0)
             }
