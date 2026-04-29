@@ -124,7 +124,7 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
 fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
         true => 55_000,
-        false => 37_000,
+        false => 39_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
         write!(buffer, "{}", DisplayDecode::new(isa, Indent::default()))

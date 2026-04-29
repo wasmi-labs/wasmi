@@ -483,10 +483,10 @@ impl FuncTranslator {
         let copy_op = match ty {
             ValType::V128 => todo!(), // this should be treated as an error for now
             ValType::I32 | ValType::I64 | ValType::ExternRef | ValType::FuncRef => {
-                Op::u64_copy_sr(result, ir::Ireg::default())
+                Op::u64_copy_sr(result, ir::Reg::default())
             }
-            ValType::F32 => Op::f32_copy_sr(result, ir::Freg32::default()),
-            ValType::F64 => Op::f64_copy_sr(result, ir::Freg64::default()),
+            ValType::F32 => Op::f32_copy_sr(result, ir::Reg::default()),
+            ValType::F64 => Op::f64_copy_sr(result, ir::Reg::default()),
         };
         Ok(Some(copy_op))
     }
