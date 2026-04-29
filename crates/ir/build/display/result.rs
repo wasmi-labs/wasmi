@@ -1,7 +1,7 @@
 use crate::build::{
     display::{Indent, ident::DisplayIdent, utils::DisplaySequence},
     isa::Isa,
-    op::Op,
+    op::{Op, OperandKind},
 };
 use core::fmt::{self, Display};
 
@@ -67,7 +67,9 @@ impl Op {
     pub fn has_result_slot(&self) -> bool {
         match self {
             Op::Return(_) => false,
-            Op::Unary(_) => false,
+            Op::Unary(op) => {
+                matches!(op.result, OperandKind::Slot)
+            }
             Op::Binary(_) => true,
             Op::Ternary(_) => true,
             Op::CmpBranch(_) => false,
