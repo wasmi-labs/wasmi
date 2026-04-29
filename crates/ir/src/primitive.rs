@@ -6,6 +6,14 @@ use core::{
 };
 
 /// A generic register type.
+///
+/// # Note
+///
+/// The generic `T` is either `i64`, `f32` or `f64`.
+///
+/// - `Reg<i64>`: used for `i32`, `i64`, `externref` and `funcref`
+/// - `Reg<f32>`: used for `f32`
+/// - `Reg<f64>`: used for `f64`
 pub struct Reg<T> {
     /// Tells the compiler that `T` is not used within.
     marker: PhantomData<fn() -> T>,
@@ -26,11 +34,6 @@ impl<T> Default for Reg<T> {
     }
 }
 
-mod marker {
-    /// Marker for the integer GPR register.
-    pub enum Int {}
-}
-
 impl<T> Debug for Reg<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.write_str("Reg<")?;
@@ -39,15 +42,6 @@ impl<T> Debug for Reg<T> {
         Ok(())
     }
 }
-
-/// The general purpose (integer) register.
-pub type Ireg = Reg<marker::Int>;
-
-/// The `f32` register.
-pub type Freg32 = Reg<f32>;
-
-/// The `f64` register.
-pub type Freg64 = Reg<f64>;
 
 /// An [`Op::BranchTableSpan`](crate::Op::BranchTableSpan) branching target.
 #[derive(Debug, Copy, Clone)]

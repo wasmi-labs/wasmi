@@ -89,9 +89,9 @@ impl OperandKind {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::from(hint),
             OperandKind::Reg => match hint {
-                Ty::F32 | Ty::SignF32 => FieldTy::Freg32,
-                Ty::F64 | Ty::SignF64 => FieldTy::Freg64,
-                _ => FieldTy::Ireg,
+                Ty::F32 | Ty::SignF32 => FieldTy::RegF32,
+                Ty::F64 | Ty::SignF64 => FieldTy::RegF64,
+                _ => FieldTy::RegInt,
             },
         }
     }
@@ -478,7 +478,7 @@ impl LoadOp {
         let ptr_ty = match self.ptr {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
-            OperandKind::Reg => FieldTy::Ireg,
+            OperandKind::Reg => FieldTy::RegInt,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -610,7 +610,7 @@ impl StoreOp {
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Reg => FieldTy::Ireg,
+            OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Immediate => FieldTy::Address,
         };
         Field::new(Ident::Ptr, ptr_ty)
@@ -936,7 +936,7 @@ impl V128ReplaceLaneOp {
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Reg => FieldTy::Ireg,
+            OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Immediate => match self.width {
                 LaneWidth::W8 => FieldTy::U8,
                 LaneWidth::W16 => FieldTy::U16,
