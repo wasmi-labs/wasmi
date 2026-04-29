@@ -466,9 +466,9 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
     type Item = ImportType<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let import = match self.names.next() {
-            None => return None,
-            Some(imported) => match imported {
+        let import = {
+            let imported = self.names.next()?;
+            match imported {
                 Imported::Func(name) => {
                     let func_type = self.funcs.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported function for {name:?}")
@@ -494,7 +494,7 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
                     });
                     ImportType::new(name, *global_type)
                 }
-            },
+            }
         };
         Some(import)
     }
