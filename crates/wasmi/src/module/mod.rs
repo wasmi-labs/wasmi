@@ -325,15 +325,14 @@ impl Module {
     /// Returns an iterator over the imports of the [`Module`].
     pub fn imports(&self) -> ModuleImportsIter<'_> {
         let header = self.module_header();
-        let len_imported_funcs = header.imports.len_funcs;
-        let len_imported_globals = header.imports.len_globals;
+        let imports = &header.imports;
         ModuleImportsIter {
             engine: self.engine(),
-            names: header.imports.items.iter(),
-            funcs: header.funcs[..len_imported_funcs].iter(),
-            tables: header.tables.iter(),
-            memories: header.memories.iter(),
-            globals: header.globals[..len_imported_globals].iter(),
+            names: imports.items.iter(),
+            funcs: header.funcs[..imports.len_funcs].iter(),
+            tables: header.tables[..imports.len_tables].iter(),
+            memories: header.memories[..imports.len_memories].iter(),
+            globals: header.globals[..imports.len_globals].iter(),
         }
     }
 
