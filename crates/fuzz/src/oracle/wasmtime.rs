@@ -3,7 +3,18 @@ use crate::{
     FuzzVal,
     oracle::{DifferentialOracle, DifferentialOracleMeta},
 };
-use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, V128, Val};
+use wasmtime::{
+    Config,
+    Engine,
+    Instance,
+    Linker,
+    Module,
+    Store,
+    StoreLimitsBuilder,
+    V128,
+    Val,
+    WasmBacktraceDetails,
+};
 
 /// Differential fuzzing backend for Wasmtime.
 pub struct WasmtimeOracle {
@@ -25,7 +36,8 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // that the entire output is obliterated by them. Generally we are
         // more interested what kind of error occurred and now how an error
         // occurred.
-        config.wasm_backtrace(false);
+        config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
+        config.wasm_backtrace_max_frames(None);
         // We're disabling POSIX signals on errors in the engine because
         // some fuzzers will catch them and report them as false positives.
         config.signals_based_traps(false);
