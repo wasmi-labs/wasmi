@@ -743,6 +743,10 @@ pub fn call_wasm_or_host(
                 Some(instance),
                 CallHooks::Call,
             )?;
+            // Host functions may re-enter WASM (e.g. calling cabi_realloc)
+            // which can trigger memory.grow, invalidating the cached mem0
+            // pointer. Re-extract to avoid stale pointer dereference.
+            let (mem0, mem0_len) = extract_mem0(state.store, instance);
             (caller_ip, sp, mem0, mem0_len, instance)
         }
     };
