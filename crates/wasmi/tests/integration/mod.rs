@@ -9,5 +9,6 @@ mod host_call_instantiation;
 mod host_calls_wasm;
 mod instantitation;
 mod multi_memory;
+mod reextract_memory;
 mod resource_limiter;
 mod resumable_call;
