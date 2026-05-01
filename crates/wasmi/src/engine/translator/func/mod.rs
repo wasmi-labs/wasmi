@@ -683,14 +683,10 @@ impl FuncTranslator {
         while let Some((value, rest)) = values.split_first() {
             let ty = value.ty();
             let value = match value {
-                Operand::Reg(_value) => {
-                    // Register values will never yield no-op copies.
-                    break;
-                }
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
-                Operand::Immediate(_) => {
-                    // Immediate values will never yield no-op copies.
+                Operand::Reg(_) | Operand::Immediate(_) => {
+                    // Immediate and register values will never yield no-op copies.
                     break;
                 }
             };
