@@ -759,12 +759,10 @@ impl FuncTranslator {
             // Note: We only have to check the register case since constant value
             //       copies can never overlap.
             let value = match value {
-                Operand::Reg(_value) => todo!(),
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
-                Operand::Immediate(_) => {
-                    // Immediates are allocated as function local constants
-                    // which can not collide with the result registers.
+                Operand::Reg(_) | Operand::Immediate(_) => {
+                    // Immediates and registers can not collide with the result registers.
                     continue;
                 }
             };
