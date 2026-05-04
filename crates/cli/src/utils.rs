@@ -1,6 +1,6 @@
 use crate::display::{DisplayFuncType, DisplayValueType};
 use anyhow::{Error, bail};
-use wasmi::{FuncType, V128, Val, ValType};
+use wasmi::{FuncType, Val, ValType};
 
 /// Returns a [`Val`] buffer capable of holding the return values.
 ///
@@ -37,16 +37,14 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Er
                 ValType::I64 => arg.parse::<i64>().map(Val::from).ok(),
                 ValType::F32 => arg.parse::<f32>().map(Val::from).ok(),
                 ValType::F64 => arg.parse::<f64>().map(Val::from).ok(),
-                ValType::V128 => arg.parse::<u128>().map(V128::from).map(Val::from).ok(),
-                ValType::FuncRef => None,
-                ValType::ExternRef => None,
+                ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                    let ty = DisplayValueType::from(param_type);
+                    bail!("unsupported function argument type {arg} at index {n} of type {ty}")
+                }
             };
             let Some(val) = val else {
-                bail!(
-                    "failed to parse function argument \
-                    {arg} at index {n} as {}",
-                    DisplayValueType::from(param_type)
-                )
+                let ty = DisplayValueType::from(param_type);
+                bail!("failed to parse function argument {arg} at index {n} as {ty}")
             };
             Ok(val)
         })
