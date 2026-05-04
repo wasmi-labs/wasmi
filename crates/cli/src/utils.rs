@@ -33,8 +33,22 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Er
         .enumerate()
         .map(|(n, (param_type, arg))| {
             let val = match param_type {
-                ValType::I32 => arg.parse::<i32>().map(Val::from).ok(),
-                ValType::I64 => arg.parse::<i64>().map(Val::from).ok(),
+                ValType::I32 => {
+                    let val = if arg.starts_with("0x") || arg.starts_with("0X") {
+                        i32::from_str_radix(&arg[2..], 16)
+                    } else {
+                        arg.parse::<i32>()
+                    };
+                    val.map(Val::from).ok()
+                }
+                ValType::I64 => {
+                    let val = if arg.starts_with("0x") || arg.starts_with("0X") {
+                        i64::from_str_radix(&arg[2..], 16)
+                    } else {
+                        arg.parse::<i64>()
+                    };
+                    val.map(Val::from).ok()
+                }
                 ValType::F32 => arg.parse::<f32>().map(Val::from).ok(),
                 ValType::F64 => arg.parse::<f64>().map(Val::from).ok(),
                 ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
