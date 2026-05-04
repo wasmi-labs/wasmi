@@ -2033,7 +2033,6 @@ impl FuncTranslator {
                     else {
                         return Ok(());
                     };
-                    debug_assert!(op.result_ref().is_some());
                     self.instrs
                         .stage(op, consume_fuel_instr, FuelCostsProvider::base)?;
                     return Ok(());
