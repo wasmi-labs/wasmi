@@ -22,7 +22,7 @@ pub fn prepare_func_results(ty: &FuncType) -> Box<[Val]> {
 ///
 /// - If there is a type mismatch between `args` and the expected [`ValType`] by `ty`.
 /// - If too many or too few `args` are given for [`FuncType`] `ty`.
-/// - If unsupported `Ref<ExternRef>` or `Ref<Func>` types are encountered.
+/// - If unsupported `V128`, `ExternRef` or `FuncRef` types are encountered.
 ///
 /// [`Func`]: wasmi::Func
 /// [`ExternRef`]: wasmi::ExternRef
@@ -32,37 +32,42 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Er
         .zip(args)
         .enumerate()
         .map(|(n, (param_type, arg))| {
-            let val = match param_type {
-                ValType::I32 => {
-                    let val = if arg.starts_with("0x") || arg.starts_with("0X") {
-                        i32::from_str_radix(&arg[2..], 16)
-                    } else {
-                        arg.parse::<i32>()
-                    };
-                    val.map(Val::from).ok()
-                }
-                ValType::I64 => {
-                    let val = if arg.starts_with("0x") || arg.starts_with("0X") {
-                        i64::from_str_radix(&arg[2..], 16)
-                    } else {
-                        arg.parse::<i64>()
-                    };
-                    val.map(Val::from).ok()
-                }
-                ValType::F32 => arg.parse::<f32>().map(Val::from).ok(),
-                ValType::F64 => arg.parse::<f64>().map(Val::from).ok(),
-                ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
-                    let ty = DisplayValueType::from(param_type);
-                    bail!("unsupported function argument type {arg} at index {n} of type {ty}")
-                }
-            };
-            let Some(val) = val else {
-                let ty = DisplayValueType::from(param_type);
-                bail!("failed to parse function argument {arg} at index {n} as {ty}")
-            };
-            Ok(val)
+            decode_func_arg(param_type, arg)
+                .map_err(|err| err.context(format!("parsing function argument at index {n}")))
         })
         .collect::<Result<Box<[_]>, _>>()
+}
+
+fn decode_func_arg(ty: &ValType, arg: &str) -> Result<Val, Error> {
+    let val = match ty {
+        ValType::I32 => {
+            let val = if arg.starts_with("0x") || arg.starts_with("0X") {
+                i32::from_str_radix(&arg[2..], 16)
+            } else {
+                arg.parse::<i32>()
+            };
+            val.map(Val::from).ok()
+        }
+        ValType::I64 => {
+            let val = if arg.starts_with("0x") || arg.starts_with("0X") {
+                i64::from_str_radix(&arg[2..], 16)
+            } else {
+                arg.parse::<i64>()
+            };
+            val.map(Val::from).ok()
+        }
+        ValType::F32 => arg.parse::<f32>().map(Val::from).ok(),
+        ValType::F64 => arg.parse::<f64>().map(Val::from).ok(),
+        ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+            let ty = DisplayValueType::from(ty);
+            bail!("unsupported function argument type: {ty}")
+        }
+    };
+    let Some(val) = val else {
+        let ty = DisplayValueType::from(ty);
+        bail!("failed to parse function argument {arg} as type {ty}")
+    };
+    Ok(val)
 }
 
 /// Performs minor typecheck on the function signature.
