@@ -1590,20 +1590,17 @@ macro_rules! handler_cmp_branch {
     };
 }
 handler_cmp_branch! {
-    // eqz + nez
-    fn branch_i32_eq_sz(BranchI32Eq_Sz) = wasm::i32_eq;
-    fn branch_i64_eq_sz(BranchI64Eq_Sz) = wasm::i64_eq;
-    fn branch_i32_not_eq_sz(BranchI32Eq_Sz) = wasm::i32_ne;
-    fn branch_i64_not_eq_sz(BranchI64Eq_Sz) = wasm::i64_ne;
     // i32
     fn branch_i32_eq_ss(BranchI32Eq_Ss) = wasm::i32_eq;
     fn branch_i32_eq_si(BranchI32Eq_Si) = wasm::i32_eq;
+    fn branch_i32_eq_sz(BranchI32Eq_Sz) = wasm::i32_eq;
     fn branch_i32_and_ss(BranchI32And_Ss) = eval::wasmi_i32_and;
     fn branch_i32_and_si(BranchI32And_Si) = eval::wasmi_i32_and;
     fn branch_i32_or_ss(BranchI32Or_Ss) = eval::wasmi_i32_or;
     fn branch_i32_or_si(BranchI32Or_Si) = eval::wasmi_i32_or;
     fn branch_i32_not_eq_ss(BranchI32NotEq_Ss) = wasm::i32_ne;
     fn branch_i32_not_eq_si(BranchI32NotEq_Si) = wasm::i32_ne;
+    fn branch_i32_not_eq_sz(BranchI32NotEq_Sz) = wasm::i32_ne;
     fn branch_i32_not_and_ss(BranchI32NotAnd_Ss) = eval::wasmi_i32_not_and;
     fn branch_i32_not_and_si(BranchI32NotAnd_Si) = eval::wasmi_i32_not_and;
     fn branch_i32_not_or_ss(BranchI32NotOr_Ss) = eval::wasmi_i32_not_or;
@@ -1623,12 +1620,14 @@ handler_cmp_branch! {
     // i64
     fn branch_i64_eq_ss(BranchI64Eq_Ss) = wasm::i64_eq;
     fn branch_i64_eq_si(BranchI64Eq_Si) = wasm::i64_eq;
+    fn branch_i64_eq_sz(BranchI64Eq_Sz) = wasm::i64_eq;
     fn branch_i64_and_ss(BranchI64And_Ss) = eval::wasmi_i64_and;
     fn branch_i64_and_si(BranchI64And_Si) = eval::wasmi_i64_and;
     fn branch_i64_or_ss(BranchI64Or_Ss) = eval::wasmi_i64_or;
     fn branch_i64_or_si(BranchI64Or_Si) = eval::wasmi_i64_or;
     fn branch_i64_not_eq_ss(BranchI64NotEq_Ss) = wasm::i64_ne;
     fn branch_i64_not_eq_si(BranchI64NotEq_Si) = wasm::i64_ne;
+    fn branch_i64_not_eq_sz(BranchI64NotEq_Sz) = wasm::i64_ne;
     fn branch_i64_not_and_ss(BranchI64NotAnd_Ss) = eval::wasmi_i64_not_and;
     fn branch_i64_not_and_si(BranchI64NotAnd_Si) = eval::wasmi_i64_not_and;
     fn branch_i64_not_or_ss(BranchI64NotOr_Ss) = eval::wasmi_i64_not_or;
