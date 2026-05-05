@@ -1590,6 +1590,11 @@ macro_rules! handler_cmp_branch {
     };
 }
 handler_cmp_branch! {
+    // eqz + nez
+    fn branch_i32_eq_sz(BranchI32Eq_Sz) = wasm::i32_eq;
+    fn branch_i64_eq_sz(BranchI64Eq_Sz) = wasm::i64_eq;
+    fn branch_i32_not_eq_sz(BranchI32Eq_Sz) = wasm::i32_ne;
+    fn branch_i64_not_eq_sz(BranchI64Eq_Sz) = wasm::i64_ne;
     // i32
     fn branch_i32_eq_ss(BranchI32Eq_Ss) = wasm::i32_eq;
     fn branch_i32_eq_si(BranchI32Eq_Si) = wasm::i32_eq;

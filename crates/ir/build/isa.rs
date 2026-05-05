@@ -308,6 +308,12 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
             ));
         }
     }
+    // br.eqz and br.nez
+    for input_ty in [Ty::I32, Ty::I64] {
+        for ident in [Ident::Eq, Ident::NotEq] {
+            isa.push_op(CmpBranchOp::new(ident, input_ty, OperandKind::Slot, OperandKind::Zero));
+        }
+    }
 }
 
 fn add_select_ops(isa: &mut Isa) {
