@@ -1070,10 +1070,9 @@ impl FuncTranslator {
             return Ok(None);
         };
         match head.as_ref() {
-            Operand::Reg(_operand) => todo!(),
             Operand::Local(operand) => Self::try_form_span_of_locals(operand, values, layout),
             Operand::Temp(operand) => Self::try_form_span_of_temps(operand, values),
-            Operand::Immediate(_) => Ok(None),
+            Operand::Reg(_) | Operand::Immediate(_) => Ok(None),
         }
     }
 
