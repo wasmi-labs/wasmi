@@ -817,7 +817,7 @@ impl FuncTranslator {
     // TODO: return `BoundedSlotSpan` instead of just `Slot`
     fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
-            Operand::Reg(_value) => todo!(),
+            Operand::Reg(_value) => todo!(), // return Ok(enum { Slot, Reg }) from this function
             Operand::Local(operand) => self.layout.local_to_slot(operand),
             Operand::Temp(operand) => Ok(operand.temp_slots().head()),
             Operand::Immediate(operand) => {
