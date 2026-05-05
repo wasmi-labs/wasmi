@@ -383,12 +383,14 @@ impl UpdateBranchOffset for Op {
             // i32
             | Op::BranchI32Eq_Ss { offset, .. }
             | Op::BranchI32Eq_Si { offset, .. }
+            | Op::BranchI32Eq_Sz { offset, .. }
             | Op::BranchI32And_Ss { offset, .. }
             | Op::BranchI32And_Si { offset, .. }
             | Op::BranchI32Or_Ss { offset, .. }
             | Op::BranchI32Or_Si { offset, .. }
             | Op::BranchI32NotEq_Ss { offset, .. }
             | Op::BranchI32NotEq_Si { offset, .. }
+            | Op::BranchI32NotEq_Sz { offset, .. }
             | Op::BranchI32NotAnd_Ss { offset, .. }
             | Op::BranchI32NotAnd_Si { offset, .. }
             | Op::BranchI32NotOr_Ss { offset, .. }
@@ -408,12 +410,14 @@ impl UpdateBranchOffset for Op {
             // i64
             | Op::BranchI64Eq_Ss { offset, .. }
             | Op::BranchI64Eq_Si { offset, .. }
+            | Op::BranchI64Eq_Sz { offset, .. }
             | Op::BranchI64And_Ss { offset, .. }
             | Op::BranchI64And_Si { offset, .. }
             | Op::BranchI64Or_Ss { offset, .. }
             | Op::BranchI64Or_Si { offset, .. }
             | Op::BranchI64NotEq_Ss { offset, .. }
             | Op::BranchI64NotEq_Si { offset, .. }
+            | Op::BranchI64NotEq_Sz { offset, .. }
             | Op::BranchI64NotAnd_Ss { offset, .. }
             | Op::BranchI64NotAnd_Si { offset, .. }
             | Op::BranchI64NotOr_Ss { offset, .. }
