@@ -481,7 +481,7 @@ impl FuncTranslator {
     fn make_copy_reg_instr(result: Slot, value: RegOperand) -> Result<Option<Op>, Error> {
         let ty = value.ty();
         let copy_op = match ty {
-            ValType::V128 => todo!(), // this should be treated as an error for now
+            ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
             ValType::I32 | ValType::I64 | ValType::ExternRef | ValType::FuncRef => {
                 Op::u64_copy_sr(result, ir::Reg::default())
             }
@@ -1001,7 +1001,7 @@ impl FuncTranslator {
                     }
                     | ValType::F32 => Op::return_f32_r(ir::Reg::default()),
                     | ValType::F64 => Op::return_f64_r(ir::Reg::default()),
-                    | ValType::V128 => todo!(),
+                    | ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
                 },
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_slot(operand)?;
