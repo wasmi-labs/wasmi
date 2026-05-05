@@ -164,6 +164,10 @@ impl Engine {
         }
     }
 
+    pub fn memory_consumption(&self) -> u64 {
+        self.inner.code_map.memory_consumption()
+    }
+
     /// Creates an [`EngineWeak`] from the given [`Engine`].
     pub fn weak(&self) -> EngineWeak {
         EngineWeak {

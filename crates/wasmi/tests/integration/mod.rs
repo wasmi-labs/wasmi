@@ -12,3 +12,4 @@ mod multi_memory;
 mod reextract_memory;
 mod resource_limiter;
 mod resumable_call;
+mod memory_usage;

@@ -219,6 +219,15 @@ impl CodeMap {
         }
     }
 
+    pub fn memory_consumption(&self) -> u64 {
+        let mut total = 0;
+        let funcs = self.funcs.lock();
+        for (_, func) in funcs.iter() {
+            total += func.memory_consumption();
+        }
+        total
+    }
+
     /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// # Note
@@ -459,6 +468,16 @@ impl Default for FuncEntity {
 }
 
 impl FuncEntity {
+    pub fn memory_consumption(&self) -> u64 {
+        match self {
+            Self::Uninit => 0,
+            Self::Uncompiled(func) => func.memory_consumption(),
+            Self::Compiling => 0,
+            Self::FailedToCompile => 0,
+            Self::Compiled(func) => func.memory_consumption(),
+        }
+    }
+
     /// Initializes the [`FuncEntity`] with a [`CompiledFuncEntity`].
     ///
     /// # Panics
@@ -614,6 +633,10 @@ impl UncompiledFuncEntity {
             module,
             validation,
         }
+    }
+
+    pub fn memory_consumption(&self) -> u64 {
+        self.bytes.as_slice().len() as u64
     }
 
     /// Compile the [`UncompiledFuncEntity`].
@@ -830,6 +853,10 @@ impl CompiledFuncEntity {
             ops,
             len_stack_slots,
         }
+    }
+
+    pub fn memory_consumption(&self) -> u64 {
+        self.ops.len() as u64
     }
 }
 
