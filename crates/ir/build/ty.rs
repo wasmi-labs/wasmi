@@ -164,6 +164,7 @@ pub enum FieldTy {
     ImmLaneIdx2,
     Bytes16,
     V128,
+    Zero,
 }
 
 impl From<Ty> for FieldTy {
@@ -247,6 +248,7 @@ impl Display for FieldTy {
             Self::ImmLaneIdx2 => "ImmLaneIdx<2>",
             Self::Bytes16 => "[u8; 16]",
             Self::V128 => "V128",
+            Self::Zero => "Zero",
         };
         f.write_str(s)
     }

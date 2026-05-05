@@ -1,6 +1,7 @@
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
+    Zero,
     Address,
     BlockFuel,
     BoundedSlotSpan,
@@ -226,6 +227,16 @@ impl<const N: usize, T: Encode> Encode for [T; N] {
             item.encode(encoder)?;
         }
         Ok(pos)
+    }
+}
+
+impl Encode for Zero {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.write_bytes(&[])
     }
 }
 

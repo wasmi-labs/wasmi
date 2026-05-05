@@ -82,6 +82,8 @@ pub enum OperandKind {
     Slot,
     /// The operand is an immediate value.
     Immediate,
+    /// The operand is an immediate zero value.
+    Zero,
 }
 
 impl OperandKind {
@@ -94,6 +96,7 @@ impl OperandKind {
                 Ty::F64 | Ty::SignF64 => FieldTy::Freg64,
                 _ => FieldTy::Ireg,
             },
+            OperandKind::Zero => FieldTy::Zero,
         }
     }
 }
@@ -480,6 +483,7 @@ impl LoadOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
             OperandKind::Reg => FieldTy::Ireg,
+            OperandKind::Zero => FieldTy::Zero,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -490,7 +494,8 @@ impl LoadOp {
                 OffsetOperand::Offset => FieldTy::U64,
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
-            OperandKind::Immediate => return None,
+            OperandKind::Immediate |
+            OperandKind::Zero => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -613,6 +618,7 @@ impl StoreOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Reg => FieldTy::Ireg,
             OperandKind::Immediate => FieldTy::Address,
+            OperandKind::Zero => FieldTy::Zero,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -623,7 +629,7 @@ impl StoreOp {
                 OffsetOperand::Offset16 => FieldTy::Offset16,
                 OffsetOperand::Offset => FieldTy::U64,
             },
-            OperandKind::Immediate => return None,
+            OperandKind::Immediate | OperandKind::Zero => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -637,6 +643,7 @@ impl StoreOp {
                 StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
                 StoreKind::Lane { width } => FieldTy::from(width),
             },
+            OperandKind::Zero => FieldTy::Zero,
         };
         Field::new(Ident::Value, field_ty)
     }
@@ -944,6 +951,7 @@ impl V128ReplaceLaneOp {
                 LaneWidth::W32 => FieldTy::U32,
                 LaneWidth::W64 => FieldTy::U64,
             },
+            OperandKind::Zero => FieldTy::Zero,
         };
         Field::new(Ident::Value, value_ty)
     }

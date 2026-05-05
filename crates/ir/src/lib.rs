@@ -24,6 +24,7 @@ pub use self::{
     op::Op,
     opcode::{InvalidOpCode, OpCode},
     primitive::{
+        Zero,
         Address,
         BlockFuel,
         BranchOffset,

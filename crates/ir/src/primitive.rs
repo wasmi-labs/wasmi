@@ -4,6 +4,10 @@ use core::{
     marker::PhantomData,
 };
 
+/// A generic zero immediate value.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Zero {}
+
 /// A generic register type.
 pub struct Reg<T> {
     /// Tells the compiler that `T` is not used within.
