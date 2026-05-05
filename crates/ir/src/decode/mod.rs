@@ -32,7 +32,6 @@ use self::op::{
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
-    Zero,
     Address,
     BlockFuel,
     BoundedSlotSpan,
@@ -45,6 +44,7 @@ use crate::{
     Sign,
     Slot,
     SlotSpan,
+    Zero,
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };

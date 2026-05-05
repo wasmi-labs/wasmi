@@ -24,7 +24,6 @@ pub use self::{
     op::Op,
     opcode::{InvalidOpCode, OpCode},
     primitive::{
-        Zero,
         Address,
         BlockFuel,
         BranchOffset,
@@ -35,6 +34,7 @@ pub use self::{
         Offset16,
         Reg,
         Sign,
+        Zero,
     },
     span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
 };

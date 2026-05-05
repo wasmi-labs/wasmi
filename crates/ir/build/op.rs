@@ -494,8 +494,7 @@ impl LoadOp {
                 OffsetOperand::Offset => FieldTy::U64,
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
-            OperandKind::Immediate |
-            OperandKind::Zero => return None,
+            OperandKind::Immediate | OperandKind::Zero => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }

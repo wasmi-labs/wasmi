@@ -10,9 +10,9 @@ use crate::{
     Sign,
     Slot,
     SlotSpan,
+    Zero,
     core::TrapCode,
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
-    Zero,
 };
 #[expect(unused_imports)]
 use crate::{Freg32, Freg64, Ireg};
