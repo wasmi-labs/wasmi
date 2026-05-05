@@ -997,7 +997,14 @@ impl FuncTranslator {
         let instr = match len_results {
             0 => Op::Return {},
             1 => match self.stack.peek(0) {
-                Operand::Reg(_operand) => todo!(),
+                Operand::Reg(operand) => match operand.ty() {
+                    | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
+                        Op::return_u64_r(ir::Reg::default())
+                    }
+                    | ValType::F32 => Op::return_f32_r(ir::Reg::default()),
+                    | ValType::F64 => Op::return_f64_r(ir::Reg::default()),
+                    | ValType::V128 => todo!(),
+                },
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_slot(operand)?;
                     return_slot_for_ty(operand.ty(), value)

@@ -420,9 +420,12 @@ fn add_store_ops(isa: &mut Isa) {
 fn add_return_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(Ident::Return, [])),
+        Op::from(ReturnOp::new(Ty::U64, OperandKind::Reg)),
         Op::from(ReturnOp::new(Ty::U64, OperandKind::Slot)),
         Op::from(ReturnOp::new(Ty::U64, OperandKind::Immediate)),
         Op::from(ReturnOp::new(Ty::U32, OperandKind::Immediate)),
+        Op::from(ReturnOp::new(Ty::F32, OperandKind::Reg)),
+        Op::from(ReturnOp::new(Ty::F64, OperandKind::Reg)),
         Op::from(GenericOp::new(
             Ident::ReturnSpan,
             [Field::new(Ident::Values, FieldTy::BoundedSlotSpan)],
