@@ -238,6 +238,7 @@ impl TryIntoCmpBranchInstr for Op {
         let cmp_branch_instr = match *self {
             // i32
             | Op::I32Eq_Sss { lhs, rhs, .. } => Op::branch_i32_eq_ss(offset, lhs, rhs),
+            | Op::I32Eq_Ssi { lhs, rhs: 0, .. } => Op::branch_i32_eq_sz(offset, lhs, ir::Zero::default()),
             | Op::I32Eq_Ssi { lhs, rhs, .. } => Op::branch_i32_eq_si(offset, lhs, rhs),
             | Op::I32And_Sss { lhs, rhs, .. }
             | Op::I32BitAnd_Sss { lhs, rhs, .. } => Op::branch_i32_and_ss(offset, lhs, rhs),
@@ -249,6 +250,8 @@ impl TryIntoCmpBranchInstr for Op {
             | Op::I32BitOr_Ssi { lhs, rhs, .. } => Op::branch_i32_or_si(offset, lhs, rhs),
             | Op::I32NotEq_Sss { lhs, rhs, .. }
             | Op::I32BitXor_Sss { lhs, rhs, .. } => Op::branch_i32_not_eq_ss(offset, lhs, rhs),
+            | Op::I32NotEq_Ssi { lhs, rhs: 0, .. }
+            | Op::I32BitXor_Ssi { lhs, rhs: 0, .. } => Op::branch_i32_not_eq_sz(offset, lhs, ir::Zero::default()),
             | Op::I32NotEq_Ssi { lhs, rhs, .. }
             | Op::I32BitXor_Ssi { lhs, rhs, .. } => Op::branch_i32_not_eq_si(offset, lhs, rhs),
             | Op::I32NotAnd_Sss { lhs, rhs, .. } => Op::branch_i32_not_and_ss(offset, lhs, rhs),
@@ -269,6 +272,7 @@ impl TryIntoCmpBranchInstr for Op {
             | Op::U32Le_Sis { lhs, rhs, .. } => Op::branch_u32_le_is(offset, lhs, rhs),
             // i64
             | Op::I64Eq_Sss { lhs, rhs, .. } => Op::branch_i64_eq_ss(offset, lhs, rhs),
+            | Op::I64Eq_Ssi { lhs, rhs: 0, .. } => Op::branch_i64_eq_sz(offset, lhs, ir::Zero::default()),
             | Op::I64Eq_Ssi { lhs, rhs, .. } => Op::branch_i64_eq_si(offset, lhs, rhs),
             | Op::I64And_Sss { lhs, rhs, .. }
             | Op::I64BitAnd_Sss { lhs, rhs, .. } => Op::branch_i64_and_ss(offset, lhs, rhs),
@@ -280,6 +284,8 @@ impl TryIntoCmpBranchInstr for Op {
             | Op::I64BitOr_Ssi { lhs, rhs, .. } => Op::branch_i64_or_si(offset, lhs, rhs),
             | Op::I64NotEq_Sss { lhs, rhs, .. }
             | Op::I64BitXor_Sss { lhs, rhs, .. } => Op::branch_i64_not_eq_ss(offset, lhs, rhs),
+            | Op::I64NotEq_Ssi { lhs, rhs: 0, .. }
+            | Op::I64BitXor_Ssi { lhs, rhs: 0, .. } => Op::branch_i64_not_eq_sz(offset, lhs, ir::Zero::default()),
             | Op::I64NotEq_Ssi { lhs, rhs, .. }
             | Op::I64BitXor_Ssi { lhs, rhs, .. } => Op::branch_i64_not_eq_si(offset, lhs, rhs),
             | Op::I64NotAnd_Sss { lhs, rhs, .. } => Op::branch_i64_not_and_ss(offset, lhs, rhs),
