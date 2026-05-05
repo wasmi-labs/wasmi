@@ -1357,10 +1357,11 @@ impl FuncTranslator {
             StackSpace::Local
         ));
         let old_result = match old_result {
-            Operand::Reg(_old_result) => todo!(),
             Operand::Temp(old_result) => old_result.temp_slots().head(),
-            Operand::Local(_) | Operand::Immediate(_) => {
-                // Case immediate: cannot replace immediate value result.
+            Operand::Reg(_) | Operand::Local(_) | Operand::Immediate(_) => {
+                // Case  register: cannot replace register operand result for now.
+                //                 (in the future new operators might allow for this)
+                // Case immediate: cannot replace immediate value result since they are immutable.
                 // Case     local: cannot replace local with another local due to observable behavior.
                 return Ok(false);
             }
