@@ -1404,8 +1404,8 @@ impl FuncTranslator {
         self.instrs.encode_branch(
             label,
             |offset| match branch_eqz {
-                true => Op::branch_i32_eq_si(offset, condition, 0),
-                false => Op::branch_i32_not_eq_si(offset, condition, 0),
+                true => Op::branch_i32_eq_sz(offset, condition, ir::Zero::default()),
+                false => Op::branch_i32_not_eq_sz(offset, condition, ir::Zero::default()),
             },
             fuel_pos,
             FuelCostsProvider::base,
