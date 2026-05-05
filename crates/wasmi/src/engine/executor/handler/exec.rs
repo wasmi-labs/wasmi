@@ -534,9 +534,12 @@ macro_rules! handler_return {
     };
 }
 handler_return! {
+    fn return_u64_r(ReturnU64_R) = identity::<u64>;
     fn return_u64_s(ReturnU64_S) = identity::<u64>;
     fn return_u32_i(ReturnU32_I) = identity::<u32>;
     fn return_u64_i(ReturnU64_I) = identity::<u64>;
+    fn return_f32_r(ReturnF32_R) = identity::<f32>;
+    fn return_f64_r(ReturnF64_R) = identity::<f64>;
 }
 
 execution_handler! {
