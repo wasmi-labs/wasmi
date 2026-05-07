@@ -166,6 +166,12 @@ pub enum FieldTy {
     V128,
 }
 
+impl FieldTy {
+    pub fn is_reg(&self) -> bool {
+        matches!(self, Self::RegInt | Self::RegF32 | Self::RegF64)
+    }
+}
+
 impl From<Ty> for FieldTy {
     fn from(ty: Ty) -> Self {
         match ty {

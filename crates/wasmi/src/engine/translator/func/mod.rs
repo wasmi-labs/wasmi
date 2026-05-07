@@ -484,10 +484,10 @@ impl FuncTranslator {
         let copy_op = match ty {
             ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
             ValType::I32 | ValType::I64 | ValType::ExternRef | ValType::FuncRef => {
-                Op::u64_copy_sr(result, ir::Reg::default())
+                Op::u64_copy_sr(result)
             }
-            ValType::F32 => Op::f32_copy_sr(result, ir::Reg::default()),
-            ValType::F64 => Op::f64_copy_sr(result, ir::Reg::default()),
+            ValType::F32 => Op::f32_copy_sr(result),
+            ValType::F64 => Op::f64_copy_sr(result),
         };
         Ok(Some(copy_op))
     }
@@ -998,10 +998,10 @@ impl FuncTranslator {
             1 => match self.stack.peek(0) {
                 Operand::Reg(operand) => match operand.ty() {
                     | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                        Op::return_u64_r(ir::Reg::default())
+                        Op::return_u64_r()
                     }
-                    | ValType::F32 => Op::return_f32_r(ir::Reg::default()),
-                    | ValType::F64 => Op::return_f64_r(ir::Reg::default()),
+                    | ValType::F32 => Op::return_f32_r(),
+                    | ValType::F64 => Op::return_f64_r(),
                     | ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
                 },
                 Operand::Local(operand) => {
@@ -1440,11 +1440,11 @@ impl FuncTranslator {
             |offset| match branch_eqz {
                 true => match condition {
                     Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
-                    Location::Reg => Op::branch_i32_eq_ri(offset, ir::Reg::default(), 0),
+                    Location::Reg => Op::branch_i32_eq_ri(offset, 0),
                 },
                 false => match condition {
                     Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
-                    Location::Reg => Op::branch_i32_not_eq_ri(offset, ir::Reg::default(), 0),
+                    Location::Reg => Op::branch_i32_not_eq_ri(offset, 0),
                 },
             },
             fuel_pos,
