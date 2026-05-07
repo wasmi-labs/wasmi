@@ -298,16 +298,18 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
         (Ident::NotLe, Ty::F64, BinaryOpCaps::NONE),
     ];
     for (ident, input_ty, caps) in ops {
-        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
-            isa.push_op(CmpBranchOp::new(ident, input_ty, OperandKind::Slot, rhs));
-        }
-        if !caps.is_commutative() {
-            isa.push_op(CmpBranchOp::new(
-                ident,
-                input_ty,
-                OperandKind::Immediate,
-                OperandKind::Slot,
-            ));
+        for lhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            for rhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                if lhs == rhs && (lhs.is_reg() || lhs.is_immediate()) {
+                    // Both operands must not be registers or immediates.
+                    continue
+                }
+                if caps.is_commutative() && lhs > rhs {
+                    // Commutative operators don't need variants with swapped operand order.
+                    continue
+                }
+                isa.push_op(CmpBranchOp::new(ident, input_ty, lhs, rhs));
+            }
         }
     }
 }
