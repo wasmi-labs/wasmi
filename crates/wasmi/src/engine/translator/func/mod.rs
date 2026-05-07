@@ -27,6 +27,7 @@ use self::{
         IfReachability,
         ImmediateOperand,
         LocalOperand,
+        Location,
         LoopControlFrame,
         Operand,
         Stack,
@@ -1410,9 +1411,15 @@ impl FuncTranslator {
             return Ok(());
         }
         let condition = match condition {
-            Operand::Reg(_condition) => todo!(),
-            Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => condition.temp_slots().head(),
+            Operand::Reg(_) => Location::Reg,
+            Operand::Local(condition) => {
+                let slot = self.layout.local_to_slot(condition)?;
+                Location::Slot(slot)
+            }
+            Operand::Temp(condition) => {
+                let slot = condition.temp_slots().head();
+                Location::Slot(slot)
+            }
             Operand::Immediate(condition) => {
                 let condition = i32::from(condition.val());
                 let take_branch = match branch_eqz {
@@ -1433,8 +1440,14 @@ impl FuncTranslator {
         self.instrs.encode_branch(
             label,
             |offset| match branch_eqz {
-                true => Op::branch_i32_eq_si(offset, condition, 0),
-                false => Op::branch_i32_not_eq_si(offset, condition, 0),
+                true => match condition {
+                    Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
+                    Location::Reg => Op::branch_i32_eq_ri(offset, ir::Reg::default(), 0),
+                },
+                false => match condition {
+                    Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
+                    Location::Reg => Op::branch_i32_not_eq_ri(offset, ir::Reg::default(), 0),
+                }
             },
             fuel_pos,
             FuelCostsProvider::base,

@@ -373,90 +373,213 @@ impl UpdateBranchOffset for Op {
     fn update_branch_offset(&mut self, new_offset: BranchOffset) {
         match self {
             // unconditional
+
             | Op::Branch { offset }
+
             // i32
+
+            | Op::BranchI32Eq_Rs { offset, .. }
             | Op::BranchI32Eq_Ss { offset, .. }
+            | Op::BranchI32Eq_Ri { offset, .. }
             | Op::BranchI32Eq_Si { offset, .. }
+            | Op::BranchI32And_Rs { offset, .. }
             | Op::BranchI32And_Ss { offset, .. }
+            | Op::BranchI32And_Ri { offset, .. }
             | Op::BranchI32And_Si { offset, .. }
+            | Op::BranchI32Or_Rs { offset, .. }
             | Op::BranchI32Or_Ss { offset, .. }
+            | Op::BranchI32Or_Ri { offset, .. }
             | Op::BranchI32Or_Si { offset, .. }
+            | Op::BranchI32NotEq_Rs { offset, .. }
             | Op::BranchI32NotEq_Ss { offset, .. }
+            | Op::BranchI32NotEq_Ri { offset, .. }
             | Op::BranchI32NotEq_Si { offset, .. }
+            | Op::BranchI32NotAnd_Rs { offset, .. }
             | Op::BranchI32NotAnd_Ss { offset, .. }
+            | Op::BranchI32NotAnd_Ri { offset, .. }
             | Op::BranchI32NotAnd_Si { offset, .. }
+            | Op::BranchI32NotOr_Rs { offset, .. }
             | Op::BranchI32NotOr_Ss { offset, .. }
+            | Op::BranchI32NotOr_Ri { offset, .. }
             | Op::BranchI32NotOr_Si { offset, .. }
+
+            | Op::BranchI32Lt_Rs { offset, .. }
+            | Op::BranchI32Lt_Ri { offset, .. }
+            | Op::BranchI32Lt_Sr { offset, .. }
             | Op::BranchI32Lt_Ss { offset, .. }
             | Op::BranchI32Lt_Si { offset, .. }
+            | Op::BranchI32Lt_Ir { offset, .. }
             | Op::BranchI32Lt_Is { offset, .. }
+
+            | Op::BranchU32Lt_Rs { offset, .. }
+            | Op::BranchU32Lt_Ri { offset, .. }
+            | Op::BranchU32Lt_Sr { offset, .. }
             | Op::BranchU32Lt_Ss { offset, .. }
             | Op::BranchU32Lt_Si { offset, .. }
+            | Op::BranchU32Lt_Ir { offset, .. }
             | Op::BranchU32Lt_Is { offset, .. }
+
+            | Op::BranchI32Le_Rs { offset, .. }
+            | Op::BranchI32Le_Ri { offset, .. }
+            | Op::BranchI32Le_Sr { offset, .. }
             | Op::BranchI32Le_Ss { offset, .. }
             | Op::BranchI32Le_Si { offset, .. }
+            | Op::BranchI32Le_Ir { offset, .. }
             | Op::BranchI32Le_Is { offset, .. }
+
+            | Op::BranchU32Le_Rs { offset, .. }
+            | Op::BranchU32Le_Ri { offset, .. }
+            | Op::BranchU32Le_Sr { offset, .. }
             | Op::BranchU32Le_Ss { offset, .. }
             | Op::BranchU32Le_Si { offset, .. }
+            | Op::BranchU32Le_Ir { offset, .. }
             | Op::BranchU32Le_Is { offset, .. }
+
             // i64
+
+            | Op::BranchI64Eq_Rs { offset, .. }
             | Op::BranchI64Eq_Ss { offset, .. }
+            | Op::BranchI64Eq_Ri { offset, .. }
             | Op::BranchI64Eq_Si { offset, .. }
+            | Op::BranchI64And_Rs { offset, .. }
             | Op::BranchI64And_Ss { offset, .. }
+            | Op::BranchI64And_Ri { offset, .. }
             | Op::BranchI64And_Si { offset, .. }
+            | Op::BranchI64Or_Rs { offset, .. }
             | Op::BranchI64Or_Ss { offset, .. }
+            | Op::BranchI64Or_Ri { offset, .. }
             | Op::BranchI64Or_Si { offset, .. }
+            | Op::BranchI64NotEq_Rs { offset, .. }
             | Op::BranchI64NotEq_Ss { offset, .. }
+            | Op::BranchI64NotEq_Ri { offset, .. }
             | Op::BranchI64NotEq_Si { offset, .. }
+            | Op::BranchI64NotAnd_Rs { offset, .. }
             | Op::BranchI64NotAnd_Ss { offset, .. }
+            | Op::BranchI64NotAnd_Ri { offset, .. }
             | Op::BranchI64NotAnd_Si { offset, .. }
+            | Op::BranchI64NotOr_Rs { offset, .. }
             | Op::BranchI64NotOr_Ss { offset, .. }
+            | Op::BranchI64NotOr_Ri { offset, .. }
             | Op::BranchI64NotOr_Si { offset, .. }
+
+            | Op::BranchI64Lt_Rs { offset, .. }
+            | Op::BranchI64Lt_Ri { offset, .. }
+            | Op::BranchI64Lt_Sr { offset, .. }
             | Op::BranchI64Lt_Ss { offset, .. }
             | Op::BranchI64Lt_Si { offset, .. }
+            | Op::BranchI64Lt_Ir { offset, .. }
             | Op::BranchI64Lt_Is { offset, .. }
+
+            | Op::BranchU64Lt_Rs { offset, .. }
+            | Op::BranchU64Lt_Ri { offset, .. }
+            | Op::BranchU64Lt_Sr { offset, .. }
             | Op::BranchU64Lt_Ss { offset, .. }
             | Op::BranchU64Lt_Si { offset, .. }
+            | Op::BranchU64Lt_Ir { offset, .. }
             | Op::BranchU64Lt_Is { offset, .. }
+
+            | Op::BranchI64Le_Rs { offset, .. }
+            | Op::BranchI64Le_Ri { offset, .. }
+            | Op::BranchI64Le_Sr { offset, .. }
             | Op::BranchI64Le_Ss { offset, .. }
             | Op::BranchI64Le_Si { offset, .. }
+            | Op::BranchI64Le_Ir { offset, .. }
             | Op::BranchI64Le_Is { offset, .. }
+
+            | Op::BranchU64Le_Rs { offset, .. }
+            | Op::BranchU64Le_Ri { offset, .. }
+            | Op::BranchU64Le_Sr { offset, .. }
             | Op::BranchU64Le_Ss { offset, .. }
             | Op::BranchU64Le_Si { offset, .. }
+            | Op::BranchU64Le_Ir { offset, .. }
             | Op::BranchU64Le_Is { offset, .. }
+
             // f32
+
+            | Op::BranchF32Eq_Rs { offset, .. }
+            | Op::BranchF32Eq_Ri { offset, .. }
             | Op::BranchF32Eq_Ss { offset, .. }
             | Op::BranchF32Eq_Si { offset, .. }
+
+            | Op::BranchF32Lt_Rs { offset, .. }
+            | Op::BranchF32Lt_Ri { offset, .. }
+            | Op::BranchF32Lt_Sr { offset, .. }
             | Op::BranchF32Lt_Ss { offset, .. }
             | Op::BranchF32Lt_Si { offset, .. }
+            | Op::BranchF32Lt_Ir { offset, .. }
             | Op::BranchF32Lt_Is { offset, .. }
+
+            | Op::BranchF32Le_Rs { offset, .. }
+            | Op::BranchF32Le_Ri { offset, .. }
+            | Op::BranchF32Le_Sr { offset, .. }
             | Op::BranchF32Le_Ss { offset, .. }
             | Op::BranchF32Le_Si { offset, .. }
+            | Op::BranchF32Le_Ir { offset, .. }
             | Op::BranchF32Le_Is { offset, .. }
+
+            | Op::BranchF32NotEq_Rs { offset, .. }
+            | Op::BranchF32NotEq_Ri { offset, .. }
             | Op::BranchF32NotEq_Ss { offset, .. }
             | Op::BranchF32NotEq_Si { offset, .. }
+
+            | Op::BranchF32NotLt_Rs { offset, .. }
+            | Op::BranchF32NotLt_Ri { offset, .. }
+            | Op::BranchF32NotLt_Sr { offset, .. }
             | Op::BranchF32NotLt_Ss { offset, .. }
             | Op::BranchF32NotLt_Si { offset, .. }
+            | Op::BranchF32NotLt_Ir { offset, .. }
             | Op::BranchF32NotLt_Is { offset, .. }
+
+            | Op::BranchF32NotLe_Rs { offset, .. }
+            | Op::BranchF32NotLe_Ri { offset, .. }
+            | Op::BranchF32NotLe_Sr { offset, .. }
             | Op::BranchF32NotLe_Ss { offset, .. }
             | Op::BranchF32NotLe_Si { offset, .. }
+            | Op::BranchF32NotLe_Ir { offset, .. }
             | Op::BranchF32NotLe_Is { offset, .. }
+
             // f64
+
+            | Op::BranchF64Eq_Rs { offset, .. }
+            | Op::BranchF64Eq_Ri { offset, .. }
             | Op::BranchF64Eq_Ss { offset, .. }
             | Op::BranchF64Eq_Si { offset, .. }
+
+            | Op::BranchF64Lt_Rs { offset, .. }
+            | Op::BranchF64Lt_Ri { offset, .. }
+            | Op::BranchF64Lt_Sr { offset, .. }
             | Op::BranchF64Lt_Ss { offset, .. }
             | Op::BranchF64Lt_Si { offset, .. }
+            | Op::BranchF64Lt_Ir { offset, .. }
             | Op::BranchF64Lt_Is { offset, .. }
+
+            | Op::BranchF64Le_Rs { offset, .. }
+            | Op::BranchF64Le_Ri { offset, .. }
+            | Op::BranchF64Le_Sr { offset, .. }
             | Op::BranchF64Le_Ss { offset, .. }
             | Op::BranchF64Le_Si { offset, .. }
+            | Op::BranchF64Le_Ir { offset, .. }
             | Op::BranchF64Le_Is { offset, .. }
+
+            | Op::BranchF64NotEq_Rs { offset, .. }
+            | Op::BranchF64NotEq_Ri { offset, .. }
             | Op::BranchF64NotEq_Ss { offset, .. }
             | Op::BranchF64NotEq_Si { offset, .. }
+
+            | Op::BranchF64NotLt_Rs { offset, .. }
+            | Op::BranchF64NotLt_Ri { offset, .. }
+            | Op::BranchF64NotLt_Sr { offset, .. }
             | Op::BranchF64NotLt_Ss { offset, .. }
             | Op::BranchF64NotLt_Si { offset, .. }
+            | Op::BranchF64NotLt_Ir { offset, .. }
             | Op::BranchF64NotLt_Is { offset, .. }
+
+            | Op::BranchF64NotLe_Rs { offset, .. }
+            | Op::BranchF64NotLe_Ri { offset, .. }
+            | Op::BranchF64NotLe_Sr { offset, .. }
             | Op::BranchF64NotLe_Ss { offset, .. }
             | Op::BranchF64NotLe_Si { offset, .. }
+            | Op::BranchF64NotLe_Ir { offset, .. }
             | Op::BranchF64NotLe_Is { offset, .. } => {
                 debug_assert!(!offset.is_init());
                 *offset = new_offset;
