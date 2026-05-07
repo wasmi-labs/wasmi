@@ -1,6 +1,6 @@
 use crate::build::{
     display::{Indent, ident::DisplayIdent, utils::DisplaySequence},
-    ident::SnakeCase,
+    ident::{Ident, SnakeCase},
     isa::Isa,
     op::{
         BinaryOp,
@@ -18,6 +18,7 @@ use crate::build::{
         V128ExtractLaneOp,
         V128ReplaceLaneOp,
     },
+    ty::FieldTy,
 };
 use core::fmt::{self, Display};
 
@@ -47,14 +48,24 @@ impl<'a, T> DisplayConstructor<&'a T> {
         let indent = self.indent;
         let snake_ident = DisplayIdent::snake(self.value);
         let camel_ident = DisplayIdent::camel(self.value);
-        let fn_params = DisplaySequence::new(", ", fields.iter().filter_map(Option::as_ref));
+        let fn_params = DisplaySequence::new(
+            ", ",
+            fields
+                .iter()
+                .filter_map(Option::as_ref)
+                .filter(|field| !field.ty.is_reg()),
+        );
         let struct_params = DisplaySequence::new(
             ", ",
             fields
                 .iter()
                 .filter_map(Option::as_ref)
-                .map(|param| param.ident)
-                .map(SnakeCase),
+                .map(|param| match param.ty {
+                    FieldTy::RegInt | FieldTy::RegF32 | FieldTy::RegF64 => {
+                        DisplayConstructorInit::Default(*param)
+                    }
+                    _ => DisplayConstructorInit::Param(param.ident),
+                }),
         );
         write!(
             f,
@@ -64,6 +75,26 @@ impl<'a, T> DisplayConstructor<&'a T> {
             {indent}}}\n\
             "
         )
+    }
+}
+
+enum DisplayConstructorInit {
+    Param(Ident),
+    Default(Field),
+}
+
+impl Display for DisplayConstructorInit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Param(ident) => SnakeCase(*ident).fmt(f),
+            Self::Default(field) => {
+                SnakeCase(field.ident).fmt(f)?;
+                f.write_str(": <")?;
+                field.ty.fmt(f)?;
+                f.write_str(">::default()")?;
+                Ok(())
+            }
+        }
     }
 }
 
