@@ -84,6 +84,14 @@ pub enum OperandKind {
 }
 
 impl OperandKind {
+    pub fn is_reg(&self) -> bool {
+        matches!(self, Self::Reg)
+    }
+
+    pub fn is_immediate(&self) -> bool {
+        matches!(self, Self::Immediate)
+    }
+
     pub fn field_ty(self, hint: Ty) -> FieldTy {
         match self {
             OperandKind::Slot => FieldTy::Slot,
