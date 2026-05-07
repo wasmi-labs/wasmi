@@ -1445,7 +1445,7 @@ impl FuncTranslator {
                 false => match condition {
                     Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
                     Location::Reg => Op::branch_i32_not_eq_ri(offset, ir::Reg::default(), 0),
-                }
+                },
             },
             fuel_pos,
             FuelCostsProvider::base,
