@@ -3,11 +3,20 @@ use crate::{
     ValType,
     core::{RawVal, TypedRawVal},
     engine::translator::utils::required_cells_for_ty,
-    ir::{BoundedSlotSpan, SlotSpan},
+    ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
 
 #[cfg(doc)]
 use super::Stack;
+
+/// The location of an operand.
+#[derive(Debug, Copy, Clone)]
+pub enum Location {
+    /// The operand's location is a slot.
+    Slot(Slot),
+    /// The operand's location is a register.
+    Reg,
+}
 
 /// An operand on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
