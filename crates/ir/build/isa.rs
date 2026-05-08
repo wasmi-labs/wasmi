@@ -221,7 +221,7 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Min, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
         (Ident::Max, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
         (Ident::Copysign, Ty::F32, Ty::F32, Ty::SignF32, BinaryOpCaps::NONE),
-        // // f64
+        // f64
         (Ident::Add, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
         (Ident::Sub, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
         (Ident::Mul, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
