@@ -662,6 +662,20 @@ impl_reg_lossy_conversions! {
     i32 as Ireg: i64,
 }
 
+impl From<bool> for Ireg {
+    #[inline]
+    fn from(value: bool) -> Self {
+        Self::from(value as u64)
+    }
+}
+
+impl From<Ireg> for bool {
+    #[inline]
+    fn from(value: Ireg) -> Self {
+        u64::from(value) != 0
+    }
+}
+
 impl From<RawRef> for Ireg {
     #[inline]
     fn from(value: RawRef) -> Self {
