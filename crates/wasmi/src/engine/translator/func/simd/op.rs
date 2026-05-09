@@ -3,7 +3,7 @@ use crate::{
     V128,
     ValType,
     core::{Typed, simd},
-    engine::translator::{func::op::LoadOperator, utils::ToBits},
+    engine::translator::{func::op::LoadOp, utils::ToBits},
     ir::{Offset16, Op, Slot, index::Memory},
 };
 
@@ -153,14 +153,14 @@ impl_replace_lane! {
 
 macro_rules! impl_simd_load {
     ( $(
-        impl LoadOperator for $name:ident {
+        impl LoadOp for $name:ident {
             fn load_ss = $store_ss:expr;
             fn load_mem0_offset16_ss = $store_mem0_offset16_ss:expr;
         }
     )* ) => {
         $(
             pub enum $name {}
-            impl LoadOperator for $name {
+            impl LoadOp for $name {
                 const LOADED_TY: ValType = ValType::V128;
 
                 fn load_ss(result: Slot, ptr: Slot, offset: u64, memory: Memory) -> Op {
@@ -175,67 +175,67 @@ macro_rules! impl_simd_load {
     };
 }
 impl_simd_load! {
-    impl LoadOperator for V128Load {
+    impl LoadOp for V128Load {
         fn load_ss = Op::v128_load_ss;
         fn load_mem0_offset16_ss = Op::v128_load_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I16x8Load8x8 {
+    impl LoadOp for I16x8Load8x8 {
         fn load_ss = Op::i16x8_load_widen8x8_ss;
         fn load_mem0_offset16_ss = Op::i16x8_load_widen8x8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U16x8Load8x8 {
+    impl LoadOp for U16x8Load8x8 {
         fn load_ss = Op::u16x8_load_widen8x8_ss;
         fn load_mem0_offset16_ss = Op::u16x8_load_widen8x8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I32x4Load16x4 {
+    impl LoadOp for I32x4Load16x4 {
         fn load_ss = Op::i32x4_load_widen16x4_ss;
         fn load_mem0_offset16_ss = Op::i32x4_load_widen16x4_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U32x4Load16x4 {
+    impl LoadOp for U32x4Load16x4 {
         fn load_ss = Op::u32x4_load_widen16x4_ss;
         fn load_mem0_offset16_ss = Op::u32x4_load_widen16x4_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I64x2Load32x2 {
+    impl LoadOp for I64x2Load32x2 {
         fn load_ss = Op::i64x2_load_widen32x2_ss;
         fn load_mem0_offset16_ss = Op::i64x2_load_widen32x2_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U64x2Load32x2 {
+    impl LoadOp for U64x2Load32x2 {
         fn load_ss = Op::u64x2_load_widen32x2_ss;
         fn load_mem0_offset16_ss = Op::u64x2_load_widen32x2_mem0_offset16_ss;
     }
 
-    impl LoadOperator for V128Load8Splat {
+    impl LoadOp for V128Load8Splat {
         fn load_ss = Op::v128_load_splat8_ss;
         fn load_mem0_offset16_ss = Op::v128_load_splat8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for V128Load16Splat {
+    impl LoadOp for V128Load16Splat {
         fn load_ss = Op::v128_load_splat16_ss;
         fn load_mem0_offset16_ss = Op::v128_load_splat16_mem0_offset16_ss;
     }
 
-    impl LoadOperator for V128Load32Splat {
+    impl LoadOp for V128Load32Splat {
         fn load_ss = Op::v128_load_splat32_ss;
         fn load_mem0_offset16_ss = Op::v128_load_splat32_mem0_offset16_ss;
     }
 
-    impl LoadOperator for V128Load64Splat {
+    impl LoadOp for V128Load64Splat {
         fn load_ss = Op::v128_load_splat64_ss;
         fn load_mem0_offset16_ss = Op::v128_load_splat64_mem0_offset16_ss;
     }
 
-    impl LoadOperator for V128Load32Zero {
+    impl LoadOp for V128Load32Zero {
         fn load_ss = Op::v128_load_low32_ss;
         fn load_mem0_offset16_ss = Op::v128_load_low32_mem0_offset16_ss;
     }
 
-    impl LoadOperator for V128Load64Zero {
+    impl LoadOp for V128Load64Zero {
         fn load_ss = Op::v128_load_low64_ss;
         fn load_mem0_offset16_ss = Op::v128_load_low64_mem0_offset16_ss;
     }
