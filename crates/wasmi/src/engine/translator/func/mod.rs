@@ -2307,7 +2307,7 @@ impl FuncTranslator {
     /// - `{i32, i64, f32, f64}.load`
     /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
-    fn translate_load<T: op::LoadOperator>(&mut self, memarg: MemArg) -> Result<(), Error> {
+    fn translate_load<T: op::LoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
@@ -2365,7 +2365,7 @@ impl FuncTranslator {
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
-    fn translate_store<T: op::StoreOperator>(&mut self, memarg: MemArg) -> Result<(), Error>
+    fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error>
     where
         T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
@@ -2376,7 +2376,7 @@ impl FuncTranslator {
     }
 
     /// Encodes a Wasm store operator to Wasmi bytecode.
-    fn encode_store<T: op::StoreOperator>(
+    fn encode_store<T: op::StoreOp>(
         &mut self,
         memarg: MemArg,
         ptr: Operand,
@@ -2410,7 +2410,7 @@ impl FuncTranslator {
             }
             Operand::Immediate(value) => {
                 let value = <T::Value>::from(value.val());
-                let immediate = <T as op::StoreOperator>::into_immediate(value);
+                let immediate = <T as op::StoreOp>::into_immediate(value);
                 T::store_si(ptr, offset, immediate, memory)
             }
         };
@@ -2419,7 +2419,7 @@ impl FuncTranslator {
     }
 
     /// Encodes a Wasm store operator with immediate `ptr` to Wasmi bytecode.
-    fn encode_store_ix<T: op::StoreOperator>(
+    fn encode_store_ix<T: op::StoreOp>(
         &mut self,
         ptr: ImmediateOperand,
         offset: u64,
@@ -2445,7 +2445,7 @@ impl FuncTranslator {
             }
             Operand::Immediate(value) => {
                 let value = <T::Value>::from(value.val());
-                let immediate = <T as op::StoreOperator>::into_immediate(value);
+                let immediate = <T as op::StoreOp>::into_immediate(value);
                 T::store_ii(address, immediate, memory)
             }
         };
@@ -2460,7 +2460,7 @@ impl FuncTranslator {
     /// - Returns `Ok(true)` if encoding was successfull.
     /// - Returns `Ok(false)` if encoding was unsuccessful.
     /// - Returns `Err(_)` if an error occurred.
-    fn encode_store_mem0_offset16<T: op::StoreOperator>(
+    fn encode_store_mem0_offset16<T: op::StoreOp>(
         &mut self,
         ptr: Slot,
         offset: u64,
@@ -2489,7 +2489,7 @@ impl FuncTranslator {
             }
             Operand::Immediate(value) => {
                 let value = <T::Value>::from(value.val());
-                let immediate = <T as op::StoreOperator>::into_immediate(value);
+                let immediate = <T as op::StoreOp>::into_immediate(value);
                 T::store_mem0_offset16_si(ptr, offset16, immediate)
             }
         };

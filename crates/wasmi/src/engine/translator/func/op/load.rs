@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Trait implemented by all Wasm operators that can be translated as load extend instructions.
-pub trait LoadOperator {
+pub trait LoadOp {
     /// The type of the loaded value.
     const LOADED_TY: ValType;
 
@@ -17,7 +17,7 @@ pub trait LoadOperator {
 
 macro_rules! impl_load_extend {
     ( $(
-        impl LoadOperator for $name:ident {
+        impl LoadOp for $name:ident {
             const LOADED_TY: ValType = $loaded_ty:expr;
 
             fn load_ss = $store_ss:expr;
@@ -27,7 +27,7 @@ macro_rules! impl_load_extend {
     )* ) => {
         $(
             pub enum $name {}
-            impl LoadOperator for $name {
+            impl LoadOp for $name {
                 const LOADED_TY: ValType = $loaded_ty;
 
                 fn load_ss(result: Slot, ptr: Slot, offset: u64, memory: Memory) -> Op {
@@ -48,7 +48,7 @@ macro_rules! impl_load_extend {
     };
 }
 impl_load_extend! {
-    impl LoadOperator for I32Load {
+    impl LoadOp for I32Load {
         const LOADED_TY: ValType = ValType::I32;
 
         fn load_ss = Op::u32_load_ss;
@@ -56,7 +56,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u32_load_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I32Load8 {
+    impl LoadOp for I32Load8 {
         const LOADED_TY: ValType = ValType::I32;
 
         fn load_ss = Op::i32_load_extend8_ss;
@@ -64,7 +64,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::i32_load_extend8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U32Load8 {
+    impl LoadOp for U32Load8 {
         const LOADED_TY: ValType = ValType::I32;
 
         fn load_ss = Op::u32_load_extend8_ss;
@@ -72,7 +72,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u32_load_extend8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I32Load16 {
+    impl LoadOp for I32Load16 {
         const LOADED_TY: ValType = ValType::I32;
 
         fn load_ss = Op::i32_load_extend16_ss;
@@ -80,7 +80,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::i32_load_extend16_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U32Load16 {
+    impl LoadOp for U32Load16 {
         const LOADED_TY: ValType = ValType::I32;
 
         fn load_ss = Op::u32_load_extend16_ss;
@@ -88,7 +88,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u32_load_extend16_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I64Load {
+    impl LoadOp for I64Load {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::u64_load_ss;
@@ -96,7 +96,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u64_load_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I64Load8 {
+    impl LoadOp for I64Load8 {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::i64_load_extend8_ss;
@@ -104,7 +104,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::i64_load_extend8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U64Load8 {
+    impl LoadOp for U64Load8 {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::u64_load_extend8_ss;
@@ -112,7 +112,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u64_load_extend8_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I64Load16 {
+    impl LoadOp for I64Load16 {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::i64_load_extend16_ss;
@@ -120,7 +120,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::i64_load_extend16_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U64Load16 {
+    impl LoadOp for U64Load16 {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::u64_load_extend16_ss;
@@ -128,7 +128,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u64_load_extend16_mem0_offset16_ss;
     }
 
-    impl LoadOperator for I64Load32 {
+    impl LoadOp for I64Load32 {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::i64_load_extend32_ss;
@@ -136,7 +136,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::i64_load_extend32_mem0_offset16_ss;
     }
 
-    impl LoadOperator for U64Load32 {
+    impl LoadOp for U64Load32 {
         const LOADED_TY: ValType = ValType::I64;
 
         fn load_ss = Op::u64_load_extend32_ss;
@@ -144,7 +144,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u64_load_extend32_mem0_offset16_ss;
     }
 
-    impl LoadOperator for F32Load {
+    impl LoadOp for F32Load {
         const LOADED_TY: ValType = ValType::F32;
 
         fn load_ss = Op::u32_load_ss;
@@ -152,7 +152,7 @@ impl_load_extend! {
         fn load_mem0_offset16_ss = Op::u32_load_mem0_offset16_ss;
     }
 
-    impl LoadOperator for F64Load {
+    impl LoadOp for F64Load {
         const LOADED_TY: ValType = ValType::F64;
 
         fn load_ss = Op::u64_load_ss;

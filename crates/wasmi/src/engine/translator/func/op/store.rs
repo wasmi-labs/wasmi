@@ -5,7 +5,7 @@ use crate::{
 };
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
-pub trait StoreOperator {
+pub trait StoreOp {
     /// The type of the value to the stored.
     type Value: Typed;
     /// The type of immediate values.
@@ -29,7 +29,7 @@ pub trait StoreOperator {
 
 macro_rules! impl_store_wrap {
     ( $(
-        impl StoreOperator for $name:ident {
+        impl StoreOp for $name:ident {
             type Value = $value_ty:ty;
             type Immediate = $immediate_ty:ty;
 
@@ -45,7 +45,7 @@ macro_rules! impl_store_wrap {
     )* ) => {
         $(
             pub enum $name {}
-            impl StoreOperator for $name {
+            impl StoreOp for $name {
                 type Value = $value_ty;
                 type Immediate = $immediate_ty;
 
@@ -81,7 +81,7 @@ macro_rules! impl_store_wrap {
     };
 }
 impl_store_wrap! {
-    impl StoreOperator for I32Store {
+    impl StoreOp for I32Store {
         type Value = i32;
         type Immediate = u32;
 
@@ -94,7 +94,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::u32_store_mem0_offset16_si;
     }
 
-    impl StoreOperator for I64Store {
+    impl StoreOp for I64Store {
         type Value = i64;
         type Immediate = u64;
 
@@ -107,7 +107,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::u64_store_mem0_offset16_si;
     }
 
-    impl StoreOperator for F32Store {
+    impl StoreOp for F32Store {
         type Value = f32;
         type Immediate = u32;
 
@@ -120,7 +120,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::u32_store_mem0_offset16_si;
     }
 
-    impl StoreOperator for F64Store {
+    impl StoreOp for F64Store {
         type Value = f64;
         type Immediate = u64;
 
@@ -133,7 +133,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::u64_store_mem0_offset16_si;
     }
 
-    impl StoreOperator for I32Store8 {
+    impl StoreOp for I32Store8 {
         type Value = i32;
         type Immediate = i8;
 
@@ -146,7 +146,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::i32_store_wrap8_mem0_offset16_si;
     }
 
-    impl StoreOperator for I32Store16 {
+    impl StoreOp for I32Store16 {
         type Value = i32;
         type Immediate = i16;
 
@@ -159,7 +159,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::i32_store_wrap16_mem0_offset16_si;
     }
 
-    impl StoreOperator for I64Store8 {
+    impl StoreOp for I64Store8 {
         type Value = i64;
         type Immediate = i8;
 
@@ -172,7 +172,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::i64_store_wrap8_mem0_offset16_si;
     }
 
-    impl StoreOperator for I64Store16 {
+    impl StoreOp for I64Store16 {
         type Value = i64;
         type Immediate = i16;
 
@@ -185,7 +185,7 @@ impl_store_wrap! {
         fn store_mem0_offset16_si = Op::i64_store_wrap16_mem0_offset16_si;
     }
 
-    impl StoreOperator for I64Store32 {
+    impl StoreOp for I64Store32 {
         type Value = i64;
         type Immediate = i32;
 
