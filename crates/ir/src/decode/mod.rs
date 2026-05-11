@@ -41,10 +41,9 @@ use crate::{
     Offset16,
     OpCode,
     Reg,
-    Sign,
     Slot,
     SlotSpan,
-    core::TrapCode,
+    core::{Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::{

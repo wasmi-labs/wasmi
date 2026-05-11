@@ -8,10 +8,9 @@ use crate::{
     FixedSlotSpan,
     Offset16,
     Reg,
-    Sign,
     Slot,
     SlotSpan,
-    core::TrapCode,
+    core::{Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;
