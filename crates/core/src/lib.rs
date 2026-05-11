@@ -21,6 +21,7 @@ mod index_ty;
 mod limiter;
 mod memory;
 mod raw;
+mod sign;
 mod table;
 mod trap;
 mod typed;
@@ -45,6 +46,7 @@ pub use self::{
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
     raw::{RawVal, ReadAs, WriteAs},
+    sign::Sign,
     table::{
         ElementSegment,
         ElementSegmentRef,
