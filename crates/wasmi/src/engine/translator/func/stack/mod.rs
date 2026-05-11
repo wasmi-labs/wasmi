@@ -21,7 +21,15 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    operand::{ImmediateOperand, LocalOperand, Location, Operand, RegOperand, TempOperand},
+    operand::{
+        ImmediateOperand,
+        LocalOperand,
+        Location,
+        Operand,
+        RegOperand,
+        ResolvedOperand,
+        TempOperand,
+    },
     operands::{PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
@@ -372,6 +380,16 @@ impl Stack {
     /// - If the local with `local_idx` does not exist.
     pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         self.operands.push_operand(operand)
+    }
+
+    /// Pushes a register operand with type `ty` on the [`Stack`].
+    ///
+    /// # Errors
+    ///
+    /// If too many operands have been pushed onto the [`Stack`].
+    #[inline]
+    pub fn push_reg(&mut self, ty: ValType) -> Result<RegOperand, Error> {
+        self.operands.push_reg(ty)
     }
 
     /// Pushes a local variable with index `local_idx` to the [`Stack`].

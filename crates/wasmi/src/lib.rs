@@ -132,6 +132,7 @@ mod core {
         RawVal,
         ReadAs,
         ResourceLimiterRef,
+        Sign,
         Table as CoreTable,
         TableType as CoreTableType,
         Typed,

@@ -665,7 +665,7 @@ impl_reg_lossy_conversions! {
 impl From<bool> for Ireg {
     #[inline]
     fn from(value: bool) -> Self {
-        Self::from(value as u64)
+        Self::from(u64::from(value))
     }
 }
 
