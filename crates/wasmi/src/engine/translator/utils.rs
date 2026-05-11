@@ -4,7 +4,6 @@ use crate::{
     ValType,
     core::{RawVal, Typed, TypedRawVal},
     engine::TranslationError,
-    ir::Sign,
 };
 use core::{convert::identity, num::NonZero};
 
@@ -74,28 +73,6 @@ macro_rules! impl_wasm_integer {
     };
 }
 impl_wasm_integer!(i32, u32, i64, u64);
-
-/// A WebAssembly float. Either `f32` or `f64`.
-///
-/// # Note
-///
-/// This trait provides some utility methods useful for translation.
-pub trait WasmFloat: Typed + Copy + Into<TypedRawVal> + From<TypedRawVal> {
-    /// Returns the [`Sign`] of `self`.
-    fn sign(self) -> Sign<Self>;
-}
-
-impl WasmFloat for f32 {
-    fn sign(self) -> Sign<Self> {
-        Sign::from(self)
-    }
-}
-
-impl WasmFloat for f64 {
-    fn sign(self) -> Sign<Self> {
-        Sign::from(self)
-    }
-}
 
 /// Implemented by integer types to wrap them to another (smaller) integer type.
 pub trait Wrap<T> {

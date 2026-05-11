@@ -18,6 +18,25 @@ pub enum Location {
     Reg,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum ResolvedOperand<T> {
+    Reg,
+    Slot(Slot),
+    Immediate(T),
+}
+
+impl<T> ResolvedOperand<T> {
+    pub fn sort(a: Self, b: Self) -> (Self, Self) {
+        match (&a, &b) {
+            | (ResolvedOperand::Slot(_), ResolvedOperand::Reg)
+            | (ResolvedOperand::Slot(_), ResolvedOperand::Immediate(_))
+            | (ResolvedOperand::Immediate(_), ResolvedOperand::Reg)
+            | (ResolvedOperand::Immediate(_), ResolvedOperand::Slot(_)) => (b, a),
+            _ => (a, b),
+        }
+    }
+}
+
 /// An operand on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub enum Operand {
@@ -257,7 +276,7 @@ impl TempOperand {
 }
 
 /// An immediate value on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ImmediateOperand {
     /// The temporary [`SlotSpan`] of the local operand.
     temp_slots: SlotSpan,

@@ -3,6 +3,7 @@
 mod block_type;
 mod code_map;
 mod config;
+pub mod eval;
 mod executor;
 mod func_types;
 mod limits;

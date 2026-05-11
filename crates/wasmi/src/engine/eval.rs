@@ -1,4 +1,7 @@
-use crate::{TrapCode, core::wasm, ir::Sign};
+use crate::{
+    TrapCode,
+    core::{Sign, wasm},
+};
 use core::{
     num::NonZero,
     ops::{Div, Rem},
