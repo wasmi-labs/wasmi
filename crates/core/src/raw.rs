@@ -1,6 +1,6 @@
 #[cfg(feature = "simd")]
 use crate::V128;
-use crate::{F32, F64};
+use crate::{F32, F64, Sign};
 
 /// A raw value.
 ///
@@ -217,6 +217,20 @@ macro_rules! impl_from_rawval_for_float {
     };
 }
 impl_from_rawval_for_float!(f32, f64, F32, F64);
+
+impl From<RawVal> for Sign<f32> {
+    #[inline]
+    fn from(value: RawVal) -> Self {
+        Self::from(f32::from(value))
+    }
+}
+
+impl From<RawVal> for Sign<f64> {
+    #[inline]
+    fn from(value: RawVal) -> Self {
+        Self::from(f64::from(value))
+    }
+}
 
 #[cfg(feature = "simd")]
 impl From<RawVal> for V128 {

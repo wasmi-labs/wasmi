@@ -23,6 +23,6 @@ pub use self::{
     index::Slot,
     op::Op,
     opcode::{InvalidOpCode, OpCode},
-    primitive::{Address, BlockFuel, BranchOffset, BranchTableTarget, Offset16, Reg, Sign},
+    primitive::{Address, BlockFuel, BranchOffset, BranchTableTarget, Offset16, Reg},
     span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
 };
