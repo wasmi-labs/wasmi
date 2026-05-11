@@ -231,29 +231,27 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Copysign, Ty::F64, Ty::F64, Ty::SignF64, BinaryOpCaps::NONE),
     ];
     for (ident, result_ty, lhs_ty, rhs_ty, caps) in ops {
-        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
-            isa.push_op(BinaryOp::new(
-                ident,
-                result_ty,
-                lhs_ty,
-                rhs_ty,
-                OperandKind::Slot,
-                OperandKind::Slot,
-                rhs,
-                caps,
-            ));
-        }
-        if !caps.is_commutative() {
-            isa.push_op(BinaryOp::new(
-                ident,
-                result_ty,
-                lhs_ty,
-                rhs_ty,
-                OperandKind::Slot,
-                OperandKind::Immediate,
-                OperandKind::Slot,
-                caps,
-            ));
+        for lhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            for rhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                if lhs == rhs && (lhs.is_reg() || lhs.is_immediate()) {
+                    // Both operands must not be registers or immediates.
+                    continue;
+                }
+                if caps.is_commutative() && lhs > rhs {
+                    // Commutative operators don't need variants with swapped operand order.
+                    continue;
+                }
+                isa.push_op(BinaryOp::new(
+                    ident,
+                    result_ty,
+                    lhs_ty,
+                    rhs_ty,
+                    OperandKind::Reg,
+                    lhs,
+                    rhs,
+                    caps,
+                ));
+            }
         }
     }
 }

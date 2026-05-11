@@ -17,13 +17,6 @@ macro_rules! bail_unreachable {
     }};
 }
 
-/// Used to swap operands of binary [`Op`] constructor.
-///
-/// [`Op`]: crate::ir::Op
-macro_rules! swap_ops {
-    ($make_instr:path) => {{ |result: $crate::ir::Slot, lhs, rhs| -> $crate::ir::Op { $make_instr(result, rhs, lhs) } }};
-}
-
 /// Implemented by types that can be reset for reuse.
 pub trait Reset: Sized {
     /// Resets `self` for reuse.

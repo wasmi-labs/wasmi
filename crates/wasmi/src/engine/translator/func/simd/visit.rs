@@ -213,7 +213,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         }
         let lhs = self.copy_if_immediate(lhs)?;
         let rhs = self.copy_if_immediate(rhs)?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
             FuelCostsProvider::simd,

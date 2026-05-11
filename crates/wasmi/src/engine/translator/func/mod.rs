@@ -15,7 +15,7 @@ use self::{
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
-    op::UnaryOp,
+    op::{BinaryOp, CommutativeBinaryOp, UnaryOp},
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -30,6 +30,7 @@ use self::{
         Location,
         LoopControlFrame,
         Operand,
+        ResolvedOperand,
         Stack,
         StackAllocations,
     },
@@ -43,7 +44,7 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawRef, Typed, TypedRawVal},
+    core::{FuelCostsProvider, IndexType, RawRef, RawVal, Typed, TypedRawVal},
     engine::{
         BlockType,
         Cell,
@@ -58,7 +59,7 @@ use crate::{
                 UpdateBranchOffset as _,
             },
             func::stack::{RegOperand, TempOperand},
-            utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger, required_cells_for_ty},
+            utils::{IntoShiftAmount, ToBits, WasmInteger, required_cells_for_ty},
         },
     },
     ir::{
@@ -69,7 +70,6 @@ use crate::{
         FixedSlotSpan,
         Offset16,
         Op,
-        Sign,
         Slot,
         SlotSpan,
         index,
@@ -867,7 +867,22 @@ impl FuncTranslator {
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
-    fn push_instr_with_result(
+    fn push_instr_with_result_reg(
+        &mut self,
+        result_ty: ValType,
+        make_instr: Op,
+        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        self.stack.push_reg(result_ty)?;
+        // debug_assert!(make_instr.result_ref().is_some()); // TODO: need make_instr.has_result_reg() method
+        self.instrs
+            .stage(make_instr, consume_fuel_instr, fuel_costs)?;
+        Ok(())
+    }
+
+    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    fn push_instr_with_result_slot(
         &mut self,
         result_ty: ValType,
         make_instr: impl FnOnce(Slot) -> Op,
@@ -893,7 +908,11 @@ impl FuncTranslator {
         debug_assert_eq!(lhs.ty(), rhs.ty());
         let lhs = self.layout.operand_to_slot(lhs)?;
         let rhs = self.layout.operand_to_slot(rhs)?;
-        self.push_instr_with_result(result_ty, |result| make_instr(result, lhs, rhs), fuel_costs)
+        self.push_instr_with_result_slot(
+            result_ty,
+            |result| make_instr(result, lhs, rhs),
+            fuel_costs,
+        )
     }
 
     /// Populate the `buffer` with the `table` targets including the `table` default target.
@@ -1723,18 +1742,17 @@ impl FuncTranslator {
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
-    fn translate_binary_consteval_fallible<T, R>(
+    fn translate_binary_consteval_fallible_v2<Lhs, Rhs, Res>(
         &mut self,
-        lhs: ImmediateOperand,
-        rhs: ImmediateOperand,
-        consteval: impl FnOnce(T, T) -> Result<R, TrapCode>,
+        lhs: Lhs,
+        rhs: Rhs,
+        consteval: impl FnOnce(Lhs, Rhs) -> Result<Res, TrapCode>,
     ) -> Result<(), Error>
     where
-        T: From<TypedRawVal>,
-        R: Into<TypedRawVal>,
+        Lhs: From<RawVal>,
+        Rhs: From<RawVal>,
+        Res: Into<TypedRawVal>,
     {
-        let lhs: T = lhs.val().into();
-        let rhs: T = rhs.val().into();
         match consteval(lhs, rhs) {
             Ok(value) => {
                 self.stack.push_immediate(value)?;
@@ -1746,81 +1764,133 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
-    fn translate_binary_consteval<T, R>(
-        &mut self,
-        lhs: ImmediateOperand,
-        rhs: ImmediateOperand,
-        consteval: fn(T, T) -> R,
-    ) -> Result<(), Error>
-    where
-        T: From<TypedRawVal>,
-        R: Into<TypedRawVal>,
-    {
-        self.translate_binary_consteval_fallible::<T, R>(lhs, rhs, |lhs, rhs| {
-            Ok(consteval(lhs, rhs))
-        })
-    }
-
     /// Convenience method to tell that there is no custom optimization.
     fn no_opt_ri<T>(&mut self, _lhs: Operand, _rhs: T) -> Result<bool, Error> {
         Ok(false)
     }
 
+    // TODO: docs
+    fn resolve_operand_as<T>(&mut self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
+    where
+        T: From<RawVal>,
+    {
+        let resolved = match operand {
+            Operand::Reg(_operand) => ResolvedOperand::Reg,
+            Operand::Local(operand) => {
+                let slot = self.layout.local_to_slot(operand)?;
+                ResolvedOperand::Slot(slot)
+            }
+            Operand::Temp(operand) => {
+                let slot = operand.temp_slots().head();
+                ResolvedOperand::Slot(slot)
+            }
+            Operand::Immediate(operand) => {
+                let value = T::from(operand.val().raw());
+                ResolvedOperand::Immediate(value)
+            }
+        };
+        Ok(resolved)
+    }
+
+    // TODO: docs
+    #[cold]
+    #[inline]
+    fn unsupported_operand_pair(lhs: impl AsRef<Operand>, rhs: impl AsRef<Operand>) -> ! {
+        #[inline(never)]
+        fn impl_(lhs: &Operand, rhs: &Operand) -> ! {
+            unreachable!("unsupported operator pair: lhs = {lhs:?}, rhs = {rhs:?}")
+        }
+        let lhs = lhs.as_ref();
+        let rhs = rhs.as_ref();
+        impl_(lhs, rhs)
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary_commutative<T, R>(
+    fn translate_binary_commutative<T: CommutativeBinaryOp>(
         &mut self,
-        make_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_ssi: fn(result: Slot, lhs: Slot, rhs: T) -> Op,
-        consteval: fn(T, T) -> R,
-        opt_si: fn(this: &mut Self, lhs: Operand, rhs: T) -> Result<bool, Error>,
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Input) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: From<TypedRawVal> + Copy,
-        R: Into<TypedRawVal> + Typed,
+        T::Input: From<RawVal> + Copy,
+        T::Result: Into<RawVal>,
     {
         bail_unreachable!(self);
-        match self.stack.pop2() {
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
-            }
-            (val, Operand::Immediate(imm)) | (Operand::Immediate(imm), val) => {
-                let rhs = imm.val().into();
-                if opt_si(self, val, rhs)? {
-                    return Ok(());
-                }
-                let lhs = self.layout.operand_to_slot(val)?;
-                self.push_instr_with_result(
-                    <R as Typed>::TY,
-                    |result| make_ssi(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (lhs, rhs) => self.push_binary_instr_with_result(
-                <R as Typed>::TY,
-                lhs,
-                rhs,
-                make_sss,
-                FuelCostsProvider::base,
-            ),
+        let (lhs, rhs) = self.stack.pop2();
+        let l = self.resolve_operand_as::<T::Input>(lhs)?;
+        let r = self.resolve_operand_as::<T::Input>(rhs)?;
+        if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
+            return self.translate_binary_consteval_fallible_v2(lhs, rhs, T::consteval);
         }
+        let (l, r) = ResolvedOperand::sort(l, r);
+        if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
+            if opt_rhs_imm(self, lhs, rhs)? {
+                return Ok(());
+            }
+        }
+        let operator = match (l, r) {
+            (ResolvedOperand::Reg, ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
+            (ResolvedOperand::Reg, ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
+            _ => Self::unsupported_operand_pair(lhs, rhs),
+        };
+        self.push_instr_with_result_reg(
+            <T::Result as Typed>::TY,
+            operator,
+            FuelCostsProvider::base,
+        )?;
+        Ok(())
+    }
+
+    /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
+    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
+    where
+        T::Lhs: From<RawVal> + Copy,
+        T::Rhs: From<RawVal> + Copy,
+        T::Result: Into<RawVal>,
+    {
+        bail_unreachable!(self);
+        let (lhs, rhs) = self.stack.pop2();
+        let l = self.resolve_operand_as::<T::Lhs>(lhs)?;
+        let r = self.resolve_operand_as::<T::Rhs>(rhs)?;
+        if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
+            return self.translate_binary_consteval_fallible_v2(lhs, rhs, T::consteval);
+        }
+        let operator = match (l, r) {
+            (ResolvedOperand::Reg, ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
+            (ResolvedOperand::Reg, ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg) => T::op_rsr(lhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg) => T::op_rir(lhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => T::op_ris(lhs, rhs),
+            _ => Self::unsupported_operand_pair(lhs, rhs),
+        };
+        self.push_instr_with_result_reg(
+            <T::Result as Typed>::TY,
+            operator,
+            FuelCostsProvider::base,
+        )?;
+        Ok(())
     }
 
     /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
+    #[expect(dead_code)]
     fn translate_divrem<T>(
         &mut self,
         make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
         make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as WasmInteger>::NonZero) -> Op,
         make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
-        consteval: fn(T, T) -> Result<T, TrapCode>,
+        _consteval: fn(T, T) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
         T: WasmInteger,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                self.translate_binary_consteval_fallible::<T, T>(lhs, rhs, consteval)
+            (Operand::Immediate(_lhs), Operand::Immediate(_rhs)) => {
+                // self.translate_binary_consteval_fallible::<T, T>(lhs, rhs, consteval)
+                todo!()
             }
             (lhs, Operand::Immediate(rhs)) => {
                 let lhs = self.layout.operand_to_slot(lhs)?;
@@ -1829,7 +1899,7 @@ impl FuncTranslator {
                     // Optimization: division by zero always traps
                     return self.translate_trap(TrapCode::IntegerDivisionByZero);
                 };
-                self.push_instr_with_result(
+                self.push_instr_with_result_slot(
                     <T as Typed>::TY,
                     |result| make_instr_ssi(result, lhs, non_zero_rhs),
                     FuelCostsProvider::base,
@@ -1838,7 +1908,7 @@ impl FuncTranslator {
             (Operand::Immediate(lhs), rhs) => {
                 let lhs = T::from(lhs.val());
                 let rhs = self.layout.operand_to_slot(rhs)?;
-                self.push_instr_with_result(
+                self.push_instr_with_result_slot(
                     <T as Typed>::TY,
                     |result| make_instr_sis(result, lhs, rhs),
                     FuelCostsProvider::base,
@@ -1854,66 +1924,23 @@ impl FuncTranslator {
         }
     }
 
-    /// Translates binary non-commutative Wasm operators to Wasmi bytecode.
-    fn translate_binary<T, R>(
-        &mut self,
-        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: T) -> Op,
-        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
-        consteval: fn(T, T) -> R,
-    ) -> Result<(), Error>
-    where
-        T: From<TypedRawVal> + Copy,
-        R: Into<TypedRawVal> + Typed,
-    {
-        bail_unreachable!(self);
-        match self.stack.pop2() {
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                self.translate_binary_consteval::<T, R>(lhs, rhs, consteval)
-            }
-            (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_slot(lhs)?;
-                let rhs = T::from(rhs.val());
-                self.push_instr_with_result(
-                    <R as Typed>::TY,
-                    |result| make_instr_ssi(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (Operand::Immediate(lhs), rhs) => {
-                let lhs = T::from(lhs.val());
-                let rhs = self.layout.operand_to_slot(rhs)?;
-                self.push_instr_with_result(
-                    <R as Typed>::TY,
-                    |result| make_instr_sis(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (lhs, rhs) => self.push_binary_instr_with_result(
-                <R as Typed>::TY,
-                lhs,
-                rhs,
-                make_instr_sss,
-                FuelCostsProvider::base,
-            ),
-        }
-    }
-
     /// Translates Wasm shift and rotate operators to Wasmi bytecode.
+    #[expect(dead_code)]
     fn translate_shift<T>(
         &mut self,
         make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
         make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::ShiftAmount) -> Op,
         make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
-        consteval: fn(T, T) -> T,
+        _consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
         T: WasmInteger + IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
     {
         bail_unreachable!(self);
         match self.stack.pop2() {
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
+            (Operand::Immediate(_lhs), Operand::Immediate(_rhs)) => {
+                // self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
+                todo!()
             }
             (lhs, Operand::Immediate(rhs)) => {
                 let shift_amount = <T::ShiftSource>::from(rhs.val());
@@ -1923,7 +1950,7 @@ impl FuncTranslator {
                     return Ok(());
                 };
                 let lhs = self.layout.operand_to_slot(lhs)?;
-                self.push_instr_with_result(
+                self.push_instr_with_result_slot(
                     <T as Typed>::TY,
                     |result| make_instr_ssi(result, lhs, rhs),
                     FuelCostsProvider::base,
@@ -1937,7 +1964,7 @@ impl FuncTranslator {
                     return Ok(());
                 }
                 let rhs = self.layout.operand_to_slot(rhs)?;
-                self.push_instr_with_result(
+                self.push_instr_with_result_slot(
                     <T as Typed>::TY,
                     |result| make_instr_sis(result, lhs, rhs),
                     FuelCostsProvider::base,
@@ -1950,62 +1977,6 @@ impl FuncTranslator {
                 make_instr_sss,
                 FuelCostsProvider::base,
             ),
-        }
-    }
-
-    /// Translate Wasmi `{f32,f64}.copysign` instructions.
-    ///
-    /// # Note
-    ///
-    /// - This applies some optimization that are valid for copysign instructions.
-    /// - Applies constant evaluation if both operands are constant values.
-    fn translate_fcopysign<T>(
-        &mut self,
-        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: Sign<T>) -> Op,
-        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
-        consteval: fn(T, T) -> T,
-    ) -> Result<(), Error>
-    where
-        T: WasmFloat,
-    {
-        bail_unreachable!(self);
-        match self.stack.pop2() {
-            (Operand::Immediate(lhs), Operand::Immediate(rhs)) => {
-                self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
-            }
-            (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_slot(lhs)?;
-                let sign = T::from(rhs.val()).sign();
-                self.push_instr_with_result(
-                    <T as Typed>::TY,
-                    |result| make_instr_ssi(result, lhs, sign),
-                    FuelCostsProvider::base,
-                )
-            }
-            (Operand::Immediate(lhs), rhs) => {
-                let lhs = T::from(lhs.val());
-                let rhs = self.layout.operand_to_slot(rhs)?;
-                self.push_instr_with_result(
-                    <T as Typed>::TY,
-                    |result| make_instr_sis(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (lhs, rhs) => {
-                if lhs.is_same(&rhs) {
-                    // Optimization: `copysign x x` is always just `x`
-                    self.stack.push_operand(lhs)?;
-                    return Ok(());
-                }
-                self.push_binary_instr_with_result(
-                    <T as Typed>::TY,
-                    lhs,
-                    rhs,
-                    make_instr_sss,
-                    FuelCostsProvider::base,
-                )
-            }
         }
     }
 
@@ -2072,7 +2043,7 @@ impl FuncTranslator {
             // Unlike normal `select` instructions the `select128` cannot be fused.
             let true_val = self.copy_if_immediate(true_val)?;
             let false_val = self.copy_if_immediate(false_val)?;
-            self.push_instr_with_result(
+            self.push_instr_with_result_slot(
                 ty,
                 |result| Op::v128_select_ssss(result, condition, true_val, false_val),
                 FuelCostsProvider::base,
@@ -2112,7 +2083,7 @@ impl FuncTranslator {
         };
         let true_val = self.make_input(true_val, |_, v| extract_bits(v))?;
         let false_val = self.make_input(false_val, |_, v| extract_bits(v))?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ty,
             |result| match (true_val, false_val) {
                 (Input::Slot(true_val), Input::Slot(false_val)) => {
@@ -2147,7 +2118,7 @@ impl FuncTranslator {
         };
         let true_val = self.make_input(true_val, |_, v| extract_bits(v))?;
         let false_val = self.make_input(false_val, |_, v| extract_bits(v))?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ty,
             |result| match (true_val, false_val) {
                 (Input::Slot(true_val), Input::Slot(false_val)) => {
@@ -2209,10 +2180,13 @@ impl FuncTranslator {
             // are not equal thus indicating that we cannot fuse the instructions.
             return Ok(SelectFusion::None);
         }
+        #[rustfmt::skip]
         let fusion = match staged {
-            Op::I32Eq_Ssi { rhs: 0, .. } => SelectFusion::FusedSwap,
-            Op::I32NotEq_Ssi { rhs: 0, .. } => SelectFusion::Fused,
-            _ => SelectFusion::None,
+            | Op::I32Eq_Rri { rhs: 0, .. }
+            | Op::I32Eq_Rsi { rhs: 0, .. } => SelectFusion::FusedSwap,
+            | Op::I32NotEq_Rri { rhs: 0, .. }
+            | Op::I32NotEq_Rsi { rhs: 0, .. } => SelectFusion::Fused,
+            | _ => SelectFusion::None,
         };
         Ok(fusion)
     }
@@ -2248,7 +2222,7 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_commutative_cmp_with<T: WasmInteger>(
+    fn fuse_commutative_cmp_with<T: WasmInteger>(
         &mut self,
         lhs: Operand,
         rhs: T,
@@ -2321,7 +2295,7 @@ impl FuncTranslator {
                 };
                 match T::load_si(address, memory) {
                     Some(load_si) => {
-                        self.push_instr_with_result(
+                        self.push_instr_with_result_slot(
                             T::LOADED_TY,
                             load_si,
                             FuelCostsProvider::load,
@@ -2337,7 +2311,7 @@ impl FuncTranslator {
         };
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_instr_with_result(
+                self.push_instr_with_result_slot(
                     T::LOADED_TY,
                     |result| T::load_mem0_offset16_ss(result, ptr, offset),
                     FuelCostsProvider::load,
@@ -2345,7 +2319,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             T::LOADED_TY,
             |result| T::load_ss(result, ptr, offset, memory),
             FuelCostsProvider::load,
