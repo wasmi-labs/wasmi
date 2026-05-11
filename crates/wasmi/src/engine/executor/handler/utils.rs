@@ -12,7 +12,7 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, WriteAs},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, Sign, WriteAs},
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -26,7 +26,7 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
     ir,
-    ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan, index},
+    ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Slot, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,

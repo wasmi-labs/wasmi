@@ -1,9 +1,9 @@
+use super::IntoResult as _;
 use crate::{
     TrapCode,
     core::{Typed, wasm},
     ir::{Op, Reg, Slot},
 };
-use super::IntoResult as _;
 
 pub trait UnaryOp {
     type Result;

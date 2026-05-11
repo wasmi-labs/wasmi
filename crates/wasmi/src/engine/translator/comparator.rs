@@ -10,102 +10,242 @@ impl NegateCmpInstr for Op {
         #[rustfmt::skip]
         let negated = match *self {
             // i32
-            | Op::I32Eq_Sss { result, lhs, rhs } => Op::i32_not_eq_sss(result, lhs, rhs),
-            | Op::I32Eq_Ssi { result, lhs, rhs } => Op::i32_not_eq_ssi(result, lhs, rhs),
-            | Op::I32And_Sss { result, lhs, rhs }
-            | Op::I32BitAnd_Sss { result, lhs, rhs } => Op::i32_not_and_sss(result, lhs, rhs),
-            | Op::I32And_Ssi { result, lhs, rhs }
-            | Op::I32BitAnd_Ssi { result, lhs, rhs } => Op::i32_not_and_ssi(result, lhs, rhs),
-            | Op::I32Or_Sss { result, lhs, rhs }
-            | Op::I32BitOr_Sss { result, lhs, rhs } => Op::i32_not_or_sss(result, lhs, rhs),
-            | Op::I32Or_Ssi { result, lhs, rhs }
-            | Op::I32BitOr_Ssi { result, lhs, rhs } => Op::i32_not_or_ssi(result, lhs, rhs),
-            | Op::I32NotEq_Sss { result, lhs, rhs }
-            | Op::I32BitXor_Sss { result, lhs, rhs } => Op::i32_eq_sss(result, lhs, rhs),
-            | Op::I32NotEq_Ssi { result, lhs, rhs }
-            | Op::I32BitXor_Ssi { result, lhs, rhs } => Op::i32_eq_ssi(result, lhs, rhs),
-            | Op::I32NotAnd_Sss { result, lhs, rhs } => Op::i32_and_sss(result, lhs, rhs),
-            | Op::I32NotAnd_Ssi { result, lhs, rhs } => Op::i32_and_ssi(result, lhs, rhs),
-            | Op::I32NotOr_Sss { result, lhs, rhs } => Op::i32_or_sss(result, lhs, rhs),
-            | Op::I32NotOr_Ssi { result, lhs, rhs } => Op::i32_or_ssi(result, lhs, rhs),
-            | Op::I32Lt_Sss { result, lhs, rhs } => Op::i32_le_sss(result, rhs, lhs),
-            | Op::I32Lt_Ssi { result, lhs, rhs } => Op::i32_le_sis(result, rhs, lhs),
-            | Op::I32Lt_Sis { result, lhs, rhs } => Op::i32_le_ssi(result, rhs, lhs),
-            | Op::U32Lt_Sss { result, lhs, rhs } => Op::u32_le_sss(result, rhs, lhs),
-            | Op::U32Lt_Ssi { result, lhs, rhs } => Op::u32_le_sis(result, rhs, lhs),
-            | Op::U32Lt_Sis { result, lhs, rhs } => Op::u32_le_ssi(result, rhs, lhs),
-            | Op::I32Le_Sss { result, lhs, rhs } => Op::i32_lt_sss(result, rhs, lhs),
-            | Op::I32Le_Ssi { result, lhs, rhs } => Op::i32_lt_sis(result, rhs, lhs),
-            | Op::I32Le_Sis { result, lhs, rhs } => Op::i32_lt_ssi(result, rhs, lhs),
-            | Op::U32Le_Sss { result, lhs, rhs } => Op::u32_lt_sss(result, rhs, lhs),
-            | Op::U32Le_Ssi { result, lhs, rhs } => Op::u32_lt_sis(result, rhs, lhs),
-            | Op::U32Le_Sis { result, lhs, rhs } => Op::u32_lt_ssi(result, rhs, lhs),
+            // i32: eq
+            | Op::I32Eq_Rrs { rhs, .. } => Op::i32_not_eq_rrs(rhs),
+            | Op::I32Eq_Rri { rhs, .. } => Op::i32_not_eq_rri(rhs),
+            | Op::I32Eq_Rss { lhs, rhs, .. } => Op::i32_not_eq_rss(lhs, rhs),
+            | Op::I32Eq_Rsi { lhs, rhs, .. } => Op::i32_not_eq_rsi(lhs, rhs),
+            // i32: and + bitand
+            | Op::I32And_Rrs { rhs, .. }
+            | Op::I32BitAnd_Rrs { rhs, .. } => Op::i32_not_and_rrs(rhs),
+            | Op::I32And_Rri { rhs, .. }
+            | Op::I32BitAnd_Rri { rhs, .. } => Op::i32_not_and_rri(rhs),
+            | Op::I32And_Rss { lhs, rhs, .. }
+            | Op::I32BitAnd_Rss { lhs, rhs, .. } => Op::i32_not_and_rss(lhs, rhs),
+            | Op::I32And_Rsi { lhs, rhs, .. }
+            | Op::I32BitAnd_Rsi { lhs, rhs, .. } => Op::i32_not_and_rsi(lhs, rhs),
+            // i32: or + bitor
+            | Op::I32Or_Rrs { rhs, .. }
+            | Op::I32BitOr_Rrs { rhs, .. } => Op::i32_not_or_rrs(rhs),
+            | Op::I32Or_Rri { rhs, .. }
+            | Op::I32BitOr_Rri { rhs, .. } => Op::i32_not_or_rri(rhs),
+            | Op::I32Or_Rss { lhs, rhs, .. }
+            | Op::I32BitOr_Rss { lhs, rhs, .. } => Op::i32_not_or_rss(lhs, rhs),
+            | Op::I32Or_Rsi { lhs, rhs, .. }
+            | Op::I32BitOr_Rsi { lhs, rhs, .. } => Op::i32_not_or_rsi(lhs, rhs),
+            // i32: not_eq + xor
+            | Op::I32NotEq_Rrs { rhs, .. }
+            | Op::I32BitXor_Rrs { rhs, .. } => Op::i32_eq_rrs(rhs),
+            | Op::I32NotEq_Rri { rhs, .. }
+            | Op::I32BitXor_Rri { rhs, .. } => Op::i32_eq_rri(rhs),
+            | Op::I32NotEq_Rss { lhs, rhs, .. }
+            | Op::I32BitXor_Rss { lhs, rhs, .. } => Op::i32_eq_rss(lhs, rhs),
+            | Op::I32NotEq_Rsi { lhs, rhs, .. }
+            | Op::I32BitXor_Rsi { lhs, rhs, .. } => Op::i32_eq_rsi(lhs, rhs),
+            // i32: not_and
+            | Op::I32NotAnd_Rrs { rhs, .. } => Op::i32_and_rrs(rhs),
+            | Op::I32NotAnd_Rri { rhs, .. } => Op::i32_and_rri(rhs),
+            | Op::I32NotAnd_Rss { lhs, rhs, .. } => Op::i32_and_rss(lhs, rhs),
+            | Op::I32NotAnd_Rsi { lhs, rhs, .. } => Op::i32_and_rsi(lhs, rhs),
+            // i32: not_or
+            | Op::I32NotOr_Rrs { rhs, .. } => Op::i32_or_rrs(rhs),
+            | Op::I32NotOr_Rri { rhs, .. } => Op::i32_or_rri(rhs),
+            | Op::I32NotOr_Rss { lhs, rhs, .. } => Op::i32_or_rss(lhs, rhs),
+            | Op::I32NotOr_Rsi { lhs, rhs, .. } => Op::i32_or_rsi(lhs, rhs),
+            // i32: lt_s
+            | Op::I32Lt_Rrs { rhs, .. } => Op::i32_le_rsr(rhs),
+            | Op::I32Lt_Rri { rhs, .. } => Op::i32_le_rir(rhs),
+            | Op::I32Lt_Rsr { lhs, .. } => Op::i32_le_rrs(lhs),
+            | Op::I32Lt_Rss { lhs, rhs, .. } => Op::i32_le_rss(rhs, lhs),
+            | Op::I32Lt_Rsi { lhs, rhs, .. } => Op::i32_le_ris(rhs, lhs),
+            | Op::I32Lt_Rir { lhs, .. } => Op::i32_le_rri(lhs),
+            | Op::I32Lt_Ris { lhs, rhs, .. } => Op::i32_le_rsi(rhs, lhs),
+            // i32: lt_u
+            | Op::U32Lt_Rrs { rhs, .. } => Op::u32_le_rsr(rhs),
+            | Op::U32Lt_Rri { rhs, .. } => Op::u32_le_rir(rhs),
+            | Op::U32Lt_Rsr { lhs, .. } => Op::u32_le_rrs(lhs),
+            | Op::U32Lt_Rss { lhs, rhs, .. } => Op::u32_le_rss(rhs, lhs),
+            | Op::U32Lt_Rsi { lhs, rhs, .. } => Op::u32_le_ris(rhs, lhs),
+            | Op::U32Lt_Rir { lhs, .. } => Op::u32_le_rri(lhs),
+            | Op::U32Lt_Ris { lhs, rhs, .. } => Op::u32_le_rsi(rhs, lhs),
+            // i32: le_s
+            | Op::I32Le_Rrs { rhs, .. } => Op::i32_lt_rsr(rhs),
+            | Op::I32Le_Rri { rhs, .. } => Op::i32_lt_rir(rhs),
+            | Op::I32Le_Rsr { lhs, .. } => Op::i32_lt_rrs(lhs),
+            | Op::I32Le_Rss { lhs, rhs, .. } => Op::i32_lt_rss(rhs, lhs),
+            | Op::I32Le_Rsi { lhs, rhs, .. } => Op::i32_lt_ris(rhs, lhs),
+            | Op::I32Le_Rir { lhs, .. } => Op::i32_lt_rri(lhs),
+            | Op::I32Le_Ris { lhs, rhs, .. } => Op::i32_lt_rsi(rhs, lhs),
+            // i32: le_u
+            | Op::U32Le_Rrs { rhs, .. } => Op::u32_lt_rsr(rhs),
+            | Op::U32Le_Rri { rhs, .. } => Op::u32_lt_rir(rhs),
+            | Op::U32Le_Rsr { lhs, .. } => Op::u32_lt_rrs(lhs),
+            | Op::U32Le_Rss { lhs, rhs, .. } => Op::u32_lt_rss(rhs, lhs),
+            | Op::U32Le_Rsi { lhs, rhs, .. } => Op::u32_lt_ris(rhs, lhs),
+            | Op::U32Le_Rir { lhs, .. } => Op::u32_lt_rri(lhs),
+            | Op::U32Le_Ris { lhs, rhs, .. } => Op::u32_lt_rsi(rhs, lhs),
             // i64
-            | Op::I64Eq_Sss { result, lhs, rhs } => Op::i64_not_eq_sss(result, lhs, rhs),
-            | Op::I64Eq_Ssi { result, lhs, rhs } => Op::i64_not_eq_ssi(result, lhs, rhs),
-            | Op::I64And_Sss { result, lhs, rhs }
-            | Op::I64BitAnd_Sss { result, lhs, rhs } => Op::i64_not_and_sss(result, lhs, rhs),
-            | Op::I64And_Ssi { result, lhs, rhs }
-            | Op::I64BitAnd_Ssi { result, lhs, rhs } => Op::i64_not_and_ssi(result, lhs, rhs),
-            | Op::I64Or_Sss { result, lhs, rhs }
-            | Op::I64BitOr_Sss { result, lhs, rhs } => Op::i64_not_or_sss(result, lhs, rhs),
-            | Op::I64Or_Ssi { result, lhs, rhs }
-            | Op::I64BitOr_Ssi { result, lhs, rhs } => Op::i64_not_or_ssi(result, lhs, rhs),
-            | Op::I64NotEq_Sss { result, lhs, rhs }
-            | Op::I64BitXor_Sss { result, lhs, rhs } => Op::i64_eq_sss(result, lhs, rhs),
-            | Op::I64NotEq_Ssi { result, lhs, rhs }
-            | Op::I64BitXor_Ssi { result, lhs, rhs } => Op::i64_eq_ssi(result, lhs, rhs),
-            | Op::I64NotAnd_Sss { result, lhs, rhs } => Op::i64_and_sss(result, lhs, rhs),
-            | Op::I64NotAnd_Ssi { result, lhs, rhs } => Op::i64_and_ssi(result, lhs, rhs),
-            | Op::I64NotOr_Sss { result, lhs, rhs } => Op::i64_or_sss(result, lhs, rhs),
-            | Op::I64NotOr_Ssi { result, lhs, rhs } => Op::i64_or_ssi(result, lhs, rhs),
-            | Op::I64Lt_Sss { result, lhs, rhs } => Op::i64_le_sss(result, rhs, lhs),
-            | Op::I64Lt_Ssi { result, lhs, rhs } => Op::i64_le_sis(result, rhs, lhs),
-            | Op::I64Lt_Sis { result, lhs, rhs } => Op::i64_le_ssi(result, rhs, lhs),
-            | Op::U64Lt_Sss { result, lhs, rhs } => Op::u64_le_sss(result, rhs, lhs),
-            | Op::U64Lt_Ssi { result, lhs, rhs } => Op::u64_le_sis(result, rhs, lhs),
-            | Op::U64Lt_Sis { result, lhs, rhs } => Op::u64_le_ssi(result, rhs, lhs),
-            | Op::I64Le_Sss { result, lhs, rhs } => Op::i64_lt_sss(result, rhs, lhs),
-            | Op::I64Le_Ssi { result, lhs, rhs } => Op::i64_lt_sis(result, rhs, lhs),
-            | Op::I64Le_Sis { result, lhs, rhs } => Op::i64_lt_ssi(result, rhs, lhs),
-            | Op::U64Le_Sss { result, lhs, rhs } => Op::u64_lt_sss(result, rhs, lhs),
-            | Op::U64Le_Ssi { result, lhs, rhs } => Op::u64_lt_sis(result, rhs, lhs),
-            | Op::U64Le_Sis { result, lhs, rhs } => Op::u64_lt_ssi(result, rhs, lhs),
+            // i64: eq
+            | Op::I64Eq_Rrs { rhs, .. } => Op::i64_not_eq_rrs(rhs),
+            | Op::I64Eq_Rri { rhs, .. } => Op::i64_not_eq_rri(rhs),
+            | Op::I64Eq_Rss { lhs, rhs, .. } => Op::i64_not_eq_rss(lhs, rhs),
+            | Op::I64Eq_Rsi { lhs, rhs, .. } => Op::i64_not_eq_rsi(lhs, rhs),
+            // i64: and + bitand
+            | Op::I64And_Rrs { rhs, .. }
+            | Op::I64BitAnd_Rrs { rhs, .. } => Op::i64_not_and_rrs(rhs),
+            | Op::I64And_Rri { rhs, .. }
+            | Op::I64BitAnd_Rri { rhs, .. } => Op::i64_not_and_rri(rhs),
+            | Op::I64And_Rss { lhs, rhs, .. }
+            | Op::I64BitAnd_Rss { lhs, rhs, .. } => Op::i64_not_and_rss(lhs, rhs),
+            | Op::I64And_Rsi { lhs, rhs, .. }
+            | Op::I64BitAnd_Rsi { lhs, rhs, .. } => Op::i64_not_and_rsi(lhs, rhs),
+            // i64: or + bitor
+            | Op::I64Or_Rrs { rhs, .. }
+            | Op::I64BitOr_Rrs { rhs, .. } => Op::i64_not_or_rrs(rhs),
+            | Op::I64Or_Rri { rhs, .. }
+            | Op::I64BitOr_Rri { rhs, .. } => Op::i64_not_or_rri(rhs),
+            | Op::I64Or_Rss { lhs, rhs, .. }
+            | Op::I64BitOr_Rss { lhs, rhs, .. } => Op::i64_not_or_rss(lhs, rhs),
+            | Op::I64Or_Rsi { lhs, rhs, .. }
+            | Op::I64BitOr_Rsi { lhs, rhs, .. } => Op::i64_not_or_rsi(lhs, rhs),
+            // i64: not_eq + bitxor
+            | Op::I64NotEq_Rrs { rhs, .. }
+            | Op::I64BitXor_Rrs { rhs, .. } => Op::i64_eq_rrs(rhs),
+            | Op::I64NotEq_Rri { rhs, .. }
+            | Op::I64BitXor_Rri { rhs, .. } => Op::i64_eq_rri(rhs),
+            | Op::I64NotEq_Rss { lhs, rhs, .. }
+            | Op::I64BitXor_Rss { lhs, rhs, .. } => Op::i64_eq_rss(lhs, rhs),
+            | Op::I64NotEq_Rsi { lhs, rhs, .. }
+            | Op::I64BitXor_Rsi { lhs, rhs, .. } => Op::i64_eq_rsi(lhs, rhs),
+            // i64: not_and
+            | Op::I64NotAnd_Rrs { rhs, .. } => Op::i64_and_rrs(rhs),
+            | Op::I64NotAnd_Rri { rhs, .. } => Op::i64_and_rri(rhs),
+            | Op::I64NotAnd_Rss { lhs, rhs, .. } => Op::i64_and_rss(lhs, rhs),
+            | Op::I64NotAnd_Rsi { lhs, rhs, .. } => Op::i64_and_rsi(lhs, rhs),
+            // i64: not_or
+            | Op::I64NotOr_Rrs { rhs, .. } => Op::i64_or_rrs(rhs),
+            | Op::I64NotOr_Rri { rhs, .. } => Op::i64_or_rri(rhs),
+            | Op::I64NotOr_Rss { lhs, rhs, .. } => Op::i64_or_rss(lhs, rhs),
+            | Op::I64NotOr_Rsi { lhs, rhs, .. } => Op::i64_or_rsi(lhs, rhs),
+            // i64: lt_s
+            | Op::I64Lt_Rrs { rhs, .. } => Op::i64_le_rsr(rhs),
+            | Op::I64Lt_Rri { rhs, .. } => Op::i64_le_rir(rhs),
+            | Op::I64Lt_Rsr { lhs, .. } => Op::i64_le_rrs(lhs),
+            | Op::I64Lt_Rss { lhs, rhs, .. } => Op::i64_le_rss(rhs, lhs),
+            | Op::I64Lt_Rsi { lhs, rhs, .. } => Op::i64_le_ris(rhs, lhs),
+            | Op::I64Lt_Rir { lhs, .. } => Op::i64_le_rri(lhs),
+            | Op::I64Lt_Ris { lhs, rhs, .. } => Op::i64_le_rsi(rhs, lhs),
+            // i64: lt_u
+            | Op::U64Lt_Rrs { rhs, .. } => Op::u64_le_rsr(rhs),
+            | Op::U64Lt_Rri { rhs, .. } => Op::u64_le_rir(rhs),
+            | Op::U64Lt_Rsr { lhs, .. } => Op::u64_le_rrs(lhs),
+            | Op::U64Lt_Rss { lhs, rhs, .. } => Op::u64_le_rss(rhs, lhs),
+            | Op::U64Lt_Rsi { lhs, rhs, .. } => Op::u64_le_ris(rhs, lhs),
+            | Op::U64Lt_Rir { lhs, .. } => Op::u64_le_rri(lhs),
+            | Op::U64Lt_Ris { lhs, rhs, .. } => Op::u64_le_rsi(rhs, lhs),
+            // i64: le_s
+            | Op::I64Le_Rrs { rhs, .. } => Op::i64_lt_rsr(rhs),
+            | Op::I64Le_Rri { rhs, .. } => Op::i64_lt_rir(rhs),
+            | Op::I64Le_Rsr { lhs, .. } => Op::i64_lt_rrs(lhs),
+            | Op::I64Le_Rss { lhs, rhs, .. } => Op::i64_lt_rss(rhs, lhs),
+            | Op::I64Le_Rsi { lhs, rhs, .. } => Op::i64_lt_ris(rhs, lhs),
+            | Op::I64Le_Rir { lhs, .. } => Op::i64_lt_rri(lhs),
+            | Op::I64Le_Ris { lhs, rhs, .. } => Op::i64_lt_rsi(rhs, lhs),
+            // i64: le_u
+            | Op::U64Le_Rrs { rhs, .. } => Op::u64_lt_rsr(rhs),
+            | Op::U64Le_Rri { rhs, .. } => Op::u64_lt_rir(rhs),
+            | Op::U64Le_Rsr { lhs, .. } => Op::u64_lt_rrs(lhs),
+            | Op::U64Le_Rss { lhs, rhs, .. } => Op::u64_lt_rss(rhs, lhs),
+            | Op::U64Le_Rsi { lhs, rhs, .. } => Op::u64_lt_ris(rhs, lhs),
+            | Op::U64Le_Rir { lhs, .. } => Op::u64_lt_rri(lhs),
+            | Op::U64Le_Ris { lhs, rhs, .. } => Op::u64_lt_rsi(rhs, lhs),
             // f32
-            Op::F32Eq_Sss { result, lhs, rhs } => Op::f32_not_eq_sss(result, lhs, rhs),
-            Op::F32Eq_Ssi { result, lhs, rhs } => Op::f32_not_eq_ssi(result, lhs, rhs),
-            Op::F32Le_Sss { result, lhs, rhs } => Op::f32_not_le_sss(result, lhs, rhs),
-            Op::F32Le_Ssi { result, lhs, rhs } => Op::f32_not_le_ssi(result, lhs, rhs),
-            Op::F32Le_Sis { result, lhs, rhs } => Op::f32_not_le_sis(result, lhs, rhs),
-            Op::F32Lt_Sss { result, lhs, rhs } => Op::f32_not_lt_sss(result, lhs, rhs),
-            Op::F32Lt_Ssi { result, lhs, rhs } => Op::f32_not_lt_ssi(result, lhs, rhs),
-            Op::F32Lt_Sis { result, lhs, rhs } => Op::f32_not_lt_sis(result, lhs, rhs),
-            Op::F32NotEq_Sss { result, lhs, rhs } => Op::f32_eq_sss(result, lhs, rhs),
-            Op::F32NotEq_Ssi { result, lhs, rhs } => Op::f32_eq_ssi(result, lhs, rhs),
-            Op::F32NotLe_Sss { result, lhs, rhs } => Op::f32_le_sss(result, lhs, rhs),
-            Op::F32NotLe_Ssi { result, lhs, rhs } => Op::f32_le_ssi(result, lhs, rhs),
-            Op::F32NotLe_Sis { result, lhs, rhs } => Op::f32_le_sis(result, lhs, rhs),
-            Op::F32NotLt_Sss { result, lhs, rhs } => Op::f32_lt_sss(result, lhs, rhs),
-            Op::F32NotLt_Ssi { result, lhs, rhs } => Op::f32_lt_ssi(result, lhs, rhs),
-            Op::F32NotLt_Sis { result, lhs, rhs } => Op::f32_lt_sis(result, lhs, rhs),
+            // f32: eq
+            | Op::F32Eq_Rrs { rhs, .. } => Op::f32_not_eq_rrs(rhs),
+            | Op::F32Eq_Rri { rhs, .. } => Op::f32_not_eq_rri(rhs),
+            | Op::F32Eq_Rss { lhs, rhs, .. } => Op::f32_not_eq_rss(lhs, rhs),
+            | Op::F32Eq_Rsi { lhs, rhs, .. } => Op::f32_not_eq_rsi(lhs, rhs),
+            // f32: le
+            | Op::F32Le_Rrs { rhs, .. } => Op::f32_not_le_rrs(rhs),
+            | Op::F32Le_Rri { rhs, .. } => Op::f32_not_le_rri(rhs),
+            | Op::F32Le_Rsr { lhs, .. } => Op::f32_not_le_rsr(lhs),
+            | Op::F32Le_Rss { lhs, rhs, .. } => Op::f32_not_le_rss(lhs, rhs),
+            | Op::F32Le_Rsi { lhs, rhs, .. } => Op::f32_not_le_rsi(lhs, rhs),
+            | Op::F32Le_Rir { lhs, .. } => Op::f32_not_le_rir(lhs),
+            | Op::F32Le_Ris { lhs, rhs, .. } => Op::f32_not_le_ris(lhs, rhs),
+            // f32: lt
+            | Op::F32Lt_Rrs { rhs, .. } => Op::f32_not_lt_rrs(rhs),
+            | Op::F32Lt_Rri { rhs, .. } => Op::f32_not_lt_rri(rhs),
+            | Op::F32Lt_Rsr { lhs, .. } => Op::f32_not_lt_rsr(lhs),
+            | Op::F32Lt_Rss { lhs, rhs, .. } => Op::f32_not_lt_rss(lhs, rhs),
+            | Op::F32Lt_Rsi { lhs, rhs, .. } => Op::f32_not_lt_rsi(lhs, rhs),
+            | Op::F32Lt_Rir { lhs, .. } => Op::f32_not_lt_rir(lhs),
+            | Op::F32Lt_Ris { lhs, rhs, .. } => Op::f32_not_lt_ris(lhs, rhs),
+            // f32: not_eq
+            | Op::F32NotEq_Rrs { rhs, .. } => Op::f32_eq_rrs(rhs),
+            | Op::F32NotEq_Rri { rhs, .. } => Op::f32_eq_rri(rhs),
+            | Op::F32NotEq_Rss { lhs, rhs, .. } => Op::f32_eq_rss(lhs, rhs),
+            | Op::F32NotEq_Rsi { lhs, rhs, .. } => Op::f32_eq_rsi(lhs, rhs),
+            // f32: not_le
+            | Op::F32NotLe_Rrs { rhs, .. } => Op::f32_le_rrs(rhs),
+            | Op::F32NotLe_Rri { rhs, .. } => Op::f32_le_rri(rhs),
+            | Op::F32NotLe_Rsr { lhs, .. } => Op::f32_le_rsr(lhs),
+            | Op::F32NotLe_Rss { lhs, rhs, .. } => Op::f32_le_rss(lhs, rhs),
+            | Op::F32NotLe_Rsi { lhs, rhs, .. } => Op::f32_le_rsi(lhs, rhs),
+            | Op::F32NotLe_Rir { lhs, .. } => Op::f32_le_rir(lhs),
+            | Op::F32NotLe_Ris { lhs, rhs, .. } => Op::f32_le_ris(lhs, rhs),
+            // f32: not_lt
+            | Op::F32NotLt_Rrs { rhs, .. } => Op::f32_lt_rrs(rhs),
+            | Op::F32NotLt_Rri { rhs, .. } => Op::f32_lt_rri(rhs),
+            | Op::F32NotLt_Rsr { lhs, .. } => Op::f32_lt_rsr(lhs),
+            | Op::F32NotLt_Rss { lhs, rhs, .. } => Op::f32_lt_rss(lhs, rhs),
+            | Op::F32NotLt_Rsi { lhs, rhs, .. } => Op::f32_lt_rsi(lhs, rhs),
+            | Op::F32NotLt_Rir { lhs, .. } => Op::f32_lt_rir(lhs),
+            | Op::F32NotLt_Ris { lhs, rhs, .. } => Op::f32_lt_ris(lhs, rhs),
             // f64
-            Op::F64Eq_Sss { result, lhs, rhs } => Op::f64_not_eq_sss(result, lhs, rhs),
-            Op::F64Eq_Ssi { result, lhs, rhs } => Op::f64_not_eq_ssi(result, lhs, rhs),
-            Op::F64Le_Sss { result, lhs, rhs } => Op::f64_not_le_sss(result, lhs, rhs),
-            Op::F64Le_Ssi { result, lhs, rhs } => Op::f64_not_le_ssi(result, lhs, rhs),
-            Op::F64Le_Sis { result, lhs, rhs } => Op::f64_not_le_sis(result, lhs, rhs),
-            Op::F64Lt_Sss { result, lhs, rhs } => Op::f64_not_lt_sss(result, lhs, rhs),
-            Op::F64Lt_Ssi { result, lhs, rhs } => Op::f64_not_lt_ssi(result, lhs, rhs),
-            Op::F64Lt_Sis { result, lhs, rhs } => Op::f64_not_lt_sis(result, lhs, rhs),
-            Op::F64NotEq_Sss { result, lhs, rhs } => Op::f64_eq_sss(result, lhs, rhs),
-            Op::F64NotEq_Ssi { result, lhs, rhs } => Op::f64_eq_ssi(result, lhs, rhs),
-            Op::F64NotLe_Sss { result, lhs, rhs } => Op::f64_le_sss(result, lhs, rhs),
-            Op::F64NotLe_Ssi { result, lhs, rhs } => Op::f64_le_ssi(result, lhs, rhs),
-            Op::F64NotLe_Sis { result, lhs, rhs } => Op::f64_le_sis(result, lhs, rhs),
-            Op::F64NotLt_Sss { result, lhs, rhs } => Op::f64_lt_sss(result, lhs, rhs),
-            Op::F64NotLt_Ssi { result, lhs, rhs } => Op::f64_lt_ssi(result, lhs, rhs),
-            Op::F64NotLt_Sis { result, lhs, rhs } => Op::f64_lt_sis(result, lhs, rhs),
-            _ => return None,
+            // f64: eq
+            | Op::F64Eq_Rrs { rhs, .. } => Op::f64_not_eq_rrs(rhs),
+            | Op::F64Eq_Rri { rhs, .. } => Op::f64_not_eq_rri(rhs),
+            | Op::F64Eq_Rss { lhs, rhs, .. } => Op::f64_not_eq_rss(lhs, rhs),
+            | Op::F64Eq_Rsi { lhs, rhs, .. } => Op::f64_not_eq_rsi(lhs, rhs),
+            // f64: le
+            | Op::F64Le_Rrs { rhs, .. } => Op::f64_not_le_rrs(rhs),
+            | Op::F64Le_Rri { rhs, .. } => Op::f64_not_le_rri(rhs),
+            | Op::F64Le_Rsr { lhs, .. } => Op::f64_not_le_rsr(lhs),
+            | Op::F64Le_Rss { lhs, rhs, .. } => Op::f64_not_le_rss(lhs, rhs),
+            | Op::F64Le_Rsi { lhs, rhs, .. } => Op::f64_not_le_rsi(lhs, rhs),
+            | Op::F64Le_Rir { lhs, .. } => Op::f64_not_le_rir(lhs),
+            | Op::F64Le_Ris { lhs, rhs, .. } => Op::f64_not_le_ris(lhs, rhs),
+            // f64: lt
+            | Op::F64Lt_Rrs { rhs, .. } => Op::f64_not_lt_rrs(rhs),
+            | Op::F64Lt_Rri { rhs, .. } => Op::f64_not_lt_rri(rhs),
+            | Op::F64Lt_Rsr { lhs, .. } => Op::f64_not_lt_rsr(lhs),
+            | Op::F64Lt_Rss { lhs, rhs, .. } => Op::f64_not_lt_rss(lhs, rhs),
+            | Op::F64Lt_Rsi { lhs, rhs, .. } => Op::f64_not_lt_rsi(lhs, rhs),
+            | Op::F64Lt_Rir { lhs, .. } => Op::f64_not_lt_rir(lhs),
+            | Op::F64Lt_Ris { lhs, rhs, .. } => Op::f64_not_lt_ris(lhs, rhs),
+            // f64: not_eq
+            | Op::F64NotEq_Rrs { rhs, .. } => Op::f64_eq_rrs(rhs),
+            | Op::F64NotEq_Rri { rhs, .. } => Op::f64_eq_rri(rhs),
+            | Op::F64NotEq_Rss { lhs, rhs, .. } => Op::f64_eq_rss(lhs, rhs),
+            | Op::F64NotEq_Rsi { lhs, rhs, .. } => Op::f64_eq_rsi(lhs, rhs),
+            // f64: not_le
+            | Op::F64NotLe_Rrs { rhs, .. } => Op::f64_le_rrs(rhs),
+            | Op::F64NotLe_Rri { rhs, .. } => Op::f64_le_rri(rhs),
+            | Op::F64NotLe_Rsr { lhs, .. } => Op::f64_le_rsr(lhs),
+            | Op::F64NotLe_Rss { lhs, rhs, .. } => Op::f64_le_rss(lhs, rhs),
+            | Op::F64NotLe_Rsi { lhs, rhs, .. } => Op::f64_le_rsi(lhs, rhs),
+            | Op::F64NotLe_Rir { lhs, .. } => Op::f64_le_rir(lhs),
+            | Op::F64NotLe_Ris { lhs, rhs, .. } => Op::f64_le_ris(lhs, rhs),
+            // f64: not_lt
+            | Op::F64NotLt_Rrs { rhs, .. } => Op::f64_lt_rrs(rhs),
+            | Op::F64NotLt_Rri { rhs, .. } => Op::f64_lt_rri(rhs),
+            | Op::F64NotLt_Rsr { lhs, .. } => Op::f64_lt_rsr(lhs),
+            | Op::F64NotLt_Rss { lhs, rhs, .. } => Op::f64_lt_rss(lhs, rhs),
+            | Op::F64NotLt_Rsi { lhs, rhs, .. } => Op::f64_lt_rsi(lhs, rhs),
+            | Op::F64NotLt_Rir { lhs, .. } => Op::f64_lt_rir(lhs),
+            | Op::F64NotLt_Ris { lhs, rhs, .. } => Op::f64_lt_ris(lhs, rhs),
+            | _ => return None,
         };
         Some(negated)
     }
@@ -124,104 +264,212 @@ impl LogicalizeCmpInstr for Op {
         #[rustfmt::skip]
         let logicalized = match *self {
             // Bitwise -> Logical: i32
-            | Op::I32BitAnd_Sss { result, lhs, rhs } => Op::i32_and_sss(result, lhs, rhs),
-            | Op::I32BitOr_Sss { result, lhs, rhs } => Op::i32_or_sss(result, lhs, rhs),
-            | Op::I32BitXor_Sss { result, lhs, rhs } => Op::i32_not_eq_sss(result, lhs, rhs),
-            | Op::I32BitAnd_Ssi { result, lhs, rhs } => Op::i32_and_ssi(result, lhs, rhs),
-            | Op::I32BitOr_Ssi { result, lhs, rhs } => Op::i32_or_ssi(result, lhs, rhs),
-            | Op::I32BitXor_Ssi { result, lhs, rhs } => Op::i32_not_eq_ssi(result, lhs, rhs),
+            | Op::I32BitAnd_Rrs { rhs, .. } => Op::i32_and_rrs(rhs),
+            | Op::I32BitAnd_Rss { lhs, rhs, .. } => Op::i32_and_rss(lhs, rhs),
+            | Op::I32BitOr_Rrs { rhs, .. } => Op::i32_or_rrs(rhs),
+            | Op::I32BitOr_Rss { lhs, rhs, .. } => Op::i32_or_rss(lhs, rhs),
+            | Op::I32BitXor_Rrs { rhs, .. } => Op::i32_not_eq_rrs(rhs),
+            | Op::I32BitXor_Rss { lhs, rhs, .. } => Op::i32_not_eq_rss(lhs, rhs),
+            | Op::I32BitAnd_Rri { rhs, .. } => Op::i32_and_rri(rhs),
+            | Op::I32BitAnd_Rsi { lhs, rhs, .. } => Op::i32_and_rsi(lhs, rhs),
+            | Op::I32BitOr_Rri { rhs, .. } => Op::i32_or_rri(rhs),
+            | Op::I32BitOr_Rsi { lhs, rhs, .. } => Op::i32_or_rsi(lhs, rhs),
+            | Op::I32BitXor_Rri { rhs, .. } => Op::i32_not_eq_rri(rhs),
+            | Op::I32BitXor_Rsi { lhs, rhs, .. } => Op::i32_not_eq_rsi(lhs, rhs),
             // Bitwise -> Logical: i64
-            | Op::I64BitAnd_Sss { result, lhs, rhs } => Op::i64_and_sss(result, lhs, rhs),
-            | Op::I64BitOr_Sss { result, lhs, rhs } => Op::i64_or_sss(result, lhs, rhs),
-            | Op::I64BitXor_Sss { result, lhs, rhs } => Op::i64_not_eq_sss(result, lhs, rhs),
-            | Op::I64BitAnd_Ssi { result, lhs, rhs } => Op::i64_and_ssi(result, lhs, rhs),
-            | Op::I64BitOr_Ssi { result, lhs, rhs } => Op::i64_or_ssi(result, lhs, rhs),
-            | Op::I64BitXor_Ssi { result, lhs, rhs } => Op::i64_not_eq_ssi(result, lhs, rhs),
+            | Op::I64BitAnd_Rrs { rhs, .. } => Op::i64_and_rrs(rhs),
+            | Op::I64BitAnd_Rss { lhs, rhs, .. } => Op::i64_and_rss(lhs, rhs),
+            | Op::I64BitOr_Rrs { rhs, .. } => Op::i64_or_rrs(rhs),
+            | Op::I64BitOr_Rss { lhs, rhs, .. } => Op::i64_or_rss(lhs, rhs),
+            | Op::I64BitXor_Rrs { rhs, .. } => Op::i64_not_eq_rrs(rhs),
+            | Op::I64BitXor_Rss { lhs, rhs, .. } => Op::i64_not_eq_rss(lhs, rhs),
+            | Op::I64BitAnd_Rri { rhs, .. } => Op::i64_and_rri(rhs),
+            | Op::I64BitAnd_Rsi { lhs, rhs, .. } => Op::i64_and_rsi(lhs, rhs),
+            | Op::I64BitOr_Rri { rhs, .. } => Op::i64_or_rri(rhs),
+            | Op::I64BitOr_Rsi { lhs, rhs, .. } => Op::i64_or_rsi(lhs, rhs),
+            | Op::I64BitXor_Rri { rhs, .. } => Op::i64_not_eq_rri(rhs),
+            | Op::I64BitXor_Rsi { lhs, rhs, .. } => Op::i64_not_eq_rsi(lhs, rhs),
             // Logical -> Logical
             // i32
-            | Op::I32Eq_Sss { .. }
-            | Op::I32Eq_Ssi { .. }
-            | Op::I32And_Sss { .. }
-            | Op::I32And_Ssi { .. }
-            | Op::I32Or_Sss { .. }
-            | Op::I32Or_Ssi { .. }
-            | Op::I32NotEq_Sss { .. }
-            | Op::I32NotEq_Ssi { .. }
-            | Op::I32NotAnd_Sss { .. }
-            | Op::I32NotAnd_Ssi { .. }
-            | Op::I32NotOr_Sss { .. }
-            | Op::I32NotOr_Ssi { .. }
-            | Op::I32Lt_Sss { .. }
-            | Op::I32Lt_Ssi { .. }
-            | Op::I32Lt_Sis { .. }
-            | Op::U32Lt_Sss { .. }
-            | Op::U32Lt_Ssi { .. }
-            | Op::U32Lt_Sis { .. }
-            | Op::I32Le_Sss { .. }
-            | Op::I32Le_Ssi { .. }
-            | Op::I32Le_Sis { .. }
-            | Op::U32Le_Sss { .. }
-            | Op::U32Le_Ssi { .. }
-            | Op::U32Le_Sis { .. }
+            | Op::I32Eq_Rrs { .. }
+            | Op::I32Eq_Rri { .. }
+            | Op::I32Eq_Rss { .. }
+            | Op::I32Eq_Rsi { .. }
+            | Op::I32And_Rrs { .. }
+            | Op::I32And_Rri { .. }
+            | Op::I32And_Rss { .. }
+            | Op::I32And_Rsi { .. }
+            | Op::I32Or_Rrs { .. }
+            | Op::I32Or_Rri { .. }
+            | Op::I32Or_Rss { .. }
+            | Op::I32Or_Rsi { .. }
+            | Op::I32NotEq_Rrs { .. }
+            | Op::I32NotEq_Rri { .. }
+            | Op::I32NotEq_Rss { .. }
+            | Op::I32NotEq_Rsi { .. }
+            | Op::I32NotAnd_Rrs { .. }
+            | Op::I32NotAnd_Rri { .. }
+            | Op::I32NotAnd_Rss { .. }
+            | Op::I32NotAnd_Rsi { .. }
+            | Op::I32NotOr_Rrs { .. }
+            | Op::I32NotOr_Rri { .. }
+            | Op::I32NotOr_Rss { .. }
+            | Op::I32NotOr_Rsi { .. }
+            | Op::I32Lt_Rrs { .. }
+            | Op::I32Lt_Rri { .. }
+            | Op::I32Lt_Rsr { .. }
+            | Op::I32Lt_Rss { .. }
+            | Op::I32Lt_Rsi { .. }
+            | Op::I32Lt_Rir { .. }
+            | Op::I32Lt_Ris { .. }
+            | Op::U32Lt_Rrs { .. }
+            | Op::U32Lt_Rri { .. }
+            | Op::U32Lt_Rsr { .. }
+            | Op::U32Lt_Rss { .. }
+            | Op::U32Lt_Rsi { .. }
+            | Op::U32Lt_Rir { .. }
+            | Op::U32Lt_Ris { .. }
+            | Op::I32Le_Rrs { .. }
+            | Op::I32Le_Rri { .. }
+            | Op::I32Le_Rsr { .. }
+            | Op::I32Le_Rss { .. }
+            | Op::I32Le_Rsi { .. }
+            | Op::I32Le_Rir { .. }
+            | Op::I32Le_Ris { .. }
+            | Op::U32Le_Rrs { .. }
+            | Op::U32Le_Rri { .. }
+            | Op::U32Le_Rsr { .. }
+            | Op::U32Le_Rss { .. }
+            | Op::U32Le_Rsi { .. }
+            | Op::U32Le_Rir { .. }
+            | Op::U32Le_Ris { .. }
             // i64
-            | Op::I64Eq_Sss { .. }
-            | Op::I64Eq_Ssi { .. }
-            | Op::I64And_Sss { .. }
-            | Op::I64And_Ssi { .. }
-            | Op::I64Or_Sss { .. }
-            | Op::I64Or_Ssi { .. }
-            | Op::I64NotEq_Sss { .. }
-            | Op::I64NotEq_Ssi { .. }
-            | Op::I64NotAnd_Sss { .. }
-            | Op::I64NotAnd_Ssi { .. }
-            | Op::I64NotOr_Sss { .. }
-            | Op::I64NotOr_Ssi { .. }
-            | Op::I64Lt_Sss { .. }
-            | Op::I64Lt_Ssi { .. }
-            | Op::I64Lt_Sis { .. }
-            | Op::U64Lt_Sss { .. }
-            | Op::U64Lt_Ssi { .. }
-            | Op::U64Lt_Sis { .. }
-            | Op::I64Le_Sss { .. }
-            | Op::I64Le_Ssi { .. }
-            | Op::I64Le_Sis { .. }
-            | Op::U64Le_Sss { .. }
-            | Op::U64Le_Ssi { .. }
-            | Op::U64Le_Sis { .. }
+            | Op::I64Eq_Rrs { .. }
+            | Op::I64Eq_Rri { .. }
+            | Op::I64Eq_Rss { .. }
+            | Op::I64Eq_Rsi { .. }
+            | Op::I64And_Rrs { .. }
+            | Op::I64And_Rri { .. }
+            | Op::I64And_Rss { .. }
+            | Op::I64And_Rsi { .. }
+            | Op::I64Or_Rrs { .. }
+            | Op::I64Or_Rri { .. }
+            | Op::I64Or_Rss { .. }
+            | Op::I64Or_Rsi { .. }
+            | Op::I64NotEq_Rrs { .. }
+            | Op::I64NotEq_Rri { .. }
+            | Op::I64NotEq_Rss { .. }
+            | Op::I64NotEq_Rsi { .. }
+            | Op::I64NotAnd_Rrs { .. }
+            | Op::I64NotAnd_Rri { .. }
+            | Op::I64NotAnd_Rss { .. }
+            | Op::I64NotAnd_Rsi { .. }
+            | Op::I64NotOr_Rrs { .. }
+            | Op::I64NotOr_Rri { .. }
+            | Op::I64NotOr_Rss { .. }
+            | Op::I64NotOr_Rsi { .. }
+            | Op::I64Lt_Rrs { .. }
+            | Op::I64Lt_Rri { .. }
+            | Op::I64Lt_Rsr { .. }
+            | Op::I64Lt_Rss { .. }
+            | Op::I64Lt_Rsi { .. }
+            | Op::I64Lt_Rir { .. }
+            | Op::I64Lt_Ris { .. }
+            | Op::U64Lt_Rrs { .. }
+            | Op::U64Lt_Rri { .. }
+            | Op::U64Lt_Rsr { .. }
+            | Op::U64Lt_Rss { .. }
+            | Op::U64Lt_Rsi { .. }
+            | Op::U64Lt_Rir { .. }
+            | Op::U64Lt_Ris { .. }
+            | Op::I64Le_Rrs { .. }
+            | Op::I64Le_Rri { .. }
+            | Op::I64Le_Rsr { .. }
+            | Op::I64Le_Rss { .. }
+            | Op::I64Le_Rsi { .. }
+            | Op::I64Le_Rir { .. }
+            | Op::I64Le_Ris { .. }
+            | Op::U64Le_Rrs { .. }
+            | Op::U64Le_Rri { .. }
+            | Op::U64Le_Rsr { .. }
+            | Op::U64Le_Rss { .. }
+            | Op::U64Le_Rsi { .. }
+            | Op::U64Le_Rir { .. }
+            | Op::U64Le_Ris { .. }
             // f32
-            | Op::F32Eq_Sss { .. }
-            | Op::F32Eq_Ssi { .. }
-            | Op::F32Le_Sss { .. }
-            | Op::F32Le_Ssi { .. }
-            | Op::F32Le_Sis { .. }
-            | Op::F32Lt_Sss { .. }
-            | Op::F32Lt_Ssi { .. }
-            | Op::F32Lt_Sis { .. }
-            | Op::F32NotEq_Sss { .. }
-            | Op::F32NotEq_Ssi { .. }
-            | Op::F32NotLe_Sss { .. }
-            | Op::F32NotLe_Ssi { .. }
-            | Op::F32NotLe_Sis { .. }
-            | Op::F32NotLt_Sss { .. }
-            | Op::F32NotLt_Ssi { .. }
-            | Op::F32NotLt_Sis { .. }
+            | Op::F32Eq_Rrs { .. }
+            | Op::F32Eq_Rri { .. }
+            | Op::F32Eq_Rss { .. }
+            | Op::F32Eq_Rsi { .. }
+            | Op::F32Le_Rrs { .. }
+            | Op::F32Le_Rri { .. }
+            | Op::F32Le_Rsr { .. }
+            | Op::F32Le_Rss { .. }
+            | Op::F32Le_Rsi { .. }
+            | Op::F32Le_Rir { .. }
+            | Op::F32Le_Ris { .. }
+            | Op::F32Lt_Rrs { .. }
+            | Op::F32Lt_Rri { .. }
+            | Op::F32Lt_Rsr { .. }
+            | Op::F32Lt_Rss { .. }
+            | Op::F32Lt_Rsi { .. }
+            | Op::F32Lt_Rir { .. }
+            | Op::F32Lt_Ris { .. }
+            | Op::F32NotEq_Rrs { .. }
+            | Op::F32NotEq_Rri { .. }
+            | Op::F32NotEq_Rss { .. }
+            | Op::F32NotEq_Rsi { .. }
+            | Op::F32NotLe_Rrs { .. }
+            | Op::F32NotLe_Rri { .. }
+            | Op::F32NotLe_Rsr { .. }
+            | Op::F32NotLe_Rss { .. }
+            | Op::F32NotLe_Rsi { .. }
+            | Op::F32NotLe_Rir { .. }
+            | Op::F32NotLe_Ris { .. }
+            | Op::F32NotLt_Rrs { .. }
+            | Op::F32NotLt_Rri { .. }
+            | Op::F32NotLt_Rsr { .. }
+            | Op::F32NotLt_Rss { .. }
+            | Op::F32NotLt_Rsi { .. }
+            | Op::F32NotLt_Rir { .. }
+            | Op::F32NotLt_Ris { .. }
             // f64
-            | Op::F64Eq_Sss { .. }
-            | Op::F64Eq_Ssi { .. }
-            | Op::F64Le_Sss { .. }
-            | Op::F64Le_Ssi { .. }
-            | Op::F64Le_Sis { .. }
-            | Op::F64Lt_Sss { .. }
-            | Op::F64Lt_Ssi { .. }
-            | Op::F64Lt_Sis { .. }
-            | Op::F64NotEq_Sss { .. }
-            | Op::F64NotEq_Ssi { .. }
-            | Op::F64NotLe_Sss { .. }
-            | Op::F64NotLe_Ssi { .. }
-            | Op::F64NotLe_Sis { .. }
-            | Op::F64NotLt_Sss { .. }
-            | Op::F64NotLt_Ssi { .. }
-            | Op::F64NotLt_Sis { .. } => *self,
+            | Op::F64Eq_Rrs { .. }
+            | Op::F64Eq_Rri { .. }
+            | Op::F64Eq_Rss { .. }
+            | Op::F64Eq_Rsi { .. }
+            | Op::F64Le_Rrs { .. }
+            | Op::F64Le_Rri { .. }
+            | Op::F64Le_Rsr { .. }
+            | Op::F64Le_Rss { .. }
+            | Op::F64Le_Rsi { .. }
+            | Op::F64Le_Rir { .. }
+            | Op::F64Le_Ris { .. }
+            | Op::F64Lt_Rrs { .. }
+            | Op::F64Lt_Rri { .. }
+            | Op::F64Lt_Rsr { .. }
+            | Op::F64Lt_Rss { .. }
+            | Op::F64Lt_Rsi { .. }
+            | Op::F64Lt_Rir { .. }
+            | Op::F64Lt_Ris { .. }
+            | Op::F64NotEq_Rrs { .. }
+            | Op::F64NotEq_Rri { .. }
+            | Op::F64NotEq_Rss { .. }
+            | Op::F64NotEq_Rsi { .. }
+            | Op::F64NotLe_Rrs { .. }
+            | Op::F64NotLe_Rri { .. }
+            | Op::F64NotLe_Rsr { .. }
+            | Op::F64NotLe_Rss { .. }
+            | Op::F64NotLe_Rsi { .. }
+            | Op::F64NotLe_Rir { .. }
+            | Op::F64NotLe_Ris { .. }
+            | Op::F64NotLt_Rrs { .. }
+            | Op::F64NotLt_Rri { .. }
+            | Op::F64NotLt_Rsr { .. }
+            | Op::F64NotLt_Rss { .. }
+            | Op::F64NotLt_Rsi { .. }
+            | Op::F64NotLt_Rir { .. }
+            | Op::F64NotLt_Ris { .. } => *self,
             _ => return None,
         };
         Some(logicalized)
@@ -234,104 +482,213 @@ pub trait TryIntoCmpBranchInstr: Sized {
 
 impl TryIntoCmpBranchInstr for Op {
     fn try_into_cmp_branch_instr(&self, offset: BranchOffset) -> Option<Self> {
+        // TODO: support new register operators
         #[rustfmt::skip]
         let cmp_branch_instr = match *self {
             // i32
-            | Op::I32Eq_Sss { lhs, rhs, .. } => Op::branch_i32_eq_ss(offset, lhs, rhs),
-            | Op::I32Eq_Ssi { lhs, rhs, .. } => Op::branch_i32_eq_si(offset, lhs, rhs),
-            | Op::I32And_Sss { lhs, rhs, .. }
-            | Op::I32BitAnd_Sss { lhs, rhs, .. } => Op::branch_i32_and_ss(offset, lhs, rhs),
-            | Op::I32And_Ssi { lhs, rhs, .. }
-            | Op::I32BitAnd_Ssi { lhs, rhs, .. } => Op::branch_i32_and_si(offset, lhs, rhs),
-            | Op::I32Or_Sss { lhs, rhs, .. }
-            | Op::I32BitOr_Sss { lhs, rhs, .. } => Op::branch_i32_or_ss(offset, lhs, rhs),
-            | Op::I32Or_Ssi { lhs, rhs, .. }
-            | Op::I32BitOr_Ssi { lhs, rhs, .. } => Op::branch_i32_or_si(offset, lhs, rhs),
-            | Op::I32NotEq_Sss { lhs, rhs, .. }
-            | Op::I32BitXor_Sss { lhs, rhs, .. } => Op::branch_i32_not_eq_ss(offset, lhs, rhs),
-            | Op::I32NotEq_Ssi { lhs, rhs, .. }
-            | Op::I32BitXor_Ssi { lhs, rhs, .. } => Op::branch_i32_not_eq_si(offset, lhs, rhs),
-            | Op::I32NotAnd_Sss { lhs, rhs, .. } => Op::branch_i32_not_and_ss(offset, lhs, rhs),
-            | Op::I32NotAnd_Ssi { lhs, rhs, .. } => Op::branch_i32_not_and_si(offset, lhs, rhs),
-            | Op::I32NotOr_Sss { lhs, rhs, .. } => Op::branch_i32_not_or_ss(offset, lhs, rhs),
-            | Op::I32NotOr_Ssi { lhs, rhs, .. } => Op::branch_i32_not_or_si(offset, lhs, rhs),
-            | Op::I32Lt_Sss { lhs, rhs, .. } => Op::branch_i32_lt_ss(offset, lhs, rhs),
-            | Op::I32Lt_Ssi { lhs, rhs, .. } => Op::branch_i32_lt_si(offset, lhs, rhs),
-            | Op::I32Lt_Sis { lhs, rhs, .. } => Op::branch_i32_lt_is(offset, lhs, rhs),
-            | Op::U32Lt_Sss { lhs, rhs, .. } => Op::branch_u32_lt_ss(offset, lhs, rhs),
-            | Op::U32Lt_Ssi { lhs, rhs, .. } => Op::branch_u32_lt_si(offset, lhs, rhs),
-            | Op::U32Lt_Sis { lhs, rhs, .. } => Op::branch_u32_lt_is(offset, lhs, rhs),
-            | Op::I32Le_Sss { lhs, rhs, .. } => Op::branch_i32_le_ss(offset, lhs, rhs),
-            | Op::I32Le_Ssi { lhs, rhs, .. } => Op::branch_i32_le_si(offset, lhs, rhs),
-            | Op::I32Le_Sis { lhs, rhs, .. } => Op::branch_i32_le_is(offset, lhs, rhs),
-            | Op::U32Le_Sss { lhs, rhs, .. } => Op::branch_u32_le_ss(offset, lhs, rhs),
-            | Op::U32Le_Ssi { lhs, rhs, .. } => Op::branch_u32_le_si(offset, lhs, rhs),
-            | Op::U32Le_Sis { lhs, rhs, .. } => Op::branch_u32_le_is(offset, lhs, rhs),
+            | Op::I32Eq_Rrs { rhs, .. } => Op::branch_i32_eq_rs(offset, rhs),
+            | Op::I32Eq_Rri { rhs, .. } => Op::branch_i32_eq_ri(offset, rhs),
+            | Op::I32Eq_Rss { lhs, rhs, .. } => Op::branch_i32_eq_ss(offset, lhs, rhs),
+            | Op::I32Eq_Rsi { lhs, rhs, .. } => Op::branch_i32_eq_si(offset, lhs, rhs),
+            | Op::I32And_Rrs { rhs, .. }
+            | Op::I32BitAnd_Rrs { rhs, .. } => Op::branch_i32_and_rs(offset, rhs),
+            | Op::I32And_Rss { lhs, rhs, .. }
+            | Op::I32BitAnd_Rss { lhs, rhs, .. } => Op::branch_i32_and_ss(offset, lhs, rhs),
+            | Op::I32And_Rri { rhs, .. }
+            | Op::I32BitAnd_Rri { rhs, .. } => Op::branch_i32_and_ri(offset, rhs),
+            | Op::I32And_Rsi { lhs, rhs, .. }
+            | Op::I32BitAnd_Rsi { lhs, rhs, .. } => Op::branch_i32_and_si(offset, lhs, rhs),
+            | Op::I32Or_Rrs { rhs, .. }
+            | Op::I32BitOr_Rrs { rhs, .. } => Op::branch_i32_or_rs(offset, rhs),
+            | Op::I32Or_Rss { lhs, rhs, .. }
+            | Op::I32BitOr_Rss { lhs, rhs, .. } => Op::branch_i32_or_ss(offset, lhs, rhs),
+            | Op::I32Or_Rri { rhs, .. }
+            | Op::I32BitOr_Rri { rhs, .. } => Op::branch_i32_or_ri(offset, rhs),
+            | Op::I32Or_Rsi { lhs, rhs, .. }
+            | Op::I32BitOr_Rsi { lhs, rhs, .. } => Op::branch_i32_or_si(offset, lhs, rhs),
+            | Op::I32NotEq_Rrs { rhs, .. }
+            | Op::I32BitXor_Rrs { rhs, .. } => Op::branch_i32_not_eq_rs(offset, rhs),
+            | Op::I32NotEq_Rss { lhs, rhs, .. }
+            | Op::I32BitXor_Rss { lhs, rhs, .. } => Op::branch_i32_not_eq_ss(offset, lhs, rhs),
+            | Op::I32NotEq_Rri { rhs, .. }
+            | Op::I32BitXor_Rri { rhs, .. } => Op::branch_i32_not_eq_ri(offset, rhs),
+            | Op::I32NotEq_Rsi { lhs, rhs, .. }
+            | Op::I32BitXor_Rsi { lhs, rhs, .. } => Op::branch_i32_not_eq_si(offset, lhs, rhs),
+            | Op::I32NotAnd_Rrs { rhs, .. } => Op::branch_i32_not_and_rs(offset, rhs),
+            | Op::I32NotAnd_Rri { rhs, .. } => Op::branch_i32_not_and_ri(offset, rhs),
+            | Op::I32NotAnd_Rss { lhs, rhs, .. } => Op::branch_i32_not_and_ss(offset, lhs, rhs),
+            | Op::I32NotAnd_Rsi { lhs, rhs, .. } => Op::branch_i32_not_and_si(offset, lhs, rhs),
+            | Op::I32NotOr_Rrs { rhs, .. } => Op::branch_i32_not_or_rs(offset, rhs),
+            | Op::I32NotOr_Rri { rhs, .. } => Op::branch_i32_not_or_ri(offset, rhs),
+            | Op::I32NotOr_Rss { lhs, rhs, .. } => Op::branch_i32_not_or_ss(offset, lhs, rhs),
+            | Op::I32NotOr_Rsi { lhs, rhs, .. } => Op::branch_i32_not_or_si(offset, lhs, rhs),
+            | Op::I32Lt_Rrs { rhs, .. } => Op::branch_i32_lt_rs(offset, rhs),
+            | Op::I32Lt_Rri { rhs, .. } => Op::branch_i32_lt_ri(offset, rhs),
+            | Op::I32Lt_Rsr { lhs, .. } => Op::branch_i32_lt_sr(offset, lhs),
+            | Op::I32Lt_Rss { lhs, rhs, .. } => Op::branch_i32_lt_ss(offset, lhs, rhs),
+            | Op::I32Lt_Rsi { lhs, rhs, .. } => Op::branch_i32_lt_si(offset, lhs, rhs),
+            | Op::I32Lt_Rir { lhs, .. } => Op::branch_i32_lt_ir(offset, lhs),
+            | Op::I32Lt_Ris { lhs, rhs, .. } => Op::branch_i32_lt_is(offset, lhs, rhs),
+            | Op::U32Lt_Rrs { rhs, .. } => Op::branch_u32_lt_rs(offset, rhs),
+            | Op::U32Lt_Rri { rhs, .. } => Op::branch_u32_lt_ri(offset, rhs),
+            | Op::U32Lt_Rsr { lhs, .. } => Op::branch_u32_lt_sr(offset, lhs),
+            | Op::U32Lt_Rss { lhs, rhs, .. } => Op::branch_u32_lt_ss(offset, lhs, rhs),
+            | Op::U32Lt_Rsi { lhs, rhs, .. } => Op::branch_u32_lt_si(offset, lhs, rhs),
+            | Op::U32Lt_Rir { lhs, .. } => Op::branch_u32_lt_ir(offset, lhs),
+            | Op::U32Lt_Ris { lhs, rhs, .. } => Op::branch_u32_lt_is(offset, lhs, rhs),
+            | Op::I32Le_Rrs { rhs, .. } => Op::branch_i32_le_rs(offset, rhs),
+            | Op::I32Le_Rri { rhs, .. } => Op::branch_i32_le_ri(offset, rhs),
+            | Op::I32Le_Rsr { lhs, .. } => Op::branch_i32_le_sr(offset, lhs),
+            | Op::I32Le_Rss { lhs, rhs, .. } => Op::branch_i32_le_ss(offset, lhs, rhs),
+            | Op::I32Le_Rsi { lhs, rhs, .. } => Op::branch_i32_le_si(offset, lhs, rhs),
+            | Op::I32Le_Rir { lhs, .. } => Op::branch_i32_le_ir(offset, lhs),
+            | Op::I32Le_Ris { lhs, rhs, .. } => Op::branch_i32_le_is(offset, lhs, rhs),
+            | Op::U32Le_Rrs { rhs, .. } => Op::branch_u32_le_rs(offset, rhs),
+            | Op::U32Le_Rri { rhs, .. } => Op::branch_u32_le_ri(offset, rhs),
+            | Op::U32Le_Rsr { lhs, .. } => Op::branch_u32_le_sr(offset, lhs),
+            | Op::U32Le_Rss { lhs, rhs, .. } => Op::branch_u32_le_ss(offset, lhs, rhs),
+            | Op::U32Le_Rsi { lhs, rhs, .. } => Op::branch_u32_le_si(offset, lhs, rhs),
+            | Op::U32Le_Rir { lhs, .. } => Op::branch_u32_le_ir(offset, lhs),
+            | Op::U32Le_Ris { lhs, rhs, .. } => Op::branch_u32_le_is(offset, lhs, rhs),
             // i64
-            | Op::I64Eq_Sss { lhs, rhs, .. } => Op::branch_i64_eq_ss(offset, lhs, rhs),
-            | Op::I64Eq_Ssi { lhs, rhs, .. } => Op::branch_i64_eq_si(offset, lhs, rhs),
-            | Op::I64And_Sss { lhs, rhs, .. }
-            | Op::I64BitAnd_Sss { lhs, rhs, .. } => Op::branch_i64_and_ss(offset, lhs, rhs),
-            | Op::I64And_Ssi { lhs, rhs, .. }
-            | Op::I64BitAnd_Ssi { lhs, rhs, .. } => Op::branch_i64_and_si(offset, lhs, rhs),
-            | Op::I64Or_Sss { lhs, rhs, .. }
-            | Op::I64BitOr_Sss { lhs, rhs, .. } => Op::branch_i64_or_ss(offset, lhs, rhs),
-            | Op::I64Or_Ssi { lhs, rhs, .. }
-            | Op::I64BitOr_Ssi { lhs, rhs, .. } => Op::branch_i64_or_si(offset, lhs, rhs),
-            | Op::I64NotEq_Sss { lhs, rhs, .. }
-            | Op::I64BitXor_Sss { lhs, rhs, .. } => Op::branch_i64_not_eq_ss(offset, lhs, rhs),
-            | Op::I64NotEq_Ssi { lhs, rhs, .. }
-            | Op::I64BitXor_Ssi { lhs, rhs, .. } => Op::branch_i64_not_eq_si(offset, lhs, rhs),
-            | Op::I64NotAnd_Sss { lhs, rhs, .. } => Op::branch_i64_not_and_ss(offset, lhs, rhs),
-            | Op::I64NotAnd_Ssi { lhs, rhs, .. } => Op::branch_i64_not_and_si(offset, lhs, rhs),
-            | Op::I64NotOr_Sss { lhs, rhs, .. } => Op::branch_i64_not_or_ss(offset, lhs, rhs),
-            | Op::I64NotOr_Ssi { lhs, rhs, .. } => Op::branch_i64_not_or_si(offset, lhs, rhs),
-            | Op::I64Lt_Sss { lhs, rhs, .. } => Op::branch_i64_lt_ss(offset, lhs, rhs),
-            | Op::I64Lt_Ssi { lhs, rhs, .. } => Op::branch_i64_lt_si(offset, lhs, rhs),
-            | Op::I64Lt_Sis { lhs, rhs, .. } => Op::branch_i64_lt_is(offset, lhs, rhs),
-            | Op::U64Lt_Sss { lhs, rhs, .. } => Op::branch_u64_lt_ss(offset, lhs, rhs),
-            | Op::U64Lt_Ssi { lhs, rhs, .. } => Op::branch_u64_lt_si(offset, lhs, rhs),
-            | Op::U64Lt_Sis { lhs, rhs, .. } => Op::branch_u64_lt_is(offset, lhs, rhs),
-            | Op::I64Le_Sss { lhs, rhs, .. } => Op::branch_i64_le_ss(offset, lhs, rhs),
-            | Op::I64Le_Ssi { lhs, rhs, .. } => Op::branch_i64_le_si(offset, lhs, rhs),
-            | Op::I64Le_Sis { lhs, rhs, .. } => Op::branch_i64_le_is(offset, lhs, rhs),
-            | Op::U64Le_Sss { lhs, rhs, .. } => Op::branch_u64_le_ss(offset, lhs, rhs),
-            | Op::U64Le_Ssi { lhs, rhs, .. } => Op::branch_u64_le_si(offset, lhs, rhs),
-            | Op::U64Le_Sis { lhs, rhs, .. } => Op::branch_u64_le_is(offset, lhs, rhs),
+            | Op::I64Eq_Rrs { rhs, .. } => Op::branch_i64_eq_rs(offset, rhs),
+            | Op::I64Eq_Rri { rhs, .. } => Op::branch_i64_eq_ri(offset, rhs),
+            | Op::I64Eq_Rss { lhs, rhs, .. } => Op::branch_i64_eq_ss(offset, lhs, rhs),
+            | Op::I64Eq_Rsi { lhs, rhs, .. } => Op::branch_i64_eq_si(offset, lhs, rhs),
+            | Op::I64And_Rrs { rhs, .. }
+            | Op::I64BitAnd_Rrs { rhs, .. } => Op::branch_i64_and_rs(offset, rhs),
+            | Op::I64And_Rss { lhs, rhs, .. }
+            | Op::I64BitAnd_Rss { lhs, rhs, .. } => Op::branch_i64_and_ss(offset, lhs, rhs),
+            | Op::I64And_Rri { rhs, .. }
+            | Op::I64BitAnd_Rri { rhs, .. } => Op::branch_i64_and_ri(offset, rhs),
+            | Op::I64And_Rsi { lhs, rhs, .. }
+            | Op::I64BitAnd_Rsi { lhs, rhs, .. } => Op::branch_i64_and_si(offset, lhs, rhs),
+            | Op::I64Or_Rrs { rhs, .. }
+            | Op::I64BitOr_Rrs { rhs, .. } => Op::branch_i64_or_rs(offset, rhs),
+            | Op::I64Or_Rss { lhs, rhs, .. }
+            | Op::I64BitOr_Rss { lhs, rhs, .. } => Op::branch_i64_or_ss(offset, lhs, rhs),
+            | Op::I64Or_Rri { rhs, .. }
+            | Op::I64BitOr_Rri { rhs, .. } => Op::branch_i64_or_ri(offset, rhs),
+            | Op::I64Or_Rsi { lhs, rhs, .. }
+            | Op::I64BitOr_Rsi { lhs, rhs, .. } => Op::branch_i64_or_si(offset, lhs, rhs),
+            | Op::I64NotEq_Rrs { rhs, .. }
+            | Op::I64BitXor_Rrs { rhs, .. } => Op::branch_i64_not_eq_rs(offset, rhs),
+            | Op::I64NotEq_Rss { lhs, rhs, .. }
+            | Op::I64BitXor_Rss { lhs, rhs, .. } => Op::branch_i64_not_eq_ss(offset, lhs, rhs),
+            | Op::I64NotEq_Rri { rhs, .. }
+            | Op::I64BitXor_Rri { rhs, .. } => Op::branch_i64_not_eq_ri(offset, rhs),
+            | Op::I64NotEq_Rsi { lhs, rhs, .. }
+            | Op::I64BitXor_Rsi { lhs, rhs, .. } => Op::branch_i64_not_eq_si(offset, lhs, rhs),
+            | Op::I64NotAnd_Rrs { rhs, .. } => Op::branch_i64_not_and_rs(offset, rhs),
+            | Op::I64NotAnd_Rri { rhs, .. } => Op::branch_i64_not_and_ri(offset, rhs),
+            | Op::I64NotAnd_Rss { lhs, rhs, .. } => Op::branch_i64_not_and_ss(offset, lhs, rhs),
+            | Op::I64NotAnd_Rsi { lhs, rhs, .. } => Op::branch_i64_not_and_si(offset, lhs, rhs),
+            | Op::I64NotOr_Rrs { rhs, .. } => Op::branch_i64_not_or_rs(offset, rhs),
+            | Op::I64NotOr_Rri { rhs, .. } => Op::branch_i64_not_or_ri(offset, rhs),
+            | Op::I64NotOr_Rss { lhs, rhs, .. } => Op::branch_i64_not_or_ss(offset, lhs, rhs),
+            | Op::I64NotOr_Rsi { lhs, rhs, .. } => Op::branch_i64_not_or_si(offset, lhs, rhs),
+            | Op::I64Lt_Rrs { rhs, .. } => Op::branch_i64_lt_rs(offset, rhs),
+            | Op::I64Lt_Rri { rhs, .. } => Op::branch_i64_lt_ri(offset, rhs),
+            | Op::I64Lt_Rsr { lhs, .. } => Op::branch_i64_lt_sr(offset, lhs),
+            | Op::I64Lt_Rss { lhs, rhs, .. } => Op::branch_i64_lt_ss(offset, lhs, rhs),
+            | Op::I64Lt_Rsi { lhs, rhs, .. } => Op::branch_i64_lt_si(offset, lhs, rhs),
+            | Op::I64Lt_Rir { lhs, .. } => Op::branch_i64_lt_ir(offset, lhs),
+            | Op::I64Lt_Ris { lhs, rhs, .. } => Op::branch_i64_lt_is(offset, lhs, rhs),
+            | Op::U64Lt_Rrs { rhs, .. } => Op::branch_u64_lt_rs(offset, rhs),
+            | Op::U64Lt_Rri { rhs, .. } => Op::branch_u64_lt_ri(offset, rhs),
+            | Op::U64Lt_Rsr { lhs, .. } => Op::branch_u64_lt_sr(offset, lhs),
+            | Op::U64Lt_Rss { lhs, rhs, .. } => Op::branch_u64_lt_ss(offset, lhs, rhs),
+            | Op::U64Lt_Rsi { lhs, rhs, .. } => Op::branch_u64_lt_si(offset, lhs, rhs),
+            | Op::U64Lt_Rir { lhs, .. } => Op::branch_u64_lt_ir(offset, lhs),
+            | Op::U64Lt_Ris { lhs, rhs, .. } => Op::branch_u64_lt_is(offset, lhs, rhs),
+            | Op::I64Le_Rrs { rhs, .. } => Op::branch_i64_le_rs(offset, rhs),
+            | Op::I64Le_Rri { rhs, .. } => Op::branch_i64_le_ri(offset, rhs),
+            | Op::I64Le_Rsr { lhs, .. } => Op::branch_i64_le_sr(offset, lhs),
+            | Op::I64Le_Rss { lhs, rhs, .. } => Op::branch_i64_le_ss(offset, lhs, rhs),
+            | Op::I64Le_Rsi { lhs, rhs, .. } => Op::branch_i64_le_si(offset, lhs, rhs),
+            | Op::I64Le_Rir { lhs, .. } => Op::branch_i64_le_ir(offset, lhs),
+            | Op::I64Le_Ris { lhs, rhs, .. } => Op::branch_i64_le_is(offset, lhs, rhs),
+            | Op::U64Le_Rrs { rhs, .. } => Op::branch_u64_le_rs(offset, rhs),
+            | Op::U64Le_Rri { rhs, .. } => Op::branch_u64_le_ri(offset, rhs),
+            | Op::U64Le_Rsr { lhs, .. } => Op::branch_u64_le_sr(offset, lhs),
+            | Op::U64Le_Rss { lhs, rhs, .. } => Op::branch_u64_le_ss(offset, lhs, rhs),
+            | Op::U64Le_Rsi { lhs, rhs, .. } => Op::branch_u64_le_si(offset, lhs, rhs),
+            | Op::U64Le_Rir { lhs, .. } => Op::branch_u64_le_ir(offset, lhs),
+            | Op::U64Le_Ris { lhs, rhs, .. } => Op::branch_u64_le_is(offset, lhs, rhs),
             // f32
-            | Op::F32Eq_Sss { lhs, rhs, .. } => Op::branch_f32_eq_ss(offset, lhs, rhs),
-            | Op::F32Eq_Ssi { lhs, rhs, .. } => Op::branch_f32_eq_si(offset, lhs, rhs),
-            | Op::F32Lt_Sss { lhs, rhs, .. } => Op::branch_f32_lt_ss(offset, lhs, rhs),
-            | Op::F32Lt_Ssi { lhs, rhs, .. } => Op::branch_f32_lt_si(offset, lhs, rhs),
-            | Op::F32Lt_Sis { lhs, rhs, .. } => Op::branch_f32_lt_is(offset, lhs, rhs),
-            | Op::F32Le_Sss { lhs, rhs, .. } => Op::branch_f32_le_ss(offset, lhs, rhs),
-            | Op::F32Le_Ssi { lhs, rhs, .. } => Op::branch_f32_le_si(offset, lhs, rhs),
-            | Op::F32Le_Sis { lhs, rhs, .. } => Op::branch_f32_le_is(offset, lhs, rhs),
-            | Op::F32NotEq_Sss { lhs, rhs, .. } => Op::branch_f32_not_eq_ss(offset, lhs, rhs),
-            | Op::F32NotEq_Ssi { lhs, rhs, .. } => Op::branch_f32_not_eq_si(offset, lhs, rhs),
-            | Op::F32NotLt_Sss { lhs, rhs, .. } => Op::branch_f32_not_lt_ss(offset, lhs, rhs),
-            | Op::F32NotLt_Ssi { lhs, rhs, .. } => Op::branch_f32_not_lt_si(offset, lhs, rhs),
-            | Op::F32NotLt_Sis { lhs, rhs, .. } => Op::branch_f32_not_lt_is(offset, lhs, rhs),
-            | Op::F32NotLe_Sss { lhs, rhs, .. } => Op::branch_f32_not_le_ss(offset, lhs, rhs),
-            | Op::F32NotLe_Ssi { lhs, rhs, .. } => Op::branch_f32_not_le_si(offset, lhs, rhs),
-            | Op::F32NotLe_Sis { lhs, rhs, .. } => Op::branch_f32_not_le_is(offset, lhs, rhs),
+            | Op::F32Eq_Rrs { rhs, .. } => Op::branch_f32_eq_rs(offset, rhs),
+            | Op::F32Eq_Rri { rhs, .. } => Op::branch_f32_eq_ri(offset, rhs),
+            | Op::F32Eq_Rss { lhs, rhs, .. } => Op::branch_f32_eq_ss(offset, lhs, rhs),
+            | Op::F32Eq_Rsi { lhs, rhs, .. } => Op::branch_f32_eq_si(offset, lhs, rhs),
+            | Op::F32Lt_Rrs { rhs, .. } => Op::branch_f32_lt_rs(offset, rhs),
+            | Op::F32Lt_Rri { rhs, .. } => Op::branch_f32_lt_ri(offset, rhs),
+            | Op::F32Lt_Rsr { lhs, .. } => Op::branch_f32_lt_sr(offset, lhs),
+            | Op::F32Lt_Rss { lhs, rhs, .. } => Op::branch_f32_lt_ss(offset, lhs, rhs),
+            | Op::F32Lt_Rsi { lhs, rhs, .. } => Op::branch_f32_lt_si(offset, lhs, rhs),
+            | Op::F32Lt_Rir { lhs, .. } => Op::branch_f32_lt_ir(offset, lhs),
+            | Op::F32Lt_Ris { lhs, rhs, .. } => Op::branch_f32_lt_is(offset, lhs, rhs),
+            | Op::F32Le_Rrs { rhs, .. } => Op::branch_f32_le_rs(offset, rhs),
+            | Op::F32Le_Rri { rhs, .. } => Op::branch_f32_le_ri(offset, rhs),
+            | Op::F32Le_Rsr { lhs, .. } => Op::branch_f32_le_sr(offset, lhs),
+            | Op::F32Le_Rss { lhs, rhs, .. } => Op::branch_f32_le_ss(offset, lhs, rhs),
+            | Op::F32Le_Rsi { lhs, rhs, .. } => Op::branch_f32_le_si(offset, lhs, rhs),
+            | Op::F32Le_Rir { lhs, .. } => Op::branch_f32_le_ir(offset, lhs),
+            | Op::F32Le_Ris { lhs, rhs, .. } => Op::branch_f32_le_is(offset, lhs, rhs),
+            | Op::F32NotEq_Rrs { rhs, .. } => Op::branch_f32_not_eq_rs(offset, rhs),
+            | Op::F32NotEq_Rri { rhs, .. } => Op::branch_f32_not_eq_ri(offset, rhs),
+            | Op::F32NotEq_Rss { lhs, rhs, .. } => Op::branch_f32_not_eq_ss(offset, lhs, rhs),
+            | Op::F32NotEq_Rsi { lhs, rhs, .. } => Op::branch_f32_not_eq_si(offset, lhs, rhs),
+            | Op::F32NotLt_Rrs { rhs, .. } => Op::branch_f32_not_lt_rs(offset, rhs),
+            | Op::F32NotLt_Rri { rhs, .. } => Op::branch_f32_not_lt_ri(offset, rhs),
+            | Op::F32NotLt_Rsr { lhs, .. } => Op::branch_f32_not_lt_sr(offset, lhs),
+            | Op::F32NotLt_Rss { lhs, rhs, .. } => Op::branch_f32_not_lt_ss(offset, lhs, rhs),
+            | Op::F32NotLt_Rsi { lhs, rhs, .. } => Op::branch_f32_not_lt_si(offset, lhs, rhs),
+            | Op::F32NotLt_Rir { lhs, .. } => Op::branch_f32_not_lt_ir(offset, lhs),
+            | Op::F32NotLt_Ris { lhs, rhs, .. } => Op::branch_f32_not_lt_is(offset, lhs, rhs),
+            | Op::F32NotLe_Rrs { rhs, .. } => Op::branch_f32_not_le_rs(offset, rhs),
+            | Op::F32NotLe_Rri { rhs, .. } => Op::branch_f32_not_le_ri(offset, rhs),
+            | Op::F32NotLe_Rsr { lhs, .. } => Op::branch_f32_not_le_sr(offset, lhs),
+            | Op::F32NotLe_Rss { lhs, rhs, .. } => Op::branch_f32_not_le_ss(offset, lhs, rhs),
+            | Op::F32NotLe_Rsi { lhs, rhs, .. } => Op::branch_f32_not_le_si(offset, lhs, rhs),
+            | Op::F32NotLe_Rir { lhs, .. } => Op::branch_f32_not_le_ir(offset, lhs),
+            | Op::F32NotLe_Ris { lhs, rhs, .. } => Op::branch_f32_not_le_is(offset, lhs, rhs),
             // f64
-            | Op::F64Eq_Sss { lhs, rhs, .. } => Op::branch_f64_eq_ss(offset, lhs, rhs),
-            | Op::F64Eq_Ssi { lhs, rhs, .. } => Op::branch_f64_eq_si(offset, lhs, rhs),
-            | Op::F64Lt_Sss { lhs, rhs, .. } => Op::branch_f64_lt_ss(offset, lhs, rhs),
-            | Op::F64Lt_Ssi { lhs, rhs, .. } => Op::branch_f64_lt_si(offset, lhs, rhs),
-            | Op::F64Lt_Sis { lhs, rhs, .. } => Op::branch_f64_lt_is(offset, lhs, rhs),
-            | Op::F64Le_Sss { lhs, rhs, .. } => Op::branch_f64_le_ss(offset, lhs, rhs),
-            | Op::F64Le_Ssi { lhs, rhs, .. } => Op::branch_f64_le_si(offset, lhs, rhs),
-            | Op::F64Le_Sis { lhs, rhs, .. } => Op::branch_f64_le_is(offset, lhs, rhs),
-            | Op::F64NotEq_Sss { lhs, rhs, .. } => Op::branch_f64_not_eq_ss(offset, lhs, rhs),
-            | Op::F64NotEq_Ssi { lhs, rhs, .. } => Op::branch_f64_not_eq_si(offset, lhs, rhs),
-            | Op::F64NotLt_Sss { lhs, rhs, .. } => Op::branch_f64_not_lt_ss(offset, lhs, rhs),
-            | Op::F64NotLt_Ssi { lhs, rhs, .. } => Op::branch_f64_not_lt_si(offset, lhs, rhs),
-            | Op::F64NotLt_Sis { lhs, rhs, .. } => Op::branch_f64_not_lt_is(offset, lhs, rhs),
-            | Op::F64NotLe_Sss { lhs, rhs, .. } => Op::branch_f64_not_le_ss(offset, lhs, rhs),
-            | Op::F64NotLe_Ssi { lhs, rhs, .. } => Op::branch_f64_not_le_si(offset, lhs, rhs),
-            | Op::F64NotLe_Sis { lhs, rhs, .. } => Op::branch_f64_not_le_is(offset, lhs, rhs),
+            | Op::F64Eq_Rrs { rhs, .. } => Op::branch_f64_eq_rs(offset, rhs),
+            | Op::F64Eq_Rri { rhs, .. } => Op::branch_f64_eq_ri(offset, rhs),
+            | Op::F64Eq_Rss { lhs, rhs, .. } => Op::branch_f64_eq_ss(offset, lhs, rhs),
+            | Op::F64Eq_Rsi { lhs, rhs, .. } => Op::branch_f64_eq_si(offset, lhs, rhs),
+            | Op::F64Lt_Rrs { rhs, .. } => Op::branch_f64_lt_rs(offset, rhs),
+            | Op::F64Lt_Rri { rhs, .. } => Op::branch_f64_lt_ri(offset, rhs),
+            | Op::F64Lt_Rsr { lhs, .. } => Op::branch_f64_lt_sr(offset, lhs),
+            | Op::F64Lt_Rss { lhs, rhs, .. } => Op::branch_f64_lt_ss(offset, lhs, rhs),
+            | Op::F64Lt_Rsi { lhs, rhs, .. } => Op::branch_f64_lt_si(offset, lhs, rhs),
+            | Op::F64Lt_Rir { lhs, .. } => Op::branch_f64_lt_ir(offset, lhs),
+            | Op::F64Lt_Ris { lhs, rhs, .. } => Op::branch_f64_lt_is(offset, lhs, rhs),
+            | Op::F64Le_Rrs { rhs, .. } => Op::branch_f64_le_rs(offset, rhs),
+            | Op::F64Le_Rri { rhs, .. } => Op::branch_f64_le_ri(offset, rhs),
+            | Op::F64Le_Rsr { lhs, .. } => Op::branch_f64_le_sr(offset, lhs),
+            | Op::F64Le_Rss { lhs, rhs, .. } => Op::branch_f64_le_ss(offset, lhs, rhs),
+            | Op::F64Le_Rsi { lhs, rhs, .. } => Op::branch_f64_le_si(offset, lhs, rhs),
+            | Op::F64Le_Rir { lhs, .. } => Op::branch_f64_le_ir(offset, lhs),
+            | Op::F64Le_Ris { lhs, rhs, .. } => Op::branch_f64_le_is(offset, lhs, rhs),
+            | Op::F64NotEq_Rrs { rhs, .. } => Op::branch_f64_not_eq_rs(offset, rhs),
+            | Op::F64NotEq_Rri { rhs, .. } => Op::branch_f64_not_eq_ri(offset, rhs),
+            | Op::F64NotEq_Rss { lhs, rhs, .. } => Op::branch_f64_not_eq_ss(offset, lhs, rhs),
+            | Op::F64NotEq_Rsi { lhs, rhs, .. } => Op::branch_f64_not_eq_si(offset, lhs, rhs),
+            | Op::F64NotLt_Rrs { rhs, .. } => Op::branch_f64_not_lt_rs(offset, rhs),
+            | Op::F64NotLt_Rri { rhs, .. } => Op::branch_f64_not_lt_ri(offset, rhs),
+            | Op::F64NotLt_Rsr { lhs, .. } => Op::branch_f64_not_lt_sr(offset, lhs),
+            | Op::F64NotLt_Rss { lhs, rhs, .. } => Op::branch_f64_not_lt_ss(offset, lhs, rhs),
+            | Op::F64NotLt_Rsi { lhs, rhs, .. } => Op::branch_f64_not_lt_si(offset, lhs, rhs),
+            | Op::F64NotLt_Rir { lhs, .. } => Op::branch_f64_not_lt_ir(offset, lhs),
+            | Op::F64NotLt_Ris { lhs, rhs, .. } => Op::branch_f64_not_lt_is(offset, lhs, rhs),
+            | Op::F64NotLe_Rrs { rhs, .. } => Op::branch_f64_not_le_rs(offset, rhs),
+            | Op::F64NotLe_Rri { rhs, .. } => Op::branch_f64_not_le_ri(offset, rhs),
+            | Op::F64NotLe_Rsr { lhs, .. } => Op::branch_f64_not_le_sr(offset, lhs),
+            | Op::F64NotLe_Rss { lhs, rhs, .. } => Op::branch_f64_not_le_ss(offset, lhs, rhs),
+            | Op::F64NotLe_Rsi { lhs, rhs, .. } => Op::branch_f64_not_le_si(offset, lhs, rhs),
+            | Op::F64NotLe_Rir { lhs, .. } => Op::branch_f64_not_le_ir(offset, lhs),
+            | Op::F64NotLe_Ris { lhs, rhs, .. } => Op::branch_f64_not_le_is(offset, lhs, rhs),
             _ => return None,
         };
         Some(cmp_branch_instr)

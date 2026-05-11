@@ -37,7 +37,7 @@ impl FuncTranslator {
         let value = self.make_input(value, |_this, value| {
             Ok(Input::Immediate(T::from(value).wrap().to_bits()))
         })?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| match value {
                 Input::Slot(value) => make_instr_ss(result, value),
@@ -69,7 +69,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.layout.operand_to_slot(input)?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             <R as Typed>::TY,
             |result| make_instr(result, input, lane),
             FuelCostsProvider::simd,
@@ -97,7 +97,7 @@ impl FuncTranslator {
         let value = self.make_input::<T::Immediate>(value, |_this, value| {
             Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
         })?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| match value {
                 Input::Slot(value) => T::replace_lane_sss(result, input, lane, value),
@@ -126,7 +126,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.layout.operand_to_slot(input)?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             <T as Typed>::TY,
             |result| make_instr(result, input),
             FuelCostsProvider::simd,
@@ -150,7 +150,7 @@ impl FuncTranslator {
         }
         let lhs = self.copy_if_immediate(lhs)?;
         let rhs = self.copy_if_immediate(rhs)?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| make_instr(result, lhs, rhs),
             FuelCostsProvider::simd,
@@ -176,7 +176,7 @@ impl FuncTranslator {
         let lhs = self.copy_if_immediate(a)?;
         let rhs = self.copy_if_immediate(b)?;
         let selector = self.copy_if_immediate(c)?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| make_instr(result, lhs, rhs, selector),
             FuelCostsProvider::simd,
@@ -210,7 +210,7 @@ impl FuncTranslator {
                 return Ok(());
             };
             let lhs = self.copy_if_immediate(lhs)?;
-            self.push_instr_with_result(
+            self.push_instr_with_result_slot(
                 ValType::V128,
                 |result| make_instr_ssi(result, lhs, rhs),
                 FuelCostsProvider::simd,
@@ -219,7 +219,7 @@ impl FuncTranslator {
         }
         let lhs = self.copy_if_immediate(lhs)?;
         let rhs = self.copy_if_immediate(rhs)?;
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| make_instr_sss(result, lhs, rhs),
             FuelCostsProvider::simd,
@@ -257,7 +257,7 @@ impl FuncTranslator {
         let v128 = self.copy_if_immediate(v128)?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_instr_with_result(
+                self.push_instr_with_result_slot(
                     ValType::V128,
                     |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
                     FuelCostsProvider::load,
@@ -265,7 +265,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
-        self.push_instr_with_result(
+        self.push_instr_with_result_slot(
             ValType::V128,
             |result| load_lane(result, ptr, offset, memory, v128, lane),
             FuelCostsProvider::load,
