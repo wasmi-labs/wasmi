@@ -70,7 +70,9 @@ impl Op {
             Op::Unary(op) => {
                 matches!(op.result, OperandKind::Slot)
             }
-            Op::Binary(_) => true,
+            Op::Binary(op) => {
+                matches!(op.result, OperandKind::Slot)
+            }
             Op::Ternary(_) => true,
             Op::CmpBranch(_) => false,
             Op::Select(_) => true,
