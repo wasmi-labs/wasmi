@@ -1,4 +1,4 @@
-use crate::{F32, F64, RawVal, V128, ValType};
+use crate::{F32, F64, RawVal, Sign, V128, ValType};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -29,6 +29,13 @@ impl_typed_for! {
     F32 => ValType::F32;
     F64 => ValType::F64;
     V128 => ValType::V128;
+}
+
+impl Typed for Sign<f32> {
+    const TY: ValType = <f32 as Typed>::TY;
+}
+impl Typed for Sign<f64> {
+    const TY: ValType = <f64 as Typed>::TY;
 }
 
 impl From<TypedRawVal> for RawVal {

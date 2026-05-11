@@ -11,10 +11,9 @@ use crate::{
     Op,
     OpCode,
     Reg,
-    Sign,
     Slot,
     SlotSpan,
-    core::TrapCode,
+    core::{Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;
@@ -164,8 +163,8 @@ impl_encode_using! {
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
 
-    Sign<f32> as bool = Sign::is_positive,
-    Sign<f64> as bool = Sign::is_positive,
+    Sign<f32> as bool = Sign::is_pos,
+    Sign<f64> as bool = Sign::is_pos,
     SlotSpan as Slot = SlotSpan::head,
     NonZero<i32> as i32 = NonZero::get,
     NonZero<i64> as i64 = NonZero::get,
