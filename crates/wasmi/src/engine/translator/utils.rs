@@ -5,7 +5,7 @@ use crate::{
     core::{RawVal, Typed, TypedRawVal},
     engine::TranslationError,
 };
-use core::{convert::identity, num::NonZero};
+use core::convert::identity;
 
 /// Returns the number of Wasmi engine cell slots required to represent a [`ValType`] `ty`.
 #[inline]
@@ -43,14 +43,6 @@ impl Typed for ExternRef {
 pub trait WasmInteger:
     Copy + Eq + Typed + From<TypedRawVal> + Into<TypedRawVal> + From<RawVal> + Into<RawVal>
 {
-    /// The non-zero type of the [`WasmInteger`].
-    type NonZero: Copy + Into<Self> + Into<RawVal>;
-
-    /// Returns `self` as [`Self::NonZero`] if possible.
-    ///
-    /// Returns `None` if `self` is zero.
-    fn non_zero(self) -> Option<Self::NonZero>;
-
     /// Returns `true` if `self` is equal to zero (0).
     fn is_zero(self) -> bool;
 }
@@ -59,12 +51,6 @@ macro_rules! impl_wasm_integer {
     ($($ty:ty),*) => {
         $(
             impl WasmInteger for $ty {
-                type NonZero = NonZero<Self>;
-
-                fn non_zero(self) -> Option<Self::NonZero> {
-                    Self::NonZero::new(self)
-                }
-
                 fn is_zero(self) -> bool {
                     self == 0
                 }
