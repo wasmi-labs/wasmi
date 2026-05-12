@@ -7,10 +7,17 @@ use crate::{
     Error,
     V128,
     ValType,
-    core::{FuelCostsProvider, Typed, TypedRawVal, simd::IntoLaneIdx},
+    core::{
+        FuelCostsProvider,
+        IntoShiftAmount,
+        ShiftAmount,
+        Typed,
+        TypedRawVal,
+        simd::IntoLaneIdx,
+    },
     engine::translator::{
         func::{Operand, utils::Input},
-        utils::{IntoShiftAmount, ToBits, Wrap},
+        utils::{ToBits, Wrap},
     },
     ir::{
         Offset16,
