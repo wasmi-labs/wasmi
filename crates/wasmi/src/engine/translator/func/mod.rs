@@ -1719,27 +1719,6 @@ impl FuncTranslator {
         Ok(Input::Slot(index32))
     }
 
-    /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
-    fn translate_binary_consteval<Lhs, Rhs, Res>(
-        &mut self,
-        lhs: Lhs,
-        rhs: Rhs,
-        consteval: impl FnOnce(Lhs, Rhs) -> Result<Res, TrapCode>,
-    ) -> Result<(), Error>
-    where
-        Res: Into<TypedRawVal>,
-    {
-        match consteval(lhs, rhs) {
-            Ok(value) => {
-                self.stack.push_immediate(value)?;
-            }
-            Err(trap) => {
-                self.translate_trap(trap)?;
-            }
-        }
-        Ok(())
-    }
-
     /// Convenience method to tell that there is no custom optimization.
     fn no_opt_ri<T>(&mut self, _lhs: Operand, _rhs: T) -> Result<bool, Error> {
         Ok(false)
@@ -1859,6 +1838,27 @@ impl FuncTranslator {
             operator,
             FuelCostsProvider::base,
         )?;
+        Ok(())
+    }
+
+    /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
+    fn translate_binary_consteval<Lhs, Rhs, Res>(
+        &mut self,
+        lhs: Lhs,
+        rhs: Rhs,
+        consteval: impl FnOnce(Lhs, Rhs) -> Result<Res, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        Res: Into<TypedRawVal>,
+    {
+        match consteval(lhs, rhs) {
+            Ok(value) => {
+                self.stack.push_immediate(value)?;
+            }
+            Err(trap) => {
+                self.translate_trap(trap)?;
+            }
+        }
         Ok(())
     }
 
