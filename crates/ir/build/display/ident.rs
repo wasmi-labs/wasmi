@@ -82,6 +82,7 @@ impl Display for CamelCase<Ty> {
             | Ty::U64x2 => "U64x2",
             | Ty::F32x4 => "F32x4",
             | Ty::F64x2 => "F64x2",
+            | Ty::ShiftAmount => "U8",
         };
         f.write_str(s)
     }
@@ -118,6 +119,7 @@ impl Display for SnakeCase<Ty> {
             Ty::U64x2 => "u64x2",
             Ty::F32x4 => "f32x4",
             Ty::F64x2 => "f64x2",
+            Ty::ShiftAmount => "u8",
         };
         f.write_str(s)
     }

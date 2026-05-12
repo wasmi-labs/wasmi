@@ -12,7 +12,16 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, Sign, WriteAs},
+    core::{
+        CoreElementSegment,
+        CoreGlobal,
+        CoreMemory,
+        CoreTable,
+        RawVal,
+        ShiftAmount,
+        Sign,
+        WriteAs,
+    },
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -163,6 +172,7 @@ impl_get_value!(
     Sign<f64>,
     Address,
     Offset16,
+    ShiftAmount,
 );
 #[cfg(feature = "simd")]
 impl_get_value!([ImmLaneIdx<32>; 16]);

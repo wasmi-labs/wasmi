@@ -117,6 +117,8 @@ pub enum Ty {
     F32x4,
     /// A `f64x2` vector type for `simd`.
     F64x2,
+    /// A shift amount for shift operators.
+    ShiftAmount,
 }
 
 #[derive(Copy, Clone)]
@@ -164,6 +166,7 @@ pub enum FieldTy {
     ImmLaneIdx2,
     Bytes16,
     V128,
+    ShiftAmount,
 }
 
 impl FieldTy {
@@ -203,6 +206,7 @@ impl From<Ty> for FieldTy {
             | Ty::U64x2
             | Ty::F32x4
             | Ty::F64x2 => FieldTy::V128,
+            | Ty::ShiftAmount => FieldTy::ShiftAmount,
         }
     }
 }
@@ -253,6 +257,7 @@ impl Display for FieldTy {
             Self::ImmLaneIdx2 => "ImmLaneIdx<2>",
             Self::Bytes16 => "[u8; 16]",
             Self::V128 => "V128",
+            Self::ShiftAmount => "ShiftAmount",
         };
         f.write_str(s)
     }
