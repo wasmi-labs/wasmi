@@ -195,7 +195,7 @@ impl FuncTranslator {
     fn translate_simd_shift<T>(
         &mut self,
         make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::ShiftAmount) -> Op,
+        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: ShiftAmount) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
