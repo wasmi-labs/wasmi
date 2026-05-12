@@ -1,4 +1,4 @@
-use crate::{F32, F64, RawVal, Sign, V128, ValType};
+use crate::{F32, F64, RawVal, ShiftAmount, Sign, V128, ValType};
 use core::num::NonZero;
 
 /// Types that are associated to a static Wasm type.
@@ -30,6 +30,7 @@ impl_typed_for! {
     F32 => ValType::F32;
     F64 => ValType::F64;
     V128 => ValType::V128;
+    ShiftAmount => ValType::I32;
 }
 
 impl Typed for NonZero<i32> {
