@@ -58,8 +58,11 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
                 UpdateBranchOffset as _,
             },
-            func::stack::{RegOperand, TempOperand},
-            utils::{IntoShiftAmount, ToBits, WasmInteger},
+            func::{
+                op::BinaryOpRhs,
+                stack::{RegOperand, TempOperand},
+            },
+            utils::{ToBits, WasmInteger},
         },
     },
     ir::{
