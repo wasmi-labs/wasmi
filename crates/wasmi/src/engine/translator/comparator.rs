@@ -482,7 +482,6 @@ pub trait TryIntoCmpBranchInstr: Sized {
 
 impl TryIntoCmpBranchInstr for Op {
     fn try_into_cmp_branch_instr(&self, offset: BranchOffset) -> Option<Self> {
-        // TODO: support new register operators
         #[rustfmt::skip]
         let cmp_branch_instr = match *self {
             // i32
