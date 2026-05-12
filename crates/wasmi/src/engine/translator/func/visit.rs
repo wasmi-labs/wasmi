@@ -873,26 +873,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_div_s(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::I32Div>()
-        todo!()
+        self.translate_binary::<op::I32Div>()
     }
 
     #[inline(never)]
     fn visit_i32_div_u(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::U32Div>()
-        todo!()
+        self.translate_binary::<op::U32Div>()
     }
 
     #[inline(never)]
     fn visit_i32_rem_s(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::I32Rem>()
-        todo!()
+        self.translate_binary::<op::I32Rem>()
     }
 
     #[inline(never)]
     fn visit_i32_rem_u(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::U32Rem>()
-        todo!()
+        self.translate_binary::<op::U32Rem>()
     }
 
     #[inline(never)]
@@ -967,26 +963,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_div_s(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::I64Div>()
-        todo!()
+        self.translate_binary::<op::I64Div>()
     }
 
     #[inline(never)]
     fn visit_i64_div_u(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::U64Div>()
-        todo!()
+        self.translate_binary::<op::U64Div>()
     }
 
     #[inline(never)]
     fn visit_i64_rem_s(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::I64Rem>()
-        todo!()
+        self.translate_binary::<op::I64Rem>()
     }
 
     #[inline(never)]
     fn visit_i64_rem_u(&mut self) -> Self::Output {
-        // self.translate_binary_v2::<op::U64Rem>()
-        todo!()
+        self.translate_binary::<op::U64Rem>()
     }
 
     #[inline(never)]
