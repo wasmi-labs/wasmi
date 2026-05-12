@@ -1,6 +1,7 @@
 use crate::{
     V128,
     core::{
+        ShiftAmount,
         simd,
         simd::{ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8, ImmLaneIdx16},
     },
@@ -271,7 +272,7 @@ handler_binary! {
 }
 
 macro_rules! wrap_shift {
-    ($f:expr) => {{ |v128: V128, rhs: u8| -> V128 { $f(v128, u32::from(rhs)) } }};
+    ($f:expr) => {{ |v128: V128, rhs: ShiftAmount| -> V128 { $f(v128, u32::from(u8::from(rhs))) } }};
 }
 handler_binary! {
     fn i8x16_shl_sss(I8x16Shl_Sss) = wrap_shift!(simd::i8x16_shl);

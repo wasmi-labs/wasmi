@@ -13,7 +13,7 @@ use crate::{
     Reg,
     Slot,
     SlotSpan,
-    core::{Sign, TrapCode},
+    core::{ShiftAmount, Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;
@@ -162,6 +162,7 @@ impl_encode_using! {
     Table as u32 = Into::into,
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
+    ShiftAmount as u8 = Into::into,
 
     Sign<f32> as bool = Sign::is_pos,
     Sign<f64> as bool = Sign::is_pos,
