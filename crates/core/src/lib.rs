@@ -21,6 +21,7 @@ mod index_ty;
 mod limiter;
 mod memory;
 mod raw;
+mod shift_amount;
 mod sign;
 mod table;
 mod trap;
@@ -46,6 +47,7 @@ pub use self::{
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
     raw::{RawVal, ReadAs, WriteAs},
+    shift_amount::{IntoShiftAmount, ShiftAmount},
     sign::Sign,
     table::{
         ElementSegment,
