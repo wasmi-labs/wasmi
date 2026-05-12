@@ -1718,7 +1718,7 @@ impl FuncTranslator {
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
-    fn translate_binary_consteval_fallible_v2<Lhs, Rhs, Res>(
+    fn translate_binary_consteval<Lhs, Rhs, Res>(
         &mut self,
         lhs: Lhs,
         rhs: Rhs,
@@ -1793,7 +1793,7 @@ impl FuncTranslator {
         let l = self.resolve_operand_as::<T::Input>(lhs)?;
         let r = self.resolve_operand_as::<T::Input>(rhs)?;
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
-            return self.translate_binary_consteval_fallible_v2(lhs, rhs, T::consteval);
+            return self.translate_binary_consteval(lhs, rhs, T::consteval);
         }
         let (l, r) = ResolvedOperand::sort(l, r);
         if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
@@ -1840,7 +1840,7 @@ impl FuncTranslator {
             },
         };
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
-            return self.translate_binary_consteval_fallible_v2(lhs, rhs, T::consteval);
+            return self.translate_binary_consteval(lhs, rhs, T::consteval);
         }
         let operator = match (l, r) {
             (ResolvedOperand::Reg, ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
