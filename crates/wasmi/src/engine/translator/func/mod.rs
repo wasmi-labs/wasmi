@@ -1598,13 +1598,13 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error>
     where
-        Op::Value: From<TypedRawVal>,
+        Op::Value: From<RawVal>,
         Op::Result: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
         let op = match self.stack.pop() {
             Operand::Immediate(input) => {
-                match Op::consteval(input.val().into()) {
+                match Op::consteval(input.val().raw().into()) {
                     Ok(result) => {
                         self.stack.push_immediate(result)?;
                     }
