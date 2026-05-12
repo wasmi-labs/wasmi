@@ -1602,9 +1602,12 @@ impl FuncTranslator {
         Op::Result: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
-        let op = match self.stack.pop() {
-            Operand::Immediate(input) => {
-                match Op::consteval(input.val().raw().into()) {
+        let input = self.stack.pop();
+        let op = match self.resolve_operand_as::<Op::Value>(input)? {
+            ResolvedOperand::Reg => Op::op_rr(),
+            ResolvedOperand::Slot(input) => Op::op_rs(input),
+            ResolvedOperand::Immediate(input) => {
+                match Op::consteval(input) {
                     Ok(result) => {
                         self.stack.push_immediate(result)?;
                     }
@@ -1613,15 +1616,6 @@ impl FuncTranslator {
                     }
                 }
                 return Ok(());
-            }
-            Operand::Reg(_input) => Op::op_rr(),
-            Operand::Local(input) => {
-                let input = self.layout.local_to_slot(input)?;
-                Op::op_rs(input)
-            }
-            Operand::Temp(input) => {
-                let input = input.temp_slots().head();
-                Op::op_rs(input)
             }
         };
         self.push_instr(op, FuelCostsProvider::base)?;
