@@ -899,25 +899,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Pushes a binary instruction with a result and associated fuel costs.
-    fn push_binary_instr_with_result(
-        &mut self,
-        result_ty: ValType,
-        lhs: Operand,
-        rhs: Operand,
-        make_instr: impl FnOnce(Slot, Slot, Slot) -> Op,
-        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<(), Error> {
-        debug_assert_eq!(lhs.ty(), rhs.ty());
-        let lhs = self.layout.operand_to_slot(lhs)?;
-        let rhs = self.layout.operand_to_slot(rhs)?;
-        self.push_instr_with_result_slot(
-            result_ty,
-            |result| make_instr(result, lhs, rhs),
-            fuel_costs,
-        )
-    }
-
     /// Populate the `buffer` with the `table` targets including the `table` default target.
     ///
     /// Returns a shared slice to the `buffer` after it has been filled.
@@ -1752,8 +1733,6 @@ impl FuncTranslator {
         consteval: impl FnOnce(Lhs, Rhs) -> Result<Res, TrapCode>,
     ) -> Result<(), Error>
     where
-        Lhs: From<RawVal>,
-        Rhs: From<RawVal>,
         Res: Into<TypedRawVal>,
     {
         match consteval(lhs, rhs) {
@@ -1849,13 +1828,25 @@ impl FuncTranslator {
     fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
     where
         T::Lhs: From<RawVal> + Copy,
-        T::Rhs: From<RawVal> + Copy,
+        T::Rhs: Copy,
         T::Result: Into<RawVal>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
         let l = self.resolve_operand_as::<T::Lhs>(lhs)?;
-        let r = self.resolve_operand_as::<T::Rhs>(rhs)?;
+        let r = self.resolve_operand_as::<RawVal>(rhs)?;
+        let r = match r {
+            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Slot(rhs) => ResolvedOperand::Slot(rhs),
+            ResolvedOperand::Immediate(rhs) => match T::decode_rhs(rhs) {
+                BinaryOpRhs::Value(rhs) => ResolvedOperand::Immediate(rhs),
+                BinaryOpRhs::Trap(trap_code) => return self.translate_trap(trap_code),
+                BinaryOpRhs::ReturnLhs => {
+                    self.stack.push_operand(lhs)?;
+                    return Ok(());
+                }
+            },
+        };
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
             return self.translate_binary_consteval_fallible_v2(lhs, rhs, T::consteval);
         }
@@ -1875,112 +1866,6 @@ impl FuncTranslator {
             FuelCostsProvider::base,
         )?;
         Ok(())
-    }
-
-    /// Translates integer division and remainder Wasm operators to Wasmi bytecode.
-    #[expect(dead_code)]
-    fn translate_divrem<T>(
-        &mut self,
-        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as WasmInteger>::NonZero) -> Op,
-        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
-        _consteval: fn(T, T) -> Result<T, TrapCode>,
-    ) -> Result<(), Error>
-    where
-        T: WasmInteger,
-    {
-        bail_unreachable!(self);
-        match self.stack.pop2() {
-            (Operand::Immediate(_lhs), Operand::Immediate(_rhs)) => {
-                // self.translate_binary_consteval_fallible::<T, T>(lhs, rhs, consteval)
-                todo!()
-            }
-            (lhs, Operand::Immediate(rhs)) => {
-                let lhs = self.layout.operand_to_slot(lhs)?;
-                let rhs = T::from(rhs.val());
-                let Some(non_zero_rhs) = <T as WasmInteger>::non_zero(rhs) else {
-                    // Optimization: division by zero always traps
-                    return self.translate_trap(TrapCode::IntegerDivisionByZero);
-                };
-                self.push_instr_with_result_slot(
-                    <T as Typed>::TY,
-                    |result| make_instr_ssi(result, lhs, non_zero_rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (Operand::Immediate(lhs), rhs) => {
-                let lhs = T::from(lhs.val());
-                let rhs = self.layout.operand_to_slot(rhs)?;
-                self.push_instr_with_result_slot(
-                    <T as Typed>::TY,
-                    |result| make_instr_sis(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (lhs, rhs) => self.push_binary_instr_with_result(
-                <T as Typed>::TY,
-                lhs,
-                rhs,
-                make_instr_sss,
-                FuelCostsProvider::base,
-            ),
-        }
-    }
-
-    /// Translates Wasm shift and rotate operators to Wasmi bytecode.
-    #[expect(dead_code)]
-    fn translate_shift<T>(
-        &mut self,
-        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: <T as IntoShiftAmount>::ShiftAmount) -> Op,
-        make_instr_sis: fn(result: Slot, lhs: T, rhs: Slot) -> Op,
-        _consteval: fn(T, T) -> T,
-    ) -> Result<(), Error>
-    where
-        T: WasmInteger + IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
-    {
-        bail_unreachable!(self);
-        match self.stack.pop2() {
-            (Operand::Immediate(_lhs), Operand::Immediate(_rhs)) => {
-                // self.translate_binary_consteval::<T, T>(lhs, rhs, consteval)
-                todo!()
-            }
-            (lhs, Operand::Immediate(rhs)) => {
-                let shift_amount = <T::ShiftSource>::from(rhs.val());
-                let Some(rhs) = T::into_shift_amount(shift_amount) else {
-                    // Optimization: Shifting or rotating by zero bits is a no-op.
-                    self.stack.push_operand(lhs)?;
-                    return Ok(());
-                };
-                let lhs = self.layout.operand_to_slot(lhs)?;
-                self.push_instr_with_result_slot(
-                    <T as Typed>::TY,
-                    |result| make_instr_ssi(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (Operand::Immediate(lhs), rhs) => {
-                let lhs = T::from(lhs.val());
-                if lhs.is_zero() {
-                    // Optimization: Shifting or rotating a zero value is a no-op.
-                    self.stack.push_immediate(lhs)?;
-                    return Ok(());
-                }
-                let rhs = self.layout.operand_to_slot(rhs)?;
-                self.push_instr_with_result_slot(
-                    <T as Typed>::TY,
-                    |result| make_instr_sis(result, lhs, rhs),
-                    FuelCostsProvider::base,
-                )
-            }
-            (lhs, rhs) => self.push_binary_instr_with_result(
-                <T as Typed>::TY,
-                lhs,
-                rhs,
-                make_instr_sss,
-                FuelCostsProvider::base,
-            ),
-        }
     }
 
     /// Translates a generic trap instruction.
