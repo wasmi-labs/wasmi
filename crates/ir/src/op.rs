@@ -10,7 +10,7 @@ use crate::{
     Reg,
     Slot,
     SlotSpan,
-    core::{Sign, TrapCode},
+    core::{ShiftAmount, Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;

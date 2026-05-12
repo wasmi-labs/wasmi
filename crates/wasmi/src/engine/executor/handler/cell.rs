@@ -7,7 +7,7 @@ use crate::{
     Ref,
     V128,
     Val,
-    core::RawRef,
+    core::{RawRef, ShiftAmount},
     handle::Handle,
     store::AsStoreId,
 };
@@ -82,6 +82,7 @@ impl_into_for_cell! {
     f64 = f64::from_bits,
     F64 = F64::from_bits,
     RawRef = |v| RawRef::from(v as u32),
+    ShiftAmount = |v| ShiftAmount::from(v as u8),
 }
 
 /// Errors raised in the encode and decode APIs of [`Cell`].
@@ -455,7 +456,21 @@ macro_rules! impl_load_from_cells_for_prim {
     };
 }
 impl_load_from_cells_for_prim!(
-    bool, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, F32, F64, RawRef,
+    bool,
+    i8,
+    i16,
+    i32,
+    i64,
+    u8,
+    u16,
+    u32,
+    u64,
+    f32,
+    f64,
+    F32,
+    F64,
+    RawRef,
+    ShiftAmount,
 );
 
 impl LoadFromCellsByValue for V128 {

@@ -3,7 +3,7 @@
 use super::IntoResult as _;
 use crate::{
     TrapCode,
-    core::{Sign, Typed, wasm},
+    core::{IntoShiftAmount, RawVal, ShiftAmount, Sign, Typed, wasm},
     engine::eval,
     ir::{Op, Reg, Slot},
 };
