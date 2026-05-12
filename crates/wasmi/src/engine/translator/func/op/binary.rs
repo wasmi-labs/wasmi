@@ -26,6 +26,7 @@ pub trait BinaryOp {
     type Lhs: Typed;
     type Rhs: Typed;
 
+    fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<Self::Rhs>;
     fn consteval(lhs: Self::Lhs, rhs: Self::Rhs) -> Result<Self::Result, TrapCode>;
 
     fn op_rrs(rhs: Slot) -> Op;
@@ -91,6 +92,7 @@ macro_rules! impl_binary_op_for {
                 type Lhs = $lhs_ty:ty;
                 type Rhs = $rhs_ty:ty;
 
+                fn decode_rhs = $decode_rhs:expr;
                 fn consteval = $consteval:expr;
 
                 fn op_rrs = $op_rrs:ident;
@@ -109,6 +111,10 @@ macro_rules! impl_binary_op_for {
                 type Result = $res_ty;
                 type Lhs = $lhs_ty;
                 type Rhs = $rhs_ty;
+
+                fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<Self::Rhs> {
+                    $decode_rhs(rhs)
+                }
 
                 fn consteval(lhs: Self::Lhs, rhs: Self::Rhs) -> Result<Self::Result, TrapCode> {
                     $consteval(lhs, rhs).into_result()
@@ -423,6 +429,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = i32;
         type Rhs = i32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_lt_s;
         fn op_rrs = I32Lt_Rrs;
         fn op_rri = I32Lt_Rri;
@@ -437,6 +444,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = i32;
         type Rhs = i32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_le_s;
         fn op_rrs = I32Le_Rrs;
         fn op_rri = I32Le_Rri;
@@ -451,6 +459,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = u32;
         type Rhs = u32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_lt_u;
         fn op_rrs = U32Lt_Rrs;
         fn op_rri = U32Lt_Rri;
@@ -465,6 +474,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = u32;
         type Rhs = u32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_le_u;
         fn op_rrs = U32Le_Rrs;
         fn op_rri = U32Le_Rri;
@@ -479,6 +489,7 @@ impl_binary_op_for! {
         type Result = i32;
         type Lhs = i32;
         type Rhs = i32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_sub;
         fn op_rrs = I32Sub_Rrs;
         fn op_rri = I32Sub_Rri;
@@ -493,6 +504,7 @@ impl_binary_op_for! {
         type Result = i32;
         type Lhs = i32;
         type Rhs = NonZero<i32>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i32_div_ssi;
         fn op_rrs = I32Div_Rrs;
         fn op_rri = I32Div_Rri;
@@ -507,6 +519,7 @@ impl_binary_op_for! {
         type Result = u32;
         type Lhs = u32;
         type Rhs = NonZero<u32>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u32_div_ssi;
         fn op_rrs = U32Div_Rrs;
         fn op_rri = U32Div_Rri;
@@ -521,6 +534,7 @@ impl_binary_op_for! {
         type Result = i32;
         type Lhs = i32;
         type Rhs = NonZero<i32>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i32_rem_ssi;
         fn op_rrs = I32Rem_Rrs;
         fn op_rri = I32Rem_Rri;
@@ -535,6 +549,7 @@ impl_binary_op_for! {
         type Result = u32;
         type Lhs = u32;
         type Rhs = NonZero<u32>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u32_rem_ssi;
         fn op_rrs = U32Rem_Rrs;
         fn op_rri = U32Rem_Rri;
@@ -548,7 +563,8 @@ impl_binary_op_for! {
     impl BinaryOp for I32Shl {
         type Result = i32;
         type Lhs = i32;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_shl_ssi;
         fn op_rrs = I32Shl_Rrs;
         fn op_rri = I32Shl_Rri;
@@ -562,7 +578,8 @@ impl_binary_op_for! {
     impl BinaryOp for I32Shr {
         type Result = i32;
         type Lhs = i32;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_shr_ssi;
         fn op_rrs = I32Shr_Rrs;
         fn op_rri = I32Shr_Rri;
@@ -576,7 +593,8 @@ impl_binary_op_for! {
     impl BinaryOp for U32Shr {
         type Result = u32;
         type Lhs = u32;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<u32>;
         fn consteval = eval::wasmi_u32_shr_ssi;
         fn op_rrs = U32Shr_Rrs;
         fn op_rri = U32Shr_Rri;
@@ -589,7 +607,8 @@ impl_binary_op_for! {
     impl BinaryOp for I32Rotl {
         type Result = i32;
         type Lhs = i32;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_rotl_ssi;
         fn op_rrs = I32Rotl_Rrs;
         fn op_rri = I32Rotl_Rri;
@@ -603,7 +622,8 @@ impl_binary_op_for! {
     impl BinaryOp for I32Rotr {
         type Result = i32;
         type Lhs = i32;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_rotr_ssi;
         fn op_rrs = I32Rotr_Rrs;
         fn op_rri = I32Rotr_Rri;
@@ -620,6 +640,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = i64;
         type Rhs = i64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_lt_s;
         fn op_rrs = I64Lt_Rrs;
         fn op_rri = I64Lt_Rri;
@@ -634,6 +655,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = i64;
         type Rhs = i64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_le_s;
         fn op_rrs = I64Le_Rrs;
         fn op_rri = I64Le_Rri;
@@ -648,6 +670,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = u64;
         type Rhs = u64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_lt_u;
         fn op_rrs = U64Lt_Rrs;
         fn op_rri = U64Lt_Rri;
@@ -662,6 +685,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = u64;
         type Rhs = u64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_le_u;
         fn op_rrs = U64Le_Rrs;
         fn op_rri = U64Le_Rri;
@@ -676,6 +700,7 @@ impl_binary_op_for! {
         type Result = i64;
         type Lhs = i64;
         type Rhs = i64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_sub;
         fn op_rrs = I64Sub_Rrs;
         fn op_rri = I64Sub_Rri;
@@ -690,6 +715,7 @@ impl_binary_op_for! {
         type Result = i64;
         type Lhs = i64;
         type Rhs = NonZero<i64>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i64_div_ssi;
         fn op_rrs = I64Div_Rrs;
         fn op_rri = I64Div_Rri;
@@ -704,6 +730,7 @@ impl_binary_op_for! {
         type Result = u64;
         type Lhs = u64;
         type Rhs = NonZero<u64>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u64_div_ssi;
         fn op_rrs = U64Div_Rrs;
         fn op_rri = U64Div_Rri;
@@ -718,6 +745,7 @@ impl_binary_op_for! {
         type Result = i64;
         type Lhs = i64;
         type Rhs = NonZero<i64>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i64_rem_ssi;
         fn op_rrs = I64Rem_Rrs;
         fn op_rri = I64Rem_Rri;
@@ -732,6 +760,7 @@ impl_binary_op_for! {
         type Result = u64;
         type Lhs = u64;
         type Rhs = NonZero<u64>;
+        fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u64_rem_ssi;
         fn op_rrs = U64Rem_Rrs;
         fn op_rri = U64Rem_Rri;
@@ -745,7 +774,8 @@ impl_binary_op_for! {
     impl BinaryOp for I64Shl {
         type Result = i64;
         type Lhs = i64;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_shl_ssi;
         fn op_rrs = I64Shl_Rrs;
         fn op_rri = I64Shl_Rri;
@@ -759,7 +789,8 @@ impl_binary_op_for! {
     impl BinaryOp for I64Shr {
         type Result = i64;
         type Lhs = i64;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_shr_ssi;
         fn op_rrs = I64Shr_Rrs;
         fn op_rri = I64Shr_Rri;
@@ -773,7 +804,8 @@ impl_binary_op_for! {
     impl BinaryOp for U64Shr {
         type Result = u64;
         type Lhs = u64;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<u64>;
         fn consteval = eval::wasmi_u64_shr_ssi;
         fn op_rrs = U64Shr_Rrs;
         fn op_rri = U64Shr_Rri;
@@ -783,10 +815,12 @@ impl_binary_op_for! {
         fn op_rir = U64Shr_Rir;
         fn op_ris = U64Shr_Ris;
     }
+
     impl BinaryOp for I64Rotl {
         type Result = i64;
         type Lhs = i64;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_rotl_ssi;
         fn op_rrs = I64Rotl_Rrs;
         fn op_rri = I64Rotl_Rri;
@@ -800,7 +834,8 @@ impl_binary_op_for! {
     impl BinaryOp for I64Rotr {
         type Result = i64;
         type Lhs = i64;
-        type Rhs = u8;
+        type Rhs = ShiftAmount;
+        fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_rotr_ssi;
         fn op_rrs = I64Rotr_Rrs;
         fn op_rri = I64Rotr_Rri;
@@ -817,6 +852,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_lt;
         fn op_rrs = F32Lt_Rrs;
         fn op_rri = F32Lt_Rri;
@@ -831,6 +867,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_le;
         fn op_rrs = F32Le_Rrs;
         fn op_rri = F32Le_Rri;
@@ -845,6 +882,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f32_not_lt;
         fn op_rrs = F32NotLt_Rrs;
         fn op_rri = F32NotLt_Rri;
@@ -859,6 +897,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f32_not_le;
         fn op_rrs = F32NotLe_Rrs;
         fn op_rri = F32NotLe_Rri;
@@ -873,6 +912,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_add;
         fn op_rrs = F32Add_Rrs;
         fn op_rri = F32Add_Rri;
@@ -887,6 +927,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_sub;
         fn op_rrs = F32Sub_Rrs;
         fn op_rri = F32Sub_Rri;
@@ -901,6 +942,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_mul;
         fn op_rrs = F32Mul_Rrs;
         fn op_rri = F32Mul_Rri;
@@ -915,6 +957,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_div;
         fn op_rrs = F32Div_Rrs;
         fn op_rri = F32Div_Rri;
@@ -929,6 +972,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_min;
         fn op_rrs = F32Min_Rrs;
         fn op_rri = F32Min_Rri;
@@ -943,6 +987,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = f32;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_max;
         fn op_rrs = F32Max_Rrs;
         fn op_rri = F32Max_Rri;
@@ -957,6 +1002,7 @@ impl_binary_op_for! {
         type Result = f32;
         type Lhs = f32;
         type Rhs = Sign<f32>;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f32_copysign_ssi;
         fn op_rrs = F32Copysign_Rrs;
         fn op_rri = F32Copysign_Rri;
@@ -973,6 +1019,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_lt;
         fn op_rrs = F64Lt_Rrs;
         fn op_rri = F64Lt_Rri;
@@ -987,6 +1034,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_le;
         fn op_rrs = F64Le_Rrs;
         fn op_rri = F64Le_Rri;
@@ -1001,6 +1049,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f64_not_lt;
         fn op_rrs = F64NotLt_Rrs;
         fn op_rri = F64NotLt_Rri;
@@ -1015,6 +1064,7 @@ impl_binary_op_for! {
         type Result = bool;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f64_not_le;
         fn op_rrs = F64NotLe_Rrs;
         fn op_rri = F64NotLe_Rri;
@@ -1029,6 +1079,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_add;
         fn op_rrs = F64Add_Rrs;
         fn op_rri = F64Add_Rri;
@@ -1043,6 +1094,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_sub;
         fn op_rrs = F64Sub_Rrs;
         fn op_rri = F64Sub_Rri;
@@ -1057,6 +1109,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_mul;
         fn op_rrs = F64Mul_Rrs;
         fn op_rri = F64Mul_Rri;
@@ -1071,6 +1124,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_div;
         fn op_rrs = F64Div_Rrs;
         fn op_rri = F64Div_Rri;
@@ -1085,6 +1139,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_min;
         fn op_rrs = F64Min_Rrs;
         fn op_rri = F64Min_Rri;
@@ -1099,6 +1154,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = f64;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_max;
         fn op_rrs = F64Max_Rrs;
         fn op_rri = F64Max_Rri;
@@ -1113,6 +1169,7 @@ impl_binary_op_for! {
         type Result = f64;
         type Lhs = f64;
         type Rhs = Sign<f64>;
+        fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f64_copysign_ssi;
         fn op_rrs = F64Copysign_Rrs;
         fn op_rri = F64Copysign_Rri;
@@ -1136,6 +1193,10 @@ macro_rules! impl_cmp_op_for {
                 type Result = <$binop as BinaryOp>::Result;
                 type Lhs = <$binop as BinaryOp>::Lhs;
                 type Rhs = <$binop as BinaryOp>::Rhs;
+
+                fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<<$binop as BinaryOp>::Rhs> {
+                    <$binop as BinaryOp>::decode_rhs(rhs)
+                }
 
                 fn consteval(lhs: Self::Lhs, rhs: Self::Rhs) -> Result<Self::Result, TrapCode> {
                     <$binop as BinaryOp>::consteval(rhs, lhs)
@@ -1189,4 +1250,52 @@ impl_cmp_op_for! {
     // f64
     impl BinaryOp for F64Gt as F64Lt;
     impl BinaryOp for F64Ge as F64Le;
+}
+
+pub enum BinaryOpRhs<T> {
+    Value(T),
+    Trap(TrapCode),
+    ReturnLhs,
+}
+
+fn decode_rhs_as_value<T>(value: RawVal) -> BinaryOpRhs<T>
+where
+    T: From<RawVal>,
+{
+    BinaryOpRhs::Value(T::from(value))
+}
+
+fn decode_rhs_as_divisor<T: DecodeRhsAsDivisor>(value: RawVal) -> BinaryOpRhs<T> {
+    DecodeRhsAsDivisor::decode_rhs_as_divisor(value)
+}
+
+trait DecodeRhsAsDivisor: Sized {
+    fn decode_rhs_as_divisor(value: RawVal) -> BinaryOpRhs<Self>;
+}
+
+macro_rules! impl_decode_rhs_as_divisor_for {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl DecodeRhsAsDivisor for NonZero<$ty> {
+                fn decode_rhs_as_divisor(value: RawVal) -> BinaryOpRhs<Self> {
+                    match Self::new(<$ty>::from(value)) {
+                        Some(value) => BinaryOpRhs::Value(value),
+                        None => BinaryOpRhs::Trap(TrapCode::IntegerDivisionByZero),
+                    }
+                }
+            }
+        )*
+    };
+}
+impl_decode_rhs_as_divisor_for!(i32, i64, u32, u64);
+
+fn decode_rhs_as_shift_amount<T>(value: RawVal) -> BinaryOpRhs<ShiftAmount>
+where
+    T: IntoShiftAmount<ShiftSource: From<RawVal>>,
+{
+    let shift_source = <<T as IntoShiftAmount>::ShiftSource>::from(value);
+    match <T as IntoShiftAmount>::into_shift_amount(shift_source) {
+        Some(value) => BinaryOpRhs::Value(value),
+        None => BinaryOpRhs::ReturnLhs,
+    }
 }
