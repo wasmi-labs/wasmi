@@ -472,59 +472,23 @@ fn add_control_ops(isa: &mut Isa) {
 
 fn add_copy_ops(isa: &mut Isa) {
     let ops = [
-        // [x] u32_copy_si: i32, f32
-        //
-        // [x] u64_copy_ss: i32, i64, f32, f64
-        // [x] u64_copy_si: i64, f64
-        // [x] u64_copy_sr: i32, i64
-        // [ ] u64_copy_rs: i32, i64
-        //
-        // [x] f32_copy_sr
-        // [x] f64_copy_sr
-        // [ ] f32_copy_rs
-        // [ ] f64_copy_rs
-        Op::from(UnaryOp::new(
-            Ident::Copy,
-            Ty::U32,
-            Ty::U32,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-        )),
-        Op::from(UnaryOp::new(
-            Ident::Copy,
-            Ty::U64,
-            Ty::U64,
-            OperandKind::Slot,
-            OperandKind::Reg,
-        )),
-        Op::from(UnaryOp::new(
-            Ident::Copy,
-            Ty::U64,
-            Ty::U64,
-            OperandKind::Slot,
-            OperandKind::Slot,
-        )),
-        Op::from(UnaryOp::new(
-            Ident::Copy,
-            Ty::U64,
-            Ty::U64,
-            OperandKind::Slot,
-            OperandKind::Immediate,
-        )),
-        Op::from(UnaryOp::new(
-            Ident::Copy,
-            Ty::F32,
-            Ty::F32,
-            OperandKind::Slot,
-            OperandKind::Reg,
-        )),
-        Op::from(UnaryOp::new(
-            Ident::Copy,
-            Ty::F64,
-            Ty::F64,
-            OperandKind::Slot,
-            OperandKind::Reg,
-        )),
+        (Ty::U32, OperandKind::Reg, OperandKind::Immediate), // i32, funcref, externref
+        (Ty::U32, OperandKind::Slot, OperandKind::Immediate), // i32, f32, funcref, externref
+        (Ty::U64, OperandKind::Reg, OperandKind::Slot),      // i32, i64, funcref, externref
+        (Ty::U64, OperandKind::Reg, OperandKind::Immediate), // i64
+        (Ty::U64, OperandKind::Slot, OperandKind::Reg),      // i32, i64
+        (Ty::U64, OperandKind::Slot, OperandKind::Slot), // i32, i64, f32, f64, funcref, externref
+        (Ty::U64, OperandKind::Slot, OperandKind::Immediate), // i64, f64
+        (Ty::F32, OperandKind::Reg, OperandKind::Immediate), // f32
+        (Ty::F32, OperandKind::Reg, OperandKind::Slot),  // f32
+        (Ty::F32, OperandKind::Slot, OperandKind::Reg),  // f32
+        (Ty::F64, OperandKind::Reg, OperandKind::Slot),  // f64
+        (Ty::F64, OperandKind::Slot, OperandKind::Reg),  // f64
+    ];
+    for (ty, result, value) in ops {
+        isa.push_op(Op::from(UnaryOp::new(Ident::Copy, ty, ty, result, value)));
+    }
+    let ops = [
         Op::from(GenericOp::new(
             Ident::CopySpanAsc,
             [
