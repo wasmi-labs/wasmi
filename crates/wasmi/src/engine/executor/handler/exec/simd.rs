@@ -41,36 +41,46 @@ execution_handler! {
     }
 }
 
-execution_handler! {
-    fn v128_select_ssss(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::V128Select_Ssss {
-                result,
-                condition,
-                true_val,
-                false_val,
-            },
-        ) = unsafe { decode_op(ip) };
-        let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
-        let selected = match condition {
-            true => true_val,
-            false => false_val,
-        };
-        let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
-        set_value!(result, selected, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+macro_rules! execution_handler_for_v128_select {
+    ( $(fn $snake_name:ident($camel_name:ident));* $(;)? ) => {
+        $(
+            execution_handler! {
+                fn $snake_name(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (
+                        ip,
+                        crate::ir::decode::$camel_name {
+                            result,
+                            condition,
+                            true_val,
+                            false_val,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
+                    let selected = match condition {
+                        true => true_val,
+                        false => false_val,
+                    };
+                    let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
+                    set_value!(result, selected, sp, ireg, freg32, freg64);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
+            }
+        )*
+    };
+}
+execution_handler_for_v128_select! {
+    fn v128_select_srss(V128Select_Srss);
+    fn v128_select_ssss(V128Select_Ssss);
 }
 
 macro_rules! impl_splat_bytes {
