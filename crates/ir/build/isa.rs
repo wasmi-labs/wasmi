@@ -483,6 +483,7 @@ fn add_copy_ops(isa: &mut Isa) {
         (Ty::F32, OperandKind::Reg, OperandKind::Slot),  // f32
         (Ty::F32, OperandKind::Slot, OperandKind::Reg),  // f32
         (Ty::F64, OperandKind::Reg, OperandKind::Slot),  // f64
+        (Ty::F64, OperandKind::Reg, OperandKind::Immediate), // f64
         (Ty::F64, OperandKind::Slot, OperandKind::Reg),  // f64
     ];
     for (ty, result, value) in ops {
