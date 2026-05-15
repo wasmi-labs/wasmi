@@ -10,7 +10,7 @@ use crate::{
     Reg,
     Slot,
     SlotSpan,
-    core::{ShiftAmount, Sign, TrapCode},
+    core::{ShiftAmount, Sign, TrapCode, ValType},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;
@@ -21,6 +21,43 @@ impl Copy for Op {}
 impl Clone for Op {
     fn clone(&self) -> Self {
         *self
+    }
+}
+
+/// The location of an operand.
+#[derive(Debug, Copy, Clone)]
+pub enum Location {
+    /// The operand resides in a register of a certain type.
+    Reg(ValType),
+    /// The operand resides in a stack slot.
+    Slot(Slot),
+}
+
+impl Slot {
+    #[inline]
+    pub fn location(&self) -> Location {
+        Location::Slot(*self)
+    }
+}
+
+impl Reg<i64> {
+    #[inline]
+    pub fn location(&self) -> Location {
+        Location::Reg(ValType::I64)
+    }
+}
+
+impl Reg<f32> {
+    #[inline]
+    pub fn location(&self) -> Location {
+        Location::Reg(ValType::F32)
+    }
+}
+
+impl Reg<f64> {
+    #[inline]
+    pub fn location(&self) -> Location {
+        Location::Reg(ValType::F64)
     }
 }
 
