@@ -313,26 +313,32 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
 }
 
 fn add_select_ops(isa: &mut Isa) {
-    isa.push_op(SelectOp::new(
-        Ty::U64,
-        OperandKind::Slot,
-        OperandKind::Slot,
-        OperandKind::Slot,
-        OperandKind::Slot,
-    ));
-    for result_ty in [Ty::U32, Ty::U64] {
-        for true_val in [OperandKind::Slot, OperandKind::Immediate] {
-            for false_val in [OperandKind::Slot, OperandKind::Immediate] {
-                if matches!(true_val, OperandKind::Slot) && matches!(false_val, OperandKind::Slot) {
-                    continue;
+    for result_ty in [Ty::U32, Ty::U64, Ty::F32, Ty::F64] {
+        for condition in [OperandKind::Reg, OperandKind::Slot] {
+            for true_val in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                for false_val in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                    if true_val.is_reg() && false_val.is_reg() {
+                        continue;
+                    }
+                    if matches!(condition.field_ty(result_ty), FieldTy::RegInt)
+                        && (true_val.is_reg() || false_val.is_reg())
+                    {
+                        continue;
+                    }
+                    if matches!(result_ty, Ty::U32)
+                        && !(matches!(true_val, OperandKind::Immediate)
+                            || matches!(false_val, OperandKind::Immediate))
+                    {
+                        continue;
+                    }
+                    isa.push_op(SelectOp::new(
+                        result_ty,
+                        OperandKind::Reg,
+                        condition,
+                        true_val,
+                        false_val,
+                    ));
                 }
-                isa.push_op(SelectOp::new(
-                    result_ty,
-                    OperandKind::Slot,
-                    OperandKind::Slot,
-                    true_val,
-                    false_val,
-                ));
             }
         }
     }
@@ -798,13 +804,15 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Result, FieldTy::Slot),
         ],
     )));
-    isa.push_op(Op::from(SelectOp::new(
-        Ty::V128,
-        OperandKind::Slot,
-        OperandKind::Slot,
-        OperandKind::Slot,
-        OperandKind::Slot,
-    )));
+    for condition in [OperandKind::Reg, OperandKind::Slot] {
+        isa.push_op(Op::from(SelectOp::new(
+            Ty::V128,
+            OperandKind::Slot,
+            condition,
+            OperandKind::Slot,
+            OperandKind::Slot,
+        )));
+    }
     add_simd_splat_ops(isa);
     add_simd_extract_lane_ops(isa);
     add_simd_replace_lane_ops(isa);

@@ -798,6 +798,48 @@ impl FuncTranslator {
         !can_avoid_copies
     }
 
+    fn copy_operand_to_reg(
+        &mut self,
+        operand: Operand,
+        consume_fuel: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        #[cold]
+        #[inline(never)]
+        fn unsupported_v128(operand: Operand) -> ! {
+            unimplemented!(
+                "operands of type `v128` cannot be put in registers but found: {operand:?}"
+            )
+        }
+        let ty = operand.ty();
+        let operator = match self.resolve_operand_as::<RawVal>(operand)? {
+            ResolvedOperand::Reg => {
+                // Case: Nothing needs to be done as operand already resides in register.
+                return Ok(());
+            }
+            ResolvedOperand::Slot(value) => match ty {
+                ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
+                    Op::u64_copy_rs(value)
+                }
+                ValType::F32 => Op::f32_copy_rs(value),
+                ValType::F64 => Op::f64_copy_rs(value),
+                ValType::V128 => unsupported_v128(operand),
+            },
+            ResolvedOperand::Immediate(value) => match ty {
+                ValType::FuncRef | ValType::ExternRef | ValType::I32 => {
+                    Op::u32_copy_ri(u32::from(value))
+                }
+                ValType::I64 => Op::u64_copy_ri(u64::from(value)),
+                ValType::F32 => Op::f32_copy_ri(f32::from(value)),
+                ValType::F64 => Op::f64_copy_ri(f64::from(value)),
+                ValType::V128 => unsupported_v128(operand),
+            },
+        };
+        self.instrs
+            .encode(operator, consume_fuel, FuelCostsProvider::base)?;
+        self.stack.push_reg(ty)?;
+        Ok(())
+    }
+
     /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
     ///
     /// # Note
@@ -1883,53 +1925,20 @@ impl FuncTranslator {
             debug_assert_eq!(true_val.ty(), type_hint);
             debug_assert_eq!(false_val.ty(), type_hint);
         }
-        let ty = true_val.ty();
         if true_val.is_same(&false_val) {
             // Optimization: both `lhs` and `rhs` either are the same register or constant values and
             //               thus `select` will always yield this same value irrespective of the condition.
             self.stack.push_operand(true_val)?;
             return Ok(());
         }
-        let condition = match condition {
-            Operand::Reg(_condition) => todo!(),
-            Operand::Immediate(condition) => {
-                let condition = i32::from(condition.val()) != 0;
-                let selected = match condition {
-                    true => true_val,
-                    false => false_val,
-                };
-                if let Operand::Temp(_) = selected {
-                    // Case: the selected operand is a temporary which needs to be copied
-                    //       if it was the `false_val` since it changed its index. This is
-                    //       not the case for the `true_val` since `true_val` is the first
-                    //       value popped from the stack.
-                    let consume_fuel_instr = self.stack.consume_fuel_instr();
-                    let result = self.stack.push_temp(ty)?.temp_slots().head();
-                    let Some(op) = Self::make_copy_instr(result, selected, &mut self.layout)?
-                    else {
-                        return Ok(());
-                    };
-                    self.instrs
-                        .stage(op, consume_fuel_instr, FuelCostsProvider::base)?;
-                    return Ok(());
-                }
-                self.stack.push_operand(selected)?;
-                return Ok(());
-            }
-            Operand::Local(condition) => self.layout.local_to_slot(condition)?,
-            Operand::Temp(condition) => condition.temp_slots().head(),
-        };
-        #[cfg(feature = "simd")]
-        if matches!(ty, ValType::V128) {
-            // Case: for `v128` values the `select128` instruction must be used.
-            // Unlike normal `select` instructions the `select128` cannot be fused.
-            let true_val = self.copy_if_immediate(true_val)?;
-            let false_val = self.copy_if_immediate(false_val)?;
-            self.push_instr_with_result_slot(
-                ty,
-                |result| Op::v128_select_ssss(result, condition, true_val, false_val),
-                FuelCostsProvider::base,
-            )?;
+        let ty = true_val.ty();
+        let condition = self.resolve_operand_as::<i32>(condition)?;
+        if let ResolvedOperand::Immediate(condition) = condition {
+            let selected = match condition != 0 {
+                true => true_val,
+                false => false_val,
+            };
+            self.copy_operand_to_reg(selected, self.stack.consume_fuel_instr())?;
             return Ok(());
         }
         let fusion = self.try_fuse_select(condition)?;
@@ -1939,82 +1948,147 @@ impl FuncTranslator {
                 mem::swap(&mut true_val, &mut false_val);
             }
         }
-        match ty {
-            ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef => {
-                self.encode_select32(ty, condition, true_val, false_val)
+        let operator = match ty {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef => {
+                self.i32_select_operator(condition, true_val, false_val)?
             }
-            ValType::I64 | ValType::F64 => self.encode_select64(ty, condition, true_val, false_val),
-            ValType::V128 => unreachable!("v128 case is handled elsewhere"),
-        }
-    }
-
-    /// Encodes `select32` operator variants.
-    fn encode_select32(
-        &mut self,
-        ty: ValType,
-        condition: Slot,
-        true_val: Operand,
-        false_val: Operand,
-    ) -> Result<(), Error> {
-        debug_assert!(matches!(
-            ty,
-            ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef
-        ));
-        let extract_bits = |v: TypedRawVal| -> Result<Input<u32>, Error> {
-            Ok(Input::Immediate(u32::from(v.raw())))
+            ValType::I64 => self.i64_select_operator(condition, true_val, false_val)?,
+            ValType::F32 => self.f32_select_operator(condition, true_val, false_val)?,
+            ValType::F64 => self.f64_select_operator(condition, true_val, false_val)?,
+            #[cfg(feature = "simd")]
+            ValType::V128 => return self.encode_v128_select(condition, true_val, false_val),
+            #[cfg(not(feature = "simd"))]
+            ValType::V128 => unreachable!("v128 simd is not enabled"),
         };
-        let true_val = self.make_input(true_val, |_, v| extract_bits(v))?;
-        let false_val = self.make_input(false_val, |_, v| extract_bits(v))?;
-        self.push_instr_with_result_slot(
-            ty,
-            |result| match (true_val, false_val) {
-                (Input::Slot(true_val), Input::Slot(false_val)) => {
-                    Op::u64_select_ssss(result, condition, true_val, false_val)
-                }
-                (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::u32_select_sssi(result, condition, true_val, false_val)
-                }
-                (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::u32_select_ssis(result, condition, true_val, false_val)
-                }
-                (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::u32_select_ssii(result, condition, true_val, false_val)
-                }
-            },
-            FuelCostsProvider::base,
-        )?;
+        self.push_instr_with_result_reg(ValType::I32, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
-    /// Encodes `select32` operator variants.
-    fn encode_select64(
+    fn i32_select_operator(
         &mut self,
-        ty: ValType,
-        condition: Slot,
+        condition: ResolvedOperand<i32>,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<Op, Error> {
+        use ResolvedOperand as Opd;
+        let true_val = self.resolve_operand_as::<u32>(true_val)?;
+        let false_val = self.resolve_operand_as::<u32>(false_val)?;
+        let operator = match (condition, true_val, false_val) {
+            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
+            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rrsi(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::u32_select_rris(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::u32_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::u64_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::u32_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::u64_select_rssr(c, t),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rsss(c, t, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rssi(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::u32_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::u32_select_rsis(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::u32_select_rsii(c, t, f),
+            _ => unreachable!(),
+        };
+        Ok(operator)
+    }
+
+    fn i64_select_operator(
+        &mut self,
+        condition: ResolvedOperand<i32>,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<Op, Error> {
+        use ResolvedOperand as Opd;
+        let true_val = self.resolve_operand_as::<u64>(true_val)?;
+        let false_val = self.resolve_operand_as::<u64>(false_val)?;
+        let operator = match (condition, true_val, false_val) {
+            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
+            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rrsi(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::u64_select_rris(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::u64_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::u64_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::u64_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::u64_select_rssr(c, t),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rsss(c, t, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rssi(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::u64_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::u64_select_rsis(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::u64_select_rsii(c, t, f),
+            _ => unreachable!(),
+        };
+        Ok(operator)
+    }
+
+    fn f32_select_operator(
+        &mut self,
+        condition: ResolvedOperand<i32>,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<Op, Error> {
+        use ResolvedOperand as Opd;
+        let true_val = self.resolve_operand_as::<f32>(true_val)?;
+        let false_val = self.resolve_operand_as::<f32>(false_val)?;
+        let operator = match (condition, true_val, false_val) {
+            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::f32_select_rrss(t, f),
+            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::f32_select_rrsi(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::f32_select_rris(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::f32_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::f32_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::f32_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::f32_select_rssr(c, t),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::f32_select_rsss(c, t, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::f32_select_rssi(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::f32_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::f32_select_rsis(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::f32_select_rsii(c, t, f),
+            _ => unreachable!(),
+        };
+        Ok(operator)
+    }
+
+    fn f64_select_operator(
+        &mut self,
+        condition: ResolvedOperand<i32>,
+        true_val: Operand,
+        false_val: Operand,
+    ) -> Result<Op, Error> {
+        use ResolvedOperand as Opd;
+        let true_val = self.resolve_operand_as::<f64>(true_val)?;
+        let false_val = self.resolve_operand_as::<f64>(false_val)?;
+        let operator = match (condition, true_val, false_val) {
+            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::f64_select_rrss(t, f),
+            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::f64_select_rrsi(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::f64_select_rris(t, f),
+            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::f64_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::f64_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::f64_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::f64_select_rssr(c, t),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::f64_select_rsss(c, t, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::f64_select_rssi(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::f64_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::f64_select_rsis(c, t, f),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::f64_select_rsii(c, t, f),
+            _ => unreachable!(),
+        };
+        Ok(operator)
+    }
+
+    #[cfg(feature = "simd")]
+    fn encode_v128_select(
+        &mut self,
+        condition: ResolvedOperand<i32>,
         true_val: Operand,
         false_val: Operand,
     ) -> Result<(), Error> {
-        debug_assert!(matches!(ty, ValType::I64 | ValType::F64));
-        let extract_bits = |v: TypedRawVal| -> Result<Input<u64>, Error> {
-            Ok(Input::Immediate(u64::from(v.raw())))
-        };
-        let true_val = self.make_input(true_val, |_, v| extract_bits(v))?;
-        let false_val = self.make_input(false_val, |_, v| extract_bits(v))?;
+        let true_val = self.copy_if_immediate(true_val)?;
+        let false_val = self.copy_if_immediate(false_val)?;
         self.push_instr_with_result_slot(
-            ty,
-            |result| match (true_val, false_val) {
-                (Input::Slot(true_val), Input::Slot(false_val)) => {
-                    Op::u64_select_ssss(result, condition, true_val, false_val)
+            ValType::V128,
+            |result| match condition {
+                ResolvedOperand::Reg => Op::v128_select_srss(result, true_val, false_val),
+                ResolvedOperand::Slot(condition) => {
+                    Op::v128_select_ssss(result, condition, true_val, false_val)
                 }
-                (Input::Slot(true_val), Input::Immediate(false_val)) => {
-                    Op::u64_select_sssi(result, condition, true_val, false_val)
-                }
-                (Input::Immediate(true_val), Input::Slot(false_val)) => {
-                    Op::u64_select_ssis(result, condition, true_val, false_val)
-                }
-                (Input::Immediate(true_val), Input::Immediate(false_val)) => {
-                    Op::u64_select_ssii(result, condition, true_val, false_val)
-                }
+                ResolvedOperand::Immediate(_) => unreachable!(),
             },
             FuelCostsProvider::base,
         )?;
@@ -2043,24 +2117,27 @@ impl FuncTranslator {
     /// - Returns [`SelectFusion::Fused`] or [`SelectFusion::FusedSwap`] if fusion was successful.
     ///     - If [`SelectFusion::FusedSwap`] was returned, true and false operands need to be swapped.
     /// - Returns [`SelectFusion::None`] if fusion could not be applied.
-    fn try_fuse_select(&self, condition: Slot) -> Result<SelectFusion, Error> {
+    fn try_fuse_select(&self, condition: ResolvedOperand<i32>) -> Result<SelectFusion, Error> {
         let Some(staged) = self.instrs.peek_staged() else {
             // If there is no last instruction there is no comparison instruction to negate.
             return Ok(SelectFusion::None);
         };
-        let Some(staged_result) = staged.result_ref().copied() else {
+        let Some(staged_result) = staged.result_loc() else {
             // All negatable instructions have a single result register.
             return Ok(SelectFusion::None);
         };
-        if matches!(self.layout.stack_space(staged_result), StackSpace::Local) {
-            // The operator stores its result into a local variable which
-            // is an observable side effect which we are not allowed to mutate.
-            return Ok(SelectFusion::None);
+        if let ir::Location::Slot(result_slot) = staged_result {
+            if matches!(self.layout.stack_space(result_slot), StackSpace::Local) {
+                // The staged operator stores its result into a local variable which
+                // is an observable side effect that must not be fused.
+                return Ok(SelectFusion::None);
+            }
         }
-        if staged_result != condition {
-            // The result of the last instruction and the select's `condition`
-            // are not equal thus indicating that we cannot fuse the instructions.
-            return Ok(SelectFusion::None);
+        match (staged_result, condition) {
+            (ir::Location::Reg(ValType::I64), ResolvedOperand::Reg) => {}
+            (ir::Location::Slot(staged), ResolvedOperand::Slot(condition))
+                if staged == condition => {}
+            _ => return Ok(SelectFusion::None),
         }
         #[rustfmt::skip]
         let fusion = match staged {
