@@ -189,7 +189,7 @@ macro_rules! impl_get_value_for_ireg {
         )*
     };
 }
-impl_get_value_for_ireg!(i8, i16, i32, i64, u8, u16, u32, u64);
+impl_get_value_for_ireg!(bool, i8, i16, i32, i64, u8, u16, u32, u64);
 
 impl GetValue<f32> for ir::Reg<f32> {
     #[inline]
