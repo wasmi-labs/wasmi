@@ -21,7 +21,7 @@ pub use self::{
     encode::{Encode, Encoder},
     error::Error,
     index::Slot,
-    op::Op,
+    op::{Location, Op},
     opcode::{InvalidOpCode, OpCode},
     primitive::{Address, BlockFuel, BranchOffset, BranchTableTarget, Offset16, Reg},
     span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
