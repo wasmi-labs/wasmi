@@ -1300,6 +1300,7 @@ handler_unary! {
     fn f32_copy_rs(F32Copy_Rs) = identity::<f32>;
     fn f32_copy_sr(F32Copy_Sr) = identity::<f32>;
     fn f64_copy_rs(F64Copy_Rs) = identity::<f64>;
+    fn f64_copy_ri(F64Copy_Ri) = identity::<f64>;
     fn f64_copy_sr(F64Copy_Sr) = identity::<f64>;
     // i32
     fn i32_popcnt_rs(I32Popcnt_Rs) = wasm::i32_popcnt;
