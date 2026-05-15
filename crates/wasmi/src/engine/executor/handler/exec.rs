@@ -2153,13 +2153,66 @@ macro_rules! handler_select {
     };
 }
 handler_select! {
-    fn u64_select_ssss(U64Select_Ssss) = u64;
-    fn u32_select_sssi(U32Select_Sssi) = u32;
-    fn u32_select_ssis(U32Select_Ssis) = u32;
-    fn u32_select_ssii(U32Select_Ssii) = u32;
-    fn u64_select_sssi(U64Select_Sssi) = u64;
-    fn u64_select_ssis(U64Select_Ssis) = u64;
-    fn u64_select_ssii(U64Select_Ssii) = u64;
+    // u32
+    // fn u32_select_rrss(U32Select_Rrss) = u32; - subsumed by u64_select_rrss
+    fn u32_select_rrsi(U32Select_Rrsi) = u32;
+    fn u32_select_rris(U32Select_Rris) = u32;
+    fn u32_select_rrii(U32Select_Rrii) = u32;
+    // fn u32_select_rsrs(U32Select_Rsrs) = u32; - subsumed by u64_select_rsrs
+    fn u32_select_rsri(U32Select_Rsri) = u32;
+    // fn u32_select_rssr(U32Select_Rssr) = u32; - subsumed by u64_select_rssr
+    // fn u32_select_rsss(U32Select_Rsss) = u32; - subsumed by u64_select_rsss
+    fn u32_select_rssi(U32Select_Rssi) = u32;
+    fn u32_select_rsir(U32Select_Rsir) = u32;
+    fn u32_select_rsis(U32Select_Rsis) = u32;
+    fn u32_select_rsii(U32Select_Rsii) = u32;
+    // u64
+    fn u64_select_rrss(U64Select_Rrss) = u64;
+    fn u64_select_rrsi(U64Select_Rrsi) = u64;
+    fn u64_select_rris(U64Select_Rris) = u64;
+    fn u64_select_rrii(U64Select_Rrii) = u64;
+    fn u64_select_rsrs(U64Select_Rsrs) = u64;
+    fn u64_select_rsri(U64Select_Rsri) = u64;
+    fn u64_select_rssr(U64Select_Rssr) = u64;
+    fn u64_select_rsss(U64Select_Rsss) = u64;
+    fn u64_select_rssi(U64Select_Rssi) = u64;
+    fn u64_select_rsir(U64Select_Rsir) = u64;
+    fn u64_select_rsis(U64Select_Rsis) = u64;
+    fn u64_select_rsii(U64Select_Rsii) = u64;
+    // f32
+    fn f32_select_rrrs(F32Select_Rrrs) = f32;
+    fn f32_select_rrri(F32Select_Rrri) = f32;
+    fn f32_select_rrsr(F32Select_Rrsr) = f32;
+    fn f32_select_rrss(F32Select_Rrss) = f32;
+    fn f32_select_rrsi(F32Select_Rrsi) = f32;
+    fn f32_select_rrir(F32Select_Rrir) = f32;
+    fn f32_select_rris(F32Select_Rris) = f32;
+    fn f32_select_rrii(F32Select_Rrii) = f32;
+    fn f32_select_rsrs(F32Select_Rsrs) = f32;
+    fn f32_select_rsri(F32Select_Rsri) = f32;
+    fn f32_select_rssr(F32Select_Rssr) = f32;
+    fn f32_select_rsss(F32Select_Rsss) = f32;
+    fn f32_select_rssi(F32Select_Rssi) = f32;
+    fn f32_select_rsir(F32Select_Rsir) = f32;
+    fn f32_select_rsis(F32Select_Rsis) = f32;
+    fn f32_select_rsii(F32Select_Rsii) = f32;
+    // f64
+    fn f64_select_rrrs(F64Select_Rrrs) = f64;
+    fn f64_select_rrri(F64Select_Rrri) = f64;
+    fn f64_select_rrsr(F64Select_Rrsr) = f64;
+    fn f64_select_rrss(F64Select_Rrss) = f64;
+    fn f64_select_rrsi(F64Select_Rrsi) = f64;
+    fn f64_select_rrir(F64Select_Rrir) = f64;
+    fn f64_select_rris(F64Select_Rris) = f64;
+    fn f64_select_rrii(F64Select_Rrii) = f64;
+    fn f64_select_rsrs(F64Select_Rsrs) = f64;
+    fn f64_select_rsri(F64Select_Rsri) = f64;
+    fn f64_select_rssr(F64Select_Rssr) = f64;
+    fn f64_select_rsss(F64Select_Rsss) = f64;
+    fn f64_select_rssi(F64Select_Rssi) = f64;
+    fn f64_select_rsir(F64Select_Rsir) = f64;
+    fn f64_select_rsis(F64Select_Rsis) = f64;
+    fn f64_select_rsii(F64Select_Rsii) = f64;
 }
 
 handler_load_ss! {
