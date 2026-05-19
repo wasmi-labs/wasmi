@@ -134,6 +134,10 @@ impl Display for DisplayDecode<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let at_suffix = match op.ptr {
+            OperandKind::Immediate => "At",
+            _ => "",
+        };
         let mem0_suffix = match op.mem {
             MemoryOperand::Immediate => "",
             MemoryOperand::Mem0 => "Mem0",
@@ -153,13 +157,16 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             _ => (None, DisplayMaybe::None),
         };
         let lane_suffix = lane_suffix.display_maybe();
-        let result_suffix = CamelCase(Suffix(OperandKind::Slot));
-        let ptr_suffix = SnakeCase(Suffix(op.ptr));
         let result_ty = op.result.field_ty(op.result_ty);
-        let generics = DisplayConcat(('<', result_ty, lane_param, '>'));
+        let ptr_ty = match op.ptr {
+            OperandKind::Reg => DisplayMaybe::Some(DisplayConcat((',', FieldTy::RegInt))),
+            OperandKind::Slot => DisplayMaybe::Some(DisplayConcat((',', FieldTy::Slot))),
+            OperandKind::Immediate => DisplayMaybe::None,
+        };
+        let generics = DisplayConcat(('<', result_ty, ptr_ty, lane_param, '>'));
         writeln!(
             f,
-            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{generics};"
+            "pub type {camel_ident} = Load{lane_suffix}{at_suffix}Op{mem0_suffix}{offset16_suffix}{generics};"
         )
     }
 }
