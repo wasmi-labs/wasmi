@@ -863,11 +863,17 @@ impl FuncTranslator {
     ///
     /// - Returns the associated [`Slot`] if `operand` is an [`Operand::Temp`] or [`Operand::Local`].
     // TODO: return `BoundedSlotSpan` instead of just `Slot`
-    fn copy_if_immediate(&mut self, operand: Operand) -> Result<Slot, Error> {
-        match operand {
-            Operand::Reg(_value) => todo!(), // return Ok(enum { Slot, Reg }) from this function
-            Operand::Local(operand) => self.layout.local_to_slot(operand),
-            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
+    fn copy_immediate_to_slot(&mut self, operand: Operand) -> Result<Location, Error> {
+        let location = match operand {
+            Operand::Reg(_value) => Location::Reg,
+            Operand::Local(operand) => {
+                let slot = self.layout.local_to_slot(operand)?;
+                Location::Slot(slot)
+            }
+            Operand::Temp(operand) => {
+                let slot = operand.temp_slots().head();
+                Location::Slot(slot)
+            }
             Operand::Immediate(operand) => {
                 let value = operand.val();
                 let result = operand.temp_slots().head();
@@ -875,9 +881,37 @@ impl FuncTranslator {
                 let consume_fuel = self.stack.consume_fuel_instr();
                 self.instrs
                     .encode(copy_instr, consume_fuel, FuelCostsProvider::base)?;
-                Ok(result)
+                Location::Slot(result)
             }
-        }
+        };
+        Ok(location)
+    }
+
+    /// Copies the `operand` to its associated [`Slot`].
+    ///
+    /// Does nothing if the operand is an [`Operand::Local`] or [`Operand::Temp`].
+    // TODO: return `BoundedSlotSpan` instead of just `Slot`
+    fn copy_operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
+        let result = operand.temp_slots().head();
+        let ty = operand.ty();
+        let copy_op = match self.resolve_operand_as::<RawVal>(operand)? {
+            ResolvedOperand::Slot(slot) => return Ok(slot),
+            ResolvedOperand::Reg => match ty {
+                | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => {
+                    Op::u64_copy_sr(result)
+                }
+                | ValType::F32 => Op::f32_copy_rs(result),
+                | ValType::F64 => Op::f64_copy_rs(result),
+                | ValType::V128 => unreachable!(),
+            },
+            ResolvedOperand::Immediate(value) => {
+                Self::make_copy_imm_instr(result, TypedRawVal::new(ty, value))?
+            }
+        };
+        let fuel_op = self.stack.consume_fuel_instr();
+        self.instrs
+            .encode(copy_op, fuel_op, FuelCostsProvider::base)?;
+        Ok(result)
     }
 
     /// Preserves all local operands on the stack.
@@ -1601,7 +1635,7 @@ impl FuncTranslator {
         let consume_fuel = self.stack.consume_fuel_instr();
         let table = index::Table::from(table_index);
         let callee_ty = self.resolve_type(type_index);
-        let index = self.copy_if_immediate(index)?;
+        let index = self.copy_immediate_to_slot(index)?;
         let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
         self.push_instr(
             make_instr(params, index, index::FuncType::from(type_index), table),
@@ -2092,8 +2126,8 @@ impl FuncTranslator {
         true_val: Operand,
         false_val: Operand,
     ) -> Result<(), Error> {
-        let true_val = self.copy_if_immediate(true_val)?;
-        let false_val = self.copy_if_immediate(false_val)?;
+        let true_val = self.copy_operand_to_slot(true_val)?;
+        let false_val = self.copy_operand_to_slot(false_val)?;
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| match condition {
@@ -2522,10 +2556,10 @@ impl FuncTranslator {
             self.stack.push_immediate(result_hi)?;
             return Ok(());
         }
-        let rhs_lo = self.copy_if_immediate(rhs_lo)?;
-        let rhs_hi = self.copy_if_immediate(rhs_hi)?;
-        let lhs_lo = self.copy_if_immediate(lhs_lo)?;
-        let lhs_hi = self.copy_if_immediate(lhs_hi)?;
+        let rhs_lo = self.copy_operand_to_slot(rhs_lo)?;
+        let rhs_hi = self.copy_operand_to_slot(rhs_hi)?;
+        let lhs_lo = self.copy_operand_to_slot(lhs_lo)?;
+        let lhs_hi = self.copy_operand_to_slot(lhs_hi)?;
         let result_lo = self.stack.push_temp(ValType::I64)?.temp_slots().head();
         let result_hi = self.stack.push_temp(ValType::I64)?.temp_slots().head();
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
@@ -2561,7 +2595,7 @@ impl FuncTranslator {
                     return Ok(());
                 }
                 let lhs = self.layout.operand_to_slot(lhs)?;
-                let rhs = self.copy_if_immediate(rhs)?;
+                let rhs = self.copy_operand_to_slot(rhs)?;
                 (lhs, rhs)
             }
             (Operand::Immediate(lhs_imm), rhs) => {
@@ -2569,7 +2603,7 @@ impl FuncTranslator {
                 if self.try_opt_i64_mul_wide_sx(rhs, lhs_val, signed)? {
                     return Ok(());
                 }
-                let lhs = self.copy_if_immediate(lhs)?;
+                let lhs = self.copy_operand_to_slot(lhs)?;
                 let rhs = self.layout.operand_to_slot(rhs)?;
                 (lhs, rhs)
             }

@@ -16,7 +16,11 @@ use crate::{
         simd::IntoLaneIdx,
     },
     engine::translator::{
-        func::{Operand, utils::Input},
+        func::{
+            Operand,
+            stack::{Location, ResolvedOperand},
+            utils::Input,
+        },
         utils::{ToBits, Wrap},
     },
     ir::{
@@ -100,7 +104,7 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let input = self.copy_if_immediate(input)?;
+        let input = self.copy_operand_to_slot(input)?;
         let value = self.make_input::<T::Immediate>(value, |_this, value| {
             Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
         })?;
@@ -155,8 +159,8 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.copy_if_immediate(lhs)?;
-        let rhs = self.copy_if_immediate(rhs)?;
+        let lhs = self.copy_operand_to_slot(lhs)?;
+        let rhs = self.copy_operand_to_slot(rhs)?;
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| make_instr(result, lhs, rhs),
@@ -180,9 +184,9 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.copy_if_immediate(a)?;
-        let rhs = self.copy_if_immediate(b)?;
-        let selector = self.copy_if_immediate(c)?;
+        let lhs = self.copy_operand_to_slot(a)?;
+        let rhs = self.copy_operand_to_slot(b)?;
+        let selector = self.copy_operand_to_slot(c)?;
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| make_instr(result, lhs, rhs, selector),
@@ -216,7 +220,7 @@ impl FuncTranslator {
                 self.stack.push_operand(lhs)?;
                 return Ok(());
             };
-            let lhs = self.copy_if_immediate(lhs)?;
+            let lhs = self.copy_operand_to_slot(lhs)?;
             self.push_instr_with_result_slot(
                 ValType::V128,
                 |result| make_instr_ssi(result, lhs, rhs),
@@ -224,8 +228,8 @@ impl FuncTranslator {
             )?;
             return Ok(());
         }
-        let lhs = self.copy_if_immediate(lhs)?;
-        let rhs = self.copy_if_immediate(rhs)?;
+        let lhs = self.copy_operand_to_slot(lhs)?;
+        let rhs = self.copy_operand_to_slot(rhs)?;
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| make_instr_sss(result, lhs, rhs),
@@ -260,8 +264,8 @@ impl FuncTranslator {
             panic!("encountered out of bounds lane: {lane}");
         };
         let (ptr, v128) = self.stack.pop2();
-        let ptr = self.copy_if_immediate(ptr)?;
-        let v128 = self.copy_if_immediate(v128)?;
+        let ptr = self.copy_operand_to_slot(ptr)?;
+        let v128 = self.copy_operand_to_slot(v128)?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_instr_with_result_slot(
@@ -316,7 +320,7 @@ impl FuncTranslator {
             Operand::Temp(v128) => v128.temp_slots().head(),
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
-        let ptr = self.copy_if_immediate(ptr)?;
+        let ptr = self.copy_operand_to_slot(ptr)?; // TODO: replace with `copy_immediate_to_slot`
         if memory.is_default() {
             if let Ok(offset16) = Offset16::try_from(offset) {
                 self.push_instr(
@@ -342,7 +346,7 @@ impl FuncTranslator {
     /// - Returns `Err(_)` if an error occurred.
     fn translate_store128_mem0_offset16(
         &mut self,
-        ptr: Slot,
+        ptr: Location,
         offset: u64,
         memory: index::Memory,
         value: Slot,
@@ -354,7 +358,10 @@ impl FuncTranslator {
             return Ok(false);
         };
         self.push_instr(
-            Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
+            match ptr {
+                Location::Slot(ptr) => Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
+                Location::Reg => todo!(), // Op::v128_store_mem0_offset16_rs(ptr, offset16, value),
+            },
             FuelCostsProvider::store,
         )?;
         Ok(true)
