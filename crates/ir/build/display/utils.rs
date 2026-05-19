@@ -69,6 +69,25 @@ where
     }
 }
 
+impl<T0, T1, T2, T3, T4> Display for DisplayConcat<(T0, T1, T2, T3, T4)>
+where
+    T0: Display,
+    T1: Display,
+    T2: Display,
+    T3: Display,
+    T4: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (t0, t1, t2, t3, t4) = &self.0;
+        t0.fmt(f)?;
+        t1.fmt(f)?;
+        t2.fmt(f)?;
+        t3.fmt(f)?;
+        t4.fmt(f)?;
+        Ok(())
+    }
+}
+
 pub struct DisplaySequence<I, S> {
     iter: I,
     sep: S,

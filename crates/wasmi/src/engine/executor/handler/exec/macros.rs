@@ -115,7 +115,7 @@ macro_rules! handler_binary {
     };
 }
 
-macro_rules! handler_load_ss {
+macro_rules! handler_load {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
             execution_handler! {

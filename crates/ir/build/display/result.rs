@@ -144,7 +144,11 @@ impl Op {
             Op::Ternary(_) => Some(Location::Slot),
             Op::CmpBranch(_) => None,
             Op::Select(_) => Some(Location::Reg),
-            Op::Load(_) => Some(Location::Slot),
+            Op::Load(op) => match op.result {
+                OperandKind::Reg => Some(Location::Reg),
+                OperandKind::Slot => Some(Location::Slot),
+                OperandKind::Immediate => unreachable!(),
+            },
             Op::Store(_) => None,
             Op::TableGet(_) => Some(Location::Slot),
             Op::TableSet(_) => None,
@@ -174,7 +178,9 @@ impl Op {
             Op::Select(op) => {
                 matches!(op.result, OperandKind::Slot)
             }
-            Op::Load(_) => true,
+            Op::Load(op) => {
+                matches!(op.result, OperandKind::Slot)
+            }
             Op::Store(_) => false,
             Op::TableGet(_) => true,
             Op::TableSet(_) => false,

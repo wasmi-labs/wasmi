@@ -7,9 +7,9 @@ mod op;
 use self::op::{
     BinaryOp,
     CmpBranchOp,
-    LoadOp_Si,
-    LoadOp_Ss,
-    LoadOpMem0Offset16_Ss,
+    LoadAtOp,
+    LoadOp,
+    LoadOpMem0Offset16,
     ReturnOp,
     SelectOp,
     StoreOp_I,
@@ -21,8 +21,8 @@ use self::op::{
 };
 #[cfg(feature = "simd")]
 use self::op::{
-    LoadLaneOp_Ss,
-    LoadLaneOpMem0Offset16_Ss,
+    LoadLaneOp,
+    LoadLaneOpMem0Offset16,
     StoreLaneOp_S,
     StoreLaneOpMem0Offset16_S,
     TernaryOp,

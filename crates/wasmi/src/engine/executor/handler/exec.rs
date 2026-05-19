@@ -2215,22 +2215,38 @@ handler_select! {
     fn f64_select_rsii(F64Select_Rsii) = f64;
 }
 
-handler_load_ss! {
-    fn u32_load_ss(U32Load_Ss) = wasm::load32;
-    fn u64_load_ss(U64Load_Ss) = wasm::load64;
-    fn i32_load_extend8_ss(I32LoadExtend8_Ss) = wasm::i32_load8_s;
-    fn u32_load_extend8_ss(U32LoadExtend8_Ss) = wasm::i32_load8_u;
-    fn i32_load_extend16_ss(I32LoadExtend16_Ss) = wasm::i32_load16_s;
-    fn u32_load_extend16_ss(U32LoadExtend16_Ss) = wasm::i32_load16_u;
-    fn i64_load_extend8_ss(I64LoadExtend8_Ss) = wasm::i64_load8_s;
-    fn u64_load_extend8_ss(U64LoadExtend8_Ss) = wasm::i64_load8_u;
-    fn i64_load_extend16_ss(I64LoadExtend16_Ss) = wasm::i64_load16_s;
-    fn u64_load_extend16_ss(U64LoadExtend16_Ss) = wasm::i64_load16_u;
-    fn i64_load_extend32_ss(I64LoadExtend32_Ss) = wasm::i64_load32_s;
-    fn u64_load_extend32_ss(U64LoadExtend32_Ss) = wasm::i64_load32_u;
+handler_load! {
+    fn u32_load_rr(U32Load_Rr) = wasm::load_u32;
+    fn u32_load_rs(U32Load_Rs) = wasm::load_u32;
+    fn u64_load_rr(U64Load_Rr) = wasm::load_u64;
+    fn u64_load_rs(U64Load_Rs) = wasm::load_u64;
+    fn f32_load_rr(F32Load_Rr) = wasm::load_f32;
+    fn f32_load_rs(F32Load_Rs) = wasm::load_f32;
+    fn f64_load_rr(F64Load_Rr) = wasm::load_f64;
+    fn f64_load_rs(F64Load_Rs) = wasm::load_f64;
+    fn i32_load_extend8_rr(I32LoadExtend8_Rr) = wasm::i32_load8_s;
+    fn i32_load_extend8_rs(I32LoadExtend8_Rs) = wasm::i32_load8_s;
+    fn u32_load_extend8_rr(U32LoadExtend8_Rr) = wasm::i32_load8_u;
+    fn u32_load_extend8_rs(U32LoadExtend8_Rs) = wasm::i32_load8_u;
+    fn i32_load_extend16_rr(I32LoadExtend16_Rr) = wasm::i32_load16_s;
+    fn i32_load_extend16_rs(I32LoadExtend16_Rs) = wasm::i32_load16_s;
+    fn u32_load_extend16_rr(U32LoadExtend16_Rr) = wasm::i32_load16_u;
+    fn u32_load_extend16_rs(U32LoadExtend16_Rs) = wasm::i32_load16_u;
+    fn i64_load_extend8_rr(I64LoadExtend8_Rr) = wasm::i64_load8_s;
+    fn i64_load_extend8_rs(I64LoadExtend8_Rs) = wasm::i64_load8_s;
+    fn u64_load_extend8_rr(U64LoadExtend8_Rr) = wasm::i64_load8_u;
+    fn u64_load_extend8_rs(U64LoadExtend8_Rs) = wasm::i64_load8_u;
+    fn i64_load_extend16_rr(I64LoadExtend16_Rr) = wasm::i64_load16_s;
+    fn i64_load_extend16_rs(I64LoadExtend16_Rs) = wasm::i64_load16_s;
+    fn u64_load_extend16_rr(U64LoadExtend16_Rr) = wasm::i64_load16_u;
+    fn u64_load_extend16_rs(U64LoadExtend16_Rs) = wasm::i64_load16_u;
+    fn i64_load_extend32_rr(I64LoadExtend32_Rr) = wasm::i64_load32_s;
+    fn i64_load_extend32_rs(I64LoadExtend32_Rs) = wasm::i64_load32_s;
+    fn u64_load_extend32_rr(U64LoadExtend32_Rr) = wasm::i64_load32_u;
+    fn u64_load_extend32_rs(U64LoadExtend32_Rs) = wasm::i64_load32_u;
 }
 
-macro_rules! handler_load_si {
+macro_rules! handler_load_ri {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
             execution_handler! {
@@ -2263,34 +2279,52 @@ macro_rules! handler_load_si {
         )*
     };
 }
-handler_load_si! {
-    fn u32_load_si(U32Load_Si) = wasm::load32_at;
-    fn u64_load_si(U64Load_Si) = wasm::load64_at;
-    fn i32_load_extend8_si(I32LoadExtend8_Si) = wasm::i32_load8_s_at;
-    fn u32_load_extend8_si(U32LoadExtend8_Si) = wasm::i32_load8_u_at;
-    fn i32_load_extend16_si(I32LoadExtend16_Si) = wasm::i32_load16_s_at;
-    fn u32_load_extend16_si(U32LoadExtend16_Si) = wasm::i32_load16_u_at;
-    fn i64_load_extend8_si(I64LoadExtend8_Si) = wasm::i64_load8_s_at;
-    fn u64_load_extend8_si(U64LoadExtend8_Si) = wasm::i64_load8_u_at;
-    fn i64_load_extend16_si(I64LoadExtend16_Si) = wasm::i64_load16_s_at;
-    fn u64_load_extend16_si(U64LoadExtend16_Si) = wasm::i64_load16_u_at;
-    fn i64_load_extend32_si(I64LoadExtend32_Si) = wasm::i64_load32_s_at;
-    fn u64_load_extend32_si(U64LoadExtend32_Si) = wasm::i64_load32_u_at;
+handler_load_ri! {
+    fn u32_load_ri(U32Load_Ri) = wasm::load_u32_at;
+    fn u64_load_ri(U64Load_Ri) = wasm::load_u64_at;
+    fn f32_load_ri(F32Load_Ri) = wasm::load_f32_at;
+    fn f64_load_ri(F64Load_Ri) = wasm::load_f64_at;
+    fn i32_load_extend8_ri(I32LoadExtend8_Ri) = wasm::i32_load8_s_at;
+    fn u32_load_extend8_ri(U32LoadExtend8_Ri) = wasm::i32_load8_u_at;
+    fn i32_load_extend16_ri(I32LoadExtend16_Ri) = wasm::i32_load16_s_at;
+    fn u32_load_extend16_ri(U32LoadExtend16_Ri) = wasm::i32_load16_u_at;
+    fn i64_load_extend8_ri(I64LoadExtend8_Ri) = wasm::i64_load8_s_at;
+    fn u64_load_extend8_ri(U64LoadExtend8_Ri) = wasm::i64_load8_u_at;
+    fn i64_load_extend16_ri(I64LoadExtend16_Ri) = wasm::i64_load16_s_at;
+    fn u64_load_extend16_ri(U64LoadExtend16_Ri) = wasm::i64_load16_u_at;
+    fn i64_load_extend32_ri(I64LoadExtend32_Ri) = wasm::i64_load32_s_at;
+    fn u64_load_extend32_ri(U64LoadExtend32_Ri) = wasm::i64_load32_u_at;
 }
 
 handler_load_mem0_offset16_ss! {
-    fn u32_load_mem0_offset16_ss(U32LoadMem0Offset16_Ss) = wasm::load32;
-    fn u64_load_mem0_offset16_ss(U64LoadMem0Offset16_Ss) = wasm::load64;
-    fn i32_load_extend8_mem0_offset16_ss(I32LoadExtend8Mem0Offset16_Ss) = wasm::i32_load8_s;
-    fn u32_load_extend8_mem0_offset16_ss(U32LoadExtend8Mem0Offset16_Ss) = wasm::i32_load8_u;
-    fn i32_load_extend16_mem0_offset16_ss(I32LoadExtend16Mem0Offset16_Ss) = wasm::i32_load16_s;
-    fn u32_load_extend16_mem0_offset16_ss(U32LoadExtend16Mem0Offset16_Ss) = wasm::i32_load16_u;
-    fn i64_load_extend8_mem0_offset16_ss(I64LoadExtend8Mem0Offset16_Ss) = wasm::i64_load8_s;
-    fn u64_load_extend8_mem0_offset16_ss(U64LoadExtend8Mem0Offset16_Ss) = wasm::i64_load8_u;
-    fn i64_load_extend16_mem0_offset16_ss(I64LoadExtend16Mem0Offset16_Ss) = wasm::i64_load16_s;
-    fn u64_load_extend16_mem0_offset16_ss(U64LoadExtend16Mem0Offset16_Ss) = wasm::i64_load16_u;
-    fn i64_load_extend32_mem0_offset16_ss(I64LoadExtend32Mem0Offset16_Ss) = wasm::i64_load32_s;
-    fn u64_load_extend32_mem0_offset16_ss(U64LoadExtend32Mem0Offset16_Ss) = wasm::i64_load32_u;
+    fn u32_load_mem0_offset16_rr(U32LoadMem0Offset16_Rr) = wasm::load_u32;
+    fn u32_load_mem0_offset16_rs(U32LoadMem0Offset16_Rs) = wasm::load_u32;
+    fn u64_load_mem0_offset16_rr(U64LoadMem0Offset16_Rr) = wasm::load_u64;
+    fn u64_load_mem0_offset16_rs(U64LoadMem0Offset16_Rs) = wasm::load_u64;
+    fn f32_load_mem0_offset16_rr(F32LoadMem0Offset16_Rr) = wasm::load_f32;
+    fn f32_load_mem0_offset16_rs(F32LoadMem0Offset16_Rs) = wasm::load_f32;
+    fn f64_load_mem0_offset16_rr(F64LoadMem0Offset16_Rr) = wasm::load_f64;
+    fn f64_load_mem0_offset16_rs(F64LoadMem0Offset16_Rs) = wasm::load_f64;
+    fn i32_load_extend8_mem0_offset16_rr(I32LoadExtend8Mem0Offset16_Rr) = wasm::i32_load8_s;
+    fn i32_load_extend8_mem0_offset16_rs(I32LoadExtend8Mem0Offset16_Rs) = wasm::i32_load8_s;
+    fn u32_load_extend8_mem0_offset16_rr(U32LoadExtend8Mem0Offset16_Rr) = wasm::i32_load8_u;
+    fn u32_load_extend8_mem0_offset16_rs(U32LoadExtend8Mem0Offset16_Rs) = wasm::i32_load8_u;
+    fn i32_load_extend16_mem0_offset16_rr(I32LoadExtend16Mem0Offset16_Rr) = wasm::i32_load16_s;
+    fn i32_load_extend16_mem0_offset16_rs(I32LoadExtend16Mem0Offset16_Rs) = wasm::i32_load16_s;
+    fn u32_load_extend16_mem0_offset16_rr(U32LoadExtend16Mem0Offset16_Rr) = wasm::i32_load16_u;
+    fn u32_load_extend16_mem0_offset16_rs(U32LoadExtend16Mem0Offset16_Rs) = wasm::i32_load16_u;
+    fn i64_load_extend8_mem0_offset16_rr(I64LoadExtend8Mem0Offset16_Rr) = wasm::i64_load8_s;
+    fn i64_load_extend8_mem0_offset16_rs(I64LoadExtend8Mem0Offset16_Rs) = wasm::i64_load8_s;
+    fn u64_load_extend8_mem0_offset16_rr(U64LoadExtend8Mem0Offset16_Rr) = wasm::i64_load8_u;
+    fn u64_load_extend8_mem0_offset16_rs(U64LoadExtend8Mem0Offset16_Rs) = wasm::i64_load8_u;
+    fn i64_load_extend16_mem0_offset16_rr(I64LoadExtend16Mem0Offset16_Rr) = wasm::i64_load16_s;
+    fn i64_load_extend16_mem0_offset16_rs(I64LoadExtend16Mem0Offset16_Rs) = wasm::i64_load16_s;
+    fn u64_load_extend16_mem0_offset16_rr(U64LoadExtend16Mem0Offset16_Rr) = wasm::i64_load16_u;
+    fn u64_load_extend16_mem0_offset16_rs(U64LoadExtend16Mem0Offset16_Rs) = wasm::i64_load16_u;
+    fn i64_load_extend32_mem0_offset16_rr(I64LoadExtend32Mem0Offset16_Rr) = wasm::i64_load32_s;
+    fn i64_load_extend32_mem0_offset16_rs(I64LoadExtend32Mem0Offset16_Rs) = wasm::i64_load32_s;
+    fn u64_load_extend32_mem0_offset16_rr(U64LoadExtend32Mem0Offset16_Rr) = wasm::i64_load32_u;
+    fn u64_load_extend32_mem0_offset16_rs(U64LoadExtend32Mem0Offset16_Rs) = wasm::i64_load32_u;
 }
 
 handler_store_sx! {

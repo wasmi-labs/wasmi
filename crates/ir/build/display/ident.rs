@@ -347,7 +347,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let op = self.value;
         let sep = case.wrap(Sep);
         let ident = case.wrap(Ident::Load);
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(op.result));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
         let v128_suffix = op
             .v128_field()
