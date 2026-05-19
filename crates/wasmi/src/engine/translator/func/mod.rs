@@ -1787,6 +1787,19 @@ impl FuncTranslator {
         Ok(resolved)
     }
 
+    fn resolve_operand_as_index(
+        &mut self,
+        operand: Operand,
+        memory: Memory,
+    ) -> Result<ResolvedOperand<u64>, Error> {
+        let memidx: MemoryIdx = u32::from(memory).into();
+        let operand = match self.module.get_type_of_memory(memidx).index_ty() {
+            IndexType::I32 => self.resolve_operand_as::<u32>(operand)?.map(u64::from),
+            IndexType::I64 => self.resolve_operand_as::<u64>(operand)?,
+        };
+        Ok(operand)
+    }
+
     // TODO: docs
     #[cold]
     #[inline]
