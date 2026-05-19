@@ -134,16 +134,17 @@ where
 }
 
 #[derive(Copy, Clone)]
-pub struct LoadOp_Ss<Res> {
+pub struct LoadOp<Res, Ptr> {
     pub result: Res,
-    pub ptr: Slot,
+    pub ptr: Ptr,
     pub offset: u64,
     pub memory: Memory,
 }
 
-impl<Res> Decode for LoadOp_Ss<Res>
+impl<Res, Ptr> Decode for LoadOp<Res, Ptr>
 where
     Res: Decode,
+    Ptr: Decode,
 {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
@@ -156,13 +157,13 @@ where
 }
 
 #[derive(Copy, Clone)]
-pub struct LoadOp_Si<Res> {
+pub struct LoadAtOp<Res> {
     pub result: Res,
     pub address: Address,
     pub memory: Memory,
 }
 
-impl<Res> Decode for LoadOp_Si<Res>
+impl<Res> Decode for LoadAtOp<Res>
 where
     Res: Decode,
 {
@@ -176,15 +177,16 @@ where
 }
 
 #[derive(Copy, Clone)]
-pub struct LoadOpMem0Offset16_Ss<Res> {
+pub struct LoadOpMem0Offset16<Res, Ptr> {
     pub result: Res,
-    pub ptr: Slot,
+    pub ptr: Ptr,
     pub offset: Offset16,
 }
 
-impl<Res> Decode for LoadOpMem0Offset16_Ss<Res>
+impl<Res, Ptr> Decode for LoadOpMem0Offset16<Res, Ptr>
 where
     Res: Decode,
+    Ptr: Decode,
 {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
@@ -368,9 +370,9 @@ impl<V: Decode, const N: u8> Decode for V128ReplaceLaneOp<V, N> {
 
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
-pub struct LoadLaneOp_Ss<Res, LaneIdx> {
+pub struct LoadLaneOp<Res, Ptr, LaneIdx> {
     pub result: Res,
-    pub ptr: Slot,
+    pub ptr: Ptr,
     pub offset: u64,
     pub memory: Memory,
     pub v128: Slot,
@@ -378,7 +380,7 @@ pub struct LoadLaneOp_Ss<Res, LaneIdx> {
 }
 
 #[cfg(feature = "simd")]
-impl<Res: Decode, LaneIdx: Decode> Decode for LoadLaneOp_Ss<Res, LaneIdx> {
+impl<Res: Decode, Ptr: Decode, LaneIdx: Decode> Decode for LoadLaneOp<Res, Ptr, LaneIdx> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             result: Decode::decode(decoder)?,
@@ -393,16 +395,18 @@ impl<Res: Decode, LaneIdx: Decode> Decode for LoadLaneOp_Ss<Res, LaneIdx> {
 
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
-pub struct LoadLaneOpMem0Offset16_Ss<Res, LaneIdx> {
+pub struct LoadLaneOpMem0Offset16<Res, Ptr, LaneIdx> {
     pub result: Res,
-    pub ptr: Slot,
+    pub ptr: Ptr,
     pub offset: Offset16,
     pub v128: Slot,
     pub lane: LaneIdx,
 }
 
 #[cfg(feature = "simd")]
-impl<Res: Decode, LaneIdx: Decode> Decode for LoadLaneOpMem0Offset16_Ss<Res, LaneIdx> {
+impl<Res: Decode, Ptr: Decode, LaneIdx: Decode> Decode
+    for LoadLaneOpMem0Offset16<Res, Ptr, LaneIdx>
+{
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             result: Decode::decode(decoder)?,

@@ -375,8 +375,10 @@ macro_rules! gen_load_fn {
     };
 }
 gen_load_fn! {
-    (fn load32, fn load32_at, u32);
-    (fn load64, fn load64_at, u64);
+    (fn load_u32, fn load_u32_at, u32);
+    (fn load_u64, fn load_u64_at, u64);
+    (fn load_f32, fn load_f32_at, f32);
+    (fn load_f64, fn load_f64_at, f64);
 }
 
 macro_rules! gen_store_wrap_fn {

@@ -13,10 +13,9 @@ use crate::{
         BlockType,
         translator::func::{
             ControlFrameBase,
-            Input,
             Operand,
             op,
-            stack::{AcquiredTarget, IfReachability},
+            stack::{AcquiredTarget, IfReachability, ResolvedOperand},
         },
     },
     ir::{self, Op, index},
@@ -346,7 +345,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
-        self.translate_call_indirect(type_index, table_index, Op::call_indirect)
+        self.translate_call_indirect(
+            type_index,
+            table_index,
+            Op::call_indirect,
+            |_, _, _| todo!(),
+        )
     }
 
     #[inline(never)]
@@ -1636,7 +1640,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
-        self.translate_call_indirect(type_index, table_index, Op::return_call_indirect)?;
+        self.translate_call_indirect(
+            type_index,
+            table_index,
+            Op::return_call_indirect,
+            |_, _, _| todo!(),
+        )?;
         self.reachable = false;
         Ok(())
     }

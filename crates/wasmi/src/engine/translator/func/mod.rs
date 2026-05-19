@@ -76,6 +76,7 @@ use crate::{
         Slot,
         SlotSpan,
         index,
+        index::Memory,
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
 };
@@ -1621,12 +1622,13 @@ impl FuncTranslator {
         &mut self,
         type_index: u32,
         table_index: u32,
-        make_instr: fn(
+        op_s: fn(
             params: BoundedSlotSpan,
             index: Slot,
             func_type: index::FuncType,
             table: index::Table,
         ) -> Op,
+        op_r: fn(params: BoundedSlotSpan, func_type: index::FuncType, table: index::Table) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
@@ -1635,10 +1637,12 @@ impl FuncTranslator {
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
         let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
-        self.push_instr(
-            make_instr(params, index, index::FuncType::from(type_index), table),
-            FuelCostsProvider::call,
-        )?;
+        let func_type = index::FuncType::from(type_index);
+        let op = match index {
+            Location::Slot(index) => op_s(params, index, func_type, table),
+            Location::Reg => op_r(params, func_type, table),
+        };
+        self.push_instr(op, FuelCostsProvider::call)?;
         Ok(())
     }
 
@@ -1781,16 +1785,20 @@ impl FuncTranslator {
         &mut self,
         operand: Operand,
         index_ty: IndexType,
-    ) -> Result<Input<u32>, Error> {
+    ) -> Result<ResolvedOperand<u32>, Error> {
         let index64 = match self.make_index64(operand, index_ty)? {
-            Input::Slot(index) => return Ok(Input::Slot(index)),
+            Input::Slot(index) => return Ok(ResolvedOperand::Slot(index)),
             Input::Immediate(index) => index,
         };
         let index32 = match u32::try_from(index64) {
-            Ok(index) => return Ok(Input::Immediate(index)),
-            Err(_) => self.copy_if_immediate(operand)?,
+            Ok(index) => return Ok(ResolvedOperand::Immediate(index)),
+            Err(_) => self.copy_immediate_to_slot(operand)?,
         };
-        Ok(Input::Slot(index32))
+        let op = match index32 {
+            Location::Slot(index32) => ResolvedOperand::Slot(index32),
+            Location::Reg => ResolvedOperand::Reg,
+        };
+        Ok(op)
     }
 
     /// Convenience method to tell that there is no custom optimization.
@@ -2289,45 +2297,34 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
-        let ptr = match ptr {
-            Operand::Reg(_ptr) => todo!(),
-            Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
-            Operand::Temp(ptr) => ptr.temp_slots().head(),
-            Operand::Immediate(ptr) => {
-                let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
-                };
-                match T::load_si(address, memory) {
-                    Some(load_si) => {
-                        self.push_instr_with_result_slot(
-                            T::LOADED_TY,
-                            load_si,
-                            FuelCostsProvider::load,
-                        )?;
-                        return Ok(());
-                    }
-                    None => {
-                        let consume_fuel = self.stack.consume_fuel_instr();
-                        self.copy_operand_to_temp(ptr.into(), consume_fuel)?
-                    }
-                }
+        let ptr = self.resolve_operand_as_index(ptr, memory)?;
+        'opt: {
+            // Try to encode an optimized load operator if possible, otherwise fallback.
+            if !memory.is_default() {
+                break 'opt;
             }
-        };
-        if memory.is_default() {
-            if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_instr_with_result_slot(
-                    T::LOADED_TY,
-                    |result| T::load_mem0_offset16_ss(result, ptr, offset),
-                    FuelCostsProvider::load,
-                )?;
-                return Ok(());
-            }
+            let offset = match Offset16::try_from(offset) {
+                Ok(offset) => offset,
+                Err(_) => break 'opt,
+            };
+            let op = match ptr {
+                ResolvedOperand::Reg => T::op_rr_mem0_offset16(offset),
+                ResolvedOperand::Slot(ptr) => T::op_rs_mem0_offset16(ptr, offset),
+                ResolvedOperand::Immediate(_) => break 'opt,
+            };
+            self.push_instr_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
+            return Ok(());
         }
-        self.push_instr_with_result_slot(
-            T::LOADED_TY,
-            |result| T::load_ss(result, ptr, offset, memory),
-            FuelCostsProvider::load,
-        )?;
+        // We need to encode a non-optimized fallback load operator.
+        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address_v2(memory, ptr, offset)) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        let op = match ptr {
+            ResolvedOperand::Reg => T::op_rr(offset, memory),
+            ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
+            ResolvedOperand::Immediate(address) => T::op_ri(address, memory),
+        };
+        self.push_instr_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
         Ok(())
     }
 
@@ -2483,6 +2480,35 @@ impl FuncTranslator {
     fn decode_memarg(memarg: MemArg) -> Result<(index::Memory, u64), Error> {
         let memory = index::Memory::try_from(memarg.memory)?;
         Ok((memory, memarg.offset))
+    }
+
+    /// Returns the effective address `ptr+offset` if it is valid.
+    // TODO: rename to just `effective_address` and remove old `effective_address`
+    fn effective_address_v2(&self, mem: index::Memory, ptr: u64, offset: u64) -> Option<Address> {
+        let memory_type = *self
+            .module
+            .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));
+        let Some(address) = ptr.checked_add(offset) else {
+            // Case: address overflows any legal memory index.
+            return None;
+        };
+        if let Some(max) = memory_type.maximum() {
+            // The memory's maximum size in bytes.
+            let max_size = max << memory_type.page_size_log2();
+            if address > max_size {
+                // Case: address overflows the memory's maximum size.
+                return None;
+            }
+        }
+        if !memory_type.is_64() && address >= 1 << 32 {
+            // Case: address overflows the 32-bit memory index.
+            return None;
+        }
+        let Ok(address) = Address::try_from(address) else {
+            // Case: address is too big for the system to handle properly.
+            return None;
+        };
+        Some(address)
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.

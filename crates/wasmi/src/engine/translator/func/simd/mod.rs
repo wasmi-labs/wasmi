@@ -5,6 +5,7 @@ mod visit;
 
 use crate::{
     Error,
+    TrapCode,
     V128,
     ValType,
     core::{
@@ -234,6 +235,48 @@ impl FuncTranslator {
             ValType::V128,
             |result| make_instr_sss(result, lhs, rhs),
             FuelCostsProvider::simd,
+        )?;
+        Ok(())
+    }
+
+    fn translate_simd_load<T: op::SimdLoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let ptr = self.stack.pop();
+        self.copy_immediate_to_slot(ptr)?;
+        let ptr = self.resolve_operand_as_index(ptr, memory)?;
+        'opt: {
+            // Try to encode an optimized load operator if possible, otherwise fallback.
+            if !memory.is_default() {
+                break 'opt;
+            }
+            let offset = match Offset16::try_from(offset) {
+                Ok(offset) => offset,
+                Err(_) => break 'opt,
+            };
+            self.push_instr_with_result_slot(
+                ValType::V128,
+                |result| match ptr {
+                    ResolvedOperand::Reg => T::op_sr_mem0_offset16(result, offset),
+                    ResolvedOperand::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
+                    ResolvedOperand::Immediate(_) => unreachable!(),
+                },
+                FuelCostsProvider::load,
+            )?;
+            return Ok(());
+        }
+        // We need to encode a non-optimized fallback load operator.
+        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address_v2(memory, ptr, offset)) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        self.push_instr_with_result_slot(
+            ValType::V128,
+            |result| match ptr {
+                ResolvedOperand::Reg => T::op_sr(result, offset, memory),
+                ResolvedOperand::Slot(ptr) => T::op_ss(result, ptr, offset, memory),
+                ResolvedOperand::Immediate(_) => unreachable!(),
+            },
+            FuelCostsProvider::load,
         )?;
         Ok(())
     }

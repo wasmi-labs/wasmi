@@ -8,7 +8,7 @@ use crate::{
         TypedRawVal,
         simd::{self, ImmLaneIdx},
     },
-    engine::translator::func::{Operand, op, simd::op as simd_op},
+    engine::translator::func::{Operand, op, simd::op as simd_op, stack::Location},
     ir::{Op, Slot},
 };
 use core::array;
@@ -31,55 +31,55 @@ macro_rules! swap_ops {
 
 impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_v128_load(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load>(memarg)
+        self.translate_simd_load::<simd_op::V128Load>(memarg)
     }
 
     fn visit_v128_load8x8_s(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::I16x8Load8x8>(memarg)
+        self.translate_simd_load::<simd_op::I16x8Load8x8>(memarg)
     }
 
     fn visit_v128_load8x8_u(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::U16x8Load8x8>(memarg)
+        self.translate_simd_load::<simd_op::U16x8Load8x8>(memarg)
     }
 
     fn visit_v128_load16x4_s(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::I32x4Load16x4>(memarg)
+        self.translate_simd_load::<simd_op::I32x4Load16x4>(memarg)
     }
 
     fn visit_v128_load16x4_u(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::U32x4Load16x4>(memarg)
+        self.translate_simd_load::<simd_op::U32x4Load16x4>(memarg)
     }
 
     fn visit_v128_load32x2_s(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::I64x2Load32x2>(memarg)
+        self.translate_simd_load::<simd_op::I64x2Load32x2>(memarg)
     }
 
     fn visit_v128_load32x2_u(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::U64x2Load32x2>(memarg)
+        self.translate_simd_load::<simd_op::U64x2Load32x2>(memarg)
     }
 
     fn visit_v128_load8_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load8Splat>(memarg)
+        self.translate_simd_load::<simd_op::V128Load8Splat>(memarg)
     }
 
     fn visit_v128_load16_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load16Splat>(memarg)
+        self.translate_simd_load::<simd_op::V128Load16Splat>(memarg)
     }
 
     fn visit_v128_load32_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load32Splat>(memarg)
+        self.translate_simd_load::<simd_op::V128Load32Splat>(memarg)
     }
 
     fn visit_v128_load64_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load64Splat>(memarg)
+        self.translate_simd_load::<simd_op::V128Load64Splat>(memarg)
     }
 
     fn visit_v128_load32_zero(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load32Zero>(memarg)
+        self.translate_simd_load::<simd_op::V128Load32Zero>(memarg)
     }
 
     fn visit_v128_load64_zero(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_load::<simd_op::V128Load64Zero>(memarg)
+        self.translate_simd_load::<simd_op::V128Load64Zero>(memarg)
     }
 
     fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
