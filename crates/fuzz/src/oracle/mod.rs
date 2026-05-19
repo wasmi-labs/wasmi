@@ -42,7 +42,7 @@ pub trait DifferentialOracleMeta: Sized {
     fn setup(wasm: &[u8]) -> Option<Self>;
 }
 
-/// A chosen differnential fuzzing oracle.
+/// A chosen differential fuzzing oracle.
 #[derive(Debug, Default, Copy, Clone)]
 pub enum ChosenOracle {
     /// The Wasmi v1.x oracle.

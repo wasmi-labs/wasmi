@@ -9,7 +9,7 @@ use wasmi::{Caller, Extern, ImportType, Linker};
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s
 fn dummy_raw_waker() -> RawWaker {
     fn no_op(_: *const ()) {}
-    //returns a new RawWaker by calling dummy_raw_waker again
+    // returns a new RawWaker by calling dummy_raw_waker again
     fn clone(_: *const ()) -> RawWaker {
         dummy_raw_waker()
     }

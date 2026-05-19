@@ -34,7 +34,7 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         let mut config = Config::default();
         // We disabled backtraces since they sometimes become so large
         // that the entire output is obliterated by them. Generally we are
-        // more interested what kind of error occurred and now how an error
+        // more interested what kind of error occurred and not how an error
         // occurred.
         config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
         config.wasm_backtrace_max_frames(None);
