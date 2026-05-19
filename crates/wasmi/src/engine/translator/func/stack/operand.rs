@@ -35,6 +35,23 @@ impl<T> ResolvedOperand<T> {
             _ => (a, b),
         }
     }
+
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> ResolvedOperand<U> {
+        match self {
+            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
+            ResolvedOperand::Immediate(value) => ResolvedOperand::Immediate(f(value)),
+        }
+    }
+
+    pub fn filter_map<U>(self, f: impl FnOnce(T) -> Option<U>) -> Option<ResolvedOperand<U>> {
+        let mapped = match self {
+            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
+            ResolvedOperand::Immediate(value) => ResolvedOperand::Immediate(f(value)?),
+        };
+        Some(mapped)
+    }
 }
 
 /// An operand on the [`Stack`].
