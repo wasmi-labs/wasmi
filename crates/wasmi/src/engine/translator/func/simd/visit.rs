@@ -86,13 +86,16 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
         let (memory, offset) = Self::decode_memarg(memarg)?;
-        let ptr = self.copy_if_immediate(ptr)?;
-        let value = self.copy_if_immediate(value)?;
+        let ptr = self.copy_immediate_to_slot(ptr)?;
+        let value = self.copy_operand_to_slot(value)?;
         if self.translate_store128_mem0_offset16(ptr, offset, memory, value)? {
             return Ok(());
         }
         self.push_instr(
-            Op::v128_store_ss(ptr, offset, value, memory),
+            match ptr {
+                Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory),
+                Location::Reg => todo!(), // Op::v128_store_rs(ptr, offset, value, memory),
+            },
             FuelCostsProvider::store,
         )?;
         Ok(())
@@ -211,8 +214,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        let lhs = self.copy_if_immediate(lhs)?;
-        let rhs = self.copy_if_immediate(rhs)?;
+        let lhs = self.copy_operand_to_slot(lhs)?;
+        let rhs = self.copy_operand_to_slot(rhs)?;
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
