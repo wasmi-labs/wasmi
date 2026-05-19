@@ -350,6 +350,8 @@ fn add_load_ops(isa: &mut Isa) {
         // Generic
         (LoadKind::Value, Ty::U32),
         (LoadKind::Value, Ty::U64),
+        (LoadKind::Value, Ty::F32),
+        (LoadKind::Value, Ty::F64),
         // i32
         (LoadKind::Extend { layout: Layout::Bits8 }, Ty::I32),
         (LoadKind::Extend { layout: Layout::Bits16 }, Ty::I32),
@@ -364,24 +366,26 @@ fn add_load_ops(isa: &mut Isa) {
         (LoadKind::Extend { layout: Layout::Bits32 }, Ty::U64),
     ];
     for (kind, result_ty) in ops {
-        for ptr in [OperandKind::Slot, OperandKind::Immediate] {
+        for ptr in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
             isa.push_op(LoadOp::new(
                 kind,
                 result_ty,
-                OperandKind::Slot,
+                OperandKind::Reg,
                 ptr,
                 MemoryOperand::Immediate,
                 OffsetOperand::Offset,
             ));
+            if matches!(ptr, OperandKind::Reg | OperandKind::Slot) {
+                isa.push_op(LoadOp::new(
+                    kind,
+                    result_ty,
+                    OperandKind::Reg,
+                    ptr,
+                    MemoryOperand::Mem0,
+                    OffsetOperand::Offset16,
+                ));
+            }
         }
-        isa.push_op(LoadOp::new(
-            kind,
-            result_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            MemoryOperand::Mem0,
-            OffsetOperand::Offset16,
-        ));
     }
 }
 
@@ -1139,22 +1143,24 @@ fn add_simd_load_ops(isa: &mut Isa) {
         (LoadKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
     for (kind, result_ty) in ops {
-        isa.push_op(LoadOp::new(
-            kind,
-            result_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            MemoryOperand::Immediate,
-            OffsetOperand::Offset,
-        ));
-        isa.push_op(LoadOp::new(
-            kind,
-            result_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            MemoryOperand::Mem0,
-            OffsetOperand::Offset16,
-        ));
+        for ptr in [OperandKind::Reg, OperandKind::Slot] {
+            isa.push_op(LoadOp::new(
+                kind,
+                result_ty,
+                OperandKind::Slot,
+                ptr,
+                MemoryOperand::Immediate,
+                OffsetOperand::Offset,
+            ));
+            isa.push_op(LoadOp::new(
+                kind,
+                result_ty,
+                OperandKind::Slot,
+                ptr,
+                MemoryOperand::Mem0,
+                OffsetOperand::Offset16,
+            ));
+        }
     }
 }
 

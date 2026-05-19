@@ -77,8 +77,8 @@ pub fn generate_code(config: &Config) -> Result<(), Error> {
 
 fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 435_000,
-        false => 315_000,
+        true => 460_000,
+        false => 325_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
         write!(
@@ -99,8 +99,8 @@ fn generate_op_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(
 
 fn generate_op_code_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 255_000,
-        false => 195_000,
+        true => 270_000,
+        false => 200_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
         writeln!(buffer, "{}", DisplayOpCode::new(isa, Indent::default()),)
@@ -111,8 +111,8 @@ fn generate_op_code_rs(config: &Config, isa: &Isa, contents: &mut String) -> Res
 
 fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 180_000,
-        false => 140_000,
+        true => 195_000,
+        false => 145_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
         write!(buffer, "{}", DisplayEncode::new(isa, Indent::default()))
@@ -123,7 +123,7 @@ fn generate_encode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Resu
 
 fn generate_decode_rs(config: &Config, isa: &Isa, contents: &mut String) -> Result<(), Error> {
     let expected_size = match config.simd {
-        true => 80_000,
+        true => 85_000,
         false => 65_000,
     };
     write_to_buffer(contents, expected_size, |buffer| {
