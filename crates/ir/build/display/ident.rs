@@ -123,7 +123,7 @@ impl Display for SnakeCase<Ty> {
     }
 }
 
-/// [`Display`] wrapper for types that can act as operator identifier prefices.
+/// [`Display`] wrapper for types that can act as operator identifier prefixes.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct IdentPrefix<T>(pub T);

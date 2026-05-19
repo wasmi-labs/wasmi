@@ -215,7 +215,7 @@ impl EnforcedLimits {
                 req_funcs_bytes: 1000,
                 // Compiled and optimized Wasm modules usually average out on 100-2500
                 // bytes per Wasm function. Thus the chosen limit is way below this threshold
-                // and should not be exceeded for non-malicous Wasm modules.
+                // and should not be exceeded for non-malicious Wasm modules.
                 min_avg_bytes_per_function: 40,
             }),
         }
