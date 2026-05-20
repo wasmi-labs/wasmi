@@ -12,16 +12,19 @@ use super::Stack;
 /// The location of an operand.
 #[derive(Debug, Copy, Clone)]
 pub enum Location {
-    /// The operand's location is a slot.
-    Slot(Slot),
     /// The operand's location is a register.
     Reg,
+    /// The operand's location is a slot.
+    Slot(Slot),
 }
 
 #[derive(Debug, Copy, Clone)]
 pub enum ResolvedOperand<T> {
+    /// The operand is a register.
     Reg,
+    /// The operand is located in a [`Slot`].
     Slot(Slot),
+    /// The operand is an immediate value of type `T`.
     Immediate(T),
 }
 
