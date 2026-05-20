@@ -409,16 +409,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // Case: The `global.get` instruction accesses a mutable or imported
         //       global variable and thus cannot be optimized away.
         let global_idx = ir::index::Global::from(global_index);
-        let make_op = match global_type.content() {
-            #[cfg(feature = "simd")]
-            ValType::V128 => Op::global_get128,
-            _ => Op::global_get64,
+        #[cfg(feature = "simd")]
+        if matches!(content, ValType::V128) {
+            self.push_instr_with_result_slot(
+                content,
+                |result| Op::global_get_v128_s(global_idx, result),
+                FuelCostsProvider::instance,
+            )?;
+            return Ok(());
+        }
+        let operator = match content {
+            ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
+                Op::global_get_u64_r(global_idx)
+            }
+            ValType::F32 => Op::global_get_f32_r(global_idx),
+            ValType::F64 => Op::global_get_f64_r(global_idx),
+            _ => unreachable!(),
         };
-        self.push_instr_with_result_slot(
-            content,
-            |result| make_op(global_idx, result),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr_with_result_reg(content, operator, FuelCostsProvider::instance)?;
         Ok(())
     }
 
