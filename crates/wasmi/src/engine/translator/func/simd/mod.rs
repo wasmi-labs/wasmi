@@ -11,6 +11,7 @@ use crate::{
     core::{
         FuelCostsProvider,
         IntoShiftAmount,
+        RawVal,
         ShiftAmount,
         Typed,
         TypedRawVal,
@@ -37,23 +38,26 @@ impl FuncTranslator {
     /// Generically translate any of the Wasm `simd` splat instructions.
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
-        make_instr_ss: fn(result: Slot, value: Slot) -> Op,
-        make_instr_si: fn(result: Slot, value: <Wrapped as ToBits>::Out) -> Op,
+        op_sr: fn(result: Slot) -> Op,
+        op_ss: fn(result: Slot, value: Slot) -> Op,
+        op_si: fn(result: Slot, value: <Wrapped as ToBits>::Out) -> Op,
     ) -> Result<(), Error>
     where
-        T: From<TypedRawVal> + Wrap<Wrapped>,
+        T: From<RawVal> + Wrap<Wrapped>,
         Wrapped: ToBits,
     {
         bail_unreachable!(self);
         let value = self.stack.pop();
-        let value = self.make_input(value, |_this, value| {
-            Ok(Input::Immediate(T::from(value).wrap().to_bits()))
-        })?;
+        let value = self.resolve_operand_as::<RawVal>(value)?;
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| match value {
-                Input::Slot(value) => make_instr_ss(result, value),
-                Input::Immediate(value) => make_instr_si(result, value),
+                ResolvedOperand::Reg => op_sr(result),
+                ResolvedOperand::Slot(value) => op_ss(result, value),
+                ResolvedOperand::Immediate(value) => {
+                    let value = T::from(value).wrap().to_bits();
+                    op_si(result, value)
+                }
             },
             FuelCostsProvider::simd,
         )?;
@@ -92,7 +96,7 @@ impl FuncTranslator {
     /// Generically translate a Wasm SIMD replace lane instruction.
     fn translate_replace_lane<T: op::SimdReplaceLane>(&mut self, lane: u8) -> Result<(), Error>
     where
-        T::Item: IntoLaneIdx + From<TypedRawVal> + Copy,
+        T::Item: IntoLaneIdx + From<RawVal> + Copy,
         T::Immediate: Copy,
     {
         bail_unreachable!(self);
@@ -101,19 +105,22 @@ impl FuncTranslator {
         };
         let (input, value) = self.stack.pop2();
         if let (Operand::Immediate(x), Operand::Immediate(item)) = (input, value) {
-            let result = T::const_eval(x.val().into(), lane, item.val().into());
+            let result = T::const_eval(x.val().into(), lane, item.val().raw().into());
             self.stack.push_immediate(result)?;
             return Ok(());
         }
         let input = self.copy_operand_to_slot(input)?;
-        let value = self.make_input::<T::Immediate>(value, |_this, value| {
-            Ok(Input::Immediate(T::into_immediate(T::Item::from(value))))
-        })?;
+        let value = self
+            .resolve_operand_as::<RawVal>(value)?
+            .map(|value| T::into_immediate(T::Item::from(value)));
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| match value {
-                Input::Slot(value) => T::replace_lane_sss(result, input, lane, value),
-                Input::Immediate(value) => T::replace_lane_ssi(result, input, lane, value),
+                ResolvedOperand::Reg => todo!(),
+                ResolvedOperand::Slot(value) => T::replace_lane_sss(result, input, lane, value),
+                ResolvedOperand::Immediate(value) => {
+                    T::replace_lane_ssi(result, input, lane, value)
+                }
             },
             FuelCostsProvider::simd,
         )?;
