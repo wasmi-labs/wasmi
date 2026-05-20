@@ -7,6 +7,7 @@ mod op;
 use self::op::{
     BinaryOp,
     CmpBranchOp,
+    GlobalGet,
     LoadAtOp,
     LoadOp,
     LoadOpMem0Offset16,

@@ -8,7 +8,7 @@ use crate::{
     Offset16,
     Slot,
     decode::DecodeError,
-    index::{Memory, Table},
+    index::{Global, Memory, Table},
 };
 
 #[derive(Copy, Clone)]
@@ -290,6 +290,21 @@ impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOpMem0Offset16_S<T, LaneIdx
             offset: Decode::decode(decoder)?,
             value: Decode::decode(decoder)?,
             lane: Decode::decode(decoder)?,
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct GlobalGet<T> {
+    pub result: T,
+    pub global: Global,
+}
+
+impl<T: Decode> Decode for GlobalGet<T> {
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            global: Decode::decode(decoder)?,
         })
     }
 }

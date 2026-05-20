@@ -11,6 +11,7 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         GenericOp,
+        GlobalGetOp,
         LaneWidth,
         LoadKind,
         LoadOp,
@@ -198,6 +199,15 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             f,
             "pub type {camel_ident} = Store{lane_ident}Op{mem0_suffix}{offset16_suffix}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
         )
+    }
+}
+
+impl Display for DisplayDecode<&'_ GlobalGetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let result_ty = op.result_field().ty;
+        writeln!(f, "pub type {camel_ident} = GlobalGet<{result_ty}>;")
     }
 }
 
