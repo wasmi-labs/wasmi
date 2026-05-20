@@ -8,6 +8,7 @@ use crate::build::{
         CmpBranchOp,
         Field,
         GenericOp,
+        GlobalGetOp,
         LaneWidth,
         LoadKind,
         LoadOp,
@@ -581,13 +582,9 @@ fn add_call_ops(isa: &mut Isa) {
 
 fn add_global_ops(isa: &mut Isa) {
     let ops = [
-        Op::from(GenericOp::new(
-            Ident::GlobalGet64,
-            [
-                Field::new(Ident::Global, FieldTy::Global),
-                Field::new(Ident::Result, FieldTy::Slot),
-            ],
-        )),
+        Op::from(GlobalGetOp::new(Ty::U64, OperandKind::Reg)),
+        Op::from(GlobalGetOp::new(Ty::F32, OperandKind::Reg)),
+        Op::from(GlobalGetOp::new(Ty::F64, OperandKind::Reg)),
         Op::from(GenericOp::new(
             Ident::GlobalSet32I,
             [
@@ -801,13 +798,7 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Value, FieldTy::Slot),
         ],
     )));
-    isa.push_op(Op::from(GenericOp::new(
-        Ident::GlobalGet128,
-        [
-            Field::new(Ident::Global, FieldTy::Global),
-            Field::new(Ident::Result, FieldTy::Slot),
-        ],
-    )));
+    isa.push_op(GlobalGetOp::new(Ty::V128, OperandKind::Slot));
     for condition in [OperandKind::Reg, OperandKind::Slot] {
         isa.push_op(Op::from(SelectOp::new(
             Ty::V128,
