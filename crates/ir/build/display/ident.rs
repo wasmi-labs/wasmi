@@ -5,6 +5,7 @@ use crate::build::{
         BinaryOp,
         CmpBranchOp,
         GenericOp,
+        GlobalGetOp,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
@@ -405,6 +406,18 @@ impl Display for DisplayIdent<&'_ StoreOp> {
 impl<const N: usize> Display for DisplayIdent<&'_ GenericOp<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.case.wrap(self.value.ident).fmt(f)
+    }
+}
+
+impl Display for DisplayIdent<&'_ GlobalGetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let ident = case.wrap(Ident::GlobalGet);
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let result_ty = case.wrap(op.result_ty);
+        let result_suffix = case.wrap(Suffix(op.result));
+        write!(f, "{ident}{sep}{result_ty}_{result_suffix}")
     }
 }
 

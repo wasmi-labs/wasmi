@@ -186,47 +186,43 @@ execution_handler! {
     }
 }
 
-execution_handler! {
-    fn global_get64(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (ip, crate::ir::decode::GlobalGet64 { result, global }) = unsafe { decode_op(ip) };
-        let global = fetch_global(instance, global);
-        let global = resolve_global(state.store, &global);
-        let value: u64 = global.get_raw().read_as();
-        set_value!(result, value, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+macro_rules! global_get_execution_handler {
+    ( $(
+        $( #[$attr:meta] )*
+        fn $snake_name:ident($camel_name:ident));* $(;)?
+    ) => {
+        $(
+            $( #[$attr] )*
+            execution_handler! {
+                fn $snake_name(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (ip, crate::ir::decode::$camel_name { global, result }) = unsafe { decode_op(ip) };
+                    let global = fetch_global(instance, global);
+                    let global = resolve_global(state.store, &global);
+                    let value: u64 = global.get_raw().read_as();
+                    set_value!(result, value, sp, ireg, freg32, freg64);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
+            }
+        )*
+    };
 }
+global_get_execution_handler! {
+    fn global_get_f32_r(GlobalGetF32_R);
+    fn global_get_f64_r(GlobalGetF64_R);
+    fn global_get_u64_r(GlobalGetU64_R);
 
-#[cfg(feature = "simd")]
-execution_handler! {
-    fn global_get128(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (ip, crate::ir::decode::GlobalGet128 { result, global }) = unsafe { decode_op(ip) };
-        let global = fetch_global(instance, global);
-        let global = resolve_global(state.store, &global);
-        let value: V128 = global.get_raw().read_as();
-        set_value!(result, value, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+    #[cfg(feature = "simd")]
+    fn global_get_v128_s(GlobalGetV128_S);
 }
 
 execution_handler! {
