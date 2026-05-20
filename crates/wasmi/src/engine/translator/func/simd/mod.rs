@@ -21,7 +21,6 @@ use crate::{
         func::{
             Operand,
             stack::{Location, ResolvedOperand},
-            utils::Input,
         },
         utils::{ToBits, Wrap},
     },

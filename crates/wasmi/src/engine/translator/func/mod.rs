@@ -34,7 +34,7 @@ use self::{
         Stack,
         StackAllocations,
     },
-    utils::{Input, Reset, ReusableAllocations, UpdateResultSlot},
+    utils::{Reset, ReusableAllocations, UpdateResultSlot},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
