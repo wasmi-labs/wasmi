@@ -57,12 +57,7 @@ impl<T> ResolvedOperand<T> {
     }
 
     pub fn filter_map<U>(self, f: impl FnOnce(T) -> Option<U>) -> Option<ResolvedOperand<U>> {
-        let mapped = match self {
-            ResolvedOperand::Reg => ResolvedOperand::Reg,
-            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
-            ResolvedOperand::Immediate(value) => ResolvedOperand::Immediate(f(value)?),
-        };
-        Some(mapped)
+        self.map(f).transpose()
     }
 }
 
