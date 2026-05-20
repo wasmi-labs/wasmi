@@ -627,14 +627,14 @@ fn add_table_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::TableSize,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Table, FieldTy::Table),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::TableGrow,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Delta, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::Slot),
                 Field::new(Ident::Table, FieldTy::Table),
