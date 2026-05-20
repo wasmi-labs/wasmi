@@ -471,29 +471,26 @@ impl FuncTranslator {
         value: Operand,
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
-        match value {
+        let op = match value {
             Operand::Reg(value) => Self::make_copy_reg_instr(result, value),
-            Operand::Temp(value) => Self::make_copy_temp_instr(result, value),
-            Operand::Local(value) => Self::make_copy_local_instr(result, value, layout),
-            Operand::Immediate(value) => {
-                let copy_op = Self::make_copy_imm_instr(result, value.val())?;
-                Ok(Some(copy_op))
-            }
-        }
+            Operand::Temp(value) => return Self::make_copy_temp_instr(result, value),
+            Operand::Local(value) => return Self::make_copy_local_instr(result, value, layout),
+            Operand::Immediate(value) => Self::make_copy_imm_instr(result, value.val())?,
+        };
+        Ok(Some(op))
     }
 
     /// Returns the copy instruction to copy the given register `value` to `result`.
-    fn make_copy_reg_instr(result: Slot, value: RegOperand) -> Result<Option<Op>, Error> {
+    fn make_copy_reg_instr(result: Slot, value: RegOperand) -> Op {
         let ty = value.ty();
-        let copy_op = match ty {
-            ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
+        match ty {
             ValType::I32 | ValType::I64 | ValType::ExternRef | ValType::FuncRef => {
                 Op::u64_copy_sr(result)
             }
             ValType::F32 => Op::f32_copy_sr(result),
             ValType::F64 => Op::f64_copy_sr(result),
-        };
-        Ok(Some(copy_op))
+            ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
+        }
     }
 
     /// Returns the copy instruction to copy the given temporary `value` to `result`.
