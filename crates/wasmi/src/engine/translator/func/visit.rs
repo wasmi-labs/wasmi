@@ -1539,12 +1539,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
         let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
-        self.push_instr_with_result_slot(
+        self.push_instr_with_result_reg(
             item_ty.into(),
-            |result| match index {
-                ResolvedOperand::Reg => todo!(), // Op::table_get_sr(result, table),
-                ResolvedOperand::Slot(index) => Op::table_get_ss(result, index, table),
-                ResolvedOperand::Immediate(index) => Op::table_get_si(result, index, table),
+            match index {
+                ResolvedOperand::Reg => Op::table_get_rr(table),
+                ResolvedOperand::Slot(index) => Op::table_get_rs(index, table),
+                ResolvedOperand::Immediate(index) => Op::table_get_ri(index, table),
             },
             FuelCostsProvider::instance,
         )?;
@@ -1562,12 +1562,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
         let value = self.resolve_operand_as::<u32>(value)?;
         let instr = match (index, value) {
-            (Opd::Reg, Opd::Slot(_value)) => todo!(), // Op::table_set_rs(table, value),
-            (Opd::Reg, Opd::Immediate(_value)) => todo!(), // Op::table_set_ri(table, value),
-            (Opd::Slot(_index), Opd::Reg) => todo!(), // Op::table_set_sr(table, value),
+            (Opd::Reg, Opd::Slot(value)) => Op::table_set_rs(table, value),
+            (Opd::Reg, Opd::Immediate(value)) => Op::table_set_ri(table, value),
+            (Opd::Slot(index), Opd::Reg) => Op::table_set_sr(table, index),
             (Opd::Slot(index), Opd::Slot(value)) => Op::table_set_ss(table, index, value),
             (Opd::Slot(index), Opd::Immediate(value)) => Op::table_set_si(table, index, value),
-            (Opd::Immediate(_index), Opd::Reg) => todo!(), // Op::table_set_ir(table, index),
+            (Opd::Immediate(index), Opd::Reg) => Op::table_set_ir(table, index),
             (Opd::Immediate(index), Opd::Slot(value)) => Op::table_set_is(table, index, value),
             (Opd::Immediate(index), Opd::Immediate(value)) => Op::table_set_ii(table, index, value),
             _ => todo!(), // unsupported operand pair

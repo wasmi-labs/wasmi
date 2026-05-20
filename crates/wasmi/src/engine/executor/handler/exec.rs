@@ -1083,8 +1083,9 @@ macro_rules! impl_table_get {
     };
 }
 impl_table_get! {
-    fn table_get_ss(TableGet_Ss) = identity;
-    fn table_get_si(TableGet_Si) = u64::from;
+    fn table_get_rr(TableGet_Rr) = identity;
+    fn table_get_rs(TableGet_Rs) = identity;
+    fn table_get_ri(TableGet_Ri) = u64::from;
 }
 
 macro_rules! impl_table_set {
@@ -1117,8 +1118,12 @@ macro_rules! impl_table_set {
     };
 }
 impl_table_set! {
+    fn table_set_rs(TableSet_Rs) = identity;
+    fn table_set_ri(TableSet_Ri) = identity;
+    fn table_set_sr(TableSet_Sr) = identity;
     fn table_set_ss(TableSet_Ss) = identity;
     fn table_set_si(TableSet_Si) = identity;
+    fn table_set_ir(TableSet_Ir) = u64::from;
     fn table_set_is(TableSet_Is) = u64::from;
     fn table_set_ii(TableSet_Ii) = u64::from;
 }
