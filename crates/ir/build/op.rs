@@ -727,17 +727,20 @@ impl StoreKind {
 
 #[derive(Copy, Clone)]
 pub struct TableGetOp {
+    /// The result operand.
+    pub result: OperandKind,
     /// The `index` type.
     pub index: OperandKind,
 }
 
 impl TableGetOp {
-    pub fn new(index: OperandKind) -> Self {
-        Self { index }
+    pub fn new(result: OperandKind, index: OperandKind) -> Self {
+        Self { result, index }
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        let result_ty = self.result.field_ty(Ty::U32);
+        Field::new(Ident::Result, result_ty)
     }
 
     pub fn index_field(&self) -> Field {
