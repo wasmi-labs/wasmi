@@ -54,6 +54,30 @@ impl<T> ResolvedOperand<T> {
     }
 }
 
+impl<T, E> ResolvedOperand<Result<T, E>> {
+    /// Transposes a [`ResolvedOperand<Result<T, E>>`] into a [`Result<ResolvedOperand<T>, E>`].
+    pub fn transpose(self) -> Result<ResolvedOperand<T>, E> {
+        let resolved = match self {
+            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
+            ResolvedOperand::Immediate(ok_or_err) => ResolvedOperand::Immediate(ok_or_err?),
+        };
+        Ok(resolved)
+    }
+}
+
+impl<T> ResolvedOperand<Option<T>> {
+    /// Transposes a [`ResolvedOperand<Option<T>>`] into an [`Option<ResolvedOperand<T>>`].
+    pub fn transpose(self) -> Option<ResolvedOperand<T>> {
+        let resolved = match self {
+            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
+            ResolvedOperand::Immediate(ok_or_err) => ResolvedOperand::Immediate(ok_or_err?),
+        };
+        Some(resolved)
+    }
+}
+
 /// An operand on the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub enum Operand {
