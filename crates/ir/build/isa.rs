@@ -686,14 +686,14 @@ fn add_memory_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::MemorySize,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Memory, FieldTy::Memory),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::MemoryGrow,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Delta, FieldTy::Slot),
                 Field::new(Ident::Memory, FieldTy::Memory),
             ],
