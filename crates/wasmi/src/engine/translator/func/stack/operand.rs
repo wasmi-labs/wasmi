@@ -25,6 +25,15 @@ pub enum ResolvedOperand<T> {
     Immediate(T),
 }
 
+impl<T> From<Location> for ResolvedOperand<T> {
+    fn from(location: Location) -> Self {
+        match location {
+            Location::Reg => ResolvedOperand::Reg,
+            Location::Slot(slot) => ResolvedOperand::Slot(slot),
+        }
+    }
+}
+
 impl<T> ResolvedOperand<T> {
     pub fn sort(a: Self, b: Self) -> (Self, Self) {
         match (&a, &b) {
