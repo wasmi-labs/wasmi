@@ -1595,9 +1595,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Since `table.grow` returns the `table.size` before the
                 // operation a `table.grow` with `delta` of 0 can be translated
                 // as `table.size` instruction instead.
-                self.push_instr_with_result_slot(
+                self.push_instr_with_result_reg(
                     index_ty.ty(),
-                    |result| Op::table_size(result, table),
+                    Op::table_size(table),
                     FuelCostsProvider::instance,
                 )?;
                 return Ok(());
@@ -1605,9 +1605,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let value = self.copy_operand_to_slot(value)?;
         let delta = self.copy_operand_to_slot(delta)?;
-        self.push_instr_with_result_slot(
+        self.push_instr_with_result_reg(
             index_ty.ty(),
-            |result| Op::table_grow(result, delta, value, table),
+            Op::table_grow(delta, value, table),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1619,9 +1619,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
-        self.push_instr_with_result_slot(
+        self.push_instr_with_result_reg(
             index_ty.ty(),
-            |result| Op::table_size(result, table),
+            Op::table_size(table),
             FuelCostsProvider::instance,
         )?;
         Ok(())
