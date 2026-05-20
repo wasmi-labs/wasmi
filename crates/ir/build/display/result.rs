@@ -126,31 +126,29 @@ impl<const N: usize> GenericOp<N> {
     }
 }
 
+impl OperandKind {
+    pub fn result_loc(&self) -> Option<Location> {
+        match self {
+            OperandKind::Reg => Some(Location::Reg),
+            OperandKind::Slot => Some(Location::Slot),
+            OperandKind::Immediate => unreachable!(),
+        }
+    }
+}
+
 impl Op {
     /// Returns `true` if `self` has a `Slot` result field.
     pub fn result_loc(&self) -> Option<Location> {
         match self {
             Op::Return(_) => None,
-            Op::Unary(op) => match op.result {
-                OperandKind::Reg => Some(Location::Reg),
-                OperandKind::Slot => Some(Location::Slot),
-                OperandKind::Immediate => unreachable!(),
-            },
-            Op::Binary(op) => match op.result {
-                OperandKind::Reg => Some(Location::Reg),
-                OperandKind::Slot => Some(Location::Slot),
-                OperandKind::Immediate => unreachable!(),
-            },
+            Op::Unary(op) => op.result.result_loc(),
+            Op::Binary(op) => op.result.result_loc(),
             Op::Ternary(_) => Some(Location::Slot),
             Op::CmpBranch(_) => None,
             Op::Select(_) => Some(Location::Reg),
-            Op::Load(op) => match op.result {
-                OperandKind::Reg => Some(Location::Reg),
-                OperandKind::Slot => Some(Location::Slot),
-                OperandKind::Immediate => unreachable!(),
-            },
+            Op::Load(op) => op.result.result_loc(),
             Op::Store(_) => None,
-            Op::TableGet(_) => Some(Location::Slot),
+            Op::TableGet(op) => op.result.result_loc(),
             Op::TableSet(_) => None,
             Op::Generic0(op) => op.result_loc(),
             Op::Generic1(op) => op.result_loc(),
@@ -182,7 +180,9 @@ impl Op {
                 matches!(op.result, OperandKind::Slot)
             }
             Op::Store(_) => false,
-            Op::TableGet(_) => true,
+            Op::TableGet(op) => {
+                matches!(op.result, OperandKind::Slot)
+            }
             Op::TableSet(_) => false,
             Op::Generic0(op) => op.has_result_slot(),
             Op::Generic1(op) => op.has_result_slot(),

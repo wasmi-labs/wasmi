@@ -412,8 +412,9 @@ impl Display for DisplayIdent<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let ident = case.wrap(Ident::TableGet);
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
-        let index_suffix = SnakeCase(Suffix(self.value.index));
+        let op = self.value;
+        let result_suffix = case.wrap(Suffix(op.result));
+        let index_suffix = SnakeCase(Suffix(op.index));
         write!(f, "{ident}_{result_suffix}{index_suffix}")
     }
 }

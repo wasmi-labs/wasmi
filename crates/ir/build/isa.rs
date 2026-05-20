@@ -614,16 +614,16 @@ fn add_global_ops(isa: &mut Isa) {
 }
 
 fn add_table_ops(isa: &mut Isa) {
+    for index in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+        isa.push_op(TableGetOp::new(OperandKind::Reg, index));
+        for value in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            if matches!(index, OperandKind::Reg) && index == value {
+                continue;
+            }
+            isa.push_op(TableSetOp::new(index, value));
+        }
+    }
     let ops = [
-        Op::TableGet(TableGetOp::new(OperandKind::Slot)),
-        Op::TableGet(TableGetOp::new(OperandKind::Immediate)),
-        Op::TableSet(TableSetOp::new(OperandKind::Slot, OperandKind::Slot)),
-        Op::TableSet(TableSetOp::new(OperandKind::Slot, OperandKind::Immediate)),
-        Op::TableSet(TableSetOp::new(OperandKind::Immediate, OperandKind::Slot)),
-        Op::TableSet(TableSetOp::new(
-            OperandKind::Immediate,
-            OperandKind::Immediate,
-        )),
         Op::from(GenericOp::new(
             Ident::TableSize,
             [
