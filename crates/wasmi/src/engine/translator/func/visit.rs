@@ -594,9 +594,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .index_ty()
             .ty();
         let memory = index::Memory::try_from(mem)?;
-        self.push_instr_with_result_slot(
+        self.push_instr_with_result_reg(
             index_ty,
-            |result| Op::memory_size(result, memory),
+            Op::memory_size(memory),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -623,9 +623,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Since `memory.grow` returns the `memory.size` before the
                 // operation a `memory.grow` with `delta` of 0 can be translated
                 // as `memory.size` instruction instead.
-                self.push_instr_with_result_slot(
+                self.push_instr_with_result_reg(
                     index_ty.ty(),
-                    |result| Op::memory_size(result, memory),
+                    Op::memory_size(memory),
                     FuelCostsProvider::instance,
                 )?;
                 return Ok(());
@@ -633,9 +633,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         // Case: fallback to generic `memory.grow` instruction
         let delta = self.copy_operand_to_slot(delta)?;
-        self.push_instr_with_result_slot(
+        self.push_instr_with_result_reg(
             index_ty.ty(),
-            |result| Op::memory_grow(result, delta, memory),
+            Op::memory_grow(delta, memory),
             FuelCostsProvider::instance,
         )?;
         Ok(())
