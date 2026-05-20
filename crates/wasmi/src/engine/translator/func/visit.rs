@@ -1538,7 +1538,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index = self.stack.pop();
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
-        let index = self.make_index32_or_copy(index, index_ty)?;
+        let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
         self.push_instr_with_result_slot(
             item_ty.into(),
             |result| match index {
@@ -1559,7 +1559,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
         let (index, value) = self.stack.pop2();
-        let index = self.make_index32_or_copy(index, index_ty)?;
+        let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
         let value = self.resolve_operand_as::<u32>(value)?;
         let instr = match (index, value) {
             (Opd::Reg, Opd::Slot(_value)) => todo!(), // Op::table_set_rs(table, value),

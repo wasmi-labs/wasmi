@@ -1732,75 +1732,29 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Create a new generic [`Input`] from the given `operand`.
-    fn make_input<R>(
-        &mut self,
-        operand: Operand,
-        f: impl FnOnce(&mut Self, TypedRawVal) -> Result<Input<R>, Error>,
-    ) -> Result<Input<R>, Error> {
-        let reg = match operand {
-            Operand::Reg(_operand) => todo!(),
-            Operand::Local(operand) => self.layout.local_to_slot(operand)?,
-            Operand::Temp(operand) => operand.temp_slots().head(),
-            Operand::Immediate(operand) => return f(self, operand.val()),
-        };
-        Ok(Input::Slot(reg))
-    }
-
-    /// Converts the `provider` to a 64-bit index-type constant value.
-    ///
-    /// # Note
-    ///
-    /// This expects `operand` to be either `u32` or `u64` if `memory64` is enabled or disabled respectively.
-    pub(super) fn make_index64(
-        &mut self,
-        operand: Operand,
-        index_type: IndexType,
-    ) -> Result<Input<u64>, Error> {
-        let value = match operand {
-            Operand::Reg(_value) => todo!(),
-            Operand::Immediate(value) => value.val(),
-            Operand::Local(value) => {
-                debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = self.layout.local_to_slot(value)?;
-                return Ok(Input::Slot(reg));
-            }
-            Operand::Temp(value) => {
-                debug_assert_eq!(operand.ty(), index_type.ty());
-                let reg = value.temp_slots().head();
-                return Ok(Input::Slot(reg));
-            }
-        };
-        let value = match index_type {
-            IndexType::I32 => u64::from(u32::from(value)),
-            IndexType::I64 => u64::from(value),
-        };
-        Ok(Input::Immediate(value))
-    }
-
     /// Copies `operand` to a temporary stack slot if it is an immediate that cannot be encoded using 32-bits.
     ///
-    /// - Returns [`Input::Slot`] if `operand` is a local or a temporary operand.
-    /// - Returns [`Input::Immediate`] if `operand` is an immediate that can be encoded as 32-bit value.
-    /// - Returns [`Input::Slot`] otherwise and encodes a copy storing the immediate into its temporary stack slot.
-    fn make_index32_or_copy(
+    /// - Returns [`ResolvedOperand::Reg`] if `operand` is a register operand.
+    /// - Returns [`ResolvedOperand::Slot`] if `operand` is a local or a temporary operand.
+    /// - Returns [`ResolvedOperand::Immediate`] if `operand` is an immediate that is representable as 32-bit value.
+    /// - Returns [`ResolvedOperand::Slot`] otherwise and encodes a copy storing the immediate into its temporary stack slot.
+    fn resolve_operand_as_index32_or_copy(
         &mut self,
         operand: Operand,
         index_ty: IndexType,
     ) -> Result<ResolvedOperand<u32>, Error> {
-        let index64 = match self.make_index64(operand, index_ty)? {
-            Input::Slot(index) => return Ok(ResolvedOperand::Slot(index)),
-            Input::Immediate(index) => index,
+        let value =
+            self.resolve_operand_as::<RawVal>(operand)?
+                .filter_map(|value| match index_ty {
+                    IndexType::I32 => Some(u32::from(value)),
+                    IndexType::I64 => u32::try_from(u64::from(value)).ok(),
+                });
+        let Some(value) = value else {
+            return self
+                .copy_immediate_to_slot(operand)
+                .map(ResolvedOperand::from);
         };
-        let index32 = match u32::try_from(index64) {
-            Ok(index) => return Ok(ResolvedOperand::Immediate(index)),
-            Err(_) => self.copy_immediate_to_slot(operand)?,
-        };
-        let op = match index32 {
-            Location::Slot(index32) => ResolvedOperand::Slot(index32),
-            Location::Reg => ResolvedOperand::Reg,
-        };
-        Ok(op)
+        Ok(value)
     }
 
     /// Convenience method to tell that there is no custom optimization.
