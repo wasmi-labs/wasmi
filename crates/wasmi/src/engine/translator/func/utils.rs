@@ -40,14 +40,6 @@ pub trait ReusableAllocations {
     fn into_allocations(self) -> Self::Allocations;
 }
 
-/// A concrete input to a Wasmi instruction.
-pub enum Input<T> {
-    /// A [`Slot`] operand.
-    Slot(Slot),
-    /// A 16-bit encoded immediate value operand.
-    Immediate(T),
-}
-
 /// Extension trait to update the result [`Slot`] of an [`Op`].
 pub trait UpdateResultSlot: Sized {
     /// Updates the result [`Slot`] of `self` if possible.
