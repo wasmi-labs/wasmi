@@ -1620,12 +1620,12 @@ impl FuncTranslator {
         type_index: u32,
         table_index: u32,
         op_s: fn(
+            table: index::Table,
+            func_type: index::FuncType,
             params: BoundedSlotSpan,
             index: Slot,
-            func_type: index::FuncType,
-            table: index::Table,
         ) -> Op,
-        op_r: fn(params: BoundedSlotSpan, func_type: index::FuncType, table: index::Table) -> Op,
+        op_r: fn(table: index::Table, func_type: index::FuncType, params: BoundedSlotSpan) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
@@ -1636,8 +1636,8 @@ impl FuncTranslator {
         let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
         let func_type = index::FuncType::from(type_index);
         let op = match index {
-            Location::Slot(index) => op_s(params, index, func_type, table),
-            Location::Reg => op_r(params, func_type, table),
+            Location::Slot(index) => op_s(table, func_type, params, index),
+            Location::Reg => op_r(table, func_type, params),
         };
         self.push_instr(op, FuelCostsProvider::call)?;
         Ok(())

@@ -20,6 +20,7 @@ macro_rules! apply_macro_for_ops {
             GlobalSet(GlobalSetOp),
             TableGet(TableGetOp),
             TableSet(TableSetOp),
+            CallIndirect(CallIndirectOp),
             Generic0(GenericOp<0>),
             Generic1(GenericOp<1>),
             Generic2(GenericOp<2>),
@@ -842,6 +843,50 @@ impl TableSetOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.table_field(), self.index_field(), self.value_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum CallKind {
+    Nested,
+    Tail,
+}
+
+#[derive(Copy, Clone)]
+pub struct CallIndirectOp {
+    pub kind: CallKind,
+    pub index: OperandKind,
+}
+
+impl CallIndirectOp {
+    pub fn new(kind: CallKind, index: OperandKind) -> Self {
+        Self { kind, index }
+    }
+
+    pub fn func_type_field(&self) -> Field {
+        Field::new(Ident::FuncType, FieldTy::FuncType)
+    }
+
+    pub fn table_field(&self) -> Field {
+        Field::new(Ident::Table, FieldTy::Table)
+    }
+
+    pub fn params_field(&self) -> Field {
+        Field::new(Ident::Params, FieldTy::BoundedSlotSpan)
+    }
+
+    pub fn index_field(&self) -> Field {
+        let index_ty = self.index.field_ty(Ty::U32);
+        Field::new(Ident::Index, index_ty)
+    }
+
+    pub fn fields(&self) -> [Field; 4] {
+        [
+            self.table_field(),
+            self.func_type_field(),
+            self.params_field(),
+            self.index_field(),
+        ]
     }
 }
 

@@ -6,6 +6,7 @@ mod op;
 
 use self::op::{
     BinaryOp,
+    CallIndirect,
     CmpBranchOp,
     GlobalGet,
     GlobalSet,
