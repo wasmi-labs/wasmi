@@ -149,6 +149,7 @@ impl Op {
             Op::Load(op) => op.result.result_loc(),
             Op::Store(_) => None,
             Op::GlobalGet(op) => op.result.result_loc(),
+            Op::GlobalSet(_) => None,
             Op::TableGet(op) => op.result.result_loc(),
             Op::TableSet(_) => None,
             Op::Generic0(op) => op.result_loc(),
@@ -182,6 +183,7 @@ impl Op {
             }
             Op::Store(_) => false,
             Op::GlobalGet(op) => matches!(op.result, OperandKind::Slot),
+            Op::GlobalSet(_) => false,
             Op::TableGet(op) => {
                 matches!(op.result, OperandKind::Slot)
             }

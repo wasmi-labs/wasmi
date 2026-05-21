@@ -8,6 +8,7 @@ use self::op::{
     BinaryOp,
     CmpBranchOp,
     GlobalGet,
+    GlobalSet,
     LoadAtOp,
     LoadOp,
     LoadOpMem0Offset16,
