@@ -310,6 +310,21 @@ impl<T: Decode> Decode for GlobalGet<T> {
 }
 
 #[derive(Copy, Clone)]
+pub struct GlobalSet<T> {
+    pub value: T,
+    pub global: Global,
+}
+
+impl<T: Decode> Decode for GlobalSet<T> {
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            value: Decode::decode(decoder)?,
+            global: Decode::decode(decoder)?,
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct TableGet<T> {
     pub result: Slot,
     pub index: T,
