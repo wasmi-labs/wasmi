@@ -308,33 +308,53 @@ execution_handler! {
     }
 }
 
-execution_handler! {
-    fn call_indirect(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            caller_ip,
-            crate::ir::decode::CallIndirect {
-                params,
-                index,
-                func_type,
-                table,
-            },
-        ) = unsafe { decode_op(ip) };
-        let func =
-            resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
-        let (callee_ip, sp, mem0, mem0_len, instance) =
-            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+macro_rules! call_indirect_execution_handler {
+    ( $( fn $snake_name:ident($camel_name:ident) );* $(;)? ) => {
+        $(
+            execution_handler! {
+                fn $snake_name(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (
+                        caller_ip,
+                        crate::ir::decode::$camel_name {
+                            table,
+                            func_type,
+                            params,
+                            index,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let func =
+                        resolve_indirect_func(
+                            index,
+                            table,
+                            func_type,
+                            state,
+                            sp,
+                            instance,
+                            ireg,
+                            freg32,
+                            freg64,
+                        ).into_control()?;
+                    let (callee_ip, sp, mem0, mem0_len, instance) =
+                        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+                    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
+            }
+        )*
+    };
+}
+call_indirect_execution_handler! {
+    fn call_indirect_r(CallIndirect_R);
+    fn call_indirect_s(CallIndirect_S);
 }
 
 execution_handler! {
@@ -395,52 +415,68 @@ execution_handler! {
     }
 }
 
-execution_handler! {
-    fn return_call_indirect(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            _,
-            crate::ir::decode::ReturnCallIndirect {
-                params,
-                index,
-                func_type,
-                table,
-            },
-        ) = unsafe { decode_op(ip) };
-        let func =
-            resolve_indirect_func(index, table, func_type, state, sp, instance).into_control()?;
-        let func_entity = resolve_func(state.store, &func);
-        let (callee_ip, sp, callee_instance) = match func_entity {
-            FuncEntity::Wasm(func) => {
-                let wasm_func = func.func_body();
-                let callee_instance = *func.instance();
-                let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-                let changed_instance = match callee_instance != instance {
-                    true => Some(callee_instance),
-                    false => None,
-                };
-                let (callee_ip, callee_sp) =
-                    return_call_wasm(state, params, wasm_func, changed_instance)?;
-                (callee_ip, callee_sp, callee_instance)
+macro_rules! return_call_indirect_execution_handler {
+    ( $( fn $snake_name:ident($camel_name:ident) );* $(;)? ) => {
+        $(
+            execution_handler! {
+                fn $snake_name(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (
+                        _,
+                        crate::ir::decode::$camel_name {
+                            params,
+                            index,
+                            func_type,
+                            table,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let func =
+                        resolve_indirect_func(
+                            index,
+                            table,
+                            func_type,
+                            state,
+                            sp,
+                            instance,
+                            ireg,
+                            freg32,
+                            freg64,
+                        ).into_control()?;
+                    let func_entity = resolve_func(state.store, &func);
+                    let (callee_ip, sp, callee_instance) = match func_entity {
+                        FuncEntity::Wasm(func) => {
+                            let wasm_func = func.func_body();
+                            let callee_instance = *func.instance();
+                            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+                            let (callee_ip, callee_sp) =
+                                return_call_wasm(state, params, wasm_func, Some(instance))?;
+                            (callee_ip, callee_sp, callee_instance)
+                        }
+                        FuncEntity::Host(host_func) => {
+                            let host_func = *host_func;
+                            return_call_host(state, func, host_func, params, instance)?
+                        }
+                    };
+                    let (instance, mem0, mem0_len) =
+                        update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+                    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
             }
-            FuncEntity::Host(host_func) => {
-                let host_func = *host_func;
-                return_call_host(state, func, host_func, params, instance)?
-            }
-        };
-        let (instance, mem0, mem0_len) =
-            update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+        )*
+    };
+}
+return_call_indirect_execution_handler! {
+    fn return_call_indirect_r(ReturnCallIndirect_R);
+    fn return_call_indirect_s(ReturnCallIndirect_S);
 }
 
 execution_handler! {

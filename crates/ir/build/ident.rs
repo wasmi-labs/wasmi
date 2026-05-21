@@ -157,7 +157,6 @@ define_ident!(
     CallIndirect: call_indirect,
     ReturnCallInternal: return_call_internal,
     ReturnCallImported: return_call_imported,
-    ReturnCallIndirect: return_call_indirect,
 
     Clz: clz,
     Ctz: ctz,

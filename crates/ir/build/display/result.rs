@@ -152,6 +152,7 @@ impl Op {
             Op::GlobalSet(_) => None,
             Op::TableGet(op) => op.result.result_loc(),
             Op::TableSet(_) => None,
+            Op::CallIndirect(_) => None,
             Op::Generic0(op) => op.result_loc(),
             Op::Generic1(op) => op.result_loc(),
             Op::Generic2(op) => op.result_loc(),
@@ -188,6 +189,7 @@ impl Op {
                 matches!(op.result, OperandKind::Slot)
             }
             Op::TableSet(_) => false,
+            Op::CallIndirect(_) => false,
             Op::Generic0(op) => op.has_result_slot(),
             Op::Generic1(op) => op.has_result_slot(),
             Op::Generic2(op) => op.has_result_slot(),

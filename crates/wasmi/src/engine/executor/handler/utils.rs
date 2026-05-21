@@ -573,15 +573,22 @@ impl_resolve_from_store! {
     fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
-pub fn resolve_indirect_func(
-    index: Slot,
+#[expect(clippy::too_many_arguments)]
+pub fn resolve_indirect_func<I>(
+    index: I,
     table: index::Table,
     func_type: index::FuncType,
     state: &mut VmState<'_>,
     sp: Sp,
     instance: Inst,
-) -> Result<Func, TrapCode> {
-    let index = get_slot_value(index, sp);
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> Result<Func, TrapCode>
+where
+    I: GetValue<u64>,
+{
+    let index = get_value(index, sp, ireg, freg32, freg64);
     let table = fetch_table(instance, table);
     let table = resolve_table(state.store, &table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;

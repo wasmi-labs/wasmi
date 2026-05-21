@@ -7,6 +7,7 @@ use crate::build::{
     isa::Isa,
     op::{
         BinaryOp,
+        CallIndirectOp,
         CmpBranchOp,
         Field,
         GenericOp,
@@ -182,6 +183,7 @@ impl_display_variant! {
     GlobalSetOp,
     TableGetOp,
     TableSetOp,
+    CallIndirectOp,
     V128ReplaceLaneOp,
     V128ExtractLaneOp,
 }
