@@ -582,18 +582,22 @@ fn add_call_ops(isa: &mut Isa) {
 }
 
 fn add_global_ops(isa: &mut Isa) {
+    // global.get
+    for result_ty in [Ty::U64, Ty::F32, Ty::F64] {
+        isa.push_op(GlobalGetOp::new(result_ty, OperandKind::Reg));
+    }
+    // global.set
     let ops = [
-        Op::from(GlobalGetOp::new(Ty::U64, OperandKind::Reg)),
-        Op::from(GlobalGetOp::new(Ty::F32, OperandKind::Reg)),
-        Op::from(GlobalGetOp::new(Ty::F64, OperandKind::Reg)),
-        Op::from(GlobalSetOp::new(Ty::U32, OperandKind::Immediate)),
-        Op::from(GlobalSetOp::new(Ty::U64, OperandKind::Reg)),
-        Op::from(GlobalSetOp::new(Ty::U64, OperandKind::Slot)),
-        Op::from(GlobalSetOp::new(Ty::U64, OperandKind::Immediate)),
-        Op::from(GlobalSetOp::new(Ty::F32, OperandKind::Reg)),
-        Op::from(GlobalSetOp::new(Ty::F64, OperandKind::Reg)),
+        (Ty::U32, OperandKind::Immediate),
+        (Ty::U64, OperandKind::Reg),
+        (Ty::U64, OperandKind::Slot),
+        (Ty::U64, OperandKind::Immediate),
+        (Ty::F32, OperandKind::Reg),
+        (Ty::F64, OperandKind::Reg),
     ];
-    isa.push_ops(ops);
+    for (value_ty, value) in ops {
+        isa.push_op(GlobalSetOp::new(value_ty, value));
+    }
 }
 
 fn add_table_ops(isa: &mut Isa) {
