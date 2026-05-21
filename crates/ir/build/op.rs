@@ -17,6 +17,7 @@ macro_rules! apply_macro_for_ops {
             Load(LoadOp),
             Store(StoreOp),
             GlobalGet(GlobalGetOp),
+            GlobalSet(GlobalSetOp),
             TableGet(TableGetOp),
             TableSet(TableSetOp),
             Generic0(GenericOp<0>),
@@ -750,6 +751,33 @@ impl GlobalGetOp {
 
     pub fn fields(&self) -> [Field; 2] {
         [self.global_field(), self.result_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct GlobalSetOp {
+    /// The type of the global variable value.
+    pub value_ty: Ty,
+    /// The result location of the `global.get`.
+    pub value: OperandKind,
+}
+
+impl GlobalSetOp {
+    pub fn new(value_ty: Ty, value: OperandKind) -> Self {
+        Self { value_ty, value }
+    }
+
+    pub fn value_field(&self) -> Field {
+        let value_ty = self.value.field_ty(self.value_ty);
+        Field::new(Ident::Value, value_ty)
+    }
+
+    pub fn global_field(&self) -> Field {
+        Field::new(Ident::Global, FieldTy::Global)
+    }
+
+    pub fn fields(&self) -> [Field; 2] {
+        [self.global_field(), self.value_field()]
     }
 }
 

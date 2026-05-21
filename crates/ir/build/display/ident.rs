@@ -6,6 +6,7 @@ use crate::build::{
         CmpBranchOp,
         GenericOp,
         GlobalGetOp,
+        GlobalSetOp,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
@@ -418,6 +419,18 @@ impl Display for DisplayIdent<&'_ GlobalGetOp> {
         let result_ty = case.wrap(op.result_ty);
         let result_suffix = case.wrap(Suffix(op.result));
         write!(f, "{ident}{sep}{result_ty}_{result_suffix}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ GlobalSetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let ident = case.wrap(Ident::GlobalSet);
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let value_ty = case.wrap(op.value_ty);
+        let value_suffix = case.wrap(Suffix(op.value));
+        write!(f, "{ident}{sep}{value_ty}_{value_suffix}")
     }
 }
 
