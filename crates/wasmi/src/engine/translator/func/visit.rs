@@ -8,7 +8,7 @@ use crate::{
     RefType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawRef, TypedRawRef, TypedRawVal, wasm},
+    core::{FuelCostsProvider, IndexType, RawRef, RawVal, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
         translator::func::{
@@ -434,47 +434,34 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let global = index::Global::from(global_index);
-        // Note: at this point we handle the different immediate `global.set` instructions.
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
+        let ty = global_type.content();
         let input = self.stack.pop();
-        let value = match input {
-            Operand::Immediate(input) => input.val(),
-            input => {
-                // Case: `global.set64` or `global.set128` with simple register input.
-                debug_assert_eq!(global_type.content(), input.ty());
-                let make_op = match global_type.content() {
-                    #[cfg(feature = "simd")]
-                    ValType::V128 => Op::global_set128_s,
-                    _ => Op::global_set64_s,
-                };
-                let input = self.layout.operand_to_slot(input)?;
-                self.push_instr(make_op(global, input), FuelCostsProvider::instance)?;
-                return Ok(());
-            }
+        let op = match self.resolve_operand_as::<RawVal>(input)? {
+            ResolvedOperand::Reg => match ty {
+                | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
+                    Op::global_set_u64_r(global)
+                }
+                | ValType::F32 => Op::global_set_f32_r(global),
+                | ValType::F64 => Op::global_set_f64_r(global),
+                | ValType::V128 => unreachable!(),
+            },
+            ResolvedOperand::Slot(value) => Op::global_set_u64_s(global, value),
+            ResolvedOperand::Immediate(value) => match ty {
+                | ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef => {
+                    Op::global_set_u32_i(global, u32::from(value))
+                }
+                | ValType::I64 | ValType::F64 => Op::global_set_u64_i(global, u64::from(value)),
+                | ValType::V128 => {
+                    let fuel_op = self.stack.consume_fuel_instr();
+                    let v128 = self.copy_operand_to_temp(input, fuel_op)?;
+                    Op::global_set_u64_s(global, v128)
+                }
+            },
         };
-        debug_assert_eq!(global_type.content(), value.ty());
-        let global_set_instr = match global_type.content() {
-            ValType::I32 => Op::global_set32_i(global, u32::from(value)),
-            ValType::I64 => Op::global_set64_i(u64::from(value), global),
-            ValType::F32 => Op::global_set32_i(global, f32::from(value).to_bits()),
-            ValType::F64 => Op::global_set64_i(f64::from(value).to_bits(), global),
-            ValType::FuncRef | ValType::ExternRef => {
-                let value = u32::from(RawRef::from(value.raw()));
-                Op::global_set32_i(global, value)
-            }
-            #[cfg(feature = "simd")]
-            ValType::V128 => {
-                let consume_fuel = self.stack.consume_fuel_instr();
-                let temp = self.copy_operand_to_temp(input, consume_fuel)?;
-                Op::global_set128_s(global, temp)
-            }
-            #[cfg(not(feature = "simd"))]
-            unexpected => panic!("unexpected value type found: {unexpected:?}"),
-        };
-        // Note: at this point we have to allocate a function local constant.
-        self.push_instr(global_set_instr, FuelCostsProvider::instance)?;
+        self.push_instr(op, FuelCostsProvider::instance)?;
         Ok(())
     }
 

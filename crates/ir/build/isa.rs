@@ -9,6 +9,7 @@ use crate::build::{
         Field,
         GenericOp,
         GlobalGetOp,
+        GlobalSetOp,
         LaneWidth,
         LoadKind,
         LoadOp,
@@ -585,27 +586,12 @@ fn add_global_ops(isa: &mut Isa) {
         Op::from(GlobalGetOp::new(Ty::U64, OperandKind::Reg)),
         Op::from(GlobalGetOp::new(Ty::F32, OperandKind::Reg)),
         Op::from(GlobalGetOp::new(Ty::F64, OperandKind::Reg)),
-        Op::from(GenericOp::new(
-            Ident::GlobalSet32I,
-            [
-                Field::new(Ident::Global, FieldTy::Global),
-                Field::new(Ident::Value, FieldTy::U32),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::GlobalSet64S,
-            [
-                Field::new(Ident::Global, FieldTy::Global),
-                Field::new(Ident::Value, FieldTy::Slot),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::GlobalSet64I,
-            [
-                Field::new(Ident::Value, FieldTy::U64),
-                Field::new(Ident::Global, FieldTy::Global),
-            ],
-        )),
+        Op::from(GlobalSetOp::new(Ty::U32, OperandKind::Immediate)),
+        Op::from(GlobalSetOp::new(Ty::U64, OperandKind::Reg)),
+        Op::from(GlobalSetOp::new(Ty::U64, OperandKind::Slot)),
+        Op::from(GlobalSetOp::new(Ty::U64, OperandKind::Immediate)),
+        Op::from(GlobalSetOp::new(Ty::F32, OperandKind::Reg)),
+        Op::from(GlobalSetOp::new(Ty::F64, OperandKind::Reg)),
     ];
     isa.push_ops(ops);
 }
@@ -791,14 +777,8 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
             Field::new(Ident::Selector, FieldTy::Array16ImmLaneIdx32),
         ],
     ));
-    isa.push_op(Op::from(GenericOp::new(
-        Ident::GlobalSet128S,
-        [
-            Field::new(Ident::Global, FieldTy::Global),
-            Field::new(Ident::Value, FieldTy::Slot),
-        ],
-    )));
     isa.push_op(GlobalGetOp::new(Ty::V128, OperandKind::Slot));
+    isa.push_op(GlobalSetOp::new(Ty::V128, OperandKind::Slot));
     for condition in [OperandKind::Reg, OperandKind::Slot] {
         isa.push_op(Op::from(SelectOp::new(
             Ty::V128,
