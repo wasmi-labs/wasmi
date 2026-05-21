@@ -235,6 +235,7 @@ macro_rules! global_set_execution_handler {
         );* $(;)?
     ) => {
         $(
+            $( #[$attr] )*
             execution_handler! {
                 fn $snake_name(
                     state: &mut VmState,
