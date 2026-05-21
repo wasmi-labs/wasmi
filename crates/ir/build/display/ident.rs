@@ -3,6 +3,8 @@ use crate::build::{
     ident::{CamelCase, Case, Ident, Sep, SnakeCase},
     op::{
         BinaryOp,
+        CallIndirectOp,
+        CallKind,
         CmpBranchOp,
         GenericOp,
         GlobalGetOp,
@@ -452,6 +454,23 @@ impl Display for DisplayIdent<&'_ TableSetOp> {
         let index_suffix = case.wrap(Suffix(self.value.index));
         let value_suffix = SnakeCase(Suffix(self.value.value));
         write!(f, "{ident}_{index_suffix}{value_suffix}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ CallIndirectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::CallIndirect);
+        let sep = case.wrap(Sep);
+        let return_ident = case.wrap(Ident::Return);
+        let prefix = match op.kind {
+            CallKind::Nested => None,
+            CallKind::Tail => Some(DisplayConcat((return_ident, sep))),
+        }
+        .display_maybe();
+        let index_suffix = case.wrap(Suffix(op.index));
+        write!(f, "{prefix}{ident}_{index_suffix}")
     }
 }
 

@@ -2,13 +2,14 @@
 use crate::core::simd::ImmLaneIdx;
 use crate::{
     Address,
+    BoundedSlotSpan,
     BranchOffset,
     Decode,
     Decoder,
     Offset16,
     Slot,
     decode::DecodeError,
-    index::{Global, Memory, Table},
+    index::{FuncType, Global, Memory, Table},
 };
 
 #[derive(Copy, Clone)]
@@ -354,6 +355,25 @@ impl<I: Decode, V: Decode> Decode for TableSet<I, V> {
             table: Decode::decode(decoder)?,
             index: Decode::decode(decoder)?,
             value: Decode::decode(decoder)?,
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct CallIndirect<I> {
+    pub table: Table,
+    pub func_type: FuncType,
+    pub params: BoundedSlotSpan,
+    pub index: I,
+}
+
+impl<I: Decode> Decode for CallIndirect<I> {
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            table: Decode::decode(decoder)?,
+            func_type: Decode::decode(decoder)?,
+            params: Decode::decode(decoder)?,
+            index: Decode::decode(decoder)?,
         })
     }
 }
