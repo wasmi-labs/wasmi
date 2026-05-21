@@ -9,6 +9,7 @@ use crate::build::{
     ident::{CamelCase, Ident, SnakeCase},
     op::{
         BinaryOp,
+        CallIndirectOp,
         CmpBranchOp,
         GenericOp,
         GlobalGetOp,
@@ -240,6 +241,15 @@ impl Display for DisplayDecode<&'_ TableSetOp> {
             f,
             "pub type {camel_ident} = TableSet<{index_ty}, {value_ty}>;"
         )
+    }
+}
+
+impl Display for DisplayDecode<&'_ CallIndirectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let index_ty = op.index_field().ty;
+        writeln!(f, "pub type {camel_ident} = CallIndirect<{index_ty}>;")
     }
 }
 

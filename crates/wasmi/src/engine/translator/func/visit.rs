@@ -348,8 +348,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_call_indirect(
             type_index,
             table_index,
-            Op::call_indirect,
-            |_, _, _| todo!(),
+            Op::call_indirect_s,
+            Op::call_indirect_r,
         )
     }
 
@@ -1638,8 +1638,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_call_indirect(
             type_index,
             table_index,
-            Op::return_call_indirect,
-            |_, _, _| todo!(),
+            Op::return_call_indirect_s,
+            Op::return_call_indirect_r,
         )?;
         self.reachable = false;
         Ok(())

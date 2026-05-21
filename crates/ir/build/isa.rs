@@ -5,6 +5,8 @@ use crate::build::{
     op::{
         BinaryOp,
         BinaryOpCaps,
+        CallIndirectOp,
+        CallKind,
         CmpBranchOp,
         Field,
         GenericOp,
@@ -545,15 +547,10 @@ fn add_call_ops(isa: &mut Isa) {
                 Field::new(Ident::Func, FieldTy::Func),
             ],
         )),
-        Op::from(GenericOp::new(
-            Ident::CallIndirect,
-            [
-                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
-                Field::new(Ident::Index, FieldTy::Slot),
-                Field::new(Ident::FuncType, FieldTy::FuncType),
-                Field::new(Ident::Table, FieldTy::Table),
-            ],
-        )),
+        Op::from(CallIndirectOp::new(CallKind::Nested, OperandKind::Reg)),
+        Op::from(CallIndirectOp::new(CallKind::Nested, OperandKind::Slot)),
+        Op::from(CallIndirectOp::new(CallKind::Tail, OperandKind::Reg)),
+        Op::from(CallIndirectOp::new(CallKind::Tail, OperandKind::Slot)),
         Op::from(GenericOp::new(
             Ident::ReturnCallInternal,
             [
@@ -566,15 +563,6 @@ fn add_call_ops(isa: &mut Isa) {
             [
                 Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
                 Field::new(Ident::Func, FieldTy::Func),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::ReturnCallIndirect,
-            [
-                Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
-                Field::new(Ident::Index, FieldTy::Slot),
-                Field::new(Ident::FuncType, FieldTy::FuncType),
-                Field::new(Ident::Table, FieldTy::Table),
             ],
         )),
     ];
