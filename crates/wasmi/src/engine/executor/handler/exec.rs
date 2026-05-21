@@ -187,9 +187,11 @@ execution_handler! {
 }
 
 macro_rules! global_get_execution_handler {
-    ( $(
-        $( #[$attr:meta] )*
-        fn $snake_name:ident($camel_name:ident));* $(;)?
+    (
+        $(
+            $( #[$attr:meta] )*
+            fn $snake_name:ident($camel_name:ident, $ty:ty)
+        );* $(;)?
     ) => {
         $(
             $( #[$attr] )*
@@ -208,7 +210,7 @@ macro_rules! global_get_execution_handler {
                     let (ip, crate::ir::decode::$camel_name { global, result }) = unsafe { decode_op(ip) };
                     let global = fetch_global(instance, global);
                     let global = resolve_global(state.store, &global);
-                    let value: u64 = global.get_raw().read_as();
+                    let value: $ty = global.get_raw().read_as();
                     set_value!(result, value, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
@@ -217,12 +219,12 @@ macro_rules! global_get_execution_handler {
     };
 }
 global_get_execution_handler! {
-    fn global_get_f32_r(GlobalGetF32_R);
-    fn global_get_f64_r(GlobalGetF64_R);
-    fn global_get_u64_r(GlobalGetU64_R);
+    fn global_get_f32_r(GlobalGetF32_R, f32);
+    fn global_get_f64_r(GlobalGetF64_R, f64);
+    fn global_get_u64_r(GlobalGetU64_R, u64);
 
     #[cfg(feature = "simd")]
-    fn global_get_v128_s(GlobalGetV128_S);
+    fn global_get_v128_s(GlobalGetV128_S, V128);
 }
 
 execution_handler! {
