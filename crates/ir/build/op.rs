@@ -740,7 +740,7 @@ impl GlobalGetOp {
     }
 
     pub fn result_field(&self) -> Field {
-        let result_ty = self.result.field_ty(Ty::U32);
+        let result_ty = self.result.field_ty(self.result_ty);
         Field::new(Ident::Result, result_ty)
     }
 
