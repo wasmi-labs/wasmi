@@ -470,18 +470,10 @@ macro_rules! impl_wasm_float {
 
             #[inline]
             fn nearest(self) -> Self {
-                let round = <libm::Libm<Self>>::round(self);
-                if <Self as WasmFloatExt>::abs(self - <Self as WasmFloatExt>::trunc(self)) != 0.5 {
-                    return round;
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
                 }
-                let rem = round % 2.0;
-                if rem == 1.0 {
-                    <Self as WasmFloatExt>::floor(self)
-                } else if rem == -1.0 {
-                    <Self as WasmFloatExt>::ceil(self)
-                } else {
-                    round
-                }
+                <libm::Libm<Self>>::roundeven(self)
             }
 
             #[inline]
@@ -522,13 +514,11 @@ impl V128 {
 }
 
 /// Extension trait for `f32` and `f64` to turn a NaN value into a quiet-NaN value.
-#[cfg(feature = "std")]
 trait IntoQuietNan: Sized {
     /// Converts `self` into a quiet-NaN if `self` is a NaN, otherwise returns `None`.
     fn into_quiet_nan(self) -> Option<Self>;
 }
 
-#[cfg(feature = "std")]
 macro_rules! impl_into_quiet_nan {
     ( $( ($float:ty, $bits:ty, $mask:literal) );* $(;)? ) => {
         $(
@@ -545,7 +535,6 @@ macro_rules! impl_into_quiet_nan {
         )*
     };
 }
-#[cfg(feature = "std")]
 impl_into_quiet_nan! {
     (f32, u32, 0x0040_0000);
     (f64, u64, 0x0008_0000_0000_0000);
