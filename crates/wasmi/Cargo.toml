@@ -73,6 +73,9 @@ indirect-dispatch = []
 # - Enable if your focus is on safety.
 # - Disable if your focus is on execution speed.
 extra-checks = []
+# Forces usage of `libm` for implementations of certain Wasm operators.
+# This mostly is used for testing the `libm` based Wasmi implementation.
+libm = ["wasmi_core/libm"]
 
 [[bench]]
 name = "benches"

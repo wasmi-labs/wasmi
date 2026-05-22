@@ -444,7 +444,7 @@ trait WasmFloatExt {
     fn mul_add(self, a: Self, b: Self) -> Self;
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(any(not(feature = "std"), feature = "libm"))]
 macro_rules! impl_wasm_float {
     ($ty:ty) => {
         impl WasmFloatExt for $ty {
@@ -540,7 +540,7 @@ impl_into_quiet_nan! {
     (f64, u64, 0x0008_0000_0000_0000);
 }
 
-#[cfg(feature = "std")]
+#[cfg(not(any(not(feature = "std"), feature = "libm")))]
 macro_rules! impl_wasm_float {
     ($ty:ty) => {
         impl WasmFloatExt for $ty {
