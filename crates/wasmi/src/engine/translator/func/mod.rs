@@ -10,6 +10,9 @@ mod simd;
 mod stack;
 mod visit;
 
+#[cfg(doc)]
+use self::stack::ImmediateOperand;
+
 use self::{
     encoder::{OpEncoder, OpEncoderAllocations, Pos},
     labels::{LabelRef, LabelRegistry},
