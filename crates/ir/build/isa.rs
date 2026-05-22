@@ -399,6 +399,8 @@ fn add_store_ops(isa: &mut Isa) {
         // Generic
         (StoreKind::Value, Ty::U32),
         (StoreKind::Value, Ty::U64),
+        (StoreKind::Value, Ty::F32),
+        (StoreKind::Value, Ty::F64),
         // i32
         (StoreKind::Wrap { wrapped: Wrapped::I8 }, Ty::I32),
         (StoreKind::Wrap { wrapped: Wrapped::I16 }, Ty::I32),
@@ -408,8 +410,14 @@ fn add_store_ops(isa: &mut Isa) {
         (StoreKind::Wrap { wrapped: Wrapped::I32 }, Ty::I64),
     ];
     for (kind, value_ty) in ops {
-        for value in [OperandKind::Slot, OperandKind::Immediate] {
-            for ptr in [OperandKind::Slot, OperandKind::Immediate] {
+        for ptr in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            for value in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                if ptr.is_reg() && value.is_reg() && !matches!(value_ty, Ty::F32 | Ty::F64) {
+                    continue;
+                }
+                if matches!(value_ty, Ty::F32 | Ty::F64) && !matches!(value, OperandKind::Reg) {
+                    continue;
+                }
                 isa.push_op(StoreOp::new(
                     kind,
                     value_ty,
@@ -418,15 +426,17 @@ fn add_store_ops(isa: &mut Isa) {
                     MemoryOperand::Immediate,
                     OffsetOperand::Offset,
                 ));
+                if !matches!(ptr, OperandKind::Immediate) {
+                    isa.push_op(StoreOp::new(
+                        kind,
+                        value_ty,
+                        ptr,
+                        value,
+                        MemoryOperand::Mem0,
+                        OffsetOperand::Offset16,
+                    ));
+                }
             }
-            isa.push_op(StoreOp::new(
-                kind,
-                value_ty,
-                OperandKind::Slot,
-                value,
-                MemoryOperand::Mem0,
-                OffsetOperand::Offset16,
-            ));
         }
     }
 }

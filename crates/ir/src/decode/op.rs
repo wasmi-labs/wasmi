@@ -199,14 +199,14 @@ where
 }
 
 #[derive(Copy, Clone)]
-pub struct StoreOp_S<T> {
-    pub ptr: Slot,
+pub struct StoreOp<Ptr, Val> {
+    pub ptr: Ptr,
     pub offset: u64,
-    pub value: T,
+    pub value: Val,
     pub memory: Memory,
 }
 
-impl<T: Decode> Decode for StoreOp_S<T> {
+impl<Ptr: Decode, Val: Decode> Decode for StoreOp<Ptr, Val> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             ptr: Decode::decode(decoder)?,
@@ -218,13 +218,13 @@ impl<T: Decode> Decode for StoreOp_S<T> {
 }
 
 #[derive(Copy, Clone)]
-pub struct StoreOp_I<T> {
+pub struct StoreAtOp<T> {
     pub address: Address,
     pub value: T,
     pub memory: Memory,
 }
 
-impl<T: Decode> Decode for StoreOp_I<T> {
+impl<T: Decode> Decode for StoreAtOp<T> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             address: Decode::decode(decoder)?,
@@ -235,13 +235,13 @@ impl<T: Decode> Decode for StoreOp_I<T> {
 }
 
 #[derive(Copy, Clone)]
-pub struct StoreOpMem0Offset16_S<T> {
-    pub ptr: Slot,
+pub struct StoreOpMem0Offset16<Ptr, Val> {
+    pub ptr: Ptr,
     pub offset: Offset16,
-    pub value: T,
+    pub value: Val,
 }
 
-impl<T: Decode> Decode for StoreOpMem0Offset16_S<T> {
+impl<Ptr: Decode, Val: Decode> Decode for StoreOpMem0Offset16<Ptr, Val> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             ptr: Decode::decode(decoder)?,
@@ -253,16 +253,16 @@ impl<T: Decode> Decode for StoreOpMem0Offset16_S<T> {
 
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
-pub struct StoreLaneOp_S<T, LaneIdx> {
-    pub ptr: Slot,
+pub struct StoreLaneOp<Ptr, Val, LaneIdx> {
+    pub ptr: Ptr,
     pub offset: u64,
-    pub value: T,
+    pub value: Val,
     pub memory: Memory,
     pub lane: LaneIdx,
 }
 
 #[cfg(feature = "simd")]
-impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOp_S<T, LaneIdx> {
+impl<Ptr: Decode, Val: Decode, LaneIdx: Decode> Decode for StoreLaneOp<Ptr, Val, LaneIdx> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             ptr: Decode::decode(decoder)?,
@@ -276,15 +276,17 @@ impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOp_S<T, LaneIdx> {
 
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
-pub struct StoreLaneOpMem0Offset16_S<T, LaneIdx> {
-    pub ptr: Slot,
+pub struct StoreLaneOpMem0Offset16<Ptr, Val, LaneIdx> {
+    pub ptr: Ptr,
     pub offset: Offset16,
-    pub value: T,
+    pub value: Val,
     pub lane: LaneIdx,
 }
 
 #[cfg(feature = "simd")]
-impl<T: Decode, LaneIdx: Decode> Decode for StoreLaneOpMem0Offset16_S<T, LaneIdx> {
+impl<Ptr: Decode, Val: Decode, LaneIdx: Decode> Decode
+    for StoreLaneOpMem0Offset16<Ptr, Val, LaneIdx>
+{
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             ptr: Decode::decode(decoder)?,
