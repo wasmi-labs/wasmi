@@ -455,16 +455,25 @@ macro_rules! impl_wasm_float {
 
             #[inline]
             fn ceil(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 <libm::Libm<Self>>::ceil(self)
             }
 
             #[inline]
             fn floor(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 <libm::Libm<Self>>::floor(self)
             }
 
             #[inline]
             fn trunc(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 <libm::Libm<Self>>::trunc(self)
             }
 
