@@ -2,7 +2,6 @@ use crate::build::{
     Isa,
     display::{
         Indent,
-        Suffix,
         ident::DisplayIdent,
         utils::{DisplayConcat, DisplayMaybe, DisplaySequence, IntoDisplayMaybe as _},
     },
@@ -182,6 +181,10 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .laneidx_field()
             .map(|_| CamelCase(Ident::Lane))
             .display_maybe();
+        let at_suffix = match op.ptr {
+            OperandKind::Immediate => "At",
+            _ => "",
+        };
         let mem0_suffix = match op.mem {
             MemoryOperand::Immediate => "",
             MemoryOperand::Mem0 => "Mem0",
@@ -190,7 +193,11 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             OffsetOperand::Offset => "",
             OffsetOperand::Offset16 => "Offset16",
         };
-        let ptr_suffix = CamelCase(Suffix(op.ptr));
+        let ptr_ty = match op.ptr {
+            OperandKind::Reg | OperandKind::Slot => Some(DisplayConcat((op.ptr_field().ty, ','))),
+            OperandKind::Immediate => None,
+        }
+        .display_maybe();
         let value_ty = op.value_field().ty;
         let laneidx_ty = op
             .laneidx_field()
@@ -199,7 +206,7 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .display_maybe();
         writeln!(
             f,
-            "pub type {camel_ident} = Store{lane_ident}Op{mem0_suffix}{offset16_suffix}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
+            "pub type {camel_ident} = Store{lane_ident}{at_suffix}Op{mem0_suffix}{offset16_suffix}<{ptr_ty}{value_ty}{laneidx_ty}>;"
         )
     }
 }

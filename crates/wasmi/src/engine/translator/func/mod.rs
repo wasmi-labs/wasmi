@@ -25,7 +25,6 @@ use self::{
         ElseReachability,
         IfControlFrame,
         IfReachability,
-        ImmediateOperand,
         LocalOperand,
         Location,
         LoopControlFrame,
@@ -2267,7 +2266,7 @@ impl FuncTranslator {
             return Ok(());
         }
         // We need to encode a non-optimized fallback load operator.
-        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address_v2(memory, ptr, offset)) else {
+        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let op = match ptr {
@@ -2293,7 +2292,7 @@ impl FuncTranslator {
     /// - `{i32, i64}.{store, store8, store16, store32}`
     fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error>
     where
-        T::Value: Copy + From<TypedRawVal>,
+        T::Value: Copy + From<RawVal>,
         T::Immediate: Copy,
     {
         bail_unreachable!(self);
@@ -2301,7 +2300,6 @@ impl FuncTranslator {
         self.encode_store::<T>(memarg, ptr, value)
     }
 
-    /// Encodes a Wasm store operator to Wasmi bytecode.
     fn encode_store<T: op::StoreOp>(
         &mut self,
         memarg: MemArg,
@@ -2309,118 +2307,103 @@ impl FuncTranslator {
         value: Operand,
     ) -> Result<(), Error>
     where
-        T::Value: Copy + From<TypedRawVal>,
+        T::Value: Copy + From<RawVal>,
         T::Immediate: Copy,
     {
         let (memory, offset) = Self::decode_memarg(memarg)?;
-        let ptr = match ptr {
-            Operand::Reg(_ptr) => todo!(),
-            Operand::Local(ptr) => self.layout.local_to_slot(ptr)?,
-            Operand::Temp(ptr) => ptr.temp_slots().head(),
-            Operand::Immediate(ptr) => {
-                return self.encode_store_ix::<T>(ptr, offset, memory, value);
-            }
-        };
-        if self.encode_store_mem0_offset16::<T>(ptr, offset, memory, value)? {
-            return Ok(());
-        }
-        let store_op = match value {
-            Operand::Reg(_value) => todo!(),
-            Operand::Local(value) => {
-                let value = self.layout.local_to_slot(value)?;
-                T::store_ss(ptr, offset, value, memory)
-            }
-            Operand::Temp(value) => {
-                let value = value.temp_slots().head();
-                T::store_ss(ptr, offset, value, memory)
-            }
-            Operand::Immediate(value) => {
-                let value = <T::Value>::from(value.val());
-                let immediate = <T as op::StoreOp>::into_immediate(value);
-                T::store_si(ptr, offset, immediate, memory)
-            }
-        };
-        self.push_instr(store_op, FuelCostsProvider::store)?;
-        Ok(())
-    }
-
-    /// Encodes a Wasm store operator with immediate `ptr` to Wasmi bytecode.
-    fn encode_store_ix<T: op::StoreOp>(
-        &mut self,
-        ptr: ImmediateOperand,
-        offset: u64,
-        memory: index::Memory,
-        value: Operand,
-    ) -> Result<(), Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
-        let Some(address) = self.effective_address(memory, ptr.val(), offset) else {
+        let Some(ptr) = self
+            .resolve_operand_as_index(ptr, memory)?
+            .map(|ptr| self.effective_address(memory, ptr, offset))
+            .transpose()
+        else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
-        let store_op = match value {
-            Operand::Reg(_value) => todo!(),
-            Operand::Local(value) => {
-                let value = self.layout.local_to_slot(value)?;
-                T::store_is(address, value, memory)
-            }
-            Operand::Temp(value) => {
-                let value = value.temp_slots().head();
-                T::store_is(address, value, memory)
-            }
-            Operand::Immediate(value) => {
-                let value = <T::Value>::from(value.val());
-                let immediate = <T as op::StoreOp>::into_immediate(value);
-                T::store_ii(address, immediate, memory)
-            }
-        };
-        self.push_instr(store_op, FuelCostsProvider::store)?;
+        let value = self
+            .resolve_operand_as::<T::Value>(value)?
+            .map(T::into_immediate);
+        let op = self.choose_store_op::<T>(memarg, ptr, value)?;
+        self.push_instr(op, FuelCostsProvider::store)?;
         Ok(())
     }
 
-    /// Encodes a Wasm store operator with `(mem 0)` and 16-bit encodable `offset` to Wasmi bytecode.
+    /// Selects which store operator to encode based on type `T`.
+    fn choose_store_op<T: op::StoreOp>(
+        &mut self,
+        memarg: MemArg,
+        ptr: ResolvedOperand<Address>,
+        value: ResolvedOperand<T::Immediate>,
+    ) -> Result<Op, Error>
+    where
+        T::Value: Copy + From<RawVal>,
+        T::Immediate: Copy,
+    {
+        use ResolvedOperand as Opd;
+        let (memory, offset) = Self::decode_memarg(memarg)?;
+        if let Some(op) = self.choose_store_mem0_offset16_op::<T>(ptr, offset, memory, value)? {
+            return Ok(op);
+        }
+        let op = match (ptr, value) {
+            (Opd::Reg, Opd::Reg) => match T::store_rr(offset, memory) {
+                Some(op) => op,
+                None => unreachable!(),
+            },
+            (Opd::Reg, Opd::Slot(value)) => T::store_rs(offset, value, memory),
+            (Opd::Reg, Opd::Immediate(value)) => T::store_ri(offset, value, memory),
+            (Opd::Slot(ptr), Opd::Reg) => T::store_sr(ptr, offset, memory),
+            (Opd::Slot(ptr), Opd::Slot(value)) => T::store_ss(ptr, offset, value, memory),
+            (Opd::Slot(ptr), Opd::Immediate(value)) => T::store_si(ptr, offset, value, memory),
+            (Opd::Immediate(address), Opd::Reg) => T::store_ir(address, memory),
+            (Opd::Immediate(address), Opd::Slot(value)) => T::store_is(address, value, memory),
+            (Opd::Immediate(address), Opd::Immediate(value)) => T::store_ii(address, value, memory),
+        };
+        Ok(op)
+    }
+
+    /// Selects a Wasm store operator with `(mem 0)` and 16-bit encodable `offset` to Wasmi bytecode.
     ///
     /// # Note
     ///
-    /// - Returns `Ok(true)` if encoding was successfull.
-    /// - Returns `Ok(false)` if encoding was unsuccessful.
+    /// - Returns `Ok(true)` if encoding is available.
+    /// - Returns `Ok(false)` if encoding is not available.
     /// - Returns `Err(_)` if an error occurred.
-    fn encode_store_mem0_offset16<T: op::StoreOp>(
+    fn choose_store_mem0_offset16_op<T: op::StoreOp>(
         &mut self,
-        ptr: Slot,
+        ptr: ResolvedOperand<Address>,
         offset: u64,
         memory: index::Memory,
-        value: Operand,
-    ) -> Result<bool, Error>
+        value: ResolvedOperand<T::Immediate>,
+    ) -> Result<Option<Op>, Error>
     where
-        T::Value: Copy + From<TypedRawVal>,
+        T::Value: Copy + From<RawVal>,
         T::Immediate: Copy,
     {
+        use Location as Loc;
+        use ResolvedOperand as Opd;
         if !memory.is_default() {
-            return Ok(false);
+            return Ok(None);
         }
-        let Ok(offset16) = Offset16::try_from(offset) else {
-            return Ok(false);
+        let Ok(offset) = Offset16::try_from(offset) else {
+            return Ok(None);
         };
-        let store_op = match value {
-            Operand::Reg(_value) => todo!(),
-            Operand::Local(value) => {
-                let value = self.layout.local_to_slot(value)?;
-                T::store_mem0_offset16_ss(ptr, offset16, value)
-            }
-            Operand::Temp(value) => {
-                let value = value.temp_slots().head();
-                T::store_mem0_offset16_ss(ptr, offset16, value)
-            }
-            Operand::Immediate(value) => {
-                let value = <T::Value>::from(value.val());
-                let immediate = <T as op::StoreOp>::into_immediate(value);
-                T::store_mem0_offset16_si(ptr, offset16, immediate)
+        let ptr = match ptr {
+            Opd::Reg => Loc::Reg,
+            Opd::Slot(ptr) => Loc::Slot(ptr),
+            Opd::Immediate(_) => return Ok(None),
+        };
+        let op = match (ptr, value) {
+            (Loc::Reg, Opd::Reg) => match T::store_mem0_offset16_rr(offset) {
+                Some(op) => op,
+                None => unreachable!(),
+            },
+            (Loc::Reg, Opd::Slot(value)) => T::store_mem0_offset16_rs(offset, value),
+            (Loc::Reg, Opd::Immediate(value)) => T::store_mem0_offset16_ri(offset, value),
+            (Loc::Slot(ptr), Opd::Reg) => T::store_mem0_offset16_sr(ptr, offset),
+            (Loc::Slot(ptr), Opd::Slot(value)) => T::store_mem0_offset16_ss(ptr, offset, value),
+            (Loc::Slot(ptr), Opd::Immediate(value)) => {
+                T::store_mem0_offset16_si(ptr, offset, value)
             }
         };
-        self.push_instr(store_op, FuelCostsProvider::store)?;
-        Ok(true)
+        Ok(Some(op))
     }
 
     /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
@@ -2435,47 +2418,10 @@ impl FuncTranslator {
 
     /// Returns the effective address `ptr+offset` if it is valid.
     // TODO: rename to just `effective_address` and remove old `effective_address`
-    fn effective_address_v2(&self, mem: index::Memory, ptr: u64, offset: u64) -> Option<Address> {
+    fn effective_address(&self, mem: index::Memory, ptr: u64, offset: u64) -> Option<Address> {
         let memory_type = *self
             .module
             .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));
-        let Some(address) = ptr.checked_add(offset) else {
-            // Case: address overflows any legal memory index.
-            return None;
-        };
-        if let Some(max) = memory_type.maximum() {
-            // The memory's maximum size in bytes.
-            let max_size = max << memory_type.page_size_log2();
-            if address > max_size {
-                // Case: address overflows the memory's maximum size.
-                return None;
-            }
-        }
-        if !memory_type.is_64() && address >= 1 << 32 {
-            // Case: address overflows the 32-bit memory index.
-            return None;
-        }
-        let Ok(address) = Address::try_from(address) else {
-            // Case: address is too big for the system to handle properly.
-            return None;
-        };
-        Some(address)
-    }
-
-    /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address(
-        &self,
-        mem: index::Memory,
-        ptr: TypedRawVal,
-        offset: u64,
-    ) -> Option<Address> {
-        let memory_type = *self
-            .module
-            .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));
-        let ptr = match memory_type.is_64() {
-            true => u64::from(ptr),
-            false => u64::from(u32::from(ptr)),
-        };
         let Some(address) = ptr.checked_add(offset) else {
             // Case: address overflows any legal memory index.
             return None;
