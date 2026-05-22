@@ -2340,18 +2340,50 @@ handler_load_mem0_offset16_ss! {
 }
 
 handler_store_sx! {
+    fn u32_store_rs(U32Store_Rs, u32) = wasm::store32;
+    fn u32_store_ri(U32Store_Ri, u32) = wasm::store32;
+    fn u32_store_sr(U32Store_Sr, u32) = wasm::store32;
     fn u32_store_ss(U32Store_Ss, u32) = wasm::store32;
     fn u32_store_si(U32Store_Si, u32) = wasm::store32;
+
+    fn u64_store_rs(U64Store_Rs, u64) = wasm::store64;
+    fn u64_store_ri(U64Store_Ri, u64) = wasm::store64;
+    fn u64_store_sr(U64Store_Sr, u64) = wasm::store64;
     fn u64_store_ss(U64Store_Ss, u64) = wasm::store64;
     fn u64_store_si(U64Store_Si, u64) = wasm::store64;
+
+    fn f32_store_rr(F32Store_Rr, f32) = wasm::store_f32;
+    fn f32_store_sr(F32Store_Sr, f32) = wasm::store_f32;
+    fn f64_store_rr(F64Store_Rr, f64) = wasm::store_f64;
+    fn f64_store_sr(F64Store_Sr, f64) = wasm::store_f64;
+
+    fn i32_store_wrap8_rs(I32StoreWrap8_Rs, i8) = wasm::i32_store8;
+    fn i32_store_wrap8_ri(I32StoreWrap8_Ri, i8) = wasm::i32_store8;
+    fn i32_store_wrap8_sr(I32StoreWrap8_Sr, i8) = wasm::i32_store8;
     fn i32_store_wrap8_ss(I32StoreWrap8_Ss, i8) = wasm::i32_store8;
     fn i32_store_wrap8_si(I32StoreWrap8_Si, i8) = wasm::i32_store8;
+
+    fn i32_store_wrap16_rs(I32StoreWrap16_Rs, i16) = wasm::i32_store16;
+    fn i32_store_wrap16_ri(I32StoreWrap16_Ri, i16) = wasm::i32_store16;
+    fn i32_store_wrap16_sr(I32StoreWrap16_Sr, i16) = wasm::i32_store16;
     fn i32_store_wrap16_ss(I32StoreWrap16_Ss, i16) = wasm::i32_store16;
     fn i32_store_wrap16_si(I32StoreWrap16_Si, i16) = wasm::i32_store16;
+
+    fn i64_store_wrap8_rs(I64StoreWrap8_Rs, i8) = wasm::i64_store8;
+    fn i64_store_wrap8_ri(I64StoreWrap8_Ri, i8) = wasm::i64_store8;
+    fn i64_store_wrap8_sr(I64StoreWrap8_Sr, i8) = wasm::i64_store8;
     fn i64_store_wrap8_ss(I64StoreWrap8_Ss, i8) = wasm::i64_store8;
     fn i64_store_wrap8_si(I64StoreWrap8_Si, i8) = wasm::i64_store8;
+
+    fn i64_store_wrap16_rs(I64StoreWrap16_Rs, i16) = wasm::i64_store16;
+    fn i64_store_wrap16_ri(I64StoreWrap16_Ri, i16) = wasm::i64_store16;
+    fn i64_store_wrap16_sr(I64StoreWrap16_Sr, i16) = wasm::i64_store16;
     fn i64_store_wrap16_ss(I64StoreWrap16_Ss, i16) = wasm::i64_store16;
     fn i64_store_wrap16_si(I64StoreWrap16_Si, i16) = wasm::i64_store16;
+
+    fn i64_store_wrap32_rs(I64StoreWrap32_Rs, i32) = wasm::i64_store32;
+    fn i64_store_wrap32_ri(I64StoreWrap32_Ri, i32) = wasm::i64_store32;
+    fn i64_store_wrap32_sr(I64StoreWrap32_Sr, i32) = wasm::i64_store32;
     fn i64_store_wrap32_ss(I64StoreWrap32_Ss, i32) = wasm::i64_store32;
     fn i64_store_wrap32_si(I64StoreWrap32_Si, i32) = wasm::i64_store32;
 }
@@ -2390,35 +2422,83 @@ macro_rules! handler_store_ix {
     };
 }
 handler_store_ix! {
+    fn u32_store_ir(U32Store_Ir, u32) = wasm::store32_at;
     fn u32_store_is(U32Store_Is, u32) = wasm::store32_at;
     fn u32_store_ii(U32Store_Ii, u32) = wasm::store32_at;
+
+    fn u64_store_ir(U64Store_Ir, u64) = wasm::store64_at;
     fn u64_store_is(U64Store_Is, u64) = wasm::store64_at;
     fn u64_store_ii(U64Store_Ii, u64) = wasm::store64_at;
+
+    fn f32_store_ir(F32Store_Ir, f32) = wasm::store_f32_at;
+    fn f64_store_ir(F64Store_Ir, f64) = wasm::store_f64_at;
+
+    fn i32_store_wrap8_ir(I32StoreWrap8_Ir, i8) = wasm::i32_store8_at;
     fn i32_store_wrap8_is(I32StoreWrap8_Is, i8) = wasm::i32_store8_at;
     fn i32_store_wrap8_ii(I32StoreWrap8_Ii, i8) = wasm::i32_store8_at;
+
+    fn i32_store_wrap16_ir(I32StoreWrap16_Ir, i16) = wasm::i32_store16_at;
     fn i32_store_wrap16_is(I32StoreWrap16_Is, i16) = wasm::i32_store16_at;
     fn i32_store_wrap16_ii(I32StoreWrap16_Ii, i16) = wasm::i32_store16_at;
+
+    fn i64_store_wrap8_ir(I64StoreWrap8_Ir, i8) = wasm::i64_store8_at;
     fn i64_store_wrap8_is(I64StoreWrap8_Is, i8) = wasm::i64_store8_at;
     fn i64_store_wrap8_ii(I64StoreWrap8_Ii, i8) = wasm::i64_store8_at;
+
+    fn i64_store_wrap16_ir(I64StoreWrap16_Ir, i16) = wasm::i64_store16_at;
     fn i64_store_wrap16_is(I64StoreWrap16_Is, i16) = wasm::i64_store16_at;
     fn i64_store_wrap16_ii(I64StoreWrap16_Ii, i16) = wasm::i64_store16_at;
+
+    fn i64_store_wrap32_ir(I64StoreWrap32_Ir, i32) = wasm::i64_store32_at;
     fn i64_store_wrap32_is(I64StoreWrap32_Is, i32) = wasm::i64_store32_at;
     fn i64_store_wrap32_ii(I64StoreWrap32_Ii, i32) = wasm::i64_store32_at;
 }
 
 handler_store_mem0_offset16_sx! {
+    fn u32_store_mem0_offset16_rs(U32StoreMem0Offset16_Rs, u32) = wasm::store32;
+    fn u32_store_mem0_offset16_ri(U32StoreMem0Offset16_Ri, u32) = wasm::store32;
+    fn u32_store_mem0_offset16_sr(U32StoreMem0Offset16_Sr, u32) = wasm::store32;
     fn u32_store_mem0_offset16_ss(U32StoreMem0Offset16_Ss, u32) = wasm::store32;
     fn u32_store_mem0_offset16_si(U32StoreMem0Offset16_Si, u32) = wasm::store32;
+
+    fn u64_store_mem0_offset16_rs(U64StoreMem0Offset16_Rs, u64) = wasm::store64;
+    fn u64_store_mem0_offset16_ri(U64StoreMem0Offset16_Ri, u64) = wasm::store64;
+    fn u64_store_mem0_offset16_sr(U64StoreMem0Offset16_Sr, u64) = wasm::store64;
     fn u64_store_mem0_offset16_ss(U64StoreMem0Offset16_Ss, u64) = wasm::store64;
     fn u64_store_mem0_offset16_si(U64StoreMem0Offset16_Si, u64) = wasm::store64;
+
+    fn f32_store_mem0_offset16_rr(F32StoreMem0Offset16_Rr, f32) = wasm::store_f32;
+    fn f32_store_mem0_offset16_sr(F32StoreMem0Offset16_Sr, f32) = wasm::store_f32;
+    fn f64_store_mem0_offset16_rr(F64StoreMem0Offset16_Rr, f64) = wasm::store_f64;
+    fn f64_store_mem0_offset16_sr(F64StoreMem0Offset16_Sr, f64) = wasm::store_f64;
+
+    fn i32_store_wrap8_mem0_offset16_rs(I32StoreWrap8Mem0Offset16_Rs, i8) = wasm::i32_store8;
+    fn i32_store_wrap8_mem0_offset16_ri(I32StoreWrap8Mem0Offset16_Ri, i8) = wasm::i32_store8;
+    fn i32_store_wrap8_mem0_offset16_sr(I32StoreWrap8Mem0Offset16_Sr, i8) = wasm::i32_store8;
     fn i32_store_wrap8_mem0_offset16_ss(I32StoreWrap8Mem0Offset16_Ss, i8) = wasm::i32_store8;
     fn i32_store_wrap8_mem0_offset16_si(I32StoreWrap8Mem0Offset16_Si, i8) = wasm::i32_store8;
+
+    fn i32_store_wrap16_mem0_offset16_rs(I32StoreWrap16Mem0Offset16_Rs, i16) = wasm::i32_store16;
+    fn i32_store_wrap16_mem0_offset16_ri(I32StoreWrap16Mem0Offset16_Ri, i16) = wasm::i32_store16;
+    fn i32_store_wrap16_mem0_offset16_sr(I32StoreWrap16Mem0Offset16_Sr, i16) = wasm::i32_store16;
     fn i32_store_wrap16_mem0_offset16_ss(I32StoreWrap16Mem0Offset16_Ss, i16) = wasm::i32_store16;
     fn i32_store_wrap16_mem0_offset16_si(I32StoreWrap16Mem0Offset16_Si, i16) = wasm::i32_store16;
+
+    fn i64_store_wrap8_mem0_offset16_rs(I64StoreWrap8Mem0Offset16_Rs, i8) = wasm::i64_store8;
+    fn i64_store_wrap8_mem0_offset16_ri(I64StoreWrap8Mem0Offset16_Ri, i8) = wasm::i64_store8;
+    fn i64_store_wrap8_mem0_offset16_sr(I64StoreWrap8Mem0Offset16_Sr, i8) = wasm::i64_store8;
     fn i64_store_wrap8_mem0_offset16_ss(I64StoreWrap8Mem0Offset16_Ss, i8) = wasm::i64_store8;
     fn i64_store_wrap8_mem0_offset16_si(I64StoreWrap8Mem0Offset16_Si, i8) = wasm::i64_store8;
+
+    fn i64_store_wrap16_mem0_offset16_rs(I64StoreWrap16Mem0Offset16_Rs, i16) = wasm::i64_store16;
+    fn i64_store_wrap16_mem0_offset16_ri(I64StoreWrap16Mem0Offset16_Ri, i16) = wasm::i64_store16;
+    fn i64_store_wrap16_mem0_offset16_sr(I64StoreWrap16Mem0Offset16_Sr, i16) = wasm::i64_store16;
     fn i64_store_wrap16_mem0_offset16_ss(I64StoreWrap16Mem0Offset16_Ss, i16) = wasm::i64_store16;
     fn i64_store_wrap16_mem0_offset16_si(I64StoreWrap16Mem0Offset16_Si, i16) = wasm::i64_store16;
+
+    fn i64_store_wrap32_mem0_offset16_rs(I64StoreWrap32Mem0Offset16_Rs, i32) = wasm::i64_store32;
+    fn i64_store_wrap32_mem0_offset16_ri(I64StoreWrap32Mem0Offset16_Ri, i32) = wasm::i64_store32;
+    fn i64_store_wrap32_mem0_offset16_sr(I64StoreWrap32Mem0Offset16_Sr, i32) = wasm::i64_store32;
     fn i64_store_wrap32_mem0_offset16_ss(I64StoreWrap32Mem0Offset16_Ss, i32) = wasm::i64_store32;
     fn i64_store_wrap32_mem0_offset16_si(I64StoreWrap32Mem0Offset16_Si, i32) = wasm::i64_store32;
 }

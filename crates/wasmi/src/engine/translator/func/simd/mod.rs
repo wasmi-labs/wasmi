@@ -272,7 +272,7 @@ impl FuncTranslator {
             return Ok(());
         }
         // We need to encode a non-optimized fallback load operator.
-        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address_v2(memory, ptr, offset)) else {
+        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         self.push_instr_with_result_slot(

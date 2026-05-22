@@ -450,6 +450,46 @@ gen_store_fn! {
     (fn store64, fn store64_at, u64);
 }
 
+/// Executes a Wasmi `f32.store` instruction.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+pub fn store_f32(memory: &mut [u8], ptr: u64, offset: u64, value: f32) -> Result<(), TrapCode> {
+    store32(memory, ptr, offset, value.to_bits())
+}
+
+/// Executes a Wasmi `f32.store` instruction.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+pub fn store_f32_at(memory: &mut [u8], address: usize, value: f32) -> Result<(), TrapCode> {
+    store32_at(memory, address, value.to_bits())
+}
+
+/// Executes a Wasmi `f64.store` instruction.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+pub fn store_f64_at(memory: &mut [u8], address: usize, value: f64) -> Result<(), TrapCode> {
+    store64_at(memory, address, value.to_bits())
+}
+
+/// Executes a Wasmi `f64.store` instruction.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+pub fn store_f64(memory: &mut [u8], ptr: u64, offset: u64, value: f64) -> Result<(), TrapCode> {
+    store64(memory, ptr, offset, value.to_bits())
+}
+
 /// Combines the two 64-bit `lo` and `hi` into a single `i128` value.
 fn combine128(lo: i64, hi: i64) -> i128 {
     let lo = i128::from(lo as u64);
