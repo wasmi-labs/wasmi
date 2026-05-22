@@ -14,7 +14,7 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-libm = { version = "0.2.11", default-features = false }
+libm = { version = "0.2.16", default-features = false }
 
 [features]
 default = ["std"]
