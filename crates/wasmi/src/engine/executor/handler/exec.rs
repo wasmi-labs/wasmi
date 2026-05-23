@@ -1250,6 +1250,7 @@ where
 
 /// Executes a generic branch table operator that does not any copy values.
 #[inline]
+#[expect(clippy::too_many_arguments)]
 fn exec_branch_table<Index>(
     index: Index,
     len_targets: u32,
@@ -1272,6 +1273,7 @@ where
 
 /// Executes a generic branch table operator that does not any copy values.
 #[inline]
+#[expect(clippy::too_many_arguments)]
 fn exec_branch_table_with_copies<Index>(
     index: Index,
     len_targets: u32,

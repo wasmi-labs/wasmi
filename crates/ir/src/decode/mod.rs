@@ -243,6 +243,6 @@ impl<T> Decode for Reg<T> {
 impl Decode for () {
     #[inline]
     fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
-        Ok(Self::default())
+        Ok(())
     }
 }
