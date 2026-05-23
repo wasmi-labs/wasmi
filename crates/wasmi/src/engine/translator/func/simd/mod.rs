@@ -67,7 +67,7 @@ impl FuncTranslator {
     fn translate_extract_lane<T: IntoLaneIdx, R>(
         &mut self,
         lane: u8,
-        make_instr: fn(result: Slot, input: Slot, lane: T::LaneIdx) -> Op,
+        make_instr: fn(input: Slot, lane: T::LaneIdx) -> Op,
         const_eval: fn(input: V128, lane: T::LaneIdx) -> R,
     ) -> Result<(), Error>
     where
@@ -84,9 +84,9 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.layout.operand_to_slot(input)?;
-        self.push_instr_with_result_slot(
+        self.push_instr_with_result_reg(
             <R as Typed>::TY,
-            |result| make_instr(result, input, lane),
+            make_instr(input, lane),
             FuelCostsProvider::simd,
         )?;
         Ok(())

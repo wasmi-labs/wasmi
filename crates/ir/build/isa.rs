@@ -843,6 +843,8 @@ fn add_simd_extract_lane_ops(isa: &mut Isa) {
             SimdTy::U16x8,
             SimdTy::U32x4,
             SimdTy::U64x2,
+            SimdTy::F32x4,
+            SimdTy::F64x2,
         ]
         .map(V128ExtractLaneOp::new),
     );
