@@ -4,6 +4,7 @@ use crate::build::{
     isa::Isa,
     op::{
         BinaryOp,
+        BranchTableOp,
         CallIndirectOp,
         CmpBranchOp,
         Field,
@@ -112,6 +113,7 @@ impl_display_encode! {
     TernaryOp,
     CmpBranchOp,
     CallIndirectOp,
+    BranchTableOp,
     SelectOp,
     LoadOp,
     GlobalGetOp,

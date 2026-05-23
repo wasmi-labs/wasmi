@@ -110,6 +110,27 @@ where
 }
 
 #[derive(Copy, Clone)]
+pub struct BranchTableOp<Index, Values> {
+    pub len_targets: u32,
+    pub index: Index,
+    pub values: Values,
+}
+
+impl<Index, Values> Decode for BranchTableOp<Index, Values>
+where
+    Index: Decode,
+    Values: Decode,
+{
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            len_targets: Decode::decode(decoder)?,
+            index: Decode::decode(decoder)?,
+            values: Decode::decode(decoder)?,
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct SelectOp<Res, Cond, Tval, Fval> {
     pub result: Res,
     pub condition: Cond,

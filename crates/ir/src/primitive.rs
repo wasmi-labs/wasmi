@@ -43,7 +43,7 @@ impl<T> Debug for Reg<T> {
     }
 }
 
-/// An [`Op::BranchTableSpan`](crate::Op::BranchTableSpan) branching target.
+/// A branching target for branch tables that copy some values upon taking a branch.
 #[derive(Debug, Copy, Clone)]
 pub struct BranchTableTarget {
     /// The result stack slots of the branch target.
