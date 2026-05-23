@@ -994,6 +994,8 @@ pub enum SimdTy {
     U16x8,
     U32x4,
     U64x2,
+    F32x4,
+    F64x2,
 }
 
 impl From<SimdTy> for Ty {
@@ -1005,6 +1007,8 @@ impl From<SimdTy> for Ty {
             SimdTy::U16x8 => Self::U16x8,
             SimdTy::U32x4 => Self::U32x4,
             SimdTy::U64x2 => Self::U64x2,
+            SimdTy::F32x4 => Self::F32x4,
+            SimdTy::F64x2 => Self::F64x2,
         }
     }
 }
@@ -1012,12 +1016,10 @@ impl From<SimdTy> for Ty {
 impl From<SimdTy> for LaneWidth {
     fn from(value: SimdTy) -> Self {
         match value {
-            SimdTy::I8x16 => Self::W8,
-            SimdTy::U8x16 => Self::W8,
-            SimdTy::I16x8 => Self::W16,
-            SimdTy::U16x8 => Self::W16,
-            SimdTy::U32x4 => Self::W32,
-            SimdTy::U64x2 => Self::W64,
+            | SimdTy::I8x16 | SimdTy::U8x16 => Self::W8,
+            | SimdTy::I16x8 | SimdTy::U16x8 => Self::W16,
+            | SimdTy::U32x4 | SimdTy::F32x4 => Self::W32,
+            | SimdTy::U64x2 | SimdTy::F64x2 => Self::W64,
         }
     }
 }
@@ -1025,12 +1027,23 @@ impl From<SimdTy> for LaneWidth {
 impl SimdTy {
     pub fn lane_ty(self) -> FieldTy {
         match self {
-            SimdTy::I8x16 => FieldTy::ImmLaneIdx16,
-            SimdTy::U8x16 => FieldTy::ImmLaneIdx16,
-            SimdTy::I16x8 => FieldTy::ImmLaneIdx8,
-            SimdTy::U16x8 => FieldTy::ImmLaneIdx8,
-            SimdTy::U32x4 => FieldTy::ImmLaneIdx4,
-            SimdTy::U64x2 => FieldTy::ImmLaneIdx2,
+            | SimdTy::I8x16 | SimdTy::U8x16 => FieldTy::ImmLaneIdx16,
+            | SimdTy::I16x8 | SimdTy::U16x8 => FieldTy::ImmLaneIdx8,
+            | SimdTy::U32x4 | SimdTy::F32x4 => FieldTy::ImmLaneIdx4,
+            | SimdTy::U64x2 | SimdTy::F64x2 => FieldTy::ImmLaneIdx2,
+        }
+    }
+
+    pub fn item_ty(self) -> FieldTy {
+        match self {
+            SimdTy::I8x16 => FieldTy::I8,
+            SimdTy::U8x16 => FieldTy::U8,
+            SimdTy::I16x8 => FieldTy::I16,
+            SimdTy::U16x8 => FieldTy::U16,
+            SimdTy::U32x4 => FieldTy::U32,
+            SimdTy::U64x2 => FieldTy::U64,
+            SimdTy::F32x4 => FieldTy::F32,
+            SimdTy::F64x2 => FieldTy::F64,
         }
     }
 }
@@ -1046,7 +1059,17 @@ impl V128ExtractLaneOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        let result_ty = match self.ty {
+            SimdTy::I8x16
+            | SimdTy::U8x16
+            | SimdTy::I16x8
+            | SimdTy::U16x8
+            | SimdTy::U32x4
+            | SimdTy::U64x2 => FieldTy::RegInt,
+            SimdTy::F32x4 => FieldTy::RegF32,
+            SimdTy::F64x2 => FieldTy::RegF64,
+        };
+        Field::new(Ident::Result, result_ty)
     }
 
     pub fn value_field(&self) -> Field {
