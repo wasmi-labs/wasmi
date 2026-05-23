@@ -996,7 +996,7 @@ fn add_simd_shift_ops(isa: &mut Isa) {
         (Ident::Shr, Ty::U64x2, Ty::U64x2),
     ];
     for (ident, result_ty, lhs_ty) in ops {
-        for rhs in [OperandKind::Slot, OperandKind::Immediate] {
+        for rhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
             isa.push_op(BinaryOp::new(
                 ident,
                 result_ty,
