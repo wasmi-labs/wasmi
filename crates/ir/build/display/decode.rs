@@ -8,6 +8,8 @@ use crate::build::{
     ident::{CamelCase, Ident, SnakeCase},
     op::{
         BinaryOp,
+        BranchTableCopies,
+        BranchTableOp,
         CallIndirectOp,
         CmpBranchOp,
         GenericOp,
@@ -114,6 +116,22 @@ impl Display for DisplayDecode<&'_ CmpBranchOp> {
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = CmpBranchOp<{lhs}, {rhs}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ BranchTableOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let index = op.index_field().ty;
+        let values_generic = match op.copies {
+            BranchTableCopies::None => FieldTy::EmptyTuple,
+            BranchTableCopies::Span => FieldTy::BoundedSlotSpan,
+        };
+        writeln!(
+            f,
+            "pub type {camel_ident} = BranchTableOp<{index}, {values_generic}>;"
+        )
     }
 }
 

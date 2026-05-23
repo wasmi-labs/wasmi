@@ -1,8 +1,10 @@
 use crate::build::{
-    display::utils::{DisplayConcat, IntoDisplayMaybe as _},
+    display::utils::{DisplayConcat, DisplayMaybe, IntoDisplayMaybe as _},
     ident::{CamelCase, Case, Ident, Sep, SnakeCase},
     op::{
         BinaryOp,
+        BranchTableCopies,
+        BranchTableOp,
         CallIndirectOp,
         CallKind,
         CmpBranchOp,
@@ -303,6 +305,24 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
             f,
             "{branch}{sep}{input_ident}{ident}_{lhs_suffix}{rhs_suffix}"
         )
+    }
+}
+
+impl Display for DisplayIdent<&'_ BranchTableOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::BranchTable);
+        let copies_suffix = match op.copies {
+            BranchTableCopies::None => DisplayMaybe::None,
+            BranchTableCopies::Span => {
+                let sep = case.wrap(Sep);
+                let span = case.wrap(Ident::Span);
+                DisplayMaybe::Some(DisplayConcat((sep, span)))
+            }
+        };
+        let index_suffix = case.wrap(Suffix(op.index));
+        write!(f, "{ident}{copies_suffix}_{index_suffix}")
     }
 }
 

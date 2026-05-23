@@ -10,7 +10,7 @@ pub use self::simd::*;
 use super::{
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_slot_value, get_value, memory_bytes, offset_ip},
+    utils::{fetch_func, get_value, memory_bytes, offset_ip},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -25,6 +25,7 @@ use crate::{
             dispatch::Break,
             state::DoneReason,
             utils::{
+                GetValue,
                 IntoControl as _,
                 call_wasm,
                 call_wasm_or_host,
@@ -59,7 +60,7 @@ use crate::{
     },
     errors::{FuelError, MemoryError, TableError},
     func::FuncEntity,
-    ir::{self, Slot, SlotSpan, index},
+    ir::{self, BoundedSlotSpan, Slot, SlotSpan, index},
     store::StoreError,
 };
 use core::cmp;
@@ -1226,65 +1227,101 @@ impl_i64_mul_wide! {
 }
 
 /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
-fn fetch_branch_table_target(sp: Sp, index: Slot, len_targets: u32) -> usize {
-    let index: u32 = get_slot_value(index, sp);
+#[inline]
+fn fetch_branch_table_target<Index>(
+    sp: Sp,
+    index: Index,
+    len_targets: u32,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> usize
+where
+    Index: GetValue<u32>,
+{
+    let index: u32 = get_value(index, sp, ireg, freg32, freg64);
     let max_index = len_targets - 1;
     cmp::min(index, max_index) as usize
 }
 
-execution_handler! {
-    fn branch_table(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (ip, crate::ir::decode::BranchTable { len_targets, index }) = unsafe { decode_op(ip) };
-        let chosen_target = fetch_branch_table_target(sp, index, len_targets);
-        let target_offset = 4 * chosen_target;
-        let ip = unsafe { ip.add(target_offset) };
-        let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
-        let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+/// Executes a generic branch table operator that does not any copy values.
+#[inline]
+fn exec_branch_table<Index>(
+    index: Index,
+    len_targets: u32,
+    _values: (),
+    ip: Ip,
+    sp: Sp,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> Ip
+where
+    Index: GetValue<u32>,
+{
+    let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
+    let target_offset = 4 * chosen_target;
+    let ip = unsafe { ip.add(target_offset) };
+    let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
+    offset_ip(ip, offset)
 }
 
-execution_handler! {
-    fn branch_table_span(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::BranchTableSpan {
-                len_targets,
-                index,
-                values,
-                len_values,
-            },
-        ) = unsafe { decode_op(ip) };
-        let chosen_target = fetch_branch_table_target(sp, index, len_targets);
-        let target_offset = 6 * chosen_target;
-        let ip = unsafe { ip.add(target_offset) };
-        let (_, ir::BranchTableTarget { results, offset }) =
-            unsafe { ip.decode::<ir::BranchTableTarget>() };
-        // TODO: maybe provide 2 `br_table_span` operation variants if needed: `br_table_span_{asc,des}`
-        exec_copy_span(sp, results, values, len_values);
-        let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+/// Executes a generic branch table operator that does not any copy values.
+#[inline]
+fn exec_branch_table_with_copies<Index>(
+    index: Index,
+    len_targets: u32,
+    values: BoundedSlotSpan,
+    ip: Ip,
+    sp: Sp,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> Ip
+where
+    Index: GetValue<u32>,
+{
+    let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
+    let target_offset = 6 * chosen_target;
+    let ip = unsafe { ip.add(target_offset) };
+    let (_, ir::BranchTableTarget { results, offset }) =
+        unsafe { ip.decode::<ir::BranchTableTarget>() };
+    let values_len = values.len();
+    let values = values.span();
+    exec_copy_span(sp, results, values, values_len);
+    offset_ip(ip, offset)
+}
+
+macro_rules! impl_branch_table_exec_handler {
+    (
+        $( fn $snake_case:ident($camel_case:ident) = $exec:expr; )*
+    ) => {
+        $(
+            execution_handler! {
+                fn $snake_case(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (ip, crate::ir::decode::$camel_case { len_targets, index, values }) = unsafe { decode_op(ip) };
+                    let ip = $exec(index, len_targets, values, ip, sp, ireg, freg32, freg64);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
+            }
+        )*
+    };
+}
+impl_branch_table_exec_handler! {
+    fn branch_table_s(BranchTable_S) = exec_branch_table;
+    fn branch_table_r(BranchTable_R) = exec_branch_table;
+    fn branch_table_span_s(BranchTableSpan_S) = exec_branch_table_with_copies;
+    fn branch_table_span_r(BranchTableSpan_R) = exec_branch_table_with_copies;
 }
 
 handler_unary! {

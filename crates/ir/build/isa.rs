@@ -5,6 +5,8 @@ use crate::build::{
     op::{
         BinaryOp,
         BinaryOpCaps,
+        BranchTableCopies,
+        BranchTableOp,
         CallIndirectOp,
         CallKind,
         CmpBranchOp,
@@ -474,21 +476,21 @@ fn add_control_ops(isa: &mut Isa) {
             Ident::Branch,
             [Field::new(Ident::Offset, FieldTy::BranchOffset)],
         )),
-        Op::from(GenericOp::new(
-            Ident::BranchTable,
-            [
-                Field::new(Ident::LenTargets, FieldTy::U32),
-                Field::new(Ident::Index, FieldTy::Slot),
-            ],
+        Op::from(BranchTableOp::new(
+            BranchTableCopies::None,
+            OperandKind::Reg,
         )),
-        Op::from(GenericOp::new(
-            Ident::BranchTableSpan,
-            [
-                Field::new(Ident::LenTargets, FieldTy::U32),
-                Field::new(Ident::Index, FieldTy::Slot),
-                Field::new(Ident::Values, FieldTy::SlotSpan),
-                Field::new(Ident::LenValues, FieldTy::U16),
-            ],
+        Op::from(BranchTableOp::new(
+            BranchTableCopies::None,
+            OperandKind::Slot,
+        )),
+        Op::from(BranchTableOp::new(
+            BranchTableCopies::Span,
+            OperandKind::Reg,
+        )),
+        Op::from(BranchTableOp::new(
+            BranchTableCopies::Span,
+            OperandKind::Slot,
         )),
     ];
     isa.push_ops(ops);

@@ -167,6 +167,7 @@ pub enum FieldTy {
     Bytes16,
     V128,
     ShiftAmount,
+    EmptyTuple,
 }
 
 impl FieldTy {
@@ -258,6 +259,7 @@ impl Display for FieldTy {
             Self::Bytes16 => "[u8; 16]",
             Self::V128 => "V128",
             Self::ShiftAmount => "ShiftAmount",
+            Self::EmptyTuple => "()",
         };
         f.write_str(s)
     }
