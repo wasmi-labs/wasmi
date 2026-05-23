@@ -114,9 +114,10 @@ pub enum Location {
 impl<const N: usize> GenericOp<N> {
     /// Returns `true` if `self` has a `Slot` result field.
     pub fn result_loc(&self) -> Option<Location> {
-        let field = self.fields.iter().find(|field| {
-            matches!(field.ident, Ident::Result)
-        })?;
+        let field = self
+            .fields
+            .iter()
+            .find(|field| matches!(field.ident, Ident::Result))?;
         let loc = match field.ty {
             FieldTy::Slot => Location::Slot,
             FieldTy::RegInt | FieldTy::RegF32 | FieldTy::RegF64 => Location::Reg,

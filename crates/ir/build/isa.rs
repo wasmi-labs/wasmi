@@ -811,7 +811,7 @@ fn add_simd_splat_ops(isa: &mut Isa) {
         (Ident::Splat, Ty::Bits64),
     ];
     for (ident, value_ty) in kinds {
-        for value in [OperandKind::Slot, OperandKind::Immediate] {
+        for value in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
             isa.push_op(UnaryOp::new(
                 ident,
                 Ty::V128,

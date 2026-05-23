@@ -100,12 +100,16 @@ impl_splat_bytes! {
 }
 
 handler_unary! {
+    fn v128_splat8_sr(V128Splat8_Sr) = splat8;
     fn v128_splat8_ss(V128Splat8_Ss) = splat8;
     fn v128_splat8_si(V128Splat8_Si) = splat8;
+    fn v128_splat16_sr(V128Splat16_Sr) = splat16;
     fn v128_splat16_ss(V128Splat16_Ss) = splat16;
     fn v128_splat16_si(V128Splat16_Si) = splat16;
+    fn v128_splat32_sr(V128Splat32_Sr) = splat32;
     fn v128_splat32_ss(V128Splat32_Ss) = splat32;
     fn v128_splat32_si(V128Splat32_Si) = splat32;
+    fn v128_splat64_sr(V128Splat64_Sr) = splat64;
     fn v128_splat64_ss(V128Splat64_Ss) = splat64;
     fn v128_splat64_si(V128Splat64_Si) = splat64;
 
