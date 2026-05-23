@@ -115,7 +115,7 @@ impl<const N: usize> GenericOp<N> {
     /// Returns `true` if `self` has a `Slot` result field.
     pub fn result_loc(&self) -> Option<Location> {
         let field = self.fields.iter().find(|field| {
-            matches!(field.ident, Ident::Result) && matches!(field.ty, FieldTy::Slot)
+            matches!(field.ident, Ident::Result)
         })?;
         let loc = match field.ty {
             FieldTy::Slot => Location::Slot,
