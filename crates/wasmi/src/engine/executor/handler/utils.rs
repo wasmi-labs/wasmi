@@ -189,7 +189,14 @@ macro_rules! impl_get_value_for_ireg {
         )*
     };
 }
-impl_get_value_for_ireg!(bool, i8, i16, i32, i64, u8, u16, u32, u64);
+impl_get_value_for_ireg!(bool, i8, i16, i32, i64, u8, u16, u32, u64, ShiftAmount);
+
+impl From<Ireg> for ShiftAmount {
+    #[inline]
+    fn from(value: Ireg) -> Self {
+        Self::from(u8::from(value))
+    }
+}
 
 impl GetValue<f32> for ir::Reg<f32> {
     #[inline]

@@ -205,12 +205,13 @@ impl FuncTranslator {
     /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
-        make_instr_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
-        make_instr_ssi: fn(result: Slot, lhs: Slot, rhs: ShiftAmount) -> Op,
+        op_ssr: fn(result: Slot, lhs: Slot) -> Op,
+        op_sss: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
+        op_ssi: fn(result: Slot, lhs: Slot, rhs: ShiftAmount) -> Op,
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
+        T: IntoShiftAmount<ShiftSource: From<RawVal>>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
@@ -220,26 +221,23 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         }
-        if let Operand::Immediate(rhs) = rhs {
-            let shift_amount = <T::ShiftSource>::from(rhs.val());
-            let Some(rhs) = T::into_shift_amount(shift_amount) else {
-                // Case: the shift operation is a no-op
-                self.stack.push_operand(lhs)?;
-                return Ok(());
-            };
-            let lhs = self.copy_operand_to_slot(lhs)?;
-            self.push_instr_with_result_slot(
-                ValType::V128,
-                |result| make_instr_ssi(result, lhs, rhs),
-                FuelCostsProvider::simd,
-            )?;
+        let Some(rhs) = self
+            .resolve_operand_as::<T::ShiftSource>(lhs)?
+            .map(T::into_shift_amount)
+            .transpose()
+        else {
+            // Case: the shift operation is a no-op
+            self.stack.push_operand(lhs)?;
             return Ok(());
-        }
+        };
         let lhs = self.copy_operand_to_slot(lhs)?;
-        let rhs = self.copy_operand_to_slot(rhs)?;
         self.push_instr_with_result_slot(
             ValType::V128,
-            |result| make_instr_sss(result, lhs, rhs),
+            |result| match rhs {
+                ResolvedOperand::Reg => op_ssr(result, lhs),
+                ResolvedOperand::Slot(rhs) => op_sss(result, lhs, rhs),
+                ResolvedOperand::Immediate(rhs) => op_ssi(result, lhs, rhs),
+            },
             FuelCostsProvider::simd,
         )?;
         Ok(())

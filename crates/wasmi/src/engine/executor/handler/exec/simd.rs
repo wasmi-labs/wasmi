@@ -289,28 +289,40 @@ macro_rules! wrap_shift {
     ($f:expr) => {{ |v128: V128, rhs: ShiftAmount| -> V128 { $f(v128, u32::from(u8::from(rhs))) } }};
 }
 handler_binary! {
+    fn i8x16_shl_ssr(I8x16Shl_Ssr) = wrap_shift!(simd::i8x16_shl);
     fn i8x16_shl_sss(I8x16Shl_Sss) = wrap_shift!(simd::i8x16_shl);
     fn i8x16_shl_ssi(I8x16Shl_Ssi) = wrap_shift!(simd::i8x16_shl);
+    fn i8x16_shr_ssr(I8x16Shr_Ssr) = wrap_shift!(simd::i8x16_shr_s);
     fn i8x16_shr_sss(I8x16Shr_Sss) = wrap_shift!(simd::i8x16_shr_s);
     fn i8x16_shr_ssi(I8x16Shr_Ssi) = wrap_shift!(simd::i8x16_shr_s);
+    fn u8x16_shr_ssr(U8x16Shr_Ssr) = wrap_shift!(simd::i8x16_shr_u);
     fn u8x16_shr_sss(U8x16Shr_Sss) = wrap_shift!(simd::i8x16_shr_u);
     fn u8x16_shr_ssi(U8x16Shr_Ssi) = wrap_shift!(simd::i8x16_shr_u);
+    fn i16x8_shl_ssr(I16x8Shl_Ssr) = wrap_shift!(simd::i16x8_shl);
     fn i16x8_shl_sss(I16x8Shl_Sss) = wrap_shift!(simd::i16x8_shl);
     fn i16x8_shl_ssi(I16x8Shl_Ssi) = wrap_shift!(simd::i16x8_shl);
+    fn i16x8_shr_ssr(I16x8Shr_Ssr) = wrap_shift!(simd::i16x8_shr_s);
     fn i16x8_shr_sss(I16x8Shr_Sss) = wrap_shift!(simd::i16x8_shr_s);
     fn i16x8_shr_ssi(I16x8Shr_Ssi) = wrap_shift!(simd::i16x8_shr_s);
+    fn u16x8_shr_ssr(U16x8Shr_Ssr) = wrap_shift!(simd::i16x8_shr_u);
     fn u16x8_shr_sss(U16x8Shr_Sss) = wrap_shift!(simd::i16x8_shr_u);
     fn u16x8_shr_ssi(U16x8Shr_Ssi) = wrap_shift!(simd::i16x8_shr_u);
+    fn i32x4_shl_ssr(I32x4Shl_Ssr) = wrap_shift!(simd::i32x4_shl);
     fn i32x4_shl_sss(I32x4Shl_Sss) = wrap_shift!(simd::i32x4_shl);
     fn i32x4_shl_ssi(I32x4Shl_Ssi) = wrap_shift!(simd::i32x4_shl);
+    fn i32x4_shr_ssr(I32x4Shr_Ssr) = wrap_shift!(simd::i32x4_shr_s);
     fn i32x4_shr_sss(I32x4Shr_Sss) = wrap_shift!(simd::i32x4_shr_s);
     fn i32x4_shr_ssi(I32x4Shr_Ssi) = wrap_shift!(simd::i32x4_shr_s);
+    fn u32x4_shr_ssr(U32x4Shr_Ssr) = wrap_shift!(simd::i32x4_shr_u);
     fn u32x4_shr_sss(U32x4Shr_Sss) = wrap_shift!(simd::i32x4_shr_u);
     fn u32x4_shr_ssi(U32x4Shr_Ssi) = wrap_shift!(simd::i32x4_shr_u);
+    fn i64x2_shl_ssr(I64x2Shl_Ssr) = wrap_shift!(simd::i64x2_shl);
     fn i64x2_shl_sss(I64x2Shl_Sss) = wrap_shift!(simd::i64x2_shl);
     fn i64x2_shl_ssi(I64x2Shl_Ssi) = wrap_shift!(simd::i64x2_shl);
+    fn i64x2_shr_ssr(I64x2Shr_Ssr) = wrap_shift!(simd::i64x2_shr_s);
     fn i64x2_shr_sss(I64x2Shr_Sss) = wrap_shift!(simd::i64x2_shr_s);
     fn i64x2_shr_ssi(I64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_s);
+    fn u64x2_shr_ssr(U64x2Shr_Ssr) = wrap_shift!(simd::i64x2_shr_u);
     fn u64x2_shr_sss(U64x2Shr_Sss) = wrap_shift!(simd::i64x2_shr_u);
     fn u64x2_shr_ssi(U64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_u);
 }
