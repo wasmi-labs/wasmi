@@ -167,39 +167,6 @@ impl Op {
 
     /// Returns `true` if `self` has a `Slot` result field.
     pub fn has_result_slot(&self) -> bool {
-        match self {
-            Op::Return(_) => false,
-            Op::Unary(op) => {
-                matches!(op.result, OperandKind::Slot)
-            }
-            Op::Binary(op) => {
-                matches!(op.result, OperandKind::Slot)
-            }
-            Op::Ternary(_) => true,
-            Op::CmpBranch(_) => false,
-            Op::BranchTable(_) => false,
-            Op::Select(op) => {
-                matches!(op.result, OperandKind::Slot)
-            }
-            Op::Load(op) => {
-                matches!(op.result, OperandKind::Slot)
-            }
-            Op::Store(_) => false,
-            Op::GlobalGet(op) => matches!(op.result, OperandKind::Slot),
-            Op::GlobalSet(_) => false,
-            Op::TableGet(op) => {
-                matches!(op.result, OperandKind::Slot)
-            }
-            Op::TableSet(_) => false,
-            Op::CallIndirect(_) => false,
-            Op::Generic0(op) => op.has_result_slot(),
-            Op::Generic1(op) => op.has_result_slot(),
-            Op::Generic2(op) => op.has_result_slot(),
-            Op::Generic3(op) => op.has_result_slot(),
-            Op::Generic4(op) => op.has_result_slot(),
-            Op::Generic5(op) => op.has_result_slot(),
-            Op::V128ReplaceLane(_) => true,
-            Op::V128ExtractLane(_) => true,
-        }
+        matches!(self.result_loc(), Some(Location::Slot))
     }
 }
