@@ -132,7 +132,6 @@ define_ident!(
 
     Branch: branch,
     BranchTable: branch_table,
-    BranchTableSpan: branch_table_span,
     Select: select,
     Load: load,
     Store: store,
@@ -151,6 +150,7 @@ define_ident!(
     Elem: elem,
     Data: data,
     Trap: trap,
+    Span: span,
 
     CallInternal: call_internal,
     CallImported: call_imported,
@@ -191,7 +191,6 @@ define_ident!(
     Params: params,
     Len: len,
     LenTargets: len_targets,
-    LenValues: len_values,
     Delta: delta,
     Dst: dst,
     Src: src,

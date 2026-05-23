@@ -1000,14 +1000,19 @@ impl FuncTranslator {
     /// # Note
     ///
     /// Upon call the `immediates` buffer contains all `br_table` target values.
-    fn encode_br_table_0(&mut self, table: wasmparser::BrTable, index: Slot) -> Result<(), Error> {
+    fn encode_br_table_0(
+        &mut self,
+        table: wasmparser::BrTable,
+        index: Location,
+    ) -> Result<(), Error> {
         // We add +1 because we include the default target here.
         let len_targets = table.len() + 1;
         debug_assert_eq!(self.immediates.len(), len_targets as usize);
-        self.push_instr(
-            Op::branch_table(len_targets, index),
-            FuelCostsProvider::base,
-        )?;
+        let op = match index {
+            Location::Reg => Op::branch_table_r(len_targets),
+            Location::Slot(index) => Op::branch_table_s(len_targets, index),
+        };
+        self.push_instr(op, FuelCostsProvider::base)?;
         // Encode the `br_table` targets:
         let fuel_pos = self.stack.consume_fuel_instr();
         let targets = &self.immediates[..];
@@ -1031,17 +1036,19 @@ impl FuncTranslator {
     fn encode_br_table_n(
         &mut self,
         table: wasmparser::BrTable,
-        index: Slot,
+        index: Location,
         len_values: u16,
     ) -> Result<(), Error> {
         debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let values =
             self.try_form_slot_span_or_move(usize::from(len_values), consume_fuel_instr)?;
-        self.push_instr(
-            Op::branch_table_span(table.len() + 1, index, values.span(), values.len()),
-            FuelCostsProvider::base,
-        )?;
+        let len_targets = table.len();
+        let op = match index {
+            Location::Reg => Op::branch_table_span_r(len_targets, values),
+            Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
+        };
+        self.push_instr(op, FuelCostsProvider::base)?;
         // Encode the `br_table` targets:
         let fuel_pos = self.stack.consume_fuel_instr();
         let targets = &self.immediates[..];
