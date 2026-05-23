@@ -145,6 +145,7 @@ impl Op {
             Op::Binary(op) => op.result.result_loc(),
             Op::Ternary(_) => Some(Location::Slot),
             Op::CmpBranch(_) => None,
+            Op::BranchTable(_) => None,
             Op::Select(_) => Some(Location::Reg),
             Op::Load(op) => op.result.result_loc(),
             Op::Store(_) => None,
@@ -176,6 +177,7 @@ impl Op {
             }
             Op::Ternary(_) => true,
             Op::CmpBranch(_) => false,
+            Op::BranchTable(_) => false,
             Op::Select(op) => {
                 matches!(op.result, OperandKind::Slot)
             }

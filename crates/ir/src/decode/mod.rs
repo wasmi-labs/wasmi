@@ -6,6 +6,7 @@ mod op;
 
 use self::op::{
     BinaryOp,
+    BranchTableOp,
     CallIndirect,
     CmpBranchOp,
     GlobalGet,
@@ -233,6 +234,13 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
 include!(concat!(env!("OUT_DIR"), "/decode.rs"));
 
 impl<T> Decode for Reg<T> {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
+    }
+}
+
+impl Decode for () {
     #[inline]
     fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self::default())

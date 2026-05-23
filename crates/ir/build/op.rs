@@ -13,6 +13,7 @@ macro_rules! apply_macro_for_ops {
             Binary(BinaryOp),
             Ternary(TernaryOp),
             CmpBranch(CmpBranchOp),
+            BranchTable(BranchTableOp),
             Select(SelectOp),
             Load(LoadOp),
             Store(StoreOp),
@@ -353,6 +354,49 @@ impl CmpBranchOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.offset_field(), self.lhs_field(), self.rhs_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct BranchTableOp {
+    pub copies: BranchTableCopies,
+    pub index: OperandKind,
+}
+
+#[derive(Copy, Clone)]
+pub enum BranchTableCopies {
+    /// No values are being copied when taking a branch.
+    None,
+    /// A span of values are being copied when taking a branch.
+    Span,
+}
+
+impl BranchTableOp {
+    pub fn new(copies: BranchTableCopies, index: OperandKind) -> Self {
+        Self { copies, index }
+    }
+
+    pub fn len_targets_field(&self) -> Field {
+        Field::new(Ident::LenTargets, FieldTy::U32)
+    }
+
+    pub fn index_field(&self) -> Field {
+        Field::new(Ident::Index, self.index.field_ty(Ty::U32))
+    }
+
+    pub fn values_field(&self) -> Option<Field> {
+        match self.copies {
+            BranchTableCopies::None => None,
+            BranchTableCopies::Span => Some(Field::new(Ident::Values, FieldTy::BoundedSlotSpan)),
+        }
+    }
+
+    pub fn fields(&self) -> [Option<Field>; 3] {
+        [
+            Some(self.len_targets_field()),
+            Some(self.index_field()),
+            self.values_field(),
+        ]
     }
 }
 

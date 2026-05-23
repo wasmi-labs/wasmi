@@ -312,7 +312,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(default_target) = usize::try_from(default_target) else {
             panic!("out of bounds `default_target` does not fit into `usize`: {default_target}");
         };
-        let index = self.layout.operand_to_slot(index)?;
+        let index = self.copy_immediate_to_slot(index)?;
         let len_branch_params = self
             .stack
             .peek_control(default_target)
