@@ -318,7 +318,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i8x16_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i32, i8>(
-            |_result| todo!(),
+            Op::v128_splat8_sr,
             Op::v128_splat8_ss,
             Op::v128_splat8_si,
         )
@@ -326,7 +326,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i16x8_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i32, i16>(
-            |_result| todo!(),
+            Op::v128_splat16_sr,
             Op::v128_splat16_ss,
             Op::v128_splat16_si,
         )
@@ -334,7 +334,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i32x4_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i32, i32>(
-            |_result| todo!(),
+            Op::v128_splat32_sr,
             Op::v128_splat32_ss,
             Op::v128_splat32_si,
         )
@@ -342,7 +342,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i64x2_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i64, i64>(
-            |_result| todo!(),
+            Op::v128_splat64_sr,
             Op::v128_splat64_ss,
             Op::v128_splat64_si,
         )
@@ -350,7 +350,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_f32x4_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<f32, f32>(
-            |_result| todo!(),
+            Op::v128_splat32_sr,
             Op::v128_splat32_ss,
             Op::v128_splat32_si,
         )
@@ -358,7 +358,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_f64x2_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<f64, f64>(
-            |_result| todo!(),
+            Op::v128_splat64_sr,
             Op::v128_splat64_ss,
             Op::v128_splat64_si,
         )
