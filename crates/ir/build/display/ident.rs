@@ -500,7 +500,7 @@ impl Display for DisplayIdent<&'_ V128ExtractLaneOp> {
         let op = self.value;
         let ident = case.wrap(Ident::ExtractLane);
         let lane_ty = case.wrap(IdentPrefix(Ty::from(op.ty)));
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(OperandKind::Reg));
         let v128_suffix = SnakeCase(Suffix(OperandKind::Slot));
         write!(f, "{lane_ty}{ident}_{result_suffix}{v128_suffix}")
     }

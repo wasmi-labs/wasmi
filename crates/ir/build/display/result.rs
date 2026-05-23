@@ -162,7 +162,7 @@ impl Op {
             Op::Generic4(op) => op.result_loc(),
             Op::Generic5(op) => op.result_loc(),
             Op::V128ReplaceLane(_) => Some(Location::Slot),
-            Op::V128ExtractLane(_) => Some(Location::Slot),
+            Op::V128ExtractLane(_) => Some(Location::Reg),
         }
     }
 
