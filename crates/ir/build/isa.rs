@@ -42,6 +42,17 @@ pub struct Isa {
     pub ops: Vec<Op>,
 }
 
+impl<T> Extend<T> for Isa
+where
+    T: Into<Op>,
+{
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for item in iter {
+            self.push_op(item.into());
+        }
+    }
+}
+
 impl Isa {
     fn push_op(&mut self, op: impl Into<Op>) {
         self.ops.push(op.into());
@@ -824,16 +835,17 @@ fn add_simd_splat_ops(isa: &mut Isa) {
 }
 
 fn add_simd_extract_lane_ops(isa: &mut Isa) {
-    let ops = [
-        V128ExtractLaneOp::new(SimdTy::I8x16),
-        V128ExtractLaneOp::new(SimdTy::U8x16),
-        V128ExtractLaneOp::new(SimdTy::I16x8),
-        V128ExtractLaneOp::new(SimdTy::U16x8),
-        V128ExtractLaneOp::new(SimdTy::U32x4),
-        V128ExtractLaneOp::new(SimdTy::U64x2),
-    ]
-    .map(Op::from);
-    isa.push_ops(ops);
+    isa.extend(
+        [
+            SimdTy::I8x16,
+            SimdTy::U8x16,
+            SimdTy::I16x8,
+            SimdTy::U16x8,
+            SimdTy::U32x4,
+            SimdTy::U64x2,
+        ]
+        .map(V128ExtractLaneOp::new),
+    );
 }
 
 fn add_simd_replace_lane_ops(isa: &mut Isa) {
@@ -844,8 +856,10 @@ fn add_simd_replace_lane_ops(isa: &mut Isa) {
         LaneWidth::W64,
     ];
     for width in widths {
-        isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Slot));
-        isa.push_op(V128ReplaceLaneOp::new(width, OperandKind::Immediate));
+        isa.extend([
+            V128ReplaceLaneOp::new(width, OperandKind::Slot),
+            V128ReplaceLaneOp::new(width, OperandKind::Immediate),
+        ]);
     }
 }
 
