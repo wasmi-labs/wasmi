@@ -491,7 +491,10 @@ impl FuncTranslator {
             }
             ValType::F32 => Op::f32_copy_sr(result),
             ValType::F64 => Op::f64_copy_sr(result),
-            ValType::V128 => unreachable!(),
+            ValType::V128 => {
+                // Note: `v128` typed values may not occupy register operands for now.
+                unreachable!()
+            }
         }
     }
 
