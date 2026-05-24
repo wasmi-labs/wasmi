@@ -18,14 +18,16 @@ pub trait SimdReplaceLane {
         value: Self::Item,
     ) -> V128;
 
-    fn replace_lane_sss(
+    fn op_ssr(result: Slot, input: Slot, lane: <Self::Item as IntoLaneIdx>::LaneIdx) -> Op;
+
+    fn op_sss(
         result: Slot,
         input: Slot,
         lane: <Self::Item as IntoLaneIdx>::LaneIdx,
         value: Slot,
     ) -> Op;
 
-    fn replace_lane_ssi(
+    fn op_ssi(
         result: Slot,
         input: Slot,
         lane: <Self::Item as IntoLaneIdx>::LaneIdx,
@@ -39,11 +41,11 @@ macro_rules! impl_replace_lane {
             impl SimdReplaceLane for $name:ident {
                 type Item = $item_ty:ty;
                 type Immediate = $imm_ty:ty;
-
                 fn const_eval = $const_eval:expr;
                 fn into_immediate = $into_immediate:expr;
-                fn replace_lane_sss = $replace_lane_sss:expr;
-                fn replace_lane_ssi = $replace_lane_ssi:expr;
+                fn op_ssr = $replace_lane_ssr:expr;
+                fn op_sss = $replace_lane_sss:expr;
+                fn op_ssi = $replace_lane_ssi:expr;
             }
         )*
     ) => {
@@ -66,7 +68,15 @@ macro_rules! impl_replace_lane {
                     $into_immediate(value)
                 }
 
-                fn replace_lane_sss(
+                fn op_ssr(
+                    result: Slot,
+                    input: Slot,
+                    lane: <Self::Item as IntoLaneIdx>::LaneIdx,
+                ) -> Op {
+                    $replace_lane_ssr(result, input, lane)
+                }
+
+                fn op_sss(
                     result: Slot,
                     input: Slot,
                     lane: <Self::Item as IntoLaneIdx>::LaneIdx,
@@ -75,7 +85,7 @@ macro_rules! impl_replace_lane {
                     $replace_lane_sss(result, input, value, lane)
                 }
 
-                fn replace_lane_ssi(
+                fn op_ssi(
                     result: Slot,
                     input: Slot,
                     lane: <Self::Item as IntoLaneIdx>::LaneIdx,
@@ -95,8 +105,9 @@ impl_replace_lane! {
 
         fn const_eval = simd::i8x16_replace_lane;
         fn into_immediate = <i8 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::v128_replace_lane8x16_sss;
-        fn replace_lane_ssi = Op::v128_replace_lane8x16_ssi;
+        fn op_ssr = Op::u8x16_replace_lane_ssr;
+        fn op_sss = Op::u8x16_replace_lane_sss;
+        fn op_ssi = Op::u8x16_replace_lane_ssi;
     }
 
     impl SimdReplaceLane for I16x8ReplaceLane {
@@ -105,8 +116,9 @@ impl_replace_lane! {
 
         fn const_eval = simd::i16x8_replace_lane;
         fn into_immediate = <i16 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::v128_replace_lane16x8_sss;
-        fn replace_lane_ssi = Op::v128_replace_lane16x8_ssi;
+        fn op_ssr = Op::u16x8_replace_lane_ssr;
+        fn op_sss = Op::u16x8_replace_lane_sss;
+        fn op_ssi = Op::u16x8_replace_lane_ssi;
     }
 
     impl SimdReplaceLane for I32x4ReplaceLane {
@@ -115,8 +127,9 @@ impl_replace_lane! {
 
         fn const_eval = simd::i32x4_replace_lane;
         fn into_immediate = <i32 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::v128_replace_lane32x4_sss;
-        fn replace_lane_ssi = Op::v128_replace_lane32x4_ssi;
+        fn op_ssr = Op::u32x4_replace_lane_ssr;
+        fn op_sss = Op::u32x4_replace_lane_sss;
+        fn op_ssi = Op::u32x4_replace_lane_ssi;
     }
 
     impl SimdReplaceLane for I64x2ReplaceLane {
@@ -125,8 +138,9 @@ impl_replace_lane! {
 
         fn const_eval = simd::i64x2_replace_lane;
         fn into_immediate = <i64 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::v128_replace_lane64x2_sss;
-        fn replace_lane_ssi = Op::v128_replace_lane64x2_ssi;
+        fn op_ssr = Op::u64x2_replace_lane_ssr;
+        fn op_sss = Op::u64x2_replace_lane_sss;
+        fn op_ssi = Op::u64x2_replace_lane_ssi;
     }
 
     impl SimdReplaceLane for F32x4ReplaceLane {
@@ -135,8 +149,9 @@ impl_replace_lane! {
 
         fn const_eval = simd::f32x4_replace_lane;
         fn into_immediate = <f32 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::v128_replace_lane32x4_sss;
-        fn replace_lane_ssi = Op::v128_replace_lane32x4_ssi;
+        fn op_ssr = Op::f32x4_replace_lane_ssr;
+        fn op_sss = Op::u32x4_replace_lane_sss;
+        fn op_ssi = Op::u32x4_replace_lane_ssi;
     }
 
     impl SimdReplaceLane for F64x2ReplaceLane {
@@ -145,8 +160,9 @@ impl_replace_lane! {
 
         fn const_eval = simd::f64x2_replace_lane;
         fn into_immediate = <f64 as ToBits>::to_bits;
-        fn replace_lane_sss = Op::v128_replace_lane64x2_sss;
-        fn replace_lane_ssi = Op::v128_replace_lane64x2_ssi;
+        fn op_ssr = Op::f64x2_replace_lane_ssr;
+        fn op_sss = Op::u64x2_replace_lane_sss;
+        fn op_ssi = Op::u64x2_replace_lane_ssi;
     }
 }
 

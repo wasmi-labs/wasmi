@@ -12,6 +12,7 @@ use crate::build::{
         GlobalGetOp,
         GlobalSetOp,
         LoadOp,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
         StoreOp,
@@ -20,7 +21,6 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
     },
     ty::FieldTy,
 };
@@ -150,7 +150,7 @@ impl_display_constructor! {
     TableGetOp,
     TableSetOp,
     CallIndirectOp,
-    V128ReplaceLaneOp,
+    ReplaceLaneOp,
     V128ExtractLaneOp,
 }
 

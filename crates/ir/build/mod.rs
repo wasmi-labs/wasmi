@@ -18,7 +18,7 @@ use self::{
     ident::{Ident, SnakeCase},
     isa::Isa,
     op::Op,
-    ty::{FieldTy, Layout, Ty},
+    ty::{FieldTy, LaneWidth, Layout, SimdTy, Ty},
 };
 use core::fmt::{self, Display, Error as FmtError, Write as _};
 use std::{env, fs, io::Error as IoError, path::PathBuf};
