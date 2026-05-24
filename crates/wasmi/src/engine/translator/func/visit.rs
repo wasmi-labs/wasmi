@@ -1476,11 +1476,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         //       via reinterpretation of the value's type.
         match self.stack.pop() {
             Operand::Immediate(input) => {
+                debug_assert!(matches!(input.ty(), ValType::FuncRef | ValType::ExternRef));
                 let raw = input.val().raw();
-                let is_null = match input.ty() {
-                    ValType::FuncRef | ValType::ExternRef => RawRef::from(raw).is_null(),
-                    invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
-                };
+                let is_null = RawRef::from(raw).is_null();
                 self.stack.push_immediate(i32::from(is_null))?;
                 return Ok(());
             }
