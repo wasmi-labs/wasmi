@@ -14,15 +14,14 @@ use crate::build::{
         GenericOp,
         GlobalGetOp,
         GlobalSetOp,
-        LaneWidth,
         LoadKind,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
-        SimdTy,
         StoreKind,
         StoreOp,
         TableGetOp,
@@ -31,10 +30,9 @@ use crate::build::{
         TernaryOpKind,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
         Wrapped,
     },
-    ty::{FieldTy, Layout, Ty},
+    ty::{FieldTy, LaneWidth, Layout, SimdTy, Ty},
 };
 
 #[derive(Default)]
@@ -851,17 +849,23 @@ fn add_simd_extract_lane_ops(isa: &mut Isa) {
 }
 
 fn add_simd_replace_lane_ops(isa: &mut Isa) {
-    let widths = [
-        LaneWidth::W8,
-        LaneWidth::W16,
-        LaneWidth::W32,
-        LaneWidth::W64,
+    let tys = [
+        SimdTy::U8x16,
+        SimdTy::U16x8,
+        SimdTy::U32x4,
+        SimdTy::U64x2,
+        SimdTy::F32x4,
+        SimdTy::F64x2,
     ];
-    for width in widths {
-        isa.extend([
-            V128ReplaceLaneOp::new(width, OperandKind::Slot),
-            V128ReplaceLaneOp::new(width, OperandKind::Immediate),
-        ]);
+    for ty in tys {
+        for value in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            if !matches!(value, OperandKind::Reg) && matches!(ty, SimdTy::F32x4 | SimdTy::F64x2) {
+                // For `f32x4` and `f64x2` slot and immediate `value` we can
+                // re-use the `u32x4` and `u64x2` variants respectively.
+                continue;
+            }
+            isa.push_op(ReplaceLaneOp::new(ty, value));
+        }
     }
 }
 

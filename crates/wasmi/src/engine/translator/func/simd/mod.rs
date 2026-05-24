@@ -115,11 +115,9 @@ impl FuncTranslator {
         self.push_instr_with_result_slot(
             ValType::V128,
             |result| match value {
-                ResolvedOperand::Reg => todo!(),
-                ResolvedOperand::Slot(value) => T::replace_lane_sss(result, input, lane, value),
-                ResolvedOperand::Immediate(value) => {
-                    T::replace_lane_ssi(result, input, lane, value)
-                }
+                ResolvedOperand::Reg => T::op_ssr(result, input, lane),
+                ResolvedOperand::Slot(value) => T::op_sss(result, input, lane, value),
+                ResolvedOperand::Immediate(value) => T::op_ssi(result, input, lane, value),
             },
             FuelCostsProvider::simd,
         )?;

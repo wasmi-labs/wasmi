@@ -1,4 +1,4 @@
-use crate::build::op::{LaneWidth, Wrapped};
+use crate::build::op::Wrapped;
 use core::fmt::{self, Display};
 
 #[derive(Copy, Clone)]
@@ -262,5 +262,125 @@ impl Display for FieldTy {
             Self::EmptyTuple => "()",
         };
         f.write_str(s)
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum LaneWidth {
+    W8,
+    W16,
+    W32,
+    W64,
+}
+
+impl From<LaneWidth> for FieldTy {
+    fn from(value: LaneWidth) -> Self {
+        match value {
+            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
+            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
+            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
+            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
+        }
+    }
+}
+
+impl Display for LaneWidth {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let width = u8::from(*self);
+        let len_lanes = self.len_lanes();
+        write!(f, "{width}x{len_lanes}")
+    }
+}
+
+impl From<LaneWidth> for u8 {
+    fn from(width: LaneWidth) -> Self {
+        match width {
+            LaneWidth::W8 => 8,
+            LaneWidth::W16 => 16,
+            LaneWidth::W32 => 32,
+            LaneWidth::W64 => 64,
+        }
+    }
+}
+
+impl LaneWidth {
+    pub fn len_lanes(self) -> u8 {
+        match self {
+            Self::W8 => 16,
+            Self::W16 => 8,
+            Self::W32 => 4,
+            Self::W64 => 2,
+        }
+    }
+
+    pub fn to_laneidx(self) -> FieldTy {
+        match self {
+            Self::W8 => FieldTy::ImmLaneIdx16,
+            Self::W16 => FieldTy::ImmLaneIdx8,
+            Self::W32 => FieldTy::ImmLaneIdx4,
+            Self::W64 => FieldTy::ImmLaneIdx2,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum SimdTy {
+    I8x16,
+    U8x16,
+    I16x8,
+    U16x8,
+    U32x4,
+    U64x2,
+    F32x4,
+    F64x2,
+}
+
+impl From<SimdTy> for Ty {
+    fn from(value: SimdTy) -> Self {
+        match value {
+            SimdTy::I8x16 => Self::I8x16,
+            SimdTy::U8x16 => Self::U8x16,
+            SimdTy::I16x8 => Self::I16x8,
+            SimdTy::U16x8 => Self::U16x8,
+            SimdTy::U32x4 => Self::U32x4,
+            SimdTy::U64x2 => Self::U64x2,
+            SimdTy::F32x4 => Self::F32x4,
+            SimdTy::F64x2 => Self::F64x2,
+        }
+    }
+}
+
+impl From<SimdTy> for LaneWidth {
+    fn from(value: SimdTy) -> Self {
+        match value {
+            | SimdTy::I8x16 | SimdTy::U8x16 => Self::W8,
+            | SimdTy::I16x8 | SimdTy::U16x8 => Self::W16,
+            | SimdTy::U32x4 | SimdTy::F32x4 => Self::W32,
+            | SimdTy::U64x2 | SimdTy::F64x2 => Self::W64,
+        }
+    }
+}
+
+impl SimdTy {
+    pub fn lane_ty(self) -> FieldTy {
+        match self {
+            | SimdTy::I8x16 | SimdTy::U8x16 => FieldTy::ImmLaneIdx16,
+            | SimdTy::I16x8 | SimdTy::U16x8 => FieldTy::ImmLaneIdx8,
+            | SimdTy::U32x4 | SimdTy::F32x4 => FieldTy::ImmLaneIdx4,
+            | SimdTy::U64x2 | SimdTy::F64x2 => FieldTy::ImmLaneIdx2,
+        }
+    }
+
+    pub fn item_ty(self) -> FieldTy {
+        match self {
+            SimdTy::I8x16 => FieldTy::I8,
+            SimdTy::U8x16 => FieldTy::U8,
+            SimdTy::I16x8 => FieldTy::I16,
+            SimdTy::U16x8 => FieldTy::U16,
+            SimdTy::U32x4 => FieldTy::U32,
+            SimdTy::U64x2 => FieldTy::U64,
+            SimdTy::F32x4 => FieldTy::F32,
+            SimdTy::F64x2 => FieldTy::F64,
+        }
     }
 }

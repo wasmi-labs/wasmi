@@ -15,6 +15,7 @@ use crate::build::{
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
         StoreOp,
@@ -23,9 +24,8 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
     },
-    ty::{Layout, Ty},
+    ty::{Layout, SimdTy, Ty},
 };
 use core::fmt::{self, Display};
 
@@ -161,6 +161,38 @@ impl Display for IdentSuffix<Layout> {
             Layout::Bits8x8 => "8x8",
             Layout::Bits16x4 => "16x4",
             Layout::Bits32x2 => "32x2",
+        };
+        f.write_str(s)
+    }
+}
+
+impl Display for CamelCase<SimdTy> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self.0 {
+            SimdTy::I8x16 => "I8x16",
+            SimdTy::U8x16 => "U8x16",
+            SimdTy::I16x8 => "I16x8",
+            SimdTy::U16x8 => "U16x8",
+            SimdTy::U32x4 => "U32x4",
+            SimdTy::U64x2 => "U64x2",
+            SimdTy::F32x4 => "F32x4",
+            SimdTy::F64x2 => "F64x2",
+        };
+        f.write_str(s)
+    }
+}
+
+impl Display for SnakeCase<SimdTy> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self.0 {
+            SimdTy::I8x16 => "i8x16",
+            SimdTy::U8x16 => "u8x16",
+            SimdTy::I16x8 => "i16x8",
+            SimdTy::U16x8 => "u16x8",
+            SimdTy::U32x4 => "u32x4",
+            SimdTy::U64x2 => "u64x2",
+            SimdTy::F32x4 => "f32x4",
+            SimdTy::F64x2 => "f64x2",
         };
         f.write_str(s)
     }
@@ -506,20 +538,19 @@ impl Display for DisplayIdent<&'_ V128ExtractLaneOp> {
     }
 }
 
-impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
+impl Display for DisplayIdent<&'_ ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let op = self.value;
-        let sep = case.wrap(Sep);
-        let v128 = case.wrap(Ident::V128);
         let ident = case.wrap(Ident::ReplaceLane);
-        let width = op.width;
+        let ty = case.wrap(op.ty);
+        let sep = case.wrap(Sep);
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let v128_suffix = SnakeCase(Suffix(OperandKind::Slot));
         let value_suffix = SnakeCase(Suffix(op.value));
         write!(
             f,
-            "{v128}{sep}{ident}{width}_{result_suffix}{v128_suffix}{value_suffix}"
+            "{ty}{sep}{ident}_{result_suffix}{v128_suffix}{value_suffix}"
         )
     }
 }
