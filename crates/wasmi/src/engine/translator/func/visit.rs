@@ -1471,6 +1471,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_ref_is_null(&mut self) -> Self::Output {
         bail_unreachable!(self);
+        // Note: `funcref` and `externref` both serialize to `RawValue`
+        //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
+        //       via reinterpretation of the value's type.
         match self.stack.pop() {
             Operand::Immediate(input) => {
                 let raw = input.val().raw();
@@ -1479,30 +1482,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
                 };
                 self.stack.push_immediate(i32::from(is_null))?;
-                Ok(())
+                return Ok(());
             }
             Operand::Reg(_input) => {
-                // Note: `funcref` and `externref` both serialize to `RawValue`
-                //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
-                //       via reinterpretation of the value's type.
-                self.stack.push_reg(ValType::I64)?;
-                self.visit_i64_eqz()
+                self.stack.push_reg(ValType::I32)?;
             }
             Operand::Local(input) => {
-                // Note: `funcref` and `externref` both serialize to `RawValue`
-                //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
-                //       via reinterpretation of the value's type.
                 self.stack.push_local(input.local_index(), ValType::I32)?;
-                self.visit_i32_eqz()
             }
             Operand::Temp(_) => {
-                // Note: `funcref` and `externref` both serialize to `RawValue`
-                //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
-                //       via reinterpretation of the value's type.
                 self.stack.push_temp(ValType::I32)?;
-                self.visit_i32_eqz()
             }
-        }
+        };
+        self.visit_i32_eqz()
     }
 
     #[inline(never)]
