@@ -1472,6 +1472,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_ref_is_null(&mut self) -> Self::Output {
         bail_unreachable!(self);
         match self.stack.pop() {
+            Operand::Immediate(input) => {
+                let raw = input.val().raw();
+                let is_null = match input.ty() {
+                    ValType::FuncRef | ValType::ExternRef => RawRef::from(raw).is_null(),
+                    invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
+                };
+                self.stack.push_immediate(i32::from(is_null))?;
+                Ok(())
+            }
             Operand::Reg(_input) => {
                 // Note: `funcref` and `externref` both serialize to `RawValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
@@ -1492,15 +1501,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 //       via reinterpretation of the value's type.
                 self.stack.push_temp(ValType::I32)?;
                 self.visit_i32_eqz()
-            }
-            Operand::Immediate(input) => {
-                let raw = input.val().raw();
-                let is_null = match input.ty() {
-                    ValType::FuncRef | ValType::ExternRef => RawRef::from(raw).is_null(),
-                    invalid => panic!("`ref.is_null`: encountered invalid input type: {invalid:?}"),
-                };
-                self.stack.push_immediate(i32::from(is_null))?;
-                Ok(())
             }
         }
     }
