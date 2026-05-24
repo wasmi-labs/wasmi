@@ -1090,7 +1090,10 @@ impl FuncTranslator {
                     }
                     | ValType::F32 => Op::return_f32_r(),
                     | ValType::F64 => Op::return_f64_r(),
-                    | ValType::V128 => todo!(), // `v128` typed values may not occupy register operands for now
+                    | ValType::V128 => {
+                        // Note: `v128` values may not occupy register operands for now.
+                        unreachable!()
+                    }
                 },
                 Operand::Local(operand) => {
                     let value = self.layout.local_to_slot(operand)?;
