@@ -422,14 +422,20 @@ macro_rules! handler_extract_lane {
     };
 }
 handler_extract_lane! {
-    fn v128_replace_lane8x16_sss(V128ReplaceLane8x16_Sss) = v128_replace_lane8x16;
-    fn v128_replace_lane8x16_ssi(V128ReplaceLane8x16_Ssi) = v128_replace_lane8x16;
-    fn v128_replace_lane16x8_sss(V128ReplaceLane16x8_Sss) = v128_replace_lane16x8;
-    fn v128_replace_lane16x8_ssi(V128ReplaceLane16x8_Ssi) = v128_replace_lane16x8;
-    fn v128_replace_lane32x4_sss(V128ReplaceLane32x4_Sss) = v128_replace_lane32x4;
-    fn v128_replace_lane32x4_ssi(V128ReplaceLane32x4_Ssi) = v128_replace_lane32x4;
-    fn v128_replace_lane64x2_sss(V128ReplaceLane64x2_Sss) = v128_replace_lane64x2;
-    fn v128_replace_lane64x2_ssi(V128ReplaceLane64x2_Ssi) = v128_replace_lane64x2;
+    fn u8x16_replace_lane_ssr(U8x16ReplaceLane_Ssr) = v128_replace_lane8x16;
+    fn u8x16_replace_lane_sss(U8x16ReplaceLane_Sss) = v128_replace_lane8x16;
+    fn u8x16_replace_lane_ssi(U8x16ReplaceLane_Ssi) = v128_replace_lane8x16;
+    fn u16x8_replace_lane_ssr(U16x8ReplaceLane_Ssr) = v128_replace_lane16x8;
+    fn u16x8_replace_lane_sss(U16x8ReplaceLane_Sss) = v128_replace_lane16x8;
+    fn u16x8_replace_lane_ssi(U16x8ReplaceLane_Ssi) = v128_replace_lane16x8;
+    fn u32x4_replace_lane_ssr(U32x4ReplaceLane_Ssr) = v128_replace_lane32x4;
+    fn u32x4_replace_lane_sss(U32x4ReplaceLane_Sss) = v128_replace_lane32x4;
+    fn u32x4_replace_lane_ssi(U32x4ReplaceLane_Ssi) = v128_replace_lane32x4;
+    fn u64x2_replace_lane_ssr(U64x2ReplaceLane_Ssr) = v128_replace_lane64x2;
+    fn u64x2_replace_lane_sss(U64x2ReplaceLane_Sss) = v128_replace_lane64x2;
+    fn u64x2_replace_lane_ssi(U64x2ReplaceLane_Ssi) = v128_replace_lane64x2;
+    fn f32x4_replace_lane_ssr(F32x4ReplaceLane_Ssr) = v128_replace_lane32x4;
+    fn f64x2_replace_lane_ssr(F64x2ReplaceLane_Ssr) = v128_replace_lane64x2;
 }
 
 macro_rules! handler_ternary {
