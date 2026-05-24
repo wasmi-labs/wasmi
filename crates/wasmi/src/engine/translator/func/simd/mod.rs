@@ -329,18 +329,15 @@ impl FuncTranslator {
         Ok(())
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity, clippy::too_many_arguments)]
     fn translate_v128_store_lane<T: IntoLaneIdx>(
         &mut self,
         memarg: MemArg,
         lane: u8,
-        make_instr: fn(ptr: Slot, offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
-        make_instr_mem0_offset16: fn(
-            ptr: Slot,
-            offset: Offset16,
-            value: Slot,
-            lane: T::LaneIdx,
-        ) -> Op,
+        op_rs: fn(offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_ss: fn(ptr: Slot, offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_rs_mem0_offset16: fn(offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
+        op_ss_mem0_offset16: fn(ptr: Slot, offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         translate_imm: fn(
             &mut Self,
             memarg: MemArg,
@@ -368,18 +365,24 @@ impl FuncTranslator {
             Operand::Temp(v128) => v128.temp_slots().head(),
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
-        let ptr = self.copy_operand_to_slot(ptr)?; // TODO: replace with `copy_immediate_to_slot`
+        let ptr = self.copy_immediate_to_slot(ptr)?;
         if memory.is_default() {
             if let Ok(offset16) = Offset16::try_from(offset) {
                 self.push_instr(
-                    make_instr_mem0_offset16(ptr, offset16, v128, lane),
+                    match ptr {
+                        Location::Reg => op_rs_mem0_offset16(offset16, v128, lane),
+                        Location::Slot(ptr) => op_ss_mem0_offset16(ptr, offset16, v128, lane),
+                    },
                     FuelCostsProvider::store,
                 )?;
                 return Ok(());
             }
         }
         self.push_instr(
-            make_instr(ptr, offset, v128, memory, lane),
+            match ptr {
+                Location::Reg => op_rs(offset, v128, memory, lane),
+                Location::Slot(ptr) => op_ss(ptr, offset, v128, memory, lane),
+            },
             FuelCostsProvider::store,
         )?;
         Ok(())
@@ -408,7 +411,7 @@ impl FuncTranslator {
         self.push_instr(
             match ptr {
                 Location::Slot(ptr) => Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
-                Location::Reg => todo!(), // Op::v128_store_mem0_offset16_rs(ptr, offset16, value),
+                Location::Reg => Op::v128_store_mem0_offset16_rs(offset16, value),
             },
             FuelCostsProvider::store,
         )?;

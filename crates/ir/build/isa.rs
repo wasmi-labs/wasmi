@@ -1169,22 +1169,24 @@ fn add_simd_store_ops(isa: &mut Isa) {
         (StoreKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
     for (kind, value_ty) in kinds {
-        isa.push_op(StoreOp::new(
-            kind,
-            value_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            MemoryOperand::Immediate,
-            OffsetOperand::Offset,
-        ));
-        isa.push_op(StoreOp::new(
-            kind,
-            value_ty,
-            OperandKind::Slot,
-            OperandKind::Slot,
-            MemoryOperand::Mem0,
-            OffsetOperand::Offset16,
-        ));
+        for ptr in [OperandKind::Reg, OperandKind::Slot] {
+            isa.push_op(StoreOp::new(
+                kind,
+                value_ty,
+                ptr,
+                OperandKind::Slot,
+                MemoryOperand::Immediate,
+                OffsetOperand::Offset,
+            ));
+            isa.push_op(StoreOp::new(
+                kind,
+                value_ty,
+                ptr,
+                OperandKind::Slot,
+                MemoryOperand::Mem0,
+                OffsetOperand::Offset16,
+            ));
+        }
     }
 }
 
