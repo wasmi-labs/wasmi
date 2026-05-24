@@ -15,12 +15,12 @@ use crate::build::{
         GenericOp,
         GlobalGetOp,
         GlobalSetOp,
-        LaneWidth,
         LoadKind,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
         StoreOp,
@@ -29,9 +29,8 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
     },
-    ty::FieldTy,
+    ty::{FieldTy, LaneWidth},
 };
 use core::fmt::{self, Display};
 
@@ -321,12 +320,12 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
     }
 }
 
-impl Display for DisplayDecode<&'_ V128ReplaceLaneOp> {
+impl Display for DisplayDecode<&'_ ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
         let value_ty = op.value_field().ty;
-        let len_lanes = op.width.len_lanes();
+        let len_lanes = LaneWidth::from(op.ty).len_lanes();
         writeln!(
             f,
             "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {len_lanes}>;"
