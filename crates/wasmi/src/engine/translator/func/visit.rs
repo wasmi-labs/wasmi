@@ -1472,7 +1472,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_ref_is_null(&mut self) -> Self::Output {
         bail_unreachable!(self);
         // Note: `funcref` and `externref` both serialize to `RawValue`
-        //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
+        //       as `u32` so we can use `i32.eqz` translation for `ref.is_null`
         //       via reinterpretation of the value's type.
         match self.stack.pop() {
             Operand::Immediate(input) => {
