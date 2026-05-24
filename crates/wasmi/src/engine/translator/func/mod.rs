@@ -1726,7 +1726,10 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         match self.stack.pop() {
-            Operand::Reg(_input) => todo!(),
+            Operand::Reg(input) => {
+                debug_assert_eq!(input.ty(), <T as Typed>::TY);
+                self.stack.push_reg(<R as Typed>::TY)?;
+            }
             Operand::Local(input) => {
                 debug_assert_eq!(input.ty(), <T as Typed>::TY);
                 self.stack
