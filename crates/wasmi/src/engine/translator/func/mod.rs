@@ -966,16 +966,27 @@ impl FuncTranslator {
     fn stage_op_with_result_reg(
         &mut self,
         result_ty: ValType,
-        make_instr: Op,
+        op: Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
+        debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
+        self.push_result_reg(result_ty)?;
         let fuel_pos = self.stack.consume_fuel_instr();
-        if let Some(operand) = self.stack.reg_to_temp(result_ty) {
-            self.copy_operand_to_temp(operand, fuel_pos)?;
-        };
-        self.stack.push_reg(result_ty)?;
-        debug_assert_eq!(make_instr.result_loc().map(|loc| loc.is_reg()), Some(true));
-        self.instrs.stage(make_instr, fuel_pos, fuel_costs)?;
+        self.instrs.stage(op, fuel_pos, fuel_costs)?;
+        Ok(())
+    }
+
+    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    fn push_op_with_result_reg(
+        &mut self,
+        result_ty: ValType,
+        op: Op,
+        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
+        self.push_result_reg(result_ty)?;
+        let fuel_pos = self.stack.consume_fuel_instr();
+        self.instrs.encode(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
