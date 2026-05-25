@@ -426,7 +426,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::F64 => Op::global_get_f64_r(global_idx),
             _ => unreachable!(),
         };
-        self.push_instr_with_result_reg(content, operator, FuelCostsProvider::instance)?;
+        self.stage_op_with_result_reg(content, operator, FuelCostsProvider::instance)?;
         Ok(())
     }
 
@@ -589,7 +589,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .index_ty()
             .ty();
         let memory = index::Memory::try_from(mem)?;
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             index_ty,
             Op::memory_size(memory),
             FuelCostsProvider::instance,
@@ -618,7 +618,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Since `memory.grow` returns the `memory.size` before the
                 // operation a `memory.grow` with `delta` of 0 can be translated
                 // as `memory.size` instruction instead.
-                self.push_instr_with_result_reg(
+                self.stage_op_with_result_reg(
                     index_ty.ty(),
                     Op::memory_size(memory),
                     FuelCostsProvider::instance,
@@ -628,7 +628,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         // Case: fallback to generic `memory.grow` instruction
         let delta = self.copy_operand_to_slot(delta)?;
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             index_ty.ty(),
             Op::memory_grow(delta, memory),
             FuelCostsProvider::instance,
@@ -1530,7 +1530,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
         let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             item_ty.into(),
             match index {
                 ResolvedOperand::Reg => Op::table_get_rr(table),
@@ -1586,7 +1586,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Since `table.grow` returns the `table.size` before the
                 // operation a `table.grow` with `delta` of 0 can be translated
                 // as `table.size` instruction instead.
-                self.push_instr_with_result_reg(
+                self.stage_op_with_result_reg(
                     index_ty.ty(),
                     Op::table_size(table),
                     FuelCostsProvider::instance,
@@ -1596,7 +1596,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let value = self.copy_operand_to_slot(value)?;
         let delta = self.copy_operand_to_slot(delta)?;
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             index_ty.ty(),
             Op::table_grow(delta, value, table),
             FuelCostsProvider::instance,
@@ -1610,7 +1610,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table = index::Table::from(table);
         let index_ty = table_type.index_ty();
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             index_ty.ty(),
             Op::table_size(table),
             FuelCostsProvider::instance,
