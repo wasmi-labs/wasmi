@@ -1875,11 +1875,7 @@ impl FuncTranslator {
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(
-            <T::Result as Typed>::TY,
-            operator,
-            FuelCostsProvider::base,
-        )?;
+        self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -1919,11 +1915,7 @@ impl FuncTranslator {
             (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => T::op_ris(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(
-            <T::Result as Typed>::TY,
-            operator,
-            FuelCostsProvider::base,
-        )?;
+        self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
