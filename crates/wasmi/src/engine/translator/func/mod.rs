@@ -1986,7 +1986,7 @@ impl FuncTranslator {
             #[cfg(not(feature = "simd"))]
             ValType::V128 => unreachable!("v128 simd is not enabled"),
         };
-        self.push_instr_with_result_reg(ValType::I32, operator, FuelCostsProvider::base)?;
+        self.push_instr_with_result_reg(ty, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
