@@ -261,7 +261,7 @@ impl FuncTranslator {
                 |result| match ptr {
                     ResolvedOperand::Reg => T::op_sr_mem0_offset16(result, offset),
                     ResolvedOperand::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
-                    ResolvedOperand::Immediate(_) => unreachable!(),
+                    ResolvedOperand::Immediate(_) => unreachable!(), // TODO: due to `self.copy_immediate_to_slot(ptr)?;` above
                 },
                 FuelCostsProvider::load,
             )?;
