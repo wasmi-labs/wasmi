@@ -1064,11 +1064,11 @@ impl FuncTranslator {
         index: Location,
         len_values: u16,
     ) -> Result<(), Error> {
-        debug_assert_eq!(self.immediates.len(), (table.len() + 1) as usize);
+        let len_targets = table.len() + 1;
+        debug_assert_eq!(self.immediates.len(), len_targets as usize);
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         let values =
             self.try_form_slot_span_or_move(usize::from(len_values), consume_fuel_instr)?;
-        let len_targets = table.len();
         let op = match index {
             Location::Reg => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
