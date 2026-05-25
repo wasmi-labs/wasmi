@@ -705,12 +705,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_le_s(&mut self) -> Self::Output {
-        self.translate_binary::<op::I32Lt>()
+        self.translate_binary::<op::I32Le>()
     }
 
     #[inline(never)]
     fn visit_i32_le_u(&mut self) -> Self::Output {
-        self.translate_binary::<op::U32Lt>()
+        self.translate_binary::<op::U32Le>()
     }
 
     #[inline(never)]
