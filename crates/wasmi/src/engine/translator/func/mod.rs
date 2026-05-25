@@ -953,11 +953,13 @@ impl FuncTranslator {
         make_instr: Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.consume_fuel_instr();
+        if let Some(operand) = self.stack.reg_to_temp(result_ty) {
+            self.copy_operand_to_temp(operand, fuel_pos)?;
+        };
         self.stack.push_reg(result_ty)?;
-        // debug_assert!(make_instr.result_ref().is_some()); // TODO: need make_instr.has_result_reg() method
-        self.instrs
-            .stage(make_instr, consume_fuel_instr, fuel_costs)?;
+        debug_assert_eq!(make_instr.result_loc().map(|loc| loc.is_reg()), Some(true));
+        self.instrs.stage(make_instr, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
