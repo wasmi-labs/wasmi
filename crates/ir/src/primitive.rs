@@ -38,7 +38,7 @@ impl<T> Debug for Reg<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.write_str("Reg<")?;
         f.write_str(type_name::<T>())?;
-        f.write_str(">")?;
+        f.write_char('>')?;
         Ok(())
     }
 }
