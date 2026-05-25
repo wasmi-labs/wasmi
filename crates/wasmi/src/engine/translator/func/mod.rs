@@ -799,11 +799,7 @@ impl FuncTranslator {
         !can_avoid_copies
     }
 
-    fn copy_operand_to_reg(
-        &mut self,
-        operand: Operand,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn copy_operand_to_reg(&mut self, operand: Operand) -> Result<(), Error> {
         #[cold]
         #[inline(never)]
         fn unsupported_v128(operand: Operand) -> ! {
@@ -835,8 +831,7 @@ impl FuncTranslator {
                 ValType::V128 => unsupported_v128(operand),
             },
         };
-        self.instrs
-            .encode(operator, consume_fuel, FuelCostsProvider::base)?;
+        self.push_op_with_result_reg(ty, operator, FuelCostsProvider::base)?;
         self.stack.push_reg(ty)?;
         Ok(())
     }
@@ -1987,7 +1982,7 @@ impl FuncTranslator {
                 true => true_val,
                 false => false_val,
             };
-            self.copy_operand_to_reg(selected, self.stack.consume_fuel_instr())?;
+            self.copy_operand_to_reg(selected)?;
             return Ok(());
         }
         let fusion = self.try_fuse_select(condition)?;
