@@ -37,7 +37,7 @@ impl<T> Default for Reg<T> {
 impl<T> Debug for Reg<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.write_str("Reg<")?;
-        type_name::<T>().fmt(f)?;
+        f.write_str(type_name::<T>())?;
         f.write_str(">")?;
         Ok(())
     }
