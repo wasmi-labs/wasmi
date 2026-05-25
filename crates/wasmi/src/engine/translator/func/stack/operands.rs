@@ -131,6 +131,12 @@ pub struct OperandStack {
     temp_offset: u16,
     /// The maximum recorded temporary stack offset.
     max_offset: u16,
+    /// The position of the general purpose (integer) [`Operand::Reg`] on the stack if any.
+    ireg: Option<StackPos>,
+    /// The position of the `f32` [`Operand::Reg`] on the stack if any.
+    freg32: Option<StackPos>,
+    /// The position of the `f64` [`Operand::Reg`] on the stack if any.
+    freg64: Option<StackPos>,
 }
 
 impl Reset for OperandStack {
@@ -140,6 +146,9 @@ impl Reset for OperandStack {
         self.len_locals = 0;
         self.temp_offset = 0;
         self.max_offset = 0;
+        self.ireg = None;
+        self.freg32 = None;
+        self.freg64 = None;
     }
 }
 
@@ -160,6 +169,15 @@ impl OperandStack {
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
         self.push_temp_offset(required_cells)?;
         Ok(())
+    }
+
+    /// Replace the typed register operand on the stack with a temporary operand if any.
+    ///
+    /// Returns `None` if no `ireg` operand exists on the stack.
+    pub fn reg_to_temp(&mut self, ty: ValType) -> Option<Operand> {
+        let pos = self.reg_pos_mut(ty).take()?;
+        let op = self.operand_to_temp_at(pos);
+        Some(Operand::new(pos, op))
     }
 
     /// Pushes the offset for temporary operands by `delta`.
@@ -286,6 +304,11 @@ impl OperandStack {
     #[inline]
     pub fn push_reg(&mut self, ty: ValType) -> Result<RegOperand, Error> {
         let stack_pos = self.next_stack_pos();
+        let prev_pos = self.reg_pos_mut(ty).replace(stack_pos);
+        debug_assert!(
+            prev_pos.is_none(),
+            "a register operand already exists on the stack",
+        );
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands.push(StackOperand::Reg { temp_slots, ty });
         Ok(RegOperand::new(temp_slots, ty, stack_pos))
@@ -357,6 +380,9 @@ impl OperandStack {
             .unwrap_or_else(|error| panic!("failed to pop temporary offset: {error}"));
         let stack_pos = self.next_stack_pos();
         self.try_unlink_local(operand);
+        if let Some(reg_pos) = self.try_unlink_reg(operand) {
+            debug_assert_eq!(stack_pos, reg_pos);
+        }
         Operand::new(stack_pos, operand)
     }
 
@@ -474,6 +500,17 @@ impl OperandStack {
         self.unlink_local(local_index, prev_local, next_local);
     }
 
+    /// Unlinks the [`StackOperand::Reg`] `operand` at `index` from `self`.
+    ///
+    /// Does nothing if `operand` is not a [`StackOperand::Local`].
+    #[inline]
+    fn try_unlink_reg(&mut self, operand: StackOperand) -> Option<StackPos> {
+        let StackOperand::Reg { ty, .. } = operand else {
+            return None;
+        };
+        self.reg_pos_mut(ty).take()
+    }
+
     /// Unlinks the [`StackOperand::Local`] `operand` identified by the parameters from `self`.
     fn unlink_local(
         &mut self,
@@ -490,6 +527,16 @@ impl OperandStack {
             self.update_prev_local(next_local, prev_local);
         }
         self.len_locals -= 1;
+    }
+
+    /// Returns a `&mut` to the [`StackPos`] of the register operand on the stack if any.
+    fn reg_pos_mut(&mut self, ty: ValType) -> &mut Option<StackPos> {
+        match ty {
+            | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => &mut self.ireg,
+            | ValType::F32 => &mut self.freg32,
+            | ValType::F64 => &mut self.freg64,
+            | ValType::V128 => unreachable!(),
+        }
     }
 
     /// Updates the `prev_local` of the [`StackOperand::Local`] at `local_index` to `prev_index`.
