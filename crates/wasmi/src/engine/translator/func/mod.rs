@@ -949,7 +949,7 @@ impl FuncTranslator {
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
-    fn push_instr_with_result_reg(
+    fn stage_op_with_result_reg(
         &mut self,
         result_ty: ValType,
         make_instr: Op,
@@ -1857,7 +1857,7 @@ impl FuncTranslator {
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             <T::Result as Typed>::TY,
             operator,
             FuelCostsProvider::base,
@@ -1901,7 +1901,7 @@ impl FuncTranslator {
             (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => T::op_ris(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             <T::Result as Typed>::TY,
             operator,
             FuelCostsProvider::base,
@@ -1986,7 +1986,7 @@ impl FuncTranslator {
             #[cfg(not(feature = "simd"))]
             ValType::V128 => unreachable!("v128 simd is not enabled"),
         };
-        self.push_instr_with_result_reg(ty, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(ty, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -2285,7 +2285,7 @@ impl FuncTranslator {
                 ResolvedOperand::Slot(ptr) => T::op_rs_mem0_offset16(ptr, offset),
                 ResolvedOperand::Immediate(_) => break 'opt,
             };
-            self.push_instr_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
+            self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
             return Ok(());
         }
         // We need to encode a non-optimized fallback load operator.
@@ -2297,7 +2297,7 @@ impl FuncTranslator {
             ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
             ResolvedOperand::Immediate(address) => T::op_ri(address, memory),
         };
-        self.push_instr_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
+        self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
         Ok(())
     }
 

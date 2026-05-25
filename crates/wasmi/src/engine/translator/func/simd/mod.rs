@@ -84,7 +84,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.layout.operand_to_slot(input)?;
-        self.push_instr_with_result_reg(
+        self.stage_op_with_result_reg(
             <R as Typed>::TY,
             make_instr(input, lane),
             FuelCostsProvider::simd,
