@@ -948,6 +948,20 @@ impl FuncTranslator {
         Ok(instr)
     }
 
+    /// Pushes a result register operand onto the stack.
+    ///
+    /// If a register operand of an equivalent type is already on the stack
+    /// a copy operator is encoded to turn the existing register operand into
+    /// a temporary operand.
+    fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
+        let fuel_pos = self.stack.consume_fuel_instr();
+        if let Some(operand) = self.stack.reg_to_temp(ty) {
+            self.copy_operand_to_temp(operand, fuel_pos)?;
+        };
+        self.stack.push_reg(ty)?;
+        Ok(())
+    }
+
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
     fn stage_op_with_result_reg(
         &mut self,
