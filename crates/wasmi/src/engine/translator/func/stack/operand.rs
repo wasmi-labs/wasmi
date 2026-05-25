@@ -41,7 +41,6 @@ impl<T> ResolvedOperand<T> {
     pub fn sort(a: Self, b: Self) -> (Self, Self) {
         match (&a, &b) {
             | (ResolvedOperand::Slot(_), ResolvedOperand::Reg)
-            | (ResolvedOperand::Slot(_), ResolvedOperand::Immediate(_))
             | (ResolvedOperand::Immediate(_), ResolvedOperand::Reg)
             | (ResolvedOperand::Immediate(_), ResolvedOperand::Slot(_)) => (b, a),
             _ => (a, b),
