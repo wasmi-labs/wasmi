@@ -1712,7 +1712,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        self.push_instr(op, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(<Op::Result>::TY, op, FuelCostsProvider::base)?;
         Ok(())
     }
 
