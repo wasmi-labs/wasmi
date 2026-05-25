@@ -812,7 +812,8 @@ impl FuncTranslator {
         let ty = operand.ty();
         let operator = match self.resolve_operand_as::<RawVal>(operand)? {
             ResolvedOperand::Reg => {
-                // Case: Nothing needs to be done as operand already resides in register.
+                // Case: No copy needed as operand already resides in register.
+                self.push_result_reg(ty)?;
                 return Ok(());
             }
             ResolvedOperand::Slot(value) => match ty {
@@ -834,7 +835,6 @@ impl FuncTranslator {
             },
         };
         self.push_op_with_result_reg(ty, operator, FuelCostsProvider::base)?;
-        self.stack.push_reg(ty)?;
         Ok(())
     }
 
