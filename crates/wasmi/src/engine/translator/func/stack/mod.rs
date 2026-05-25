@@ -370,6 +370,13 @@ impl Stack {
         self.controls.acquire_target(depth)
     }
 
+    /// Replace the typed register operand on the stack with a temporary operand if any.
+    ///
+    /// Returns `None` if no `ireg` operand exists on the stack.
+    pub fn reg_to_temp(&mut self, ty: ValType) -> Option<Operand> {
+        self.operands.reg_to_temp(ty)
+    }
+
     /// Pushes the [`Operand`] back to the [`Stack`].
     ///
     /// Returns the new [`StackPos`].

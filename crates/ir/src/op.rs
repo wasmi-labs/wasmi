@@ -33,6 +33,13 @@ pub enum Location {
     Slot(Slot),
 }
 
+impl Location {
+    /// Returns `true` if `self` is a [`Location::Reg`].
+    pub fn is_reg(&self) -> bool {
+        matches!(self, Self::Reg(_))
+    }
+}
+
 impl Slot {
     #[inline]
     pub fn location(&self) -> Location {
