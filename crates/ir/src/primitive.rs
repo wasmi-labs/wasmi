@@ -1,7 +1,7 @@
 use crate::{Error, SlotSpan};
 use core::{
     any::type_name,
-    fmt::{Debug, Formatter},
+    fmt::{Debug, Formatter, Write as _},
     marker::PhantomData,
 };
 
