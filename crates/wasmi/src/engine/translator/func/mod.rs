@@ -2550,7 +2550,7 @@ impl FuncTranslator {
                 if self.try_opt_i64_mul_wide_sx(lhs, rhs_val, signed)? {
                     return Ok(());
                 }
-                let lhs = self.layout.operand_to_slot(lhs)?;
+                let lhs = self.copy_operand_to_slot(lhs)?;
                 let rhs = self.copy_operand_to_slot(rhs)?;
                 (lhs, rhs)
             }
@@ -2560,12 +2560,12 @@ impl FuncTranslator {
                     return Ok(());
                 }
                 let lhs = self.copy_operand_to_slot(lhs)?;
-                let rhs = self.layout.operand_to_slot(rhs)?;
+                let rhs = self.copy_operand_to_slot(rhs)?;
                 (lhs, rhs)
             }
             (lhs, rhs) => {
-                let lhs = self.layout.operand_to_slot(lhs)?;
-                let rhs = self.layout.operand_to_slot(rhs)?;
+                let lhs = self.copy_operand_to_slot(lhs)?;
+                let rhs = self.copy_operand_to_slot(rhs)?;
                 (lhs, rhs)
             }
         };
