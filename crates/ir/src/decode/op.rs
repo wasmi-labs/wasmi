@@ -321,30 +321,30 @@ impl<Ptr: Decode, Val: Decode, LaneIdx: Decode> Decode
 
 #[derive(Copy, Clone)]
 pub struct GlobalGet<T> {
-    pub result: T,
     pub global: Global,
+    pub result: T,
 }
 
 impl<T: Decode> Decode for GlobalGet<T> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
-            result: Decode::decode(decoder)?,
             global: Decode::decode(decoder)?,
+            result: Decode::decode(decoder)?,
         })
     }
 }
 
 #[derive(Copy, Clone)]
 pub struct GlobalSet<T> {
-    pub value: T,
     pub global: Global,
+    pub value: T,
 }
 
 impl<T: Decode> Decode for GlobalSet<T> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
-            value: Decode::decode(decoder)?,
             global: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
         })
     }
 }
