@@ -404,14 +404,14 @@ impl<I: Decode> Decode for CallIndirect<I> {
 
 #[derive(Copy, Clone)]
 #[cfg(feature = "simd")]
-pub struct V128ExtractLaneOp<const N: u8> {
-    pub result: Slot,
+pub struct V128ExtractLaneOp<const N: u8, Res> {
+    pub result: Res,
     pub value: Slot,
     pub lane: ImmLaneIdx<N>,
 }
 
 #[cfg(feature = "simd")]
-impl<const N: u8> Decode for V128ExtractLaneOp<N> {
+impl<const N: u8, Res: Decode> Decode for V128ExtractLaneOp<N, Res> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             result: Decode::decode(decoder)?,
