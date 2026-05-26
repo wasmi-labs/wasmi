@@ -1,4 +1,6 @@
 #[cfg(feature = "simd")]
+use crate::Slot;
+#[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
     Address,
@@ -8,7 +10,6 @@ use crate::{
     Decoder,
     Offset16,
     Reg,
-    Slot,
     decode::DecodeError,
     index::{FuncType, Global, Memory, Table},
 };
