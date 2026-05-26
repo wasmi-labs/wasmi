@@ -147,7 +147,7 @@ impl Op {
             Op::Ternary(_) => Some(Location::Slot),
             Op::CmpBranch(_) => None,
             Op::BranchTable(_) => None,
-            Op::Select(_) => Some(Location::Reg),
+            Op::Select(op) => op.result.result_loc(),
             Op::Load(op) => op.result.result_loc(),
             Op::Store(_) => None,
             Op::GlobalGet(op) => op.result.result_loc(),
