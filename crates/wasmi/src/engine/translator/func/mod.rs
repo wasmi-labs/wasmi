@@ -1399,12 +1399,7 @@ impl FuncTranslator {
     ///
     /// This applies op-code fusion that replaces the result of the previous instruction
     /// instead of encoding a copy instruction for the `local.set` or `local.tee` if possible.
-    fn translate_local_set(&mut self, local_index: u32, pop_input: bool) -> Result<(), Error> {
-        bail_unreachable!(self);
-        let input = match pop_input {
-            true => self.stack.pop(),
-            false => self.stack.peek(0),
-        };
+    fn translate_local_set(&mut self, local_index: u32, input: Operand) -> Result<(), Error> {
         if let Operand::Local(input) = input {
             if u32::from(input.local_index()) == local_index {
                 // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
@@ -1415,15 +1410,16 @@ impl FuncTranslator {
             }
         }
         let local_idx = LocalIdx::from(local_index);
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.consume_fuel_instr();
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = preserved.temp_slots().head();
-            let Some(copy_op) = Self::make_copy_local_instr(result, preserved, &mut self.layout)?
-            else {
-                panic!("copying local to temp must yield operator")
+            let op_or_noop = Self::make_copy_local_instr(result, preserved, &mut self.layout)?;
+            let Some(copy_op) = op_or_noop else {
+                // Note: local preservation must not yield no-op copies.
+                unreachable!()
             };
             self.instrs
-                .encode(copy_op, consume_fuel_instr, FuelCostsProvider::base)?;
+                .encode(copy_op, fuel_pos, FuelCostsProvider::base)?;
         }
         if self.try_replace_result(local_idx, input)? {
             // Case: it was possible to replace the result of the previous
@@ -1432,7 +1428,7 @@ impl FuncTranslator {
         }
         // At this point we need to encode a copy instruction.
         let result = self.layout.local_to_slot(local_idx)?;
-        let outcome = self.encode_copy(result, input, consume_fuel_instr)?;
+        let outcome = self.encode_copy(result, input, fuel_pos)?;
         debug_assert!(
             outcome.is_some(),
             "no-op copy cases have been filtered out already"
