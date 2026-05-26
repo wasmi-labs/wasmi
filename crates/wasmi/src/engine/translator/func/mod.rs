@@ -1429,6 +1429,9 @@ impl FuncTranslator {
         }
         if push_result {
             match input {
+                Operand::Reg(input) => {
+                    self.stack.push_reg(input.ty())?;
+                }
                 Operand::Immediate(input) => {
                     self.stack.push_immediate(input.val())?;
                 }
