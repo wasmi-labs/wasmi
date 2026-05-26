@@ -244,11 +244,24 @@ impl FuncTranslator {
     fn translate_simd_load<T: op::SimdLoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg)?;
-        let ptr = self.stack.pop();
-        self.copy_immediate_to_slot(ptr)?;
-        let ptr = self.resolve_operand_as_index(ptr, memory)?;
+        let ptr_opd = self.stack.pop();
+        let ptr = self.resolve_operand_as_index(ptr_opd, memory)?;
+        if let ResolvedOperand::Immediate(ptr) = ptr {
+            if self.effective_address(memory, ptr, offset).is_none() {
+                // Case: `ptr` is statically known to be out-of-bounds.
+                return self.translate_trap(TrapCode::MemoryOutOfBounds);
+            }
+        }
+        let ptr_loc = match ptr {
+            ResolvedOperand::Reg => Location::Reg,
+            ResolvedOperand::Slot(ptr) => Location::Slot(ptr),
+            ResolvedOperand::Immediate(_ptr) => {
+                // Note: simd load operators have no encoding for an immediate `ptr` operand.
+                self.copy_immediate_to_slot(ptr_opd)?
+            }
+        };
         'opt: {
-            // Try to encode an optimized load operator if possible, otherwise fallback.
+            // Case: optimized load operator if possible, otherwise fallback.
             if !memory.is_default() {
                 break 'opt;
             }
@@ -258,25 +271,20 @@ impl FuncTranslator {
             };
             self.push_instr_with_result_slot(
                 ValType::V128,
-                |result| match ptr {
-                    ResolvedOperand::Reg => T::op_sr_mem0_offset16(result, offset),
-                    ResolvedOperand::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
-                    ResolvedOperand::Immediate(_) => unreachable!(), // TODO: due to `self.copy_immediate_to_slot(ptr)?;` above
+                |result| match ptr_loc {
+                    Location::Reg => T::op_sr_mem0_offset16(result, offset),
+                    Location::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
                 },
                 FuelCostsProvider::load,
             )?;
             return Ok(());
         }
-        // We need to encode a non-optimized fallback load operator.
-        let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
+        // Case: non-optimized fallback load operator.
         self.push_instr_with_result_slot(
             ValType::V128,
-            |result| match ptr {
-                ResolvedOperand::Reg => T::op_sr(result, offset, memory),
-                ResolvedOperand::Slot(ptr) => T::op_ss(result, ptr, offset, memory),
-                ResolvedOperand::Immediate(_) => unreachable!(),
+            |result| match ptr_loc {
+                Location::Reg => T::op_sr(result, offset, memory),
+                Location::Slot(ptr) => T::op_ss(result, ptr, offset, memory),
             },
             FuelCostsProvider::load,
         )?;
