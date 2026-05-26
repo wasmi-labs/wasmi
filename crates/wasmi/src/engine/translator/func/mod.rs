@@ -2064,6 +2064,10 @@ impl FuncTranslator {
         let true_val = self.resolve_operand_as::<f32>(true_val)?;
         let false_val = self.resolve_operand_as::<f32>(false_val)?;
         let operator = match (condition, true_val, false_val) {
+            (Opd::Reg, Opd::Reg, Opd::Slot(f)) => Op::f32_select_rrrs(f),
+            (Opd::Reg, Opd::Reg, Opd::Immediate(f)) => Op::f32_select_rrri(f),
+            (Opd::Reg, Opd::Slot(t), Opd::Reg) => Op::f32_select_rrsr(t),
+            (Opd::Reg, Opd::Immediate(t), Opd::Reg) => Op::f32_select_rrir(t),
             (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::f32_select_rrss(t, f),
             (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::f32_select_rrsi(t, f),
             (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::f32_select_rris(t, f),
@@ -2091,6 +2095,10 @@ impl FuncTranslator {
         let true_val = self.resolve_operand_as::<f64>(true_val)?;
         let false_val = self.resolve_operand_as::<f64>(false_val)?;
         let operator = match (condition, true_val, false_val) {
+            (Opd::Reg, Opd::Reg, Opd::Slot(f)) => Op::f64_select_rrrs(f),
+            (Opd::Reg, Opd::Reg, Opd::Immediate(f)) => Op::f64_select_rrri(f),
+            (Opd::Reg, Opd::Slot(t), Opd::Reg) => Op::f64_select_rrsr(t),
+            (Opd::Reg, Opd::Immediate(t), Opd::Reg) => Op::f64_select_rrir(t),
             (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::f64_select_rrss(t, f),
             (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::f64_select_rrsi(t, f),
             (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::f64_select_rris(t, f),
