@@ -7,6 +7,7 @@ use crate::{
     Decode,
     Decoder,
     Offset16,
+    Reg,
     Slot,
     decode::DecodeError,
     index::{FuncType, Global, Memory, Table},
@@ -350,7 +351,7 @@ impl<T: Decode> Decode for GlobalSet<T> {
 
 #[derive(Copy, Clone)]
 pub struct TableGet<T> {
-    pub result: Slot,
+    pub result: Reg<i64>,
     pub index: T,
     pub table: Table,
 }
