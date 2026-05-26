@@ -376,12 +376,32 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
-        self.translate_local_set(local_index, true)
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        self.translate_local_set(local_index, input)
     }
 
     #[inline(never)]
     fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
-        self.translate_local_set(local_index, false)
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        let ty = input.ty();
+        self.translate_local_set(local_index, input)?;
+        match input {
+            Operand::Reg(_) => {
+                self.stack.push_reg(ty)?;
+            }
+            Operand::Local(_) => {
+                self.stack.push_local(local_index.into(), ty)?;
+            }
+            Operand::Temp(_) => {
+                self.stack.push_temp(ty)?;
+            }
+            Operand::Immediate(input) => {
+                self.stack.push_immediate(input.val())?;
+            }
+        };
+        Ok(())
     }
 
     #[inline(never)]
