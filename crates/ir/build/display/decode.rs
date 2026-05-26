@@ -338,10 +338,11 @@ impl Display for DisplayDecode<&'_ V128ExtractLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let res = op.result_field().ty;
         let len_lanes = LaneWidth::from(op.ty).len_lanes();
         writeln!(
             f,
-            "pub type {camel_ident} = V128ExtractLaneOp<{len_lanes}>;"
+            "pub type {camel_ident} = V128ExtractLaneOp<{len_lanes}, {res}>;"
         )
     }
 }
