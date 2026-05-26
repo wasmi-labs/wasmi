@@ -1399,20 +1399,18 @@ impl FuncTranslator {
     ///
     /// This applies op-code fusion that replaces the result of the previous instruction
     /// instead of encoding a copy instruction for the `local.set` or `local.tee` if possible.
-    fn translate_local_set(&mut self, local_index: u32, push_result: bool) -> Result<(), Error> {
+    fn translate_local_set(&mut self, local_index: u32, pop_input: bool) -> Result<(), Error> {
         bail_unreachable!(self);
-        let input = self.stack.pop();
-        let input_ty = input.ty();
+        let input = match pop_input {
+            true => self.stack.pop(),
+            false => self.stack.peek(0),
+        };
         if let Operand::Local(input) = input {
             if u32::from(input.local_index()) == local_index {
                 // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
                 //
                 // Note: This does not require any preservation since it won't change
                 //       the value of `local $n`.
-                if push_result {
-                    // Need to push back input before we exit.
-                    self.stack.push_operand(input.into())?;
-                }
                 return Ok(());
             }
         }
@@ -1426,19 +1424,6 @@ impl FuncTranslator {
             };
             self.instrs
                 .encode(copy_op, consume_fuel_instr, FuelCostsProvider::base)?;
-        }
-        if push_result {
-            match input {
-                Operand::Reg(input) => {
-                    self.stack.push_reg(input.ty())?;
-                }
-                Operand::Immediate(input) => {
-                    self.stack.push_immediate(input.val())?;
-                }
-                _ => {
-                    self.stack.push_local(local_idx, input_ty)?;
-                }
-            }
         }
         if self.try_replace_result(local_idx, input)? {
             // Case: it was possible to replace the result of the previous
