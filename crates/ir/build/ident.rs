@@ -139,6 +139,7 @@ define_ident!(
     Copy: copy,
     CopySpanAsc: copy_span_asc,
     CopySpanDes: copy_span_des,
+    Reinterpret: reinterpret,
 
     Table: table,
     Memory: memory,
