@@ -523,13 +523,13 @@ impl Sp {
 /// and already occupied by other execution handler parameters.
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(transparent)]
-pub struct Bits64(f64);
+pub struct Bits64(u64);
 
 impl Bits64 {
     /// Constructs `Self` from `bytes` in native-endian order.
     #[inline]
     pub fn from_ne_bytes(bytes: [u8; 8]) -> Self {
-        Self(f64::from_ne_bytes(bytes))
+        Self(u64::from_ne_bytes(bytes))
     }
 
     /// Converts `self` to its bytes in native-endian order.
