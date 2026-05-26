@@ -28,14 +28,7 @@ use crate::{
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{
-    cmp,
-    marker::PhantomData,
-    mem,
-    ops,
-    ptr::{self, NonNull},
-    slice,
-};
+use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -155,7 +148,16 @@ impl DoneReason {
 #[repr(transparent)]
 pub struct Inst {
     /// The underlying reference to the [`InstanceEntity`].
-    value: NonNull<InstanceEntity>,
+    ///
+    /// # Note
+    ///
+    /// - We use a `f64` to represent [`Inst`] to avoid using a
+    ///   general purpose (integer) register as they are not as
+    ///   available as floating point registers on most platforms.
+    /// - Since [`Inst`] is only accessed by operators that are
+    ///   considered "slow" anyways an additional conversion between
+    ///   integer and float won't be a terrible trade-off.
+    value: f64,
     /// Indicates to the compiler that this type is similar in behavior as
     /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
     marker: PhantomData<*const InstanceEntity>,
@@ -163,8 +165,10 @@ pub struct Inst {
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
+        let value =
+            f64::from_ne_bytes(((entity as *const InstanceEntity as usize) as u64).to_ne_bytes());
         Self {
-            value: entity.into(),
+            value,
             marker: PhantomData,
         }
     }
@@ -172,12 +176,18 @@ impl From<&'_ InstanceEntity> for Inst {
 
 impl PartialEq for Inst {
     fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
+        ptr::addr_eq(self.as_ptr(), other.as_ptr())
     }
 }
 impl Eq for Inst {}
 
 impl Inst {
+    /// Converts the underlying representation back into its original pointer value.
+    fn as_ptr(&self) -> *const InstanceEntity {
+        let bits = u64::from_ne_bytes(self.value.to_ne_bytes());
+        bits as usize as *const InstanceEntity
+    }
+
     /// Returns a shared reference to the referenced [`InstanceEntity`].
     ///
     /// # Safety
@@ -190,7 +200,7 @@ impl Inst {
     ///   mutably accessed for the entire duration of the returned
     ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { self.value.as_ref() }
+        unsafe { &*self.as_ptr() }
     }
 }
 
