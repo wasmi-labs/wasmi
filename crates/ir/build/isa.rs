@@ -506,23 +506,24 @@ fn add_control_ops(isa: &mut Isa) {
 }
 
 fn add_copy_ops(isa: &mut Isa) {
+    use OperandKind as Opd;
     let ops = [
-        (Ty::U32, OperandKind::Reg, OperandKind::Immediate), // i32, funcref, externref
-        (Ty::U32, OperandKind::Slot, OperandKind::Immediate), // i32, f32, funcref, externref
-        (Ty::U64, OperandKind::Reg, OperandKind::Slot),      // i32, i64, funcref, externref
-        (Ty::U64, OperandKind::Reg, OperandKind::Immediate), // i64
-        (Ty::U64, OperandKind::Slot, OperandKind::Reg),      // i32, i64
-        (Ty::U64, OperandKind::Slot, OperandKind::Slot), // i32, i64, f32, f64, funcref, externref
-        (Ty::U64, OperandKind::Slot, OperandKind::Immediate), // i64, f64
-        (Ty::F32, OperandKind::Reg, OperandKind::Immediate), // f32
-        (Ty::F32, OperandKind::Reg, OperandKind::Slot),  // f32
-        (Ty::F32, OperandKind::Slot, OperandKind::Reg),  // f32
-        (Ty::F64, OperandKind::Reg, OperandKind::Slot),  // f64
-        (Ty::F64, OperandKind::Reg, OperandKind::Immediate), // f64
-        (Ty::F64, OperandKind::Slot, OperandKind::Reg),  // f64
+        (Ty::U32, Opd::Reg, Opd::Immediate),  // i32, funcref, externref
+        (Ty::U32, Opd::Slot, Opd::Immediate), // i32, f32, funcref, externref
+        (Ty::U64, Opd::Reg, Opd::Slot),       // i32, i64, funcref, externref
+        (Ty::U64, Opd::Reg, Opd::Immediate),  // i64
+        (Ty::U64, Opd::Slot, Opd::Reg),       // i32, i64
+        (Ty::U64, Opd::Slot, Opd::Slot),      // i32, i64, f32, f64, funcref, externref
+        (Ty::U64, Opd::Slot, Opd::Immediate), // i64, f64
+        (Ty::F32, Opd::Reg, Opd::Immediate),  // f32
+        (Ty::F32, Opd::Reg, Opd::Slot),       // f32
+        (Ty::F32, Opd::Slot, Opd::Reg),       // f32
+        (Ty::F64, Opd::Reg, Opd::Slot),       // f64
+        (Ty::F64, Opd::Reg, Opd::Immediate),  // f64
+        (Ty::F64, Opd::Slot, Opd::Reg),       // f64
     ];
     for (ty, result, value) in ops {
-        isa.push_op(Op::from(UnaryOp::new(Ident::Copy, ty, ty, result, value)));
+        isa.push_op(UnaryOp::new(Ident::Copy, ty, ty, result, value));
     }
     let ops = [
         Op::from(GenericOp::new(
