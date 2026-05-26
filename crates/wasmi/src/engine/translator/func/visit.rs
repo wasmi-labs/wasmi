@@ -1192,7 +1192,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        self.translate_reinterpret(wasm::i64_extend_i32_u)
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        debug_assert_eq!(input.ty(), ValType::I32);
+        let result_ty = ValType::I64;
+        match input {
+            Operand::Reg(_input) => {
+                self.stack.push_reg(result_ty)?;
+            }
+            Operand::Local(input) => {
+                self.stack.push_local(input.local_index(), result_ty)?;
+            }
+            Operand::Temp(_input) => {
+                self.stack.push_temp(result_ty)?;
+            }
+            Operand::Immediate(input) => {
+                let input: u32 = input.val().into();
+                self.stack.push_immediate(wasm::i64_extend_i32_u(input))?;
+            }
+        }
+        Ok(())
     }
 
     #[inline(never)]
@@ -1267,22 +1286,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
-        self.translate_reinterpret(wasm::i32_reinterpret_f32)
+        self.translate_reinterpret(Op::i32_reinterpret_f32_rr, wasm::i32_reinterpret_f32)
     }
 
     #[inline(never)]
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
-        self.translate_reinterpret(wasm::i64_reinterpret_f64)
+        self.translate_reinterpret(Op::i64_reinterpret_f64_rr, wasm::i64_reinterpret_f64)
     }
 
     #[inline(never)]
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
-        self.translate_reinterpret(wasm::f32_reinterpret_i32)
+        self.translate_reinterpret(Op::f32_reinterpret_i32_rr, wasm::f32_reinterpret_i32)
     }
 
     #[inline(never)]
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
-        self.translate_reinterpret(wasm::f64_reinterpret_i64)
+        self.translate_reinterpret(Op::f64_reinterpret_i64_rr, wasm::f64_reinterpret_i64)
     }
 
     #[inline(never)]

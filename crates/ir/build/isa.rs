@@ -525,6 +525,21 @@ fn add_copy_ops(isa: &mut Isa) {
     for (ty, result, value) in ops {
         isa.push_op(UnaryOp::new(Ident::Copy, ty, ty, result, value));
     }
+    let reinterpret_ops = [
+        (Ty::F32, Ty::I32),
+        (Ty::I32, Ty::F32),
+        (Ty::F64, Ty::I64),
+        (Ty::I64, Ty::F64),
+    ];
+    for (result_ty, value_ty) in reinterpret_ops {
+        isa.push_op(UnaryOp::new(
+            Ident::Reinterpret,
+            result_ty,
+            value_ty,
+            OperandKind::Reg,
+            OperandKind::Reg,
+        ));
+    }
     let ops = [
         Op::from(GenericOp::new(
             Ident::CopySpanAsc,
