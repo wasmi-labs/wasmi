@@ -76,9 +76,10 @@ impl Display for DisplayDecode<&'_ ReturnOp> {
 
 impl Display for DisplayDecode<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let camel_ident = DisplayIdent::camel(self.value);
-        let result_ty = self.value.result_field().ty;
-        let value_ty = self.value.value_field().ty;
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let result_ty = op.result_field().ty;
+        let value_ty = op.value_field().ty;
         writeln!(
             f,
             "pub type {camel_ident} = UnaryOp<{result_ty}, {value_ty}>;"
@@ -90,7 +91,7 @@ impl Display for DisplayDecode<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
-        let res = self.value.result_field().ty;
+        let res = op.result_field().ty;
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = BinaryOp<{res}, {lhs}, {rhs}>;")
