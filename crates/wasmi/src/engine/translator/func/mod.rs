@@ -1739,24 +1739,31 @@ impl FuncTranslator {
     /// # Note
     ///
     /// This Wasm operation is a no-op. Ideally we only have to change the types on the stack.
-    fn translate_reinterpret<T, R>(&mut self, consteval: fn(T) -> R) -> Result<(), Error>
+    fn translate_reinterpret<T, R>(
+        &mut self,
+        op_rr: fn() -> Op,
+        consteval: fn(T) -> R,
+    ) -> Result<(), Error>
     where
         T: From<TypedRawVal> + Typed,
         R: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
-        match self.stack.pop() {
-            Operand::Reg(input) => {
-                debug_assert_eq!(input.ty(), <T as Typed>::TY);
-                self.stack.push_reg(<R as Typed>::TY)?;
+        let input = self.stack.pop();
+        debug_assert_eq!(input.ty(), <T as Typed>::TY);
+        match input {
+            Operand::Reg(_input) => {
+                return self.push_op_with_result_reg(
+                    <R as Typed>::TY,
+                    op_rr(),
+                    FuelCostsProvider::base,
+                );
             }
             Operand::Local(input) => {
-                debug_assert_eq!(input.ty(), <T as Typed>::TY);
                 self.stack
                     .push_local(input.local_index(), <R as Typed>::TY)?;
             }
-            Operand::Temp(input) => {
-                debug_assert_eq!(input.ty(), <T as Typed>::TY);
+            Operand::Temp(_input) => {
                 self.stack.push_temp(<R as Typed>::TY)?;
             }
             Operand::Immediate(input) => {

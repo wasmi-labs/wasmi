@@ -1341,6 +1341,11 @@ handler_unary! {
     fn f64_copy_rs(F64Copy_Rs) = identity::<f64>;
     fn f64_copy_ri(F64Copy_Ri) = identity::<f64>;
     fn f64_copy_sr(F64Copy_Sr) = identity::<f64>;
+    // reinterpret
+    fn f32_reinterpret_i32_rr(F32ReinterpretI32_Rr) = wasm::f32_reinterpret_i32;
+    fn i32_reinterpret_f32_rr(I32ReinterpretF32_Rr) = wasm::i32_reinterpret_f32;
+    fn f64_reinterpret_i64_rr(F64ReinterpretI64_Rr) = wasm::f64_reinterpret_i64;
+    fn i64_reinterpret_f64_rr(I64ReinterpretF64_Rr) = wasm::i64_reinterpret_f64;
     // i32
     fn i32_popcnt_rs(I32Popcnt_Rs) = wasm::i32_popcnt;
     fn i32_popcnt_rr(I32Popcnt_Rr) = wasm::i32_popcnt;
