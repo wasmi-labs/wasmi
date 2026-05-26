@@ -1,4 +1,4 @@
-use super::{LocalIdx, Operand, Reset};
+use super::{LocalIdx, Reset};
 use crate::{
     Error,
     ValType,
@@ -118,32 +118,6 @@ impl StackLayout {
             return StackSpace::Local;
         }
         StackSpace::Temp
-    }
-
-    /// Converts the `operand` into the associated [`Slot`].
-    ///
-    /// # Note
-    ///
-    /// Forwards to [`StackLayout::local_to_slot`] if possible.
-    ///
-    ///
-    /// # Errors
-    ///
-    /// If the forwarded method returned an error.
-    ///
-    /// # Panics
-    ///
-    /// If `operand` is an [`ImmediateOperand`].
-    ///
-    /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
-    pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
-        match operand {
-            Operand::Local(operand) => self.local_to_slot(operand),
-            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
-            Operand::Reg(_) | Operand::Immediate(_) => {
-                panic!("cannot convert operand to stack `Slot` without copy: {operand:?}")
-            }
-        }
     }
 
     /// Converts the local `index` into the associated [`Slot`].

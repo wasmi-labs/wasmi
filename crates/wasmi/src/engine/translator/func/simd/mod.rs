@@ -34,6 +34,32 @@ use crate::{
 use wasmparser::MemArg;
 
 impl FuncTranslator {
+    /// Converts the `operand` into the associated [`Slot`].
+    ///
+    /// # Note
+    ///
+    /// Forwards to [`StackLayout::local_to_slot`] if possible.
+    ///
+    ///
+    /// # Errors
+    ///
+    /// If the forwarded method returned an error.
+    ///
+    /// # Panics
+    ///
+    /// If `operand` is an [`ImmediateOperand`].
+    ///
+    /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
+    pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
+        match operand {
+            Operand::Local(operand) => self.layout.local_to_slot(operand),
+            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
+            Operand::Reg(_) | Operand::Immediate(_) => {
+                panic!("cannot convert operand to stack `Slot` without copy: {operand:?}")
+            }
+        }
+    }
+
     /// Generically translate any of the Wasm `simd` splat instructions.
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
@@ -83,7 +109,7 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         };
-        let input = self.layout.operand_to_slot(input)?;
+        let input = self.operand_to_slot(input)?;
         self.stage_op_with_result_reg(
             <R as Typed>::TY,
             make_instr(input, lane),
@@ -141,7 +167,7 @@ impl FuncTranslator {
             self.stack.push_immediate(result)?;
             return Ok(());
         };
-        let input = self.layout.operand_to_slot(input)?;
+        let input = self.operand_to_slot(input)?;
         self.push_instr_with_result_slot(
             <T as Typed>::TY,
             |result| make_instr(result, input),
