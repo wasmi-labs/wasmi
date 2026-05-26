@@ -376,12 +376,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
-        self.translate_local_set(local_index, false)
+        self.translate_local_set(local_index, true)
     }
 
     #[inline(never)]
     fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
-        self.translate_local_set(local_index, true)
+        self.translate_local_set(local_index, false)
     }
 
     #[inline(never)]
