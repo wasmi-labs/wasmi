@@ -1568,27 +1568,17 @@ impl FuncTranslator {
             // Case: cannot fuse without a known last instruction
             return Ok(false);
         };
-        let Operand::Temp(condition) = condition else {
-            // Case: cannot fuse non-temporary operands
+        let Some(ir::Location::Reg(result_ty)) = staged_op.result_loc() else {
+            // Case: cannot fuse without register result.
+            return Ok(false);
+        };
+        let Operand::Reg(_condition) = condition else {
+            // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        debug_assert!(matches!(condition.ty(), ValType::I32 | ValType::I64));
-        let Some(cmp_result) = staged_op.result_ref().copied() else {
-            // Note: `cmp` operators must have a result.
-            return Ok(false);
-        };
-        if matches!(self.layout.stack_space(cmp_result), StackSpace::Local) {
-            // Note: local variable results have observable behavior which must not change.
-            return Ok(false);
-        }
-        let br_condition = condition.temp_slots().head();
-        if cmp_result != br_condition {
-            // Note: cannot fuse cmp instruction with a result that differs
-            //       from the branch condition operand.
-            return Ok(false);
-        }
+        debug_assert!(matches!(result_ty, ValType::I32 | ValType::I64));
         let cmp_op = match negate {
             false => staged_op,
             true => match staged_op.negate_cmp_instr() {
