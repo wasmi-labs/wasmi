@@ -397,9 +397,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Operand::Temp(_) => {
                 self.stack.push_temp(ty)?;
             }
-            Operand::Immediate(input) => {
-                self.stack.push_immediate(input.val())?;
-            }
+            Operand::Immediate(input) => match ty {
+                ValType::V128 => {
+                    self.stack.push_local(local_index.into(), ty)?;
+                }
+                _ => {
+                    self.stack.push_immediate(input.val())?;
+                }
+            },
         };
         Ok(())
     }
