@@ -93,25 +93,29 @@ macro_rules! impl_splat_bytes {
     }
 }
 impl_splat_bytes! {
-    fn splat8(value: u8) -> V128 = simd::i8x16_splat;
-    fn splat16(value: u16) -> V128 = simd::i16x8_splat;
-    fn splat32(value: u32) -> V128 = simd::i32x4_splat;
-    fn splat64(value: u64) -> V128 = simd::i64x2_splat;
+    fn splat_u8(value: u8) -> V128 = simd::i8x16_splat;
+    fn splat_u16(value: u16) -> V128 = simd::i16x8_splat;
+    fn splat_u32(value: u32) -> V128 = simd::i32x4_splat;
+    fn splat_u64(value: u64) -> V128 = simd::i64x2_splat;
+    fn splat_f32(value: f32) -> V128 = simd::f32x4_splat;
+    fn splat_f64(value: f64) -> V128 = simd::f64x2_splat;
 }
 
 handler_unary! {
-    fn v128_splat8_sr(V128Splat8_Sr) = splat8;
-    fn v128_splat8_ss(V128Splat8_Ss) = splat8;
-    fn v128_splat8_si(V128Splat8_Si) = splat8;
-    fn v128_splat16_sr(V128Splat16_Sr) = splat16;
-    fn v128_splat16_ss(V128Splat16_Ss) = splat16;
-    fn v128_splat16_si(V128Splat16_Si) = splat16;
-    fn v128_splat32_sr(V128Splat32_Sr) = splat32;
-    fn v128_splat32_ss(V128Splat32_Ss) = splat32;
-    fn v128_splat32_si(V128Splat32_Si) = splat32;
-    fn v128_splat64_sr(V128Splat64_Sr) = splat64;
-    fn v128_splat64_ss(V128Splat64_Ss) = splat64;
-    fn v128_splat64_si(V128Splat64_Si) = splat64;
+    fn v128_splat_u8_sr(V128SplatU8_Sr) = splat_u8;
+    fn v128_splat_u8_ss(V128SplatU8_Ss) = splat_u8;
+    fn v128_splat_u8_si(V128SplatU8_Si) = splat_u8;
+    fn v128_splat_u16_sr(V128SplatU16_Sr) = splat_u16;
+    fn v128_splat_u16_ss(V128SplatU16_Ss) = splat_u16;
+    fn v128_splat_u16_si(V128SplatU16_Si) = splat_u16;
+    fn v128_splat_u32_sr(V128SplatU32_Sr) = splat_u32;
+    fn v128_splat_u32_ss(V128SplatU32_Ss) = splat_u32;
+    fn v128_splat_u32_si(V128SplatU32_Si) = splat_u32;
+    fn v128_splat_u64_sr(V128SplatU64_Sr) = splat_u64;
+    fn v128_splat_u64_ss(V128SplatU64_Ss) = splat_u64;
+    fn v128_splat_u64_si(V128SplatU64_Si) = splat_u64;
+    fn v128_splat_f32_sr(V128SplatF32_Sr) = splat_f32;
+    fn v128_splat_f64_sr(V128SplatF64_Sr) = splat_f64;
 
     fn v128_not_ss(V128Not_Ss) = simd::v128_not;
     fn v128_any_true_ss(V128AnyTrue_Ss) = simd::v128_any_true;

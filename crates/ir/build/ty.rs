@@ -75,6 +75,8 @@ pub enum Ty {
     I64,
     /// A unsigned 8-bit integer type.
     U8,
+    /// A unsigned 16-bit integer type.
+    U16,
     /// A unsigned 32-bit integer type.
     U32,
     /// A unsigned 64-bit integer type.
@@ -186,6 +188,7 @@ impl From<Ty> for FieldTy {
             | Ty::I32 => FieldTy::I32,
             | Ty::I64 => FieldTy::I64,
             | Ty::U8 => FieldTy::U8,
+            | Ty::U16 => FieldTy::U16,
             | Ty::U32 => FieldTy::U32,
             | Ty::U64 => FieldTy::U64,
             | Ty::NonZeroI32 => FieldTy::NonZeroI32,
