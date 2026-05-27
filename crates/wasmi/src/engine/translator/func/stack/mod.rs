@@ -41,7 +41,12 @@ use crate::{
     engine::{
         BlockType,
         translator::{
-            func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+            func::{
+                LocalIdx,
+                Pos,
+                labels::LabelRef,
+                stack::operands::{PeekedOperands, PreservedRegs},
+            },
             utils::required_cells_for_tys,
         },
     },
@@ -541,6 +546,16 @@ impl Stack {
     #[must_use]
     pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
         self.operands.preserve_all_locals()
+    }
+
+    /// Preserve all register operands on the [`Stack`].
+    ///
+    /// This is done by converting those operands to [`StackOperand::Temp`] and
+    /// returning their associated [`Slot`] in order to emit copy operators by
+    /// the caller.
+    #[must_use]
+    pub fn preserve_all_regs(&mut self) -> PreservedRegs {
+        self.operands.preserve_all_regs()
     }
 
     /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].
