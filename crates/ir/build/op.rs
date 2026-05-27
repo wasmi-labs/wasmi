@@ -993,7 +993,7 @@ impl ReplaceLaneOp {
                 FieldTy::F32 => FieldTy::RegF32,
                 FieldTy::F64 => FieldTy::RegF64,
                 _ => FieldTy::RegInt,
-            }
+            },
             OperandKind::Immediate => self.ty.item_ty(),
         };
         Field::new(Ident::Value, value_ty)
