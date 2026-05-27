@@ -643,12 +643,12 @@ impl_reg_lossless_conversions! {
 }
 
 macro_rules! impl_reg_lossy_conversions {
-    ( $($ty:ty as $reg:ty: $base:ty),* $(,)? ) => {
+    ( $($ty:ty as $reg:ty: $base:ty = $extend:expr),* $(,)? ) => {
         $(
             impl From<$ty> for $reg {
                 #[inline]
                 fn from(value: $ty) -> Self {
-                    Self::from(value as $base)
+                    Self::from($extend(value))
                 }
             }
 
@@ -663,13 +663,13 @@ macro_rules! impl_reg_lossy_conversions {
 }
 impl_reg_lossy_conversions! {
     // unsigned
-    u8 as Ireg: u64,
-    u16 as Ireg: u64,
-    u32 as Ireg: u64,
+    u8 as Ireg: u64 = u64::from,
+    u16 as Ireg: u64 = u64::from,
+    u32 as Ireg: u64 = u64::from,
     // signed
-    i8 as Ireg: i64,
-    i16 as Ireg: i64,
-    i32 as Ireg: i64,
+    i8 as Ireg: u64 = |v| u64::from(v as u8),
+    i16 as Ireg: u64 = |v| u64::from(v as u16),
+    i32 as Ireg: u64 = |v| u64::from(v as u32),
 }
 
 impl From<bool> for Ireg {
