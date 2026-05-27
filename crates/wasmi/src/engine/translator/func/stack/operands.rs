@@ -566,6 +566,35 @@ impl OperandStack {
             stack_pos: index,
         }
     }
+}
+
+#[derive(Copy, Clone)]
+pub struct PreservedRegs {
+    pub ireg: Option<Slot>,
+    pub freg32: Option<Slot>,
+    pub freg64: Option<Slot>,
+}
+
+impl OperandStack {
+    /// Preserve all register operands on the [`OperandStack`].
+    ///
+    /// This is done by converting those operands to [`StackOperand::Temp`] and
+    /// returning their associated [`Slot`] in order to emit copy operators by
+    /// the caller.
+    #[must_use]
+    pub fn preserve_all_regs(&mut self) -> PreservedRegs {
+        fn preserve_reg(this: &mut OperandStack, reg: StackPos) -> Slot {
+            this.operand_to_temp_at(reg).temp_slots().head()
+        }
+        let ireg = self.ireg.take().map(|reg| preserve_reg(self, reg));
+        let freg32 = self.freg32.take().map(|reg| preserve_reg(self, reg));
+        let freg64 = self.freg64.take().map(|reg| preserve_reg(self, reg));
+        PreservedRegs {
+            ireg,
+            freg32,
+            freg64,
+        }
+    }
 
     /// Unlinks the [`StackOperand::Local`] `operand` at `index` from `self`.
     ///
