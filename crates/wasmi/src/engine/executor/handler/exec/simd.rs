@@ -385,6 +385,8 @@ impl_replace_lane! {
     fn v128_replace_lane16x8(v128: V128, lane: ImmLaneIdx8, item: u16) -> V128 = simd::i16x8_replace_lane;
     fn v128_replace_lane32x4(v128: V128, lane: ImmLaneIdx4, item: u32) -> V128 = simd::i32x4_replace_lane;
     fn v128_replace_lane64x2(v128: V128, lane: ImmLaneIdx2, item: u64) -> V128 = simd::i64x2_replace_lane;
+    fn f32x4_replace_lane(v128: V128, lane: ImmLaneIdx4, item: f32) -> V128 = simd::f32x4_replace_lane;
+    fn f64x2_replace_lane(v128: V128, lane: ImmLaneIdx2, item: f64) -> V128 = simd::f64x2_replace_lane;
 }
 
 macro_rules! handler_extract_lane {
@@ -434,8 +436,8 @@ handler_extract_lane! {
     fn u64x2_replace_lane_ssr(U64x2ReplaceLane_Ssr) = v128_replace_lane64x2;
     fn u64x2_replace_lane_sss(U64x2ReplaceLane_Sss) = v128_replace_lane64x2;
     fn u64x2_replace_lane_ssi(U64x2ReplaceLane_Ssi) = v128_replace_lane64x2;
-    fn f32x4_replace_lane_ssr(F32x4ReplaceLane_Ssr) = v128_replace_lane32x4;
-    fn f64x2_replace_lane_ssr(F64x2ReplaceLane_Ssr) = v128_replace_lane64x2;
+    fn f32x4_replace_lane_ssr(F32x4ReplaceLane_Ssr) = f32x4_replace_lane;
+    fn f64x2_replace_lane_ssr(F64x2ReplaceLane_Ssr) = f64x2_replace_lane;
 }
 
 macro_rules! handler_ternary {
