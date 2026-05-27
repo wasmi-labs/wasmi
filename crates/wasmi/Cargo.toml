@@ -37,6 +37,7 @@ criterion = { version = "0.5", default-features = false }
 [features]
 default = ["stable", "std", "wat"]
 std = [
+    "wasmi_ir/std",
     "wasmi_core/std",
     "wasmi_collections/std",
     "wasmparser/std",
