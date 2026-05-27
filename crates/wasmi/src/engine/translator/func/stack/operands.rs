@@ -70,6 +70,8 @@ pub enum StackOperand {
         prev_local: Option<StackPos>,
         /// The next [`StackOperand::Local`] on the [`OperandStack`].
         next_local: Option<StackPos>,
+        /// This is `true` if the [`StackOperand::Local`] is also stored in a register.
+        in_reg: bool,
     },
     /// A temporary value on the [`OperandStack`].
     Temp {
@@ -173,11 +175,44 @@ impl OperandStack {
 
     /// Replace the typed register operand on the stack with a temporary operand if any.
     ///
-    /// Returns `None` if no `ireg` operand exists on the stack.
+    /// Returns `None` if no `reg` operand exists on the stack of type `ty` that needs to be copied.
+    ///
+    /// # Note
+    ///
+    /// If the register operand is a register-backed local it is turned into a normal local operand
+    /// and `None` is returned as no copy operator is required.
     pub fn reg_to_temp(&mut self, ty: ValType) -> Option<Operand> {
         let pos = self.reg_pos_mut(ty).take()?;
-        let op = self.operand_to_temp_at(pos);
-        Some(Operand::new(pos, op))
+        let index = usize::from(pos);
+        let operand = self.get_at(pos);
+        let (new_operand, returned) = match operand {
+            StackOperand::Reg { temp_slots, ty } => {
+                let new_operand = StackOperand::Temp { temp_slots, ty };
+                let returned = Some(Operand::new(pos, operand));
+                (new_operand, returned)
+            }
+            StackOperand::Local {
+                in_reg: true,
+                temp_slots,
+                ty,
+                local_index,
+                prev_local,
+                next_local,
+            } => {
+                let new_operand = StackOperand::Local {
+                    in_reg: false,
+                    temp_slots,
+                    ty,
+                    local_index,
+                    prev_local,
+                    next_local,
+                };
+                (new_operand, None)
+            }
+            _ => unreachable!(),
+        };
+        self.operands[index] = new_operand;
+        returned
     }
 
     /// Pushes the offset for temporary operands by `delta`.
@@ -267,6 +302,21 @@ impl OperandStack {
         }
     }
 
+    /// Pushes a register backed local variable with index `local_idx` to the [`OperandStack`].
+    ///
+    /// # Errors
+    ///
+    /// - If too many operands have been pushed onto the [`OperandStack`].
+    /// - If the local with `local_idx` does not exist.
+    #[inline]
+    pub fn push_reg_backed_local(
+        &mut self,
+        local_index: LocalIdx,
+        ty: ValType,
+    ) -> Result<LocalOperand, Error> {
+        self.push_local_impl(local_index, ty, true)
+    }
+
     /// Pushes a local variable with index `local_idx` to the [`OperandStack`].
     ///
     /// # Errors
@@ -279,7 +329,20 @@ impl OperandStack {
         local_index: LocalIdx,
         ty: ValType,
     ) -> Result<LocalOperand, Error> {
+        self.push_local_impl(local_index, ty, false)
+    }
+
+    #[inline]
+    fn push_local_impl(
+        &mut self,
+        local_index: LocalIdx,
+        ty: ValType,
+        in_reg: bool,
+    ) -> Result<LocalOperand, Error> {
         let stack_pos = self.next_stack_pos();
+        if in_reg {
+            self.link_reg(stack_pos, ty);
+        }
         let next_local = self.local_heads.replace_first(local_index, Some(stack_pos));
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(stack_pos));
@@ -291,6 +354,7 @@ impl OperandStack {
             local_index,
             prev_local: None,
             next_local,
+            in_reg,
         });
         self.len_locals += 1;
         Ok(LocalOperand::new(temp_slots, ty, local_index))
@@ -304,11 +368,7 @@ impl OperandStack {
     #[inline]
     pub fn push_reg(&mut self, ty: ValType) -> Result<RegOperand, Error> {
         let stack_pos = self.next_stack_pos();
-        let prev_pos = self.reg_pos_mut(ty).replace(stack_pos);
-        debug_assert!(
-            prev_pos.is_none(),
-            "a register operand already exists on the stack",
-        );
+        self.link_reg(stack_pos, ty);
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
         self.operands.push(StackOperand::Reg { temp_slots, ty });
         Ok(RegOperand::new(temp_slots, ty, stack_pos))
@@ -441,7 +501,31 @@ impl OperandStack {
         let temp_slots = operand.temp_slots();
         let ty = operand.ty();
         self.try_unlink_local(operand);
+        self.try_unlink_reg(operand);
         self.operands[usize::from(index)] = StackOperand::Temp { temp_slots, ty };
+        operand
+    }
+
+    fn preserve_local_at(&mut self, pos: StackPos) -> StackOperand {
+        let operand = self.get_at(pos);
+        self.try_unlink_local(operand);
+        let StackOperand::Local {
+            temp_slots,
+            ty,
+            in_reg,
+            ..
+        } = operand
+        else {
+            unreachable!()
+        };
+        let opd = match in_reg {
+            true => {
+                self.try_unlink_reg(operand);
+                StackOperand::Reg { temp_slots, ty }
+            }
+            false => StackOperand::Temp { temp_slots, ty },
+        };
+        self.operands[usize::from(pos)] = opd;
         operand
     }
 
@@ -461,7 +545,7 @@ impl OperandStack {
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
         let stack_pos = self.local_heads.replace_first(local_index, None);
         PreservedLocalsIter {
-            operands: self,
+            stack: self,
             stack_pos,
         }
     }
@@ -478,7 +562,7 @@ impl OperandStack {
     pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
         let index = self.operands.len();
         PreservedAllLocalsIter {
-            operands: self,
+            stack: self,
             stack_pos: index,
         }
     }
@@ -500,15 +584,42 @@ impl OperandStack {
         self.unlink_local(local_index, prev_local, next_local);
     }
 
+    /// Links the operand at `pos` to the register associated to `ty`.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the register with `ty` is already occupied.
+    fn link_reg(&mut self, pos: StackPos, ty: ValType) {
+        let prev_pos = self.reg_pos_mut(ty).replace(pos);
+        debug_assert!(
+            prev_pos.is_none(),
+            "a register operand already exists on the stack",
+        );
+    }
+
     /// Unlinks the [`StackOperand::Reg`] `operand` at `index` from `self`.
     ///
     /// Does nothing if `operand` is not a [`StackOperand::Local`].
     #[inline]
     fn try_unlink_reg(&mut self, operand: StackOperand) -> Option<StackPos> {
-        let StackOperand::Reg { ty, .. } = operand else {
-            return None;
+        let ty = match operand {
+            StackOperand::Reg { ty, .. } => ty,
+            StackOperand::Local {
+                ty, in_reg: true, ..
+            } => ty,
+            _ => return None,
         };
         self.reg_pos_mut(ty).take()
+    }
+
+    /// Returns a `&mut` to the [`StackPos`] of the register operand on the stack if any.
+    fn reg_pos_mut(&mut self, ty: ValType) -> &mut Option<StackPos> {
+        match ty {
+            | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => &mut self.ireg,
+            | ValType::F32 => &mut self.freg32,
+            | ValType::F64 => &mut self.freg64,
+            | ValType::V128 => unreachable!(),
+        }
     }
 
     /// Unlinks the [`StackOperand::Local`] `operand` identified by the parameters from `self`.
@@ -527,16 +638,6 @@ impl OperandStack {
             self.update_prev_local(next_local, prev_local);
         }
         self.len_locals -= 1;
-    }
-
-    /// Returns a `&mut` to the [`StackPos`] of the register operand on the stack if any.
-    fn reg_pos_mut(&mut self, ty: ValType) -> &mut Option<StackPos> {
-        match ty {
-            | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => &mut self.ireg,
-            | ValType::F32 => &mut self.freg32,
-            | ValType::F64 => &mut self.freg64,
-            | ValType::V128 => unreachable!(),
-        }
     }
 
     /// Updates the `prev_local` of the [`StackOperand::Local`] at `local_index` to `prev_index`.
@@ -587,7 +688,7 @@ impl OperandStack {
 #[derive(Debug)]
 pub struct PreservedAllLocalsIter<'stack> {
     /// The underlying operand stack.
-    operands: &'stack mut OperandStack,
+    stack: &'stack mut OperandStack,
     /// The current operand stack position of the next preserved local if any.
     stack_pos: usize,
 }
@@ -595,7 +696,7 @@ pub struct PreservedAllLocalsIter<'stack> {
 impl PreservedAllLocalsIter<'_> {
     /// Returns `true` if there are remaining local operands on the stack.
     fn has_remaining_locals(&self) -> bool {
-        self.operands.len_locals != 0
+        self.stack.len_locals != 0
     }
 
     /// Returns the index of the next local operand on the stack if any.
@@ -605,7 +706,7 @@ impl PreservedAllLocalsIter<'_> {
         let mut stack_pos = self.stack_pos;
         loop {
             stack_pos -= 1;
-            let opd = self.operands.operands.get(stack_pos)?;
+            let opd = self.stack.operands.get(stack_pos)?;
             if let StackOperand::Local { .. } = opd {
                 return Some(stack_pos);
             }
@@ -617,22 +718,28 @@ impl Iterator for PreservedAllLocalsIter<'_> {
     type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if !self.has_remaining_locals() {
-            return None;
+        loop {
+            if !self.has_remaining_locals() {
+                return None;
+            }
+            self.stack_pos = self.find_next_local()?;
+            let stack_pos = StackPos::from(self.stack_pos);
+            let operand = self.stack.preserve_local_at(stack_pos);
+            let StackOperand::Local {
+                temp_slots,
+                ty,
+                local_index,
+                in_reg,
+                ..
+            } = operand
+            else {
+                unreachable!("expected `StackOperand::Local` but found: {operand:?}")
+            };
+            if in_reg {
+                continue;
+            }
+            return Some(LocalOperand::new(temp_slots, ty, local_index));
         }
-        self.stack_pos = self.find_next_local()?;
-        let stack_pos = StackPos::from(self.stack_pos);
-        let operand = self.operands.operand_to_temp_at(stack_pos);
-        let StackOperand::Local {
-            temp_slots,
-            ty,
-            local_index,
-            ..
-        } = operand
-        else {
-            panic!("expected `StackOperand::Local` but found: {operand:?}")
-        };
-        Some(LocalOperand::new(temp_slots, ty, local_index))
     }
 }
 
@@ -640,7 +747,7 @@ impl Iterator for PreservedAllLocalsIter<'_> {
 #[derive(Debug)]
 pub struct PreservedLocalsIter<'stack> {
     /// The underlying operand stack.
-    operands: &'stack mut OperandStack,
+    stack: &'stack mut OperandStack,
     /// The current operand stack position of the next preserved local if any.
     stack_pos: Option<StackPos>,
 }
@@ -649,20 +756,26 @@ impl Iterator for PreservedLocalsIter<'_> {
     type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let stack_pos = self.stack_pos?;
-        let operand = self.operands.operand_to_temp_at(stack_pos);
-        let StackOperand::Local {
-            temp_slots,
-            ty,
-            local_index,
-            next_local,
-            ..
-        } = operand
-        else {
-            panic!("expected `StackOperand::Local` but found: {operand:?}")
-        };
-        self.stack_pos = next_local;
-        Some(LocalOperand::new(temp_slots, ty, local_index))
+        loop {
+            let stack_pos = self.stack_pos?;
+            let operand = self.stack.preserve_local_at(stack_pos);
+            let StackOperand::Local {
+                temp_slots,
+                ty,
+                local_index,
+                next_local,
+                in_reg,
+                ..
+            } = operand
+            else {
+                unreachable!("expected `StackOperand::Local` but found: {operand:?}")
+            };
+            self.stack_pos = next_local;
+            if in_reg {
+                continue;
+            }
+            return Some(LocalOperand::new(temp_slots, ty, local_index));
+        }
     }
 }
 
