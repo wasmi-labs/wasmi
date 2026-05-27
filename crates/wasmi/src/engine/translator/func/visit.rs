@@ -1837,15 +1837,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Note: `funcref` and `externref` both serialize to `RawValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
                 //       via reinterpretation of the value's type.
-                self.stack.push_local(input.local_index(), ValType::I64)?;
-                self.visit_i64_eqz()
+                self.stack.push_local(input.local_index(), ValType::I32)?;
+                self.visit_i32_eqz()
             }
             Operand::Temp(_) => {
                 // Note: `funcref` and `externref` both serialize to `RawValue`
                 //       as `u64` so we can use `i64.eqz` translation for `ref.is_null`
                 //       via reinterpretation of the value's type.
-                self.stack.push_temp(ValType::I64)?;
-                self.visit_i64_eqz()
+                self.stack.push_temp(ValType::I32)?;
+                self.visit_i32_eqz()
             }
             Operand::Immediate(input) => {
                 let raw = input.val().raw();
