@@ -399,6 +399,20 @@ impl Stack {
         self.operands.push_reg(ty)
     }
 
+    /// Pushes a register backed local variable with index `local_idx` to the [`OperandStack`].
+    ///
+    /// # Errors
+    ///
+    /// - If too many operands have been pushed onto the [`OperandStack`].
+    /// - If the local with `local_idx` does not exist.
+    pub fn push_reg_backed_local(
+        &mut self,
+        local_index: LocalIdx,
+        ty: ValType,
+    ) -> Result<LocalOperand, Error> {
+        self.operands.push_reg_backed_local(local_index, ty)
+    }
+
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
     ///
     /// # Errors

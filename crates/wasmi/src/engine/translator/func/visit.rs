@@ -386,20 +386,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let input = self.stack.pop();
         let ty = input.ty();
+        let local_idx = local_index.into();
         self.translate_local_set(local_index, input)?;
         match input {
             Operand::Reg(_) => {
-                self.stack.push_reg(ty)?;
+                self.stack.push_reg_backed_local(local_idx, ty)?;
             }
             Operand::Local(_) => {
-                self.stack.push_local(local_index.into(), ty)?;
+                self.stack.push_local(local_idx, ty)?;
             }
             Operand::Temp(_) => {
                 self.stack.push_temp(ty)?;
             }
             Operand::Immediate(input) => match ty {
                 ValType::V128 => {
-                    self.stack.push_local(local_index.into(), ty)?;
+                    self.stack.push_local(local_idx, ty)?;
                 }
                 _ => {
                     self.stack.push_immediate(input.val())?;

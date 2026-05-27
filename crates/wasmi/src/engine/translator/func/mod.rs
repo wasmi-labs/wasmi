@@ -951,7 +951,12 @@ impl FuncTranslator {
     fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
         let fuel_pos = self.stack.consume_fuel_instr();
         if let Some(operand) = self.stack.reg_to_temp(ty) {
-            self.copy_operand_to_temp(operand, fuel_pos)?;
+            if let Operand::Reg(operand) = operand {
+                let result = operand.temp_slots().head();
+                let copy_op = Self::make_copy_reg_instr(result, operand);
+                self.instrs
+                    .encode(copy_op, fuel_pos, FuelCostsProvider::base)?;
+            }
         };
         self.stack.push_reg(ty)?;
         Ok(())
