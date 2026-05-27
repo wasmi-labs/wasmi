@@ -89,7 +89,13 @@ impl Operand {
     /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`StackPos`].
     pub(super) fn new(stack_pos: StackPos, operand: StackOperand) -> Self {
         match operand {
-            StackOperand::Reg { temp_slots, ty } => Self::reg(stack_pos, temp_slots, ty),
+            StackOperand::Reg { temp_slots, ty }
+            | StackOperand::Local {
+                temp_slots,
+                ty,
+                in_reg: true,
+                ..
+            } => Self::reg(stack_pos, temp_slots, ty),
             StackOperand::Local {
                 local_index,
                 ty,
