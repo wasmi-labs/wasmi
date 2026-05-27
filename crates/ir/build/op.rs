@@ -989,7 +989,11 @@ impl ReplaceLaneOp {
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Reg => FieldTy::RegInt,
+            OperandKind::Reg => match self.ty.item_ty() {
+                FieldTy::F32 => FieldTy::RegF32,
+                FieldTy::F64 => FieldTy::RegF64,
+                _ => FieldTy::RegInt,
+            }
             OperandKind::Immediate => self.ty.item_ty(),
         };
         Field::new(Ident::Value, value_ty)
