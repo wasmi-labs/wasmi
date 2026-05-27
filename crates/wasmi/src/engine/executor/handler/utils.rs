@@ -43,18 +43,19 @@ use crate::{
 use core::num::NonZero;
 
 macro_rules! consume_fuel {
-    ($state:expr, $ip:expr, $fuel:expr, $eval:expr) => {{
+    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $fuel:expr, $eval:expr $(,)? ) => {{
         if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
             $fuel.consume_fuel_if($eval)
         {
-            out_of_fuel!($state, $ip, required_fuel)
+            out_of_fuel!($state, $ip, $ireg, $freg32, $freg64, required_fuel)
         }
     }};
 }
 
 macro_rules! out_of_fuel {
-    ($state:expr, $ip:expr, $required_fuel:expr) => {{
+    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $required_fuel:expr) => {{
         $state.stack.sync_ip($ip);
+        $state.stack.sync_regs($ireg, $freg32, $freg64);
         done!(
             $state,
             $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
