@@ -247,7 +247,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let Some(rhs) = self
-            .resolve_operand_as::<T::ShiftSource>(lhs)?
+            .resolve_operand_as::<T::ShiftSource>(rhs)?
             .map(T::into_shift_amount)
             .transpose()
         else {
