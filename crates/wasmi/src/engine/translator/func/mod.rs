@@ -1668,6 +1668,7 @@ impl FuncTranslator {
         ty: &FuncType,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
+        self.preserve_regs(fuel_pos)?;
         let mut params_start = self.stack.next_temp_slots();
         let mut params_len: u16 = 0;
         for _ in 0..ty.len_params() {
@@ -1684,6 +1685,24 @@ impl FuncTranslator {
             self.stack.push_temp(*result)?;
         }
         Ok(params)
+    }
+
+    /// Preserve all register operands on the [`Stack`].
+    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
+        let regs = self.stack.preserve_all_regs();
+        if let Some(result) = regs.ireg {
+            self.instrs
+                .encode(Op::u64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+        }
+        if let Some(result) = regs.freg32 {
+            self.instrs
+                .encode(Op::f32_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+        }
+        if let Some(result) = regs.freg64 {
+            self.instrs
+                .encode(Op::f64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+        }
+        Ok(())
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
