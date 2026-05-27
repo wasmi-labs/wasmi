@@ -710,6 +710,12 @@ pub struct Stack {
     values: ValueStack,
     /// The underlying call stack.
     frames: CallStack,
+    /// The value of the integer register (GPR).
+    ireg: Ireg,
+    /// The value of the `f32` register.
+    freg32: Freg32,
+    /// The value of the `f64` register.
+    freg64: Freg64,
 }
 
 type ReturnCallHost = Control<(Ip, Sp, Inst), Sp>;
@@ -720,6 +726,9 @@ impl Stack {
         Self {
             values: ValueStack::new(config.min_stack_height(), config.max_stack_height()),
             frames: CallStack::new(config.max_recursion_depth()),
+            ireg: Ireg::default(),
+            freg32: Freg32::default(),
+            freg64: Freg64::default(),
         }
     }
 
@@ -728,6 +737,9 @@ impl Stack {
         Self {
             values: ValueStack::empty(),
             frames: CallStack::empty(),
+            ireg: Ireg::default(),
+            freg32: Freg32::default(),
+            freg64: Freg64::default(),
         }
     }
 
@@ -735,6 +747,14 @@ impl Stack {
     pub fn reset(&mut self) {
         self.values.reset();
         self.frames.reset();
+        self.ireg = Ireg::default();
+        self.freg32 = Freg32::default();
+        self.freg64 = Freg64::default();
+    }
+
+    /// Returns the state of all registers.
+    pub fn regs(&self) -> (Ireg, Freg32, Freg64) {
+        (self.ireg, self.freg32, self.freg64)
     }
 
     /// Returns the total number of heap allocated bytes of `self`.
@@ -758,17 +778,24 @@ impl Stack {
         self.frames.sync_ip(ip);
     }
 
+    /// Synchronizes the register states of the top-most function frame.
+    pub fn sync_regs(&mut self, ireg: Ireg, freg32: Freg32, freg64: Freg64) {
+        self.ireg = ireg;
+        self.freg32 = freg32;
+        self.freg64 = freg64;
+    }
+
     /// Restores the top-most function frame and its [`Ip`], [`Sp`] and [`Inst`].
     ///
     /// # Note
     ///
     /// This is useful and required to resume a function execution that yielded back to the host.
-    pub fn restore_frame(&mut self) -> (Ip, Sp, Inst) {
+    pub fn restore_frame(&mut self) -> (Ip, Sp, Inst, Ireg, Freg32, Freg64) {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
         };
         let sp = self.values.sp_or_dangling(start);
-        (ip, sp, instance)
+        (ip, sp, instance, self.ireg, self.freg32, self.freg64)
     }
 
     /// Prepares `self` for a host function tail call.

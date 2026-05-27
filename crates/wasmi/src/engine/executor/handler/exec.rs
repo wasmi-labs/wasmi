@@ -113,7 +113,7 @@ execution_handler! {
             .fuel_mut()
             .consume_fuel_unchecked(u64::from(fuel));
         if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-            out_of_fuel!(state, ip, required_fuel)
+            out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
         }
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
@@ -614,7 +614,7 @@ execution_handler! {
                 }
             }
             Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-                out_of_fuel!(state, ip, required_fuel)
+                out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
             }
             Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
@@ -666,7 +666,7 @@ execution_handler! {
             trap!(TrapCode::MemoryOutOfBounds)
         };
         if dst_memory == src_memory {
-            memory_copy_within(state, ip, instance, dst_memory, dst_index, src_index, len)?;
+            memory_copy_within(state, ip, instance, ireg, freg32, freg64, dst_memory, dst_index, src_index, len)?;
             dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
         }
         let dst_memory = fetch_memory(instance, dst_memory);
@@ -678,17 +678,28 @@ execution_handler! {
         // These accesses just perform the bounds checks required by the Wasm spec.
         let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
         let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
-        consume_fuel!(state, ip, fuel, |costs| costs
-            .fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel!(
+            state,
+            ip,
+            ireg,
+            freg32,
+            freg64,
+            fuel,
+            |costs| costs.fuel_for_copying_values::<u8>(len as u64),
+        );
         dst_bytes.copy_from_slice(src_bytes);
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 fn memory_copy_within(
     state: &mut VmState<'_>,
     ip: Ip,
     instance: Inst,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
     dst_memory: index::Memory,
     dst_index: usize,
     src_index: usize,
@@ -699,7 +710,7 @@ fn memory_copy_within(
     // These accesses just perform the bounds checks required by the Wasm spec.
     memory_slice(memory, src_index, len).into_control()?;
     memory_slice(memory, dst_index, len).into_control()?;
-    consume_fuel!(state, ip, fuel, |costs| costs
+    consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
         .fuel_for_copying_values::<u8>(len as u64));
     memory
         .data_mut()
@@ -740,7 +751,7 @@ execution_handler! {
         let memory = fetch_memory(instance, memory);
         let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
         let slice = memory_slice_mut(memory, dst, len).into_control()?;
-        consume_fuel!(state, ip, fuel, |costs| costs
+        consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
             .fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
@@ -793,7 +804,7 @@ execution_handler! {
         else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        consume_fuel!(state, ip, fuel, |costs| costs
+        consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
             .fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
@@ -924,7 +935,7 @@ execution_handler! {
                     TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                     TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                     TableError::OutOfFuel { required_fuel } => {
-                        out_of_fuel!(state, ip, required_fuel)
+                        out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
                     }
                     _ => panic!("table.copy: unexpected error: {error:?}"),
                 };
@@ -944,7 +955,7 @@ execution_handler! {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, required_fuel)
+                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
                 }
                 _ => panic!("table.copy: unexpected error: {error:?}"),
             };
@@ -985,7 +996,7 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, required_fuel)
+                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
                 }
                 _ => panic!("table.fill: unexpected error: {error:?}"),
             };
@@ -1031,7 +1042,7 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, required_fuel)
+                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
                 }
                 _ => panic!("table.init: unexpected error: {error:?}"),
             };
