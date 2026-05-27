@@ -551,7 +551,7 @@ impl Stack {
     /// Preserve all register operands on the [`Stack`].
     ///
     /// This is done by converting those operands to [`StackOperand::Temp`] and
-    /// returning their associated [`Slot`] in order to emit copy operators by
+    /// returning their associated slots in order to emit copy operators by
     /// the caller.
     #[must_use]
     pub fn preserve_all_regs(&mut self) -> PreservedRegs {
