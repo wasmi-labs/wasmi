@@ -50,6 +50,7 @@ impl FuncTranslator {
     /// If `operand` is an [`ImmediateOperand`].
     ///
     /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
+    /// [`StackLayout::local_to_slot`]: crate::engine::translator::func::StackLayout::local_to_slot
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand),
