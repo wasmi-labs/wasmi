@@ -829,16 +829,14 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
 }
 
 fn add_simd_splat_ops(isa: &mut Isa) {
-    let kinds = [
-        (Ident::Splat, Ty::Bits8),
-        (Ident::Splat, Ty::Bits16),
-        (Ident::Splat, Ty::Bits32),
-        (Ident::Splat, Ty::Bits64),
-    ];
-    for (ident, value_ty) in kinds {
+    let kinds = [Ty::U8, Ty::U16, Ty::U32, Ty::U64, Ty::F32, Ty::F64];
+    for value_ty in kinds {
         for value in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            if !matches!(value, OperandKind::Reg) && matches!(value_ty, Ty::F32 | Ty::F64) {
+                continue;
+            }
             isa.push_op(UnaryOp::new(
-                ident,
+                Ident::Splat,
                 Ty::V128,
                 value_ty,
                 OperandKind::Slot,

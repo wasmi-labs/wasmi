@@ -326,49 +326,49 @@ impl VisitSimdOperator<'_> for FuncTranslator {
 
     fn visit_i8x16_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i32, i8>(
-            Op::v128_splat8_sr,
-            Op::v128_splat8_ss,
-            Op::v128_splat8_si,
+            Op::v128_splat_u8_sr,
+            Op::v128_splat_u8_ss,
+            Op::v128_splat_u8_si,
         )
     }
 
     fn visit_i16x8_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i32, i16>(
-            Op::v128_splat16_sr,
-            Op::v128_splat16_ss,
-            Op::v128_splat16_si,
+            Op::v128_splat_u16_sr,
+            Op::v128_splat_u16_ss,
+            Op::v128_splat_u16_si,
         )
     }
 
     fn visit_i32x4_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i32, i32>(
-            Op::v128_splat32_sr,
-            Op::v128_splat32_ss,
-            Op::v128_splat32_si,
+            Op::v128_splat_u32_sr,
+            Op::v128_splat_u32_ss,
+            Op::v128_splat_u32_si,
         )
     }
 
     fn visit_i64x2_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<i64, i64>(
-            Op::v128_splat64_sr,
-            Op::v128_splat64_ss,
-            Op::v128_splat64_si,
+            Op::v128_splat_u64_sr,
+            Op::v128_splat_u64_ss,
+            Op::v128_splat_u64_si,
         )
     }
 
     fn visit_f32x4_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<f32, f32>(
-            Op::v128_splat32_sr,
-            Op::v128_splat32_ss,
-            Op::v128_splat32_si,
+            Op::v128_splat_f32_sr,
+            Op::v128_splat_u32_ss,
+            Op::v128_splat_u32_si,
         )
     }
 
     fn visit_f64x2_splat(&mut self) -> Self::Output {
         self.translate_simd_splat::<f64, f64>(
-            Op::v128_splat64_sr,
-            Op::v128_splat64_ss,
-            Op::v128_splat64_si,
+            Op::v128_splat_f64_sr,
+            Op::v128_splat_u64_ss,
+            Op::v128_splat_u64_si,
         )
     }
 
