@@ -475,6 +475,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 | ValType::V128 => unreachable!(),
             },
             ResolvedOperand::Slot(value) => match ty {
+                #[cfg(feature = "simd")]
                 ValType::V128 => Op::global_set_v128_s(global, value),
                 _ => Op::global_set_u64_s(global, value),
             },
@@ -483,11 +484,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     Op::global_set_u32_i(global, u32::from(value))
                 }
                 | ValType::I64 | ValType::F64 => Op::global_set_u64_i(global, u64::from(value)),
+                #[cfg(feature = "simd")]
                 | ValType::V128 => {
                     let fuel_op = self.stack.consume_fuel_instr();
                     let v128 = self.copy_operand_to_temp(input, fuel_op)?;
                     Op::global_set_v128_s(global, v128)
                 }
+                #[cfg(not(feature = "simd"))]
+                _ => unreachable!(),
             },
         };
         self.push_instr(op, FuelCostsProvider::instance)?;
