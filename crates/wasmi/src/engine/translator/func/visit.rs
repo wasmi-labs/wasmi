@@ -476,7 +476,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             },
             ResolvedOperand::Slot(value) => match ty {
                 ValType::V128 => Op::global_set_v128_s(global, value),
-                _ => Op::global_set_u64_s(global, value)
+                _ => Op::global_set_u64_s(global, value),
             },
             ResolvedOperand::Immediate(value) => match ty {
                 | ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef => {
