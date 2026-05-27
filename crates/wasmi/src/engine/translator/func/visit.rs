@@ -1823,7 +1823,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let null = match type_hint {
             ValType::FuncRef => TypedRawRef::null(RefType::Func),
             ValType::ExternRef => TypedRawRef::null(RefType::Extern),
-            ty => panic!("expected a Wasm `reftype` but found: {ty:?}"),
+            ty => unreachable!("expected a Wasm `reftype` but found: {ty:?}"),
         };
         self.stack.push_immediate(null)?;
         Ok(())
