@@ -1977,10 +1977,24 @@ impl FuncTranslator {
                 };
                 match ty {
                     ValType::V128 => {
-                        self.copy_operand_to_slot(selected)?;
-                    }
-                    _ => {
-                        self.copy_operand_to_reg(selected)?;
+                        // Note: this is a special case where we have to copy the `v128`
+                        //       value that spans across 2 slots into the result slots of
+                        //       the `select` operator.
+                        let selected = self.resolve_operand_as::<V128>(selected)?;
+                        self.try_push_op_with_result_slot(
+                            ty,
+                            |result| match selected {
+                                ResolvedOperand::Reg(_) => unreachable!(),
+                                ResolvedOperand::Slot(value) => {
+                                    Self::select_copy_ss_op(result, value, ty)
+                                }
+                                ResolvedOperand::Immediate(value) => {
+                                    Self::select_copy_si_op(result, value.into()).map(Some)
+                                }
+                            },
+                            FuelCostsProvider::base,
+                        )?;
+                        return Ok(());
                     }
                 }
                 return Ok(());
