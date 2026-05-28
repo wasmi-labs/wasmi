@@ -898,8 +898,8 @@ impl FuncTranslator {
                 | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => {
                     Op::u64_copy_sr(result)
                 }
-                | ValType::F32 => Op::f32_copy_rs(result),
-                | ValType::F64 => Op::f64_copy_rs(result),
+                | ValType::F32 => Op::f32_copy_sr(result),
+                | ValType::F64 => Op::f64_copy_sr(result),
                 | ValType::V128 => unreachable!(),
             },
             ResolvedOperand::Immediate(value) => {
