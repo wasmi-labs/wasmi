@@ -1842,7 +1842,7 @@ impl FuncTranslator {
     fn unsupported_operand_pair(lhs: impl AsRef<Operand>, rhs: impl AsRef<Operand>) -> ! {
         #[inline(never)]
         fn impl_(lhs: &Operand, rhs: &Operand) -> ! {
-            unreachable!("unsupported operator pair: lhs = {lhs:?}, rhs = {rhs:?}")
+            unreachable!("unsupported operator pair:\n\t- lhs = {lhs:?}\n\t- rhs = {rhs:?}")
         }
         let lhs = lhs.as_ref();
         let rhs = rhs.as_ref();
