@@ -437,7 +437,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let global_idx = ir::index::Global::from(global_index);
         #[cfg(feature = "simd")]
         if matches!(content, ValType::V128) {
-            self.push_instr_with_result_slot(
+            self.push_op_with_result_slot(
                 content,
                 |result| Op::global_get_v128_s(global_idx, result),
                 FuelCostsProvider::instance,
