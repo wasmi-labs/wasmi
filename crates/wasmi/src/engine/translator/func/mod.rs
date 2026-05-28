@@ -987,6 +987,7 @@ impl FuncTranslator {
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    #[cfg(feature = "simd")]
     fn push_op_with_result_slot(
         &mut self,
         result_ty: ValType,
