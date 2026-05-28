@@ -1595,7 +1595,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let index_ty = table_type.index_ty();
         let (index, value) = self.stack.pop2();
         let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
-        let value = self.resolve_operand_as::<u32>(value)?;
+        let value = self
+            .resolve_operand_as::<TypedRawRef>(value)?
+            .map(|r| r.raw())
+            .map(u32::from);
         let instr = match (index, value) {
             (Opd::Reg, Opd::Slot(value)) => Op::table_set_rs(table, value),
             (Opd::Reg, Opd::Immediate(value)) => Op::table_set_ri(table, value),

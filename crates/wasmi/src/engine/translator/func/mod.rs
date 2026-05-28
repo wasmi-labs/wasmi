@@ -1709,7 +1709,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error>
     where
-        Op::Value: From<RawVal>,
+        Op::Value: From<TypedRawVal>,
         Op::Result: Into<TypedRawVal> + Typed,
     {
         bail_unreachable!(self);
@@ -1806,7 +1806,7 @@ impl FuncTranslator {
     // TODO: docs
     fn resolve_operand_as<T>(&self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
     where
-        T: From<RawVal>,
+        T: From<TypedRawVal>,
     {
         let resolved = match operand {
             Operand::Reg(_operand) => ResolvedOperand::Reg,
@@ -1819,7 +1819,7 @@ impl FuncTranslator {
                 ResolvedOperand::Slot(slot)
             }
             Operand::Immediate(operand) => {
-                let value = T::from(operand.val().raw());
+                let value = T::from(operand.val());
                 ResolvedOperand::Immediate(value)
             }
         };
@@ -1860,8 +1860,8 @@ impl FuncTranslator {
         opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Input) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T::Input: From<RawVal> + Copy,
-        T::Result: Into<RawVal>,
+        T::Input: From<TypedRawVal> + Copy,
+        T::Result: Into<TypedRawVal>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
@@ -1890,9 +1890,9 @@ impl FuncTranslator {
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
     where
-        T::Lhs: From<RawVal> + Copy,
+        T::Lhs: From<TypedRawVal> + Copy,
         T::Rhs: Copy,
-        T::Result: Into<RawVal>,
+        T::Result: Into<TypedRawVal>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
@@ -2341,7 +2341,7 @@ impl FuncTranslator {
     /// - `{i32, i64}.{store, store8, store16, store32}`
     fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error>
     where
-        T::Value: Copy + From<RawVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         bail_unreachable!(self);
@@ -2356,7 +2356,7 @@ impl FuncTranslator {
         value: Operand,
     ) -> Result<(), Error>
     where
-        T::Value: Copy + From<RawVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         let (memory, offset) = Self::decode_memarg(memarg)?;
@@ -2383,7 +2383,7 @@ impl FuncTranslator {
         value: ResolvedOperand<T::Immediate>,
     ) -> Result<Op, Error>
     where
-        T::Value: Copy + From<RawVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         use ResolvedOperand as Opd;
@@ -2423,7 +2423,7 @@ impl FuncTranslator {
         value: ResolvedOperand<T::Immediate>,
     ) -> Result<Option<Op>, Error>
     where
-        T::Value: Copy + From<RawVal>,
+        T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
         use Location as Loc;
