@@ -1450,6 +1450,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
+        self.cancel_loop_rotation_on_memory_access();
         let (dst, src, len) = self.stack.pop3();
         let memory = index::Memory::try_from(mem)?;
         let data = index::Data::from(data_index);
@@ -1476,6 +1477,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
+        self.cancel_loop_rotation_on_memory_access();
         let (dst, src, len) = self.stack.pop3();
         let dst_memory = index::Memory::try_from(dst_mem)?;
         let src_memory = index::Memory::try_from(src_mem)?;
@@ -1492,6 +1494,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
+        self.cancel_loop_rotation_on_memory_access();
         let (dst, value, len) = self.stack.pop3();
         let memory = index::Memory::try_from(mem)?;
         let dst = self.copy_operand_to_slot(dst)?;

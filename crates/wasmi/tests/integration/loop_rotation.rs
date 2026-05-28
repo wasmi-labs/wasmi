@@ -200,6 +200,39 @@ const COUNTER: &str = r#"
     (local.get $i)))
 "#;
 
+/// Memory loops: rotation is gated off (loads/stores make the loop memory-bound), but the
+/// computation must remain correct. Stores `i` to `mem[i*4]`, then sums it back.
+const MEMORY_LOOP: &str = r#"
+(module
+  (memory 1)
+  (func (export "run") (param $n i32) (result i32)
+    (local $i i32) (local $acc i32)
+    (block $w (loop $L
+      (br_if $w (i32.eq (local.get $i) (local.get $n)))
+      (i32.store (i32.mul (local.get $i) (i32.const 4)) (local.get $i))
+      (local.set $i (i32.add (local.get $i) (i32.const 1)))
+      (br $L)))
+    (local.set $i (i32.const 0))
+    (block $r (loop $L2
+      (br_if $r (i32.eq (local.get $i) (local.get $n)))
+      (local.set $acc
+        (i32.add (local.get $acc)
+          (i32.load (i32.mul (local.get $i) (i32.const 4)))))
+      (local.set $i (i32.add (local.get $i) (i32.const 1)))
+      (br $L2)))
+    (local.get $acc)))
+"#;
+
+#[test]
+fn memory_loop_is_correct() {
+    let (mut store, func) = setup(false, MEMORY_LOOP);
+    let run = func.typed::<i32, i32>(&store).unwrap();
+    for n in [0i32, 1, 2, 100, 256] {
+        let expected = (0..n).sum::<i32>();
+        assert_eq!(run.call(&mut store, n).unwrap(), expected, "mem_loop({n})");
+    }
+}
+
 #[test]
 fn counter_loop_is_correct() {
     let (mut store, func) = setup(false, COUNTER);

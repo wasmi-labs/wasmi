@@ -1565,6 +1565,18 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Cancels a pending loop-rotation candidate when a linear-memory access is translated.
+    ///
+    /// Loop rotation replaces the loop's unconditional back-edge with a *data-dependent*
+    /// fused conditional branch. For compute-bound loops this is a win (one fewer dispatch),
+    /// but for memory-latency-bound loop bodies (loads/stores) it measures as a regression:
+    /// the unconditional back-edge's dispatch target is known immediately and overlaps with
+    /// the loop body, whereas the rotated back-edge serializes dispatch behind the compare.
+    /// Conservatively skip rotation for any loop body that touches linear memory.
+    fn cancel_loop_rotation_on_memory_access(&mut self) {
+        self.loop_rotation = None;
+    }
+
     /// Encodes the rotated conditional back-edge of a loop (see [`LoopRotation`]).
     ///
     /// Re-emits the (reg-free) loop-continue comparison as a fused conditional branch that
@@ -2404,6 +2416,9 @@ impl FuncTranslator {
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
     fn translate_load<T: op::LoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
+        // Loads in a loop body make the loop memory-latency bound, where loop rotation's
+        // data-dependent back-edge dispatch measures as a regression; cancel any candidate.
+        self.cancel_loop_rotation_on_memory_access();
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
         let ptr = self.resolve_operand_as_index(ptr, memory)?;
@@ -2455,6 +2470,7 @@ impl FuncTranslator {
         T::Immediate: Copy,
     {
         bail_unreachable!(self);
+        self.cancel_loop_rotation_on_memory_access();
         let (ptr, value) = self.stack.pop2();
         self.encode_store::<T>(memarg, ptr, value)
     }
