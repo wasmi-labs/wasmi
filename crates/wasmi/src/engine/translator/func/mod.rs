@@ -1978,6 +1978,7 @@ impl FuncTranslator {
                     false => false_val,
                 };
                 match ty {
+                    #[cfg(feature = "simd")]
                     ValType::V128 => {
                         // Note: this is a special case where we have to copy the `v128`
                         //       value that spans across 2 slots into the result slots of
