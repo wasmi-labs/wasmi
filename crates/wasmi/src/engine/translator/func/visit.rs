@@ -1541,9 +1541,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr_with_result_slot(
+        let func_index = index::Func::from(function_index);
+        self.push_op_with_result_reg(
             ValType::FuncRef,
-            |result| Op::ref_func(result, index::Func::from(function_index)),
+            Op::ref_func(func_index),
             FuelCostsProvider::instance,
         )?;
         Ok(())
