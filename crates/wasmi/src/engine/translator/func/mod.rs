@@ -1839,8 +1839,10 @@ impl FuncTranslator {
     // TODO: docs
     #[cold]
     #[inline]
+    #[track_caller]
     fn unsupported_operand_pair(lhs: impl AsRef<Operand>, rhs: impl AsRef<Operand>) -> ! {
         #[inline(never)]
+        #[track_caller]
         fn impl_(lhs: &Operand, rhs: &Operand) -> ! {
             unreachable!("unsupported operator pair:\n\t- lhs = {lhs:?}\n\t- rhs = {rhs:?}")
         }
