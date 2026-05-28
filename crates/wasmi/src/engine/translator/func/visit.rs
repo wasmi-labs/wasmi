@@ -1613,7 +1613,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             (Opd::Immediate(index), Opd::Reg) => Op::table_set_ir(table, index),
             (Opd::Immediate(index), Opd::Slot(value)) => Op::table_set_is(table, index, value),
             (Opd::Immediate(index), Opd::Immediate(value)) => Op::table_set_ii(table, index, value),
-            _ => todo!(), // unsupported operand pair
+            _ => unreachable!(),
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
         Ok(())
