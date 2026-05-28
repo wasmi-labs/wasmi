@@ -978,6 +978,26 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    #[cfg(feature = "simd")]
+    fn try_push_op_with_result_slot(
+        &mut self,
+        result_ty: ValType,
+        make_instr: impl FnOnce(Slot) -> Result<Option<Op>, Error>,
+        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), Error> {
+        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let result = self.stack.push_temp(result_ty)?.temp_slots().head();
+        let op = make_instr(result)?;
+        let Some(op) = op else {
+            self.stack.pop();
+            return Ok(());
+        };
+        debug_assert!(op.result_ref().is_some());
+        self.instrs.encode(op, consume_fuel_instr, fuel_costs)?;
+        Ok(())
+    }
+
     /// Populate the `buffer` with the `table` targets including the `table` default target.
     ///
     /// Returns a shared slice to the `buffer` after it has been filled.
