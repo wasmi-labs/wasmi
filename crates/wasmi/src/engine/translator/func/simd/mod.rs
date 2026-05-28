@@ -236,7 +236,7 @@ impl FuncTranslator {
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: IntoShiftAmount<ShiftSource: From<RawVal>>,
+        T: IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
