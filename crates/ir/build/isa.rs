@@ -566,7 +566,7 @@ fn add_call_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::RefFunc,
             [
-                Field::new(Ident::Result, FieldTy::Slot),
+                Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Func, FieldTy::Func),
             ],
         )),
