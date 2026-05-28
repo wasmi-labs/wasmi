@@ -14,7 +14,7 @@ mod visit;
 use self::stack::ImmediateOperand;
 
 use self::{
-    encoder::{OpEncoder, OpEncoderAllocations, Pos},
+    encoder::{BytePos, OpEncoder, OpEncoderAllocations, Pos},
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
@@ -58,6 +58,7 @@ use crate::{
                 LogicalizeCmpInstr,
                 NegateCmpInstr,
                 TryIntoCmpBranchInstr as _,
+                TryIntoLoopbackCmpBranch as _,
                 UpdateBranchOffset as _,
             },
             func::{op::BinaryOpRhs, stack::TempOperand},
@@ -82,6 +83,25 @@ use crate::{
 use alloc::vec::Vec;
 use core::{convert::identity, mem};
 use wasmparser::{MemArg, WasmFeatures};
+
+/// A pending loop-rotation candidate.
+///
+/// Set when a `loop`'s body opens with a fusable, reg-free conditional exit test
+/// (`loop { if cond { .. } }`). When the matching unconditional back-edge `br` is
+/// reached the loop is rotated: the exit test stays as a one-time guard and the
+/// back-edge becomes a fused conditional branch that re-evaluates `cmp`. This removes
+/// one branch per loop iteration.
+#[derive(Debug, Copy, Clone)]
+struct LoopRotation {
+    /// The `continue` label of the `loop` this rotation belongs to.
+    ///
+    /// Used to match the back-edge `br` target against the right `loop`.
+    loop_label: LabelRef,
+    /// The label pinned directly after the guard = the rotated loop body entry.
+    body_label: LabelRef,
+    /// The non-negated, reg-free comparison `Op` to re-emit as the conditional back-edge.
+    cmp: Op,
+}
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
 #[derive(Debug)]
@@ -120,6 +140,13 @@ pub struct FuncTranslator {
     operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
     immediates: Vec<TypedRawVal>,
+    /// The encoded position right after the most recently opened `loop` header.
+    ///
+    /// Used to detect whether a following `if` is the very first instruction of the
+    /// `loop` body (a precondition for loop rotation).
+    loop_header_pos: Option<BytePos>,
+    /// The pending loop-rotation candidate, if any. See [`LoopRotation`].
+    loop_rotation: Option<LoopRotation>,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -252,6 +279,8 @@ impl FuncTranslator {
             instrs,
             operands,
             immediates,
+            loop_header_pos: None,
+            loop_rotation: None,
         };
         translator.init_func_params()?;
         Ok(translator)
@@ -1268,6 +1297,8 @@ impl FuncTranslator {
     /// Translates the end of a Wasm `loop` control frame.
     fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
+        // Drop any pending rotation candidate that was not consumed by a back-edge.
+        self.loop_rotation = None;
         // Nothing needs to be done since Wasm `loop` control frames always only have a single exit.
         //
         // Note: no need to reset `last_instr` since end of `loop` is not a control flow boundary.
@@ -1277,6 +1308,9 @@ impl FuncTranslator {
     /// Translates the end of a Wasm `if` control frame.
     fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
+        // A rotation candidate that survived to the end of its `if` was never consumed
+        // by a back-edge; drop it.
+        self.loop_rotation = None;
         let is_end_of_then_reachable = self.reachable;
         let IfReachability::Both { else_label } = frame.reachability() else {
             let is_end_reachable = match frame.reachability() {
@@ -1462,25 +1496,109 @@ impl FuncTranslator {
         Ok(br_op)
     }
 
+    /// Marks the just-translated `if` as a loop-rotation candidate if all preconditions hold.
+    ///
+    /// See [`LoopRotation`]. The candidate is only established for the shape
+    /// `loop { if cond { .. } }` where:
+    /// - the `if`'s exit test was fused into a reg-free comparison branch (`fused_cmp`),
+    /// - the `if` is the very first instruction of the enclosing `loop` body,
+    /// - the `if` has no parameters or results,
+    /// - the enclosing `loop` has no parameters and no active fuel metering.
+    ///
+    /// On success, pins a fresh body-entry label directly after the guard and records the
+    /// (non-negated) comparison to be re-emitted as the conditional back-edge.
+    fn try_mark_loop_rotation(
+        &mut self,
+        pos_before: BytePos,
+        fused_cmp: Option<Op>,
+        if_block_ty: BlockType,
+    ) -> Result<(), Error> {
+        self.loop_rotation = None;
+        // Must have fused the exit test into a comparison whose operands are reg-free,
+        // so the comparison may be safely re-evaluated at the loop back-edge.
+        let Some(cmp) = fused_cmp else {
+            return Ok(());
+        };
+        if cmp
+            .try_into_loopback_cmp_branch(BranchOffset::uninit())
+            .is_none()
+        {
+            return Ok(());
+        }
+        // The `if` must be trivially typed (no parameters or results).
+        if if_block_ty.len_params(&self.engine) != 0 || if_block_ty.len_results(&self.engine) != 0 {
+            return Ok(());
+        }
+        // The guard must be the first emitted instruction of the enclosing loop body.
+        if self.loop_header_pos != Some(pos_before) {
+            return Ok(());
+        }
+        // The directly enclosing control frame must be a `loop` without parameters and
+        // without active fuel metering (the guard would otherwise skip per-iteration fuel).
+        let ControlFrame::Loop(loop_frame) = self.stack.peek_control(0) else {
+            return Ok(());
+        };
+        if loop_frame.consume_fuel_instr().is_some() {
+            return Ok(());
+        }
+        if loop_frame.ty().len_params(&self.engine) != 0 {
+            return Ok(());
+        }
+        let loop_label = loop_frame.label();
+        // Pin the rotated loop body entry directly after the guard branch.
+        let body_label = self.instrs.new_label();
+        self.instrs.pin_label(body_label)?;
+        self.loop_rotation = Some(LoopRotation {
+            loop_label,
+            body_label,
+            cmp,
+        });
+        Ok(())
+    }
+
+    /// Encodes the rotated conditional back-edge of a loop (see [`LoopRotation`]).
+    ///
+    /// Re-emits the (reg-free) loop guard comparison as a fused conditional branch that
+    /// jumps back to the loop body entry `body_label` while the condition still holds.
+    fn encode_loop_rotation_branch(&mut self, body_label: LabelRef, cmp: Op) -> Result<(), Error> {
+        let fuel_pos = self.stack.consume_fuel_instr();
+        self.instrs.encode_branch(
+            body_label,
+            |offset| {
+                cmp.try_into_loopback_cmp_branch(offset)
+                    .expect("loop-rotation comparison was checked to be reg-free")
+            },
+            fuel_pos,
+            FuelCostsProvider::base,
+        )?;
+        Ok(())
+    }
+
     /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
-    fn encode_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
+    ///
+    /// Returns the non-negated comparison [`Op`] that was fused into the branch, if any.
+    fn encode_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<Option<Op>, Error> {
         self.encode_br_if(condition, label, true)
     }
 
     /// Encodes a `br_if` conditional branch instruction.
-    fn encode_br_nez(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
+    ///
+    /// Returns the non-negated comparison [`Op`] that was fused into the branch, if any.
+    fn encode_br_nez(&mut self, condition: Operand, label: LabelRef) -> Result<Option<Op>, Error> {
         self.encode_br_if(condition, label, false)
     }
 
     /// Encodes a generic `br_if` fused conditional branch instruction.
+    ///
+    /// Returns the non-negated comparison [`Op`] that was fused into the branch, if any.
     fn encode_br_if(
         &mut self,
         condition: Operand,
         label: LabelRef,
         branch_eqz: bool,
-    ) -> Result<(), Error> {
-        if self.try_fuse_branch_cmp(condition, label, branch_eqz)? {
-            return Ok(());
+    ) -> Result<Option<Op>, Error> {
+        if let Some(fused_cmp) = self.try_fuse_branch_cmp(condition, label, branch_eqz)? {
+            return Ok(Some(fused_cmp));
         }
         let condition = match condition {
             Operand::Reg(_) => Location::Reg,
@@ -1502,9 +1620,9 @@ impl FuncTranslator {
                     true => {
                         self.encode_br(label)?;
                         self.reachable = false;
-                        return Ok(());
+                        return Ok(None);
                     }
-                    false => return Ok(()),
+                    false => return Ok(None),
                 }
             }
         };
@@ -1524,29 +1642,31 @@ impl FuncTranslator {
             fuel_pos,
             FuelCostsProvider::base,
         )?;
-        Ok(())
+        Ok(None)
     }
 
     /// Try to fuse a cmp+branch [`Op`] with optional negation.
+    ///
+    /// Returns the non-negated comparison [`Op`] that was fused, or `None` if no fusion happened.
     fn try_fuse_branch_cmp(
         &mut self,
         condition: Operand,
         label: LabelRef,
         negate: bool,
-    ) -> Result<bool, Error> {
+    ) -> Result<Option<Op>, Error> {
         let Some(staged_op) = self.instrs.peek_staged() else {
             // Case: cannot fuse without a known last instruction
-            return Ok(false);
+            return Ok(None);
         };
         let Some(ir::Location::Reg(result_ty)) = staged_op.result_loc() else {
             // Case: cannot fuse without register result.
-            return Ok(false);
+            return Ok(None);
         };
         let Operand::Reg(_condition) = condition else {
             // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
-            return Ok(false);
+            return Ok(None);
         };
         debug_assert!(matches!(result_ty, ValType::I32 | ValType::I64));
         let cmp_op = match negate {
@@ -1555,13 +1675,13 @@ impl FuncTranslator {
                 Some(negated) => negated,
                 None => {
                     // Note: cannot negate staged [`Op`], thus it is not a `cmp` operator and thus not fusable.
-                    return Ok(false);
+                    return Ok(None);
                 }
             },
         };
         let Some(fused_cmp_branch) = cmp_op.try_into_cmp_branch_instr(BranchOffset::uninit())
         else {
-            return Ok(false);
+            return Ok(None);
         };
         let (fuel_pos, _) = self.instrs.drop_staged();
         self.instrs.encode_branch(
@@ -1570,7 +1690,9 @@ impl FuncTranslator {
             fuel_pos,
             FuelCostsProvider::base,
         )?;
-        Ok(true)
+        // Note: returns the *non-negated* comparison so callers may reuse it (e.g. as the
+        //       conditional back-edge of a rotated loop).
+        Ok(Some(staged_op))
     }
 
     /// Generically translates a `call` or `return_call` Wasm operator.

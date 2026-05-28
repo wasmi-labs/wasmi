@@ -258,6 +258,15 @@ impl OpEncoder {
         self.labels.new_label()
     }
 
+    /// Returns the current [`BytePos`] in the encoded byte stream.
+    ///
+    /// # Note
+    ///
+    /// This excludes any currently staged [`Op`] that has not yet been encoded.
+    pub fn current_pos(&self) -> BytePos {
+        self.ops.next_pos()
+    }
+
     /// Pins the [`Label`] at `lref` to the current encoded bytestream position.
     ///
     /// # Panics

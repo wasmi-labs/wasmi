@@ -8,6 +8,7 @@ mod host_call_error;
 mod host_call_instantiation;
 mod host_calls_wasm;
 mod instantitation;
+mod loop_rotation;
 mod multi_memory;
 mod reextract_memory;
 mod resource_limiter;

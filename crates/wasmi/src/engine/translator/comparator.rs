@@ -944,3 +944,118 @@ impl UpdateBranchOffset for Op {
         }
     }
 }
+
+/// Converts a comparison [`Op`] into a fused conditional-branch [`Op`], but **only**
+/// when all of its operands are reg-free (slot/immediate).
+///
+/// # Note
+///
+/// Used for loop rotation: the resulting cmp+branch is re-evaluated at the loop's
+/// back-edge after the loop body executed. Comparison operands that live in a virtual
+/// register would have been clobbered by the body, so such comparisons are rejected
+/// here (returns `None`) and the loop is left unrotated.
+pub trait TryIntoLoopbackCmpBranch: Sized {
+    fn try_into_loopback_cmp_branch(&self, offset: BranchOffset) -> Option<Self>;
+}
+
+impl TryIntoLoopbackCmpBranch for Op {
+    fn try_into_loopback_cmp_branch(&self, offset: BranchOffset) -> Option<Self> {
+        #[rustfmt::skip]
+        let cmp_branch_instr = match *self {
+            | Op::I32Eq_Rss { lhs, rhs, .. } => Op::branch_i32_eq_ss(offset, lhs, rhs),
+            | Op::I32Eq_Rsi { lhs, rhs, .. } => Op::branch_i32_eq_si(offset, lhs, rhs),
+            | Op::I32And_Rss { lhs, rhs, .. }
+            | Op::I32BitAnd_Rss { lhs, rhs, .. } => Op::branch_i32_and_ss(offset, lhs, rhs),
+            | Op::I32And_Rsi { lhs, rhs, .. }
+            | Op::I32BitAnd_Rsi { lhs, rhs, .. } => Op::branch_i32_and_si(offset, lhs, rhs),
+            | Op::I32Or_Rss { lhs, rhs, .. }
+            | Op::I32BitOr_Rss { lhs, rhs, .. } => Op::branch_i32_or_ss(offset, lhs, rhs),
+            | Op::I32Or_Rsi { lhs, rhs, .. }
+            | Op::I32BitOr_Rsi { lhs, rhs, .. } => Op::branch_i32_or_si(offset, lhs, rhs),
+            | Op::I32NotEq_Rss { lhs, rhs, .. }
+            | Op::I32BitXor_Rss { lhs, rhs, .. } => Op::branch_i32_not_eq_ss(offset, lhs, rhs),
+            | Op::I32NotEq_Rsi { lhs, rhs, .. }
+            | Op::I32BitXor_Rsi { lhs, rhs, .. } => Op::branch_i32_not_eq_si(offset, lhs, rhs),
+            | Op::I32NotAnd_Rss { lhs, rhs, .. } => Op::branch_i32_not_and_ss(offset, lhs, rhs),
+            | Op::I32NotAnd_Rsi { lhs, rhs, .. } => Op::branch_i32_not_and_si(offset, lhs, rhs),
+            | Op::I32NotOr_Rss { lhs, rhs, .. } => Op::branch_i32_not_or_ss(offset, lhs, rhs),
+            | Op::I32NotOr_Rsi { lhs, rhs, .. } => Op::branch_i32_not_or_si(offset, lhs, rhs),
+            | Op::I32Lt_Rss { lhs, rhs, .. } => Op::branch_i32_lt_ss(offset, lhs, rhs),
+            | Op::I32Lt_Rsi { lhs, rhs, .. } => Op::branch_i32_lt_si(offset, lhs, rhs),
+            | Op::I32Lt_Ris { lhs, rhs, .. } => Op::branch_i32_lt_is(offset, lhs, rhs),
+            | Op::U32Lt_Rss { lhs, rhs, .. } => Op::branch_u32_lt_ss(offset, lhs, rhs),
+            | Op::U32Lt_Rsi { lhs, rhs, .. } => Op::branch_u32_lt_si(offset, lhs, rhs),
+            | Op::U32Lt_Ris { lhs, rhs, .. } => Op::branch_u32_lt_is(offset, lhs, rhs),
+            | Op::I32Le_Rss { lhs, rhs, .. } => Op::branch_i32_le_ss(offset, lhs, rhs),
+            | Op::I32Le_Rsi { lhs, rhs, .. } => Op::branch_i32_le_si(offset, lhs, rhs),
+            | Op::I32Le_Ris { lhs, rhs, .. } => Op::branch_i32_le_is(offset, lhs, rhs),
+            | Op::U32Le_Rss { lhs, rhs, .. } => Op::branch_u32_le_ss(offset, lhs, rhs),
+            | Op::U32Le_Rsi { lhs, rhs, .. } => Op::branch_u32_le_si(offset, lhs, rhs),
+            | Op::U32Le_Ris { lhs, rhs, .. } => Op::branch_u32_le_is(offset, lhs, rhs),
+            | Op::I64Eq_Rss { lhs, rhs, .. } => Op::branch_i64_eq_ss(offset, lhs, rhs),
+            | Op::I64Eq_Rsi { lhs, rhs, .. } => Op::branch_i64_eq_si(offset, lhs, rhs),
+            | Op::I64And_Rss { lhs, rhs, .. }
+            | Op::I64BitAnd_Rss { lhs, rhs, .. } => Op::branch_i64_and_ss(offset, lhs, rhs),
+            | Op::I64And_Rsi { lhs, rhs, .. }
+            | Op::I64BitAnd_Rsi { lhs, rhs, .. } => Op::branch_i64_and_si(offset, lhs, rhs),
+            | Op::I64Or_Rss { lhs, rhs, .. }
+            | Op::I64BitOr_Rss { lhs, rhs, .. } => Op::branch_i64_or_ss(offset, lhs, rhs),
+            | Op::I64Or_Rsi { lhs, rhs, .. }
+            | Op::I64BitOr_Rsi { lhs, rhs, .. } => Op::branch_i64_or_si(offset, lhs, rhs),
+            | Op::I64NotEq_Rss { lhs, rhs, .. }
+            | Op::I64BitXor_Rss { lhs, rhs, .. } => Op::branch_i64_not_eq_ss(offset, lhs, rhs),
+            | Op::I64NotEq_Rsi { lhs, rhs, .. }
+            | Op::I64BitXor_Rsi { lhs, rhs, .. } => Op::branch_i64_not_eq_si(offset, lhs, rhs),
+            | Op::I64NotAnd_Rss { lhs, rhs, .. } => Op::branch_i64_not_and_ss(offset, lhs, rhs),
+            | Op::I64NotAnd_Rsi { lhs, rhs, .. } => Op::branch_i64_not_and_si(offset, lhs, rhs),
+            | Op::I64NotOr_Rss { lhs, rhs, .. } => Op::branch_i64_not_or_ss(offset, lhs, rhs),
+            | Op::I64NotOr_Rsi { lhs, rhs, .. } => Op::branch_i64_not_or_si(offset, lhs, rhs),
+            | Op::I64Lt_Rss { lhs, rhs, .. } => Op::branch_i64_lt_ss(offset, lhs, rhs),
+            | Op::I64Lt_Rsi { lhs, rhs, .. } => Op::branch_i64_lt_si(offset, lhs, rhs),
+            | Op::I64Lt_Ris { lhs, rhs, .. } => Op::branch_i64_lt_is(offset, lhs, rhs),
+            | Op::U64Lt_Rss { lhs, rhs, .. } => Op::branch_u64_lt_ss(offset, lhs, rhs),
+            | Op::U64Lt_Rsi { lhs, rhs, .. } => Op::branch_u64_lt_si(offset, lhs, rhs),
+            | Op::U64Lt_Ris { lhs, rhs, .. } => Op::branch_u64_lt_is(offset, lhs, rhs),
+            | Op::I64Le_Rss { lhs, rhs, .. } => Op::branch_i64_le_ss(offset, lhs, rhs),
+            | Op::I64Le_Rsi { lhs, rhs, .. } => Op::branch_i64_le_si(offset, lhs, rhs),
+            | Op::I64Le_Ris { lhs, rhs, .. } => Op::branch_i64_le_is(offset, lhs, rhs),
+            | Op::U64Le_Rss { lhs, rhs, .. } => Op::branch_u64_le_ss(offset, lhs, rhs),
+            | Op::U64Le_Rsi { lhs, rhs, .. } => Op::branch_u64_le_si(offset, lhs, rhs),
+            | Op::U64Le_Ris { lhs, rhs, .. } => Op::branch_u64_le_is(offset, lhs, rhs),
+            | Op::F32Eq_Rss { lhs, rhs, .. } => Op::branch_f32_eq_ss(offset, lhs, rhs),
+            | Op::F32Eq_Rsi { lhs, rhs, .. } => Op::branch_f32_eq_si(offset, lhs, rhs),
+            | Op::F32Lt_Rss { lhs, rhs, .. } => Op::branch_f32_lt_ss(offset, lhs, rhs),
+            | Op::F32Lt_Rsi { lhs, rhs, .. } => Op::branch_f32_lt_si(offset, lhs, rhs),
+            | Op::F32Lt_Ris { lhs, rhs, .. } => Op::branch_f32_lt_is(offset, lhs, rhs),
+            | Op::F32Le_Rss { lhs, rhs, .. } => Op::branch_f32_le_ss(offset, lhs, rhs),
+            | Op::F32Le_Rsi { lhs, rhs, .. } => Op::branch_f32_le_si(offset, lhs, rhs),
+            | Op::F32Le_Ris { lhs, rhs, .. } => Op::branch_f32_le_is(offset, lhs, rhs),
+            | Op::F32NotEq_Rss { lhs, rhs, .. } => Op::branch_f32_not_eq_ss(offset, lhs, rhs),
+            | Op::F32NotEq_Rsi { lhs, rhs, .. } => Op::branch_f32_not_eq_si(offset, lhs, rhs),
+            | Op::F32NotLt_Rss { lhs, rhs, .. } => Op::branch_f32_not_lt_ss(offset, lhs, rhs),
+            | Op::F32NotLt_Rsi { lhs, rhs, .. } => Op::branch_f32_not_lt_si(offset, lhs, rhs),
+            | Op::F32NotLt_Ris { lhs, rhs, .. } => Op::branch_f32_not_lt_is(offset, lhs, rhs),
+            | Op::F32NotLe_Rss { lhs, rhs, .. } => Op::branch_f32_not_le_ss(offset, lhs, rhs),
+            | Op::F32NotLe_Rsi { lhs, rhs, .. } => Op::branch_f32_not_le_si(offset, lhs, rhs),
+            | Op::F32NotLe_Ris { lhs, rhs, .. } => Op::branch_f32_not_le_is(offset, lhs, rhs),
+            | Op::F64Eq_Rss { lhs, rhs, .. } => Op::branch_f64_eq_ss(offset, lhs, rhs),
+            | Op::F64Eq_Rsi { lhs, rhs, .. } => Op::branch_f64_eq_si(offset, lhs, rhs),
+            | Op::F64Lt_Rss { lhs, rhs, .. } => Op::branch_f64_lt_ss(offset, lhs, rhs),
+            | Op::F64Lt_Rsi { lhs, rhs, .. } => Op::branch_f64_lt_si(offset, lhs, rhs),
+            | Op::F64Lt_Ris { lhs, rhs, .. } => Op::branch_f64_lt_is(offset, lhs, rhs),
+            | Op::F64Le_Rss { lhs, rhs, .. } => Op::branch_f64_le_ss(offset, lhs, rhs),
+            | Op::F64Le_Rsi { lhs, rhs, .. } => Op::branch_f64_le_si(offset, lhs, rhs),
+            | Op::F64Le_Ris { lhs, rhs, .. } => Op::branch_f64_le_is(offset, lhs, rhs),
+            | Op::F64NotEq_Rss { lhs, rhs, .. } => Op::branch_f64_not_eq_ss(offset, lhs, rhs),
+            | Op::F64NotEq_Rsi { lhs, rhs, .. } => Op::branch_f64_not_eq_si(offset, lhs, rhs),
+            | Op::F64NotLt_Rss { lhs, rhs, .. } => Op::branch_f64_not_lt_ss(offset, lhs, rhs),
+            | Op::F64NotLt_Rsi { lhs, rhs, .. } => Op::branch_f64_not_lt_si(offset, lhs, rhs),
+            | Op::F64NotLt_Ris { lhs, rhs, .. } => Op::branch_f64_not_lt_is(offset, lhs, rhs),
+            | Op::F64NotLe_Rss { lhs, rhs, .. } => Op::branch_f64_not_le_ss(offset, lhs, rhs),
+            | Op::F64NotLe_Rsi { lhs, rhs, .. } => Op::branch_f64_not_le_si(offset, lhs, rhs),
+            | Op::F64NotLe_Ris { lhs, rhs, .. } => Op::branch_f64_not_le_is(offset, lhs, rhs),
+            _ => return None,
+        };
+        Some(cmp_branch_instr)
+    }
+}

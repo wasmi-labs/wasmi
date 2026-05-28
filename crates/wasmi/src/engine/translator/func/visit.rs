@@ -110,6 +110,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         self.preserve_all_locals()?;
+        // A nested block breaks the straight-line `loop { if cond { .. ; br } }` shape.
+        self.loop_rotation = None;
         let block_ty = BlockType::new(block_ty, &self.module);
         let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
@@ -132,6 +134,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         self.instrs.pin_label(continue_label)?;
         let consume_fuel = self.instrs.encode_consume_fuel()?;
+        // Record the loop header position so that a following `if` can detect whether
+        // it is the very first instruction of the loop body (a precondition for loop
+        // rotation). Opening a `loop` also invalidates any pending rotation candidate.
+        self.loop_header_pos = Some(self.instrs.current_pos());
+        self.loop_rotation = None;
         self.stack
             .push_loop(block_ty, continue_label, consume_fuel)?;
         Ok(())
@@ -146,6 +153,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let end_label = self.instrs.new_label();
         let condition = self.stack.pop();
         self.preserve_all_locals()?;
+        // Opening an `if` invalidates any pending rotation from an enclosing scope; it may
+        // be re-established below if this `if` itself starts a rotatable loop body.
+        self.loop_rotation = None;
+        // Position before the (possibly fused) conditional exit branch is emitted, used to
+        // detect whether this `if` is the very first instruction of an enclosing loop body.
+        let pos_before = self.instrs.current_pos();
+        let mut fused_cmp = None;
         let (reachability, consume_fuel_instr) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());
@@ -161,13 +175,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             _ => {
                 let else_label = self.instrs.new_label();
-                self.encode_br_eqz(condition, else_label)?;
+                fused_cmp = self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
                 let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
                 (reachability, consume_fuel_instr)
             }
         };
         let block_ty = BlockType::new(block_ty, &self.module);
+        // Mark this `if` as a loop-rotation candidate if it opens a rotatable loop body.
+        self.try_mark_loop_rotation(pos_before, fused_cmp, block_ty)?;
         self.stack
             .push_if(block_ty, end_label, reachability, consume_fuel_instr)?;
         Ok(())
@@ -175,6 +191,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_else(&mut self) -> Self::Output {
+        // An `else` breaks the then-only `loop { if cond { .. ; br } }` rotation shape.
+        self.loop_rotation = None;
         let mut frame = match self.stack.pop_control() {
             ControlFrame::If(frame) => frame,
             ControlFrame::Unreachable(ControlFrameKind::If) => {
@@ -223,11 +241,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             panic!("out of bounds depth: {depth}")
         };
         let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let rotation = self.loop_rotation;
         match self.stack.peek_control_mut(depth) {
             AcquiredTarget::Return(_) => self.visit_return(),
             AcquiredTarget::Branch(mut frame) => {
-                frame.branch_to();
                 let label = frame.label();
+                if let Some(rot) = rotation {
+                    if rot.loop_label == label {
+                        // Loop rotation: replace the redundant unconditional back-edge with a
+                        // fused conditional branch that re-evaluates the (reg-free) loop guard,
+                        // targeting the loop body entry (after the one-time guard).
+                        drop(frame);
+                        self.encode_loop_rotation_branch(rot.body_label, rot.cmp)?;
+                        self.loop_rotation = None;
+                        self.reachable = false;
+                        return Ok(());
+                    }
+                }
+                frame.branch_to();
                 let len_params = frame.len_branch_params(&self.engine);
                 if let Some(branch_results) = frame.branch_slots() {
                     self.encode_copies(branch_results.span(), len_params, consume_fuel_instr)?;
