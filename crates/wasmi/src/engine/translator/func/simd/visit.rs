@@ -224,7 +224,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         }
         let lhs = self.copy_operand_to_slot(lhs)?;
         let rhs = self.copy_operand_to_slot(rhs)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
             FuelCostsProvider::simd,
