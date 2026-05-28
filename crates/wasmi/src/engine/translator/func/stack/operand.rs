@@ -13,7 +13,7 @@ use super::Stack;
 #[derive(Debug, Copy, Clone)]
 pub enum Location {
     /// The operand's location is a register.
-    Reg,
+    Reg(ValType),
     /// The operand's location is a slot.
     Slot(Slot),
 }
@@ -21,7 +21,7 @@ pub enum Location {
 #[derive(Debug, Copy, Clone)]
 pub enum ResolvedOperand<T> {
     /// The operand is a register.
-    Reg,
+    Reg(ValType),
     /// The operand is located in a [`Slot`].
     Slot(Slot),
     /// The operand is an immediate value of type `T`.
@@ -31,7 +31,7 @@ pub enum ResolvedOperand<T> {
 impl<T> From<Location> for ResolvedOperand<T> {
     fn from(location: Location) -> Self {
         match location {
-            Location::Reg => ResolvedOperand::Reg,
+            Location::Reg(ty) => ResolvedOperand::Reg(ty),
             Location::Slot(slot) => ResolvedOperand::Slot(slot),
         }
     }
@@ -40,8 +40,8 @@ impl<T> From<Location> for ResolvedOperand<T> {
 impl<T> ResolvedOperand<T> {
     pub fn sort(a: Self, b: Self) -> (Self, Self) {
         match (&a, &b) {
-            | (ResolvedOperand::Slot(_), ResolvedOperand::Reg)
-            | (ResolvedOperand::Immediate(_), ResolvedOperand::Reg)
+            | (ResolvedOperand::Slot(_), ResolvedOperand::Reg(_))
+            | (ResolvedOperand::Immediate(_), ResolvedOperand::Reg(_))
             | (ResolvedOperand::Immediate(_), ResolvedOperand::Slot(_)) => (b, a),
             _ => (a, b),
         }
@@ -49,7 +49,7 @@ impl<T> ResolvedOperand<T> {
 
     pub fn map<U>(self, f: impl FnOnce(T) -> U) -> ResolvedOperand<U> {
         match self {
-            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
             ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
             ResolvedOperand::Immediate(value) => ResolvedOperand::Immediate(f(value)),
         }
@@ -64,7 +64,7 @@ impl<T> ResolvedOperand<Option<T>> {
     /// Transposes a [`ResolvedOperand<Option<T>>`] into an [`Option<ResolvedOperand<T>>`].
     pub fn transpose(self) -> Option<ResolvedOperand<T>> {
         let resolved = match self {
-            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
             ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
             ResolvedOperand::Immediate(ok_or_err) => ResolvedOperand::Immediate(ok_or_err?),
         };

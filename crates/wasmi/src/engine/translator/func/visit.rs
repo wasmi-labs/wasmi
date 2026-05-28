@@ -466,7 +466,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let ty = global_type.content();
         let input = self.stack.pop();
         let op = match self.resolve_operand_as::<RawVal>(input)? {
-            ResolvedOperand::Reg => match ty {
+            ResolvedOperand::Reg(ty) => match ty {
                 | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
                     Op::global_set_u64_r(global)
                 }
@@ -1577,7 +1577,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.stage_op_with_result_reg(
             item_ty.into(),
             match index {
-                ResolvedOperand::Reg => Op::table_get_rr(table),
+                ResolvedOperand::Reg(_) => Op::table_get_rr(table),
                 ResolvedOperand::Slot(index) => Op::table_get_rs(index, table),
                 ResolvedOperand::Immediate(index) => Op::table_get_ri(index, table),
             },
@@ -1600,12 +1600,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .map(|r| r.raw())
             .map(u32::from);
         let instr = match (index, value) {
-            (Opd::Reg, Opd::Slot(value)) => Op::table_set_rs(table, value),
-            (Opd::Reg, Opd::Immediate(value)) => Op::table_set_ri(table, value),
-            (Opd::Slot(index), Opd::Reg) => Op::table_set_sr(table, index),
+            (Opd::Reg(_), Opd::Slot(value)) => Op::table_set_rs(table, value),
+            (Opd::Reg(_), Opd::Immediate(value)) => Op::table_set_ri(table, value),
+            (Opd::Slot(index), Opd::Reg(_)) => Op::table_set_sr(table, index),
             (Opd::Slot(index), Opd::Slot(value)) => Op::table_set_ss(table, index, value),
             (Opd::Slot(index), Opd::Immediate(value)) => Op::table_set_si(table, index, value),
-            (Opd::Immediate(index), Opd::Reg) => Op::table_set_ir(table, index),
+            (Opd::Immediate(index), Opd::Reg(_)) => Op::table_set_ir(table, index),
             (Opd::Immediate(index), Opd::Slot(value)) => Op::table_set_is(table, index, value),
             (Opd::Immediate(index), Opd::Immediate(value)) => Op::table_set_ii(table, index, value),
             _ => unreachable!(),
