@@ -1996,6 +1996,7 @@ impl FuncTranslator {
                         )?;
                         return Ok(());
                     }
+                    _ => self.copy_operand_to_reg(selected)?,
                 }
                 return Ok(());
             }
