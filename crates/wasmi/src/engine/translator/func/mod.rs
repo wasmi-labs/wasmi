@@ -783,7 +783,7 @@ impl FuncTranslator {
         }
         let ty = operand.ty();
         let operator = match self.resolve_operand_as::<RawVal>(operand)? {
-            ResolvedOperand::Reg => {
+            ResolvedOperand::Reg(ty) => {
                 // Case: No copy needed as operand already resides in register.
                 self.push_result_reg(ty)?;
                 return Ok(());
@@ -835,7 +835,7 @@ impl FuncTranslator {
     // TODO: return `BoundedSlotSpan` instead of just `Slot`
     fn copy_immediate_to_slot(&mut self, operand: Operand) -> Result<Location, Error> {
         let location = match operand {
-            Operand::Reg(_value) => Location::Reg,
+            Operand::Reg(value) => Location::Reg(value.ty()),
             Operand::Local(operand) => {
                 let slot = self.layout.local_to_slot(operand)?;
                 Location::Slot(slot)
@@ -866,7 +866,7 @@ impl FuncTranslator {
         let ty = operand.ty();
         let copy_op = match self.resolve_operand_as::<RawVal>(operand)? {
             ResolvedOperand::Slot(slot) => return Ok(slot),
-            ResolvedOperand::Reg => match ty {
+            ResolvedOperand::Reg(ty) => match ty {
                 | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => {
                     Op::u64_copy_sr(result)
                 }
@@ -1010,7 +1010,7 @@ impl FuncTranslator {
         let len_targets = table.len() + 1;
         debug_assert_eq!(self.immediates.len(), len_targets as usize);
         let op = match index {
-            Location::Reg => Op::branch_table_r(len_targets),
+            Location::Reg(_) => Op::branch_table_r(len_targets),
             Location::Slot(index) => Op::branch_table_s(len_targets, index),
         };
         self.push_instr(op, FuelCostsProvider::base)?;
@@ -1046,7 +1046,7 @@ impl FuncTranslator {
         let values =
             self.try_form_slot_span_or_move(usize::from(len_values), consume_fuel_instr)?;
         let op = match index {
-            Location::Reg => Op::branch_table_span_r(len_targets, values),
+            Location::Reg(_) => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
         };
         self.push_instr(op, FuelCostsProvider::base)?;
@@ -1483,7 +1483,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let condition = match condition {
-            Operand::Reg(_) => Location::Reg,
+            Operand::Reg(condition) => Location::Reg(condition.ty()),
             Operand::Local(condition) => {
                 let slot = self.layout.local_to_slot(condition)?;
                 Location::Slot(slot)
@@ -1514,11 +1514,11 @@ impl FuncTranslator {
             |offset| match branch_eqz {
                 true => match condition {
                     Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
-                    Location::Reg => Op::branch_i32_eq_ri(offset, 0),
+                    Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
                 },
                 false => match condition {
                     Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
-                    Location::Reg => Op::branch_i32_not_eq_ri(offset, 0),
+                    Location::Reg(_) => Op::branch_i32_not_eq_ri(offset, 0),
                 },
             },
             fuel_pos,
@@ -1624,7 +1624,7 @@ impl FuncTranslator {
         let func_type = index::FuncType::from(type_index);
         let op = match index {
             Location::Slot(index) => op_s(table, func_type, params, index),
-            Location::Reg => op_r(table, func_type, params),
+            Location::Reg(_) => op_r(table, func_type, params),
         };
         self.push_instr(op, FuelCostsProvider::call)?;
         Ok(())
@@ -1685,7 +1685,7 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let input = self.stack.pop();
         let op = match self.resolve_operand_as::<Op::Value>(input)? {
-            ResolvedOperand::Reg => Op::op_rr(),
+            ResolvedOperand::Reg(_) => Op::op_rr(),
             ResolvedOperand::Slot(input) => Op::op_rs(input),
             ResolvedOperand::Immediate(input) => {
                 match Op::consteval(input) {
@@ -1779,7 +1779,7 @@ impl FuncTranslator {
         T: From<TypedRawVal>,
     {
         let resolved = match operand {
-            Operand::Reg(_operand) => ResolvedOperand::Reg,
+            Operand::Reg(operand) => ResolvedOperand::Reg(operand.ty()),
             Operand::Local(operand) => {
                 let slot = self.layout.local_to_slot(operand)?;
                 ResolvedOperand::Slot(slot)
@@ -1847,8 +1847,8 @@ impl FuncTranslator {
             }
         }
         let operator = match (l, r) {
-            (ResolvedOperand::Reg, ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
-            (ResolvedOperand::Reg, ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
@@ -1869,7 +1869,7 @@ impl FuncTranslator {
         let l = self.resolve_operand_as::<T::Lhs>(lhs)?;
         let r = self.resolve_operand_as::<RawVal>(rhs)?;
         let r = match r {
-            ResolvedOperand::Reg => ResolvedOperand::Reg,
+            ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
             ResolvedOperand::Slot(rhs) => ResolvedOperand::Slot(rhs),
             ResolvedOperand::Immediate(rhs) => match T::decode_rhs(rhs) {
                 BinaryOpRhs::Value(rhs) => ResolvedOperand::Immediate(rhs),
@@ -1884,12 +1884,12 @@ impl FuncTranslator {
             return self.translate_binary_consteval(lhs, rhs, T::consteval);
         }
         let operator = match (l, r) {
-            (ResolvedOperand::Reg, ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
-            (ResolvedOperand::Reg, ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg) => T::op_rsr(lhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg(_)) => T::op_rsr(lhs),
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
-            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg) => T::op_rir(lhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg(_)) => T::op_rir(lhs),
             (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => T::op_ris(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
@@ -1988,16 +1988,16 @@ impl FuncTranslator {
         let true_val = self.resolve_operand_as::<u32>(true_val)?;
         let false_val = self.resolve_operand_as::<u32>(false_val)?;
         let operator = match (condition, true_val, false_val) {
-            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
-            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rrsi(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::u32_select_rris(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::u32_select_rrii(t, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::u64_select_rsrs(c, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::u32_select_rsri(c, f),
-            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::u64_select_rssr(c, t),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rrsi(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Slot(f)) => Op::u32_select_rris(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Immediate(f)) => Op::u32_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Slot(f)) => Op::u64_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Immediate(f)) => Op::u32_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg(_)) => Op::u64_select_rssr(c, t),
             (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rsss(c, t, f),
             (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rssi(c, t, f),
-            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::u32_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg(_)) => Op::u32_select_rsir(c, t),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::u32_select_rsis(c, t, f),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::u32_select_rsii(c, t, f),
             _ => unreachable!(),
@@ -2015,16 +2015,16 @@ impl FuncTranslator {
         let true_val = self.resolve_operand_as::<u64>(true_val)?;
         let false_val = self.resolve_operand_as::<u64>(false_val)?;
         let operator = match (condition, true_val, false_val) {
-            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
-            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rrsi(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::u64_select_rris(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::u64_select_rrii(t, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::u64_select_rsrs(c, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::u64_select_rsri(c, f),
-            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::u64_select_rssr(c, t),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rrsi(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Slot(f)) => Op::u64_select_rris(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Immediate(f)) => Op::u64_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Slot(f)) => Op::u64_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Immediate(f)) => Op::u64_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg(_)) => Op::u64_select_rssr(c, t),
             (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rsss(c, t, f),
             (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rssi(c, t, f),
-            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::u64_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg(_)) => Op::u64_select_rsir(c, t),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::u64_select_rsis(c, t, f),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::u64_select_rsii(c, t, f),
             _ => unreachable!(),
@@ -2042,20 +2042,20 @@ impl FuncTranslator {
         let true_val = self.resolve_operand_as::<f32>(true_val)?;
         let false_val = self.resolve_operand_as::<f32>(false_val)?;
         let operator = match (condition, true_val, false_val) {
-            (Opd::Reg, Opd::Reg, Opd::Slot(f)) => Op::f32_select_rrrs(f),
-            (Opd::Reg, Opd::Reg, Opd::Immediate(f)) => Op::f32_select_rrri(f),
-            (Opd::Reg, Opd::Slot(t), Opd::Reg) => Op::f32_select_rrsr(t),
-            (Opd::Reg, Opd::Immediate(t), Opd::Reg) => Op::f32_select_rrir(t),
-            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::f32_select_rrss(t, f),
-            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::f32_select_rrsi(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::f32_select_rris(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::f32_select_rrii(t, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::f32_select_rsrs(c, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::f32_select_rsri(c, f),
-            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::f32_select_rssr(c, t),
+            (Opd::Reg(_), Opd::Reg(_), Opd::Slot(f)) => Op::f32_select_rrrs(f),
+            (Opd::Reg(_), Opd::Reg(_), Opd::Immediate(f)) => Op::f32_select_rrri(f),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Reg(_)) => Op::f32_select_rrsr(t),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Reg(_)) => Op::f32_select_rrir(t),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::f32_select_rrss(t, f),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::f32_select_rrsi(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Slot(f)) => Op::f32_select_rris(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Immediate(f)) => Op::f32_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Slot(f)) => Op::f32_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Immediate(f)) => Op::f32_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg(_)) => Op::f32_select_rssr(c, t),
             (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::f32_select_rsss(c, t, f),
             (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::f32_select_rssi(c, t, f),
-            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::f32_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg(_)) => Op::f32_select_rsir(c, t),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::f32_select_rsis(c, t, f),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::f32_select_rsii(c, t, f),
             _ => unreachable!(),
@@ -2073,20 +2073,20 @@ impl FuncTranslator {
         let true_val = self.resolve_operand_as::<f64>(true_val)?;
         let false_val = self.resolve_operand_as::<f64>(false_val)?;
         let operator = match (condition, true_val, false_val) {
-            (Opd::Reg, Opd::Reg, Opd::Slot(f)) => Op::f64_select_rrrs(f),
-            (Opd::Reg, Opd::Reg, Opd::Immediate(f)) => Op::f64_select_rrri(f),
-            (Opd::Reg, Opd::Slot(t), Opd::Reg) => Op::f64_select_rrsr(t),
-            (Opd::Reg, Opd::Immediate(t), Opd::Reg) => Op::f64_select_rrir(t),
-            (Opd::Reg, Opd::Slot(t), Opd::Slot(f)) => Op::f64_select_rrss(t, f),
-            (Opd::Reg, Opd::Slot(t), Opd::Immediate(f)) => Op::f64_select_rrsi(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Slot(f)) => Op::f64_select_rris(t, f),
-            (Opd::Reg, Opd::Immediate(t), Opd::Immediate(f)) => Op::f64_select_rrii(t, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Slot(f)) => Op::f64_select_rsrs(c, f),
-            (Opd::Slot(c), Opd::Reg, Opd::Immediate(f)) => Op::f64_select_rsri(c, f),
-            (Opd::Slot(c), Opd::Slot(t), Opd::Reg) => Op::f64_select_rssr(c, t),
+            (Opd::Reg(_), Opd::Reg(_), Opd::Slot(f)) => Op::f64_select_rrrs(f),
+            (Opd::Reg(_), Opd::Reg(_), Opd::Immediate(f)) => Op::f64_select_rrri(f),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Reg(_)) => Op::f64_select_rrsr(t),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Reg(_)) => Op::f64_select_rrir(t),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::f64_select_rrss(t, f),
+            (Opd::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::f64_select_rrsi(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Slot(f)) => Op::f64_select_rris(t, f),
+            (Opd::Reg(_), Opd::Immediate(t), Opd::Immediate(f)) => Op::f64_select_rrii(t, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Slot(f)) => Op::f64_select_rsrs(c, f),
+            (Opd::Slot(c), Opd::Reg(_), Opd::Immediate(f)) => Op::f64_select_rsri(c, f),
+            (Opd::Slot(c), Opd::Slot(t), Opd::Reg(_)) => Op::f64_select_rssr(c, t),
             (Opd::Slot(c), Opd::Slot(t), Opd::Slot(f)) => Op::f64_select_rsss(c, t, f),
             (Opd::Slot(c), Opd::Slot(t), Opd::Immediate(f)) => Op::f64_select_rssi(c, t, f),
-            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg) => Op::f64_select_rsir(c, t),
+            (Opd::Slot(c), Opd::Immediate(t), Opd::Reg(_)) => Op::f64_select_rsir(c, t),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Slot(f)) => Op::f64_select_rsis(c, t, f),
             (Opd::Slot(c), Opd::Immediate(t), Opd::Immediate(f)) => Op::f64_select_rsii(c, t, f),
             _ => unreachable!(),
@@ -2106,7 +2106,7 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match condition {
-                ResolvedOperand::Reg => Op::v128_select_srss(result, true_val, false_val),
+                ResolvedOperand::Reg(_) => Op::v128_select_srss(result, true_val, false_val),
                 ResolvedOperand::Slot(condition) => {
                     Op::v128_select_ssss(result, condition, true_val, false_val)
                 }
@@ -2156,7 +2156,7 @@ impl FuncTranslator {
             }
         }
         match (staged_result, condition) {
-            (ir::Location::Reg(ValType::I64), ResolvedOperand::Reg) => {}
+            (ir::Location::Reg(ValType::I64), ResolvedOperand::Reg(_)) => {}
             (ir::Location::Slot(staged), ResolvedOperand::Slot(condition))
                 if staged == condition => {}
             _ => return Ok(SelectFusion::None),
@@ -2277,7 +2277,7 @@ impl FuncTranslator {
                 Err(_) => break 'opt,
             };
             let op = match ptr {
-                ResolvedOperand::Reg => T::op_rr_mem0_offset16(offset),
+                ResolvedOperand::Reg(_) => T::op_rr_mem0_offset16(offset),
                 ResolvedOperand::Slot(ptr) => T::op_rs_mem0_offset16(ptr, offset),
                 ResolvedOperand::Immediate(_) => break 'opt,
             };
@@ -2289,7 +2289,7 @@ impl FuncTranslator {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let op = match ptr {
-            ResolvedOperand::Reg => T::op_rr(offset, memory),
+            ResolvedOperand::Reg(_) => T::op_rr(offset, memory),
             ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
             ResolvedOperand::Immediate(address) => T::op_ri(address, memory),
         };
@@ -2362,16 +2362,16 @@ impl FuncTranslator {
             return Ok(op);
         }
         let op = match (ptr, value) {
-            (Opd::Reg, Opd::Reg) => match T::store_rr(offset, memory) {
+            (Opd::Reg(_), Opd::Reg(_)) => match T::store_rr(offset, memory) {
                 Some(op) => op,
                 None => unreachable!(),
             },
-            (Opd::Reg, Opd::Slot(value)) => T::store_rs(offset, value, memory),
-            (Opd::Reg, Opd::Immediate(value)) => T::store_ri(offset, value, memory),
-            (Opd::Slot(ptr), Opd::Reg) => T::store_sr(ptr, offset, memory),
+            (Opd::Reg(_), Opd::Slot(value)) => T::store_rs(offset, value, memory),
+            (Opd::Reg(_), Opd::Immediate(value)) => T::store_ri(offset, value, memory),
+            (Opd::Slot(ptr), Opd::Reg(_)) => T::store_sr(ptr, offset, memory),
             (Opd::Slot(ptr), Opd::Slot(value)) => T::store_ss(ptr, offset, value, memory),
             (Opd::Slot(ptr), Opd::Immediate(value)) => T::store_si(ptr, offset, value, memory),
-            (Opd::Immediate(address), Opd::Reg) => T::store_ir(address, memory),
+            (Opd::Immediate(address), Opd::Reg(_)) => T::store_ir(address, memory),
             (Opd::Immediate(address), Opd::Slot(value)) => T::store_is(address, value, memory),
             (Opd::Immediate(address), Opd::Immediate(value)) => T::store_ii(address, value, memory),
         };
@@ -2405,18 +2405,18 @@ impl FuncTranslator {
             return Ok(None);
         };
         let ptr = match ptr {
-            Opd::Reg => Loc::Reg,
+            Opd::Reg(ty) => Loc::Reg(ty),
             Opd::Slot(ptr) => Loc::Slot(ptr),
             Opd::Immediate(_) => return Ok(None),
         };
         let op = match (ptr, value) {
-            (Loc::Reg, Opd::Reg) => match T::store_mem0_offset16_rr(offset) {
+            (Loc::Reg(_), Opd::Reg(_)) => match T::store_mem0_offset16_rr(offset) {
                 Some(op) => op,
                 None => unreachable!(),
             },
-            (Loc::Reg, Opd::Slot(value)) => T::store_mem0_offset16_rs(offset, value),
-            (Loc::Reg, Opd::Immediate(value)) => T::store_mem0_offset16_ri(offset, value),
-            (Loc::Slot(ptr), Opd::Reg) => T::store_mem0_offset16_sr(ptr, offset),
+            (Loc::Reg(_), Opd::Slot(value)) => T::store_mem0_offset16_rs(offset, value),
+            (Loc::Reg(_), Opd::Immediate(value)) => T::store_mem0_offset16_ri(offset, value),
+            (Loc::Slot(ptr), Opd::Reg(_)) => T::store_mem0_offset16_sr(ptr, offset),
             (Loc::Slot(ptr), Opd::Slot(value)) => T::store_mem0_offset16_ss(ptr, offset, value),
             (Loc::Slot(ptr), Opd::Immediate(value)) => {
                 T::store_mem0_offset16_si(ptr, offset, value)

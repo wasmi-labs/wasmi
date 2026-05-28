@@ -78,7 +78,7 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match value {
-                ResolvedOperand::Reg => op_sr(result),
+                ResolvedOperand::Reg(_) => op_sr(result),
                 ResolvedOperand::Slot(value) => op_ss(result, value),
                 ResolvedOperand::Immediate(value) => {
                     let value = T::from(value).wrap().to_bits();
@@ -142,7 +142,7 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match value {
-                ResolvedOperand::Reg => T::op_ssr(result, input, lane),
+                ResolvedOperand::Reg(_) => T::op_ssr(result, input, lane),
                 ResolvedOperand::Slot(value) => T::op_sss(result, input, lane, value),
                 ResolvedOperand::Immediate(value) => T::op_ssi(result, input, lane, value),
             },
@@ -259,7 +259,7 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match rhs {
-                ResolvedOperand::Reg => op_ssr(result, lhs),
+                ResolvedOperand::Reg(_) => op_ssr(result, lhs),
                 ResolvedOperand::Slot(rhs) => op_sss(result, lhs, rhs),
                 ResolvedOperand::Immediate(rhs) => op_ssi(result, lhs, rhs),
             },
@@ -280,7 +280,7 @@ impl FuncTranslator {
             }
         }
         let ptr_loc = match ptr {
-            ResolvedOperand::Reg => Location::Reg,
+            ResolvedOperand::Reg(ty) => Location::Reg(ty),
             ResolvedOperand::Slot(ptr) => Location::Slot(ptr),
             ResolvedOperand::Immediate(_ptr) => {
                 // Note: simd load operators have no encoding for an immediate `ptr` operand.
@@ -299,7 +299,7 @@ impl FuncTranslator {
             self.push_op_with_result_slot(
                 ValType::V128,
                 |result| match ptr_loc {
-                    Location::Reg => T::op_sr_mem0_offset16(result, offset),
+                    Location::Reg(_) => T::op_sr_mem0_offset16(result, offset),
                     Location::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
                 },
                 FuelCostsProvider::load,
@@ -310,7 +310,7 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
-                Location::Reg => T::op_sr(result, offset, memory),
+                Location::Reg(_) => T::op_sr(result, offset, memory),
                 Location::Slot(ptr) => T::op_ss(result, ptr, offset, memory),
             },
             FuelCostsProvider::load,
@@ -405,7 +405,7 @@ impl FuncTranslator {
             if let Ok(offset16) = Offset16::try_from(offset) {
                 self.push_instr(
                     match ptr {
-                        Location::Reg => op_rs_mem0_offset16(offset16, v128, lane),
+                        Location::Reg(_) => op_rs_mem0_offset16(offset16, v128, lane),
                         Location::Slot(ptr) => op_ss_mem0_offset16(ptr, offset16, v128, lane),
                     },
                     FuelCostsProvider::store,
@@ -415,7 +415,7 @@ impl FuncTranslator {
         }
         self.push_instr(
             match ptr {
-                Location::Reg => op_rs(offset, v128, memory, lane),
+                Location::Reg(_) => op_rs(offset, v128, memory, lane),
                 Location::Slot(ptr) => op_ss(ptr, offset, v128, memory, lane),
             },
             FuelCostsProvider::store,
@@ -446,7 +446,7 @@ impl FuncTranslator {
         self.push_instr(
             match ptr {
                 Location::Slot(ptr) => Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
-                Location::Reg => Op::v128_store_mem0_offset16_rs(offset16, value),
+                Location::Reg(_) => Op::v128_store_mem0_offset16_rs(offset16, value),
             },
             FuelCostsProvider::store,
         )?;

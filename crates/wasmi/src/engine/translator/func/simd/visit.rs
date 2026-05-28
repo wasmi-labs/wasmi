@@ -94,7 +94,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.push_instr(
             match ptr {
                 Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory),
-                Location::Reg => Op::v128_store_rs(offset, value, memory),
+                Location::Reg(_) => Op::v128_store_rs(offset, value, memory),
             },
             FuelCostsProvider::store,
         )?;
