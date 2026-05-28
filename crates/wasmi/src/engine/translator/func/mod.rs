@@ -987,7 +987,7 @@ impl FuncTranslator {
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
-    fn push_instr_with_result_slot(
+    fn push_op_with_result_slot(
         &mut self,
         result_ty: ValType,
         make_instr: impl FnOnce(Slot) -> Op,
@@ -2130,7 +2130,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         let true_val = self.copy_operand_to_slot(true_val)?;
         let false_val = self.copy_operand_to_slot(false_val)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| match condition {
                 ResolvedOperand::Reg => Op::v128_select_srss(result, true_val, false_val),

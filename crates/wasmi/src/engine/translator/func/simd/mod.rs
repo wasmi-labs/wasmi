@@ -75,7 +75,7 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let value = self.stack.pop();
         let value = self.resolve_operand_as::<RawVal>(value)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| match value {
                 ResolvedOperand::Reg => op_sr(result),
@@ -139,7 +139,7 @@ impl FuncTranslator {
         let value = self
             .resolve_operand_as::<RawVal>(value)?
             .map(|value| T::into_immediate(T::Item::from(value)));
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| match value {
                 ResolvedOperand::Reg => T::op_ssr(result, input, lane),
@@ -169,7 +169,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.operand_to_slot(input)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             <T as Typed>::TY,
             |result| make_instr(result, input),
             FuelCostsProvider::simd,
@@ -193,7 +193,7 @@ impl FuncTranslator {
         }
         let lhs = self.copy_operand_to_slot(lhs)?;
         let rhs = self.copy_operand_to_slot(rhs)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| make_instr(result, lhs, rhs),
             FuelCostsProvider::simd,
@@ -219,7 +219,7 @@ impl FuncTranslator {
         let lhs = self.copy_operand_to_slot(a)?;
         let rhs = self.copy_operand_to_slot(b)?;
         let selector = self.copy_operand_to_slot(c)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| make_instr(result, lhs, rhs, selector),
             FuelCostsProvider::simd,
@@ -256,7 +256,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let lhs = self.copy_operand_to_slot(lhs)?;
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| match rhs {
                 ResolvedOperand::Reg => op_ssr(result, lhs),
@@ -296,7 +296,7 @@ impl FuncTranslator {
                 Ok(offset) => offset,
                 Err(_) => break 'opt,
             };
-            self.push_instr_with_result_slot(
+            self.push_op_with_result_slot(
                 ValType::V128,
                 |result| match ptr_loc {
                     Location::Reg => T::op_sr_mem0_offset16(result, offset),
@@ -307,7 +307,7 @@ impl FuncTranslator {
             return Ok(());
         }
         // Case: non-optimized fallback load operator.
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
                 Location::Reg => T::op_sr(result, offset, memory),
@@ -348,7 +348,7 @@ impl FuncTranslator {
         let v128 = self.copy_operand_to_slot(v128)?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_instr_with_result_slot(
+                self.push_op_with_result_slot(
                     ValType::V128,
                     |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
                     FuelCostsProvider::load,
@@ -356,7 +356,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
-        self.push_instr_with_result_slot(
+        self.push_op_with_result_slot(
             ValType::V128,
             |result| load_lane(result, ptr, offset, memory, v128, lane),
             FuelCostsProvider::load,
