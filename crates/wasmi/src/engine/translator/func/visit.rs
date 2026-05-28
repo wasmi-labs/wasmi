@@ -1524,26 +1524,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_ref_is_null(&mut self) -> Self::Output {
         bail_unreachable!(self);
         // Note: `funcref` and `externref` both serialize to `RawValue`
-        //       as `u32` so we can use `i32.eqz` translation for `ref.is_null`
-        //       via reinterpretation of the value's type.
-        match self.stack.pop() {
-            Operand::Immediate(input) => {
-                debug_assert!(matches!(input.ty(), ValType::FuncRef | ValType::ExternRef));
-                let raw = input.val().raw();
-                let is_null = RawRef::from(raw).is_null();
-                self.stack.push_immediate(i32::from(is_null))?;
-                return Ok(());
-            }
-            Operand::Reg(_input) => {
-                self.stack.push_reg(ValType::I32)?;
-            }
-            Operand::Local(input) => {
-                self.stack.push_local(input.local_index(), ValType::I32)?;
-            }
-            Operand::Temp(_) => {
-                self.stack.push_temp(ValType::I32)?;
-            }
-        };
+        //       as `u32` so we can forward to `i32.eqz` translation for
+        //       `ref.is_null` via reinterpretation of the value's type.
+        let input = self.stack.peek(0);
+        if let Operand::Immediate(input) = input {
+            _ = self.stack.pop();
+            debug_assert!(matches!(input.ty(), ValType::FuncRef | ValType::ExternRef));
+            let raw = input.val().raw();
+            let is_null = RawRef::from(raw).is_null();
+            self.stack.push_immediate(i32::from(is_null))?;
+            return Ok(());
+        }
         self.visit_i32_eqz()
     }
 
