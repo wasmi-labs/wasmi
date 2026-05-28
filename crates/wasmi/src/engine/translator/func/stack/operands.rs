@@ -519,9 +519,7 @@ impl OperandStack {
             unreachable!()
         };
         let opd = match in_reg {
-            true => {
-                StackOperand::Reg { temp_slots, ty }
-            }
+            true => StackOperand::Reg { temp_slots, ty },
             false => StackOperand::Temp { temp_slots, ty },
         };
         self.operands[usize::from(pos)] = opd;
