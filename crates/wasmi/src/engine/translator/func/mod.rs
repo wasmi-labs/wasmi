@@ -1803,7 +1803,7 @@ impl FuncTranslator {
     }
 
     // TODO: docs
-    fn resolve_operand_as<T>(&mut self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
+    fn resolve_operand_as<T>(&self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
     where
         T: From<RawVal>,
     {
