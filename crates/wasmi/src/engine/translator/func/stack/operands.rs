@@ -520,7 +520,6 @@ impl OperandStack {
         };
         let opd = match in_reg {
             true => {
-                self.try_unlink_reg(operand);
                 StackOperand::Reg { temp_slots, ty }
             }
             false => StackOperand::Temp { temp_slots, ty },
