@@ -128,6 +128,67 @@ fn non_rotatable_loop_is_correct() {
     }
 }
 
+/// `block $exit { loop { br_if $exit cond ; body ; br } }` — the forward `br_if`-exit shape
+/// (what real toolchains emit). Rotation must fire here and preserve behavior.
+const BRIF_EXIT: &str = r#"
+(module
+  (func (export "run") (param $n i32) (result i32)
+    (local $i i32) (local $acc i32)
+    (block $exit
+      (loop $L
+        (br_if $exit (i32.eq (local.get $i) (local.get $n)))
+        (local.set $acc (i32.add (local.get $acc) (local.get $i)))
+        (local.set $i (i32.add (local.get $i) (i32.const 1)))
+        (br $L)))
+    (local.get $acc)))
+"#;
+
+#[test]
+fn brif_exit_loop_rotation_is_correct() {
+    let (mut store, func) = setup(false, BRIF_EXIT);
+    let run = func.typed::<i32, i32>(&store).unwrap();
+    for n in [0i32, 1, 2, 5, 100, 1000] {
+        let expected = (0..n).sum::<i32>();
+        assert_eq!(run.call(&mut store, n).unwrap(), expected, "brif_exit({n})");
+    }
+}
+
+#[test]
+fn brif_exit_with_fuel_is_correct() {
+    // Fuel metering on: must not rotate, results must still match.
+    let (mut store, func) = setup(true, BRIF_EXIT);
+    let run = func.typed::<i32, i32>(&store).unwrap();
+    for n in [0i32, 1, 5, 100] {
+        let expected = (0..n).sum::<i32>();
+        assert_eq!(run.call(&mut store, n).unwrap(), expected, "brif_exit({n}) +fuel");
+    }
+}
+
+/// `block $exit { loop { br_if $exit (i >= n) ; body ; br } }` — `>=` exit (negation is `<`),
+/// exercising a different comparison through the rotation.
+const BRIF_EXIT_GE: &str = r#"
+(module
+  (func (export "run") (param $n i32) (result i32)
+    (local $i i32) (local $acc i32)
+    (block $exit
+      (loop $L
+        (br_if $exit (i32.ge_s (local.get $i) (local.get $n)))
+        (local.set $acc (i32.add (local.get $acc) (local.get $i)))
+        (local.set $i (i32.add (local.get $i) (i32.const 1)))
+        (br $L)))
+    (local.get $acc)))
+"#;
+
+#[test]
+fn brif_exit_ge_loop_rotation_is_correct() {
+    let (mut store, func) = setup(false, BRIF_EXIT_GE);
+    let run = func.typed::<i32, i32>(&store).unwrap();
+    for n in [0i32, 1, 2, 5, 100, 1000] {
+        let expected = (0..n.max(0)).sum::<i32>();
+        assert_eq!(run.call(&mut store, n).unwrap(), expected, "brif_exit_ge({n})");
+    }
+}
+
 /// A `loop { br_if }` shape (no inner `if`) — already optimal, must be untouched and correct.
 const COUNTER: &str = r#"
 (module

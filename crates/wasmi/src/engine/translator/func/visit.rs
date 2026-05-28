@@ -159,7 +159,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // Position before the (possibly fused) conditional exit branch is emitted, used to
         // detect whether this `if` is the very first instruction of an enclosing loop body.
         let pos_before = self.instrs.current_pos();
-        let mut fused_cmp = None;
+        let mut continue_cmp = None;
         let (reachability, consume_fuel_instr) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());
@@ -175,7 +175,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             _ => {
                 let else_label = self.instrs.new_label();
-                fused_cmp = self.encode_br_eqz(condition, else_label)?;
+                continue_cmp = self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
                 let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
                 (reachability, consume_fuel_instr)
@@ -183,7 +183,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let block_ty = BlockType::new(block_ty, &self.module);
         // Mark this `if` as a loop-rotation candidate if it opens a rotatable loop body.
-        self.try_mark_loop_rotation(pos_before, fused_cmp, block_ty)?;
+        // Only trivially-typed `if`s (no parameters or results) qualify, so the then-block
+        // produces no values that would need copying.
+        if block_ty.len_params(&self.engine) == 0 && block_ty.len_results(&self.engine) == 0 {
+            self.try_mark_loop_rotation(pos_before, continue_cmp)?;
+        }
         self.stack
             .push_if(block_ty, end_label, reachability, consume_fuel_instr)?;
         Ok(())
@@ -284,18 +288,28 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(depth) = usize::try_from(depth) else {
             panic!("out of bounds depth: {depth}")
         };
+        // Position before the guard is emitted, for loop-rotation candidacy detection.
+        // A `br_if` to an enclosing frame (`depth >= 1`) that is the first instruction of the
+        // directly enclosing `loop` is the guard of a `block { loop { br_if $exit ; .. ; br } }`.
+        let pos_before = self.instrs.current_pos();
         let mut frame = self.stack.peek_control_mut(depth).control_frame();
         frame.branch_to();
         let label = frame.label();
         let Some(branch_slots) = frame.branch_slots() else {
             // Case: no branch values are required to be copied
-            self.encode_br_nez(condition, label)?;
+            let continue_cmp = self.encode_br_nez(condition, label)?;
+            if depth >= 1 {
+                self.try_mark_loop_rotation(pos_before, continue_cmp)?;
+            }
             return Ok(());
         };
         let len_branch_params = frame.len_branch_params(&self.engine);
         if !self.requires_branch_param_copies(depth) {
             // Case: no branch values are required to be copied
-            self.encode_br_nez(condition, label)?;
+            let continue_cmp = self.encode_br_nez(condition, label)?;
+            if depth >= 1 {
+                self.try_mark_loop_rotation(pos_before, continue_cmp)?;
+            }
             return Ok(());
         }
         // Case: fallback to copy branch parameters conditionally
