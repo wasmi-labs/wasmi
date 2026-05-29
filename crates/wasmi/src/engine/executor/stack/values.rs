@@ -397,7 +397,7 @@ pub struct FrameSlots {
 
 impl Debug for FrameSlots {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", &self.ptr)
+        write!(f, "{:?}", self.ptr)
     }
 }
 

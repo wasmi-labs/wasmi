@@ -66,7 +66,7 @@ impl Executor<'_> {
     pub fn execute_copy_span_impl(&mut self, results: SlotSpan, values: SlotSpan, len: u16) {
         let results = results.iter(len);
         let values = values.iter(len);
-        for (result, value) in results.into_iter().zip(values.into_iter()) {
+        for (result, value) in results.into_iter().zip(values) {
             let value = self.get_stack_slot(value);
             self.set_stack_slot(result, value);
         }
