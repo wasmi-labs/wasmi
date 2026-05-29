@@ -45,7 +45,7 @@ wasmi_wast = { version = "1.0.9", path = "crates/wast" }
 # wasm-tools dependencies
 wat = { version = "1.228.0", default-features = false }
 wast = { version = "228.0.0", default-features = false }
-wasmparser = { version = "0.228.0", default-features = false }
+wasmparser = { version = "0.239.0", default-features = false }
 wasm-smith = "0.228.0"
 wasmprinter = { version = "0.228.0", default-features = false }
 

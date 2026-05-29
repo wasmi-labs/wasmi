@@ -24,6 +24,7 @@ use crate::{
     F32,
     F64,
 };
+use alloc::vec::Vec;
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -417,6 +418,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_select(&mut self) -> Self::Output {
         self.translate_select(None)
+    }
+
+    #[inline(never)]
+    fn visit_typed_select_multi(&mut self, _tys: Vec<wasmparser::ValType>) -> Self::Output {
+        unimplemented!()
     }
 
     #[inline(never)]

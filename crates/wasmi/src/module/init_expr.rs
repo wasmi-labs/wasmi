@@ -342,7 +342,7 @@ impl ConstExpr {
             stack.push(op);
         }
         reader
-            .ensure_end()
+            .finish()
             .expect("Wasm validation requires const expressions to have an `end`");
         let op = stack
             .pop()

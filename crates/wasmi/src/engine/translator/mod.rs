@@ -22,6 +22,7 @@ use crate::{
     module::{FuncIdx, ModuleHeader},
     Error,
 };
+use alloc::vec::Vec;
 use core::{fmt, mem};
 use wasmparser::{
     BinaryReaderError,
@@ -211,12 +212,7 @@ where
         self.pos = pos;
     }
 
-    fn finish(
-        mut self,
-        finalize: impl FnOnce(CompiledFuncEntity),
-    ) -> Result<Self::Allocations, Error> {
-        let pos = self.current_pos();
-        self.validator.finish(pos)?;
+    fn finish(self, finalize: impl FnOnce(CompiledFuncEntity)) -> Result<Self::Allocations, Error> {
         let translation = self.translator.finish(finalize)?;
         let validation = self.validator.into_allocations();
         let allocations = ReusableAllocations {
@@ -237,6 +233,17 @@ macro_rules! impl_visit_operator {
             self.validate_then_translate(
                 |validator| validator.visitor(offset).$visit($arg.clone()),
                 |translator| translator.$visit($arg.clone()),
+            )
+        }
+        impl_visit_operator!($($rest)*);
+    };
+    ( @reference_types TypedSelectMulti { tys: $tys_type:ty } => $visit:ident $_ann:tt $($rest:tt)* ) => {
+        fn $visit(&mut self, tys: $tys_type) -> Self::Output {
+            let offset = self.current_pos();
+            let tys_cloned = tys.clone();
+            self.validate_then_translate(
+                move |validator| validator.visitor(offset).$visit(tys_cloned),
+                move |translator| translator.$visit(tys),
             )
         }
         impl_visit_operator!($($rest)*);
