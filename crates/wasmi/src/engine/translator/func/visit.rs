@@ -465,7 +465,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .get_global(module::GlobalIdx::from(global_index));
         let ty = global_type.content();
         let input = self.stack.pop();
-        let op = match self.resolve_operand_as::<RawVal>(input)? {
+        let op = match self.resolve_operand::<RawVal>(input)? {
             ResolvedOperand::Reg(ty) => match ty {
                 | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
                     Op::global_set_u64_r(global)
@@ -1597,7 +1597,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (index, value) = self.stack.pop2();
         let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
         let value = self
-            .resolve_operand_as::<TypedRawRef>(value)?
+            .resolve_operand::<TypedRawRef>(value)?
             .map(|r| r.raw())
             .map(u32::from);
         let instr = match (index, value) {

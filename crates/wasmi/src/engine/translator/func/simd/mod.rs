@@ -74,7 +74,7 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let value = self.stack.pop();
-        let value = self.resolve_operand_as::<RawVal>(value)?;
+        let value = self.resolve_operand::<RawVal>(value)?;
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match value {
@@ -137,7 +137,7 @@ impl FuncTranslator {
         }
         let input = self.copy_operand_to_slot(input)?;
         let value = self
-            .resolve_operand_as::<RawVal>(value)?
+            .resolve_operand::<RawVal>(value)?
             .map(|value| T::into_immediate(T::Item::from(value)));
         self.push_op_with_result_slot(
             ValType::V128,
@@ -247,7 +247,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let Some(rhs) = self
-            .resolve_operand_as::<T::ShiftSource>(rhs)?
+            .resolve_operand::<T::ShiftSource>(rhs)?
             .map(T::into_shift_amount)
             .transpose()
         else {
