@@ -784,7 +784,7 @@ impl FuncTranslator {
             )
         }
         let ty = operand.ty();
-        let operator = match self.resolve_operand_as::<RawVal>(operand)? {
+        let operator = match self.resolve_operand::<RawVal>(operand)? {
             ResolvedOperand::Reg(ty) => {
                 // Case: No copy needed as operand already resides in register.
                 self.push_result_reg(ty)?;
@@ -866,7 +866,7 @@ impl FuncTranslator {
     fn copy_operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
         let result = operand.temp_slots().head();
         let ty = operand.ty();
-        let copy_op = match self.resolve_operand_as::<RawVal>(operand)? {
+        let copy_op = match self.resolve_operand::<RawVal>(operand)? {
             ResolvedOperand::Slot(slot) => return Ok(slot),
             ResolvedOperand::Reg(ty) => match ty {
                 | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => {
@@ -1714,7 +1714,7 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let input = self.stack.pop();
-        let op = match self.resolve_operand_as::<Op::Value>(input)? {
+        let op = match self.resolve_operand::<Op::Value>(input)? {
             ResolvedOperand::Reg(_) => Op::op_rr(),
             ResolvedOperand::Slot(input) => Op::op_rs(input),
             ResolvedOperand::Immediate(input) => {
@@ -1784,12 +1784,12 @@ impl FuncTranslator {
         operand: Operand,
         index_ty: IndexType,
     ) -> Result<ResolvedOperand<u32>, Error> {
-        let value =
-            self.resolve_operand_as::<RawVal>(operand)?
-                .filter_map(|value| match index_ty {
-                    IndexType::I32 => Some(u32::from(value)),
-                    IndexType::I64 => u32::try_from(u64::from(value)).ok(),
-                });
+        let value = self
+            .resolve_operand::<RawVal>(operand)?
+            .filter_map(|value| match index_ty {
+                IndexType::I32 => Some(u32::from(value)),
+                IndexType::I64 => u32::try_from(u64::from(value)).ok(),
+            });
         let Some(value) = value else {
             return self
                 .copy_immediate_to_slot(operand)
@@ -1804,7 +1804,7 @@ impl FuncTranslator {
     }
 
     // TODO: docs
-    fn resolve_operand_as<T>(&self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
+    fn resolve_operand<T>(&self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
     where
         T: From<TypedRawVal>,
     {
@@ -1833,8 +1833,8 @@ impl FuncTranslator {
     ) -> Result<ResolvedOperand<u64>, Error> {
         let memidx: MemoryIdx = u32::from(memory).into();
         let operand = match self.module.get_type_of_memory(memidx).index_ty() {
-            IndexType::I32 => self.resolve_operand_as::<u32>(operand)?.map(u64::from),
-            IndexType::I64 => self.resolve_operand_as::<u64>(operand)?,
+            IndexType::I32 => self.resolve_operand::<u32>(operand)?.map(u64::from),
+            IndexType::I64 => self.resolve_operand::<u64>(operand)?,
         };
         Ok(operand)
     }
@@ -1865,8 +1865,8 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
-        let l = self.resolve_operand_as::<T::Input>(lhs)?;
-        let r = self.resolve_operand_as::<T::Input>(rhs)?;
+        let l = self.resolve_operand::<T::Input>(lhs)?;
+        let r = self.resolve_operand::<T::Input>(rhs)?;
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
             return self.translate_binary_consteval(lhs, rhs, T::consteval);
         }
@@ -1896,8 +1896,8 @@ impl FuncTranslator {
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
-        let l = self.resolve_operand_as::<T::Lhs>(lhs)?;
-        let r = self.resolve_operand_as::<RawVal>(rhs)?;
+        let l = self.resolve_operand::<T::Lhs>(lhs)?;
+        let r = self.resolve_operand::<RawVal>(rhs)?;
         let r = match r {
             ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
             ResolvedOperand::Slot(rhs) => ResolvedOperand::Slot(rhs),
@@ -1976,7 +1976,7 @@ impl FuncTranslator {
             return Ok(());
         }
         let ty = true_val.ty();
-        let condition = self.resolve_operand_as::<i32>(condition)?;
+        let condition = self.resolve_operand::<i32>(condition)?;
         let condition = match condition {
             ResolvedOperand::Reg(ty) => Location::Reg(ty),
             ResolvedOperand::Slot(condition) => Location::Slot(condition),
@@ -1991,7 +1991,7 @@ impl FuncTranslator {
                         // Note: this is a special case where we have to copy the `v128`
                         //       value that spans across 2 slots into the result slots of
                         //       the `select` operator.
-                        let selected = self.resolve_operand_as::<V128>(selected)?;
+                        let selected = self.resolve_operand::<V128>(selected)?;
                         self.try_push_op_with_result_slot(
                             ty,
                             |result| match selected {
@@ -2043,8 +2043,8 @@ impl FuncTranslator {
     ) -> Result<Op, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
-        let true_val = self.resolve_operand_as::<u32>(true_val)?;
-        let false_val = self.resolve_operand_as::<u32>(false_val)?;
+        let true_val = self.resolve_operand::<u32>(true_val)?;
+        let false_val = self.resolve_operand::<u32>(false_val)?;
         let operator = match (condition, true_val, false_val) {
             (Loc::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
             (Loc::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rrsi(t, f),
@@ -2071,8 +2071,8 @@ impl FuncTranslator {
     ) -> Result<Op, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
-        let true_val = self.resolve_operand_as::<u64>(true_val)?;
-        let false_val = self.resolve_operand_as::<u64>(false_val)?;
+        let true_val = self.resolve_operand::<u64>(true_val)?;
+        let false_val = self.resolve_operand::<u64>(false_val)?;
         let operator = match (condition, true_val, false_val) {
             (Loc::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
             (Loc::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rrsi(t, f),
@@ -2099,8 +2099,8 @@ impl FuncTranslator {
     ) -> Result<Op, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
-        let true_val = self.resolve_operand_as::<f32>(true_val)?;
-        let false_val = self.resolve_operand_as::<f32>(false_val)?;
+        let true_val = self.resolve_operand::<f32>(true_val)?;
+        let false_val = self.resolve_operand::<f32>(false_val)?;
         let operator = match (condition, true_val, false_val) {
             (Loc::Reg(_), Opd::Reg(_), Opd::Slot(f)) => Op::f32_select_rrrs(f),
             (Loc::Reg(_), Opd::Reg(_), Opd::Immediate(f)) => Op::f32_select_rrri(f),
@@ -2131,8 +2131,8 @@ impl FuncTranslator {
     ) -> Result<Op, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
-        let true_val = self.resolve_operand_as::<f64>(true_val)?;
-        let false_val = self.resolve_operand_as::<f64>(false_val)?;
+        let true_val = self.resolve_operand::<f64>(true_val)?;
+        let false_val = self.resolve_operand::<f64>(false_val)?;
         let operator = match (condition, true_val, false_val) {
             (Loc::Reg(_), Opd::Reg(_), Opd::Slot(f)) => Op::f64_select_rrrs(f),
             (Loc::Reg(_), Opd::Reg(_), Opd::Immediate(f)) => Op::f64_select_rrri(f),
@@ -2387,7 +2387,7 @@ impl FuncTranslator {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let value = self
-            .resolve_operand_as::<T::Value>(value)?
+            .resolve_operand::<T::Value>(value)?
             .map(T::into_immediate);
         let op = self.choose_store_op::<T>(memarg, ptr, value)?;
         self.push_instr(op, FuelCostsProvider::store)?;
