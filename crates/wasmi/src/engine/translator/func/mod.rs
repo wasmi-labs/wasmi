@@ -456,7 +456,7 @@ impl FuncTranslator {
         layout: &mut StackLayout,
         encoder: &mut OpEncoder,
     ) -> Result<Option<Pos<Op>>, Error> {
-        let Some(copy_instr) = Self::make_copy_instr(result, value, layout)? else {
+        let Some(copy_instr) = Self::select_copy_op(result, value, layout)? else {
             // Case: no-op copy instruction
             return Ok(None);
         };
@@ -467,7 +467,7 @@ impl FuncTranslator {
     /// Returns the copy instruction to copy the given `operand` to `result`.
     ///
     /// Returns `None` if the resulting copy instruction is a no-op.
-    fn make_copy_instr(
+    fn select_copy_op(
         result: Slot,
         value: Operand,
         layout: &mut StackLayout,
@@ -887,7 +887,7 @@ impl FuncTranslator {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
         for local in self.stack.preserve_all_locals() {
             let result = local.temp_slots().head();
-            let Some(copy_instr) = Self::make_copy_instr(result, local.into(), &mut self.layout)?
+            let Some(copy_instr) = Self::select_copy_op(result, local.into(), &mut self.layout)?
             else {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
