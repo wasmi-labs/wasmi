@@ -2278,12 +2278,16 @@ impl FuncTranslator {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
-        let Operand::Temp(lhs) = lhs else {
-            // Case: cannot fuse non-temporary operands
+        let Operand::Reg(lhs) = lhs else {
+            // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
+        if matches!(staged.result_loc(), Some(ir::Location::Reg(_))) {
+            // Case: staged operator has no result register.
+            return Ok(false);
+        }
         let lhs_reg = lhs.temp_slots().head();
         let Some(result) = staged.result_ref().copied() else {
             // Case: cannot fuse non-cmp instructions
