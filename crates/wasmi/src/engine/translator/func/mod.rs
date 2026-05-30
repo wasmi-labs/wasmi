@@ -650,11 +650,9 @@ impl FuncTranslator {
         let mut result = results.head();
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
-            let ty = value.ty();
-            let value = match value {
-                Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slots().head(),
-                Operand::Reg(_) | Operand::Immediate(_) => {
+            let value = match value.resolve::<TypedRawVal>(layout)? {
+                ResolvedOperand::Slot(value) => value,
+                _ => {
                     // Immediate and register values will never yield no-op copies.
                     break;
                 }
