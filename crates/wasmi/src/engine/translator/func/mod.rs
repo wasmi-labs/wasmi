@@ -1805,7 +1805,11 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    // TODO: docs
+    /// Resolves the [`Operand`] into a [`ResolvedOperand`].
+    ///
+    /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
+    /// especially in pattern matching contexts. However, in contrast to [`Operand`]
+    /// it loses some information during the conversion process.
     fn resolve_operand<T>(&self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
     where
         T: From<TypedRawVal>,
@@ -1828,6 +1832,9 @@ impl FuncTranslator {
         Ok(resolved)
     }
 
+    /// Resolves the [`Operand`] into a [`ResolvedOperand<u64>`].
+    ///
+    /// See [`Self::resolve_operand`] for rational.
     fn resolve_operand_as_index(
         &mut self,
         operand: Operand,
