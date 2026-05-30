@@ -177,6 +177,13 @@ impl Operand {
         }
     }
 
+    /// Resolves the [`Operand`] into a [`ResolvedOperand<TypedRawVal`].
+    ///
+    /// This is a convenience wrapper for [`Self::resolve_as`].
+    pub fn resolve(&self, layout: &StackLayout) -> Result<ResolvedOperand<TypedRawVal>, Error> {
+        self.resolve_as::<TypedRawVal>(layout)
+    }
+
     /// Resolves the [`Operand`] into a [`ResolvedOperand`].
     ///
     /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
