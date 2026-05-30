@@ -15,7 +15,7 @@ use crate::{
             ControlFrameBase,
             Operand,
             op,
-            stack::{AcquiredTarget, IfReachability, ResolvedOperand},
+            stack::{AcquiredTarget, Allocation, IfReachability, ResolvedOperand},
         },
     },
     ir::{self, Op, index},
@@ -370,7 +370,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let local_idx = LocalIdx::from(local_index);
         let ty = self.locals.ty(local_idx);
-        self.stack.push_local(local_idx, ty)?;
+        self.stack.push_local(local_idx, ty, Allocation::None)?;
         Ok(())
     }
 
@@ -390,17 +390,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_local_set(local_index, input)?;
         match input {
             Operand::Reg(_) => {
-                self.stack.push_reg_backed_local(local_idx, ty)?;
+                self.stack.push_local(local_idx, ty, Allocation::Reg)?;
             }
             Operand::Local(_) => {
-                self.stack.push_local(local_idx, ty)?;
+                self.stack.push_local(local_idx, ty, Allocation::None)?;
             }
             Operand::Temp(_) => {
-                self.stack.push_temp(ty)?;
+                self.stack.push_temp(ty, Allocation::None)?;
             }
             Operand::Immediate(input) => match ty {
                 ValType::V128 => {
-                    self.stack.push_local(local_idx, ty)?;
+                    self.stack.push_local(local_idx, ty, Allocation::None)?;
                 }
                 _ => {
                     self.stack.push_immediate(input.val())?;
@@ -1231,13 +1231,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let result_ty = ValType::I64;
         match input {
             Operand::Reg(_input) => {
-                self.stack.push_reg(result_ty)?;
+                self.stack.push_temp(result_ty, Allocation::Reg)?;
             }
             Operand::Local(input) => {
-                self.stack.push_local(input.local_index(), result_ty)?;
+                self.stack
+                    .push_local(input.local_index(), result_ty, Allocation::None)?;
             }
             Operand::Temp(_input) => {
-                self.stack.push_temp(result_ty)?;
+                self.stack.push_temp(result_ty, Allocation::None)?;
             }
             Operand::Immediate(input) => {
                 let input: u32 = input.val().into();
