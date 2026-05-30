@@ -414,17 +414,17 @@ impl FuncTranslator {
         &mut self,
         results: SlotSpan,
         len_values: u16,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         match len_values {
             0 => Ok(()),
             1 => {
                 let result = results.head();
                 let value = self.stack.peek(0);
-                self.encode_copy(result, value, consume_fuel_instr)?;
+                self.encode_copy(result, value, fuel_pos)?;
                 Ok(())
             }
-            _ => self.encode_copy_many(results, len_values, consume_fuel_instr),
+            _ => self.encode_copy_many(results, len_values, fuel_pos),
         }
     }
 
