@@ -433,12 +433,12 @@ impl FuncTranslator {
         &mut self,
         result: Slot,
         value: Operand,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Option<Pos<Op>>, Error> {
         Self::encode_copy_impl(
             result,
             value,
-            consume_fuel_instr,
+            fuel_pos,
             &mut self.layout,
             &mut self.instrs,
         )
