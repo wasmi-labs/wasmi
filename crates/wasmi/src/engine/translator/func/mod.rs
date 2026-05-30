@@ -1798,7 +1798,7 @@ impl FuncTranslator {
     ///
     /// See [`Self::resolve_operand`] for rational.
     fn resolve_operand_as_index(
-        &mut self,
+        &self,
         operand: Operand,
         memory: Memory,
     ) -> Result<ResolvedOperand<u64>, Error> {
