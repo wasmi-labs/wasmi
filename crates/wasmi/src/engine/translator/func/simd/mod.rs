@@ -52,13 +52,14 @@ impl FuncTranslator {
     /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
     /// [`StackLayout::local_to_slot`]: crate::engine::translator::func::StackLayout::local_to_slot
     pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
-        match operand {
+        let value = match operand {
             Operand::Local(operand) => self.layout.local_to_slot(operand),
-            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
-            Operand::Reg(_) | Operand::Immediate(_) => {
+            Operand::Temp(operand) if !operand.in_reg() => Ok(operand.temp_slots().head()),
+            _ => {
                 panic!("cannot convert operand to stack `Slot` without copy: {operand:?}")
             }
-        }
+        }?;
+        Ok(value)
     }
 
     /// Generically translate any of the Wasm `simd` splat instructions.
@@ -386,18 +387,17 @@ impl FuncTranslator {
             panic!("encountered out of bounds lane index: {lane}");
         };
         let (ptr, v128) = self.stack.pop2();
-        let v128 = match v128 {
-            Operand::Reg(_v128) => {
+        let v128 = match v128.resolve(&self.layout)? {
+            ResolvedOperand::Reg(_v128) => {
                 // Note: `v128` typed values may not occupy register operands for now.
                 unreachable!()
             }
-            Operand::Immediate(v128) => {
+            ResolvedOperand::Immediate(v128) => {
                 // Case: with `v128` being an immediate value we can extract its
                 //       lane value and translate as a more efficient non-SIMD operation.
-                return translate_imm(self, memarg, ptr, lane, V128::from(v128.val()));
+                return translate_imm(self, memarg, ptr, lane, V128::from(v128));
             }
-            Operand::Local(v128) => self.layout.local_to_slot(v128)?,
-            Operand::Temp(v128) => v128.temp_slots().head(),
+            ResolvedOperand::Slot(v128) => v128,
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.copy_immediate_to_slot(ptr)?;

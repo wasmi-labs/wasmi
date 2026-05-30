@@ -367,10 +367,15 @@ impl Stack {
         self.controls.acquire_target(depth)
     }
 
-    /// Replace the typed register operand on the stack with a temporary operand if any.
+    /// Deallocates the register of the `ty` from `self`.
     ///
-    /// Returns `None` if no `ireg` operand exists on the stack.
-    pub fn dealloc_reg(&mut self, ty: ValType) -> Option<Operand> {
+    /// Returns `Some` if a copy operator is required to reflect the changes.
+    ///
+    /// # Note
+    ///
+    /// If the register operand is a register-backed local it is turned into a normal local operand
+    /// and `None` is returned as no copy operator is required.
+    pub fn dealloc_reg(&mut self, ty: ValType) -> Option<TempOperand> {
         self.operands.dealloc_reg(ty)
     }
 

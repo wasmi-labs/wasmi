@@ -749,7 +749,7 @@ impl FuncTranslator {
         let height_matches = frame_height == (self.stack.height() - len_branch_params);
         let only_temps = (0..len_branch_params)
             .map(|depth| self.stack.peek(depth))
-            .all(|o| o.is_temp());
+            .all(|o| o.is_temp() && !o.in_reg());
         let can_avoid_copies = height_matches && only_temps;
         !can_avoid_copies
     }
@@ -895,7 +895,7 @@ impl FuncTranslator {
     /// a temporary operand.
     fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
         let fuel_pos = self.stack.fuel_pos();
-        if let Some(Operand::Reg(operand)) = self.stack.dealloc_reg(ty) {
+        if let Some(operand) = self.stack.dealloc_reg(ty) {
             let result = operand.temp_slots().head();
             let copy_op = Self::select_copy_sr_op(result, operand.ty())?;
             self.instrs
@@ -1157,9 +1157,9 @@ impl FuncTranslator {
             return Ok(None);
         };
         match head.as_ref() {
-            Operand::Local(operand) => Self::try_form_span_of_locals(operand, values, layout),
-            Operand::Temp(operand) => Self::try_form_span_of_temps(operand, values),
-            Operand::Reg(_) | Operand::Immediate(_) => Ok(None),
+            Operand::Local(head) => Self::try_form_span_of_locals(head, values, layout),
+            Operand::Temp(head) => Self::try_form_span_of_temps(head, values),
+            Operand::Immediate(_) => Ok(None),
         }
     }
 
@@ -1207,6 +1207,9 @@ impl FuncTranslator {
     where
         T: AsRef<Operand>,
     {
+        if head.in_reg() {
+            return Ok(None);
+        }
         let head_slots = head.temp_slots();
         let start = head_slots.span().head();
         let mut len = head_slots.len();
@@ -1217,6 +1220,9 @@ impl FuncTranslator {
                     let slots = operand.temp_slots();
                     if slots.head() != next {
                         // Note: the operands do not form a contiguous span of slots.
+                        return Ok(None);
+                    }
+                    if operand.in_reg() {
                         return Ok(None);
                     }
                     len = len
@@ -1426,8 +1432,8 @@ impl FuncTranslator {
             StackSpace::Local
         ));
         let old_result = match old_result {
-            Operand::Temp(old_result) => old_result.temp_slots().head(),
-            Operand::Reg(_) | Operand::Local(_) | Operand::Immediate(_) => {
+            Operand::Temp(old_result) if !old_result.in_reg() => old_result.temp_slots().head(),
+            _ => {
                 // Case  register: cannot replace register operand result for now.
                 //                 (in the future new operators might allow for this)
                 // Case immediate: cannot replace immediate value result since they are immutable.
@@ -1708,20 +1714,17 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let input = self.stack.pop();
         debug_assert_eq!(input.ty(), <T as Typed>::TY);
+        let result_ty = <R as Typed>::TY;
         match input {
-            Operand::Reg(_input) => {
-                return self.push_op_with_result_reg(
-                    <R as Typed>::TY,
-                    op_rr(),
-                    FuelCostsProvider::base,
-                );
+            input if input.in_reg() => {
+                self.push_op_with_result_reg(result_ty, op_rr(), FuelCostsProvider::base)?;
             }
             Operand::Local(input) => {
                 self.stack
-                    .push_local(input.local_index(), <R as Typed>::TY, Allocation::None)?;
+                    .push_local(input.local_index(), result_ty, Allocation::None)?;
             }
             Operand::Temp(_input) => {
-                self.stack.push_temp(<R as Typed>::TY, Allocation::None)?;
+                self.stack.push_temp(result_ty, Allocation::None)?;
             }
             Operand::Immediate(input) => {
                 let input: T = input.val().into();
