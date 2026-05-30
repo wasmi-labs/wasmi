@@ -62,7 +62,7 @@ use crate::{
     ir::{self, Slot, SlotSpan, index},
     store::StoreError,
 };
-use core::cmp;
+use core::{cmp, hint};
 
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "indirect-dispatch") {
@@ -1579,10 +1579,7 @@ macro_rules! handler_cmp_branch {
                     let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
                     let lhs = get_value(lhs, sp, ireg, freg32, freg64);
                     let rhs = get_value(rhs, sp, ireg, freg32, freg64);
-                    let ip = match $eval(lhs, rhs) {
-                        true => offset_ip(ip, offset),
-                        false => next_ip,
-                    };
+                    let ip = hint::select_unpredictable($eval(lhs, rhs), offset_ip(ip, offset), next_ip);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -1700,14 +1697,12 @@ macro_rules! handler_select {
                             false_val,
                         },
                     ) = unsafe { decode_op(ip) };
-                    let condition: i32 = get_value(condition, sp, ireg, freg32, freg64);
+                    let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
                     let true_val: $width = get_value(true_val, sp, ireg, freg32, freg64);
                     let false_val: $width = get_value(false_val, sp, ireg, freg32, freg64);
-                    let selected = match condition {
-                        0 => get_value(false_val, sp, ireg, freg32, freg64),
-                        _ => get_value(true_val, sp, ireg, freg32, freg64),
-                    };
-                    set_value!(result, selected, sp, ireg, freg32, freg64);
+                    let selected = hint::select_unpredictable(condition, true_val, false_val);
+                    let value = get_value(selected, sp, ireg, freg32, freg64);
+                    set_value!(result, value, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
