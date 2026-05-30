@@ -1535,7 +1535,7 @@ impl FuncTranslator {
             // Case: cannot fuse without register result.
             return Ok(false);
         };
-        let Operand::Reg(_condition) = condition else {
+        let ResolvedOperand::Reg(_ty) = condition.resolve(&self.layout)? else {
             // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
