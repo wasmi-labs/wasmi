@@ -681,10 +681,9 @@ impl FuncTranslator {
         let mut result = results.head().next_n(len);
         let mut values = values;
         while let Some((value, rest)) = values.split_last() {
-            let value = match value {
-                Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slots().head(),
-                Operand::Reg(_) | Operand::Immediate(_) => {
+            let value = match value.resolve(layout)? {
+                ResolvedOperand::Slot(value) => value,
+                _ => {
                     // Immediate and register values will never yield no-op copies.
                     break;
                 }
