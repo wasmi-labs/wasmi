@@ -1483,18 +1483,10 @@ impl FuncTranslator {
         if self.try_fuse_branch_cmp(condition, label, branch_eqz)? {
             return Ok(());
         }
-        let condition = match condition {
-            Operand::Reg(condition) => Location::Reg(condition.ty()),
-            Operand::Local(condition) => {
-                let slot = self.layout.local_to_slot(condition)?;
-                Location::Slot(slot)
-            }
-            Operand::Temp(condition) => {
-                let slot = condition.temp_slots().head();
-                Location::Slot(slot)
-            }
-            Operand::Immediate(condition) => {
-                let condition = i32::from(condition.val());
+        let condition = match self.resolve_operand::<i32>(condition)? {
+            ResolvedOperand::Reg(ty) => Location::Reg(ty),
+            ResolvedOperand::Slot(condition) => Location::Slot(condition),
+            ResolvedOperand::Immediate(condition) => {
                 let take_branch = match branch_eqz {
                     true => condition == 0,
                     false => condition != 0,
