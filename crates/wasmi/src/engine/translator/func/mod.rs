@@ -467,7 +467,7 @@ impl FuncTranslator {
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
         let ty = value.ty();
-        let op = match value.resolve_as::<TypedRawVal>(layout)? {
+        let op = match value.resolve(layout)? {
             ResolvedOperand::Reg(ty) => Self::select_copy_sr_op(result, ty)?,
             ResolvedOperand::Slot(value) => return Self::select_copy_ss_op(result, value, ty),
             ResolvedOperand::Immediate(value) => Self::select_copy_si_op(result, value)?,
@@ -650,7 +650,7 @@ impl FuncTranslator {
         let mut result = results.head();
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
-            let value = match value.resolve_as::<TypedRawVal>(layout)? {
+            let value = match value.resolve(layout)? {
                 ResolvedOperand::Slot(value) => value,
                 _ => {
                     // Immediate and register values will never yield no-op copies.
