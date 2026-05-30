@@ -126,7 +126,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(&self.engine);
         let continue_label = self.instrs.new_label();
-        let consume_fuel = self.stack.consume_fuel_instr();
+        let consume_fuel = self.stack.fuel_pos();
         if len_params > 0 {
             self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
         }
@@ -146,7 +146,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let end_label = self.instrs.new_label();
         let condition = self.stack.pop();
         self.preserve_all_locals()?;
-        let (reachability, consume_fuel_instr) = match condition {
+        let (reachability, fuel_pos) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());
                 let reachability = match condition {
@@ -156,20 +156,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     }
                     _ => IfReachability::OnlyThen,
                 };
-                let consume_fuel_instr = self.stack.consume_fuel_instr();
-                (reachability, consume_fuel_instr)
+                let fuel_pos = self.stack.fuel_pos();
+                (reachability, fuel_pos)
             }
             _ => {
                 let else_label = self.instrs.new_label();
                 self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
-                let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
-                (reachability, consume_fuel_instr)
+                let fuel_pos = self.instrs.encode_consume_fuel()?;
+                (reachability, fuel_pos)
             }
         };
         let block_ty = BlockType::new(block_ty, &self.module);
         self.stack
-            .push_if(block_ty, end_label, reachability, consume_fuel_instr)?;
+            .push_if(block_ty, end_label, reachability, fuel_pos)?;
         Ok(())
     }
 
@@ -190,18 +190,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let is_end_of_then_reachable = self.reachable;
         if let IfReachability::Both { else_label } = frame.reachability() {
             if is_end_of_then_reachable {
-                let consume_fuel_instr = frame.consume_fuel_instr();
-                self.copy_branch_params(&frame, consume_fuel_instr)?;
+                let fuel_pos = frame.fuel_pos();
+                self.copy_branch_params(&frame, fuel_pos)?;
                 frame.branch_to();
                 self.encode_br(frame.label())?;
             }
             // Start of `else` block:
             self.instrs.pin_label(else_label)?;
         }
-        let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
+        let fuel_pos = self.instrs.encode_consume_fuel()?;
         self.reachable = frame.is_else_reachable();
         self.stack
-            .push_else(frame, is_end_of_then_reachable, consume_fuel_instr)?;
+            .push_else(frame, is_end_of_then_reachable, fuel_pos)?;
         Ok(())
     }
 
@@ -222,7 +222,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(depth) = usize::try_from(depth) else {
             panic!("out of bounds depth: {depth}")
         };
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         match self.stack.peek_control_mut(depth) {
             AcquiredTarget::Return(_) => self.visit_return(),
             AcquiredTarget::Branch(mut frame) => {
@@ -230,7 +230,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let label = frame.label();
                 let len_params = frame.len_branch_params(&self.engine);
                 if let Some(branch_results) = frame.branch_slots() {
-                    self.encode_copies(branch_results.span(), len_params, consume_fuel_instr)?;
+                    self.encode_copies(branch_results.span(), len_params, fuel_pos)?;
                 }
                 self.encode_br(label)?;
                 self.reachable = false;
@@ -268,10 +268,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         // Case: fallback to copy branch parameters conditionally
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         let skip_label = self.instrs.new_label();
         self.encode_br_eqz(condition, skip_label)?;
-        self.encode_copies(branch_slots.span(), len_branch_params, consume_fuel_instr)?;
+        self.encode_copies(branch_slots.span(), len_branch_params, fuel_pos)?;
         self.encode_br(label)?;
         self.instrs.pin_label(skip_label)?;
         Ok(())
@@ -328,8 +328,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_return(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
-        self.encode_return(consume_fuel_instr)?;
+        let fuel_pos = self.stack.fuel_pos();
+        self.encode_return(fuel_pos)?;
         let len_results = self.func_type_with(FuncType::len_results);
         for _ in 0..len_results {
             self.stack.pop();
@@ -486,7 +486,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 | ValType::I64 | ValType::F64 => Op::global_set_u64_i(global, u64::from(value)),
                 #[cfg(feature = "simd")]
                 | ValType::V128 => {
-                    let fuel_op = self.stack.consume_fuel_instr();
+                    let fuel_op = self.stack.fuel_pos();
                     let v128 = self.copy_operand_to_temp(input, fuel_op)?;
                     Op::global_set_v128_s(global, v128)
                 }
