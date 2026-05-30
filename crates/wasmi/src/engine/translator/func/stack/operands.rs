@@ -175,11 +175,15 @@ impl OperandStack {
     ///
     /// If the register operand is a register-backed local it is turned into a normal local operand
     /// and `None` is returned as no copy operator is required.
-    pub fn dealloc_reg(&mut self, ty: ValType) -> Option<Operand> {
+    pub fn dealloc_reg(&mut self, ty: ValType) -> Option<TempOperand> {
         let pos = self.reg_pos_mut(ty).take()?;
         let mut operand = self.get_at_mut(pos);
-        let returned = match operand {
-            StackOperand::Temp { .. } => Some(Operand::new(pos, *operand)),
+        let returned = match *operand {
+            StackOperand::Temp {
+                temp_slots,
+                ty,
+                in_reg,
+            } => Some(TempOperand::new(temp_slots, ty, pos, in_reg)),
             _ => None,
         };
         #[rustfmt::skip]
@@ -269,11 +273,10 @@ impl OperandStack {
     #[inline]
     pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         match operand {
-            Operand::Reg(op) => self.push_temp(op.ty(), Allocation::Reg).map(Operand::from),
             Operand::Local(op) => self
-                .push_local(op.local_index(), op.ty(), Allocation::None)
+                .push_local(op.local_index(), op.ty(), op.alloc())
                 .map(Operand::from),
-            Operand::Temp(op) => self.push_temp(op.ty(), Allocation::None).map(Operand::from),
+            Operand::Temp(op) => self.push_temp(op.ty(), op.alloc()).map(Operand::from),
             Operand::Immediate(op) => self.push_immediate(op.val()).map(Operand::from),
         }
     }
@@ -300,16 +303,17 @@ impl OperandStack {
             self.update_prev_local(next_local, Some(stack_pos));
         }
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
+        let in_reg = alloc.is_reg();
         self.operands.push(StackOperand::Local {
             temp_slots,
             ty,
             local_index,
             prev_local: None,
             next_local,
-            in_reg: alloc.is_reg(),
+            in_reg,
         });
         self.len_locals += 1;
-        Ok(LocalOperand::new(temp_slots, ty, local_index))
+        Ok(LocalOperand::new(temp_slots, ty, local_index, in_reg))
     }
 
     /// Pushes a temporary with type `ty` on the [`OperandStack`].
@@ -324,12 +328,13 @@ impl OperandStack {
             self.link_reg(stack_pos, ty);
         }
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
+        let in_reg = alloc.is_reg();
         self.operands.push(StackOperand::Temp {
             temp_slots,
             ty,
-            in_reg: alloc.is_reg(),
+            in_reg,
         });
-        Ok(TempOperand::new(temp_slots, ty, stack_pos))
+        Ok(TempOperand::new(temp_slots, ty, stack_pos, in_reg))
     }
 
     /// Pushes an immediate `value` on the [`OperandStack`].
@@ -725,7 +730,7 @@ impl Iterator for PreservedAllLocalsIter<'_> {
             if in_reg {
                 continue;
             }
-            return Some(LocalOperand::new(temp_slots, ty, local_index));
+            return Some(LocalOperand::new(temp_slots, ty, local_index, in_reg));
         }
     }
 }
@@ -761,7 +766,7 @@ impl Iterator for PreservedLocalsIter<'_> {
             if in_reg {
                 continue;
             }
-            return Some(LocalOperand::new(temp_slots, ty, local_index));
+            return Some(LocalOperand::new(temp_slots, ty, local_index, in_reg));
         }
     }
 }

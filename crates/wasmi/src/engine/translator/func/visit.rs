@@ -389,15 +389,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let local_idx = local_index.into();
         self.translate_local_set(local_index, input)?;
         match input {
-            Operand::Reg(_) => {
-                self.stack.push_local(local_idx, ty, Allocation::Reg)?;
+            Operand::Local(input) => {
+                self.stack.push_local(local_idx, ty, input.alloc())?;
             }
-            Operand::Local(_) => {
-                self.stack.push_local(local_idx, ty, Allocation::None)?;
-            }
-            Operand::Temp(_) => {
-                self.stack.push_temp(ty, Allocation::None)?;
-            }
+            Operand::Temp(input) => match input.alloc() {
+                Allocation::None => {
+                    self.stack.push_temp(ty, Allocation::None)?;
+                }
+                Allocation::Reg => {
+                    self.stack.push_local(local_idx, ty, Allocation::Reg)?;
+                }
+            },
             Operand::Immediate(input) => match ty {
                 ValType::V128 => {
                     self.stack.push_local(local_idx, ty, Allocation::None)?;
@@ -1230,15 +1232,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         debug_assert_eq!(input.ty(), ValType::I32);
         let result_ty = ValType::I64;
         match input {
-            Operand::Reg(_input) => {
-                self.stack.push_temp(result_ty, Allocation::Reg)?;
-            }
             Operand::Local(input) => {
                 self.stack
-                    .push_local(input.local_index(), result_ty, Allocation::None)?;
+                    .push_local(input.local_index(), result_ty, input.alloc())?;
             }
-            Operand::Temp(_input) => {
-                self.stack.push_temp(result_ty, Allocation::None)?;
+            Operand::Temp(input) => {
+                self.stack.push_temp(result_ty, input.alloc())?;
             }
             Operand::Immediate(input) => {
                 let input: u32 = input.val().into();
