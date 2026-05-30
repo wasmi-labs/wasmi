@@ -1848,7 +1848,7 @@ impl FuncTranslator {
         Ok(operand)
     }
 
-    // TODO: docs
+    /// Issues a panic message for cases where an invalid operand pair was encountered.
     #[cold]
     #[inline]
     #[track_caller]
