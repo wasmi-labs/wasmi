@@ -472,19 +472,11 @@ impl FuncTranslator {
         value: Operand,
         layout: &mut StackLayout,
     ) -> Result<Option<Op>, Error> {
-        let op = match value {
-            Operand::Reg(value) => Self::select_copy_sr_op(result, value.ty())?,
-            Operand::Temp(value) => {
-                let ty = value.ty();
-                let value = value.temp_slots().head();
-                return Self::select_copy_ss_op(result, value, ty);
-            }
-            Operand::Local(value) => {
-                let ty = value.ty();
-                let value = layout.local_to_slot(value.local_index())?;
-                return Self::select_copy_ss_op(result, value, ty);
-            }
-            Operand::Immediate(value) => Self::select_copy_si_op(result, value.val())?,
+        let ty = value.ty();
+        let op = match value.resolve::<TypedRawVal>(layout)? {
+            ResolvedOperand::Reg(ty) => Self::select_copy_sr_op(result, ty)?,
+            ResolvedOperand::Slot(value) => return Self::select_copy_ss_op(result, value, ty),
+            ResolvedOperand::Immediate(value) => Self::select_copy_si_op(result, value)?,
         };
         Ok(Some(op))
     }
