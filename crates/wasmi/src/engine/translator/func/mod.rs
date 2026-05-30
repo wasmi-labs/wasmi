@@ -435,13 +435,7 @@ impl FuncTranslator {
         value: Operand,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Option<Pos<Op>>, Error> {
-        Self::encode_copy_impl(
-            result,
-            value,
-            fuel_pos,
-            &mut self.layout,
-            &mut self.instrs,
-        )
+        Self::encode_copy_impl(result, value, fuel_pos, &mut self.layout, &mut self.instrs)
     }
 
     /// Encodes a single copy instruction.
