@@ -127,11 +127,11 @@ pub struct OperandStack {
     temp_offset: u16,
     /// The maximum recorded temporary stack offset.
     max_offset: u16,
-    /// The position of the general purpose (integer) [`Operand::Reg`] on the stack if any.
+    /// The position of the operand that is cached by the general-purpose register (GPR) if any.
     ireg: Option<StackPos>,
-    /// The position of the `f32` [`Operand::Reg`] on the stack if any.
+    /// The position of the operand that is cached by the `f32` register if any.
     freg32: Option<StackPos>,
-    /// The position of the `f64` [`Operand::Reg`] on the stack if any.
+    /// The position of the operand that is cached by the `f64` register if any.
     freg64: Option<StackPos>,
 }
 
