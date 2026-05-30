@@ -177,7 +177,7 @@ impl Operand {
         }
     }
 
-    /// Resolves the [`Operand`] into a [`ResolvedOperand<TypedRawVal`].
+    /// Resolves the [`Operand`] into a [`ResolvedOperand<TypedRawVal>`].
     ///
     /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
     /// especially in pattern matching contexts. However, in contrast to [`Operand`]
