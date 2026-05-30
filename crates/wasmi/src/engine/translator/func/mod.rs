@@ -723,10 +723,9 @@ impl FuncTranslator {
         for (result, value) in results.iter(len).zip(values) {
             // Note: We only have to check the register case since constant value
             //       copies can never overlap.
-            let value = match value {
-                Operand::Local(value) => layout.local_to_slot(value)?,
-                Operand::Temp(value) => value.temp_slots().head(),
-                Operand::Reg(_) | Operand::Immediate(_) => {
+            let value = match value.resolve(layout)? {
+                ResolvedOperand::Slot(value) => value,
+                _ => {
                     // Immediates and registers can not collide with the result registers.
                     continue;
                 }
