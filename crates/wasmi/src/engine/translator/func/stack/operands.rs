@@ -582,9 +582,9 @@ impl OperandStack {
         );
     }
 
-    /// Unlinks the [`StackOperand::Reg`] `operand` at `index` from `self`.
+    /// Deallocates the `operand`'s register if any.
     ///
-    /// Does nothing if `operand` is not a [`StackOperand::Local`].
+    /// Does nothing if `operand` has no allocated register.
     #[inline]
     fn try_unlink_reg(&mut self, operand: StackOperand) -> Option<StackPos> {
         let ty = match operand {
