@@ -347,7 +347,7 @@ impl FuncTranslator {
     fn move_operands_to_temp(
         &mut self,
         len: usize,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
         debug_assert!(len > 0);
         let mut copied_cells: u16 = 0;
@@ -356,7 +356,7 @@ impl FuncTranslator {
             copied_cells = copied_cells
                 .checked_add(operand.temp_slots().len())
                 .ok_or(TranslationError::SlotAccessOutOfBounds)?;
-            self.copy_operand_to_temp(operand, consume_fuel)?;
+            self.copy_operand_to_temp(operand, fuel_pos)?;
         }
         let first = self.stack.peek(len - 1).temp_slots().head();
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
@@ -371,13 +371,13 @@ impl FuncTranslator {
     fn copy_branch_params(
         &mut self,
         target: &impl ControlFrameBase,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         let len_branch_params = target.len_branch_params(&self.engine);
         let Some(branch_slots) = target.branch_slots() else {
             return Ok(());
         };
-        self.encode_copies(branch_slots.span(), len_branch_params, consume_fuel_instr)?;
+        self.encode_copies(branch_slots.span(), len_branch_params, fuel_pos)?;
         Ok(())
     }
 
@@ -446,7 +446,7 @@ impl FuncTranslator {
     fn encode_copy_impl(
         result: Slot,
         value: Operand,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
         layout: &mut StackLayout,
         encoder: &mut OpEncoder,
     ) -> Result<Option<Pos<Op>>, Error> {
@@ -454,7 +454,7 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let pos = encoder.encode(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+        let pos = encoder.encode(copy_instr, fuel_pos, FuelCostsProvider::base)?;
         Ok(Some(pos))
     }
 
@@ -541,14 +541,14 @@ impl FuncTranslator {
         results: SlotSpan,
         values: SlotSpan,
         len: u16,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         let Some(op) = Self::make_copy_span(results, values, len) else {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
         };
         self.instrs
-            .encode(op, consume_fuel_instr, |costs: &FuelCostsProvider| {
+            .encode(op, fuel_pos, |costs: &FuelCostsProvider| {
                 costs.fuel_for_copying_values::<Cell>(u64::from(len))
             })?;
         Ok(())
@@ -580,7 +580,7 @@ impl FuncTranslator {
         &mut self,
         results: SlotSpan,
         len: u16,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         self.peek_operands_into_buffer(usize::from(len));
         let values = &self.operands[..];
@@ -596,22 +596,18 @@ impl FuncTranslator {
             [val0] => {
                 let result = results.head();
                 let value = *val0;
-                self.encode_copy(result, value, consume_fuel_instr)?;
+                self.encode_copy(result, value, fuel_pos)?;
                 return Ok(());
             }
             _values => {}
         }
         debug_assert!(!values.is_empty());
         if let Some(values) = Self::try_form_slot_span_of(values, &self.layout)? {
-            return self.encode_copy_span(results, values.span(), values.len(), consume_fuel_instr);
+            return self.encode_copy_span(results, values.span(), values.len(), fuel_pos);
         }
-        let values = Self::copy_operands_to_temp(
-            values,
-            consume_fuel_instr,
-            &mut self.layout,
-            &mut self.instrs,
-        )?;
-        self.encode_copy_span(results, values.span(), values.len(), consume_fuel_instr)
+        let values =
+            Self::copy_operands_to_temp(values, fuel_pos, &mut self.layout, &mut self.instrs)?;
+        self.encode_copy_span(results, values.span(), values.len(), fuel_pos)
     }
 
     /// Copy `values` to temporary stack [`Slot`]s without changing the translation stack.
@@ -803,10 +799,10 @@ impl FuncTranslator {
     fn copy_operand_to_temp(
         &mut self,
         operand: Operand,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Slot, Error> {
         let result = operand.temp_slots().head();
-        self.encode_copy(result, operand, consume_fuel)?;
+        self.encode_copy(result, operand, fuel_pos)?;
         Ok(result)
     }
 
@@ -825,7 +821,7 @@ impl FuncTranslator {
             ResolvedOperand::Immediate(value) => {
                 let result = operand.temp_slots().head();
                 let copy_instr = Self::select_copy_si_op(result, value)?;
-                let consume_fuel = self.stack.consume_fuel_instr();
+                let consume_fuel = self.stack.fuel_pos();
                 self.instrs
                     .encode(copy_instr, consume_fuel, FuelCostsProvider::base)?;
                 Location::Slot(result)
@@ -855,7 +851,7 @@ impl FuncTranslator {
                 Self::select_copy_si_op(result, TypedRawVal::new(ty, value))?
             }
         };
-        let fuel_op = self.stack.consume_fuel_instr();
+        let fuel_op = self.stack.fuel_pos();
         self.instrs
             .encode(copy_op, fuel_op, FuelCostsProvider::base)?;
         Ok(result)
@@ -867,7 +863,7 @@ impl FuncTranslator {
     ///
     /// This works by encoding copy instructions to `temp` register space.
     fn preserve_all_locals(&mut self) -> Result<(), Error> {
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         for local in self.stack.preserve_all_locals() {
             let result = local.temp_slots().head();
             let Some(copy_instr) = Self::select_copy_sx_op(result, local.into(), &mut self.layout)?
@@ -875,7 +871,7 @@ impl FuncTranslator {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
             self.instrs
-                .encode(copy_instr, consume_fuel_instr, FuelCostsProvider::base)?;
+                .encode(copy_instr, fuel_pos, FuelCostsProvider::base)?;
         }
         Ok(())
     }
@@ -887,7 +883,7 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<Pos<Op>, Error> {
         debug_assert!(instr.result_ref().is_none());
-        let consume_fuel = self.stack.consume_fuel_instr();
+        let consume_fuel = self.stack.fuel_pos();
         let instr = self.instrs.encode(instr, consume_fuel, fuel_costs)?;
         Ok(instr)
     }
@@ -898,7 +894,7 @@ impl FuncTranslator {
     /// a copy operator is encoded to turn the existing register operand into
     /// a temporary operand.
     fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         if let Some(Operand::Reg(operand)) = self.stack.dealloc_reg(ty) {
             let result = operand.temp_slots().head();
             let copy_op = Self::select_copy_sr_op(result, operand.ty())?;
@@ -918,7 +914,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
         self.push_result_reg(result_ty)?;
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         self.instrs.stage(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
@@ -932,7 +928,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
         self.push_result_reg(result_ty)?;
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         self.instrs.encode(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
@@ -945,7 +941,7 @@ impl FuncTranslator {
         make_instr: impl FnOnce(Slot) -> Op,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         let result = self
             .stack
             .push_temp(result_ty, Allocation::None)?
@@ -953,7 +949,7 @@ impl FuncTranslator {
             .head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
-        self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
+        self.instrs.stage(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
@@ -965,7 +961,7 @@ impl FuncTranslator {
         make_instr: impl FnOnce(Slot) -> Result<Option<Op>, Error>,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         let result = self
             .stack
             .push_temp(result_ty, Allocation::None)?
@@ -977,7 +973,7 @@ impl FuncTranslator {
             return Ok(());
         };
         debug_assert!(op.result_ref().is_some());
-        self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
+        self.instrs.stage(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
@@ -1020,7 +1016,7 @@ impl FuncTranslator {
         };
         self.push_instr(op, FuelCostsProvider::base)?;
         // Encode the `br_table` targets:
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         let targets = &self.immediates[..];
         for target in targets {
             let Ok(depth) = usize::try_from(u32::from(*target)) else {
@@ -1047,16 +1043,15 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         let len_targets = table.len() + 1;
         debug_assert_eq!(self.immediates.len(), len_targets as usize);
-        let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let values =
-            self.try_form_slot_span_or_move(usize::from(len_values), consume_fuel_instr)?;
+        let fuel_pos = self.stack.fuel_pos();
+        let values = self.try_form_slot_span_or_move(usize::from(len_values), fuel_pos)?;
         let op = match index {
             Location::Reg(_) => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
         };
         self.push_instr(op, FuelCostsProvider::base)?;
         // Encode the `br_table` targets:
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         let targets = &self.immediates[..];
         for target in targets {
             let Ok(depth) = usize::try_from(u32::from(*target)) else {
@@ -1241,27 +1236,27 @@ impl FuncTranslator {
     fn try_form_slot_span_or_move(
         &mut self,
         len: usize,
-        consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
         if let Some(span) = self.try_form_slot_span(len)? {
             return Ok(span);
         }
-        self.move_operands_to_temp(len, consume_fuel_instr)
+        self.move_operands_to_temp(len, fuel_pos)
     }
 
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        let consume_fuel_instr = frame.consume_fuel_instr();
+        let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if self.reachable {
-                self.copy_branch_params(&frame, consume_fuel_instr)?;
+                self.copy_branch_params(&frame, fuel_pos)?;
             }
             self.push_frame_results(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
-            self.encode_return(consume_fuel_instr)?;
+            self.encode_return(fuel_pos)?;
         }
         Ok(())
     }
@@ -1290,12 +1285,12 @@ impl FuncTranslator {
         let len_results = frame.ty().len_results(self.engine());
         let has_results = len_results >= 1;
         if is_end_of_then_reachable && has_results {
-            let consume_fuel_instr = frame.consume_fuel_instr();
-            self.copy_branch_params(&frame, consume_fuel_instr)?;
+            let fuel_pos = frame.fuel_pos();
+            self.copy_branch_params(&frame, fuel_pos)?;
             self.instrs.encode_branch(
                 frame.label(),
                 Op::branch,
-                consume_fuel_instr,
+                fuel_pos,
                 FuelCostsProvider::base,
             )?;
         }
@@ -1307,8 +1302,8 @@ impl FuncTranslator {
             // be popped. We use them to restore the stack to the state
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
-            let consume_fuel_instr = self.instrs.encode_consume_fuel()?;
-            self.copy_branch_params(&frame, consume_fuel_instr)?;
+            let fuel_pos = self.instrs.encode_consume_fuel()?;
+            self.copy_branch_params(&frame, fuel_pos)?;
         }
         self.push_frame_results(&frame)?;
         self.instrs.pin_label(frame.label())?;
@@ -1337,8 +1332,8 @@ impl FuncTranslator {
             _ => true,
         };
         if end_of_else_reachable {
-            let consume_fuel_instr: Option<Pos<ir::BlockFuel>> = frame.consume_fuel_instr();
-            self.copy_branch_params(&frame, consume_fuel_instr)?;
+            let fuel_pos = frame.fuel_pos();
+            self.copy_branch_params(&frame, fuel_pos)?;
         }
         self.push_frame_results(&frame)?;
         self.instrs.pin_label(frame.label())?;
@@ -1354,8 +1349,8 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         if frame.is_branched_to() {
             if end_is_reachable {
-                let consume_fuel_instr = frame.consume_fuel_instr();
-                self.copy_branch_params(&frame, consume_fuel_instr)?;
+                let fuel_pos = frame.fuel_pos();
+                self.copy_branch_params(&frame, fuel_pos)?;
             }
             self.push_frame_results(&frame)?;
         }
@@ -1389,7 +1384,7 @@ impl FuncTranslator {
             }
         }
         let local_idx = LocalIdx::from(local_index);
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         for preserved in self.stack.preserve_locals(local_idx) {
             let ty = preserved.ty();
             let result = preserved.temp_slots().head();
@@ -1456,7 +1451,7 @@ impl FuncTranslator {
 
     /// Encodes an unconditional Wasm `branch` instruction.
     fn encode_br(&mut self, label: LabelRef) -> Result<Pos<Op>, Error> {
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         let (br_op, _) =
             self.instrs
                 .encode_branch(label, Op::branch, fuel_pos, FuelCostsProvider::base)?;
@@ -1501,7 +1496,7 @@ impl FuncTranslator {
                 }
             }
         };
-        let fuel_pos = self.stack.consume_fuel_instr();
+        let fuel_pos = self.stack.fuel_pos();
         self.instrs.encode_branch(
             label,
             |offset| match branch_eqz {
@@ -1574,7 +1569,7 @@ impl FuncTranslator {
         call_imported: fn(params: BoundedSlotSpan, func: index::Func) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let consume_fuel = self.stack.consume_fuel_instr();
+        let consume_fuel = self.stack.fuel_pos();
         let func_idx = FuncIdx::from(function_index);
         let callee_ty = self.resolve_func_type(func_idx);
         let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
@@ -1609,7 +1604,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
-        let consume_fuel = self.stack.consume_fuel_instr();
+        let consume_fuel = self.stack.fuel_pos();
         let table = index::Table::from(table_index);
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
@@ -2597,9 +2592,9 @@ impl FuncTranslator {
             let result = self.stack.push_operand(lhs)?; // lo-bits
             if matches!(lhs, Operand::Temp(_)) {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
-                let consume_fuel_instr = self.stack.consume_fuel_instr();
+                let fuel_pos = self.stack.fuel_pos();
                 let result = result.temp_slots().head();
-                self.encode_copy(result, lhs, consume_fuel_instr)?;
+                self.encode_copy(result, lhs, fuel_pos)?;
             }
             self.stack.push_immediate(0_i64)?; // hi-bits
             return Ok(true);
