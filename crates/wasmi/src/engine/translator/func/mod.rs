@@ -1077,65 +1077,61 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Encodes a generic return instruction.
-    fn encode_return(
-        &mut self,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<Pos<Op>, Error> {
+    /// Encodes a generic return operator.
+    fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
-        let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
-            ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
-            _ => Op::return_u64_s(slot),
-        };
         let instr = match len_results {
             0 => Op::Return {},
-            1 => match self.stack.peek(0) {
-                Operand::Reg(operand) => match operand.ty() {
-                    | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                        Op::return_u64_r()
-                    }
-                    | ValType::F32 => Op::return_f32_r(),
-                    | ValType::F64 => Op::return_f64_r(),
-                    | ValType::V128 => {
-                        // Note: `v128` values may not occupy register operands for now.
-                        unreachable!()
-                    }
-                },
-                Operand::Local(operand) => {
-                    let value = self.layout.local_to_slot(operand)?;
-                    return_slot_for_ty(operand.ty(), value)
-                }
-                Operand::Temp(operand) => {
-                    return_slot_for_ty(operand.ty(), operand.temp_slots().head())
-                }
-                Operand::Immediate(operand) => {
-                    let val = operand.val();
-                    match operand.ty() {
-                        ValType::I32 => Op::return_u32_i(i32::from(val).to_bits()),
-                        ValType::I64 => Op::return_u64_i(i64::from(val).to_bits()),
-                        ValType::F32 => Op::return_u32_i(f32::from(val).to_bits()),
-                        ValType::F64 => Op::return_u64_i(f64::from(val).to_bits()),
-                        ValType::FuncRef | ValType::ExternRef => {
-                            Op::return_u32_i(u32::from(RawRef::from(val.raw())))
-                        }
-                        ValType::V128 => {
-                            let value = self.stack.peek(0);
-                            let temp_slot = self.copy_operand_to_temp(value, consume_fuel)?;
-                            Op::return_span(BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2))
-                        }
-                    }
-                }
-            },
+            1 => self.encode_return_value(fuel_pos)?,
             _ => {
                 let len_results = usize::from(len_results);
-                let results = self.move_operands_to_temp(len_results, consume_fuel)?;
+                let results = self.move_operands_to_temp(len_results, fuel_pos)?;
                 Op::return_span(results)
             }
         };
         let instr = self
             .instrs
-            .encode(instr, consume_fuel, FuelCostsProvider::base)?;
+            .encode(instr, fuel_pos, FuelCostsProvider::base)?;
         Ok(instr)
+    }
+
+    /// Encodes a return operator that returns a single value.
+    fn encode_return_value(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
+        let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
+            ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
+            _ => Op::return_u64_s(slot),
+        };
+        let value = self.stack.peek(0);
+        let ty = value.ty();
+        let op = match value.resolve(&self.layout)? {
+            ResolvedOperand::Reg(ty) => match ty {
+                | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
+                    Op::return_u64_r()
+                }
+                | ValType::F32 => Op::return_f32_r(),
+                | ValType::F64 => Op::return_f64_r(),
+                | ValType::V128 => {
+                    // Note: `v128` values may not occupy register operands for now.
+                    unreachable!()
+                }
+            },
+            ResolvedOperand::Slot(value) => return_slot_for_ty(ty, value),
+            ResolvedOperand::Immediate(value) => match value.ty() {
+                ValType::I32 => Op::return_u32_i(i32::from(value).to_bits()),
+                ValType::I64 => Op::return_u64_i(i64::from(value).to_bits()),
+                ValType::F32 => Op::return_u32_i(f32::from(value).to_bits()),
+                ValType::F64 => Op::return_u64_i(f64::from(value).to_bits()),
+                ValType::FuncRef | ValType::ExternRef => {
+                    Op::return_u32_i(u32::from(RawRef::from(value.raw())))
+                }
+                ValType::V128 => {
+                    let value = self.stack.peek(0);
+                    let temp_slot = self.copy_operand_to_temp(value, fuel_pos)?;
+                    Op::return_span(BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2))
+                }
+            },
+        };
+        Ok(op)
     }
 
     /// Store the top-most [`Operand`]s on the [`Stack`] into the operands buffer.
