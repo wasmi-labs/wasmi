@@ -182,7 +182,7 @@ impl Operand {
     /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
     /// especially in pattern matching contexts. However, in contrast to [`Operand`]
     /// it loses some information during the conversion process.
-    pub fn resolve<T>(&self, layout: &StackLayout) -> Result<ResolvedOperand<T>, Error>
+    pub fn resolve_as<T>(&self, layout: &StackLayout) -> Result<ResolvedOperand<T>, Error>
     where
         T: From<TypedRawVal>,
     {
