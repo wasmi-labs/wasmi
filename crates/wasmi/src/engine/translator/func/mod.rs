@@ -2227,7 +2227,7 @@ impl FuncTranslator {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
-        let Operand::Reg(_) = lhs else {
+        let ResolvedOperand::Reg(_ty) = lhs.resolve(&self.layout)? else {
             // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
