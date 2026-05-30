@@ -1803,31 +1803,12 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    /// Resolves the [`Operand`] into a [`ResolvedOperand`].
-    ///
-    /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
-    /// especially in pattern matching contexts. However, in contrast to [`Operand`]
-    /// it loses some information during the conversion process.
+    /// Convenience method forwarding to [`Operand::resolve`].
     fn resolve_operand<T>(&self, operand: Operand) -> Result<ResolvedOperand<T>, Error>
     where
         T: From<TypedRawVal>,
     {
-        let resolved = match operand {
-            Operand::Reg(operand) => ResolvedOperand::Reg(operand.ty()),
-            Operand::Local(operand) => {
-                let slot = self.layout.local_to_slot(operand)?;
-                ResolvedOperand::Slot(slot)
-            }
-            Operand::Temp(operand) => {
-                let slot = operand.temp_slots().head();
-                ResolvedOperand::Slot(slot)
-            }
-            Operand::Immediate(operand) => {
-                let value = T::from(operand.val());
-                ResolvedOperand::Immediate(value)
-            }
-        };
-        Ok(resolved)
+        operand.resolve::<T>(&self.layout)
     }
 
     /// Resolves the [`Operand`] into a [`ResolvedOperand<u64>`].

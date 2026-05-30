@@ -1,8 +1,9 @@
 use super::{LocalIdx, StackOperand, StackPos};
 use crate::{
+    Error,
     ValType,
     core::{RawVal, TypedRawVal},
-    engine::translator::utils::required_cells_for_ty,
+    engine::translator::{func::layout::StackLayout, utils::required_cells_for_ty},
     ir::{BoundedSlotSpan, Slot, SlotSpan},
 };
 
@@ -174,6 +175,33 @@ impl Operand {
             Self::Temp(operand) => operand.ty(),
             Self::Immediate(operand) => operand.ty(),
         }
+    }
+
+    /// Resolves the [`Operand`] into a [`ResolvedOperand`].
+    ///
+    /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
+    /// especially in pattern matching contexts. However, in contrast to [`Operand`]
+    /// it loses some information during the conversion process.
+    pub fn resolve<T>(&self, layout: &StackLayout) -> Result<ResolvedOperand<T>, Error>
+    where
+        T: From<TypedRawVal>,
+    {
+        let resolved = match self {
+            Operand::Reg(operand) => ResolvedOperand::Reg(operand.ty()),
+            Operand::Local(operand) => {
+                let slot = layout.local_to_slot(operand)?;
+                ResolvedOperand::Slot(slot)
+            }
+            Operand::Temp(operand) => {
+                let slot = operand.temp_slots().head();
+                ResolvedOperand::Slot(slot)
+            }
+            Operand::Immediate(operand) => {
+                let value = T::from(operand.val());
+                ResolvedOperand::Immediate(value)
+            }
+        };
+        Ok(resolved)
     }
 }
 
