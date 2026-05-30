@@ -1004,7 +1004,7 @@ impl FuncTranslator {
             return Ok(());
         };
         debug_assert!(op.result_ref().is_some());
-        self.instrs.encode(op, consume_fuel_instr, fuel_costs)?;
+        self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
         Ok(())
     }
 
