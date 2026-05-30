@@ -175,16 +175,16 @@ impl Stack {
         &mut self,
         ty: BlockType,
         label: LabelRef,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(self.controls.is_empty());
-        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let branch_slots_head = self.operands.next_temp_slots();
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls
-            .push_block(ty, 0, branch_slots, label, consume_fuel);
+            .push_block(ty, 0, branch_slots, label, fuel_pos);
         Ok(())
     }
 
@@ -205,7 +205,7 @@ impl Stack {
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
-        let consume_fuel = self.consume_fuel_instr();
+        let consume_fuel = self.fuel_pos();
         self.controls
             .push_block(ty, block_height, branch_slots, label, consume_fuel);
         Ok(())
@@ -225,10 +225,10 @@ impl Stack {
         &mut self,
         ty: BlockType,
         label: LabelRef,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
-        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         debug_assert!(
@@ -241,7 +241,7 @@ impl Stack {
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.params()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
         self.controls
-            .push_loop(ty, block_height, branch_slots, label, consume_fuel);
+            .push_loop(ty, block_height, branch_slots, label, fuel_pos);
         Ok(())
     }
 
@@ -259,10 +259,10 @@ impl Stack {
         ty: BlockType,
         label: LabelRef,
         reachability: IfReachability,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
-        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         let else_operands = self.operands.peek(len_params);
@@ -276,7 +276,7 @@ impl Stack {
             block_height,
             branch_slots,
             label,
-            consume_fuel,
+            fuel_pos,
             reachability,
             else_operands,
         );
@@ -296,12 +296,12 @@ impl Stack {
         &mut self,
         if_frame: IfControlFrame,
         is_end_of_then_reachable: bool,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        debug_assert!(self.is_fuel_metering_enabled() == consume_fuel.is_some());
+        debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         self.push_else_operands(&if_frame)?;
         self.controls
-            .push_else(if_frame, consume_fuel, is_end_of_then_reachable);
+            .push_else(if_frame, fuel_pos, is_end_of_then_reachable);
         Ok(())
     }
 
@@ -546,7 +546,7 @@ impl Stack {
     ///
     /// Returns `None` otherwise.
     #[inline]
-    pub fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        self.controls.consume_fuel_instr()
+    pub fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
+        self.controls.fuel_pos()
     }
 }
