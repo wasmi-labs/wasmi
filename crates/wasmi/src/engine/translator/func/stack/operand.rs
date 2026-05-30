@@ -179,20 +179,10 @@ impl Operand {
 
     /// Resolves the [`Operand`] into a [`ResolvedOperand<TypedRawVal`].
     ///
-    /// This is a convenience wrapper for [`Self::resolve_as`].
-    pub fn resolve(&self, layout: &StackLayout) -> Result<ResolvedOperand<TypedRawVal>, Error> {
-        self.resolve_as::<TypedRawVal>(layout)
-    }
-
-    /// Resolves the [`Operand`] into a [`ResolvedOperand`].
-    ///
     /// [`ResolvedOperand`] is a more destructed form which is simpler to handle,
     /// especially in pattern matching contexts. However, in contrast to [`Operand`]
     /// it loses some information during the conversion process.
-    pub fn resolve_as<T>(&self, layout: &StackLayout) -> Result<ResolvedOperand<T>, Error>
-    where
-        T: From<TypedRawVal>,
-    {
+    pub fn resolve(&self, layout: &StackLayout) -> Result<ResolvedOperand<TypedRawVal>, Error> {
         let resolved = match self {
             Operand::Reg(operand) => ResolvedOperand::Reg(operand.ty()),
             Operand::Local(operand) => {
@@ -203,12 +193,19 @@ impl Operand {
                 let slot = operand.temp_slots().head();
                 ResolvedOperand::Slot(slot)
             }
-            Operand::Immediate(operand) => {
-                let value = T::from(operand.val());
-                ResolvedOperand::Immediate(value)
-            }
+            Operand::Immediate(operand) => ResolvedOperand::Immediate(operand.val()),
         };
         Ok(resolved)
+    }
+
+    /// Resolves the [`Operand`] into a [`ResolvedOperand`].
+    ///
+    /// This is a convenience wrapper for [`Self::resolve`] and a call to `map`.
+    pub fn resolve_as<T>(&self, layout: &StackLayout) -> Result<ResolvedOperand<T>, Error>
+    where
+        T: From<TypedRawVal>,
+    {
+        Ok(self.resolve(layout)?.map(T::from))
     }
 }
 
