@@ -36,7 +36,7 @@ use self::{
         Stack,
         StackAllocations,
     },
-    utils::{Reset, ReusableAllocations, UpdateResultSlot},
+    utils::{Reset, ReusableAllocations},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -2278,23 +2278,14 @@ impl FuncTranslator {
             // Case: cannot fuse without registered last instruction
             return Ok(false);
         };
-        let Operand::Reg(lhs) = lhs else {
+        let Operand::Reg(_) = lhs else {
             // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
             return Ok(false);
         };
-        if matches!(staged.result_loc(), Some(ir::Location::Reg(_))) {
+        if !matches!(staged.result_loc(), Some(ir::Location::Reg(_))) {
             // Case: staged operator has no result register.
-            return Ok(false);
-        }
-        let lhs_reg = lhs.temp_slots().head();
-        let Some(result) = staged.result_ref().copied() else {
-            // Case: cannot fuse non-cmp instructions
-            return Ok(false);
-        };
-        if result != lhs_reg {
-            // Case: the `cmp` instruction does not feed into the `eqz` and cannot be fused
             return Ok(false);
         }
         let Some(negated) = try_fuse(&staged) else {
@@ -2303,16 +2294,7 @@ impl FuncTranslator {
         };
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        let new_result = self
-            .stack
-            .push_temp(ValType::I32, Allocation::None)?
-            .temp_slots()
-            .head();
-        // Need to replace `cmp` instruction result register since it might
-        // have been misaligned if `lhs` originally referred to the zero operand.
-        let Some(negated) = negated.update_result_slot(new_result) else {
-            unreachable!("`negated` has been asserted as `cmp` instruction");
-        };
+        self.stack.push_temp(ValType::I32, Allocation::Reg)?;
         self.instrs.replace_staged(negated)?;
         Ok(true)
     }
