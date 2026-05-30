@@ -31,8 +31,8 @@ pub enum ResolvedOperand<T> {
 impl<T> From<Location> for ResolvedOperand<T> {
     fn from(location: Location) -> Self {
         match location {
-            Location::Reg(ty) => ResolvedOperand::Reg(ty),
-            Location::Slot(slot) => ResolvedOperand::Slot(slot),
+            Location::Reg(ty) => Self::Reg(ty),
+            Location::Slot(slot) => Self::Slot(slot),
         }
     }
 }
@@ -40,18 +40,18 @@ impl<T> From<Location> for ResolvedOperand<T> {
 impl<T> ResolvedOperand<T> {
     pub fn sort(a: Self, b: Self) -> (Self, Self) {
         match (&a, &b) {
-            | (ResolvedOperand::Slot(_), ResolvedOperand::Reg(_))
-            | (ResolvedOperand::Immediate(_), ResolvedOperand::Reg(_))
-            | (ResolvedOperand::Immediate(_), ResolvedOperand::Slot(_)) => (b, a),
+            | (Self::Slot(_), Self::Reg(_))
+            | (Self::Immediate(_), Self::Reg(_))
+            | (Self::Immediate(_), Self::Slot(_)) => (b, a),
             _ => (a, b),
         }
     }
 
     pub fn map<U>(self, f: impl FnOnce(T) -> U) -> ResolvedOperand<U> {
         match self {
-            ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
-            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
-            ResolvedOperand::Immediate(value) => ResolvedOperand::Immediate(f(value)),
+            Self::Reg(ty) => ResolvedOperand::Reg(ty),
+            Self::Slot(slot) => ResolvedOperand::Slot(slot),
+            Self::Immediate(value) => ResolvedOperand::Immediate(f(value)),
         }
     }
 
@@ -64,9 +64,9 @@ impl<T> ResolvedOperand<Option<T>> {
     /// Transposes a [`ResolvedOperand<Option<T>>`] into an [`Option<ResolvedOperand<T>>`].
     pub fn transpose(self) -> Option<ResolvedOperand<T>> {
         let resolved = match self {
-            ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
-            ResolvedOperand::Slot(slot) => ResolvedOperand::Slot(slot),
-            ResolvedOperand::Immediate(ok_or_err) => ResolvedOperand::Immediate(ok_or_err?),
+            Self::Reg(ty) => ResolvedOperand::Reg(ty),
+            Self::Slot(slot) => ResolvedOperand::Slot(slot),
+            Self::Immediate(ok_or_err) => ResolvedOperand::Immediate(ok_or_err?),
         };
         Some(resolved)
     }
@@ -88,22 +88,27 @@ pub enum Operand {
 impl Operand {
     /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`StackPos`].
     pub(super) fn new(stack_pos: StackPos, operand: StackOperand) -> Self {
+        use StackOperand as Opd;
         match operand {
-            StackOperand::Reg { temp_slots, ty }
-            | StackOperand::Local {
+            Opd::Temp {
                 temp_slots,
                 ty,
-                in_reg: true,
-                ..
-            } => Self::reg(stack_pos, temp_slots, ty),
-            StackOperand::Local {
+                in_reg,
+            } => match in_reg {
+                true => Self::reg(stack_pos, temp_slots, ty),
+                false => Self::temp(stack_pos, temp_slots, ty),
+            },
+            Opd::Local {
+                temp_slots,
+                ty,
+                in_reg,
                 local_index,
-                ty,
-                temp_slots,
                 ..
-            } => Self::local(temp_slots, local_index, ty),
-            StackOperand::Temp { ty, temp_slots, .. } => Self::temp(stack_pos, temp_slots, ty),
-            StackOperand::Immediate {
+            } => match in_reg {
+                true => Self::reg(stack_pos, temp_slots, ty),
+                false => Self::local(temp_slots, local_index, ty),
+            },
+            Opd::Immediate {
                 ty,
                 temp_slots,
                 val,
@@ -124,38 +129,22 @@ impl Operand {
 
     /// Creates a register [`Operand`].
     pub(super) fn reg(stack_pos: StackPos, temp_slots: SlotSpan, ty: ValType) -> Self {
-        Self::Reg(RegOperand {
-            temp_slots,
-            ty,
-            stack_pos,
-        })
+        Self::Reg(RegOperand::new(temp_slots, ty, stack_pos))
     }
 
     /// Creates a local [`Operand`].
     pub(super) fn local(temp_slots: SlotSpan, local_index: LocalIdx, ty: ValType) -> Self {
-        Self::Local(LocalOperand {
-            temp_slots,
-            ty,
-            local_index,
-        })
+        Self::Local(LocalOperand::new(temp_slots, ty, local_index))
     }
 
     /// Creates a temporary [`Operand`].
     pub(super) fn temp(stack_pos: StackPos, temp_slots: SlotSpan, ty: ValType) -> Self {
-        Self::Temp(TempOperand {
-            temp_slots,
-            ty,
-            stack_pos,
-        })
+        Self::Temp(TempOperand::new(temp_slots, ty, stack_pos))
     }
 
     /// Creates an immediate [`Operand`].
     pub(super) fn immediate(temp_slots: SlotSpan, ty: ValType, val: RawVal) -> Self {
-        Self::Immediate(ImmediateOperand {
-            temp_slots,
-            ty,
-            val,
-        })
+        Self::Immediate(ImmediateOperand::new(temp_slots, ty, val))
     }
 
     /// Returns `true` if `self` is an [`Operand::Temp`].

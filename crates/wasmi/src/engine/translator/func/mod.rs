@@ -60,7 +60,10 @@ use crate::{
                 TryIntoCmpBranchInstr as _,
                 UpdateBranchOffset as _,
             },
-            func::{op::BinaryOpRhs, stack::TempOperand},
+            func::{
+                op::BinaryOpRhs,
+                stack::{Allocation, TempOperand},
+            },
             utils::{ToBits, WasmInteger, required_cells_for_ty},
         },
     },
@@ -74,8 +77,7 @@ use crate::{
         Op,
         Slot,
         SlotSpan,
-        index,
-        index::Memory,
+        index::{self, Memory},
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
 };
@@ -394,7 +396,7 @@ impl FuncTranslator {
             .ty()
             .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
                 for result in func_ty.results() {
-                    self.stack.push_temp(*result)?;
+                    self.stack.push_temp(*result, Allocation::None)?;
                 }
                 Ok(())
             })?;
@@ -924,13 +926,13 @@ impl FuncTranslator {
     /// a temporary operand.
     fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
         let fuel_pos = self.stack.consume_fuel_instr();
-        if let Some(Operand::Reg(operand)) = self.stack.reg_to_temp(ty) {
+        if let Some(Operand::Reg(operand)) = self.stack.dealloc_reg(ty) {
             let result = operand.temp_slots().head();
             let copy_op = Self::select_copy_sr_op(result, operand.ty())?;
             self.instrs
                 .encode(copy_op, fuel_pos, FuelCostsProvider::base)?;
         };
-        self.stack.push_reg(ty)?;
+        self.stack.push_temp(ty, Allocation::Reg)?;
         Ok(())
     }
 
@@ -971,7 +973,11 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let result = self.stack.push_temp(result_ty)?.temp_slots().head();
+        let result = self
+            .stack
+            .push_temp(result_ty, Allocation::None)?
+            .temp_slots()
+            .head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
         self.instrs.stage(op, consume_fuel_instr, fuel_costs)?;
@@ -987,7 +993,11 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let consume_fuel_instr = self.stack.consume_fuel_instr();
-        let result = self.stack.push_temp(result_ty)?.temp_slots().head();
+        let result = self
+            .stack
+            .push_temp(result_ty, Allocation::None)?
+            .temp_slots()
+            .head();
         let op = make_instr(result)?;
         let Some(op) = op else {
             self.stack.pop();
@@ -1675,7 +1685,7 @@ impl FuncTranslator {
         }
         let params = BoundedSlotSpan::new(params_start, params_len);
         for result in ty.results() {
-            self.stack.push_temp(*result)?;
+            self.stack.push_temp(*result, Allocation::None)?;
         }
         Ok(params)
     }
@@ -1752,10 +1762,10 @@ impl FuncTranslator {
             }
             Operand::Local(input) => {
                 self.stack
-                    .push_local(input.local_index(), <R as Typed>::TY)?;
+                    .push_local(input.local_index(), <R as Typed>::TY, Allocation::None)?;
             }
             Operand::Temp(_input) => {
-                self.stack.push_temp(<R as Typed>::TY)?;
+                self.stack.push_temp(<R as Typed>::TY, Allocation::None)?;
             }
             Operand::Immediate(input) => {
                 let input: T = input.val().into();
@@ -2289,7 +2299,11 @@ impl FuncTranslator {
         };
         // Need to push back `lhs` but with its type adjusted to be `i32`
         // since that's the return type of `i{32,64}.{eqz,eq,ne}`.
-        let new_result = self.stack.push_temp(ValType::I32)?.temp_slots().head();
+        let new_result = self
+            .stack
+            .push_temp(ValType::I32, Allocation::None)?
+            .temp_slots()
+            .head();
         // Need to replace `cmp` instruction result register since it might
         // have been misaligned if `lhs` originally referred to the zero operand.
         let Some(negated) = negated.update_result_slot(new_result) else {
@@ -2551,8 +2565,16 @@ impl FuncTranslator {
         let rhs_hi = self.copy_operand_to_slot(rhs_hi)?;
         let lhs_lo = self.copy_operand_to_slot(lhs_lo)?;
         let lhs_hi = self.copy_operand_to_slot(lhs_hi)?;
-        let result_lo = self.stack.push_temp(ValType::I64)?.temp_slots().head();
-        let result_hi = self.stack.push_temp(ValType::I64)?.temp_slots().head();
+        let result_lo = self
+            .stack
+            .push_temp(ValType::I64, Allocation::None)?
+            .temp_slots()
+            .head();
+        let result_hi = self
+            .stack
+            .push_temp(ValType::I64, Allocation::None)?
+            .temp_slots()
+            .head();
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result_lo)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
@@ -2604,8 +2626,12 @@ impl FuncTranslator {
                 (lhs, rhs)
             }
         };
-        let result0 = self.stack.push_temp(ValType::I64)?.temp_slots().head();
-        self.stack.push_temp(ValType::I64)?;
+        let result0 = self
+            .stack
+            .push_temp(ValType::I64, Allocation::None)?
+            .temp_slots()
+            .head();
+        self.stack.push_temp(ValType::I64, Allocation::None)?;
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };

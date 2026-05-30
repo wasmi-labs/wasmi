@@ -21,16 +21,8 @@ pub use self::{
         IfReachability,
         LoopControlFrame,
     },
-    operand::{
-        ImmediateOperand,
-        LocalOperand,
-        Location,
-        Operand,
-        RegOperand,
-        ResolvedOperand,
-        TempOperand,
-    },
-    operands::{PreservedAllLocalsIter, PreservedLocalsIter},
+    operand::{ImmediateOperand, LocalOperand, Location, Operand, ResolvedOperand, TempOperand},
+    operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
@@ -378,8 +370,8 @@ impl Stack {
     /// Replace the typed register operand on the stack with a temporary operand if any.
     ///
     /// Returns `None` if no `ireg` operand exists on the stack.
-    pub fn reg_to_temp(&mut self, ty: ValType) -> Option<Operand> {
-        self.operands.reg_to_temp(ty)
+    pub fn dealloc_reg(&mut self, ty: ValType) -> Option<Operand> {
+        self.operands.dealloc_reg(ty)
     }
 
     /// Pushes the [`Operand`] back to the [`Stack`].
@@ -394,30 +386,6 @@ impl Stack {
         self.operands.push_operand(operand)
     }
 
-    /// Pushes a register operand with type `ty` on the [`Stack`].
-    ///
-    /// # Errors
-    ///
-    /// If too many operands have been pushed onto the [`Stack`].
-    #[inline]
-    pub fn push_reg(&mut self, ty: ValType) -> Result<RegOperand, Error> {
-        self.operands.push_reg(ty)
-    }
-
-    /// Pushes a register backed local variable with index `local_idx` to the [`OperandStack`].
-    ///
-    /// # Errors
-    ///
-    /// - If too many operands have been pushed onto the [`OperandStack`].
-    /// - If the local with `local_idx` does not exist.
-    pub fn push_reg_backed_local(
-        &mut self,
-        local_index: LocalIdx,
-        ty: ValType,
-    ) -> Result<LocalOperand, Error> {
-        self.operands.push_reg_backed_local(local_index, ty)
-    }
-
     /// Pushes a local variable with index `local_idx` to the [`Stack`].
     ///
     /// # Errors
@@ -428,8 +396,9 @@ impl Stack {
         &mut self,
         local_index: LocalIdx,
         ty: ValType,
+        alloc: Allocation,
     ) -> Result<LocalOperand, Error> {
-        self.operands.push_local(local_index, ty)
+        self.operands.push_local(local_index, ty, alloc)
     }
 
     /// Pushes a temporary with type `ty` on the [`Stack`].
@@ -438,8 +407,8 @@ impl Stack {
     ///
     /// If too many operands have been pushed onto the [`Stack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
-        self.operands.push_temp(ty)
+    pub fn push_temp(&mut self, ty: ValType, alloc: Allocation) -> Result<TempOperand, Error> {
+        self.operands.push_temp(ty, alloc)
     }
 
     /// Pushes an immediate `value` on the [`Stack`].

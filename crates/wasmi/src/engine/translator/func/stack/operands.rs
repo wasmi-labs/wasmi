@@ -1,13 +1,4 @@
-use super::{
-    ImmediateOperand,
-    LocalIdx,
-    LocalOperand,
-    LocalsHead,
-    Operand,
-    RegOperand,
-    Reset,
-    TempOperand,
-};
+use super::{ImmediateOperand, LocalIdx, LocalOperand, LocalsHead, Operand, Reset, TempOperand};
 use crate::{
     Error,
     ValType,
@@ -43,17 +34,6 @@ impl From<usize> for StackPos {
 /// hidden to the outside.
 #[derive(Debug, Copy, Clone)]
 pub enum StackOperand {
-    /// A register operand.
-    Reg {
-        /// The temporary stack offset of the operand.
-        temp_slots: SlotSpan,
-        /// The type of the register operand.
-        ///
-        /// This does not have to be the type of the associated operand but
-        /// might be a type overwrite. This is useful for Wasm `reinterpret`
-        /// operators with local operand inputs.
-        ty: ValType,
-    },
     /// A local variable.
     Local {
         /// The temporary stack offset of the operand.
@@ -64,14 +44,14 @@ pub enum StackOperand {
         /// might be a type overwrite. This is useful for Wasm `reinterpret`
         /// operators with local operand inputs.
         ty: ValType,
+        /// This is `true` if the [`StackOperand::Local`] is also stored in a register.
+        in_reg: bool,
         /// The index of the local variable.
         local_index: LocalIdx,
         /// The previous [`StackOperand::Local`] on the [`OperandStack`].
         prev_local: Option<StackPos>,
         /// The next [`StackOperand::Local`] on the [`OperandStack`].
         next_local: Option<StackPos>,
-        /// This is `true` if the [`StackOperand::Local`] is also stored in a register.
-        in_reg: bool,
     },
     /// A temporary value on the [`OperandStack`].
     Temp {
@@ -79,6 +59,8 @@ pub enum StackOperand {
         temp_slots: SlotSpan,
         /// The type of the temporary operand.
         ty: ValType,
+        /// This is `true` if the [`StackOperand::Temp`] is also stored in a register.
+        in_reg: bool,
     },
     /// An immediate value on the [`OperandStack`].
     Immediate {
@@ -95,21 +77,33 @@ impl StackOperand {
     /// Returns the [`ValType`] of the [`StackOperand`].
     pub fn ty(&self) -> ValType {
         match self {
-            Self::Reg { ty, .. }
-            | Self::Temp { ty, .. }
-            | Self::Immediate { ty, .. }
-            | Self::Local { ty, .. } => *ty,
+            | Self::Temp { ty, .. } | Self::Immediate { ty, .. } | Self::Local { ty, .. } => *ty,
         }
     }
 
     /// Returns the temporary [`SlotSpan`] of the [`StackOperand`].
     pub fn temp_slots(&self) -> SlotSpan {
         match self {
-            | Self::Reg { temp_slots, .. }
             | Self::Temp { temp_slots, .. }
             | Self::Immediate { temp_slots, .. }
             | Self::Local { temp_slots, .. } => *temp_slots,
         }
+    }
+}
+
+/// Whether pushing an operand should also allocate a register for it.
+#[derive(Debug, Copy, Clone)]
+pub enum Allocation {
+    /// No register is being allocated for the operand.
+    None,
+    /// A register is being allocated for the operand.
+    Reg,
+}
+
+impl Allocation {
+    /// Returns `true` if `self` is [`Self::Reg`].
+    pub fn is_reg(&self) -> bool {
+        matches!(self, Self::Reg)
     }
 }
 
@@ -173,45 +167,27 @@ impl OperandStack {
         Ok(())
     }
 
-    /// Replace the typed register operand on the stack with a temporary operand if any.
+    /// Deallocates the register of the `ty` from `self`.
     ///
-    /// Returns `None` if no `reg` operand exists on the stack of type `ty` that needs to be copied.
+    /// Returns `Some` if a copy operator is required to reflect the changes.
     ///
     /// # Note
     ///
     /// If the register operand is a register-backed local it is turned into a normal local operand
     /// and `None` is returned as no copy operator is required.
-    pub fn reg_to_temp(&mut self, ty: ValType) -> Option<Operand> {
+    pub fn dealloc_reg(&mut self, ty: ValType) -> Option<Operand> {
         let pos = self.reg_pos_mut(ty).take()?;
-        let index = usize::from(pos);
-        let operand = self.get_at(pos);
-        let (new_operand, returned) = match operand {
-            StackOperand::Reg { temp_slots, ty } => {
-                let new_operand = StackOperand::Temp { temp_slots, ty };
-                let returned = Some(Operand::new(pos, operand));
-                (new_operand, returned)
-            }
-            StackOperand::Local {
-                in_reg: true,
-                temp_slots,
-                ty,
-                local_index,
-                prev_local,
-                next_local,
-            } => {
-                let new_operand = StackOperand::Local {
-                    in_reg: false,
-                    temp_slots,
-                    ty,
-                    local_index,
-                    prev_local,
-                    next_local,
-                };
-                (new_operand, None)
-            }
+        let mut operand = self.get_at_mut(pos);
+        let returned = match operand {
+            StackOperand::Temp { .. } => Some(Operand::new(pos, *operand)),
+            _ => None,
+        };
+        #[rustfmt::skip]
+        match &mut operand {
+            | StackOperand::Local { in_reg, .. }
+            | StackOperand::Temp { in_reg, .. } if *in_reg => *in_reg = false,
             _ => unreachable!(),
         };
-        self.operands[index] = new_operand;
         returned
     }
 
@@ -293,28 +269,13 @@ impl OperandStack {
     #[inline]
     pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         match operand {
-            Operand::Reg(op) => self.push_reg(op.ty()).map(Operand::from),
+            Operand::Reg(op) => self.push_temp(op.ty(), Allocation::Reg).map(Operand::from),
             Operand::Local(op) => self
-                .push_local(op.local_index(), op.ty())
+                .push_local(op.local_index(), op.ty(), Allocation::None)
                 .map(Operand::from),
-            Operand::Temp(op) => self.push_temp(op.ty()).map(Operand::from),
+            Operand::Temp(op) => self.push_temp(op.ty(), Allocation::None).map(Operand::from),
             Operand::Immediate(op) => self.push_immediate(op.val()).map(Operand::from),
         }
-    }
-
-    /// Pushes a register backed local variable with index `local_idx` to the [`OperandStack`].
-    ///
-    /// # Errors
-    ///
-    /// - If too many operands have been pushed onto the [`OperandStack`].
-    /// - If the local with `local_idx` does not exist.
-    #[inline]
-    pub fn push_reg_backed_local(
-        &mut self,
-        local_index: LocalIdx,
-        ty: ValType,
-    ) -> Result<LocalOperand, Error> {
-        self.push_local_impl(local_index, ty, true)
     }
 
     /// Pushes a local variable with index `local_idx` to the [`OperandStack`].
@@ -328,19 +289,10 @@ impl OperandStack {
         &mut self,
         local_index: LocalIdx,
         ty: ValType,
-    ) -> Result<LocalOperand, Error> {
-        self.push_local_impl(local_index, ty, false)
-    }
-
-    #[inline]
-    fn push_local_impl(
-        &mut self,
-        local_index: LocalIdx,
-        ty: ValType,
-        in_reg: bool,
+        alloc: Allocation,
     ) -> Result<LocalOperand, Error> {
         let stack_pos = self.next_stack_pos();
-        if in_reg {
+        if alloc.is_reg() {
             self.link_reg(stack_pos, ty);
         }
         let next_local = self.local_heads.replace_first(local_index, Some(stack_pos));
@@ -354,24 +306,10 @@ impl OperandStack {
             local_index,
             prev_local: None,
             next_local,
-            in_reg,
+            in_reg: alloc.is_reg(),
         });
         self.len_locals += 1;
         Ok(LocalOperand::new(temp_slots, ty, local_index))
-    }
-
-    /// Pushes a register operand with type `ty` on the [`OperandStack`].
-    ///
-    /// # Errors
-    ///
-    /// If too many operands have been pushed onto the [`OperandStack`].
-    #[inline]
-    pub fn push_reg(&mut self, ty: ValType) -> Result<RegOperand, Error> {
-        let stack_pos = self.next_stack_pos();
-        self.link_reg(stack_pos, ty);
-        let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
-        self.operands.push(StackOperand::Reg { temp_slots, ty });
-        Ok(RegOperand::new(temp_slots, ty, stack_pos))
     }
 
     /// Pushes a temporary with type `ty` on the [`OperandStack`].
@@ -380,10 +318,17 @@ impl OperandStack {
     ///
     /// If too many operands have been pushed onto the [`OperandStack`].
     #[inline]
-    pub fn push_temp(&mut self, ty: ValType) -> Result<TempOperand, Error> {
+    pub fn push_temp(&mut self, ty: ValType, alloc: Allocation) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
+        if alloc.is_reg() {
+            self.link_reg(stack_pos, ty);
+        }
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
-        self.operands.push(StackOperand::Temp { temp_slots, ty });
+        self.operands.push(StackOperand::Temp {
+            temp_slots,
+            ty,
+            in_reg: alloc.is_reg(),
+        });
         Ok(TempOperand::new(temp_slots, ty, stack_pos))
     }
 
@@ -468,6 +413,16 @@ impl OperandStack {
         self.operands[usize::from(pos)]
     }
 
+    /// Returns the [`StackOperand`] at `index`.
+    ///
+    /// # Panics
+    ///
+    /// If `index` is out of bounds for `self`.
+    #[inline]
+    fn get_at_mut(&mut self, pos: StackPos) -> &mut StackOperand {
+        &mut self.operands[usize::from(pos)]
+    }
+
     /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].
     ///
     /// # Note
@@ -502,7 +457,11 @@ impl OperandStack {
         let ty = operand.ty();
         self.try_unlink_local(operand);
         self.try_unlink_reg(operand);
-        self.operands[usize::from(index)] = StackOperand::Temp { temp_slots, ty };
+        self.operands[usize::from(index)] = StackOperand::Temp {
+            temp_slots,
+            ty,
+            in_reg: false,
+        };
         operand
     }
 
@@ -518,11 +477,11 @@ impl OperandStack {
         else {
             unreachable!()
         };
-        let opd = match in_reg {
-            true => StackOperand::Reg { temp_slots, ty },
-            false => StackOperand::Temp { temp_slots, ty },
+        self.operands[usize::from(pos)] = StackOperand::Temp {
+            in_reg,
+            temp_slots,
+            ty,
         };
-        self.operands[usize::from(pos)] = opd;
         operand
     }
 
@@ -629,9 +588,11 @@ impl OperandStack {
     #[inline]
     fn try_unlink_reg(&mut self, operand: StackOperand) -> Option<StackPos> {
         let ty = match operand {
-            StackOperand::Reg { ty, .. } => ty,
+            StackOperand::Temp {
+                in_reg: true, ty, ..
+            } => ty,
             StackOperand::Local {
-                ty, in_reg: true, ..
+                in_reg: true, ty, ..
             } => ty,
             _ => return None,
         };
