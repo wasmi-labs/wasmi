@@ -770,7 +770,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_ne(&mut self) -> Self::Output {
-        self.translate_binary_commutative::<op::I64NotEq>(Self::fuse_eqz)
+        self.translate_binary_commutative::<op::I64NotEq>(Self::fuse_nez)
     }
 
     #[inline(never)]
