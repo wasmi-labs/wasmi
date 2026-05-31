@@ -285,7 +285,7 @@ impl FuncTranslator {
         let func_ty = self.module.get_type_of_func(self.func);
         let block_ty = BlockType::func_type(func_ty);
         let end_label = self.instrs.new_label();
-        let consume_fuel = self.instrs.encode_consume_fuel()?;
+        let consume_fuel = self.instrs.encode_consume_fuel_op()?;
         self.stack
             .push_func_block(block_ty, end_label, consume_fuel)?;
         Ok(())
@@ -1308,7 +1308,7 @@ impl FuncTranslator {
             // be popped. We use them to restore the stack to the state
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
-            let fuel_pos = self.instrs.encode_consume_fuel()?;
+            let fuel_pos = self.instrs.encode_consume_fuel_op()?;
             self.copy_branch_params(&frame, fuel_pos)?;
         }
         self.push_frame_results(&frame)?;
