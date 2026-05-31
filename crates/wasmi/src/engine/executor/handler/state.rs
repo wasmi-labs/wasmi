@@ -392,6 +392,21 @@ impl Ip {
         let value = unsafe { self.value.byte_add(delta) };
         Self { value }
     }
+
+    /// Aligns `self` relative to `base`.
+    #[inline(always)]
+    pub fn align_relative_to(self, base: Ip) -> Self {
+        const ALIGN: usize = core::mem::align_of::<usize>();
+        if cfg!(feature = "indirect-dispatch") {
+            return self;
+        }
+        let base_addr = base.value as usize;
+        let offset = (self.value as usize) - base_addr;
+        let aligned_offset = offset.next_multiple_of(ALIGN);
+        Self {
+            value: (base_addr + aligned_offset) as *mut u8,
+        }
+    }
 }
 
 /// # Safety
