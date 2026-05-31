@@ -18,7 +18,7 @@ use crate::{
     ir::{self, BlockFuel, BranchOffset, Encode as _, Op, OpCode},
 };
 use alloc::vec::Vec;
-use core::{cmp, fmt, marker::PhantomData};
+use core::{cmp, fmt, iter, marker::PhantomData};
 
 /// Fuel amount required by certain operators.
 type FuelUsed = u64;
@@ -283,6 +283,7 @@ impl OpEncoder {
     /// If there is a staged [`Op`].
     pub fn pin_label(&mut self, lref: LabelRef) -> Result<(), Error> {
         self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         let next_pos = Pos::from(self.ops.next_pos());
         self.labels.pin_label(lref, next_pos);
         Ok(())
@@ -299,6 +300,7 @@ impl OpEncoder {
     /// If there is a staged [`Op`].
     pub fn pin_label_if_unpinned(&mut self, lref: LabelRef) -> Result<(), Error> {
         self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         let next_pos = Pos::from(self.ops.next_pos());
         self.labels.pin_label_if_unpinned(lref, next_pos);
         Ok(())
@@ -339,6 +341,7 @@ impl OpEncoder {
         fuel_selector: impl FuelCostsSelector,
     ) -> Result<(), Error> {
         self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         let pos = self.encode_impl(new_staged)?;
         let fuel = match (fuel_op, &self.fuel_costs) {
             (None, None) => None,
@@ -429,6 +432,7 @@ impl OpEncoder {
     ) -> Result<Pos<Op>, Error> {
         self.commit_staged_if_any()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
+        self.pad_to_op_alignment()?;
         let pos = self.encode_impl(op)?;
         debug_assert!(self.ops.take_reporting_pos().is_none());
         debug_assert!(self.staged.is_none());
@@ -446,6 +450,7 @@ impl OpEncoder {
         };
         let consumed_fuel = BlockFuel::from(fuel_costs.base());
         self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         Op::consume_fuel(consumed_fuel).encode(&mut self.ops)?;
         let Some(ReportingPos::BlockFuel(pos)) = self.ops.take_reporting_pos() else {
             unreachable!("expected encoded `BlockFuel` entry but found none")
@@ -498,6 +503,25 @@ impl OpEncoder {
         let pos = self.ops.next_pos();
         op.encode(&mut self.ops)?;
         Ok(Pos::from(pos))
+    }
+
+    /// Pads the encoded operator buffer with zero bytes until its length is [`Op`] aligned.
+    ///
+    /// This is used to encode new [`Op`] at properly aligned offsets within the buffer.
+    /// The alignment is equal to the alignment of function pointers, e.g. `fn()`.
+    ///
+    /// Does nothing if the buffer is already aligned.
+    pub fn pad_to_op_alignment(&mut self) -> Result<(), Error> {
+        const ALIGN: usize = core::mem::align_of::<fn()>();
+        if cfg!(feature = "indirect-dispatch") {
+            // Only pad to alignment when `indirect-dispatch` is disabled.
+            return Ok(());
+        }
+        let len = self.ops.buffer.len();
+        let aligned_len = len.next_multiple_of(ALIGN);
+        let padding_len = aligned_len - len;
+        self.ops.buffer.extend(iter::repeat_n(0_u8, padding_len));
+        Ok(())
     }
 
     /// Bumps consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `fuel_selector(fuel_costs)`.

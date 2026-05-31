@@ -65,7 +65,14 @@ use crate::{
 };
 use core::cmp;
 
+#[inline(always)]
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
+    let (new_ip, op) = unsafe { decode_op_no_align(ip) };
+    (new_ip.align_relative_to(ip), op)
+}
+
+#[inline(always)]
+unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "indirect-dispatch") {
         true => unsafe { ip.skip::<ir::OpCode>() },
         false => unsafe { ip.skip::<::core::primitive::usize>() },
@@ -1326,7 +1333,7 @@ macro_rules! impl_branch_table_exec_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_case { len_targets, index, values }) = unsafe { decode_op(ip) };
+                    let (ip, crate::ir::decode::$camel_case { len_targets, index, values }) = unsafe { decode_op_no_align(ip) };
                     let ip = $exec(index, len_targets, values, ip, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
