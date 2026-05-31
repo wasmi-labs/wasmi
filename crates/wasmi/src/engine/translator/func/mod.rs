@@ -454,7 +454,7 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let pos = encoder.encode(copy_instr, fuel_pos, FuelCostsProvider::base)?;
+        let pos = encoder.encode_op(copy_instr, fuel_pos, FuelCostsProvider::base)?;
         Ok(Some(pos))
     }
 
@@ -548,7 +548,7 @@ impl FuncTranslator {
             return Ok(());
         };
         self.instrs
-            .encode(op, fuel_pos, |costs: &FuelCostsProvider| {
+            .encode_op(op, fuel_pos, |costs: &FuelCostsProvider| {
                 costs.fuel_for_copying_values::<Cell>(u64::from(len))
             })?;
         Ok(())
@@ -823,7 +823,7 @@ impl FuncTranslator {
                 let copy_instr = Self::select_copy_si_op(result, value)?;
                 let consume_fuel = self.stack.fuel_pos();
                 self.instrs
-                    .encode(copy_instr, consume_fuel, FuelCostsProvider::base)?;
+                    .encode_op(copy_instr, consume_fuel, FuelCostsProvider::base)?;
                 Location::Slot(result)
             }
         };
@@ -853,7 +853,7 @@ impl FuncTranslator {
         };
         let fuel_op = self.stack.fuel_pos();
         self.instrs
-            .encode(copy_op, fuel_op, FuelCostsProvider::base)?;
+            .encode_op(copy_op, fuel_op, FuelCostsProvider::base)?;
         Ok(result)
     }
 
@@ -871,7 +871,7 @@ impl FuncTranslator {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
             self.instrs
-                .encode(copy_instr, fuel_pos, FuelCostsProvider::base)?;
+                .encode_op(copy_instr, fuel_pos, FuelCostsProvider::base)?;
         }
         Ok(())
     }
@@ -884,7 +884,7 @@ impl FuncTranslator {
     ) -> Result<Pos<Op>, Error> {
         debug_assert!(instr.result_ref().is_none());
         let consume_fuel = self.stack.fuel_pos();
-        let instr = self.instrs.encode(instr, consume_fuel, fuel_costs)?;
+        let instr = self.instrs.encode_op(instr, consume_fuel, fuel_costs)?;
         Ok(instr)
     }
 
@@ -899,7 +899,7 @@ impl FuncTranslator {
             let result = operand.temp_slots().head();
             let copy_op = Self::select_copy_sr_op(result, operand.ty())?;
             self.instrs
-                .encode(copy_op, fuel_pos, FuelCostsProvider::base)?;
+                .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
         };
         self.stack.push_temp(ty, Allocation::Reg)?;
         Ok(())
@@ -929,7 +929,7 @@ impl FuncTranslator {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
         self.push_result_reg(result_ty)?;
         let fuel_pos = self.stack.fuel_pos();
-        self.instrs.encode(op, fuel_pos, fuel_costs)?;
+        self.instrs.encode_op(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
@@ -1086,7 +1086,7 @@ impl FuncTranslator {
         };
         let instr = self
             .instrs
-            .encode(instr, fuel_pos, FuelCostsProvider::base)?;
+            .encode_op(instr, fuel_pos, FuelCostsProvider::base)?;
         Ok(instr)
     }
 
@@ -1397,7 +1397,8 @@ impl FuncTranslator {
             let value = self.layout.local_to_slot(preserved)?;
             let op = Self::select_copy_ss_op(result, value, ty)?
                 .expect("local preservation must not yield no-op copies");
-            self.instrs.encode(op, fuel_pos, FuelCostsProvider::base)?;
+            self.instrs
+                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
         }
         if self.try_replace_result(local_idx, input)? {
             // Case: it was possible to replace the result of the previous
@@ -1451,7 +1452,7 @@ impl FuncTranslator {
         }
         *staged_result = new_result;
         let (fuel_pos, fuel_used) = self.instrs.drop_staged();
-        self.instrs.encode(staged, fuel_pos, fuel_used)?;
+        self.instrs.encode_op(staged, fuel_pos, fuel_used)?;
         Ok(true)
     }
 
@@ -1657,15 +1658,15 @@ impl FuncTranslator {
         let regs = self.stack.preserve_all_regs();
         if let Some(result) = regs.ireg {
             self.instrs
-                .encode(Op::u64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+                .encode_op(Op::u64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
         }
         if let Some(result) = regs.freg32 {
             self.instrs
-                .encode(Op::f32_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+                .encode_op(Op::f32_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
         }
         if let Some(result) = regs.freg64 {
             self.instrs
-                .encode(Op::f64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+                .encode_op(Op::f64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
         }
         Ok(())
     }
