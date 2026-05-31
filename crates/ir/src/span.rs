@@ -37,18 +37,6 @@ impl SlotSpan {
     pub fn head_mut(&mut self) -> &mut Slot {
         &mut self.0
     }
-
-    /// Returns `true` if `copy_span results <- values` has overlapping copies.
-    ///
-    /// # Examples
-    ///
-    /// - `[ ]`: empty never overlaps
-    /// - `[ 1 <- 0 ]`: single element never overlaps
-    /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]`: no overlap
-    /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    pub fn has_overlapping_copies(results: Self, values: Self, len: u16) -> bool {
-        SlotSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
-    }
 }
 
 /// A [`SlotSpan`] with a statically known number of [`Slot`].
