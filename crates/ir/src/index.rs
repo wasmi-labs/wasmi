@@ -27,13 +27,6 @@ macro_rules! for_each_index {
     };
 }
 
-impl Memory {
-    /// Returns `true` if `self` refers to the default linear memory which always is at index 0.
-    pub fn is_default(&self) -> bool {
-        self.0 == 0
-    }
-}
-
 macro_rules! define_index {
     (
         $(
@@ -61,6 +54,13 @@ macro_rules! define_index {
     };
 }
 for_each_index!(define_index);
+
+impl Memory {
+    /// Returns `true` if `self` refers to the default linear memory which always is at index 0.
+    pub fn is_default(&self) -> bool {
+        self.0 == 0
+    }
+}
 
 impl From<Memory> for u32 {
     fn from(value: Memory) -> Self {
