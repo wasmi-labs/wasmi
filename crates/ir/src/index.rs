@@ -78,16 +78,6 @@ impl TryFrom<u32> for Memory {
     }
 }
 
-impl TryFrom<u32> for Slot {
-    type Error = Error;
-
-    fn try_from(local_index: u32) -> Result<Self, Self::Error> {
-        u16::try_from(local_index)
-            .map_err(|_| Error::StackSlotOutOfBounds)
-            .map(Self::from)
-    }
-}
-
 impl Slot {
     /// Returns the n-th next [`Slot`] from `self` with contiguous index.
     ///
