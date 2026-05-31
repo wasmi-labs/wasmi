@@ -319,7 +319,7 @@ impl OpEncoder {
         new_staged: Op,
         fuel_op: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<Pos<Op>, Error> {
+    ) -> Result<(), Error> {
         let fuel = match (fuel_op, &self.fuel_costs) {
             (None, None) => None,
             (Some(fuel_op), Some(fuel_costs)) => Some((fuel_op, fuel_selector.select(fuel_costs))),
@@ -329,7 +329,7 @@ impl OpEncoder {
         if let Some(old_staged) = self.staged.replace(new_staged) {
             self.encode_staged(old_staged)?;
         }
-        Ok(Pos::from(self.ops.next_pos()))
+        Ok(())
     }
 
     /// Encodes the staged [`Op`] if there is any.
@@ -389,12 +389,12 @@ impl OpEncoder {
     /// # Panics (Debug)
     ///
     /// If there currently is no staged [`Op`] that can be replaced.
-    pub fn replace_staged(&mut self, new_staged: Op) -> Result<Pos<Op>, Error> {
+    pub fn replace_staged(&mut self, new_staged: Op) -> Result<(), Error> {
         let Some(staged) = self.staged.as_mut() else {
             panic!("expected a staged `Op` but found `None`")
         };
         staged.replace(new_staged);
-        Ok(Pos::from(self.ops.next_pos()))
+        Ok(())
     }
 
     /// Encodes an item of type `T` to the [`OpEncoder`] and returns its [`Pos`].
