@@ -1072,6 +1072,17 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Encodes a branching [`Op`].
+    fn encode_branch_op(
+        &mut self,
+        dst: LabelRef,
+        op: impl FnOnce(BranchOffset) -> Op,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<Pos<Op>, Error> {
+        let (pos, _) = self.instrs.encode_branch(dst, op, fuel_pos, 0)?;
+        Ok(pos)
+    }
+
     /// Encodes a generic return operator.
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
@@ -1293,12 +1304,7 @@ impl FuncTranslator {
         if is_end_of_then_reachable && has_results {
             let fuel_pos = frame.fuel_pos();
             self.copy_branch_params(&frame, fuel_pos)?;
-            self.instrs.encode_branch(
-                frame.label(),
-                Op::branch,
-                fuel_pos,
-                FuelCostsProvider::base,
-            )?;
+            self.encode_branch_op(frame.label(), Op::branch, fuel_pos)?;
         }
         self.instrs.pin_label_if_unpinned(else_label)?;
         self.stack.push_else_operands(&frame)?;
@@ -1457,12 +1463,10 @@ impl FuncTranslator {
     }
 
     /// Encodes an unconditional Wasm `branch` instruction.
-    fn encode_br(&mut self, label: LabelRef) -> Result<Pos<Op>, Error> {
+    fn encode_br(&mut self, label: LabelRef) -> Result<(), Error> {
         let fuel_pos = self.stack.fuel_pos();
-        let (br_op, _) =
-            self.instrs
-                .encode_branch(label, Op::branch, fuel_pos, FuelCostsProvider::base)?;
-        Ok(br_op)
+        self.encode_branch_op(label, Op::branch, fuel_pos)?;
+        Ok(())
     }
 
     /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
@@ -1504,7 +1508,7 @@ impl FuncTranslator {
             }
         };
         let fuel_pos = self.stack.fuel_pos();
-        self.instrs.encode_branch(
+        self.encode_branch_op(
             label,
             |offset| match branch_eqz {
                 true => match condition {
@@ -1517,7 +1521,6 @@ impl FuncTranslator {
                 },
             },
             fuel_pos,
-            FuelCostsProvider::base,
         )?;
         Ok(())
     }
@@ -1559,11 +1562,10 @@ impl FuncTranslator {
             return Ok(false);
         };
         let (fuel_pos, _) = self.instrs.drop_staged();
-        self.instrs.encode_branch(
+        self.encode_branch_op(
             label,
             |offset| fused_cmp_branch.with_branch_offset(offset),
             fuel_pos,
-            FuelCostsProvider::base,
         )?;
         Ok(true)
     }
