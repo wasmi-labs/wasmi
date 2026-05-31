@@ -234,15 +234,6 @@ pub struct SlotSpanIter {
 }
 
 impl SlotSpanIter {
-    /// Creates a [`SlotSpanIter`] from then given raw `start` and `end` [`Slot`].
-    pub fn from_raw_parts(start: Slot, end: Slot) -> Self {
-        debug_assert!(u16::from(start) <= u16::from(end));
-        Self {
-            next: start,
-            last: end,
-        }
-    }
-
     /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
     ///
     /// # Panics
@@ -255,7 +246,8 @@ impl SlotSpanIter {
             .checked_add(len)
             .map(Slot)
             .expect("overflowing register index for register span");
-        Self::from_raw_parts(next, last)
+        debug_assert!(u16::from(next) <= u16::from(last));
+        Self { next, last }
     }
 
     /// Creates a [`SlotSpan`] from this [`SlotSpanIter`].
