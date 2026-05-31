@@ -32,11 +32,6 @@ impl SlotSpan {
     pub fn head(self) -> Slot {
         self.0
     }
-
-    /// Returns an exclusive reference to the head [`Slot`] of the [`SlotSpan`].
-    pub fn head_mut(&mut self) -> &mut Slot {
-        &mut self.0
-    }
 }
 
 /// A [`SlotSpan`] with a statically known number of [`Slot`].
