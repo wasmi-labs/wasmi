@@ -332,7 +332,7 @@ impl OpEncoder {
     /// Sets the staged [`Op`] to `new_staged` and encodes the previously staged [`Op`] if any.
     ///
     /// Returns the [`Pos<Op>`] of the staged [`Op`] if it was encoded.
-    pub fn stage(
+    pub fn stage_op(
         &mut self,
         new_staged: Op,
         fuel_op: Option<Pos<BlockFuel>>,

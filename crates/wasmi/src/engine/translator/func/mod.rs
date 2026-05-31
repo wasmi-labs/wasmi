@@ -915,7 +915,7 @@ impl FuncTranslator {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
         self.push_result_reg(result_ty)?;
         let fuel_pos = self.stack.fuel_pos();
-        self.instrs.stage(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
@@ -949,7 +949,7 @@ impl FuncTranslator {
             .head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
-        self.instrs.stage(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
@@ -973,7 +973,7 @@ impl FuncTranslator {
             return Ok(());
         };
         debug_assert!(op.result_ref().is_some());
-        self.instrs.stage(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
         Ok(())
     }
 
