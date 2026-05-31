@@ -455,9 +455,8 @@ impl OpEncoder {
         let offset = self.try_resolve_label(dst)?;
         let item = make_branch(offset);
         let pos_item = self.encode_impl(item)?;
-        let pos_offset = match self.ops.take_reporting_pos() {
-            Some(ReportingPos::BranchOffset(pos)) => pos,
-            _ => panic!("missing encoded position for `BranchOffset`"),
+        let Some(ReportingPos::BranchOffset(pos_offset)) = self.ops.take_reporting_pos() else {
+            unreachable!("expected encoded position for `BranchOffset` entry but found none");
         };
         if !self.labels.is_pinned(dst) {
             self.labels
