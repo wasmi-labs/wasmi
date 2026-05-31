@@ -483,7 +483,7 @@ handler_ternary! {
 }
 
 handler_load! {
-    fn v128_load_sr(V128Load_Ss) = simd::v128_load;
+    fn v128_load_sr(V128Load_Sr) = simd::v128_load;
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
 
     fn i16x8_load_widen8x8_sr(I16x8LoadWiden8x8_Sr) = simd::v128_load8x8_s;
