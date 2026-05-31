@@ -25,7 +25,7 @@ impl SlotSpan {
 
     /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
     pub fn iter(self, len: u16) -> SlotSpanIter {
-        SlotSpanIter::new_u16(self.0, len)
+        SlotSpanIter::new(self.0, len)
     }
 
     /// Returns the head [`Slot`] of the [`SlotSpan`].
@@ -248,7 +248,7 @@ impl SlotSpanIter {
     /// # Panics
     ///
     /// If the `start..end` [`Slot`] span indices are out of bounds.
-    fn new_u16(start: Slot, len: u16) -> Self {
+    fn new(start: Slot, len: u16) -> Self {
         let next = start;
         let last = start
             .0
