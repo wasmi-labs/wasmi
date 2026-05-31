@@ -1369,7 +1369,7 @@ impl FuncTranslator {
     fn translate_end_unreachable(&mut self, _frame: ControlFrameKind) -> Result<(), Error> {
         debug_assert!(!self.stack.is_control_empty());
         // We reset `last_instr` out of caution in case there is a control flow boundary.
-        self.instrs.try_encode_staged()?;
+        self.instrs.commit_staged_if_any()?;
         Ok(())
     }
 
