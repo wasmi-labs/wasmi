@@ -24,11 +24,6 @@ impl SlotSpan {
     }
 
     /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
-    pub fn iter_sized(self, len: usize) -> SlotSpanIter {
-        SlotSpanIter::new(self.0, len)
-    }
-
-    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
     pub fn iter(self, len: u16) -> SlotSpanIter {
         SlotSpanIter::new_u16(self.0, len)
     }
@@ -246,17 +241,6 @@ impl SlotSpanIter {
             next: start,
             last: end,
         }
-    }
-
-    /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
-    ///
-    /// # Panics
-    ///
-    /// If the `start..end` [`Slot`] span indices are out of bounds.
-    fn new(start: Slot, len: usize) -> Self {
-        let len = u16::try_from(len)
-            .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
-        Self::new_u16(start, len)
     }
 
     /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
