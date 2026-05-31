@@ -62,15 +62,6 @@ impl<const N: u16> FixedSlotSpan<N> {
         Ok(Self { span })
     }
 
-    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
-    ///
-    /// # Safety
-    ///
-    /// The caller is responsible for making sure that `span` is valid for a length of `N`.
-    pub unsafe fn new_unchecked(span: SlotSpan) -> Self {
-        Self { span }
-    }
-
     /// Returns a [`SlotSpanIter`] yielding `N` [`Slot`]s.
     pub fn iter(&self) -> SlotSpanIter {
         self.span.iter(self.len())
