@@ -421,12 +421,12 @@ impl OpEncoder {
     /// # Note
     ///
     /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
-    pub fn encode<T: ir::Encode>(
+    pub fn encode_op(
         &mut self,
-        op: T,
+        op: Op,
         fuel_pos: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<Pos<T>, Error> {
+    ) -> Result<Pos<Op>, Error> {
         self.commit_staged_if_any()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
         let pos = self.encode_impl(op)?;
