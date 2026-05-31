@@ -1079,6 +1079,7 @@ impl FuncTranslator {
         op: impl FnOnce(BranchOffset) -> Op,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Pos<Op>, Error> {
+        self.instrs.pad_to_op_alignment()?;
         let (pos, _) = self.instrs.encode_branch(dst, op, fuel_pos, 0)?;
         Ok(pos)
     }
