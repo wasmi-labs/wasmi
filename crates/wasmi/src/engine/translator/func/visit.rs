@@ -131,7 +131,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
         }
         self.instrs.pin_label(continue_label)?;
-        let consume_fuel = self.instrs.encode_consume_fuel()?;
+        let consume_fuel = self.instrs.encode_consume_fuel_op()?;
         self.stack
             .push_loop(block_ty, continue_label, consume_fuel)?;
         Ok(())
@@ -163,7 +163,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let else_label = self.instrs.new_label();
                 self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
-                let fuel_pos = self.instrs.encode_consume_fuel()?;
+                let fuel_pos = self.instrs.encode_consume_fuel_op()?;
                 (reachability, fuel_pos)
             }
         };
@@ -198,7 +198,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // Start of `else` block:
             self.instrs.pin_label(else_label)?;
         }
-        let fuel_pos = self.instrs.encode_consume_fuel()?;
+        let fuel_pos = self.instrs.encode_consume_fuel_op()?;
         self.reachable = frame.is_else_reachable();
         self.stack
             .push_else(frame, is_end_of_then_reachable, fuel_pos)?;

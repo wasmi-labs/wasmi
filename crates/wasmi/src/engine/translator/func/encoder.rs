@@ -440,7 +440,7 @@ impl OpEncoder {
     /// # Note
     ///
     /// The pushed [`Op::ConsumeFuel`] is initialized with base fuel costs.
-    pub fn encode_consume_fuel(&mut self) -> Result<Option<Pos<BlockFuel>>, Error> {
+    pub fn encode_consume_fuel_op(&mut self) -> Result<Option<Pos<BlockFuel>>, Error> {
         let Some(fuel_costs) = &self.fuel_costs else {
             return Ok(None);
         };
