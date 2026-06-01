@@ -646,6 +646,7 @@ impl FuncTranslator {
         let mut result = results.head();
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
+            let ty = value.ty();
             let value = match value.resolve(layout)? {
                 ResolvedOperand::Slot(value) => value,
                 _ => {
@@ -677,6 +678,7 @@ impl FuncTranslator {
         let mut result = results.head().next_n(len);
         let mut values = values;
         while let Some((value, rest)) = values.split_last() {
+            let ty = value.ty();
             let value = match value.resolve(layout)? {
                 ResolvedOperand::Slot(value) => value,
                 _ => {
