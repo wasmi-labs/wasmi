@@ -127,14 +127,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(&self.engine);
         let continue_label = self.instrs.new_label();
-        let consume_fuel = self.stack.fuel_pos();
+        let fuel_pos = self.stack.fuel_pos();
         if len_params > 0 {
-            self.move_operands_to_temp(usize::from(len_params), consume_fuel)?;
+            self.move_operands_to_temp(usize::from(len_params), fuel_pos)?;
         }
         self.instrs.pin_label(continue_label)?;
-        let consume_fuel = self.instrs.encode_consume_fuel_op()?;
-        self.stack
-            .push_loop(block_ty, continue_label, consume_fuel)?;
+        let fuel_pos = self.instrs.encode_consume_fuel_op()?;
+        self.stack.push_loop(block_ty, continue_label, fuel_pos)?;
         Ok(())
     }
 
