@@ -64,7 +64,7 @@ use crate::{
                 op::BinaryOpRhs,
                 stack::{Allocation, TempOperand},
             },
-            utils::{ToBits, WasmInteger},
+            utils::{ToBits, WasmInteger, required_cells_for_ty},
         },
     },
     ir::{
@@ -646,6 +646,7 @@ impl FuncTranslator {
         let mut result = results.head();
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
+            let ty = value.ty();
             let value = match value.resolve(layout)? {
                 ResolvedOperand::Slot(value) => value,
                 _ => {
@@ -657,7 +658,7 @@ impl FuncTranslator {
                 // Can no longer strip no-op copies from the start.
                 break;
             }
-            result = result.next();
+            result = result.next_n(required_cells_for_ty(ty));
             values = rest;
         }
         Ok((SlotSpan::new(result), values))
@@ -677,6 +678,7 @@ impl FuncTranslator {
         let mut result = results.head().next_n(len);
         let mut values = values;
         while let Some((value, rest)) = values.split_last() {
+            let ty = value.ty();
             let value = match value.resolve(layout)? {
                 ResolvedOperand::Slot(value) => value,
                 _ => {
@@ -684,7 +686,7 @@ impl FuncTranslator {
                     break;
                 }
             };
-            result = result.prev();
+            result = result.prev_n(required_cells_for_ty(ty));
             if result != value {
                 // Can no longer strip no-op copies from the end.
                 break;
