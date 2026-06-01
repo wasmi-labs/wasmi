@@ -194,6 +194,7 @@ macro_rules! foreach_test {
             fn wasmi_fuse_cmp("wasmi/tests/fuse-cmp");
             fn wasmi_select("wasmi/tests/select");
             fn wasmi_preserve_locals("wasmi/tests/preserve-locals");
+            fn wasmi_preserve_regs("wasmi/tests/preserve-regs");
             fn wasmi_many_inout("wasmi/tests/many-inout");
             fn wasmi_copy_span("wasmi/tests/copy-span");
             fn wasmi_audit("wasmi/tests/audit");
