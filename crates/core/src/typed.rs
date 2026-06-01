@@ -99,6 +99,8 @@ macro_rules! impl_from_typed_value_for {
         $(
             $( #[$attr] )*
             impl From<TypedRawVal> for $ty {
+                #[track_caller]
+                #[inline]
                 fn from(typed_value: TypedRawVal) -> Self {
                     // # Note
                     //
