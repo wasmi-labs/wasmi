@@ -1379,21 +1379,38 @@ impl FuncTranslator {
         self.instrs.commit_staged_if_any()?;
         Ok(())
     }
+}
 
+/// What [`FuncTranslator::translate_local_set`] generated to translate the `local.set`.
+#[derive(Debug, Copy, Clone)]
+pub enum LocalSetCodegen {
+    /// The `local.set` was fused with the staged [`Op`].
+    Fused,
+    /// The `local.set` was found to be a no-op, e.g. `(local.set $n (local.get $n))`.
+    NoOp,
+    /// The `local.set` generated a copy operator.
+    Copy,
+}
+
+impl FuncTranslator {
     /// Translate the Wasm `local.set` and `local.tee` operations.
     ///
     /// # Note
     ///
     /// This applies op-code fusion that replaces the result of the previous instruction
     /// instead of encoding a copy instruction for the `local.set` or `local.tee` if possible.
-    fn translate_local_set(&mut self, local_index: u32, input: Operand) -> Result<(), Error> {
+    fn translate_local_set(
+        &mut self,
+        local_index: u32,
+        input: Operand,
+    ) -> Result<LocalSetCodegen, Error> {
         if let Operand::Local(input) = input {
             if u32::from(input.local_index()) == local_index {
                 // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
                 //
                 // Note: This does not require any preservation since it won't change
                 //       the value of `local $n`.
-                return Ok(());
+                return Ok(LocalSetCodegen::NoOp);
             }
         }
         let local_idx = LocalIdx::from(local_index);
@@ -1410,16 +1427,13 @@ impl FuncTranslator {
         if self.try_replace_result(local_idx, input)? {
             // Case: it was possible to replace the result of the previous
             //       instructions so no copy instruction is required.
-            return Ok(());
+            return Ok(LocalSetCodegen::Fused);
         }
         // At this point we need to encode a copy instruction.
         let result = self.layout.local_to_slot(local_idx)?;
-        let outcome = self.encode_copy(result, input, fuel_pos)?;
-        debug_assert!(
-            outcome.is_some(),
-            "no-op copy cases have been filtered out already"
-        );
-        Ok(())
+        self.encode_copy(result, input, fuel_pos)?
+            .expect("no-op copy cases have been filtered out above");
+        Ok(LocalSetCodegen::Copy)
     }
 
     /// Tries to replace the result of the previous instruction with `new_result` if possible.
