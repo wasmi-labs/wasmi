@@ -1593,10 +1593,9 @@ impl FuncTranslator {
         call_imported: fn(params: BoundedSlotSpan, func: index::Func) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let consume_fuel = self.stack.fuel_pos();
         let func_idx = FuncIdx::from(function_index);
         let callee_ty = self.resolve_func_type(func_idx);
-        let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
+        let params = self.adjust_stack_for_call(&callee_ty)?;
         let instr = match self.module.get_engine_func(func_idx) {
             Some(engine_func) => {
                 // Case: We are calling an internal function and can optimize
@@ -1628,11 +1627,10 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
-        let consume_fuel = self.stack.fuel_pos();
         let table = index::Table::from(table_index);
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
-        let params = self.adjust_stack_for_call(&callee_ty, consume_fuel)?;
+        let params = self.adjust_stack_for_call(&callee_ty)?;
         let func_type = index::FuncType::from(type_index);
         let op = match index {
             Location::Slot(index) => op_s(table, func_type, params, index),
@@ -1646,12 +1644,9 @@ impl FuncTranslator {
     ///
     /// Returns a bounded [`SlotSpan`] to the start of the call parameters and results
     /// with the length equal to the number of cells storing the call parameters.
-    fn adjust_stack_for_call(
-        &mut self,
-        ty: &FuncType,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<BoundedSlotSpan, Error> {
-        self.preserve_regs(fuel_pos)?;
+    fn adjust_stack_for_call(&mut self, ty: &FuncType) -> Result<BoundedSlotSpan, Error> {
+        self.preserve_regs()?;
+        let fuel_pos = self.stack.fuel_pos();
         let mut params_start = self.stack.next_temp_slots();
         let mut params_len: u16 = 0;
         for _ in 0..ty.len_params() {
@@ -1671,7 +1666,8 @@ impl FuncTranslator {
     }
 
     /// Preserve all register operands on the [`Stack`].
-    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
+    fn preserve_regs(&mut self) -> Result<(), Error> {
+        let fuel_pos = self.stack.fuel_pos();
         let regs = self.stack.preserve_all_regs();
         if let Some(result) = regs.ireg {
             self.instrs
