@@ -1932,6 +1932,7 @@ impl FuncTranslator {
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
         bail_unreachable!(self);
         let (mut true_val, mut false_val, condition) = self.stack.pop3();
+        debug_assert_eq!(condition.ty(), ValType::I32);
         if let Some(type_hint) = type_hint {
             debug_assert_eq!(true_val.ty(), type_hint);
             debug_assert_eq!(false_val.ty(), type_hint);
@@ -2010,8 +2011,16 @@ impl FuncTranslator {
     ) -> Result<Op, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
-        let true_val = self.resolve_operand::<u32>(true_val)?;
-        let false_val = self.resolve_operand::<u32>(false_val)?;
+        debug_assert!(matches!(
+            true_val.ty(),
+            ValType::I32 | ValType::ExternRef | ValType::FuncRef
+        ));
+        debug_assert!(matches!(
+            false_val.ty(),
+            ValType::I32 | ValType::ExternRef | ValType::FuncRef
+        ));
+        let true_val = self.resolve_operand::<RawVal>(true_val)?.map(u32::from);
+        let false_val = self.resolve_operand::<RawVal>(false_val)?.map(u32::from);
         let operator = match (condition, true_val, false_val) {
             (Loc::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
             (Loc::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rrsi(t, f),
