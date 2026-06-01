@@ -13,6 +13,7 @@ use crate::{
         BlockType,
         translator::func::{
             ControlFrameBase,
+            LocalSetCodegen,
             Operand,
             op,
             stack::{AcquiredTarget, Allocation, IfReachability, ResolvedOperand},
@@ -378,7 +379,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let input = self.stack.pop();
-        self.translate_local_set(local_index, input)
+        self.translate_local_set(local_index, input)?;
+        Ok(())
     }
 
     #[inline(never)]
@@ -387,28 +389,46 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let input = self.stack.pop();
         let ty = input.ty();
         let local_idx = local_index.into();
-        self.translate_local_set(local_index, input)?;
-        match input {
-            Operand::Local(input) => {
-                self.stack.push_local(local_idx, ty, input.alloc())?;
+        let codegen = self.translate_local_set(local_index, input)?;
+        match codegen {
+            LocalSetCodegen::Fused => {
+                // A fused `local.set` must be returned as local operand.
+                self.stack.push_local(local_idx, ty, Allocation::None)?;
             }
-            Operand::Temp(input) => match input.alloc() {
-                Allocation::None => {
-                    self.stack.push_temp(ty, Allocation::None)?;
+            LocalSetCodegen::NoOp => {
+                // This case can only happen if `input` was already a local operand.
+                // Since no code was generated we can simply push back the `input` operand.
+                self.stack.push_operand(input)?;
+            }
+            LocalSetCodegen::Copy => match input {
+                // A `copy` operation was generated, thus we want to optimize what is pushed back onto the stack.
+                Operand::Local(input) => {
+                    self.stack.push_local(local_idx, ty, input.alloc())?;
                 }
-                Allocation::Reg => {
-                    self.stack.push_local(local_idx, ty, Allocation::Reg)?;
-                }
+                Operand::Temp(input) => match input.alloc() {
+                    Allocation::None => {
+                        // It is generally preferable to have temporary operands on the stack
+                        // instead of locals due to potential local preservations.
+                        self.stack.push_temp(ty, Allocation::None)?;
+                    }
+                    Allocation::Reg => {
+                        self.stack.push_local(local_idx, ty, Allocation::Reg)?;
+                    }
+                },
+                Operand::Immediate(input) => match ty {
+                    ValType::V128 => {
+                        // Usually having immediates on the stack is to be preferred.
+                        // However, for `v128` values this is not true since they are so
+                        // big and most operators push copy them into slots prior to execution
+                        // anyways.
+                        self.stack.push_local(local_idx, ty, Allocation::None)?;
+                    }
+                    _ => {
+                        self.stack.push_immediate(input.val())?;
+                    }
+                },
             },
-            Operand::Immediate(input) => match ty {
-                ValType::V128 => {
-                    self.stack.push_local(local_idx, ty, Allocation::None)?;
-                }
-                _ => {
-                    self.stack.push_immediate(input.val())?;
-                }
-            },
-        };
+        }
         Ok(())
     }
 
