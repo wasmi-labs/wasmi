@@ -109,6 +109,7 @@ criterion_group! {
         bench_execute_prime_sieve,
         bench_execute_matrix_mul,
         bench_execute_nbody,
+        bench_execute_argon2,
         bench_execute_tiny_keccak,
         bench_execute_reverse_complement,
         bench_execute_regex_redux,
@@ -755,6 +756,33 @@ fn bench_execute_nbody(c: &mut Criterion) {
         b.iter(|| {
             run.call(&mut store, benchmark).unwrap();
         });
+        instance
+            .get_typed_func::<u32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, benchmark)
+            .unwrap();
+    });
+}
+
+fn bench_execute_argon2(c: &mut Criterion) {
+    c.bench_function("execute/argon2", |b| {
+        let (mut store, instance) = load_instance_from_file("benches/rust/cases/argon2/out.wasm");
+        let benchmark = instance
+            .get_typed_func::<u32, u32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, 10_000)
+            .unwrap();
+        let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
+        b.iter(|| {
+            run.call(&mut store, benchmark).unwrap();
+        });
+        let output = instance
+            .get_typed_func::<u32, u64>(&store, "output")
+            .unwrap();
+        assert_eq!(
+            output.call(&mut store, benchmark).unwrap(),
+            0x4CDBBC7DE0EAA94,
+        );
         instance
             .get_typed_func::<u32, ()>(&store, "teardown")
             .unwrap()
