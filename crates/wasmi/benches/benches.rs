@@ -672,8 +672,7 @@ fn bench_instantiate_erc1155(c: &mut Criterion) {
 
 fn bench_execute_sort(c: &mut Criterion) {
     c.bench_function("execute/sort", |b| {
-        let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/sort/out.wasm");
+        let (mut store, instance) = load_instance_from_file("benches/rust/cases/sort/out.wasm");
         let benchmark = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
