@@ -955,12 +955,14 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    /// Pushes an operator to the function with the associated `fuel_costs` if `make_op` yields `Some`.
+    ///
+    /// Only pushes the operand to the stack without encoding an operator if `make_op` yields `None`.
     #[cfg(feature = "simd")]
     fn try_push_op_with_result_slot(
         &mut self,
         result_ty: ValType,
-        make_instr: impl FnOnce(Slot) -> Result<Option<Op>, Error>,
+        make_op: impl FnOnce(Slot) -> Result<Option<Op>, Error>,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let fuel_pos = self.stack.fuel_pos();
@@ -969,13 +971,10 @@ impl FuncTranslator {
             .push_temp(result_ty, Allocation::None)?
             .temp_slots()
             .head();
-        let op = make_instr(result)?;
-        let Some(op) = op else {
-            self.stack.pop();
-            return Ok(());
-        };
-        debug_assert!(op.result_ref().is_some());
-        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+        if let Some(op) = make_op(result)? {
+            // debug_assert!(op.result_ref().is_some()); // TODO: incorrect for `copy_span_{asc,des}`
+            self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+        }
         Ok(())
     }
 
