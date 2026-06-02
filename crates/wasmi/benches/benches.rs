@@ -106,6 +106,7 @@ criterion_group! {
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_sort,
+        bench_execute_prime_sieve,
         bench_execute_tiny_keccak,
         bench_execute_reverse_complement,
         bench_execute_regex_redux,
@@ -682,6 +683,35 @@ fn bench_execute_sort(c: &mut Criterion) {
         b.iter(|| {
             run.call(&mut store, benchmark).unwrap();
         });
+        instance
+            .get_typed_func::<u32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, benchmark)
+            .unwrap();
+    });
+}
+
+fn bench_execute_prime_sieve(c: &mut Criterion) {
+    c.bench_function("execute/prime_sieve", |b| {
+        let (mut store, instance) =
+            load_instance_from_file("benches/rust/cases/prime_sieve/out.wasm");
+        let benchmark = instance
+            .get_typed_func::<u64, u32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, 10_000_000)
+            .unwrap();
+        let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
+        b.iter(|| {
+            run.call(&mut store, benchmark).unwrap();
+        });
+        let len_primes = instance
+            .get_typed_func::<u32, u64>(&store, "len_primes")
+            .unwrap();
+        let largest_prime = instance
+            .get_typed_func::<u32, u64>(&store, "largest_prime")
+            .unwrap();
+        assert_eq!(len_primes.call(&mut store, benchmark).unwrap(), 664579);
+        assert_eq!(largest_prime.call(&mut store, benchmark).unwrap(), 9999991);
         instance
             .get_typed_func::<u32, ()>(&store, "teardown")
             .unwrap()
