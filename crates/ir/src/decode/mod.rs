@@ -34,7 +34,7 @@ use self::op::{
     V128ReplaceLaneOp,
 };
 #[cfg(feature = "simd")]
-use crate::core::simd::ImmLaneIdx;
+use crate::core::{V128, simd::ImmLaneIdx};
 use crate::{
     Address,
     BlockFuel,
@@ -170,6 +170,10 @@ impl_decode_using! {
     Sign<f32> as bool = Sign::new,
     Sign<f64> as bool = Sign::new,
     SlotSpan as Slot = SlotSpan::new,
+}
+#[cfg(feature = "simd")]
+impl_decode_using! {
+    V128 as u128 = Into::into,
 }
 
 macro_rules! impl_decode_fallible_using {

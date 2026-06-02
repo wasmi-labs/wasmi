@@ -174,6 +174,7 @@ impl_get_value!(
     Address,
     Offset16,
     ShiftAmount,
+    V128,
 );
 #[cfg(feature = "simd")]
 impl_get_value!([ImmLaneIdx<32>; 16]);

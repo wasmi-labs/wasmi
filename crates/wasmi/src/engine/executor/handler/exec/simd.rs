@@ -12,34 +12,7 @@ use crate::{
         utils::{IntoControl as _, get_value},
     },
 };
-
-execution_handler! {
-    fn copy_imm128(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::CopyImm128 {
-                result,
-                value_lo,
-                value_hi,
-            },
-        ) = unsafe { decode_op(ip) };
-        let value_lo: u64 = get_value(value_lo, sp, ireg, freg32, freg64);
-        let value_hi: u64 = get_value(value_hi, sp, ireg, freg32, freg64);
-        let v128: V128 = V128::from((u128::from(value_hi) << 64) | u128::from(value_lo));
-        set_value!(result, v128, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
-}
+use core::convert::identity;
 
 macro_rules! execution_handler_for_v128_select {
     ( $(fn $snake_name:ident($camel_name:ident));* $(;)? ) => {
@@ -102,6 +75,9 @@ impl_splat_bytes! {
 }
 
 handler_unary! {
+    fn v128_copy_ss(V128Copy_Ss) = identity::<V128>;
+    fn v128_copy_si(V128Copy_Si) = identity::<V128>;
+
     fn v128_splat_u8_sr(V128SplatU8_Sr) = splat_u8;
     fn v128_splat_u8_ss(V128SplatU8_Ss) = splat_u8;
     fn v128_splat_u8_si(V128SplatU8_Si) = splat_u8;
