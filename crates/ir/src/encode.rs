@@ -1,5 +1,5 @@
 #[cfg(feature = "simd")]
-use crate::core::simd::ImmLaneIdx;
+use crate::core::{V128, simd::ImmLaneIdx};
 use crate::{
     Address,
     BlockFuel,
@@ -172,6 +172,10 @@ impl_encode_using! {
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
     TrapCode as u8 = |code: TrapCode| -> u8 { code as _ },
+}
+#[cfg(feature = "simd")]
+impl_encode_using! {
+    V128 as u128 = |v128: V128| -> u128 { v128.as_u128() },
 }
 
 #[cfg(feature = "simd")]

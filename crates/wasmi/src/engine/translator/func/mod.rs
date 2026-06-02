@@ -496,15 +496,8 @@ impl FuncTranslator {
             return Ok(None);
         }
         let op = match ty {
-            ValType::V128 => {
-                let results = SlotSpan::new(result);
-                let values = SlotSpan::new(value);
-                let op = match results.head() > values.head() {
-                    true => Op::copy_span_des,
-                    false => Op::copy_span_asc,
-                };
-                op(results, values, 2)
-            }
+            #[cfg(feature = "simd")]
+            ValType::V128 => Op::v128_copy_ss(result, value),
             _ => Op::u64_copy_ss(result, value),
         };
         Ok(Some(op))
@@ -519,12 +512,7 @@ impl FuncTranslator {
             }
             | ValType::I64 | ValType::F64 => Op::u64_copy_si(result, u64::from(raw)),
             #[cfg(feature = "simd")]
-            | ValType::V128 => {
-                let v128 = V128::from(raw).as_u128();
-                let lo = (v128 & 0xFFFF_FFFF_FFFF_FFFF) as u64;
-                let hi = (v128 >> 64) as u64;
-                Op::copy_imm128(result, lo, hi)
-            }
+            | ValType::V128 => Op::v128_copy_si(result, V128::from(raw)),
             #[cfg(not(feature = "simd"))]
             | ValType::V128 => unreachable!(),
         };

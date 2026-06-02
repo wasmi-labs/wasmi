@@ -1,4 +1,6 @@
 #[cfg(feature = "simd")]
+use crate::core::V128;
+#[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
     Address,
