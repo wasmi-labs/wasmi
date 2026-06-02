@@ -972,7 +972,6 @@ impl FuncTranslator {
             .temp_slots()
             .head();
         if let Some(op) = make_op(result)? {
-            // debug_assert!(op.result_ref().is_some()); // TODO: incorrect for `copy_span_{asc,des}`
             self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
         }
         Ok(())
