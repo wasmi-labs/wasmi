@@ -230,10 +230,6 @@ define_ident!(
     RhsLo: rhs_lo,
     RhsHi: rhs_hi,
     Ptr: ptr,
-
-    CopyImm128: copy_imm128,
-    ValueLo: value_lo,
-    ValueHi: value_hi,
     Selector: selector,
 
     V128: v128,

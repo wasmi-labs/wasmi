@@ -789,13 +789,19 @@ fn add_simd_ops(isa: &mut Isa, config: &Config) {
     if !config.simd {
         return;
     }
-    isa.push_op(GenericOp::new(
-        Ident::CopyImm128,
-        [
-            Field::new(Ident::Result, FieldTy::Slot),
-            Field::new(Ident::ValueLo, FieldTy::U64),
-            Field::new(Ident::ValueHi, FieldTy::U64),
-        ],
+    isa.push_op(UnaryOp::new(
+        Ident::Copy,
+        Ty::V128,
+        Ty::V128,
+        OperandKind::Slot,
+        OperandKind::Immediate,
+    ));
+    isa.push_op(UnaryOp::new(
+        Ident::Copy,
+        Ty::V128,
+        Ty::V128,
+        OperandKind::Slot,
+        OperandKind::Slot,
     ));
     isa.push_op(GenericOp::new(
         Ident::I8x16Shuffle,
