@@ -485,8 +485,12 @@ impl TryIntoCmpBranchInstr for Op {
         #[rustfmt::skip]
         let cmp_branch_instr = match *self {
             // i32
+            | Op::I32Eq_Rri { rhs: 0, .. }
+            | Op::I32Eq_Rrz { .. } => Op::branch_i32_eq_rz(offset),
             | Op::I32Eq_Rrs { rhs, .. } => Op::branch_i32_eq_rs(offset, rhs),
             | Op::I32Eq_Rri { rhs, .. } => Op::branch_i32_eq_ri(offset, rhs),
+            | Op::I32Eq_Rsi { lhs, rhs: 0, .. }
+            | Op::I32Eq_Rsz { lhs, .. } => Op::branch_i32_eq_sz(offset, lhs),
             | Op::I32Eq_Rss { lhs, rhs, .. } => Op::branch_i32_eq_ss(offset, lhs, rhs),
             | Op::I32Eq_Rsi { lhs, rhs, .. } => Op::branch_i32_eq_si(offset, lhs, rhs),
             | Op::I32And_Rrs { rhs, .. }
@@ -505,6 +509,12 @@ impl TryIntoCmpBranchInstr for Op {
             | Op::I32BitOr_Rri { rhs, .. } => Op::branch_i32_or_ri(offset, rhs),
             | Op::I32Or_Rsi { lhs, rhs, .. }
             | Op::I32BitOr_Rsi { lhs, rhs, .. } => Op::branch_i32_or_si(offset, lhs, rhs),
+            | Op::I32NotEq_Rrz { .. }
+            | Op::I32NotEq_Rri { rhs: 0, .. }
+            | Op::I32BitXor_Rri { rhs: 0, .. } => Op::branch_i32_not_eq_rz(offset),
+            | Op::I32NotEq_Rsz { lhs, .. }
+            | Op::I32NotEq_Rsi { lhs, rhs: 0, .. }
+            | Op::I32BitXor_Rsi { lhs, rhs: 0, .. } => Op::branch_i32_not_eq_sz(offset, lhs),
             | Op::I32NotEq_Rrs { rhs, .. }
             | Op::I32BitXor_Rrs { rhs, .. } => Op::branch_i32_not_eq_rs(offset, rhs),
             | Op::I32NotEq_Rss { lhs, rhs, .. }
@@ -550,8 +560,12 @@ impl TryIntoCmpBranchInstr for Op {
             | Op::U32Le_Rir { lhs, .. } => Op::branch_u32_le_ir(offset, lhs),
             | Op::U32Le_Ris { lhs, rhs, .. } => Op::branch_u32_le_is(offset, lhs, rhs),
             // i64
+            | Op::I64Eq_Rri { rhs: 0, .. }
+            | Op::I64Eq_Rrz { .. } => Op::branch_i64_eq_rz(offset),
             | Op::I64Eq_Rrs { rhs, .. } => Op::branch_i64_eq_rs(offset, rhs),
             | Op::I64Eq_Rri { rhs, .. } => Op::branch_i64_eq_ri(offset, rhs),
+            | Op::I64Eq_Rsi { lhs, rhs: 0, .. }
+            | Op::I64Eq_Rsz { lhs, .. } => Op::branch_i64_eq_sz(offset, lhs),
             | Op::I64Eq_Rss { lhs, rhs, .. } => Op::branch_i64_eq_ss(offset, lhs, rhs),
             | Op::I64Eq_Rsi { lhs, rhs, .. } => Op::branch_i64_eq_si(offset, lhs, rhs),
             | Op::I64And_Rrs { rhs, .. }
@@ -570,6 +584,12 @@ impl TryIntoCmpBranchInstr for Op {
             | Op::I64BitOr_Rri { rhs, .. } => Op::branch_i64_or_ri(offset, rhs),
             | Op::I64Or_Rsi { lhs, rhs, .. }
             | Op::I64BitOr_Rsi { lhs, rhs, .. } => Op::branch_i64_or_si(offset, lhs, rhs),
+            | Op::I64NotEq_Rrz { .. }
+            | Op::I64NotEq_Rri { rhs: 0, .. }
+            | Op::I64BitXor_Rri { rhs: 0, .. } => Op::branch_i64_not_eq_rz(offset),
+            | Op::I64NotEq_Rsz { lhs, .. }
+            | Op::I64NotEq_Rsi { lhs, rhs: 0, .. }
+            | Op::I64BitXor_Rsi { lhs, rhs: 0, .. } => Op::branch_i64_not_eq_sz(offset, lhs),
             | Op::I64NotEq_Rrs { rhs, .. }
             | Op::I64BitXor_Rrs { rhs, .. } => Op::branch_i64_not_eq_rs(offset, rhs),
             | Op::I64NotEq_Rss { lhs, rhs, .. }
