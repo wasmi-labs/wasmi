@@ -1306,7 +1306,8 @@ where
     Index: GetValue<u32>,
 {
     let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
-    let len_encoded_target = match cfg!(feature = "indirect-dispatch") { // TODO: add and use `Encode` trait assoc constants
+    let len_encoded_target = match cfg!(feature = "indirect-dispatch") {
+        // TODO: add and use `Encode` trait assoc constants
         true => 6,
         false => 8,
     };
