@@ -49,6 +49,10 @@ impl<'a, T> DisplayConstructor<&'a T> {
     where
         DisplayIdent<&'a T>: Display,
     {
+        fn is_default_init(ty: FieldTy) -> bool {
+            ty.is_reg() || ty.is_zero()
+        }
+
         let indent = self.indent;
         let snake_ident = DisplayIdent::snake(self.value);
         let camel_ident = DisplayIdent::camel(self.value);
@@ -57,7 +61,7 @@ impl<'a, T> DisplayConstructor<&'a T> {
             fields
                 .iter()
                 .filter_map(Option::as_ref)
-                .filter(|field| !field.ty.is_reg()),
+                .filter(|field| !is_default_init(field.ty)),
         );
         let struct_params = DisplaySequence::new(
             ", ",
@@ -65,9 +69,7 @@ impl<'a, T> DisplayConstructor<&'a T> {
                 .iter()
                 .filter_map(Option::as_ref)
                 .map(|param| match param.ty {
-                    FieldTy::RegInt | FieldTy::RegF32 | FieldTy::RegF64 => {
-                        DisplayConstructorInit::Default(*param)
-                    }
+                    ty if is_default_init(ty) => DisplayConstructorInit::Default(*param),
                     _ => DisplayConstructorInit::Param(param.ident),
                 }),
         );

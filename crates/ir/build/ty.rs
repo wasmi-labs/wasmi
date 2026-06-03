@@ -177,6 +177,10 @@ impl FieldTy {
     pub fn is_reg(&self) -> bool {
         matches!(self, Self::RegInt | Self::RegF32 | Self::RegF64)
     }
+
+    pub fn is_zero(&self) -> bool {
+        matches!(self, Self::Zero)
+    }
 }
 
 impl From<Ty> for FieldTy {
