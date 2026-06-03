@@ -142,6 +142,31 @@ pub trait GetValue<T> {
     fn get_value(src: Self, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> T;
 }
 
+macro_rules! impl_get_value_for_zero {
+    ( $($ty:ty = $zero:literal),* $(,)? ) => {
+        $(
+            impl GetValue<$ty> for ir::Zero {
+                #[inline(always)]
+                fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $ty {
+                    $zero
+                }
+            }
+        )*
+    };
+}
+impl_get_value_for_zero!(
+    u8 = 0,
+    u16 = 0,
+    u32 = 0,
+    u64 = 0,
+    i8 = 0,
+    i16 = 0,
+    i32 = 0,
+    i64 = 0,
+    f32 = 0.0,
+    f64 = 0.0,
+);
+
 macro_rules! impl_get_value {
     ( $($ty:ty),* $(,)? ) => {
         $(
