@@ -215,12 +215,8 @@ impl SlotSpanIter {
     /// If the `start..end` [`Slot`] span indices are out of bounds.
     fn new(start: Slot, len: u16) -> Self {
         let next = start;
-        let last = start
-            .0
-            .checked_add(len)
-            .map(Slot)
-            .expect("overflowing register index for register span");
-        debug_assert!(u16::from(next) <= u16::from(last));
+        let last = start.next_n(len);
+        debug_assert!(next <= last);
         Self { next, last }
     }
 
@@ -230,13 +226,13 @@ impl SlotSpanIter {
     }
 
     /// Returns the remaining number of [`Slot`]s yielded by the [`SlotSpanIter`].
-    pub fn len_as_u16(&self) -> u16 {
-        self.last.0.abs_diff(self.next.0)
+    pub fn len(&self) -> u16 {
+        u16::from(self.last).abs_diff(u16::from(self.next))
     }
 
     /// Returns `true` if `self` yields no more [`Slot`]s.
     pub fn is_empty(&self) -> bool {
-        self.len_as_u16() == 0
+        self.next == self.last
     }
 
     /// Returns `true` if `copy_span results <- values` has overlapping copies.
@@ -297,6 +293,6 @@ impl DoubleEndedIterator for SlotSpanIter {
 
 impl ExactSizeIterator for SlotSpanIter {
     fn len(&self) -> usize {
-        usize::from(SlotSpanIter::len_as_u16(self))
+        usize::from(SlotSpanIter::len(self))
     }
 }
