@@ -47,6 +47,7 @@ use crate::{
     Reg,
     Slot,
     SlotSpan,
+    Zero,
     core::{ShiftAmount, Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
 };
@@ -236,6 +237,13 @@ impl<const N: usize, T: Decode> Decode for [T; N] {
         // Safety: we have decoded and thus initialized all array items.
         let array = unsafe { array.assume_init() };
         Ok(array)
+    }
+}
+
+impl Decode for Zero {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
     }
 }
 

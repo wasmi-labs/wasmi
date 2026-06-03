@@ -5,6 +5,10 @@ use core::{
     marker::PhantomData,
 };
 
+/// A generic zero immediate value.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Zero {}
+
 /// A generic register type.
 ///
 /// # Note

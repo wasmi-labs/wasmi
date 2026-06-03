@@ -13,6 +13,7 @@ use crate::{
     Reg,
     Slot,
     SlotSpan,
+    Zero,
     core::{ShiftAmount, Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
 };
@@ -246,6 +247,15 @@ impl<const N: usize, T: Encode> Encode for [T; N] {
     }
 }
 
+impl Encode for Zero {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.write_bytes(&[])
+    }
+}
 include!(concat!(env!("OUT_DIR"), "/encode.rs"));
 
 impl<T> Encode for Reg<T> {
