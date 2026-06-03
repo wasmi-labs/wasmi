@@ -2182,8 +2182,10 @@ impl FuncTranslator {
         }
         #[rustfmt::skip]
         let fusion = match staged {
+            | Op::I32Eq_Rrz { .. }
             | Op::I32Eq_Rri { rhs: 0, .. }
             | Op::I32Eq_Rsi { rhs: 0, .. } => SelectFusion::FusedSwap,
+            | Op::I32NotEq_Rsz { .. }
             | Op::I32NotEq_Rri { rhs: 0, .. }
             | Op::I32NotEq_Rsi { rhs: 0, .. } => SelectFusion::Fused,
             | _ => SelectFusion::None,
