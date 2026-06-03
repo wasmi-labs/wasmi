@@ -293,8 +293,10 @@ impl LogicalizeCmpInstr for Op {
             // i32
             | Op::I32Eq_Rrs { .. }
             | Op::I32Eq_Rri { .. }
+            | Op::I32Eq_Rrz { .. }
             | Op::I32Eq_Rss { .. }
             | Op::I32Eq_Rsi { .. }
+            | Op::I32Eq_Rsz { .. }
             | Op::I32And_Rrs { .. }
             | Op::I32And_Rri { .. }
             | Op::I32And_Rss { .. }
@@ -305,8 +307,10 @@ impl LogicalizeCmpInstr for Op {
             | Op::I32Or_Rsi { .. }
             | Op::I32NotEq_Rrs { .. }
             | Op::I32NotEq_Rri { .. }
+            | Op::I32NotEq_Rrz { .. }
             | Op::I32NotEq_Rss { .. }
             | Op::I32NotEq_Rsi { .. }
+            | Op::I32NotEq_Rsz { .. }
             | Op::I32NotAnd_Rrs { .. }
             | Op::I32NotAnd_Rri { .. }
             | Op::I32NotAnd_Rss { .. }
@@ -346,8 +350,10 @@ impl LogicalizeCmpInstr for Op {
             // i64
             | Op::I64Eq_Rrs { .. }
             | Op::I64Eq_Rri { .. }
+            | Op::I64Eq_Rrz { .. }
             | Op::I64Eq_Rss { .. }
             | Op::I64Eq_Rsi { .. }
+            | Op::I64Eq_Rsz { .. }
             | Op::I64And_Rrs { .. }
             | Op::I64And_Rri { .. }
             | Op::I64And_Rss { .. }
@@ -358,8 +364,10 @@ impl LogicalizeCmpInstr for Op {
             | Op::I64Or_Rsi { .. }
             | Op::I64NotEq_Rrs { .. }
             | Op::I64NotEq_Rri { .. }
+            | Op::I64NotEq_Rrz { .. }
             | Op::I64NotEq_Rss { .. }
             | Op::I64NotEq_Rsi { .. }
+            | Op::I64NotEq_Rsz { .. }
             | Op::I64NotAnd_Rrs { .. }
             | Op::I64NotAnd_Rri { .. }
             | Op::I64NotAnd_Rss { .. }
