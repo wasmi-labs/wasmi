@@ -14,6 +14,7 @@ macro_rules! execution_handler {
         ) -> $done:ty = $body:tt
     ) => {
         #[cfg_attr(feature = "portable-dispatch", inline(always))]
+        #[cfg_attr(not(feature = "portable-dispatch"), inline(never))]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[allow(clippy::too_many_arguments)] // extern fns are ignored
         pub extern "sysv64" fn $name(
@@ -46,6 +47,7 @@ macro_rules! execution_handler {
         ) -> $done:ty = $body:tt
     ) => {
         #[cfg_attr(feature = "portable-dispatch", inline(always))]
+        #[cfg_attr(not(feature = "portable-dispatch"), inline(never))]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[expect(clippy::too_many_arguments)]
         pub fn $name(
