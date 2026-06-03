@@ -9,6 +9,15 @@ impl NegateCmpInstr for Op {
     fn negate_cmp_instr(&self) -> Option<Self> {
         #[rustfmt::skip]
         let negated = match *self {
+            // Lowering
+            | Op::I32Eq_Rri { rhs: 0, .. } => Op::i32_not_eq_rrz(),
+            | Op::I32NotEq_Rri { rhs: 0, .. } => Op::i32_eq_rrz(),
+            | Op::I64Eq_Rri { rhs: 0, .. } => Op::i64_not_eq_rrz(),
+            | Op::I64NotEq_Rri { rhs: 0, .. } => Op::i64_eq_rrz(),
+            | Op::I32Eq_Rsi { lhs, rhs: 0, .. } => Op::i32_not_eq_rsz(lhs),
+            | Op::I32NotEq_Rsi { lhs, rhs: 0, .. } => Op::i32_eq_rsz(lhs),
+            | Op::I64Eq_Rsi { lhs, rhs: 0, .. } => Op::i64_not_eq_rsz(lhs),
+            | Op::I64NotEq_Rsi { lhs, rhs: 0, .. } => Op::i64_eq_rsz(lhs),
             // i32
             // i32: eq
             | Op::I32Eq_Rrs { rhs, .. } => Op::i32_not_eq_rrs(rhs),
@@ -275,6 +284,15 @@ impl LogicalizeCmpInstr for Op {
     fn logicalize_cmp_instr(&self) -> Option<Self> {
         #[rustfmt::skip]
         let logicalized = match *self {
+            // Lowering
+            | Op::I32Eq_Rri { rhs: 0, .. } => Op::i32_eq_rrz(),
+            | Op::I32NotEq_Rri { rhs: 0, .. } => Op::i32_not_eq_rrz(),
+            | Op::I64Eq_Rri { rhs: 0, .. } => Op::i64_eq_rrz(),
+            | Op::I64NotEq_Rri { rhs: 0, .. } => Op::i64_not_eq_rrz(),
+            | Op::I32Eq_Rsi { lhs, rhs: 0, .. } => Op::i32_eq_rsz(lhs),
+            | Op::I32NotEq_Rsi { lhs, rhs: 0, .. } => Op::i32_not_eq_rsz(lhs),
+            | Op::I64Eq_Rsi { lhs, rhs: 0, .. } => Op::i64_eq_rsz(lhs),
+            | Op::I64NotEq_Rsi { lhs, rhs: 0, .. } => Op::i64_not_eq_rsz(lhs),
             // Bitwise -> Logical: i32
             | Op::I32BitAnd_Rrs { rhs, .. } => Op::i32_and_rrs(rhs),
             | Op::I32BitAnd_Rss { lhs, rhs, .. } => Op::i32_and_rss(lhs, rhs),
