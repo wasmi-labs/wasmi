@@ -269,6 +269,23 @@ fn add_binary_ops(isa: &mut Isa) {
             }
         }
     }
+    // i{32,64}.eqz and i{32,64}.nez
+    for input_ty in [Ty::I32, Ty::I64] {
+        for ident in [Ident::Eq, Ident::NotEq] {
+            for lhs in [OperandKind::Reg, OperandKind::Slot] {
+                isa.push_op(BinaryOp::new(
+                    ident,
+                    Ty::I32,
+                    input_ty,
+                    input_ty,
+                    OperandKind::Reg,
+                    lhs,
+                    OperandKind::Zero,
+                    BinaryOpCaps::CMP,
+                ));
+            }
+        }
+    }
 }
 
 fn add_cmp_branch_ops(isa: &mut Isa) {
@@ -322,6 +339,14 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
                     continue;
                 }
                 isa.push_op(CmpBranchOp::new(ident, input_ty, lhs, rhs));
+            }
+        }
+    }
+    // br.eqz and br.nez
+    for input_ty in [Ty::I32, Ty::I64] {
+        for ident in [Ident::Eq, Ident::NotEq] {
+            for lhs in [OperandKind::Reg, OperandKind::Slot] {
+                isa.push_op(CmpBranchOp::new(ident, input_ty, lhs, OperandKind::Zero));
             }
         }
     }
