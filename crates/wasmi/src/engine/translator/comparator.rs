@@ -274,6 +274,7 @@ impl LogicalizeCmpInstr for Op {
             | Op::I32BitAnd_Rsi { lhs, rhs, .. } => Op::i32_and_rsi(lhs, rhs),
             | Op::I32BitOr_Rri { rhs, .. } => Op::i32_or_rri(rhs),
             | Op::I32BitOr_Rsi { lhs, rhs, .. } => Op::i32_or_rsi(lhs, rhs),
+            | Op::I32BitXor_Rri { rhs: 0, .. } => Op::i32_not_eq_rrz(),
             | Op::I32BitXor_Rri { rhs, .. } => Op::i32_not_eq_rri(rhs),
             | Op::I32BitXor_Rsi { lhs, rhs, .. } => Op::i32_not_eq_rsi(lhs, rhs),
             // Bitwise -> Logical: i64
@@ -287,6 +288,7 @@ impl LogicalizeCmpInstr for Op {
             | Op::I64BitAnd_Rsi { lhs, rhs, .. } => Op::i64_and_rsi(lhs, rhs),
             | Op::I64BitOr_Rri { rhs, .. } => Op::i64_or_rri(rhs),
             | Op::I64BitOr_Rsi { lhs, rhs, .. } => Op::i64_or_rsi(lhs, rhs),
+            | Op::I64BitXor_Rri { rhs: 0, .. } => Op::i64_not_eq_rrz(),
             | Op::I64BitXor_Rri { rhs, .. } => Op::i64_not_eq_rri(rhs),
             | Op::I64BitXor_Rsi { lhs, rhs, .. } => Op::i64_not_eq_rsi(lhs, rhs),
             // Logical -> Logical
