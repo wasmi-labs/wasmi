@@ -13,8 +13,10 @@ impl NegateCmpInstr for Op {
             // i32: eq
             | Op::I32Eq_Rrs { rhs, .. } => Op::i32_not_eq_rrs(rhs),
             | Op::I32Eq_Rri { rhs, .. } => Op::i32_not_eq_rri(rhs),
+            | Op::I32Eq_Rrz { .. } => Op::i32_not_eq_rrz(),
             | Op::I32Eq_Rss { lhs, rhs, .. } => Op::i32_not_eq_rss(lhs, rhs),
             | Op::I32Eq_Rsi { lhs, rhs, .. } => Op::i32_not_eq_rsi(lhs, rhs),
+            | Op::I32Eq_Rsz { lhs, .. } => Op::i32_not_eq_rsz(lhs),
             // i32: and + bitand
             | Op::I32And_Rrs { rhs, .. }
             | Op::I32BitAnd_Rrs { rhs, .. } => Op::i32_not_and_rrs(rhs),
@@ -36,12 +38,16 @@ impl NegateCmpInstr for Op {
             // i32: not_eq + xor
             | Op::I32NotEq_Rrs { rhs, .. }
             | Op::I32BitXor_Rrs { rhs, .. } => Op::i32_eq_rrs(rhs),
+            | Op::I32BitXor_Rri { rhs: 0, .. } => Op::i32_eq_rrz(),
             | Op::I32NotEq_Rri { rhs, .. }
             | Op::I32BitXor_Rri { rhs, .. } => Op::i32_eq_rri(rhs),
+            | Op::I32NotEq_Rrz { .. } => Op::i32_eq_rrz(),
             | Op::I32NotEq_Rss { lhs, rhs, .. }
             | Op::I32BitXor_Rss { lhs, rhs, .. } => Op::i32_eq_rss(lhs, rhs),
+            | Op::I32BitXor_Rsi { lhs, rhs: 0, .. } => Op::i32_eq_rsz(lhs),
             | Op::I32NotEq_Rsi { lhs, rhs, .. }
             | Op::I32BitXor_Rsi { lhs, rhs, .. } => Op::i32_eq_rsi(lhs, rhs),
+            | Op::I32NotEq_Rsz { lhs, .. } => Op::i32_eq_rsz(lhs),
             // i32: not_and
             | Op::I32NotAnd_Rrs { rhs, .. } => Op::i32_and_rrs(rhs),
             | Op::I32NotAnd_Rri { rhs, .. } => Op::i32_and_rri(rhs),
@@ -88,8 +94,10 @@ impl NegateCmpInstr for Op {
             // i64: eq
             | Op::I64Eq_Rrs { rhs, .. } => Op::i64_not_eq_rrs(rhs),
             | Op::I64Eq_Rri { rhs, .. } => Op::i64_not_eq_rri(rhs),
+            | Op::I64Eq_Rrz { .. } => Op::i64_not_eq_rrz(),
             | Op::I64Eq_Rss { lhs, rhs, .. } => Op::i64_not_eq_rss(lhs, rhs),
             | Op::I64Eq_Rsi { lhs, rhs, .. } => Op::i64_not_eq_rsi(lhs, rhs),
+            | Op::I64Eq_Rsz { lhs, .. } => Op::i64_not_eq_rsz(lhs),
             // i64: and + bitand
             | Op::I64And_Rrs { rhs, .. }
             | Op::I64BitAnd_Rrs { rhs, .. } => Op::i64_not_and_rrs(rhs),
@@ -111,12 +119,16 @@ impl NegateCmpInstr for Op {
             // i64: not_eq + bitxor
             | Op::I64NotEq_Rrs { rhs, .. }
             | Op::I64BitXor_Rrs { rhs, .. } => Op::i64_eq_rrs(rhs),
+            | Op::I64BitXor_Rri { rhs: 0, .. } => Op::i64_eq_rrz(),
             | Op::I64NotEq_Rri { rhs, .. }
             | Op::I64BitXor_Rri { rhs, .. } => Op::i64_eq_rri(rhs),
+            | Op::I64NotEq_Rrz { .. } => Op::i64_eq_rrz(),
             | Op::I64NotEq_Rss { lhs, rhs, .. }
             | Op::I64BitXor_Rss { lhs, rhs, .. } => Op::i64_eq_rss(lhs, rhs),
+            | Op::I64BitXor_Rsi { lhs, rhs: 0, .. } => Op::i64_eq_rsz(lhs),
             | Op::I64NotEq_Rsi { lhs, rhs, .. }
             | Op::I64BitXor_Rsi { lhs, rhs, .. } => Op::i64_eq_rsi(lhs, rhs),
+            | Op::I64NotEq_Rsz { lhs, .. } => Op::i64_eq_rsz(lhs),
             // i64: not_and
             | Op::I64NotAnd_Rrs { rhs, .. } => Op::i64_and_rrs(rhs),
             | Op::I64NotAnd_Rri { rhs, .. } => Op::i64_and_rri(rhs),
