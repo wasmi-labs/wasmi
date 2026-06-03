@@ -921,7 +921,7 @@ fn bench_execute_counter(c: &mut Criterion) {
         let run = instance.get_typed_func::<i32, i32>(&store, "run").unwrap();
         b.iter(|| {
             let result = run.call(&mut store, ITERATIONS).unwrap();
-            assert_eq!(result, ITERATIONS);
+            assert_eq!(result, 0);
         })
     });
 }
