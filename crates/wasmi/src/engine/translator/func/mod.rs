@@ -2199,7 +2199,29 @@ impl FuncTranslator {
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
     pub fn fuse_eqz<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
-        self.fuse_commutative_cmp_with(lhs, rhs, NegateCmpInstr::negate_cmp_instr)
+        if self.fuse_commutative_cmp_with(lhs, rhs, NegateCmpInstr::negate_cmp_instr)? {
+            return Ok(true);
+        }
+        if !rhs.is_zero() {
+            // Case: cannot generate an `eqz` operator.
+            return Ok(false);
+        }
+        let ty = <T as Typed>::TY;
+        let op = match self.resolve_operand::<T>(lhs)? {
+            ResolvedOperand::Reg(ty) => match ty {
+                ValType::I32 | ValType::ExternRef | ValType::FuncRef => Op::i32_eq_rrz(),
+                ValType::I64 => Op::i64_eq_rrz(),
+                _ => unreachable!(),
+            },
+            ResolvedOperand::Slot(lhs) => match ty {
+                ValType::I32 | ValType::ExternRef | ValType::FuncRef => Op::i32_eq_rsz(lhs),
+                ValType::I64 => Op::i64_eq_rsz(lhs),
+                _ => unreachable!(),
+            },
+            ResolvedOperand::Immediate(_) => return Ok(false),
+        };
+        self.stage_op_with_result_reg(ValType::I32, op, FuelCostsProvider::base)?;
+        Ok(true)
     }
 
     /// Tries to fuse a Wasm `i32.ne` instruction with 0 `rhs` value.
@@ -2210,7 +2232,29 @@ impl FuncTranslator {
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
     pub fn fuse_nez<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
-        self.fuse_commutative_cmp_with(lhs, rhs, LogicalizeCmpInstr::logicalize_cmp_instr)
+        if self.fuse_commutative_cmp_with(lhs, rhs, LogicalizeCmpInstr::logicalize_cmp_instr)? {
+            return Ok(true);
+        };
+        if !rhs.is_zero() {
+            // Case: cannot generate an `eqz` operator.
+            return Ok(false);
+        }
+        let ty = <T as Typed>::TY;
+        let op = match self.resolve_operand::<T>(lhs)? {
+            ResolvedOperand::Reg(ty) => match ty {
+                ValType::I32 | ValType::ExternRef | ValType::FuncRef => Op::i32_not_eq_rrz(),
+                ValType::I64 => Op::i64_not_eq_rrz(),
+                _ => unreachable!(),
+            },
+            ResolvedOperand::Slot(lhs) => match ty {
+                ValType::I32 | ValType::ExternRef | ValType::FuncRef => Op::i32_not_eq_rsz(lhs),
+                ValType::I64 => Op::i64_not_eq_rsz(lhs),
+                _ => unreachable!(),
+            },
+            ResolvedOperand::Immediate(_) => return Ok(false),
+        };
+        self.stage_op_with_result_reg(ValType::I32, op, FuelCostsProvider::base)?;
+        Ok(true)
     }
 
     /// Tries to fuse a `i{32,64}`.{eq,ne}` instruction with `rhs` of zero.
