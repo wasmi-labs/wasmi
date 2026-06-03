@@ -72,6 +72,12 @@ impl Reg<f64> {
 
 #[test]
 fn op_size_of_and_alignment() {
-    assert_eq!(core::mem::size_of::<Op>(), 24);
+    assert_eq!(
+        core::mem::size_of::<Op>(),
+        match cfg!(feature = "slot16") {
+            true => 24,
+            false => 32,
+        }
+    );
     assert_eq!(core::mem::align_of::<Op>(), 8);
 }

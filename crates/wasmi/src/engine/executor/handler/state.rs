@@ -506,8 +506,8 @@ impl Sp {
 
     /// Offsets `self` by `slot` to access the [`Cell`] associated to it.
     pub fn offset(self, slot: Slot) -> Self {
-        let delta = usize::from(u16::from(slot));
-        let value = unsafe { self.value.add(delta) };
+        let delta = slot.byte_offset();
+        let value = unsafe { self.value.cast::<u8>().add(delta).cast::<Cell>() };
         Self { value }
     }
 

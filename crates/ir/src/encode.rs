@@ -14,7 +14,7 @@ use crate::{
     Slot,
     SlotSpan,
     core::{ShiftAmount, Sign, TrapCode},
-    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
+    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
 };
 use core::num::NonZero;
 
@@ -137,6 +137,20 @@ impl_encode_for_primitive!(
     u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64
 );
 
+impl Encode for RawSlot {
+    #[inline]
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        self.0.encode(encoder)
+    }
+}
+
+impl Encode for Slot {
+    #[inline]
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        self.0.encode(encoder)
+    }
+}
+
 macro_rules! impl_encode_using {
     ( $($ty:ty as $prim:ty = $e:expr),* $(,)? ) => {
         $(
@@ -153,7 +167,6 @@ impl_encode_using! {
     bool as u8 = Into::into,
     Offset16 as u16 = Into::into,
     Address as u64 = Into::into,
-    Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
     InternalFunc as u32 = Into::into,

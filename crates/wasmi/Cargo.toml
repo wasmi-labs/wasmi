@@ -61,7 +61,7 @@ unstable = []
 portable-dispatch = []
 # Enables an indirect dispatch scheme using op-codes instead of
 # embedded function pointers for more compact bytecode.
-indirect-dispatch = []
+indirect-dispatch = ["wasmi_ir/slot16"]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #
