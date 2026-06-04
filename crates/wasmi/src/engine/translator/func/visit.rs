@@ -163,6 +163,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 (reachability, fuel_pos)
             }
             _ => {
+                // TODO: `encode_br_nez` is after `preserve_all_locals` and `preserve_all_regs` which hinders op-code fusion.
                 let else_label = self.instrs.new_label();
                 self.encode_br_eqz(condition, else_label)?;
                 let reachability = IfReachability::Both { else_label };
