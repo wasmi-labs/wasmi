@@ -44,8 +44,6 @@ pub enum StackOperand {
         /// might be a type overwrite. This is useful for Wasm `reinterpret`
         /// operators with local operand inputs.
         ty: ValType,
-        /// This is `true` if the [`StackOperand::Local`] is also stored in a register.
-        in_reg: bool,
         /// The index of the local variable.
         local_index: LocalIdx,
         /// The previous [`StackOperand::Local`] on the [`OperandStack`].
@@ -127,12 +125,97 @@ pub struct OperandStack {
     temp_offset: u16,
     /// The maximum recorded temporary stack offset.
     max_offset: u16,
-    /// The position of the operand that is cached by the general-purpose register (GPR) if any.
-    ireg: Option<StackPos>,
-    /// The position of the operand that is cached by the `f32` register if any.
-    freg32: Option<StackPos>,
-    /// The position of the operand that is cached by the `f64` register if any.
-    freg64: Option<StackPos>,
+    /// Information about the registers that are in use.
+    regs: RegisterMap,
+}
+
+/// The state of all registers and their live links.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct RegisterMap {
+    /// The link of the general-purpose register (GPR) if any.
+    ireg: Option<RegisterLink>,
+    /// The link of the `f32` register if any.
+    freg32: Option<RegisterLink>,
+    /// The link of the `f64` register if any.
+    freg64: Option<RegisterLink>,
+}
+
+impl Reset for RegisterMap {
+    fn reset(&mut self) {
+        self.ireg = None;
+        self.freg32 = None;
+        self.freg64 = None;
+    }
+}
+
+impl RegisterMap {
+    /// Returns a `&mut` to the [`RegisterLink`] of the register for type `ty`.
+    fn get_mut(&mut self, ty: ValType) -> &mut Option<RegisterLink> {
+        match ty {
+            | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => &mut self.ireg,
+            | ValType::F32 => &mut self.freg32,
+            | ValType::F64 => &mut self.freg64,
+            | ValType::V128 => unreachable!(),
+        }
+    }
+
+    /// Allocates `link` to the register for type `ty`.
+    ///
+    /// Returns the old link of the register for type `ty` if any.
+    pub fn alloc(&mut self, ty: ValType, link: RegisterLink) -> Option<RegisterLink> {
+        self.get_mut(ty).replace(link)
+    }
+
+    /// Deallocates any link from the register for type `ty`.
+    ///
+    /// Returns the deallocated link of the register for type `ty` if any.
+    pub fn dealloc(&mut self, ty: ValType) -> Option<RegisterLink> {
+        self.get_mut(ty).take()
+    }
+
+    /// Returns the link of the register for type `ty` if any.
+    pub fn get(&self, ty: ValType) -> Option<RegisterLink> {
+        match ty {
+            | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => self.ireg,
+            | ValType::F32 => self.freg32,
+            | ValType::F64 => self.freg64,
+            | ValType::V128 => None,
+        }
+    }
+
+    /// Returns `true` if the local at `local_index` is known to be stored in the register of type `ty`.
+    pub fn is_local_in_reg(&self, ty: ValType, local_index: LocalIdx) -> bool {
+        let Some(RegisterLink::Local(index)) = self.get(ty) else {
+            return false;
+        };
+        index == local_index
+    }
+
+    /// Returns `true` if the local at `local_index` is known to be stored in any of the registers.
+    pub fn is_local_in_any_reg(&self, local_index: LocalIdx) -> bool {
+        self.is_local_in_reg(ValType::I64, local_index)
+            || self.is_local_in_reg(ValType::F32, local_index)
+            || self.is_local_in_reg(ValType::F64, local_index)
+    }
+
+    pub fn wrap_operand(&self, pos: StackPos, operand: StackOperand) -> Operand {
+        let in_reg = match operand {
+            StackOperand::Local {
+                ty, local_index, ..
+            } => self.is_local_in_reg(ty, local_index),
+            _ => false,
+        };
+        Operand::new(pos, operand, in_reg)
+    }
+}
+
+/// The current linkage of a register.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum RegisterLink {
+    /// The register is linked to a temporary on the stack.
+    Temp(StackPos),
+    /// The register is linked to a local variable.
+    Local(LocalIdx),
 }
 
 impl Reset for OperandStack {
@@ -142,9 +225,7 @@ impl Reset for OperandStack {
         self.len_locals = 0;
         self.temp_offset = 0;
         self.max_offset = 0;
-        self.ireg = None;
-        self.freg32 = None;
-        self.freg64 = None;
+        self.regs.reset();
     }
 }
 
@@ -167,6 +248,36 @@ impl OperandStack {
         Ok(())
     }
 
+    /// Registers the local at `local_index` for register of type `ty`.
+    pub fn register_local_for_reg(
+        &mut self,
+        ty: ValType,
+        local_index: LocalIdx,
+    ) -> Result<(), Error> {
+        if matches!(ty, ValType::V128) {
+            // Cannot register `v128` operand for a register.
+            return Ok(());
+        }
+        self.regs.alloc(ty, RegisterLink::Local(local_index));
+        Ok(())
+    }
+
+    /// Deallocates the local at `local_index` for register of type `ty`.
+    pub fn dealloc_local_for_reg(
+        &mut self,
+        ty: ValType,
+        local_index: LocalIdx,
+    ) -> Result<(), Error> {
+        if matches!(ty, ValType::V128) {
+            // Cannot register `v128` operand for a register.
+            return Ok(());
+        }
+        if self.regs.is_local_in_any_reg(local_index) {
+            self.regs.dealloc(ty);
+        }
+        Ok(())
+    }
+
     /// Deallocates the register of the `ty` from `self`.
     ///
     /// Returns `Some` if a copy operator is required to reflect the changes.
@@ -176,23 +287,22 @@ impl OperandStack {
     /// If the register operand is a register-backed local it is turned into a normal local operand
     /// and `None` is returned as no copy operator is required.
     pub fn dealloc_reg(&mut self, ty: ValType) -> Option<TempOperand> {
-        let pos = self.reg_pos_mut(ty).take()?;
-        let mut operand = self.get_at_mut(pos);
-        let returned = match *operand {
-            StackOperand::Temp {
-                temp_slots,
-                ty,
-                in_reg,
-            } => Some(TempOperand::new(temp_slots, ty, pos, in_reg)),
-            _ => None,
+        let link = self.regs.dealloc(ty)?;
+        let RegisterLink::Temp(pos) = link else {
+            return None;
         };
-        #[rustfmt::skip]
-        match &mut operand {
-            | StackOperand::Local { in_reg, .. }
-            | StackOperand::Temp { in_reg, .. } if *in_reg => *in_reg = false,
-            _ => unreachable!(),
+        let operand = self.get_at_mut(pos);
+        let StackOperand::Temp {
+            temp_slots,
+            ty,
+            in_reg,
+        } = operand
+        else {
+            unreachable!()
         };
-        returned
+        let returned = TempOperand::new(*temp_slots, *ty, pos, *in_reg);
+        *in_reg = false;
+        Some(returned)
     }
 
     /// Pushes the offset for temporary operands by `delta`.
@@ -274,7 +384,7 @@ impl OperandStack {
     pub fn push_operand(&mut self, operand: Operand) -> Result<Operand, Error> {
         match operand {
             Operand::Local(op) => self
-                .push_local(op.local_index(), op.ty(), op.alloc())
+                .push_local(op.local_index(), op.ty())
                 .map(Operand::from),
             Operand::Temp(op) => self.push_temp(op.ty(), op.alloc()).map(Operand::from),
             Operand::Immediate(op) => self.push_immediate(op.val()).map(Operand::from),
@@ -292,27 +402,22 @@ impl OperandStack {
         &mut self,
         local_index: LocalIdx,
         ty: ValType,
-        alloc: Allocation,
     ) -> Result<LocalOperand, Error> {
         let stack_pos = self.next_stack_pos();
-        if alloc.is_reg() {
-            self.link_reg(stack_pos, ty);
-        }
         let next_local = self.local_heads.replace_first(local_index, Some(stack_pos));
         if let Some(next_local) = next_local {
             self.update_prev_local(next_local, Some(stack_pos));
         }
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
-        let in_reg = alloc.is_reg();
         self.operands.push(StackOperand::Local {
             temp_slots,
             ty,
             local_index,
             prev_local: None,
             next_local,
-            in_reg,
         });
         self.len_locals += 1;
+        let in_reg = self.regs.is_local_in_reg(ty, local_index);
         Ok(LocalOperand::new(temp_slots, ty, local_index, in_reg))
     }
 
@@ -325,7 +430,7 @@ impl OperandStack {
     pub fn push_temp(&mut self, ty: ValType, alloc: Allocation) -> Result<TempOperand, Error> {
         let stack_pos = self.next_stack_pos();
         if alloc.is_reg() {
-            self.link_reg(stack_pos, ty);
+            self.alloc_reg(RegisterLink::Temp(stack_pos), ty);
         }
         let temp_slots = self.push_temp_offset(required_cells_for_ty(ty))?;
         let in_reg = alloc.is_reg();
@@ -373,6 +478,7 @@ impl OperandStack {
         PeekedOperands {
             stack_pos: first_index,
             operands: operands.iter(),
+            regs: self.regs,
         }
     }
 
@@ -393,7 +499,7 @@ impl OperandStack {
         if let Some(reg_pos) = self.try_unlink_reg(operand) {
             debug_assert_eq!(stack_pos, reg_pos);
         }
-        Operand::new(stack_pos, operand)
+        self.regs.wrap_operand(stack_pos, operand)
     }
 
     /// Returns the [`Operand`] at `depth`.
@@ -405,7 +511,7 @@ impl OperandStack {
     pub fn get(&self, depth: usize) -> Operand {
         let stack_pos = self.depth_to_stack_pos(depth);
         let operand = self.get_at(stack_pos);
-        Operand::new(stack_pos, operand)
+        self.regs.wrap_operand(stack_pos, operand)
     }
 
     /// Returns the [`StackOperand`] at `index`.
@@ -442,7 +548,7 @@ impl OperandStack {
     pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
         let stack_pos = self.depth_to_stack_pos(depth);
         let operand = self.operand_to_temp_at(stack_pos);
-        Operand::new(stack_pos, operand)
+        self.regs.wrap_operand(stack_pos, operand)
     }
 
     /// Converts and returns the [`StackOperand`] at `index` into a [`StackOperand::Temp`].
@@ -472,18 +578,19 @@ impl OperandStack {
 
     fn preserve_local_at(&mut self, pos: StackPos) -> StackOperand {
         let operand = self.get_at(pos);
-        self.try_unlink_local(operand);
         let StackOperand::Local {
             temp_slots,
             ty,
-            in_reg,
-            ..
+            local_index,
+            prev_local,
+            next_local,
         } = operand
         else {
             unreachable!()
         };
+        self.unlink_local(local_index, prev_local, next_local);
         self.operands[usize::from(pos)] = StackOperand::Temp {
-            in_reg,
+            in_reg: false,
             temp_slots,
             ty,
         };
@@ -505,9 +612,11 @@ impl OperandStack {
     #[must_use]
     pub fn preserve_locals(&mut self, local_index: LocalIdx) -> PreservedLocalsIter<'_> {
         let stack_pos = self.local_heads.replace_first(local_index, None);
+        let in_reg = self.regs.is_local_in_any_reg(local_index);
         PreservedLocalsIter {
             stack: self,
             stack_pos,
+            in_reg,
         }
     }
 
@@ -544,12 +653,18 @@ impl OperandStack {
     /// the caller.
     #[must_use]
     pub fn preserve_all_regs(&mut self) -> PreservedRegs {
-        fn preserve_reg(this: &mut OperandStack, reg: StackPos) -> Slot {
-            this.operand_to_temp_at(reg).temp_slots().head()
+        fn preserve_reg(this: &mut OperandStack, link: RegisterLink) -> Option<Slot> {
+            let RegisterLink::Temp(stack_pos) = link else {
+                return None;
+            };
+            Some(this.operand_to_temp_at(stack_pos).temp_slots().head())
         }
-        let ireg = self.ireg.take().map(|reg| preserve_reg(self, reg));
-        let freg32 = self.freg32.take().map(|reg| preserve_reg(self, reg));
-        let freg64 = self.freg64.take().map(|reg| preserve_reg(self, reg));
+        let reg_tys = [ValType::I64, ValType::F32, ValType::F64];
+        let [ireg, freg32, freg64] = reg_tys.map(|ty| {
+            self.regs
+                .dealloc(ty)
+                .and_then(|reg| preserve_reg(self, reg))
+        });
         PreservedRegs {
             ireg,
             freg32,
@@ -579,10 +694,10 @@ impl OperandStack {
     /// # Panics (Debug)
     ///
     /// If the register with `ty` is already occupied.
-    fn link_reg(&mut self, pos: StackPos, ty: ValType) {
-        let prev_pos = self.reg_pos_mut(ty).replace(pos);
+    fn alloc_reg(&mut self, link: RegisterLink, ty: ValType) {
+        let prev_link = self.regs.alloc(ty, link);
         debug_assert!(
-            prev_pos.is_none(),
+            prev_link.is_none(),
             "a register operand already exists on the stack",
         );
     }
@@ -596,21 +711,11 @@ impl OperandStack {
             StackOperand::Temp {
                 in_reg: true, ty, ..
             } => ty,
-            StackOperand::Local {
-                in_reg: true, ty, ..
-            } => ty,
             _ => return None,
         };
-        self.reg_pos_mut(ty).take()
-    }
-
-    /// Returns a `&mut` to the [`StackPos`] of the register operand on the stack if any.
-    fn reg_pos_mut(&mut self, ty: ValType) -> &mut Option<StackPos> {
-        match ty {
-            | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => &mut self.ireg,
-            | ValType::F32 => &mut self.freg32,
-            | ValType::F64 => &mut self.freg64,
-            | ValType::V128 => unreachable!(),
+        match self.regs.dealloc(ty)? {
+            RegisterLink::Temp(stack_pos) => Some(stack_pos),
+            RegisterLink::Local(_) => None,
         }
     }
 
@@ -710,28 +815,23 @@ impl Iterator for PreservedAllLocalsIter<'_> {
     type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if !self.has_remaining_locals() {
-                return None;
-            }
-            self.stack_pos = self.find_next_local()?;
-            let stack_pos = StackPos::from(self.stack_pos);
-            let operand = self.stack.preserve_local_at(stack_pos);
-            let StackOperand::Local {
-                temp_slots,
-                ty,
-                local_index,
-                in_reg,
-                ..
-            } = operand
-            else {
-                unreachable!("expected `StackOperand::Local` but found: {operand:?}")
-            };
-            if in_reg {
-                continue;
-            }
-            return Some(LocalOperand::new(temp_slots, ty, local_index, in_reg));
+        if !self.has_remaining_locals() {
+            return None;
         }
+        self.stack_pos = self.find_next_local()?;
+        let stack_pos = StackPos::from(self.stack_pos);
+        let operand = self.stack.preserve_local_at(stack_pos);
+        let StackOperand::Local {
+            temp_slots,
+            ty,
+            local_index,
+            ..
+        } = operand
+        else {
+            unreachable!("expected `StackOperand::Local` but found: {operand:?}")
+        };
+        let in_reg = self.stack.regs.is_local_in_reg(ty, local_index);
+        Some(LocalOperand::new(temp_slots, ty, local_index, in_reg))
     }
 }
 
@@ -742,32 +842,31 @@ pub struct PreservedLocalsIter<'stack> {
     stack: &'stack mut OperandStack,
     /// The current operand stack position of the next preserved local if any.
     stack_pos: Option<StackPos>,
+    /// This is `true` if the preserved local is stored in a register.
+    ///
+    /// This must be the same for all local operands on the stack that
+    /// refer to the same underlying local variable.
+    in_reg: bool,
 }
 
 impl Iterator for PreservedLocalsIter<'_> {
     type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let stack_pos = self.stack_pos?;
-            let operand = self.stack.preserve_local_at(stack_pos);
-            let StackOperand::Local {
-                temp_slots,
-                ty,
-                local_index,
-                next_local,
-                in_reg,
-                ..
-            } = operand
-            else {
-                unreachable!("expected `StackOperand::Local` but found: {operand:?}")
-            };
-            self.stack_pos = next_local;
-            if in_reg {
-                continue;
-            }
-            return Some(LocalOperand::new(temp_slots, ty, local_index, in_reg));
-        }
+        let stack_pos = self.stack_pos?;
+        let operand = self.stack.preserve_local_at(stack_pos);
+        let StackOperand::Local {
+            temp_slots,
+            ty,
+            local_index,
+            next_local,
+            ..
+        } = operand
+        else {
+            unreachable!("expected `StackOperand::Local` but found: {operand:?}")
+        };
+        self.stack_pos = next_local;
+        Some(LocalOperand::new(temp_slots, ty, local_index, self.in_reg))
     }
 }
 
@@ -778,6 +877,8 @@ pub struct PeekedOperands<'stack> {
     stack_pos: usize,
     /// The iterator of peeked stack operands.
     operands: slice::Iter<'stack, StackOperand>,
+    /// Information about the registers that are in use.
+    regs: RegisterMap,
 }
 
 impl<'stack> PeekedOperands<'stack> {
@@ -786,6 +887,7 @@ impl<'stack> PeekedOperands<'stack> {
         Self {
             stack_pos: 0,
             operands: [].iter(),
+            regs: RegisterMap::default(),
         }
     }
 }
@@ -797,7 +899,8 @@ impl Iterator for PeekedOperands<'_> {
         let operand = self.operands.next().copied()?;
         let stack_pos = StackPos::from(self.stack_pos);
         self.stack_pos += 1;
-        Some(Operand::new(stack_pos, operand))
+        let wrapped = self.regs.wrap_operand(stack_pos, operand);
+        Some(wrapped)
     }
 }
 

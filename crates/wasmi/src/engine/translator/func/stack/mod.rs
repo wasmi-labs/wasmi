@@ -367,6 +367,24 @@ impl Stack {
         self.controls.acquire_target(depth)
     }
 
+    /// Registers the local at `local_index` for register of type `ty`.
+    pub fn register_local_for_reg(
+        &mut self,
+        ty: ValType,
+        local_index: LocalIdx,
+    ) -> Result<(), Error> {
+        self.operands.register_local_for_reg(ty, local_index)
+    }
+
+    /// Deallocates the local at `local_index` for register of type `ty`.
+    pub fn dealloc_local_for_reg(
+        &mut self,
+        ty: ValType,
+        local_index: LocalIdx,
+    ) -> Result<(), Error> {
+        self.operands.dealloc_local_for_reg(ty, local_index)
+    }
+
     /// Deallocates the register of the `ty` from `self`.
     ///
     /// Returns `Some` if a copy operator is required to reflect the changes.
@@ -401,9 +419,8 @@ impl Stack {
         &mut self,
         local_index: LocalIdx,
         ty: ValType,
-        alloc: Allocation,
     ) -> Result<LocalOperand, Error> {
-        self.operands.push_local(local_index, ty, alloc)
+        self.operands.push_local(local_index, ty)
     }
 
     /// Pushes a temporary with type `ty` on the [`Stack`].

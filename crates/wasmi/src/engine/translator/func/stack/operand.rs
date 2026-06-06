@@ -89,7 +89,9 @@ pub enum Operand {
 
 impl Operand {
     /// Creates a new [`Operand`] from the given [`StackOperand`] and its [`StackPos`].
-    pub(super) fn new(stack_pos: StackPos, operand: StackOperand) -> Self {
+    ///
+    /// The `in_reg` argument is a hint to tell if a [`StackOperand::Local`] is live in a register.
+    pub(super) fn new(stack_pos: StackPos, operand: StackOperand, in_reg: bool) -> Self {
         use StackOperand as Opd;
         match operand {
             Opd::Temp {
@@ -100,7 +102,6 @@ impl Operand {
             Opd::Local {
                 temp_slots,
                 ty,
-                in_reg,
                 local_index,
                 ..
             } => Self::local(temp_slots, local_index, ty, in_reg),
@@ -275,14 +276,6 @@ impl LocalOperand {
     /// Returns `true` if the operand is stored in a register.
     pub fn in_reg(&self) -> bool {
         self.in_reg
-    }
-
-    /// Returns the associated [`Allocation`] of `self.`
-    pub fn alloc(&self) -> Allocation {
-        match self.in_reg() {
-            true => Allocation::Reg,
-            false => Allocation::None,
-        }
     }
 }
 

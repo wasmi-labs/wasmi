@@ -269,6 +269,22 @@ fn add_binary_ops(isa: &mut Isa) {
             }
         }
     }
+    for ty in [Ty::I32, Ty::I64, Ty::F32, Ty::F64] {
+        let caps = match ty {
+            Ty::F32 | Ty::F64 => BinaryOpCaps::NONE,
+            _ => BinaryOpCaps::COMMUTATIVE,
+        };
+        isa.push_op(BinaryOp::new(
+            Ident::Mul,
+            ty,
+            ty,
+            ty,
+            OperandKind::Reg,
+            OperandKind::Reg,
+            OperandKind::Reg,
+            caps,
+        ));
+    }
 }
 
 fn add_cmp_branch_ops(isa: &mut Isa) {
@@ -336,7 +352,7 @@ fn add_select_ops(isa: &mut Isa) {
                         continue;
                     }
                     if matches!(condition.field_ty(result_ty), FieldTy::RegInt)
-                        && (true_val.is_reg() || false_val.is_reg())
+                        && (true_val.is_reg() && false_val.is_reg())
                     {
                         continue;
                     }

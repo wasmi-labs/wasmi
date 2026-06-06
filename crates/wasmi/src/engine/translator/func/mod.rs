@@ -1254,6 +1254,7 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
+            self.preserve_regs(fuel_pos)?;
             if self.reachable {
                 self.copy_branch_params(&frame, fuel_pos)?;
             }
@@ -1290,8 +1291,9 @@ impl FuncTranslator {
         };
         let len_results = frame.ty().len_results(self.engine());
         let has_results = len_results >= 1;
+        let fuel_pos = frame.fuel_pos();
+        self.preserve_regs(fuel_pos)?;
         if is_end_of_then_reachable && has_results {
-            let fuel_pos = frame.fuel_pos();
             self.copy_branch_params(&frame, fuel_pos)?;
             self.encode_branch_op(frame.label(), Op::branch, fuel_pos)?;
         }
@@ -1332,8 +1334,9 @@ impl FuncTranslator {
             (false, false) => frame.is_branched_to(),
             _ => true,
         };
+        let fuel_pos = frame.fuel_pos();
+        self.preserve_regs(fuel_pos)?;
         if end_of_else_reachable {
-            let fuel_pos = frame.fuel_pos();
             self.copy_branch_params(&frame, fuel_pos)?;
         }
         self.push_frame_results(&frame)?;
@@ -1348,9 +1351,10 @@ impl FuncTranslator {
         frame: impl ControlFrameBase,
         end_is_reachable: bool,
     ) -> Result<(), Error> {
+        let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
+            self.preserve_regs(fuel_pos)?;
             if end_is_reachable {
-                let fuel_pos = frame.fuel_pos();
                 self.copy_branch_params(&frame, fuel_pos)?;
             }
             self.push_frame_results(&frame)?;
@@ -1401,16 +1405,27 @@ impl FuncTranslator {
                 return Ok(LocalSetCodegen::NoOp);
             }
         }
+        let ty = input.ty();
         let local_idx = LocalIdx::from(local_index);
         let fuel_pos = self.stack.fuel_pos();
         for preserved in self.stack.preserve_locals(local_idx) {
             let ty = preserved.ty();
             let result = preserved.temp_slots().head();
-            let value = self.layout.local_to_slot(preserved)?;
-            let op = Self::select_copy_ss_op(result, value, ty)?
-                .expect("local preservation must not yield no-op copies");
+            let op = match preserved.in_reg() {
+                true => Self::select_copy_sr_op(result, ty)?,
+                false => {
+                    let value = self.layout.local_to_slot(preserved)?;
+                    Self::select_copy_ss_op(result, value, ty)?
+                        .expect("local preservation must not yield no-op copies")
+                }
+            };
             self.instrs
                 .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        }
+        if input.in_reg() {
+            self.stack.register_local_for_reg(ty, local_idx)?;
+        } else {
+            self.stack.dealloc_local_for_reg(ty, local_idx)?;
         }
         if self.try_replace_result(local_idx, input)? {
             // Case: it was possible to replace the result of the previous
@@ -1633,7 +1648,8 @@ impl FuncTranslator {
     /// Returns a bounded [`SlotSpan`] to the start of the call parameters and results
     /// with the length equal to the number of cells storing the call parameters.
     fn adjust_stack_for_call(&mut self, ty: &FuncType) -> Result<BoundedSlotSpan, Error> {
-        self.preserve_regs()?;
+        let fuel_pos = self.stack.fuel_pos();
+        self.preserve_regs(fuel_pos)?;
         let fuel_pos = self.stack.fuel_pos();
         let mut params_start = self.stack.next_temp_slots();
         let mut params_len: u16 = 0;
@@ -1654,9 +1670,12 @@ impl FuncTranslator {
     }
 
     /// Preserve all register operands on the [`Stack`].
-    fn preserve_regs(&mut self) -> Result<(), Error> {
-        let fuel_pos = self.stack.fuel_pos();
+    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
         let regs = self.stack.preserve_all_regs();
+        if !self.reachable {
+            // No need to encode copies if unreachable.
+            return Ok(());
+        }
         if let Some(result) = regs.ireg {
             self.instrs
                 .encode_op(Op::u64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
@@ -1722,8 +1741,7 @@ impl FuncTranslator {
                 self.push_op_with_result_reg(result_ty, op_rr(), FuelCostsProvider::base)?;
             }
             Operand::Local(input) => {
-                self.stack
-                    .push_local(input.local_index(), result_ty, Allocation::None)?;
+                self.stack.push_local(input.local_index(), result_ty)?;
             }
             Operand::Temp(_input) => {
                 self.stack.push_temp(result_ty, Allocation::None)?;
@@ -1805,6 +1823,24 @@ impl FuncTranslator {
         impl_(lhs, rhs)
     }
 
+    /// Converts the `operand` into a [`Slot`] if possible.
+    ///
+    /// # Note
+    ///
+    /// This method shall be used if `lhs = rhs = register` is encountered to resolve
+    /// `lhs` or `rhs` to `Slot` in order to encode a fallback operator in case the
+    /// base operation does not provide one for this particular variant.
+    fn reg_operand_to_slot(&self, operand: Operand) -> Result<Slot, Error> {
+        let slot = match operand {
+            Operand::Local(operand) => {
+                debug_assert!(operand.in_reg());
+                self.layout.local_to_slot(operand.local_index())?
+            }
+            _ => unreachable!(),
+        };
+        Ok(slot)
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative<T: CommutativeBinaryOp>(
         &mut self,
@@ -1828,6 +1864,13 @@ impl FuncTranslator {
             }
         }
         let operator = match (l, r) {
+            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
+                Some(op) => op,
+                None => {
+                    let rhs_slot = self.reg_operand_to_slot(rhs)?;
+                    T::op_rrs(rhs_slot)
+                }
+            },
             (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
             (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
@@ -1865,6 +1908,13 @@ impl FuncTranslator {
             return self.translate_binary_consteval(lhs, rhs, T::consteval);
         }
         let operator = match (l, r) {
+            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
+                Some(op) => op,
+                None => {
+                    let rhs_slot = self.reg_operand_to_slot(rhs)?;
+                    T::op_rrs(rhs_slot)
+                }
+            },
             (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
             (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg(_)) => T::op_rsr(lhs),
@@ -2006,6 +2056,10 @@ impl FuncTranslator {
         let true_val = self.resolve_operand::<RawVal>(true_val)?.map(u32::from);
         let false_val = self.resolve_operand::<RawVal>(false_val)?.map(u32::from);
         let operator = match (condition, true_val, false_val) {
+            (Loc::Reg(_), Opd::Reg(_), Opd::Slot(f)) => Op::u64_select_rrrs(f),
+            (Loc::Reg(_), Opd::Reg(_), Opd::Immediate(f)) => Op::u32_select_rrri(f),
+            (Loc::Reg(_), Opd::Slot(t), Opd::Reg(_)) => Op::u64_select_rrsr(t),
+            (Loc::Reg(_), Opd::Immediate(t), Opd::Reg(_)) => Op::u32_select_rrir(t),
             (Loc::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
             (Loc::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u32_select_rrsi(t, f),
             (Loc::Reg(_), Opd::Immediate(t), Opd::Slot(f)) => Op::u32_select_rris(t, f),
@@ -2034,6 +2088,10 @@ impl FuncTranslator {
         let true_val = self.resolve_operand::<u64>(true_val)?;
         let false_val = self.resolve_operand::<u64>(false_val)?;
         let operator = match (condition, true_val, false_val) {
+            (Loc::Reg(_), Opd::Reg(_), Opd::Slot(f)) => Op::u64_select_rrrs(f),
+            (Loc::Reg(_), Opd::Reg(_), Opd::Immediate(f)) => Op::u64_select_rrri(f),
+            (Loc::Reg(_), Opd::Slot(t), Opd::Reg(_)) => Op::u64_select_rrsr(t),
+            (Loc::Reg(_), Opd::Immediate(t), Opd::Reg(_)) => Op::u64_select_rrir(t),
             (Loc::Reg(_), Opd::Slot(t), Opd::Slot(f)) => Op::u64_select_rrss(t, f),
             (Loc::Reg(_), Opd::Slot(t), Opd::Immediate(f)) => Op::u64_select_rrsi(t, f),
             (Loc::Reg(_), Opd::Immediate(t), Opd::Slot(f)) => Op::u64_select_rris(t, f),
