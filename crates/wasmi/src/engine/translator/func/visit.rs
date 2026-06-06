@@ -110,8 +110,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::Block)?;
             return Ok(());
         }
+        let fuel_pos = self.stack.fuel_pos();
         self.preserve_all_locals()?;
-        self.preserve_regs()?;
+        self.preserve_regs(fuel_pos)?;
         let block_ty = BlockType::new(block_ty, &self.module);
         let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
@@ -124,8 +125,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::Loop)?;
             return Ok(());
         }
+        let fuel_pos = self.stack.fuel_pos();
         self.preserve_all_locals()?;
-        self.preserve_regs()?;
+        self.preserve_regs(fuel_pos)?;
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(&self.engine);
         let continue_label = self.instrs.new_label();
@@ -147,8 +149,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let end_label = self.instrs.new_label();
         let condition = self.stack.pop();
+        let fuel_pos = self.stack.fuel_pos();
         self.preserve_all_locals()?;
-        self.preserve_regs()?;
+        self.preserve_regs(fuel_pos)?;
         let (reachability, fuel_pos) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());
@@ -193,8 +196,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // - Branch from end of `then` to end of `if`.
         let is_end_of_then_reachable = self.reachable;
         if let IfReachability::Both { else_label } = frame.reachability() {
+            let fuel_pos = frame.fuel_pos();
+            self.preserve_regs(fuel_pos)?;
             if is_end_of_then_reachable {
-                let fuel_pos = frame.fuel_pos();
                 self.copy_branch_params(&frame, fuel_pos)?;
                 frame.branch_to();
                 self.encode_br(frame.label())?;
@@ -374,7 +378,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let local_idx = LocalIdx::from(local_index);
         let ty = self.locals.ty(local_idx);
-        self.stack.push_local(local_idx, ty, Allocation::None)?;
+        self.stack.push_local(local_idx, ty)?;
         Ok(())
     }
 
@@ -396,7 +400,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         match codegen {
             LocalSetCodegen::Fused => {
                 // A fused `local.set` must be returned as local operand.
-                self.stack.push_local(local_idx, ty, Allocation::None)?;
+                self.stack.push_local(local_idx, ty)?;
             }
             LocalSetCodegen::NoOp => {
                 // This case can only happen if `input` was already a local operand.
@@ -405,8 +409,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             LocalSetCodegen::Copy => match input {
                 // A `copy` operation was generated, thus we want to optimize what is pushed back onto the stack.
-                Operand::Local(input) => {
-                    self.stack.push_local(local_idx, ty, input.alloc())?;
+                Operand::Local(_input) => {
+                    self.stack.push_local(local_idx, ty)?;
                 }
                 Operand::Temp(input) => match input.alloc() {
                     Allocation::None => {
@@ -415,7 +419,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                         self.stack.push_temp(ty, Allocation::None)?;
                     }
                     Allocation::Reg => {
-                        self.stack.push_local(local_idx, ty, Allocation::Reg)?;
+                        self.stack.push_local(local_idx, ty)?;
                     }
                 },
                 Operand::Immediate(input) => match ty {
@@ -424,7 +428,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                         // However, for `v128` values this is not true since they are so
                         // big and most operators push copy them into slots prior to execution
                         // anyways.
-                        self.stack.push_local(local_idx, ty, Allocation::None)?;
+                        self.stack.push_local(local_idx, ty)?;
                     }
                     _ => {
                         self.stack.push_immediate(input.val())?;
@@ -1256,8 +1260,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let result_ty = ValType::I64;
         match input {
             Operand::Local(input) => {
-                self.stack
-                    .push_local(input.local_index(), result_ty, input.alloc())?;
+                self.stack.push_local(input.local_index(), result_ty)?;
             }
             Operand::Temp(input) => {
                 self.stack.push_temp(result_ty, input.alloc())?;

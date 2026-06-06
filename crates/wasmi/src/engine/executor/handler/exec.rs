@@ -1515,6 +1515,7 @@ handler_binary! {
     fn i32_add_rri(I32Add_Rri) = wasm::i32_add;
     fn i32_add_rss(I32Add_Rss) = wasm::i32_add;
     fn i32_add_rsi(I32Add_Rsi) = wasm::i32_add;
+    fn i32_mul_rrr(I32Mul_Rrr) = wasm::i32_mul;
     fn i32_mul_rrs(I32Mul_Rrs) = wasm::i32_mul;
     fn i32_mul_rri(I32Mul_Rri) = wasm::i32_mul;
     fn i32_mul_rss(I32Mul_Rss) = wasm::i32_mul;
@@ -1662,6 +1663,7 @@ handler_binary! {
     fn i64_add_rri(I64Add_Rri) = wasm::i64_add;
     fn i64_add_rss(I64Add_Rss) = wasm::i64_add;
     fn i64_add_rsi(I64Add_Rsi) = wasm::i64_add;
+    fn i64_mul_rrr(I64Mul_Rrr) = wasm::i64_mul;
     fn i64_mul_rrs(I64Mul_Rrs) = wasm::i64_mul;
     fn i64_mul_rri(I64Mul_Rri) = wasm::i64_mul;
     fn i64_mul_rss(I64Mul_Rss) = wasm::i64_mul;
@@ -1795,6 +1797,7 @@ handler_binary! {
     fn f32_sub_rsi(F32Sub_Rsi) = wasm::f32_sub;
     fn f32_sub_rir(F32Sub_Rir) = wasm::f32_sub;
     fn f32_sub_ris(F32Sub_Ris) = wasm::f32_sub;
+    fn f32_mul_rrr(F32Mul_Rrr) = wasm::f32_mul;
     fn f32_mul_rrs(F32Mul_Rrs) = wasm::f32_mul;
     fn f32_mul_rri(F32Mul_Rri) = wasm::f32_mul;
     fn f32_mul_rsr(F32Mul_Rsr) = wasm::f32_mul;
@@ -1883,6 +1886,7 @@ handler_binary! {
     fn f64_sub_rsi(F64Sub_Rsi) = wasm::f64_sub;
     fn f64_sub_rir(F64Sub_Rir) = wasm::f64_sub;
     fn f64_sub_ris(F64Sub_Ris) = wasm::f64_sub;
+    fn f64_mul_rrr(F64Mul_Rrr) = wasm::f64_mul;
     fn f64_mul_rrs(F64Mul_Rrs) = wasm::f64_mul;
     fn f64_mul_rri(F64Mul_Rri) = wasm::f64_mul;
     fn f64_mul_rsr(F64Mul_Rsr) = wasm::f64_mul;
@@ -2233,6 +2237,10 @@ macro_rules! handler_select {
 }
 handler_select! {
     // u32
+    // fn u32_select_rrrs(U32Select_Rrrs) = u32; - subsumed by u64_select_rrrs
+    fn u32_select_rrri(U32Select_Rrri) = u32;
+    // fn u32_select_rrsr(U32Select_Rrsr) = u32; - subsumed by u64_select_rrsr
+    fn u32_select_rrir(U32Select_Rrir) = u32;
     // fn u32_select_rrss(U32Select_Rrss) = u32; - subsumed by u64_select_rrss
     fn u32_select_rrsi(U32Select_Rrsi) = u32;
     fn u32_select_rris(U32Select_Rris) = u32;
@@ -2246,6 +2254,10 @@ handler_select! {
     fn u32_select_rsis(U32Select_Rsis) = u32;
     fn u32_select_rsii(U32Select_Rsii) = u32;
     // u64
+    fn u64_select_rrrs(U64Select_Rrrs) = u64;
+    fn u64_select_rrri(U64Select_Rrri) = u64;
+    fn u64_select_rrsr(U64Select_Rrsr) = u64;
+    fn u64_select_rrir(U64Select_Rrir) = u64;
     fn u64_select_rrss(U64Select_Rrss) = u64;
     fn u64_select_rrsi(U64Select_Rrsi) = u64;
     fn u64_select_rris(U64Select_Rris) = u64;

@@ -15,6 +15,9 @@ pub trait CommutativeBinaryOp {
 
     fn consteval(lhs: Self::Input, rhs: Self::Input) -> Result<Self::Result, TrapCode>;
 
+    fn op_rrr() -> Option<Op> {
+        None
+    }
     fn op_rrs(rhs: Slot) -> Op;
     fn op_rri(rhs: Self::Input) -> Op;
     fn op_rss(lhs: Slot, rhs: Slot) -> Op;
@@ -29,6 +32,9 @@ pub trait BinaryOp {
     fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<Self::Rhs>;
     fn consteval(lhs: Self::Lhs, rhs: Self::Rhs) -> Result<Self::Result, TrapCode>;
 
+    fn op_rrr() -> Option<Op> {
+        None
+    }
     fn op_rrs(rhs: Slot) -> Op;
     fn op_rri(rhs: Self::Rhs) -> Op;
     fn op_rsr(lhs: Slot) -> Op;
@@ -47,6 +53,7 @@ macro_rules! impl_commutative_binary_op_for {
 
                 fn consteval = $consteval:expr;
 
+                $( fn op_rrr = $op_rrr:expr; )?
                 fn op_rrs = $op_rrs:ident;
                 fn op_rri = $op_rri:ident;
                 fn op_rss = $op_rss:ident;
@@ -63,6 +70,12 @@ macro_rules! impl_commutative_binary_op_for {
                 fn consteval(lhs: Self::Input, rhs: Self::Input) -> Result<Self::Result, TrapCode> {
                     $consteval(lhs, rhs).into_result()
                 }
+
+                $(
+                    fn op_rrr() -> Option<Op> {
+                        Some($op_rrr)
+                    }
+                )?
 
                 fn op_rrs(rhs: Slot) -> Op {
                     Op::$op_rrs { result: Reg::default(), lhs: Reg::default(), rhs }
@@ -95,6 +108,7 @@ macro_rules! impl_binary_op_for {
                 fn decode_rhs = $decode_rhs:expr;
                 fn consteval = $consteval:expr;
 
+                $( fn op_rrr = $op_rrr:expr; )?
                 fn op_rrs = $op_rrs:ident;
                 fn op_rri = $op_rri:ident;
                 fn op_rsr = $op_rsr:ident;
@@ -119,6 +133,12 @@ macro_rules! impl_binary_op_for {
                 fn consteval(lhs: Self::Lhs, rhs: Self::Rhs) -> Result<Self::Result, TrapCode> {
                     $consteval(lhs, rhs).into_result()
                 }
+
+                $(
+                    fn op_rrr() -> Option<Op> {
+                        Some($op_rrr)
+                    }
+                )?
 
                 fn op_rrs(rhs: Slot) -> Op {
                     Op::$op_rrs { result: Reg::default(), lhs: Reg::default(), rhs }
@@ -219,6 +239,7 @@ impl_commutative_binary_op_for! {
         type Result = i32;
         type Input = i32;
         fn consteval = wasm::i32_add;
+        fn op_rrr = Op::i32_mul_rri(2);
         fn op_rrs = I32Add_Rrs;
         fn op_rri = I32Add_Rri;
         fn op_rss = I32Add_Rss;
@@ -229,6 +250,7 @@ impl_commutative_binary_op_for! {
         type Result = i32;
         type Input = i32;
         fn consteval = wasm::i32_mul;
+        fn op_rrr = Op::i32_mul_rrr();
         fn op_rrs = I32Mul_Rrs;
         fn op_rri = I32Mul_Rri;
         fn op_rss = I32Mul_Rss;
@@ -331,6 +353,7 @@ impl_commutative_binary_op_for! {
         type Result = i64;
         type Input = i64;
         fn consteval = wasm::i64_add;
+        fn op_rrr = Op::i64_mul_rri(2);
         fn op_rrs = I64Add_Rrs;
         fn op_rri = I64Add_Rri;
         fn op_rss = I64Add_Rss;
@@ -341,6 +364,7 @@ impl_commutative_binary_op_for! {
         type Result = i64;
         type Input = i64;
         fn consteval = wasm::i64_mul;
+        fn op_rrr = Op::i64_mul_rrr();
         fn op_rrs = I64Mul_Rrs;
         fn op_rri = I64Mul_Rri;
         fn op_rss = I64Mul_Rss;
@@ -944,6 +968,7 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_mul;
+        fn op_rrr = Op::f32_mul_rrr();
         fn op_rrs = F32Mul_Rrs;
         fn op_rri = F32Mul_Rri;
         fn op_rsr = F32Mul_Rsr;
@@ -1111,6 +1136,7 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_mul;
+        fn op_rrr = Op::f64_mul_rrr();
         fn op_rrs = F64Mul_Rrs;
         fn op_rri = F64Mul_Rri;
         fn op_rsr = F64Mul_Rsr;
