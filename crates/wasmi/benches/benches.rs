@@ -875,7 +875,7 @@ fn bench_execute_compression(c: &mut Criterion) {
         let data_ptr = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
-            .call(&mut store, input_data.as_bytes().len() as u32)
+            .call(&mut store, input_data.len() as u32)
             .unwrap();
         // Get the pointer to the input buffer.
         let input_offset = instance
@@ -918,7 +918,7 @@ fn bench_execute_word_count(c: &mut Criterion) {
         let data_ptr = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
-            .call(&mut store, input_data.as_bytes().len() as u32)
+            .call(&mut store, input_data.len() as u32)
             .unwrap();
         // Get the pointer to the input buffer.
         let input_offset = instance
@@ -967,7 +967,7 @@ fn bench_execute_json_parse(c: &mut Criterion) {
         let data_ptr = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
-            .call(&mut store, input_data.as_bytes().len() as u32)
+            .call(&mut store, input_data.len() as u32)
             .unwrap();
         // Get the pointer to the input buffer.
         let input_offset = instance
