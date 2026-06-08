@@ -113,6 +113,7 @@ criterion_group! {
         bench_execute_tiny_keccak,
         bench_execute_mandelbrot,
         bench_execute_spectralnorm,
+        bench_execute_compression,
         bench_execute_json_parse,
         bench_execute_reverse_complement,
         bench_execute_regex_redux,
@@ -861,6 +862,49 @@ fn bench_execute_spectralnorm(c: &mut Criterion) {
             1.2742241159529095
         );
         teardown.call(&mut store, data_ptr).unwrap();
+    });
+}
+
+fn bench_execute_compression(c: &mut Criterion) {
+    c.bench_function("execute/compression", |b| {
+        let (mut store, instance) =
+            load_instance_from_file("benches/rust/cases/compression/out.wasm");
+        let input_data = std::fs::read_to_string("benches/rust/res/alice29.txt").unwrap();
+        // Allocate buffers for the input and output.
+        let data_ptr = instance
+            .get_typed_func::<u32, u32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, input_data.as_bytes().len() as u32)
+            .unwrap();
+        // Get the pointer to the input buffer.
+        let input_offset = instance
+            .get_typed_func::<u32, u32>(&store, "input_ptr")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
+        // Copy test data inside the wasm memory.
+        let memory = instance.get_memory(&store, "memory").unwrap();
+        memory
+            .write(&mut store, input_offset as usize, input_data.as_bytes())
+            .unwrap();
+        // Run the benchmark.
+        let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
+        b.iter(|| {
+            run.call(&mut store, data_ptr).unwrap();
+        });
+        // Get the pointer to the output buffer.
+        let len_compressed = instance
+            .get_typed_func::<u32, u64>(&store, "len_compressed")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
+        assert_eq!(len_compressed, 97_649);
+        // Teardown benchmark data.
+        instance
+            .get_typed_func::<u32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 
