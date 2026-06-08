@@ -62,7 +62,7 @@ use crate::{
             },
             func::{
                 op::BinaryOpRhs,
-                stack::{Allocation, TempOperand},
+                stack::{Allocation, PreservedRegs, TempOperand},
             },
             utils::{ToBits, WasmInteger, required_cells_for_ty},
         },
@@ -1669,9 +1669,11 @@ impl FuncTranslator {
         Ok(params)
     }
 
-    /// Preserve all register operands on the [`Stack`].
-    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
-        let regs = self.stack.preserve_all_regs();
+    fn copy_preserved_regs_to_slots(
+        &mut self,
+        regs: PreservedRegs,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
         if !self.reachable {
             // No need to encode copies if unreachable.
             return Ok(());
@@ -1689,6 +1691,18 @@ impl FuncTranslator {
                 .encode_op(Op::f64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
         }
         Ok(())
+    }
+
+    /// Preserve all register operands on the [`Stack`].
+    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
+        let regs = self.stack.preserve_all_regs();
+        self.copy_preserved_regs_to_slots(regs, fuel_pos)
+    }
+
+    /// Preserve all temporary register operands on the [`Stack`] but keep `local` register links.
+    fn preserve_temp_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
+        let regs = self.stack.preserve_all_temp_regs();
+        self.copy_preserved_regs_to_slots(regs, fuel_pos)
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.

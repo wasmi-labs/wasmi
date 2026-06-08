@@ -22,7 +22,7 @@ pub use self::{
         LoopControlFrame,
     },
     operand::{ImmediateOperand, LocalOperand, Location, Operand, ResolvedOperand, TempOperand},
-    operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter},
+    operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter, PreservedRegs},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
@@ -33,12 +33,7 @@ use crate::{
     engine::{
         BlockType,
         translator::{
-            func::{
-                LocalIdx,
-                Pos,
-                labels::LabelRef,
-                stack::operands::{PeekedOperands, PreservedRegs},
-            },
+            func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
             utils::required_cells_for_tys,
         },
     },
@@ -266,6 +261,7 @@ impl Stack {
         let len_params = usize::from(ty.len_params(&self.engine));
         let block_height = self.height() - len_params;
         let else_operands = self.operands.peek(len_params);
+        let registers = self.operands.get_registers();
         debug_assert!(len_params == else_operands.len());
         let branch_slots_head = self.branch_slots(len_params);
         let branch_slots_len =
@@ -279,6 +275,7 @@ impl Stack {
             fuel_pos,
             reachability,
             else_operands,
+            registers,
         );
         Ok(())
     }
@@ -300,6 +297,7 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         self.push_else_operands(&if_frame)?;
+        self.operands.set_registers(if_frame.registers());
         self.controls
             .push_else(if_frame, fuel_pos, is_end_of_then_reachable);
         Ok(())
@@ -547,6 +545,16 @@ impl Stack {
     #[must_use]
     pub fn preserve_all_regs(&mut self) -> PreservedRegs {
         self.operands.preserve_all_regs()
+    }
+
+    /// Preserve temporary register operands on the [`Stack`].
+    ///
+    /// This is done by converting those operands to [`StackOperand::Temp`] and
+    /// returning their associated slots in order to emit copy operators by
+    /// the caller.
+    #[must_use]
+    pub fn preserve_all_temp_regs(&mut self) -> PreservedRegs {
+        self.operands.preserve_all_temp_regs()
     }
 
     /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].

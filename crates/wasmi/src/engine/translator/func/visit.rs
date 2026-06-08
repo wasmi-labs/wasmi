@@ -112,7 +112,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let fuel_pos = self.stack.fuel_pos();
         self.preserve_all_locals()?;
-        self.preserve_regs(fuel_pos)?;
+        self.preserve_temp_regs(fuel_pos)?;
         let block_ty = BlockType::new(block_ty, &self.module);
         let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
@@ -151,7 +151,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let condition = self.stack.pop();
         let fuel_pos = self.stack.fuel_pos();
         self.preserve_all_locals()?;
-        self.preserve_regs(fuel_pos)?;
+        self.preserve_temp_regs(fuel_pos)?;
         let (reachability, fuel_pos) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());
@@ -197,7 +197,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let is_end_of_then_reachable = self.reachable;
         if let IfReachability::Both { else_label } = frame.reachability() {
             let fuel_pos = frame.fuel_pos();
-            self.preserve_regs(fuel_pos)?;
+            self.preserve_temp_regs(fuel_pos)?;
             if is_end_of_then_reachable {
                 self.copy_branch_params(&frame, fuel_pos)?;
                 frame.branch_to();
