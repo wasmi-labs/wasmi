@@ -426,7 +426,7 @@ jobs:
         run: |
           cargo tarpaulin --verbose --all-features --workspace --timeout 180 --engine llvm --out xml
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v6.0.1
+        uses: codecov/codecov-action@v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true
