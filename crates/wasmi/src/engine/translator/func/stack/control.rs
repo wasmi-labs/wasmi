@@ -3,10 +3,9 @@ use crate::{
     Engine,
     engine::{
         BlockType,
-        translator::func::{Pos, labels::LabelRef},
+        translator::func::{Pos, labels::LabelRef, stack::operands::RegisterMap},
     },
-    ir,
-    ir::BoundedSlotSpan,
+    ir::{self, BoundedSlotSpan},
 };
 use alloc::vec::{Drain, Vec};
 
@@ -177,6 +176,7 @@ impl ControlStack {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
         reachability: IfReachability,
         else_operands: impl IntoIterator<Item = Operand>,
+        registers: RegisterMap,
     ) {
         debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(IfControlFrame {
@@ -187,6 +187,7 @@ impl ControlStack {
             fuel_pos,
             label,
             reachability,
+            registers,
         }));
         if matches!(reachability, IfReachability::Both { .. }) {
             self.else_operands.push(else_operands);
@@ -687,6 +688,10 @@ pub struct IfControlFrame {
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
     reachability: IfReachability,
+    /// The state of registers on the stack upon entering the `if` block.
+    ///
+    /// This is used to restore the register state upon entering the `else` block.
+    registers: RegisterMap,
 }
 
 impl IfControlFrame {
@@ -705,6 +710,11 @@ impl IfControlFrame {
             IfReachability::Both { .. } | IfReachability::OnlyElse => true,
             IfReachability::OnlyThen => false,
         }
+    }
+
+    /// Returns the state of registers on the stack upon entering the `if` block.
+    pub(super) fn registers(&self) -> RegisterMap {
+        self.registers
     }
 }
 

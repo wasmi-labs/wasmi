@@ -173,6 +173,19 @@ impl RegisterMap {
         self.get_mut(ty).take()
     }
 
+    /// Deallocates any temporary link from the register for type `ty`.
+    ///
+    /// Returns the deallocated link of the register for type `ty` if any.
+    pub fn dealloc_temp(&mut self, ty: ValType) -> Option<StackPos> {
+        let link = self.get_mut(ty);
+        let Some(RegisterLink::Temp(pos)) = link else {
+            return None;
+        };
+        let pos = *pos;
+        link.take();
+        Some(pos)
+    }
+
     /// Returns the link of the register for type `ty` if any.
     pub fn get(&self, ty: ValType) -> Option<RegisterLink> {
         match ty {
@@ -303,6 +316,16 @@ impl OperandStack {
         let returned = TempOperand::new(*temp_slots, *ty, pos, *in_reg);
         *in_reg = false;
         Some(returned)
+    }
+
+    /// Returns the current [`RegisterMap`] state.
+    pub fn get_registers(&self) -> RegisterMap {
+        self.regs
+    }
+
+    /// Restores the state of registers of `self`.
+    pub fn set_registers(&mut self, registers: RegisterMap) {
+        self.regs = registers;
     }
 
     /// Pushes the offset for temporary operands by `delta`.
@@ -664,6 +687,26 @@ impl OperandStack {
             self.regs
                 .dealloc(ty)
                 .and_then(|reg| preserve_reg(self, reg))
+        });
+        PreservedRegs {
+            ireg,
+            freg32,
+            freg64,
+        }
+    }
+
+    /// Preserve all temporary register operands on the [`OperandStack`].
+    ///
+    /// This is done by converting those operands to [`StackOperand::Temp`] and
+    /// returning their associated [`Slot`] in order to emit copy operators by
+    /// the caller.
+    #[must_use]
+    pub fn preserve_all_temp_regs(&mut self) -> PreservedRegs {
+        let reg_tys = [ValType::I64, ValType::F32, ValType::F64];
+        let [ireg, freg32, freg64] = reg_tys.map(|ty| {
+            self.regs
+                .dealloc_temp(ty)
+                .map(|pos| self.operand_to_temp_at(pos).temp_slots().head())
         });
         PreservedRegs {
             ireg,
