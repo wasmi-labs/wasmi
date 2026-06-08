@@ -827,15 +827,12 @@ fn bench_execute_mandelbrot(c: &mut Criterion) {
         let output = instance
             .get_typed_func::<u32, u64>(&store, "output")
             .unwrap();
-        let data_ptr = setup
-            .call(&mut store, 150)
-            .unwrap();
+        let data_ptr = setup.call(&mut store, 150).unwrap();
         b.iter(|| {
             run.call(&mut store, data_ptr).unwrap();
         });
         assert_eq!(output.call(&mut store, data_ptr).unwrap(), 5_595_328);
-        teardown
-            .call(&mut store, data_ptr)
+        teardown.call(&mut store, data_ptr).unwrap();
             .unwrap();
     });
 }
