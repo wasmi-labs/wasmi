@@ -112,6 +112,7 @@ criterion_group! {
         bench_execute_argon2,
         bench_execute_tiny_keccak,
         bench_execute_mandelbrot,
+        bench_execute_spectralnorm,
         bench_execute_reverse_complement,
         bench_execute_regex_redux,
         bench_execute_counter,
@@ -833,7 +834,32 @@ fn bench_execute_mandelbrot(c: &mut Criterion) {
         });
         assert_eq!(output.call(&mut store, data_ptr).unwrap(), 5_595_328);
         teardown.call(&mut store, data_ptr).unwrap();
+    });
+}
+
+fn bench_execute_spectralnorm(c: &mut Criterion) {
+    c.bench_function("execute/spectralnorm", |b| {
+        let (mut store, instance) =
+            load_instance_from_file("benches/rust/cases/spectralnorm/out.wasm");
+        let setup = instance
+            .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap();
+        let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
+        let teardown = instance
+            .get_typed_func::<u32, ()>(&store, "teardown")
+            .unwrap();
+        let output = instance
+            .get_typed_func::<u32, f64>(&store, "output")
+            .unwrap();
+        let data_ptr = setup.call(&mut store, 500).unwrap();
+        b.iter(|| {
+            run.call(&mut store, data_ptr).unwrap();
+        });
+        assert_eq!(
+            output.call(&mut store, data_ptr).unwrap(),
+            1.2742241159529095
+        );
+        teardown.call(&mut store, data_ptr).unwrap();
     });
 }
 
