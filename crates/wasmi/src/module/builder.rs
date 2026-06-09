@@ -33,15 +33,8 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder {
-    pub header: ModuleHeader,
-    pub data_segments: DataSegmentsBuilder,
-    pub custom_sections: CustomSectionsBuilder,
-}
-
-/// A builder for a WebAssembly [`Module`] header.
-#[derive(Debug)]
-pub struct ModuleHeaderBuilder {
     engine: Engine,
+    pub header: Option<ModuleHeader>,
     pub func_types: Vec<DedupFuncType>,
     pub imports: ModuleImportsBuilder,
     pub funcs: Vec<DedupFuncType>,
@@ -53,13 +46,16 @@ pub struct ModuleHeaderBuilder {
     pub start: Option<FuncIdx>,
     pub engine_funcs: EngineFuncSpan,
     pub element_segments: Box<[ElementSegment]>,
+    pub data_segments: DataSegmentsBuilder,
+    pub custom_sections: CustomSectionsBuilder,
 }
 
-impl ModuleHeaderBuilder {
-    /// Creates a new [`ModuleHeaderBuilder`] for the given [`Engine`].
+impl ModuleBuilder {
+    /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
         Self {
             engine: engine.clone(),
+            header: None,
             func_types: Vec::new(),
             imports: ModuleImportsBuilder::default(),
             funcs: Vec::new(),
@@ -71,27 +67,56 @@ impl ModuleHeaderBuilder {
             start: None,
             engine_funcs: EngineFuncSpan::default(),
             element_segments: Box::from([]),
+            data_segments: DataSegments::build(),
+            custom_sections: CustomSectionsBuilder::default(),
         }
     }
 
     /// Finishes construction of [`ModuleHeader`].
-    pub fn finish(self) -> ModuleHeader {
-        ModuleHeader {
-            inner: Arc::new(ModuleHeaderInner {
-                engine: self.engine.weak(),
-                func_types: self.func_types.into(),
-                imports: self.imports.finish(),
-                funcs: self.funcs.into(),
-                tables: self.tables.into(),
-                memories: self.memories.into(),
-                globals: self.globals.into(),
-                globals_init: self.globals_init.into(),
-                exports: self.exports,
-                start: self.start,
-                engine_funcs: self.engine_funcs,
-                element_segments: self.element_segments,
+    pub fn finish(mut self) -> Module {
+        let header = self.header();
+        Module {
+            inner: Arc::new(ModuleInner {
+                engine: self.engine,
+                data_segments: self.data_segments.finish(),
+                custom_sections: self.custom_sections.finish(),
+                header,
             }),
         }
+    }
+
+    pub fn header(&mut self) -> ModuleHeader {
+        use core::mem::take;
+        if let Some(header) = self.header.as_ref() {
+            return header.clone();
+        }
+        let func_types: Box<[DedupFuncType]> = take(&mut self.func_types).into();
+        let header = ModuleHeader {
+            inner: Arc::new(ModuleHeaderInner {
+                engine: self.engine.weak(),
+                func_types: func_types.into(),
+                imports: take(&mut self.imports).finish(),
+                funcs: take(&mut self.funcs).into(),
+                tables: take(&mut self.tables).into(),
+                memories: take(&mut self.memories).into(),
+                globals: take(&mut self.globals).into(),
+                globals_init: take(&mut self.globals_init).into(),
+                exports: take(&mut self.exports),
+                start: self.start,
+                engine_funcs: self.engine_funcs,
+                element_segments: take(&mut self.element_segments),
+            }),
+        };
+        self.header = Some(header.clone());
+        header
+    }
+
+    /// Returns the number of imported functions.
+    pub fn len_funcs_imports(&self) -> usize {
+        if let Some(header) = self.header.as_ref() {
+            return header.inner.imports.len_funcs();
+        }
+        self.imports.funcs.len()
     }
 }
 
@@ -131,17 +156,6 @@ impl ModuleImportsBuilder {
 }
 
 impl ModuleBuilder {
-    /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
-    pub fn new(header: ModuleHeader, custom_sections: CustomSectionsBuilder) -> Self {
-        Self {
-            header,
-            data_segments: DataSegments::build(),
-            custom_sections,
-        }
-    }
-}
-
-impl ModuleHeaderBuilder {
     /// Pushes the given function types to the [`Module`] under construction.
     ///
     /// # Errors
@@ -405,17 +419,5 @@ impl ModuleBuilder {
     /// Push another parsed data segment to the [`ModuleBuilder`].
     pub fn push_data_segment(&mut self, data: wasmparser::Data) -> Result<(), Error> {
         self.data_segments.push_data_segment(data)
-    }
-
-    /// Finishes construction of the WebAssembly [`Module`].
-    pub fn finish(self, engine: &Engine) -> Module {
-        Module {
-            inner: Arc::new(ModuleInner {
-                engine: engine.clone(),
-                header: self.header,
-                data_segments: self.data_segments.finish(),
-                custom_sections: self.custom_sections.finish(),
-            }),
-        }
     }
 }

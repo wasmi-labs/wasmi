@@ -1,14 +1,11 @@
 use super::{
-    builder::ModuleHeaderBuilder,
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
     utils::FromWasmparser as _,
-    CustomSectionsBuilder,
     ElementSegment,
     FuncIdx,
     ModuleBuilder,
-    ModuleHeader,
 };
 use crate::{
     engine::{EnforcedLimitsError, EngineFunc},
@@ -104,7 +101,7 @@ impl ModuleParser {
     fn process_types(
         &mut self,
         section: TypeSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(validator) = &mut self.validator {
             validator.type_section(&section)?;
@@ -127,7 +124,7 @@ impl ModuleParser {
             }
             Ok(FuncType::from_wasmparser(func_ty))
         });
-        header.push_func_types(func_types)?;
+        module.push_func_types(func_types)?;
         Ok(())
     }
 
@@ -144,7 +141,7 @@ impl ModuleParser {
     fn process_imports(
         &mut self,
         section: ImportSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(validator) = &mut self.validator {
             validator.import_section(&section)?;
@@ -152,7 +149,7 @@ impl ModuleParser {
         let imports = section
             .into_iter()
             .map(|import| import.map(Import::from).map_err(Error::from));
-        header.push_imports(imports)?;
+        module.push_imports(imports)?;
         Ok(())
     }
 
@@ -168,7 +165,7 @@ impl ModuleParser {
     fn process_functions(
         &mut self,
         section: FunctionSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_enforced_limits().max_functions {
             if section.count() > limit {
@@ -181,7 +178,7 @@ impl ModuleParser {
         let funcs = section
             .into_iter()
             .map(|func| func.map(FuncTypeIdx::from).map_err(Error::from));
-        header.push_funcs(funcs)?;
+        module.push_funcs(funcs)?;
         Ok(())
     }
 
@@ -197,7 +194,7 @@ impl ModuleParser {
     fn process_tables(
         &mut self,
         section: TableSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_enforced_limits().max_tables {
             if section.count() > limit {
@@ -214,7 +211,7 @@ impl ModuleParser {
             }
             Err(err) => Err(err.into()),
         });
-        header.push_tables(tables)?;
+        module.push_tables(tables)?;
         Ok(())
     }
 
@@ -230,7 +227,7 @@ impl ModuleParser {
     fn process_memories(
         &mut self,
         section: MemorySectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_enforced_limits().max_memories {
             if section.count() > limit {
@@ -243,7 +240,7 @@ impl ModuleParser {
         let memories = section
             .into_iter()
             .map(|memory| memory.map(MemoryType::from_wasmparser).map_err(Error::from));
-        header.push_memories(memories)?;
+        module.push_memories(memories)?;
         Ok(())
     }
 
@@ -259,7 +256,7 @@ impl ModuleParser {
     fn process_globals(
         &mut self,
         section: GlobalSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_enforced_limits().max_globals {
             if section.count() > limit {
@@ -272,7 +269,7 @@ impl ModuleParser {
         let globals = section
             .into_iter()
             .map(|global| global.map(Global::from).map_err(Error::from));
-        header.push_globals(globals)?;
+        module.push_globals(globals)?;
         Ok(())
     }
 
@@ -288,7 +285,7 @@ impl ModuleParser {
     fn process_exports(
         &mut self,
         section: ExportSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(validator) = &mut self.validator {
             validator.export_section(&section)?;
@@ -299,7 +296,7 @@ impl ModuleParser {
             let idx = ExternIdx::new(export.kind, export.index)?;
             Ok((field, idx))
         });
-        header.push_exports(exports)?;
+        module.push_exports(exports)?;
         Ok(())
     }
 
@@ -316,12 +313,12 @@ impl ModuleParser {
         &mut self,
         func: u32,
         range: Range<usize>,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(validator) = &mut self.validator {
             validator.start_section(func, &range)?;
         }
-        header.set_start(FuncIdx::from(func));
+        module.set_start(FuncIdx::from(func));
         Ok(())
     }
 
@@ -337,7 +334,7 @@ impl ModuleParser {
     fn process_element(
         &mut self,
         section: ElementSectionReader,
-        header: &mut ModuleHeaderBuilder,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if let Some(limit) = self
             .engine
@@ -357,7 +354,7 @@ impl ModuleParser {
         let segments = section
             .into_iter()
             .map(|segment| segment.map(ElementSegment::from).map_err(Error::from));
-        header.push_element_segments(segments)?;
+        module.push_element_segments(segments)?;
         Ok(())
     }
 
@@ -457,13 +454,13 @@ impl ModuleParser {
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
-    fn next_func(&mut self, header: &ModuleHeader) -> (FuncIdx, EngineFunc) {
+    fn next_func(&mut self, module: &ModuleBuilder) -> (FuncIdx, EngineFunc) {
         let index = self.engine_funcs;
-        let engine_func = header.inner.engine_funcs.get_or_panic(index);
+        let engine_func = module.engine_funcs.get_or_panic(index);
         self.engine_funcs += 1;
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
-        let len_func_imports = u32::try_from(header.inner.imports.len_funcs())
+        let len_func_imports = u32::try_from(module.len_funcs_imports())
             .unwrap_or_else(|_| panic!("too many imported functions"));
         let func_idx = FuncIdx::from(index + len_func_imports);
         (func_idx, engine_func)
@@ -484,30 +481,30 @@ impl ModuleParser {
         &mut self,
         func_body: FunctionBody,
         bytes: &[u8],
-        header: &ModuleHeader,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
-        let (func, engine_func) = self.next_func(header);
-        let module = header.clone();
+        let (func, engine_func) = self.next_func(module);
         let offset = func_body.get_binary_reader().original_position();
         let func_to_validate = match &mut self.validator {
             Some(validator) => Some(validator.code_section_entry(&func_body)?),
             None => None,
         };
+        let header = module.header();
         self.engine
-            .translate_func(func, engine_func, offset, bytes, module, func_to_validate)?;
+            .translate_func(func, engine_func, offset, bytes, header, func_to_validate)?;
         Ok(())
     }
 
     /// Process a single Wasm custom section.
     fn process_custom_section(
         &mut self,
-        custom_sections: &mut CustomSectionsBuilder,
         reader: CustomSectionReader,
+        module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
         if self.engine.config().get_ignore_custom_sections() {
             return Ok(());
         }
-        custom_sections.push(reader.name(), reader.data());
+        module.custom_sections.push(reader.name(), reader.data());
         Ok(())
     }
 
