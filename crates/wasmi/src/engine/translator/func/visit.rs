@@ -199,7 +199,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let is_end_of_then_reachable = self.reachable;
         if let IfReachability::Both { else_label } = frame.reachability() {
             let fuel_pos = frame.fuel_pos();
-            self.preserve_temp_regs(fuel_pos)?;
             if is_end_of_then_reachable {
                 self.copy_branch_params(&frame, fuel_pos)?;
                 frame.branch_to();
