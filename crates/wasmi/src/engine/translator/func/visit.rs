@@ -111,9 +111,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         let fuel_pos = self.stack.fuel_pos();
-        self.preserve_all_locals()?;
-        self.preserve_temp_regs(fuel_pos)?;
         let block_ty = BlockType::new(block_ty, &self.module);
+        let len_params = block_ty.len_params(self.engine());
+        self.preserve_all_locals(len_params.into())?;
+        self.preserve_temp_regs(fuel_pos)?;
         let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
         Ok(())
@@ -126,7 +127,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         let fuel_pos = self.stack.fuel_pos();
-        self.preserve_all_locals()?;
+        self.preserve_all_locals(0)?;
         self.preserve_regs(fuel_pos)?;
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(&self.engine);
@@ -150,7 +151,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let end_label = self.instrs.new_label();
         let condition = self.stack.pop();
         let fuel_pos = self.stack.fuel_pos();
-        self.preserve_all_locals()?;
+        let block_ty = BlockType::new(block_ty, &self.module);
+        let len_params = block_ty.len_params(self.engine());
+        self.preserve_all_locals(len_params.into())?;
         self.preserve_temp_regs(fuel_pos)?;
         let (reachability, fuel_pos) = match condition {
             Operand::Immediate(operand) => {
@@ -174,7 +177,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 (reachability, fuel_pos)
             }
         };
-        let block_ty = BlockType::new(block_ty, &self.module);
         self.stack
             .push_if(block_ty, end_label, reachability, fuel_pos)?;
         Ok(())
