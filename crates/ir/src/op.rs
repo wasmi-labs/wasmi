@@ -8,6 +8,7 @@ use crate::{
     BoundedSlotSpan,
     BranchOffset,
     FixedSlotSpan,
+    Local,
     Offset16,
     Reg,
     Slot,

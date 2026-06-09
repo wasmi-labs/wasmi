@@ -475,15 +475,68 @@ impl FuncTranslator {
         Ok(Some(op))
     }
 
-    /// Returns the [`Op`] to copy the register `value` into `result`.
+    /// Returns the [`Op`] to copy the register `value` into `result` for `ty`.
     fn select_copy_sr_op(result: Slot, ty: ValType) -> Result<Op, Error> {
-        let op = match ty {
+        match ty {
             | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                Op::u64_copy_sr(result)
+                Self::select_u64_copy_sr_op(result)
             }
-            | ValType::F32 => Op::f32_copy_sr(result),
-            | ValType::F64 => Op::f64_copy_sr(result),
+            | ValType::F32 => Self::select_f32_copy_sr_op(result),
+            | ValType::F64 => Self::select_f64_copy_sr_op(result),
             | ValType::V128 => unreachable!(),
+        }
+    }
+
+    /// Returns the [`Op`] to copy the register `value` of type `u64` into `result`.
+    fn select_u64_copy_sr_op(result: Slot) -> Result<Op, Error> {
+        let op = match u16::from(result) {
+            0 => Op::u64_copy_s0r(),
+            1 => Op::u64_copy_s1r(),
+            2 => Op::u64_copy_s2r(),
+            3 => Op::u64_copy_s3r(),
+            4 => Op::u64_copy_s4r(),
+            5 => Op::u64_copy_s5r(),
+            6 => Op::u64_copy_s6r(),
+            7 => Op::u64_copy_s7r(),
+            8 => Op::u64_copy_s8r(),
+            9 => Op::u64_copy_s9r(),
+            _ => Op::u64_copy_sr(result),
+        };
+        Ok(op)
+    }
+
+    /// Returns the [`Op`] to copy the register `value` of type `f32` into `result`.
+    fn select_f32_copy_sr_op(result: Slot) -> Result<Op, Error> {
+        let op = match u16::from(result) {
+            0 => Op::f32_copy_s0r(),
+            1 => Op::f32_copy_s1r(),
+            2 => Op::f32_copy_s2r(),
+            3 => Op::f32_copy_s3r(),
+            4 => Op::f32_copy_s4r(),
+            5 => Op::f32_copy_s5r(),
+            6 => Op::f32_copy_s6r(),
+            7 => Op::f32_copy_s7r(),
+            8 => Op::f32_copy_s8r(),
+            9 => Op::f32_copy_s9r(),
+            _ => Op::f32_copy_sr(result),
+        };
+        Ok(op)
+    }
+
+    /// Returns the [`Op`] to copy the register `value` of type `f64` into `result`.
+    fn select_f64_copy_sr_op(result: Slot) -> Result<Op, Error> {
+        let op = match u16::from(result) {
+            0 => Op::f64_copy_s0r(),
+            1 => Op::f64_copy_s1r(),
+            2 => Op::f64_copy_s2r(),
+            3 => Op::f64_copy_s3r(),
+            4 => Op::f64_copy_s4r(),
+            5 => Op::f64_copy_s5r(),
+            6 => Op::f64_copy_s6r(),
+            7 => Op::f64_copy_s7r(),
+            8 => Op::f64_copy_s8r(),
+            9 => Op::f64_copy_s9r(),
+            _ => Op::f64_copy_sr(result),
         };
         Ok(op)
     }

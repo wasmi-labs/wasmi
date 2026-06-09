@@ -232,6 +232,7 @@ impl Display for CamelCase<Suffix<OperandKind>> {
             OperandKind::Slot => "S",
             OperandKind::Reg => "R",
             OperandKind::Immediate => "I",
+            OperandKind::Local(index) => return write!(f, "S{index}"),
         };
         f.write_str(s)
     }
@@ -243,6 +244,7 @@ impl Display for SnakeCase<Suffix<OperandKind>> {
             OperandKind::Slot => "s",
             OperandKind::Reg => "r",
             OperandKind::Immediate => "i",
+            OperandKind::Local(index) => return write!(f, "s{index}"),
         };
         f.write_str(s)
     }

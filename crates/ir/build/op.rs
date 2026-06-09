@@ -85,6 +85,8 @@ pub enum OperandKind {
     Slot,
     /// The operand is an immediate value.
     Immediate,
+    /// The operand is a fixed stack slot value.
+    Local(u16),
 }
 
 impl OperandKind {
@@ -105,6 +107,7 @@ impl OperandKind {
                 Ty::F64 | Ty::SignF64 => FieldTy::RegF64,
                 _ => FieldTy::RegInt,
             },
+            OperandKind::Local(index) => FieldTy::Local(index),
         }
     }
 }
@@ -528,6 +531,7 @@ impl LoadOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
             OperandKind::Reg => FieldTy::RegInt,
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -539,6 +543,7 @@ impl LoadOp {
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
             OperandKind::Immediate => return None,
+            OperandKind::Local(_index) => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -661,6 +666,7 @@ impl StoreOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Immediate => FieldTy::Address,
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -672,6 +678,7 @@ impl StoreOp {
                 OffsetOperand::Offset => FieldTy::U64,
             },
             OperandKind::Immediate => return None,
+            OperandKind::Local(_index) => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -685,6 +692,7 @@ impl StoreOp {
                 StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
                 StoreKind::Lane { width } => FieldTy::from(width),
             },
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Value, field_ty)
     }
@@ -995,6 +1003,7 @@ impl ReplaceLaneOp {
                 _ => FieldTy::RegInt,
             },
             OperandKind::Immediate => self.ty.item_ty(),
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Value, value_ty)
     }

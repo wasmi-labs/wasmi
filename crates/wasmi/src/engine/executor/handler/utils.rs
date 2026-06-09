@@ -35,7 +35,7 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
     ir,
-    ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Slot, SlotSpan, index},
+    ir::{Address, BoundedSlotSpan, BranchOffset, Local, Offset16, Slot, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -329,6 +329,23 @@ where
         _freg64: Freg64,
     ) -> (Ireg, Freg32, Freg64) {
         (ireg, freg32, src.into())
+    }
+}
+
+impl<const N: u16, T> SetValue<T> for Local<N>
+where
+    T: StoreToCells,
+{
+    #[inline]
+    fn set_value(
+        _dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        <Slot as SetValue<T>>::set_value(Slot::from(N), src, sp, ireg, freg32, freg64)
     }
 }
 

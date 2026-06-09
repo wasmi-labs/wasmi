@@ -132,6 +132,7 @@ impl OperandKind {
         match self {
             OperandKind::Reg => Some(Location::Reg),
             OperandKind::Slot => Some(Location::Slot),
+            OperandKind::Local(_) => None,
             OperandKind::Immediate => unreachable!(),
         }
     }

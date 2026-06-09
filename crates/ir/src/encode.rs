@@ -7,6 +7,7 @@ use crate::{
     BranchOffset,
     BranchTableTarget,
     FixedSlotSpan,
+    Local,
     Offset16,
     Op,
     OpCode,
@@ -243,6 +244,16 @@ impl<const N: usize, T: Encode> Encode for [T; N] {
             item.encode(encoder)?;
         }
         Ok(pos)
+    }
+}
+
+impl<const N: u16> Encode for Local<N> {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.write_bytes(&[])
     }
 }
 

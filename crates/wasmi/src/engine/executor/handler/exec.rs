@@ -1354,6 +1354,37 @@ impl_branch_table_exec_handler! {
 }
 
 handler_unary! {
+    // specialized copy_sNr operators
+    fn u64_copy_s0r(U64Copy_S0r) = identity::<u64>;
+    fn u64_copy_s1r(U64Copy_S1r) = identity::<u64>;
+    fn u64_copy_s2r(U64Copy_S2r) = identity::<u64>;
+    fn u64_copy_s3r(U64Copy_S3r) = identity::<u64>;
+    fn u64_copy_s4r(U64Copy_S4r) = identity::<u64>;
+    fn u64_copy_s5r(U64Copy_S5r) = identity::<u64>;
+    fn u64_copy_s6r(U64Copy_S6r) = identity::<u64>;
+    fn u64_copy_s7r(U64Copy_S7r) = identity::<u64>;
+    fn u64_copy_s8r(U64Copy_S8r) = identity::<u64>;
+    fn u64_copy_s9r(U64Copy_S9r) = identity::<u64>;
+    fn f32_copy_s0r(F32Copy_S0r) = identity::<f32>;
+    fn f32_copy_s1r(F32Copy_S1r) = identity::<f32>;
+    fn f32_copy_s2r(F32Copy_S2r) = identity::<f32>;
+    fn f32_copy_s3r(F32Copy_S3r) = identity::<f32>;
+    fn f32_copy_s4r(F32Copy_S4r) = identity::<f32>;
+    fn f32_copy_s5r(F32Copy_S5r) = identity::<f32>;
+    fn f32_copy_s6r(F32Copy_S6r) = identity::<f32>;
+    fn f32_copy_s7r(F32Copy_S7r) = identity::<f32>;
+    fn f32_copy_s8r(F32Copy_S8r) = identity::<f32>;
+    fn f32_copy_s9r(F32Copy_S9r) = identity::<f32>;
+    fn f64_copy_s0r(F64Copy_S0r) = identity::<f64>;
+    fn f64_copy_s1r(F64Copy_S1r) = identity::<f64>;
+    fn f64_copy_s2r(F64Copy_S2r) = identity::<f64>;
+    fn f64_copy_s3r(F64Copy_S3r) = identity::<f64>;
+    fn f64_copy_s4r(F64Copy_S4r) = identity::<f64>;
+    fn f64_copy_s5r(F64Copy_S5r) = identity::<f64>;
+    fn f64_copy_s6r(F64Copy_S6r) = identity::<f64>;
+    fn f64_copy_s7r(F64Copy_S7r) = identity::<f64>;
+    fn f64_copy_s8r(F64Copy_S8r) = identity::<f64>;
+    fn f64_copy_s9r(F64Copy_S9r) = identity::<f64>;
     // copy
     fn u32_copy_ri(U32Copy_Ri) = identity::<u32>;
     fn u32_copy_si(U32Copy_Si) = identity::<u32>;

@@ -42,6 +42,7 @@ use crate::{
     BranchOffset,
     BranchTableTarget,
     FixedSlotSpan,
+    Local,
     Offset16,
     OpCode,
     Reg,
@@ -245,6 +246,13 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
         let byte = u8::decode(decoder)?;
         let lane = ImmLaneIdx::try_from(byte).map_err(|_| DecodeError::InvalidBitPattern)?;
         Ok(lane)
+    }
+}
+
+impl<const N: u16> Decode for Local<N> {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
     }
 }
 

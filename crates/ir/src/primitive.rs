@@ -5,6 +5,12 @@ use core::{
     marker::PhantomData,
 };
 
+/// A fixed local or stack slot index.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Local<const N: u16> {
+    marker: PhantomData<fn()>,
+}
+
 /// A generic register type.
 ///
 /// # Note

@@ -575,6 +575,17 @@ fn add_copy_ops(isa: &mut Isa) {
         )),
     ];
     isa.push_ops(ops);
+    for result_ty in [Ty::U64, Ty::F32, Ty::F64] {
+        for index in 0..10 {
+            isa.push_op(UnaryOp::new(
+                Ident::Copy,
+                result_ty,
+                result_ty,
+                Opd::Local(index),
+                OperandKind::Reg,
+            ));
+        }
+    }
 }
 
 fn add_call_ops(isa: &mut Isa) {

@@ -57,7 +57,7 @@ impl<'a, T> DisplayConstructor<&'a T> {
             fields
                 .iter()
                 .filter_map(Option::as_ref)
-                .filter(|field| !field.ty.is_reg()),
+                .filter(|field| !field.ty.is_reg() && !matches!(field.ty, FieldTy::Local(_))),
         );
         let struct_params = DisplaySequence::new(
             ", ",
@@ -65,7 +65,7 @@ impl<'a, T> DisplayConstructor<&'a T> {
                 .iter()
                 .filter_map(Option::as_ref)
                 .map(|param| match param.ty {
-                    FieldTy::RegInt | FieldTy::RegF32 | FieldTy::RegF64 => {
+                    FieldTy::RegInt | FieldTy::RegF32 | FieldTy::RegF64 | FieldTy::Local(_) => {
                         DisplayConstructorInit::Default(*param)
                     }
                     _ => DisplayConstructorInit::Param(param.ident),
