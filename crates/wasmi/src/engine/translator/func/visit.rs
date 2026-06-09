@@ -114,7 +114,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(self.engine());
         self.preserve_all_locals(len_params.into())?;
-        self.preserve_temp_regs(fuel_pos)?;
+        self.preserve_temp_regs(fuel_pos, len_params.into())?;
         let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
         Ok(())
@@ -154,7 +154,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(self.engine());
         self.preserve_all_locals(len_params.into())?;
-        self.preserve_temp_regs(fuel_pos)?;
+        self.preserve_temp_regs(fuel_pos, len_params.into())?;
         let (reachability, fuel_pos) = match condition {
             Operand::Immediate(operand) => {
                 let condition = i32::from(operand.val());

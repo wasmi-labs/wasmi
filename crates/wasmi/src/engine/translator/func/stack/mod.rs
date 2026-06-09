@@ -553,8 +553,8 @@ impl Stack {
     /// returning their associated slots in order to emit copy operators by
     /// the caller.
     #[must_use]
-    pub fn preserve_all_temp_regs(&mut self) -> PreservedRegs {
-        self.operands.preserve_all_temp_regs()
+    pub fn preserve_all_temp_regs(&mut self, skip: usize) -> PreservedRegs {
+        self.operands.preserve_all_temp_regs(skip)
     }
 
     /// Converts and returns the [`Operand`] at `depth` into a [`Operand::Temp`].

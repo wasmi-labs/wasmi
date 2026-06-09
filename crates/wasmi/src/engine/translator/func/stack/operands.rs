@@ -176,11 +176,14 @@ impl RegisterMap {
     /// Deallocates any temporary link from the register for type `ty`.
     ///
     /// Returns the deallocated link of the register for type `ty` if any.
-    pub fn dealloc_temp(&mut self, ty: ValType) -> Option<StackPos> {
+    pub fn dealloc_temp(&mut self, ty: ValType, skip_threshold: usize) -> Option<StackPos> {
         let link = self.get_mut(ty);
         let Some(RegisterLink::Temp(pos)) = link else {
             return None;
         };
+        if usize::from(*pos) >= skip_threshold {
+            return None;
+        }
         let pos = *pos;
         link.take();
         Some(pos)
@@ -697,11 +700,12 @@ impl OperandStack {
     /// returning their associated [`Slot`] in order to emit copy operators by
     /// the caller.
     #[must_use]
-    pub fn preserve_all_temp_regs(&mut self) -> PreservedRegs {
+    pub fn preserve_all_temp_regs(&mut self, skip: usize) -> PreservedRegs {
+        let skip_threshold = self.operands.len() - skip;
         let reg_tys = [ValType::I64, ValType::F32, ValType::F64];
         let [ireg, freg32, freg64] = reg_tys.map(|ty| {
             self.regs
-                .dealloc_temp(ty)
+                .dealloc_temp(ty, skip_threshold)
                 .map(|pos| self.operand_to_temp_at(pos).temp_slots().head())
         });
         PreservedRegs {
