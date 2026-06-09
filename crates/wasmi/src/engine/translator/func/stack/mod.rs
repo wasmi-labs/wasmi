@@ -533,8 +533,8 @@ impl Stack {
     /// The users must fully consume all items yielded by the returned iterator in order
     /// for the local preservation to take full effect.
     #[must_use]
-    pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
-        self.operands.preserve_all_locals()
+    pub fn preserve_all_locals(&mut self, skip: usize) -> PreservedAllLocalsIter<'_> {
+        self.operands.preserve_all_locals(skip)
     }
 
     /// Preserve all register operands on the [`Stack`].

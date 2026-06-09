@@ -652,12 +652,8 @@ impl OperandStack {
     /// The users must fully consume all items yielded by the returned iterator in order
     /// for the local preservation to take full effect.
     #[must_use]
-    pub fn preserve_all_locals(&mut self) -> PreservedAllLocalsIter<'_> {
-        let index = self.operands.len();
-        PreservedAllLocalsIter {
-            stack: self,
-            stack_pos: index,
-        }
+    pub fn preserve_all_locals(&mut self, skip: usize) -> PreservedAllLocalsIter<'_> {
+        PreservedAllLocalsIter::new(self, skip)
     }
 }
 
@@ -831,12 +827,28 @@ pub struct PreservedAllLocalsIter<'stack> {
     stack: &'stack mut OperandStack,
     /// The current operand stack position of the next preserved local if any.
     stack_pos: usize,
+    /// The number of operands to be skipped before preservation.
+    skip: usize,
+    /// The number of remaining locals to be found.
+    remaining_locals: usize,
 }
 
-impl PreservedAllLocalsIter<'_> {
+impl<'stack> PreservedAllLocalsIter<'stack> {
+    /// Creates a new [`PreservedAllLocalsIter`] for `stack` skipping the top-most `skip` operands.
+    pub fn new(stack: &'stack mut OperandStack, skip: usize) -> Self {
+        let stack_pos = stack.operands.len();
+        let remaining_locals = stack.len_locals;
+        Self {
+            stack,
+            stack_pos,
+            skip,
+            remaining_locals,
+        }
+    }
+
     /// Returns `true` if there are remaining local operands on the stack.
     fn has_remaining_locals(&self) -> bool {
-        self.stack.len_locals != 0
+        self.remaining_locals != 0
     }
 
     /// Returns the index of the next local operand on the stack if any.
@@ -845,11 +857,20 @@ impl PreservedAllLocalsIter<'_> {
     fn find_next_local(&mut self) -> Option<usize> {
         let mut stack_pos = self.stack_pos;
         loop {
+            if !self.has_remaining_locals() {
+                return None;
+            }
             stack_pos -= 1;
             let opd = self.stack.operands.get(stack_pos)?;
-            if let StackOperand::Local { .. } = opd {
-                return Some(stack_pos);
+            let StackOperand::Local { .. } = opd else {
+                continue;
+            };
+            self.remaining_locals -= 1;
+            if self.skip > 0 {
+                self.skip -= 1;
+                continue;
             }
+            return Some(stack_pos);
         }
     }
 }
@@ -858,9 +879,6 @@ impl Iterator for PreservedAllLocalsIter<'_> {
     type Item = LocalOperand;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if !self.has_remaining_locals() {
-            return None;
-        }
         self.stack_pos = self.find_next_local()?;
         let stack_pos = StackPos::from(self.stack_pos);
         let operand = self.stack.preserve_local_at(stack_pos);

@@ -852,9 +852,9 @@ impl FuncTranslator {
     /// # Note
     ///
     /// This works by encoding copy instructions to `temp` register space.
-    fn preserve_all_locals(&mut self) -> Result<(), Error> {
+    fn preserve_all_locals(&mut self, skip: usize) -> Result<(), Error> {
         let fuel_pos = self.stack.fuel_pos();
-        for local in self.stack.preserve_all_locals() {
+        for local in self.stack.preserve_all_locals(skip) {
             let result = local.temp_slots().head();
             let Some(copy_instr) = Self::select_copy_sx_op(result, local.into(), &mut self.layout)?
             else {
