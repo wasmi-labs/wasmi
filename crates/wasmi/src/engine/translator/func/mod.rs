@@ -435,7 +435,7 @@ impl FuncTranslator {
         value: Operand,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Option<Pos<Op>>, Error> {
-        Self::encode_copy_impl(result, value, fuel_pos, &mut self.layout, &mut self.instrs)
+        Self::encode_copy_impl(result, value, fuel_pos, &self.layout, &mut self.instrs)
     }
 
     /// Encodes a single copy instruction.
@@ -447,7 +447,7 @@ impl FuncTranslator {
         result: Slot,
         value: Operand,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
-        layout: &mut StackLayout,
+        layout: &StackLayout,
         encoder: &mut OpEncoder,
     ) -> Result<Option<Pos<Op>>, Error> {
         let Some(copy_instr) = Self::select_copy_sx_op(result, value, layout)? else {
@@ -464,7 +464,7 @@ impl FuncTranslator {
     fn select_copy_sx_op(
         result: Slot,
         value: Operand,
-        layout: &mut StackLayout,
+        layout: &StackLayout,
     ) -> Result<Option<Op>, Error> {
         let ty = value.ty();
         let op = match value.resolve(layout)? {
@@ -909,7 +909,7 @@ impl FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         for local in self.stack.preserve_all_locals(skip) {
             let result = local.temp_slots().head();
-            let Some(copy_instr) = Self::select_copy_sx_op(result, local.into(), &mut self.layout)?
+            let Some(copy_instr) = Self::select_copy_sx_op(result, local.into(), &self.layout)?
             else {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
@@ -1449,17 +1449,20 @@ impl FuncTranslator {
         local_index: u32,
         input: Operand,
     ) -> Result<LocalSetCodegen, Error> {
-        if let Operand::Local(input) = input {
-            if u32::from(input.local_index()) == local_index {
-                // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
-                //
-                // Note: This does not require any preservation since it won't change
-                //       the value of `local $n`.
-                return Ok(LocalSetCodegen::NoOp);
-            }
+        let local_idx = LocalIdx::from(local_index);
+        let result = self.layout.local_to_slot(local_idx)?;
+        let Some(unfused_op) = Self::select_copy_sx_op(result, input, &self.layout)? else {
+            // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
+            //
+            // Note: This does not require any preservation since it won't change
+            //       the value of `local $n`.
+            return Ok(LocalSetCodegen::NoOp);
+        };
+        let fused_op = self.fused_local_set(local_idx, input)?;
+        if fused_op.is_some() {
+            self.instrs.drop_staged();
         }
         let ty = input.ty();
-        let local_idx = LocalIdx::from(local_index);
         let fuel_pos = self.stack.fuel_pos();
         for preserved in self.stack.preserve_locals(local_idx) {
             let ty = preserved.ty();
@@ -1480,57 +1483,47 @@ impl FuncTranslator {
         } else {
             self.stack.dealloc_local_for_reg(ty, local_idx)?;
         }
-        if self.try_replace_result(local_idx, input)? {
-            // Case: it was possible to replace the result of the previous
-            //       instructions so no copy instruction is required.
-            return Ok(LocalSetCodegen::Fused);
-        }
-        // At this point we need to encode a copy instruction.
-        let result = self.layout.local_to_slot(local_idx)?;
-        self.encode_copy(result, input, fuel_pos)?
-            .expect("no-op copy cases have been filtered out above");
-        Ok(LocalSetCodegen::Copy)
+        let (outcome, op) = match fused_op {
+            Some(fused_op) => (LocalSetCodegen::Fused, fused_op),
+            None => (LocalSetCodegen::Copy, unfused_op),
+        };
+        self.instrs
+            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        Ok(outcome)
     }
 
-    /// Tries to replace the result of the previous instruction with `new_result` if possible.
+    /// Returns `Some` if the staged [`Op`] can be fused with the `local.set` and `None` otherwise.
     ///
-    /// Returns `Ok(true)` if replacement was successful and `Ok(false)` otherwise.
-    fn try_replace_result(
-        &mut self,
-        new_result: LocalIdx,
-        old_result: Operand,
-    ) -> Result<bool, Error> {
+    /// # Note
+    ///
+    /// - The `local` argument reflects the local index and `input` is the `input` operand of the `local.set`.
+    /// - This does not unstage or drop the staged [`Op`], nor does it encode the fused [`Op`].
+    /// - This only returns the resulting fused [`Op`] if any for later consideration.
+    fn fused_local_set(&self, local: LocalIdx, input: Operand) -> Result<Option<Op>, Error> {
         let Some(mut staged) = self.instrs.peek_staged() else {
-            // Case: cannot replace result without staged operator.
-            return Ok(false);
+            // Cannot replace result if no staged operator exists.
+            return Ok(None);
         };
-        let new_result = self.layout.local_to_slot(new_result)?;
-        debug_assert!(matches!(
-            self.layout.stack_space(new_result),
-            StackSpace::Local
-        ));
-        let old_result = match old_result {
-            Operand::Temp(old_result) if !old_result.in_reg() => old_result.temp_slots().head(),
-            _ => {
-                // Case  register: cannot replace register operand result for now.
-                //                 (in the future new operators might allow for this)
-                // Case immediate: cannot replace immediate value result since they are immutable.
-                // Case     local: cannot replace local with another local due to observable behavior.
-                return Ok(false);
-            }
+        let Some(old_result) = staged.result_mut() else {
+            // Cannot replace result of staged `Op` with non-slot result.
+            return Ok(None);
         };
-        let Some(staged_result) = staged.result_mut() else {
-            // Case: staged has no result and thus cannot have its result changed.
-            return Ok(false);
-        };
-        if *staged_result != old_result {
-            // Case: staged result does not match `old_result` and thus is not available for mutation.
-            return Ok(false);
+        if matches!(self.layout.stack_space(*old_result), StackSpace::Temp) {
+            // Cannot replace result of staged `Op` with a local result as its observable behavior.
+            return Ok(None);
         }
-        *staged_result = new_result;
-        let (fuel_pos, fuel_used) = self.instrs.drop_staged();
-        self.instrs.encode_op(staged, fuel_pos, fuel_used)?;
-        Ok(true)
+        let ResolvedOperand::Slot(input) = self.resolve_operand::<TypedRawVal>(input)? else {
+            // The `local.set` input is not a `Slot` and is not sourced from the staged `Op`.
+            return Ok(None);
+        };
+        if *old_result != input {
+            // The `local.set` input is not equal to staged `Op`'s output, thus the fusion is invalid.
+            return Ok(None);
+        }
+        // All checks passed, now replace result and return new fused `Op`.
+        let new_result = self.layout.local_to_slot(local)?;
+        *old_result = new_result;
+        Ok(Some(staged))
     }
 
     /// Encodes an unconditional Wasm `branch` instruction.
