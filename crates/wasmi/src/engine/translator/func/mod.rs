@@ -1451,13 +1451,15 @@ impl FuncTranslator {
     ) -> Result<LocalSetCodegen, Error> {
         let local_idx = LocalIdx::from(local_index);
         let result = self.layout.local_to_slot(local_idx)?;
-        let Some(unfused_op) = Self::select_copy_sx_op(result, input, &self.layout)? else {
-            // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
-            //
-            // Note: This does not require any preservation since it won't change
-            //       the value of `local $n`.
-            return Ok(LocalSetCodegen::NoOp);
-        };
+        if let Operand::Local(input) = input {
+            let input = self.layout.local_to_slot(input)?;
+            if result == input {
+                // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
+                return Ok(LocalSetCodegen::NoOp);
+            }
+        }
+        let unfused_op = Self::select_copy_sx_op(result, input, &self.layout)?
+            .expect("already filtered out no-op copies above");
         let fused_op = self.fused_local_set(local_idx, input)?;
         if fused_op.is_some() {
             self.instrs.drop_staged();
