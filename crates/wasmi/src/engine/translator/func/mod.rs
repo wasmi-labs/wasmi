@@ -1461,9 +1461,13 @@ impl FuncTranslator {
         let unfused_op = Self::select_copy_sx_op(result, input, &self.layout)?
             .expect("already filtered out no-op copies above");
         let fused_op = self.fused_local_set(local_idx, input)?;
-        if fused_op.is_some() {
-            self.instrs.drop_staged();
-        }
+        let staged_fuel = match fused_op {
+            Some(_) => {
+                let (_, fuel_used) = self.instrs.drop_staged();
+                Some(fuel_used)
+            }
+            None => None,
+        };
         let ty = input.ty();
         let fuel_pos = self.stack.fuel_pos();
         for preserved in self.stack.preserve_locals(local_idx) {
@@ -1489,8 +1493,13 @@ impl FuncTranslator {
             Some(fused_op) => (LocalSetCodegen::Fused, fused_op),
             None => (LocalSetCodegen::Copy, unfused_op),
         };
-        self.instrs
-            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        let fuel_costs = |selector: &FuelCostsProvider| -> u64 {
+            match staged_fuel {
+                None => selector.base(),
+                Some(fuel) => fuel,
+            }
+        };
+        self.instrs.encode_op(op, fuel_pos, fuel_costs)?;
         Ok(outcome)
     }
 
