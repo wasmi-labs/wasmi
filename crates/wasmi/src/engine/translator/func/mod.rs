@@ -1508,7 +1508,7 @@ impl FuncTranslator {
             // Cannot replace result of staged `Op` with non-slot result.
             return Ok(None);
         };
-        if matches!(self.layout.stack_space(*old_result), StackSpace::Temp) {
+        if matches!(self.layout.stack_space(*old_result), StackSpace::Local) {
             // Cannot replace result of staged `Op` with a local result as its observable behavior.
             return Ok(None);
         }
