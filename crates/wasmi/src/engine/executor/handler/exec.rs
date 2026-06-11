@@ -413,8 +413,12 @@ execution_handler! {
                 let wasm_func = func.func_body();
                 let callee_instance = *func.instance();
                 let callee_instance = resolve_instance(state.store, &callee_instance).into();
+                let changed_instance = match callee_instance != instance {
+                    true => Some(callee_instance),
+                    false => None,
+                };
                 let (callee_ip, callee_sp) =
-                    return_call_wasm(state, params, wasm_func, Some(instance))?;
+                    return_call_wasm(state, params, wasm_func, changed_instance)?;
                 (callee_ip, callee_sp, callee_instance)
             }
             FuncEntity::Host(host_func) => {
@@ -457,8 +461,12 @@ execution_handler! {
                 let wasm_func = func.func_body();
                 let callee_instance = *func.instance();
                 let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+                let changed_instance = match callee_instance != instance {
+                    true => Some(callee_instance),
+                    false => None,
+                };
                 let (callee_ip, callee_sp) =
-                    return_call_wasm(state, params, wasm_func, Some(instance))?;
+                    return_call_wasm(state, params, wasm_func, changed_instance)?;
                 (callee_ip, callee_sp, callee_instance)
             }
             FuncEntity::Host(host_func) => {

@@ -1253,21 +1253,30 @@ impl CallStack {
     }
 
     /// Adjusts `self` for a function tail call.
+    ///
+    /// # Note
+    ///
+    /// - If `instance` is `Some` it refers to the _callee_ instance of the tail call
+    ///   which is required to be different from the currently used instance.
+    /// - If `instance` is `None` the callee shares the currently used instance.
     #[inline(always)]
     fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<SpOffset, TrapCode> {
         let Some(caller_frame) = self.frames.last_mut() else {
             unsafe { unreachable_unchecked!("missing caller frame on the call stack") }
         };
-        let prev_instance = match instance {
-            Some(instance) => self.instance.replace(instance),
-            None => self.instance,
-        };
         let start = caller_frame.start;
-        *caller_frame = Frame {
-            start,
-            ip: callee_ip,
-            instance: prev_instance,
-        };
+        caller_frame.ip = callee_ip;
+        if let Some(callee_instance) = instance {
+            debug_assert!(self.instance != Some(callee_instance));
+            // The replaced frame's restoration obligation is carried over unchanged.
+            // However, if the replaced frame has no such obligation yet, its caller
+            // runs in the currently used instance which must be restored when the
+            // new frame returns since the callee continues in a different instance.
+            if caller_frame.instance.is_none() {
+                caller_frame.instance = self.instance;
+            }
+            self.instance = Some(callee_instance);
+        }
         Ok(start)
     }
 }
