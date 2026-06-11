@@ -200,6 +200,7 @@ macro_rules! foreach_test {
             fn wasmi_audit("wasmi/tests/audit");
             fn wasmi_call("wasmi/tests/call");
             fn wasmi_call_indirect("wasmi/tests/call-indirect");
+            fn wasmi_cross_instance_calls("wasmi/tests/cross-instance-calls");
             fn wasmi_return_call("wasmi/tests/return-call");
             fn wasmi_return_call_indirect("wasmi/tests/return-call-indirect");
             fn wasmi_global_set("wasmi/tests/global-set");
