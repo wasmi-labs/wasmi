@@ -1225,8 +1225,8 @@ impl CallStack {
             None => debug_assert!(self.frames.is_empty()),
         }
         let prev_instance = match instance {
-            Some(instance) => self.instance.replace(instance),
-            None => self.instance,
+            Some(instance) if self.instance != Some(instance) => self.instance.replace(instance),
+            _ => None,
         };
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let start = self.top_start().add(params_offset)?;
