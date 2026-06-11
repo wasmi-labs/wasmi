@@ -11,12 +11,15 @@ use crate::{
     core::{FuelCostsProvider, IndexType, RawRef, RawVal, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
-        translator::func::{
-            ControlFrameBase,
-            LocalSetCodegen,
-            Operand,
-            op,
-            stack::{AcquiredTarget, Allocation, IfReachability, ResolvedOperand},
+        translator::{
+            comparator::UpdateBranchOffset,
+            func::{
+                ControlFrameBase,
+                LocalSetCodegen,
+                Operand,
+                op,
+                stack::{AcquiredTarget, Allocation, IfReachability, Location, ResolvedOperand},
+            },
         },
     },
     ir::{self, Op, index},
@@ -153,11 +156,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(self.engine());
+        let fused_op = match self.fused_br_eqz(condition)? {
+            Some(op) => {
+                self.instrs.drop_staged();
+                Some(op)
+            }
+            None => None,
+        };
         self.preserve_all_locals(len_params.into())?;
         self.preserve_temp_regs(fuel_pos, len_params.into())?;
-        let (reachability, fuel_pos) = match condition {
-            Operand::Immediate(operand) => {
-                let condition = i32::from(operand.val());
+        let (reachability, fuel_pos) = match self.resolve_operand::<TypedRawVal>(condition)? {
+            ResolvedOperand::Immediate(operand) => {
+                let condition = i32::from(operand);
                 let reachability = match condition {
                     0 => {
                         self.reachable = false;
@@ -168,10 +178,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 let fuel_pos = self.stack.fuel_pos();
                 (reachability, fuel_pos)
             }
-            _ => {
-                // TODO: `encode_br_nez` is after `preserve_all_locals` and `preserve_all_regs` which hinders op-code fusion.
+            condition => {
+                let condition = match condition {
+                    ResolvedOperand::Reg(ty) => Location::Reg(ty),
+                    ResolvedOperand::Slot(condition) => Location::Slot(condition),
+                    ResolvedOperand::Immediate(_) => unreachable!(),
+                };
                 let else_label = self.instrs.new_label();
-                self.encode_br_eqz(condition, else_label)?;
+                self.encode_branch_op(
+                    else_label,
+                    |offset| match fused_op {
+                        Some(fused_op) => fused_op.with_branch_offset(offset),
+                        None => match condition {
+                            Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
+                            Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
+                        },
+                    },
+                    fuel_pos,
+                )?;
                 let reachability = IfReachability::Both { else_label };
                 let fuel_pos = self.instrs.encode_consume_fuel_op()?;
                 (reachability, fuel_pos)

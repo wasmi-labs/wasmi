@@ -1545,6 +1545,42 @@ impl FuncTranslator {
     }
 
     /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
+    fn fused_br_eqz(&self, condition: Operand) -> Result<Option<Op>, Error> {
+        self.fused_cmp_branch(condition, true)
+    }
+
+    /// Try to fuse a cmp+branch [`Op`] with optional negation.
+    fn fused_cmp_branch(&self, condition: Operand, negate: bool) -> Result<Option<Op>, Error> {
+        let Some(staged_op) = self.instrs.peek_staged() else {
+            // Case: cannot fuse without a known last instruction
+            return Ok(None);
+        };
+        let Some(ir::Location::Reg(result_ty)) = staged_op.result_loc() else {
+            // Case: cannot fuse without register result.
+            return Ok(None);
+        };
+        let ResolvedOperand::Reg(_ty) = condition.resolve(&self.layout)? else {
+            // Case: cannot fuse non-register operands
+            //  - locals have observable behavior.
+            //  - immediates cannot be the result of a previous instruction.
+            return Ok(None);
+        };
+        debug_assert!(matches!(result_ty, ValType::I32 | ValType::I64));
+        let cmp_op = match negate {
+            false => staged_op,
+            true => match staged_op.negate_cmp_instr() {
+                Some(negated) => negated,
+                None => {
+                    // Note: cannot negate staged [`Op`], thus it is not a `cmp` operator and thus not fusable.
+                    return Ok(None);
+                }
+            },
+        };
+        let fused_op_or_none = cmp_op.try_into_cmp_branch_instr(BranchOffset::uninit());
+        Ok(fused_op_or_none)
+    }
+
+    /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
     fn encode_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {
         self.encode_br_if(condition, label, true)
     }
