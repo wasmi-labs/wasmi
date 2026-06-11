@@ -56,7 +56,7 @@ use crate::{
                 UpdateBranchOffset as _,
             },
             func::stack::TempOperand,
-            utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger},
+            utils::{IntoShiftAmount, ToBits, WasmFloat, WasmInteger, required_cells_for_ty},
         },
     },
     ir::{
@@ -665,6 +665,7 @@ impl FuncTranslator {
         let mut result = results.head();
         let mut values = values;
         while let Some((value, rest)) = values.split_first() {
+            let ty = value.ty();
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
@@ -677,7 +678,7 @@ impl FuncTranslator {
                 // Can no longer strip no-op copies from the start.
                 break;
             }
-            result = result.next();
+            result = result.next_n(required_cells_for_ty(ty));
             values = rest;
         }
         Ok((SlotSpan::new(result), values))
@@ -697,6 +698,7 @@ impl FuncTranslator {
         let mut result = results.head().next_n(len);
         let mut values = values;
         while let Some((value, rest)) = values.split_last() {
+            let ty = value.ty();
             let value = match value {
                 Operand::Local(value) => layout.local_to_slot(value)?,
                 Operand::Temp(value) => value.temp_slots().head(),
@@ -705,7 +707,7 @@ impl FuncTranslator {
                     break;
                 }
             };
-            result = result.prev();
+            result = result.prev_n(required_cells_for_ty(ty));
             if result != value {
                 // Can no longer strip no-op copies from the end.
                 break;
