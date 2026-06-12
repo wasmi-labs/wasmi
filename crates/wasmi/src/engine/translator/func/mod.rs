@@ -1125,6 +1125,14 @@ impl FuncTranslator {
         Ok(pos)
     }
 
+    /// Returns [`Op::return_span`] if `returned` needs to be copied or otherwise [`Op::return`].
+    fn make_return_span(returned: BoundedSlotSpan) -> Op {
+        match returned.head() != Slot::from(0) {
+            true => Op::return_span(returned),
+            false => Op::r#return(),
+        }
+    }
+
     /// Encodes a generic return operator.
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
@@ -1134,7 +1142,7 @@ impl FuncTranslator {
             _ => {
                 let len_results = usize::from(len_results);
                 let results = self.move_operands_to_temp(len_results, fuel_pos)?;
-                Op::return_span(results)
+                Self::make_return_span(results)
             }
         };
         let instr = self
@@ -1146,7 +1154,10 @@ impl FuncTranslator {
     /// Encodes a return operator that returns a single value.
     fn encode_return_value(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
         let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
-            ValType::V128 => Op::return_span(BoundedSlotSpan::new(SlotSpan::new(slot), 2)),
+            ValType::V128 => {
+                let returned = BoundedSlotSpan::new(SlotSpan::new(slot), 2);
+                Self::make_return_span(returned)
+            }
             _ => Op::return_u64_s(slot),
         };
         let value = self.stack.peek(0);
@@ -1175,7 +1186,8 @@ impl FuncTranslator {
                 ValType::V128 => {
                     let value = self.stack.peek(0);
                     let temp_slot = self.copy_operand_to_temp(value, fuel_pos)?;
-                    Op::return_span(BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2))
+                    let returned = BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2);
+                    Self::make_return_span(returned)
                 }
             },
         };

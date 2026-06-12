@@ -1321,7 +1321,9 @@ where
         unsafe { ip.decode::<ir::BranchTableTarget>() };
     let values_len = values.len();
     let values = values.span();
-    exec_copy_span(sp, results, values, values_len);
+    if results != values {
+        exec_copy_span(sp, results, values, values_len);
+    }
     offset_ip(ip, offset)
 }
 

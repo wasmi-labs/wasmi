@@ -455,6 +455,8 @@ pub fn exec_return(
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    debug_assert_ne!(dst, src);
+    debug_assert!(len > 0);
     let op = match dst.head() <= src.head() {
         true => exec_copy_span_asc,
         false => exec_copy_span_des,
@@ -463,7 +465,8 @@ pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 }
 
 pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
-    debug_assert!(dst.head() <= src.head());
+    debug_assert!(dst.head() < src.head());
+    debug_assert!(len > 0);
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src) {
@@ -473,7 +476,8 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 }
 
 pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
-    debug_assert!(dst.head() >= src.head());
+    debug_assert!(dst.head() > src.head());
+    debug_assert!(len > 0);
     let dst = dst.iter(len);
     let src = src.iter(len);
     for (dst, src) in dst.into_iter().zip(src).rev() {
