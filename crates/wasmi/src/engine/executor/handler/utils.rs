@@ -467,22 +467,28 @@ pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert!(dst.head() < src.head());
     debug_assert!(len > 0);
-    let dst = dst.iter(len);
-    let src = src.iter(len);
-    for (dst, src) in dst.into_iter().zip(src) {
-        let src: u64 = get_slot_value(src, sp);
-        set_slot_value(dst, src, sp);
+    let mut dst = dst.head();
+    let mut src = src.head();
+    let dst_end = dst.next_n(len);
+    while dst != dst_end {
+        let value: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, value, sp);
+        dst = dst.next();
+        src = src.next();
     }
 }
 
 pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert!(dst.head() > src.head());
     debug_assert!(len > 0);
-    let dst = dst.iter(len);
-    let src = src.iter(len);
-    for (dst, src) in dst.into_iter().zip(src).rev() {
-        let src: u64 = get_slot_value(src, sp);
-        set_slot_value(dst, src, sp);
+    let dst_end = dst.head();
+    let mut dst = dst.head().next_n(len - 1);
+    let mut src = src.head().next_n(len - 1);
+    while dst != dst_end {
+        let value: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, value, sp);
+        dst = dst.prev();
+        src = src.prev();
     }
 }
 
