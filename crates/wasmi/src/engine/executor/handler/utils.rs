@@ -482,13 +482,13 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert!(dst.head() > src.head());
     debug_assert!(len > 0);
     let dst_end = dst.head();
-    let mut dst = dst.head().next_n(len - 1);
-    let mut src = src.head().next_n(len - 1);
+    let mut dst = dst.head().next_n(len);
+    let mut src = src.head().next_n(len);
     while dst != dst_end {
-        let value: u64 = get_slot_value(src, sp);
-        set_slot_value(dst, value, sp);
         dst = dst.prev();
         src = src.prev();
+        let value: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, value, sp);
     }
 }
 
