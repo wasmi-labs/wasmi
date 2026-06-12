@@ -8,6 +8,13 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `1.1.0` - 2026-06-12
+
+### Changed
+
+- Updated the `wasmparser` dependency from `v0.228` to `v0.239`.
+- Add convenience `From<{f32,f64}> for Val` impls.
+
 ## `1.0.9` - 2026-02-09
 
 ### Fixed
