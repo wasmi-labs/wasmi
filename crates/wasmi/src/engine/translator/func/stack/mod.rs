@@ -3,11 +3,6 @@ mod locals;
 mod operand;
 mod operands;
 
-use self::{
-    control::ControlStack,
-    locals::LocalsHead,
-    operands::{OperandStack, StackOperand, StackPos},
-};
 pub use self::{
     control::{
         AcquiredTarget,
@@ -24,6 +19,11 @@ pub use self::{
     operand::{ImmediateOperand, LocalOperand, Location, Operand, ResolvedOperand, TempOperand},
     operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter, PreservedRegs},
 };
+use self::{
+    control::{BranchParamRegs, ControlStack},
+    locals::LocalsHead,
+    operands::{OperandStack, StackOperand, StackPos},
+};
 use super::{Reset, ReusableAllocations};
 use crate::{
     Engine,
@@ -33,7 +33,12 @@ use crate::{
     engine::{
         BlockType,
         translator::{
-            func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+            func::{
+                LocalIdx,
+                Pos,
+                labels::LabelRef,
+                stack::{control::BranchParams, operands::PeekedOperands},
+            },
             utils::required_cells_for_tys,
         },
     },
@@ -156,6 +161,53 @@ impl Stack {
         }
     }
 
+    /// Creates [`BranchParamRegs`] from `tys` if any.
+    ///
+    /// Returns `None` if `tys` is empty.
+    fn branch_params_regs(tys: &[ValType]) -> Option<BranchParamRegs> {
+        let regs = match tys {
+            [] => return None,
+            [ty] => BranchParamRegs::new_one(*ty),
+            [.., last2, last1, last0] => {
+                let [last2, last1, last0] = [*last2, *last1, *last0];
+                if last0 == last1 {
+                    return Some(BranchParamRegs::new_one(last0));
+                }
+                if last0 == last2 || last1 == last2 {
+                    return Some(BranchParamRegs::new_two([last0, last1]));
+                }
+                match last0 != last2 && last1 != last2 {
+                    true => BranchParamRegs::new_three([last0, last1, last2]),
+                    false => BranchParamRegs::new_two([last0, last1]),
+                }
+            }
+            [.., last1, last0] => match last0 != last1 {
+                true => BranchParamRegs::new_two([*last0, *last1]),
+                false => BranchParamRegs::new_one(*last0),
+            },
+        };
+        Some(regs)
+    }
+
+    /// Creates [`BranchParams`] from `temp_slots`, `ty` and the control flow `kind`.
+    fn branch_params(
+        &self,
+        temp_slots: SlotSpan,
+        ty: BlockType,
+        kind: ControlFrameKind,
+    ) -> BranchParams {
+        ty.func_type_with(&self.engine, |func_ty| {
+            let (tys, len_tys) = match kind {
+                ControlFrameKind::Loop => (func_ty.params(), func_ty.len_params()),
+                _ => (func_ty.results(), func_ty.len_results()),
+            };
+            let regs = Self::branch_params_regs(tys);
+            let regs_len = regs.as_ref().map(BranchParamRegs::len).unwrap_or(0);
+            let temp_len = len_tys - regs_len;
+            BranchParams::new(temp_slots, temp_len, regs)
+        })
+    }
+
     /// Pushes the function enclosing Wasm `block` onto the [`Stack`].
     ///
     /// # Note
@@ -178,8 +230,9 @@ impl Stack {
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
+        let branch_params = self.branch_params(branch_slots_head, ty, ControlFrameKind::Block);
         self.controls
-            .push_block(ty, 0, branch_slots, label, fuel_pos);
+            .push_block(ty, 0, branch_slots, branch_params, label, fuel_pos);
         Ok(())
     }
 
@@ -200,9 +253,16 @@ impl Stack {
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
+        let branch_params = self.branch_params(branch_slots_head, ty, ControlFrameKind::Block);
         let consume_fuel = self.fuel_pos();
-        self.controls
-            .push_block(ty, block_height, branch_slots, label, consume_fuel);
+        self.controls.push_block(
+            ty,
+            block_height,
+            branch_slots,
+            branch_params,
+            label,
+            consume_fuel,
+        );
         Ok(())
     }
 
@@ -235,8 +295,15 @@ impl Stack {
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.params()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
-        self.controls
-            .push_loop(ty, block_height, branch_slots, label, fuel_pos);
+        let branch_params = self.branch_params(branch_slots_head, ty, ControlFrameKind::Loop);
+        self.controls.push_loop(
+            ty,
+            block_height,
+            branch_slots,
+            branch_params,
+            label,
+            fuel_pos,
+        );
         Ok(())
     }
 
@@ -267,10 +334,12 @@ impl Stack {
         let branch_slots_len =
             ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
+        let branch_params = self.branch_params(branch_slots_head, ty, ControlFrameKind::If);
         self.controls.push_if(
             ty,
             block_height,
             branch_slots,
+            branch_params,
             label,
             fuel_pos,
             reachability,
