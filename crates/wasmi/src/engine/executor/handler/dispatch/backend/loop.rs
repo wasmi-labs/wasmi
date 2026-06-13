@@ -185,6 +185,10 @@ impl Executor {
 macro_rules! impl_executor_handlers {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         $(
+            // Note we only enable `inline(always)` if `debug_assertions` is `false`.
+            // The rational is that `debug_assertions` usually indicate a test run usually without optimizations.
+            // This particular configuration with `inline(always)` bloated the outer `execute_until_done`
+            // stack size so much that it caused a stackoverflow on the GitHub Actions CI runner for windows.
             #[cfg_attr(all(feature = "indirect-dispatch", not(debug_assertions)), inline(always))]
             #[cfg_attr(all(feature = "indirect-dispatch", debug_assertions), inline(never))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
