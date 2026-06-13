@@ -11,6 +11,7 @@ fn test_setup() -> (Store<()>, Linker<()>) {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn host_calls_wasm() {
     let (mut store, mut linker) = test_setup();
     let host_fn = Func::wrap(&mut store, |mut caller: Caller<()>, input: i32| -> i32 {

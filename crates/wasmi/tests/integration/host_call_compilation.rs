@@ -15,6 +15,7 @@ fn compile_module(engine: &Engine) -> wasmi::Module {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_compile_in_host_call() {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());

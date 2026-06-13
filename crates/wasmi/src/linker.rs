@@ -640,6 +640,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "wat"), ignore)]
     fn linker_funcs_work() {
         let engine = Engine::default();
         let mut linker = <Linker<HostState>>::new(&engine);
@@ -730,6 +731,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "wat"), ignore)]
     fn populate_via_imports() {
         use crate::{Engine, Func, Linker, Memory, MemoryType, Module, Store};
         let wasm = r#"

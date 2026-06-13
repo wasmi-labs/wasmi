@@ -31,6 +31,7 @@ impl core::error::Error for Error {}
 impl wasmi::errors::HostError for Error {}
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_instantiate_in_host_call() {
     let engine = Engine::default();
     let mut store = <Store<Data>>::new(&engine, Data::Uninit);

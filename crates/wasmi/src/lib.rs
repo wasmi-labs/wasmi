@@ -18,6 +18,9 @@
 //!
 //! // In this simple example we are going to compile the below Wasm source,
 //! // instantiate a Wasm module from it and call its exported "hello" function.
+//! # #[cfg(not(feature = "wat"))]
+//! # fn main() {}
+//! # #[cfg(feature = "wat")]
 //! fn main() -> Result<(), wasmi::Error> {
 //!     let wasm = r#"
 //!         (module
