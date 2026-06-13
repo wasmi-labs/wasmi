@@ -185,7 +185,8 @@ impl Executor {
 macro_rules! impl_executor_handlers {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         $(
-            #[cfg_attr(feature = "indirect-dispatch", inline(always))]
+            #[cfg_attr(all(feature = "indirect-dispatch", not(debug_assertions)), inline(always))]
+            #[cfg_attr(all(feature = "indirect-dispatch", debug_assertions), inline(never))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
             fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
                 match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
