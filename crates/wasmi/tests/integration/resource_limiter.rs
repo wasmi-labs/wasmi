@@ -75,6 +75,7 @@ impl Test {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_big_memory_fails_to_instantiate() {
     let loose_limits = StoreLimitsBuilder::new().memory_size(3 * (1 << 16)).build();
     let tight_limits = StoreLimitsBuilder::new().memory_size(2 * (1 << 16)).build();
@@ -83,6 +84,7 @@ fn test_big_memory_fails_to_instantiate() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_big_table_fails_to_instantiate() {
     let loose_limits = StoreLimitsBuilder::new().table_elements(100).build();
     let tight_limits = StoreLimitsBuilder::new().table_elements(99).build();
@@ -91,24 +93,28 @@ fn test_big_table_fails_to_instantiate() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_memory_count_limit() {
     let limits = StoreLimitsBuilder::new().memories(0).build();
     assert!(Test::new(0, 0, limits).is_err());
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_instance_count_limit() {
     let limits = StoreLimitsBuilder::new().instances(0).build();
     assert!(Test::new(0, 0, limits).is_err());
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_tables_count_limit() {
     let limits = StoreLimitsBuilder::new().tables(0).build();
     assert!(Test::new(0, 0, limits).is_err());
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_memory_does_not_grow_on_limited_growth() -> Result<(), Error> {
     let limits = StoreLimitsBuilder::new().memory_size(3 * (1 << 16)).build();
     let mut test = Test::new(2, 0, limits)?;
@@ -130,6 +136,7 @@ fn test_memory_does_not_grow_on_limited_growth() -> Result<(), Error> {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_memory_traps_on_limited_growth() -> Result<(), Error> {
     let limits = StoreLimitsBuilder::new()
         .memory_size(3 * (1 << 16))
@@ -156,6 +163,7 @@ fn test_memory_traps_on_limited_growth() -> Result<(), Error> {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_table_does_not_grow_on_limited_growth() -> Result<(), Error> {
     let limits = StoreLimitsBuilder::new().table_elements(100).build();
     let mut test = Test::new(0, 99, limits)?;
@@ -177,6 +185,7 @@ fn test_table_does_not_grow_on_limited_growth() -> Result<(), Error> {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_table_traps_on_limited_growth() -> Result<(), Error> {
     let limits = StoreLimitsBuilder::new()
         .table_elements(100)

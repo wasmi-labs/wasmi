@@ -11,6 +11,7 @@ fn parse_with(wasm: &str, limits: EnforcedLimits) -> Result<Module, Error> {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_globals_ok() {
     let wasm = "
         (module
@@ -29,6 +30,7 @@ fn max_globals_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_globals_err() {
     let wasm = "
         (module
@@ -48,6 +50,7 @@ fn max_globals_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_functions_ok() {
     let wasm = "
         (module
@@ -66,6 +69,7 @@ fn max_functions_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_functions_err() {
     let wasm = "
         (module
@@ -85,6 +89,7 @@ fn max_functions_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_tables_ok() {
     let wasm = "
         (module
@@ -103,6 +108,7 @@ fn max_tables_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_tables_err() {
     let wasm = "
         (module
@@ -122,6 +128,7 @@ fn max_tables_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_memories_ok() {
     let wasm = "
         (module
@@ -140,6 +147,7 @@ fn max_memories_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_memories_err() {
     let wasm = "
         (module
@@ -159,6 +167,7 @@ fn max_memories_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_element_segments_ok() {
     let wasm = "
         (module
@@ -179,6 +188,7 @@ fn max_element_segments_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_element_segments_err() {
     let wasm = "
         (module
@@ -200,6 +210,7 @@ fn max_element_segments_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_data_segments_ok() {
     let wasm = "
         (module
@@ -219,6 +230,7 @@ fn max_data_segments_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_data_segments_err() {
     let wasm = "
         (module
@@ -239,6 +251,7 @@ fn max_data_segments_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_params_func_ok() {
     let wasm = "
         (module
@@ -256,6 +269,7 @@ fn max_params_func_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_params_func_err() {
     let wasm = "
         (module
@@ -273,6 +287,7 @@ fn max_params_func_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_params_control_ok() {
     let wasm = "
         (module
@@ -297,6 +312,7 @@ fn max_params_control_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_params_control_err() {
     let wasm = "
         (module
@@ -322,6 +338,7 @@ fn max_params_control_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_results_func_ok() {
     let wasm = "
         (module
@@ -342,6 +359,7 @@ fn max_results_func_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_results_func_err() {
     let wasm = "
         (module
@@ -363,6 +381,7 @@ fn max_results_func_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_results_control_ok() {
     let wasm = "
         (module
@@ -387,6 +406,7 @@ fn max_results_control_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn max_results_control_err() {
     let wasm = "
         (module
@@ -413,6 +433,7 @@ fn max_results_control_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn min_avg_code_bytes_ok() {
     let wasm = "
         (module
@@ -442,6 +463,7 @@ fn min_avg_code_bytes_ok() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn min_avg_code_bytes_err() {
     let wasm = "
         (module
@@ -470,6 +492,7 @@ fn min_avg_code_bytes_err() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn min_avg_code_bytes_ok_threshold() {
     let wasm = "
         (module

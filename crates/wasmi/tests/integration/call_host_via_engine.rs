@@ -85,6 +85,7 @@ fn host_call_from_host_params_4_results_4() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn host_tail_calls_0() {
     let wasm = r#"
         (module
@@ -117,6 +118,7 @@ fn host_tail_calls_0() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn host_tail_calls_1() {
     let wasm = r#"
         (module

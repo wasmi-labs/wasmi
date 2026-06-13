@@ -63,6 +63,7 @@ fn execute_wasm_fn_a(
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn call_hooks_get_called() {
     let (mut store, mut linker) = test_setup();
 
@@ -158,6 +159,7 @@ fn generate_error_after_n_calls<E: Into<Error> + Clone + Send + Sync + 'static>(
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn call_hook_prevents_wasm_execution() {
     let (mut store, mut linker) = test_setup();
 
@@ -186,6 +188,7 @@ fn call_hook_prevents_wasm_execution() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn call_hook_prevents_host_execution() {
     let (mut store, mut linker) = test_setup();
 
@@ -211,6 +214,7 @@ fn call_hook_prevents_host_execution() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn call_hook_prevents_nested_wasm_execution() {
     let (mut store, mut linker) = test_setup();
 
