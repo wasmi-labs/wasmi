@@ -106,6 +106,7 @@ impl<Results> ResumableExt for Result<TypedResumableCall<Results>, Error> {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn resumable_call_smoldot_01() {
     let (mut store, wasm_fn) = resumable_call_smoldot_common(
         r#"
@@ -126,6 +127,7 @@ fn resumable_call_smoldot_01() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn resumable_call_smoldot_tail_01() {
     let (mut store, wasm_fn) = resumable_call_smoldot_common(
         r#"
@@ -147,6 +149,7 @@ fn resumable_call_smoldot_tail_01() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn resumable_call_smoldot_tail_02() {
     let (mut store, wasm_fn) = resumable_call_smoldot_common(
         r#"
@@ -170,6 +173,7 @@ fn resumable_call_smoldot_tail_02() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn resumable_call_smoldot_02() {
     let (mut store, wasm_fn) = resumable_call_smoldot_common(
         r#"
@@ -222,6 +226,7 @@ fn resumable_call_host() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn resumable_call() {
     let (mut store, mut linker) = test_setup(0);
     let host_fn = Func::wrap(&mut store, |input: i32| -> Result<i32, Error> {

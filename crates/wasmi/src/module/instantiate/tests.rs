@@ -55,6 +55,7 @@ fn assert_no_duplicates(store: &Store<()>, instance: Instance) {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_import_memory_and_table() {
     let wat = r#"
         (module
@@ -68,6 +69,7 @@ fn test_import_memory_and_table() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_import_memory() {
     let wat = r#"
         (module
@@ -80,6 +82,7 @@ fn test_import_memory() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_import_table() {
     let wat = r#"
         (module
@@ -92,6 +95,7 @@ fn test_import_table() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_no_memory_no_table() {
     let wat = "(module)";
     let (store, instance) = instantiate_from_wat(wat);
@@ -101,6 +105,7 @@ fn test_no_memory_no_table() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_internal_memory() {
     let wat = "(module (memory 1 10) )";
     let (store, instance) = instantiate_from_wat(wat);
@@ -110,6 +115,7 @@ fn test_internal_memory() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn test_internal_table() {
     let wat = "(module (table 4 funcref) )";
     let (store, instance) = instantiate_from_wat(wat);

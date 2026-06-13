@@ -1,6 +1,7 @@
 use wasmi::{Engine, Instance, Module, Store};
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_out_of_memory() {
     let wasm = r#"
         (module

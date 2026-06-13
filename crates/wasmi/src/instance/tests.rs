@@ -18,6 +18,7 @@ use crate::{
 };
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_no_imports() {
     let wasm = r#"
         (module
@@ -34,6 +35,7 @@ fn instantiate_no_imports() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_start() {
     let wasm = r#"
         (module
@@ -48,6 +50,7 @@ fn instantiate_with_start() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_trapping_start() {
     let wasm = r#"
         (module
@@ -65,6 +68,7 @@ fn instantiate_with_trapping_start() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_imports_and_start() {
     let wasm = r#"
         (module
@@ -115,6 +119,7 @@ fn instantiate_with_imports_and_start() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_invalid_global_import() {
     let wasm = r#"
         (module
@@ -137,6 +142,7 @@ fn instantiate_with_invalid_global_import() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_invalid_memory_import() {
     let wasm = r#"
         (module
@@ -159,6 +165,7 @@ fn instantiate_with_invalid_memory_import() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_invalid_table_import() {
     let wasm = r#"
         (module
@@ -187,6 +194,7 @@ fn instantiate_with_invalid_table_import() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn instantiate_with_invalid_func_import() {
     let wasm = r#"
         (module
