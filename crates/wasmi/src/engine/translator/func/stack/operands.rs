@@ -530,6 +530,8 @@ impl OperandStack {
 
     /// Returns the [`Operand`] at `depth`.
     ///
+    /// A `depth` of 1 returns the last [`Operand`] on `self`.
+    ///
     /// # Panics
     ///
     /// If `depth` is out of bounds for `self`.

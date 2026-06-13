@@ -448,7 +448,7 @@ impl Stack {
     ///
     /// # Note
     ///
-    /// A depth of 0 peeks the top-most [`Operand`] on `self`.
+    /// A `depth` of 0 peeks the top-most [`Operand`] on `self`.
     ///
     /// # Panics
     ///
