@@ -175,6 +175,10 @@ jobs:
         env:
           RUSTFLAGS: "-C debug-assertions"
         run: cargo test --workspace --locked --all-features
+      - name: Build (benches)
+        env:
+          RUSTFLAGS: "-C debug-assertions"
+        run: cargo build --bench benches --release --locked
       - name: Test (benches)
         env:
           RUSTFLAGS: "-C debug-assertions"
