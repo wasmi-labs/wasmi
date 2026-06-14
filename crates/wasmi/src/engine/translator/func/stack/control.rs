@@ -61,6 +61,11 @@ impl BranchParams {
         }
     }
 
+    /// Returns `true` if no branch parameters exist.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Returns the total number of branch parameter operands.
     ///
     /// # Note
