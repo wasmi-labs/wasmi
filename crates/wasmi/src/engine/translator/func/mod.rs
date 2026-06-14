@@ -2527,9 +2527,6 @@ impl FuncTranslator {
         else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
-        let value = self
-            .resolve_operand::<T::Value>(value)?
-            .map(T::into_immediate);
         let op = self.choose_store_op::<T>(memarg, ptr, value)?;
         self.push_instr(op, FuelCostsProvider::store)?;
         Ok(())
@@ -2540,7 +2537,7 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         ptr: ResolvedOperand<Address>,
-        value: ResolvedOperand<T::Immediate>,
+        value: Operand,
     ) -> Result<Op, Error>
     where
         T::Value: Copy + From<TypedRawVal>,
@@ -2551,6 +2548,9 @@ impl FuncTranslator {
         if let Some(op) = self.choose_store_mem0_offset16_op::<T>(ptr, offset, memory, value)? {
             return Ok(op);
         }
+        let value = self
+            .resolve_operand::<T::Value>(value)?
+            .map(T::into_immediate);
         let op = match (ptr, value) {
             (Opd::Reg(_), Opd::Reg(_)) => match T::store_rr(offset, memory) {
                 Some(op) => op,
@@ -2580,7 +2580,7 @@ impl FuncTranslator {
         ptr: ResolvedOperand<Address>,
         offset: u64,
         memory: index::Memory,
-        value: ResolvedOperand<T::Immediate>,
+        value: Operand,
     ) -> Result<Option<Op>, Error>
     where
         T::Value: Copy + From<TypedRawVal>,
@@ -2599,10 +2599,16 @@ impl FuncTranslator {
             Opd::Slot(ptr) => Loc::Slot(ptr),
             Opd::Immediate(_) => return Ok(None),
         };
-        let op = match (ptr, value) {
+        let resolved_value = self
+            .resolve_operand::<T::Value>(value)?
+            .map(T::into_immediate);
+        let op = match (ptr, resolved_value) {
             (Loc::Reg(_), Opd::Reg(_)) => match T::store_mem0_offset16_rr(offset) {
                 Some(op) => op,
-                None => unreachable!(),
+                None => {
+                    let value = self.reg_operand_to_slot(value)?;
+                    T::store_mem0_offset16_rs(offset, value)
+                }
             },
             (Loc::Reg(_), Opd::Slot(value)) => T::store_mem0_offset16_rs(offset, value),
             (Loc::Reg(_), Opd::Immediate(value)) => T::store_mem0_offset16_ri(offset, value),
