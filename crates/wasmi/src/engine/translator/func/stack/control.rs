@@ -172,8 +172,16 @@ impl BranchParamRegs {
     pub fn as_slice(&self) -> &[ValType] {
         match self {
             Self::One(ty) => slice::from_ref(ty),
-            Self::Two(tys) => &tys[..],
-            Self::Three(tys) => &tys[..],
+            Self::Two(tys) => {
+                debug_assert_ne!(tys[0], tys[1]);
+                &tys[..]
+            }
+            Self::Three(tys) => {
+                debug_assert_ne!(tys[0], tys[1]);
+                debug_assert_ne!(tys[0], tys[2]);
+                debug_assert_ne!(tys[1], tys[2]);
+                &tys[..]
+            }
         }
     }
 }
