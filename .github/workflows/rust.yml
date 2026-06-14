@@ -175,6 +175,10 @@ jobs:
         env:
           RUSTFLAGS: "-C debug-assertions"
         run: cargo test --workspace --locked --all-features
+      - name: Test (benches)
+        env:
+          RUSTFLAGS: "-C debug-assertions"
+        run: cargo test --bench benches --release --locked
 
   fmt:
     name: Formatting
