@@ -2,7 +2,6 @@
 
 use super::{Operand, Reset};
 use crate::{
-    Engine,
     ValType,
     engine::{
         BlockType,
@@ -461,10 +460,6 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
         self.0.branch_params()
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        self.0.branch_slots()
-    }
-
     fn label(&self) -> LabelRef {
         self.0.label()
     }
@@ -475,11 +470,6 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
 
     fn branch_to(&mut self) {
         self.0.branch_to()
-    }
-
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.0.len_branch_params(engine)
     }
 
     fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
@@ -583,11 +573,6 @@ pub trait ControlFrameBase {
     /// Returns the [`BranchParams`] of the control frame.
     fn branch_params(&self) -> BranchParams;
 
-    /// Returns the branch slots of the control frame as [`BoundedSlotSpan`].
-    ///
-    /// Returns `None` if no values need to be copied for branching.
-    fn branch_slots(&self) -> Option<BoundedSlotSpan>;
-
     /// Returns the branch label of `self`.
     fn label(&self) -> LabelRef;
 
@@ -596,10 +581,6 @@ pub trait ControlFrameBase {
 
     /// Makes `self` aware that there is a branch to it.
     fn branch_to(&mut self);
-
-    /// Returns the number of operands required for branching to `self`.
-    // TODO: remove in favor of `branch_slots`
-    fn len_branch_params(&self, engine: &Engine) -> u16;
 
     /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
     ///
@@ -646,20 +627,6 @@ impl ControlFrameBase for ControlFrame {
         }
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        match self {
-            ControlFrame::Block(frame) => frame.branch_slots(),
-            ControlFrame::Loop(frame) => frame.branch_slots(),
-            ControlFrame::If(frame) => frame.branch_slots(),
-            ControlFrame::Else(frame) => frame.branch_slots(),
-            ControlFrame::Unreachable(_) => {
-                panic!(
-                    "invalid query for unreachable control frame: `ControlFrameBase::branch_slots`"
-                )
-            }
-        }
-    }
-
     fn label(&self) -> LabelRef {
         match self {
             ControlFrame::Block(frame) => frame.label(),
@@ -694,21 +661,6 @@ impl ControlFrameBase for ControlFrame {
             ControlFrame::Else(frame) => frame.branch_to(),
             ControlFrame::Unreachable(_) => {
                 panic!("invalid query for unreachable control frame: `ControlFrame::branch_to`")
-            }
-        }
-    }
-
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        match self {
-            ControlFrame::Block(frame) => frame.len_branch_params(engine),
-            ControlFrame::Loop(frame) => frame.len_branch_params(engine),
-            ControlFrame::If(frame) => frame.len_branch_params(engine),
-            ControlFrame::Else(frame) => frame.len_branch_params(engine),
-            ControlFrame::Unreachable(_) => {
-                panic!(
-                    "invalid query for unreachable control frame: `ControlFrame::len_branch_params`"
-                )
             }
         }
     }
@@ -762,13 +714,6 @@ impl ControlFrameBase for BlockControlFrame {
         self.branch_params
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
-    }
-
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -779,11 +724,6 @@ impl ControlFrameBase for BlockControlFrame {
 
     fn branch_to(&mut self) {
         self.is_branched_to = true;
-    }
-
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_results(engine)
     }
 
     fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
@@ -827,13 +767,6 @@ impl ControlFrameBase for LoopControlFrame {
         self.branch_params
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
-    }
-
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -844,11 +777,6 @@ impl ControlFrameBase for LoopControlFrame {
 
     fn branch_to(&mut self) {
         self.is_branched_to = true;
-    }
-
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_params(engine)
     }
 
     fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
@@ -922,13 +850,6 @@ impl ControlFrameBase for IfControlFrame {
         self.branch_params
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
-    }
-
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -939,11 +860,6 @@ impl ControlFrameBase for IfControlFrame {
 
     fn branch_to(&mut self) {
         self.is_branched_to = true;
-    }
-
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_results(engine)
     }
 
     fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
@@ -1073,13 +989,6 @@ impl ControlFrameBase for ElseControlFrame {
         self.branch_params
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
-    }
-
     fn label(&self) -> LabelRef {
         self.label
     }
@@ -1090,11 +999,6 @@ impl ControlFrameBase for ElseControlFrame {
 
     fn branch_to(&mut self) {
         self.is_branched_to = true;
-    }
-
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_results(engine)
     }
 
     fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {

@@ -3,10 +3,17 @@ mod locals;
 mod operand;
 mod operands;
 
+use self::{
+    control::ControlStack,
+    locals::LocalsHead,
+    operands::{OperandStack, StackOperand, StackPos},
+};
 pub use self::{
     control::{
         AcquiredTarget,
         BlockControlFrame,
+        BranchParamRegs,
+        BranchParams,
         ControlFrame,
         ControlFrameBase,
         ControlFrameKind,
@@ -19,11 +26,6 @@ pub use self::{
     operand::{ImmediateOperand, LocalOperand, Location, Operand, ResolvedOperand, TempOperand},
     operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter, PreservedRegs},
 };
-use self::{
-    control::{BranchParamRegs, ControlStack},
-    locals::LocalsHead,
-    operands::{OperandStack, StackOperand, StackPos},
-};
 use super::{Reset, ReusableAllocations};
 use crate::{
     Engine,
@@ -33,12 +35,7 @@ use crate::{
     engine::{
         BlockType,
         translator::{
-            func::{
-                LocalIdx,
-                Pos,
-                labels::LabelRef,
-                stack::{control::BranchParams, operands::PeekedOperands},
-            },
+            func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
             utils::required_cells_for_tys,
         },
     },

@@ -62,7 +62,7 @@ use crate::{
             },
             func::{
                 op::BinaryOpRhs,
-                stack::{Allocation, PreservedRegs, TempOperand},
+                stack::{Allocation, BranchParams, PreservedRegs, TempOperand},
             },
             utils::{ToBits, WasmInteger, required_cells_for_ty},
         },
@@ -370,14 +370,10 @@ impl FuncTranslator {
     /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
     fn copy_branch_params(
         &mut self,
-        target: &impl ControlFrameBase,
+        params: BranchParams,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let len_branch_params = target.len_branch_params(&self.engine);
-        let Some(branch_slots) = target.branch_slots() else {
-            return Ok(());
-        };
-        self.encode_copies(branch_slots.span(), len_branch_params, fuel_pos)?;
+        self.encode_copies(params.temp_slots(), params.len(), fuel_pos)?;
         Ok(())
     }
 
@@ -788,7 +784,8 @@ impl FuncTranslator {
     /// Some instructions can be encoded in a more efficient way if no branch parameter copies are required.
     fn requires_branch_param_copies(&self, depth: usize) -> bool {
         let frame = self.stack.peek_control(depth);
-        let len_branch_params = usize::from(frame.len_branch_params(&self.engine));
+        let branch_params = frame.branch_params();
+        let len_branch_params = usize::from(branch_params.len());
         let frame_height = frame.height();
         let height_matches = frame_height == (self.stack.height() - len_branch_params);
         let only_temps = (0..len_branch_params)
@@ -1100,12 +1097,10 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(results) = frame.branch_slots() else {
-                panic!("must have frame results since `br_table` requires to copy values");
-            };
+            let results = frame.branch_params().temp_slots();
             self.instrs.encode_branch(
                 frame.label(),
-                |offset| ir::BranchTableTarget::new(results.span(), offset),
+                |offset| ir::BranchTableTarget::new(results, offset),
                 fuel_pos,
                 0,
             )?;
@@ -1321,7 +1316,7 @@ impl FuncTranslator {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if self.reachable {
-                self.copy_branch_params(&frame, fuel_pos)?;
+                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
             self.push_frame_results(&frame)?;
         }
@@ -1358,7 +1353,7 @@ impl FuncTranslator {
         let has_results = len_results >= 1;
         let fuel_pos = frame.fuel_pos();
         if is_end_of_then_reachable && has_results {
-            self.copy_branch_params(&frame, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             self.encode_branch_op(frame.label(), Op::branch, fuel_pos)?;
         }
         self.instrs.pin_label_if_unpinned(else_label)?;
@@ -1370,7 +1365,7 @@ impl FuncTranslator {
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
             let fuel_pos = self.instrs.encode_consume_fuel_op()?;
-            self.copy_branch_params(&frame, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
         self.push_frame_results(&frame)?;
         self.instrs.pin_label(frame.label())?;
@@ -1400,7 +1395,7 @@ impl FuncTranslator {
         };
         let fuel_pos = frame.fuel_pos();
         if end_of_else_reachable {
-            self.copy_branch_params(&frame, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
         self.push_frame_results(&frame)?;
         self.instrs.pin_label(frame.label())?;
@@ -1417,7 +1412,7 @@ impl FuncTranslator {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if end_is_reachable {
-                self.copy_branch_params(&frame, fuel_pos)?;
+                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
             self.push_frame_results(&frame)?;
         }

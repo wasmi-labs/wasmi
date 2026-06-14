@@ -224,7 +224,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         if let IfReachability::Both { else_label } = frame.reachability() {
             let fuel_pos = frame.fuel_pos();
             if is_end_of_then_reachable {
-                self.copy_branch_params(&frame, fuel_pos)?;
+                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
                 frame.branch_to();
                 self.encode_br(frame.label())?;
             }
@@ -261,10 +261,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             AcquiredTarget::Branch(mut frame) => {
                 frame.branch_to();
                 let label = frame.label();
-                let len_params = frame.len_branch_params(&self.engine);
-                if let Some(branch_results) = frame.branch_slots() {
-                    self.encode_copies(branch_results.span(), len_params, fuel_pos)?;
-                }
+                let branch_params = frame.branch_params();
+                self.copy_branch_params(branch_params, fuel_pos)?;
                 self.encode_br(label)?;
                 self.reachable = false;
                 Ok(())
@@ -289,12 +287,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let mut frame = self.stack.peek_control_mut(depth).control_frame();
         frame.branch_to();
         let label = frame.label();
-        let Some(branch_slots) = frame.branch_slots() else {
+        let branch_params = frame.branch_params();
+        if branch_params.is_empty() {
             // Case: no branch values are required to be copied
             self.encode_br_nez(condition, label)?;
             return Ok(());
         };
-        let len_branch_params = frame.len_branch_params(&self.engine);
         if !self.requires_branch_param_copies(depth) {
             // Case: no branch values are required to be copied
             self.encode_br_nez(condition, label)?;
@@ -304,7 +302,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         let skip_label = self.instrs.new_label();
         self.encode_br_eqz(condition, skip_label)?;
-        self.encode_copies(branch_slots.span(), len_branch_params, fuel_pos)?;
+        self.copy_branch_params(branch_params, fuel_pos)?;
         self.encode_br(label)?;
         self.instrs.pin_label(skip_label)?;
         Ok(())
@@ -349,7 +347,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let len_branch_params = self
             .stack
             .peek_control(default_target)
-            .len_branch_params(&self.engine);
+            .branch_params()
+            .len();
         match len_branch_params {
             0 => self.encode_br_table_0(table, index)?,
             n => self.encode_br_table_n(table, index, n)?,
