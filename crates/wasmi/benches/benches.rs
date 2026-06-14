@@ -1020,10 +1020,22 @@ fn bench_execute_reverse_complement(c: &mut Criterion) {
             .call(&mut store, data_ptr)
             .unwrap();
 
+        let [input, output]: [Box<[u8]>; 2] = {
+            // Make sure the input and output `.txt` files are properly FASTA
+            // encoded which requires line endings with LF and not CRLF.
+            //
+            // On Windows these files might be checked-out with CRLF new-line
+            // encoding which invalidates the benchmark computation.
+            let mut input = REVCOMP_INPUT.to_vec();
+            let mut output = REVCOMP_OUTPUT.to_vec();
+            input.retain(|b| *b != b'\r');
+            output.retain(|b| *b != b'\r');
+            [input.into(), output.into()]
+        };
         // Copy test data inside the wasm memory.
         let memory = instance.get_memory(&store, "memory").unwrap();
         memory
-            .write(&mut store, input_offset as usize, REVCOMP_INPUT)
+            .write(&mut store, input_offset as usize, &input[..])
             .unwrap();
 
         // Run the rev complement benchmark.
@@ -1039,11 +1051,11 @@ fn bench_execute_reverse_complement(c: &mut Criterion) {
             .call(&mut store, data_ptr)
             .unwrap();
 
-        let mut result = [0x00_u8; REVCOMP_OUTPUT.len()];
+        let mut result: Box<[u8]> = vec![0x00_u8; output.len()].into();
         memory
-            .read(&store, output_offset as usize, &mut result)
+            .read(&store, output_offset as usize, &mut result[..])
             .unwrap();
-        assert_eq!(&result[..], REVCOMP_OUTPUT);
+        assert_eq!(result, output);
 
         // Teardown benchmark data.
         instance
