@@ -362,18 +362,30 @@ impl FuncTranslator {
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
-    /// Convert all branch params up to `depth` to [`Operand::Temp`].
+    /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
     ///
     /// # Note
-    ///
-    /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
-    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
+    /// 
+    /// - This does _not_ change or mutate the operand stack.
+    /// - Uses `fuel_pos` to bump fuel consumption if enabled.
     fn copy_branch_params(
         &mut self,
         params: BranchParams,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        self.encode_copies(params.temp_slots(), params.len(), fuel_pos)?;
+        let results = params.temp_slots();
+        let len_values = params.len();
+        match len_values {
+            0 => {}
+            1 => {
+                let result = results.head();
+                let value = self.stack.peek(0);
+                self.encode_copy(result, value, fuel_pos)?;
+            }
+            _ => {
+                self.encode_copy_many(results, len_values, fuel_pos)?;
+            }
+        }
         Ok(())
     }
 
@@ -398,31 +410,6 @@ impl FuncTranslator {
                 Ok(())
             })?;
         Ok(())
-    }
-
-    /// Encodes a copy instruction for the top-most `len_values` on the stack to `results`.
-    ///
-    /// # Note
-    ///
-    /// - This does _not_ pop values from the stack or manipulate the stack otherwise.
-    /// - This might allocate new function local constant values if necessary.
-    /// - This does _not_ encode a copy if the copy is a no-op.
-    fn encode_copies(
-        &mut self,
-        results: SlotSpan,
-        len_values: u16,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
-        match len_values {
-            0 => Ok(()),
-            1 => {
-                let result = results.head();
-                let value = self.stack.peek(0);
-                self.encode_copy(result, value, fuel_pos)?;
-                Ok(())
-            }
-            _ => self.encode_copy_many(results, len_values, fuel_pos),
-        }
     }
 
     /// Convenience wrapper for [`Self::encode_copy_impl`].
