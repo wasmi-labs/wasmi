@@ -537,6 +537,10 @@ impl Stack {
         self.operands.preserve_all_locals(skip)
     }
 
+    pub fn discard_local_regs(&mut self) {
+        self.operands.discard_local_regs()
+    }
+
     /// Preserve all register operands on the [`Stack`].
     ///
     /// This is done by converting those operands to [`StackOperand::Temp`] and

@@ -223,6 +223,16 @@ impl RegisterMap {
         };
         Operand::new(pos, operand, in_reg)
     }
+
+    /// Discards any local register links from `self`.
+    pub fn discard_local_regs(&mut self) {
+        fn is_local(link: &mut RegisterLink) -> bool {
+            matches!(link, RegisterLink::Local(_))
+        }
+        self.ireg.take_if(is_local);
+        self.freg32.take_if(is_local);
+        self.freg64.take_if(is_local);
+    }
 }
 
 /// The current linkage of a register.
@@ -670,6 +680,11 @@ pub struct PreservedRegs {
 }
 
 impl OperandStack {
+    /// Discards any local register links from `self`.
+    pub fn discard_local_regs(&mut self) {
+        self.regs.discard_local_regs()
+    }
+
     /// Preserve all register operands on the [`OperandStack`].
     ///
     /// This is done by converting those operands to [`StackOperand::Temp`] and

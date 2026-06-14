@@ -391,6 +391,7 @@ impl FuncTranslator {
     ///   require to call this function.
     fn push_frame_results(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
         let height = frame.height();
+        self.stack.discard_local_regs();
         self.stack.trunc(height);
         frame
             .ty()
@@ -1319,7 +1320,6 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
-            self.preserve_regs(fuel_pos)?;
             if self.reachable {
                 self.copy_branch_params(&frame, fuel_pos)?;
             }
@@ -1357,7 +1357,6 @@ impl FuncTranslator {
         let len_results = frame.ty().len_results(self.engine());
         let has_results = len_results >= 1;
         let fuel_pos = frame.fuel_pos();
-        self.preserve_regs(fuel_pos)?;
         if is_end_of_then_reachable && has_results {
             self.copy_branch_params(&frame, fuel_pos)?;
             self.encode_branch_op(frame.label(), Op::branch, fuel_pos)?;
@@ -1400,7 +1399,6 @@ impl FuncTranslator {
             _ => true,
         };
         let fuel_pos = frame.fuel_pos();
-        self.preserve_regs(fuel_pos)?;
         if end_of_else_reachable {
             self.copy_branch_params(&frame, fuel_pos)?;
         }
@@ -1418,7 +1416,6 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
-            self.preserve_regs(fuel_pos)?;
             if end_is_reachable {
                 self.copy_branch_params(&frame, fuel_pos)?;
             }
