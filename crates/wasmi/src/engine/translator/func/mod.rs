@@ -362,6 +362,29 @@ impl FuncTranslator {
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
+    /// Pushes the temporary results of the control `frame` onto the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// - Before pushing the results, the [`Stack`] is truncated to the `frame`'s height.
+    /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
+    ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
+    ///   require to call this function.
+    fn push_frame_results(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let height = frame.height();
+        self.stack.discard_local_regs();
+        self.stack.trunc(height);
+        frame
+            .ty()
+            .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
+                for result in func_ty.results() {
+                    self.stack.push_temp(*result, Allocation::None)?;
+                }
+                Ok(())
+            })?;
+        Ok(())
+    }
+
     /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
     ///
     /// # Note
@@ -386,29 +409,6 @@ impl FuncTranslator {
                 self.encode_copy_many(results, len_values, fuel_pos)?;
             }
         }
-        Ok(())
-    }
-
-    /// Pushes the temporary results of the control `frame` onto the [`Stack`].
-    ///
-    /// # Note
-    ///
-    /// - Before pushing the results, the [`Stack`] is truncated to the `frame`'s height.
-    /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
-    ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
-    ///   require to call this function.
-    fn push_frame_results(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
-        let height = frame.height();
-        self.stack.discard_local_regs();
-        self.stack.trunc(height);
-        frame
-            .ty()
-            .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
-                for result in func_ty.results() {
-                    self.stack.push_temp(*result, Allocation::None)?;
-                }
-                Ok(())
-            })?;
         Ok(())
     }
 
