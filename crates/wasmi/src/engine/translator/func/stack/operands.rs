@@ -214,6 +214,7 @@ impl RegisterMap {
             || self.is_local_in_reg(ValType::F64, local_index)
     }
 
+    /// Enhance the `operand` with `in_reg` information if it is a local operand.
     pub fn wrap_operand(&self, pos: StackPos, operand: StackOperand) -> Operand {
         let in_reg = match operand {
             StackOperand::Local {
