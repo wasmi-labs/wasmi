@@ -227,10 +227,14 @@ impl Stack {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let branch_slots_head = self.operands.next_temp_slots();
-        let branch_slots_len =
-            ty.func_type_with(&self.engine, |ty| required_cells_for_tys(ty.results()))?;
+        let (temp_len, branch_slots_len) =
+            ty.func_type_with(&self.engine, |ty| -> Result<(u16, u16), Error> {
+                let len_results = ty.len_results();
+                let len_branch_slots = required_cells_for_tys(ty.results())?;
+                Ok((len_results, len_branch_slots))
+            })?;
         let branch_slots = BoundedSlotSpan::new(branch_slots_head, branch_slots_len);
-        let branch_params = self.branch_params(branch_slots_head, ty, ControlFrameKind::Block);
+        let branch_params = BranchParams::new(branch_slots_head, temp_len, None);
         self.controls
             .push_block(ty, 0, branch_slots, branch_params, label, fuel_pos);
         Ok(())
