@@ -7,7 +7,7 @@ use crate::{
         BlockType,
         translator::func::{Pos, labels::LabelRef, stack::operands::RegisterMap},
     },
-    ir::{self, BoundedSlotSpan, SlotSpan},
+    ir::{self, SlotSpan},
 };
 use alloc::vec::{Drain, Vec};
 use core::slice;
@@ -275,7 +275,6 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
-        branch_slots: BoundedSlotSpan,
         branch_params: BranchParams,
         label: LabelRef,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
@@ -284,7 +283,6 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(BlockControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
             branch_params,
             is_branched_to: false,
             fuel_pos,
@@ -298,7 +296,6 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
-        branch_slots: BoundedSlotSpan,
         branch_params: BranchParams,
         label: LabelRef,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
@@ -307,7 +304,6 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(LoopControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
             branch_params,
             is_branched_to: false,
             fuel_pos,
@@ -322,7 +318,6 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
-        branch_slots: BoundedSlotSpan,
         branch_params: BranchParams,
         label: LabelRef,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
@@ -334,7 +329,6 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
             branch_params,
             is_branched_to: false,
             fuel_pos,
@@ -360,7 +354,6 @@ impl ControlStack {
         debug_assert!(!self.orphaned_else_operands);
         let ty = if_frame.ty();
         let height = if_frame.height();
-        let branch_slots = if_frame.branch_slots;
         let branch_params = if_frame.branch_params;
         let label = if_frame.label();
         let is_branched_to = if_frame.is_branched_to();
@@ -376,7 +369,6 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
             branch_params,
             is_branched_to,
             fuel_pos,
@@ -685,8 +677,6 @@ pub struct BlockControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`BlockControlFrame`].
-    branch_slots: BoundedSlotSpan,
     /// The [`BranchParams`] of the [`BlockControlFrame`].
     branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`BlockControlFrame`].
@@ -738,8 +728,6 @@ pub struct LoopControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`LoopControlFrame`].
-    branch_slots: BoundedSlotSpan,
     /// The [`BranchParams`] of the [`LoopControlFrame`].
     branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
@@ -791,8 +779,6 @@ pub struct IfControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`IfControlFrame`].
-    branch_slots: BoundedSlotSpan,
     /// The [`BranchParams`] of the [`IfControlFrame`].
     branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`IfControlFrame`].
@@ -899,8 +885,6 @@ pub struct ElseControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`ElseControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`ElseControlFrame`].
-    branch_slots: BoundedSlotSpan,
     /// The [`BranchParams`] of the [`ElseControlFrame`].
     branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`ElseControlFrame`].
