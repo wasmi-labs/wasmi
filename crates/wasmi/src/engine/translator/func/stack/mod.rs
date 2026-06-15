@@ -168,20 +168,22 @@ pub enum RegKind {
     Freg64,
 }
 
-impl Stack {
-    /// Converts a [`ValType`] into a [`RegKind`].
+impl RegKind {
+    /// Creates a [`RegKind`] from a [`ValType`] if possible.
     ///
     /// Returns `None` if there is no register kind available to `ty`.
-    fn ty_to_reg_kind(ty: ValType) -> Option<RegKind> {
+    pub fn new(ty: ValType) -> Option<Self> {
         let kind = match ty {
-            ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => RegKind::Ireg,
-            ValType::F32 => RegKind::Freg32,
-            ValType::F64 => RegKind::Freg64,
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => Self::Ireg,
+            ValType::F32 => Self::Freg32,
+            ValType::F64 => Self::Freg64,
             ValType::V128 => return None,
         };
         Some(kind)
     }
+}
 
+impl Stack {
     /// Creates [`BranchParamRegs`] from `tys` if any.
     ///
     /// Returns `None` if `tys` is empty.
@@ -189,12 +191,12 @@ impl Stack {
         let regs = match tys {
             [] => return None,
             [ty] => {
-                Self::ty_to_reg_kind(*ty)?;
+                RegKind::new(*ty)?;
                 BranchParamRegs::new_one(*ty)
             }
             [.., last2, last1, last0] => {
                 let [last2, last1, last0] = [*last2, *last1, *last0];
-                let [kind2, kind1, kind0] = [last2, last1, last0].map(Self::ty_to_reg_kind);
+                let [kind2, kind1, kind0] = [last2, last1, last0].map(RegKind::new);
                 let kind0 = kind0?;
                 let Some(kind1) = kind1 else {
                     return Some(BranchParamRegs::new_one(last0));
@@ -218,7 +220,7 @@ impl Stack {
             }
             [.., last1, last0] => {
                 let [last1, last0] = [*last1, *last0];
-                let [kind1, kind0] = [last1, last0].map(Self::ty_to_reg_kind);
+                let [kind1, kind0] = [last1, last0].map(RegKind::new);
                 let kind0 = kind0?;
                 let Some(kind1) = kind1 else {
                     return Some(BranchParamRegs::new_one(last0));
