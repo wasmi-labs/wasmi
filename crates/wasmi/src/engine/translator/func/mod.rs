@@ -376,12 +376,17 @@ impl FuncTranslator {
         let height = frame.height();
         self.stack.discard_local_regs();
         self.stack.trunc(height);
+        let kind = frame.kind();
         let params = frame.branch_params();
         let len_temps = usize::from(params.len_temps());
         frame
             .ty()
             .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
-                for (n, result) in func_ty.results().iter().enumerate() {
+                let params = match kind {
+                    ControlFrameKind::Loop => func_ty.params(),
+                    _ => func_ty.results(),
+                };
+                for (n, result) in params.iter().enumerate() {
                     let alloc = match n < len_temps {
                         true => Allocation::None,
                         false => Allocation::Reg,
