@@ -155,6 +155,35 @@ impl Stack {
             _ => self.operands.get(len_params - 1).temp_slots().span(),
         }
     }
+}
+
+/// The kind of a register.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum RegKind {
+    /// The general purpose register for `i32` and `i64` values.
+    Ireg,
+    /// The `f32` register.
+    Freg32,
+    /// The `f64` register.
+    Freg64,
+}
+
+impl Stack {
+    /// Converts a [`ValType`] into a [`RegKind`].
+    /// 
+    /// Returns `None` if there is no register kind available to `ty`.
+    fn ty_to_reg_kind(ty: ValType) -> Option<RegKind> {
+        let kind = match ty {
+            ValType::I32 |
+            ValType::FuncRef |
+            ValType::ExternRef |
+            ValType::I64 => RegKind::Ireg,
+            ValType::F32 => RegKind::Freg32,
+            ValType::F64 => RegKind::Freg64,
+            ValType::V128 => return None,
+        };
+        Some(kind)
+    }
 
     /// Creates [`BranchParamRegs`] from `tys` if any.
     ///
@@ -162,24 +191,50 @@ impl Stack {
     fn branch_params_regs(tys: &[ValType]) -> Option<BranchParamRegs> {
         let regs = match tys {
             [] => return None,
-            [ty] => BranchParamRegs::new_one(*ty),
+            [ty] => {
+                Self::ty_to_reg_kind(*ty)?;
+                BranchParamRegs::new_one(*ty)
+            }
             [.., last2, last1, last0] => {
                 let [last2, last1, last0] = [*last2, *last1, *last0];
-                if last0 == last1 {
+                let [kind2, kind1, kind0] = [last2, last1, last0].map(Self::ty_to_reg_kind);
+                let Some(kind0) = kind0 else {
+                    return None
+                };
+                let Some(kind1) = kind1 else {
+                    return Some(BranchParamRegs::new_one(last0));
+                };
+                let Some(kind2) = kind2 else {
+                    match kind0 != kind1 {
+                        true => return Some(BranchParamRegs::new_two([last0, last1])),
+                        false => return Some(BranchParamRegs::new_one(last0)),
+                    }
+                };
+                if kind0 == kind1 {
                     return Some(BranchParamRegs::new_one(last0));
                 }
-                if last0 == last2 || last1 == last2 {
+                if kind0 == kind2 || kind1 == kind2 {
                     return Some(BranchParamRegs::new_two([last0, last1]));
                 }
-                match last0 != last2 && last1 != last2 {
+                match kind0 != kind2 && kind1 != kind2 {
                     true => BranchParamRegs::new_three([last0, last1, last2]),
                     false => BranchParamRegs::new_two([last0, last1]),
                 }
             }
-            [.., last1, last0] => match last0 != last1 {
-                true => BranchParamRegs::new_two([*last0, *last1]),
-                false => BranchParamRegs::new_one(*last0),
-            },
+            [.., last1, last0] => {
+                let [last1, last0] = [*last1, *last0];
+                let [kind1, kind0] = [last1, last0].map(Self::ty_to_reg_kind);
+                let Some(kind0) = kind0 else {
+                    return None
+                };
+                let Some(kind1) = kind1 else {
+                    return Some(BranchParamRegs::new_one(last0));
+                };
+                match kind0 != kind1 {
+                    true => BranchParamRegs::new_two([last0, last1]),
+                    false => BranchParamRegs::new_one(last0),
+                }
+            }
         };
         Some(regs)
     }
