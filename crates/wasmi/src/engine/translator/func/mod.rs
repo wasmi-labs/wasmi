@@ -364,40 +364,6 @@ impl FuncTranslator {
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
-    /// Pushes the branch params of the control `frame` onto the [`Stack`].
-    ///
-    /// # Note
-    ///
-    /// - Before pushing the results, the [`Stack`] is truncated to the `frame`'s height.
-    /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
-    ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
-    ///   require to call this function.
-    fn push_branch_params(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
-        let height = frame.height();
-        self.stack.discard_local_regs();
-        self.stack.trunc(height);
-        let kind = frame.kind();
-        let params = frame.branch_params();
-        let len_temps = usize::from(params.len_temps());
-        frame
-            .ty()
-            .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
-                let params = match kind {
-                    ControlFrameKind::Loop => func_ty.params(),
-                    _ => func_ty.results(),
-                };
-                for (n, result) in params.iter().enumerate() {
-                    let alloc = match n < len_temps {
-                        true => Allocation::None,
-                        false => Allocation::Reg,
-                    };
-                    self.stack.push_temp(*result, alloc)?;
-                }
-                Ok(())
-            })?;
-        Ok(())
-    }
-
     /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
     ///
     /// # Note
@@ -1444,7 +1410,7 @@ impl FuncTranslator {
             if self.reachable {
                 self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
-            self.push_branch_params(&frame)?;
+            self.stack.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable |= frame.is_branched_to();
@@ -1493,7 +1459,7 @@ impl FuncTranslator {
             let fuel_pos = self.instrs.encode_consume_fuel_op()?;
             self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
-        self.push_branch_params(&frame)?;
+        self.stack.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
         self.reachable = true;
         Ok(())
@@ -1523,7 +1489,7 @@ impl FuncTranslator {
         if end_of_else_reachable {
             self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
-        self.push_branch_params(&frame)?;
+        self.stack.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
         self.reachable = reachable;
         Ok(())
@@ -1540,7 +1506,7 @@ impl FuncTranslator {
             if end_is_reachable {
                 self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
-            self.push_branch_params(&frame)?;
+            self.stack.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable = end_is_reachable || frame.is_branched_to();

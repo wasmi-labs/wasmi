@@ -149,6 +149,40 @@ impl Stack {
         self.engine.config().get_consume_fuel()
     }
 
+    /// Pushes the branch params of the control `frame` onto the [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// - Before pushing the results, the [`Stack`] is truncated to the `frame`'s height.
+    /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
+    ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
+    ///   require to call this function.
+    pub fn push_branch_params(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+        let height = frame.height();
+        self.discard_local_regs();
+        self.trunc(height);
+        let kind = frame.kind();
+        let params = frame.branch_params();
+        let len_temps = usize::from(params.len_temps());
+        frame
+            .ty()
+            .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
+                let params = match kind {
+                    ControlFrameKind::Loop => func_ty.params(),
+                    _ => func_ty.results(),
+                };
+                for (n, result) in params.iter().enumerate() {
+                    let alloc = match n < len_temps {
+                        true => Allocation::None,
+                        false => Allocation::Reg,
+                    };
+                    self.operands.push_temp(*result, alloc)?;
+                }
+                Ok(())
+            })?;
+        Ok(())
+    }
+
     /// Returns the branch slots for the control frame with `len_params` operand parameters.
     fn branch_slots(&self, len_params: usize) -> SlotSpan {
         match len_params {
