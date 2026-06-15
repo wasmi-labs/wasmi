@@ -364,7 +364,7 @@ impl FuncTranslator {
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
-    /// Pushes the temporary results of the control `frame` onto the [`Stack`].
+    /// Pushes the branch params of the control `frame` onto the [`Stack`].
     ///
     /// # Note
     ///
@@ -372,7 +372,7 @@ impl FuncTranslator {
     /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
     ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
     ///   require to call this function.
-    fn push_frame_results(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
+    fn push_branch_params(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
         let height = frame.height();
         self.stack.discard_local_regs();
         self.stack.trunc(height);
@@ -1465,7 +1465,7 @@ impl FuncTranslator {
             if self.reachable {
                 self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
-            self.push_frame_results(&frame)?;
+            self.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable |= frame.is_branched_to();
@@ -1514,7 +1514,7 @@ impl FuncTranslator {
             let fuel_pos = self.instrs.encode_consume_fuel_op()?;
             self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
-        self.push_frame_results(&frame)?;
+        self.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
         self.reachable = true;
         Ok(())
@@ -1544,7 +1544,7 @@ impl FuncTranslator {
         if end_of_else_reachable {
             self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
-        self.push_frame_results(&frame)?;
+        self.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
         self.reachable = reachable;
         Ok(())
@@ -1561,7 +1561,7 @@ impl FuncTranslator {
             if end_is_reachable {
                 self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
-            self.push_frame_results(&frame)?;
+            self.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable = end_is_reachable || frame.is_branched_to();
