@@ -478,6 +478,10 @@ impl ControlStack {
 pub struct ControlFrameMut<'a>(&'a mut ControlFrame);
 
 impl<'a> ControlFrameBase for ControlFrameMut<'a> {
+    fn kind(&self) -> ControlFrameKind {
+        self.0.kind()
+    }
+
     fn ty(&self) -> BlockType {
         self.0.ty()
     }
@@ -594,6 +598,9 @@ impl From<ControlFrameKind> for ControlFrame {
 
 /// Trait implemented by control frame types that share a common API.
 pub trait ControlFrameBase {
+    /// Returns the [`ControlFrameKind`] of the control frame.
+    fn kind(&self) -> ControlFrameKind;
+
     /// Returns the [`BlockType`] of the control frame.
     fn ty(&self) -> BlockType;
 
@@ -619,6 +626,18 @@ pub trait ControlFrameBase {
 }
 
 impl ControlFrameBase for ControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        match self {
+            ControlFrame::Block(frame) => frame.kind(),
+            ControlFrame::Loop(frame) => frame.kind(),
+            ControlFrame::If(frame) => frame.kind(),
+            ControlFrame::Else(frame) => frame.kind(),
+            ControlFrame::Unreachable(_) => {
+                panic!("invalid query for unreachable control frame: `ControlFrameBase::kind`")
+            }
+        }
+    }
+
     fn ty(&self) -> BlockType {
         match self {
             ControlFrame::Block(frame) => frame.ty(),
@@ -730,6 +749,10 @@ pub struct BlockControlFrame {
 }
 
 impl ControlFrameBase for BlockControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::Block
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -781,6 +804,10 @@ pub struct LoopControlFrame {
 }
 
 impl ControlFrameBase for LoopControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::Loop
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -862,6 +889,10 @@ impl IfControlFrame {
 }
 
 impl ControlFrameBase for IfControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::If
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -999,6 +1030,10 @@ impl ElseControlFrame {
 }
 
 impl ControlFrameBase for ElseControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::Else
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
