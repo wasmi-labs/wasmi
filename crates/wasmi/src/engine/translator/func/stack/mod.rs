@@ -170,14 +170,11 @@ pub enum RegKind {
 
 impl Stack {
     /// Converts a [`ValType`] into a [`RegKind`].
-    /// 
+    ///
     /// Returns `None` if there is no register kind available to `ty`.
     fn ty_to_reg_kind(ty: ValType) -> Option<RegKind> {
         let kind = match ty {
-            ValType::I32 |
-            ValType::FuncRef |
-            ValType::ExternRef |
-            ValType::I64 => RegKind::Ireg,
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => RegKind::Ireg,
             ValType::F32 => RegKind::Freg32,
             ValType::F64 => RegKind::Freg64,
             ValType::V128 => return None,
