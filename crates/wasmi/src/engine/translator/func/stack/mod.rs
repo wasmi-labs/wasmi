@@ -205,23 +205,31 @@ impl Stack {
         Some(regs)
     }
 
-    /// Creates [`BranchParams`] from `temp_slots`, `ty` and the control flow `kind`.
-    fn branch_params(
-        &self,
-        temp_slots: SlotSpan,
-        ty: BlockType,
-        kind: ControlFrameKind,
-    ) -> BranchParams {
-        ty.func_type_with(&self.engine, |func_ty| {
-            let (tys, len_tys) = match kind {
-                ControlFrameKind::Loop => (func_ty.params(), func_ty.len_params()),
-                _ => (func_ty.results(), func_ty.len_results()),
-            };
-            let regs = Self::branch_params_regs(tys);
-            let regs_len = regs.as_ref().map(BranchParamRegs::len).unwrap_or(0);
-            let temp_len = len_tys - regs_len;
-            BranchParams::new(temp_slots, temp_len, regs)
+    /// Creates [`BranchParams`] from `ty` and the control flow `kind`.
+    fn branch_params_for(&self, func_ty: &FuncType, kind: ControlFrameKind) -> BranchParams {
+        let len_params = func_ty.len_params();
+        let temp_slots = self.branch_slots(len_params.into());
+        let (tys, len_tys) = match kind {
+            ControlFrameKind::Loop => (func_ty.params(), func_ty.len_params()),
+            _ => (func_ty.results(), func_ty.len_results()),
+        };
+        let regs = Self::branch_params_regs(tys);
+        let regs_len = regs.as_ref().map(BranchParamRegs::len).unwrap_or(0);
+        let temp_len = len_tys - regs_len;
+        BranchParams::new(temp_slots, temp_len, regs)
+    }
+
+    /// Creates [`BranchParams`] from `ty` and the control flow `kind`.
+    fn branch_params(&self, block_ty: BlockType, kind: ControlFrameKind) -> BranchParams {
+        block_ty.func_type_with(&self.engine, |func_ty| {
+            self.branch_params_for(func_ty, kind)
         })
+    }
+
+    /// Returns the height of the control frame with `block_ty` for `self`.
+    fn block_height(&self, block_ty: BlockType) -> usize {
+        let len_block_params = usize::from(block_ty.len_params(&self.engine));
+        self.height() - len_block_params
     }
 
     /// Pushes the function enclosing Wasm `block` onto the [`Stack`].
@@ -261,10 +269,8 @@ impl Stack {
     /// If the stack height exceeds the maximum height.
     pub fn push_block(&mut self, ty: BlockType, label: LabelRef) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
-        let len_params = usize::from(ty.len_params(&self.engine));
-        let block_height = self.height() - len_params;
-        let temp_slots = self.branch_slots(len_params);
-        let branch_params = self.branch_params(temp_slots, ty, ControlFrameKind::Block);
+        let block_height = self.block_height(ty);
+        let branch_params = self.branch_params(ty, ControlFrameKind::Block);
         let consume_fuel = self.fuel_pos();
         self.controls
             .push_block(ty, block_height, branch_params, label, consume_fuel);
@@ -289,15 +295,8 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
-        let len_params = usize::from(ty.len_params(&self.engine));
-        let block_height = self.height() - len_params;
-        debug_assert!(
-            self.operands
-                .peek(len_params)
-                .all(|operand| operand.is_temp())
-        );
-        let temp_slots = self.branch_slots(len_params);
-        let branch_params = self.branch_params(temp_slots, ty, ControlFrameKind::Loop);
+        let block_height = self.block_height(ty);
+        let branch_params = self.branch_params(ty, ControlFrameKind::Loop);
         self.controls
             .push_loop(ty, block_height, branch_params, label, fuel_pos);
         Ok(())
@@ -321,13 +320,12 @@ impl Stack {
     ) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
-        let len_params = usize::from(ty.len_params(&self.engine));
-        let block_height = self.height() - len_params;
-        let else_operands = self.operands.peek(len_params);
+        let block_height = self.block_height(ty);
+        let len_block_params = usize::from(ty.len_params(&self.engine));
+        let else_operands = self.operands.peek(len_block_params);
         let registers = self.operands.get_registers();
-        debug_assert!(len_params == else_operands.len());
-        let temp_slots = self.branch_slots(len_params);
-        let branch_params = self.branch_params(temp_slots, ty, ControlFrameKind::If);
+        debug_assert!(len_block_params == else_operands.len());
+        let branch_params = self.branch_params(ty, ControlFrameKind::If);
         self.controls.push_if(
             ty,
             block_height,
