@@ -707,7 +707,7 @@ impl FuncTranslator {
         len: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let Some(op) = Self::make_copy_span(results, values, len) else {
+        let Some(op) = Self::select_copy_span_op(results, values, len) else {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
         };
@@ -721,7 +721,7 @@ impl FuncTranslator {
     /// Returns an [`Op::copy_span_asc`] or [`Op::copy_span_des`] depending on inputs.
     ///
     /// Returns `None` if the `copy_span` operation is a no-op.
-    fn make_copy_span(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
+    fn select_copy_span_op(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
         if results == values {
             // Case: results and values are equal and therefore the copy is a no-op
             return None;
