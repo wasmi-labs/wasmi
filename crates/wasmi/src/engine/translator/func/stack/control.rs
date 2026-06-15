@@ -184,6 +184,32 @@ impl BranchParamRegs {
     }
 }
 
+/// The kind of a register.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum RegKind {
+    /// The general purpose register for `i32` and `i64` values.
+    Ireg,
+    /// The `f32` register.
+    Freg32,
+    /// The `f64` register.
+    Freg64,
+}
+
+impl RegKind {
+    /// Creates a [`RegKind`] from a [`ValType`] if possible.
+    ///
+    /// Returns `None` if there is no register kind available to `ty`.
+    pub fn new(ty: ValType) -> Option<Self> {
+        let kind = match ty {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => Self::Ireg,
+            ValType::F32 => Self::Freg32,
+            ValType::F64 => Self::Freg64,
+            ValType::V128 => return None,
+        };
+        Some(kind)
+    }
+}
+
 /// The Wasm control stack.
 #[derive(Debug, Default)]
 pub struct ControlStack {

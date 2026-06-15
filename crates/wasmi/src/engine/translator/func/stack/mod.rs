@@ -22,6 +22,7 @@ pub use self::{
         IfControlFrame,
         IfReachability,
         LoopControlFrame,
+        RegKind,
     },
     operand::{ImmediateOperand, LocalOperand, Location, Operand, ResolvedOperand, TempOperand},
     operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter, PreservedRegs},
@@ -155,35 +156,7 @@ impl Stack {
             _ => self.operands.get(len_params - 1).temp_slots().span(),
         }
     }
-}
 
-/// The kind of a register.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum RegKind {
-    /// The general purpose register for `i32` and `i64` values.
-    Ireg,
-    /// The `f32` register.
-    Freg32,
-    /// The `f64` register.
-    Freg64,
-}
-
-impl RegKind {
-    /// Creates a [`RegKind`] from a [`ValType`] if possible.
-    ///
-    /// Returns `None` if there is no register kind available to `ty`.
-    pub fn new(ty: ValType) -> Option<Self> {
-        let kind = match ty {
-            ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => Self::Ireg,
-            ValType::F32 => Self::Freg32,
-            ValType::F64 => Self::Freg64,
-            ValType::V128 => return None,
-        };
-        Some(kind)
-    }
-}
-
-impl Stack {
     /// Creates [`BranchParamRegs`] from `tys` if any.
     ///
     /// Returns `None` if `tys` is empty.
