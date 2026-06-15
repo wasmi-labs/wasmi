@@ -948,39 +948,13 @@ impl FuncTranslator {
     }
 
     fn copy_operand_to_reg(&mut self, operand: Operand) -> Result<(), Error> {
-        #[cold]
-        #[inline(never)]
-        fn unsupported_v128(operand: Operand) -> ! {
-            unimplemented!(
-                "operands of type `v128` cannot be put in registers but found: {operand:?}"
-            )
-        }
         let ty = operand.ty();
-        let operator = match self.resolve_operand::<RawVal>(operand)? {
-            ResolvedOperand::Reg(ty) => {
-                // Case: No copy needed as operand already resides in register.
-                self.push_result_reg(ty)?;
-                return Ok(());
-            }
-            ResolvedOperand::Slot(value) => match ty {
-                ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                    Op::u64_copy_rs(value)
-                }
-                ValType::F32 => Op::f32_copy_rs(value),
-                ValType::F64 => Op::f64_copy_rs(value),
-                ValType::V128 => unsupported_v128(operand),
-            },
-            ResolvedOperand::Immediate(value) => match ty {
-                ValType::FuncRef | ValType::ExternRef | ValType::I32 => {
-                    Op::u32_copy_ri(u32::from(value))
-                }
-                ValType::I64 => Op::u64_copy_ri(u64::from(value)),
-                ValType::F32 => Op::f32_copy_ri(f32::from(value)),
-                ValType::F64 => Op::f64_copy_ri(f64::from(value)),
-                ValType::V128 => unsupported_v128(operand),
-            },
+        let Some(op) = Self::select_copy_rx_op(operand, &self.layout)? else {
+            // Case: No copy needed as operand already resides in register.
+            self.push_result_reg(ty)?;
+            return Ok(());
         };
-        self.push_op_with_result_reg(ty, operator, FuelCostsProvider::base)?;
+        self.push_op_with_result_reg(ty, op, FuelCostsProvider::base)?;
         Ok(())
     }
 
