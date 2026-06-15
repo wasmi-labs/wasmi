@@ -898,22 +898,48 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
+    /// Returns `true` if there is a need to copy branch parameters for the frame at `depth` with the current stack.
+    ///
+    /// # Dev. Note
+    ///
+    /// We take `depth` to a frame instead of a reference to the frame directly
+    /// to avoid some borrow-checking issues at users.
     ///
     /// # Note
     ///
-    /// Some instructions can be encoded in a more efficient way if no branch parameter copies are required.
+    /// Conditional branches can be encoded in a more efficient way
+    /// if no branch parameter copies are required.
     fn requires_branch_param_copies(&self, depth: usize) -> bool {
         let frame = self.stack.peek_control(depth);
         let branch_params = frame.branch_params();
-        let len_branch_params = usize::from(branch_params.len());
+        let len_params = usize::from(branch_params.len());
+        if len_params == 0 {
+            // The frame has no branch params and thus no copies need to be performed.
+            return false;
+        }
         let frame_height = frame.height();
-        let height_matches = frame_height == (self.stack.height() - len_branch_params);
-        let only_temps = (0..len_branch_params)
+        let height_matches = frame_height == (self.stack.height() - len_params);
+        let has_temp_params = branch_params.len_temps() > 0;
+        if !height_matches && has_temp_params {
+            // If the height does not match we need to copy
+            return true;
+        }
+        let len_regs = usize::from(branch_params.len_regs());
+        let temp_params_require_copies = (len_regs..len_params)
             .map(|depth| self.stack.peek(depth))
-            .all(|o| o.is_temp() && !o.in_reg());
-        let can_avoid_copies = height_matches && only_temps;
-        !can_avoid_copies
+            .any(|o| !(o.is_temp() && !o.in_reg()));
+        if temp_params_require_copies {
+            // The branch paramters expected in temporary stack slots require copy operations.
+            return true;
+        }
+        let reg_params_require_copies = (0..len_regs)
+            .map(|depth| self.stack.peek(depth))
+            .any(|o| !o.in_reg());
+        if reg_params_require_copies {
+            // The branch paramters expected in registers require copy operations.
+            return true;
+        }
+        false
     }
 
     fn copy_operand_to_reg(&mut self, operand: Operand) -> Result<(), Error> {
