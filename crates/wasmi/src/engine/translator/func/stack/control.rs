@@ -83,10 +83,10 @@ impl BranchParams {
         self.temp_len
     }
 
-    /// Returns the [`ValType`] of all branch parameter operands expected in accumulator registers.
+    /// Returns the [`RegKind`] of all branch parameter operands expected in accumulator registers.
     ///
-    /// The order is reversed from the back, thus the first [`ValType`] refers to the last operand etc.
-    pub fn reg_tys(&self) -> &[ValType] {
+    /// The order is reversed from the back, thus the first [`RegKind`] refers to the last operand etc.
+    pub fn reg_tys(&self) -> &[RegKind] {
         self.regs
             .as_ref()
             .map(BranchParamRegs::as_slice)
@@ -103,19 +103,14 @@ impl BranchParams {
 #[derive(Debug, Copy, Clone)]
 pub enum BranchParamRegs {
     /// The last branch parameter is expected in its accumulator.
-    ///
-    /// # Note
-    ///
-    /// - The [`ValType`] must not refer to [`ValType::V128`].
-    One(ValType),
+    One(RegKind),
     /// The last 2 branch parameters are expected in their accumulators.
     ///
     /// # Note
     ///
     /// - Item at index `0` refers to the last operand, item at index `1` to the 2nd last.
-    /// - No [`ValType`] must refer to [`ValType::V128`].
-    /// - All [`ValType`] must be unequal.
-    Two([ValType; 2]),
+    /// - All [`RegKind`] must be unequal.
+    Two([RegKind; 2]),
     /// The last 3 branch parameters are expected in their accumulators.
     ///
     /// # Note
@@ -124,15 +119,14 @@ pub enum BranchParamRegs {
     ///     - index `0`: last operand
     ///     - index `1`: 2nd last operand
     ///     - index `2`: 3rd last operand
-    /// - No [`ValType`] must refer to [`ValType::V128`].
-    /// - All [`ValType`] must be unequal.
-    Three([ValType; 3]),
+    /// - All [`RegKind`] must be unequal.
+    Three([RegKind; 3]),
 }
 
 impl BranchParamRegs {
     /// Create a new [`BranchParamRegs::One`] from `ty`.
-    pub fn new_one(ty: ValType) -> Self {
-        Self::One(ty)
+    pub fn new_one(kind: RegKind) -> Self {
+        Self::One(kind)
     }
 
     /// Create a new [`BranchParamRegs::Two`] from `tys`.
@@ -140,9 +134,9 @@ impl BranchParamRegs {
     /// # Panics (Debug)
     ///
     /// If `tys` contains the same [`ValType`] more than once.
-    pub fn new_two(tys: [ValType; 2]) -> Self {
-        debug_assert_ne!(tys[0], tys[1]);
-        Self::Two(tys)
+    pub fn new_two(kinds: [RegKind; 2]) -> Self {
+        debug_assert_ne!(kinds[0], kinds[1]);
+        Self::Two(kinds)
     }
 
     /// Create a new [`BranchParamRegs::Three`] from `tys`.
@@ -150,11 +144,11 @@ impl BranchParamRegs {
     /// # Panics (Debug)
     ///
     /// If `tys` contains the same [`ValType`] more than once.
-    pub fn new_three(tys: [ValType; 3]) -> Self {
-        debug_assert_ne!(tys[0], tys[1]);
-        debug_assert_ne!(tys[0], tys[2]);
-        debug_assert_ne!(tys[1], tys[2]);
-        Self::Three(tys)
+    pub fn new_three(kinds: [RegKind; 3]) -> Self {
+        debug_assert_ne!(kinds[0], kinds[1]);
+        debug_assert_ne!(kinds[0], kinds[2]);
+        debug_assert_ne!(kinds[1], kinds[2]);
+        Self::Three(kinds)
     }
 
     /// Returns the number of branch params expected in accumulator registers.
@@ -167,18 +161,18 @@ impl BranchParamRegs {
     }
 
     /// Returns a slice over the type of branch params expected in accumulator registers.
-    pub fn as_slice(&self) -> &[ValType] {
+    pub fn as_slice(&self) -> &[RegKind] {
         match self {
-            Self::One(ty) => slice::from_ref(ty),
-            Self::Two(tys) => {
-                debug_assert_ne!(tys[0], tys[1]);
-                &tys[..]
+            Self::One(kind) => slice::from_ref(kind),
+            Self::Two(kinds) => {
+                debug_assert_ne!(kinds[0], kinds[1]);
+                &kinds[..]
             }
-            Self::Three(tys) => {
-                debug_assert_ne!(tys[0], tys[1]);
-                debug_assert_ne!(tys[0], tys[2]);
-                debug_assert_ne!(tys[1], tys[2]);
-                &tys[..]
+            Self::Three(kinds) => {
+                debug_assert_ne!(kinds[0], kinds[1]);
+                debug_assert_ne!(kinds[0], kinds[2]);
+                debug_assert_ne!(kinds[1], kinds[2]);
+                &kinds[..]
             }
         }
     }
@@ -207,6 +201,18 @@ impl RegKind {
             ValType::V128 => return None,
         };
         Some(kind)
+    }
+
+    /// Returns `true` if `self` matches `ty`.
+    pub fn matches_ty(&self, ty: ValType) -> bool {
+        match self {
+            RegKind::Ireg => matches!(
+                ty,
+                ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64
+            ),
+            RegKind::Freg32 => matches!(ty, ValType::F32),
+            RegKind::Freg64 => matches!(ty, ValType::F64),
+        }
     }
 }
 

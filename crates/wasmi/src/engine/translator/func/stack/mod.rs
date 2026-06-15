@@ -164,43 +164,41 @@ impl Stack {
         let regs = match tys {
             [] => return None,
             [ty] => {
-                RegKind::new(*ty)?;
-                BranchParamRegs::new_one(*ty)
+                let kind = RegKind::new(*ty)?;
+                BranchParamRegs::new_one(kind)
             }
             [.., last2, last1, last0] => {
-                let [last2, last1, last0] = [*last2, *last1, *last0];
-                let [kind2, kind1, kind0] = [last2, last1, last0].map(RegKind::new);
+                let [kind2, kind1, kind0] = [*last2, *last1, *last0].map(RegKind::new);
                 let kind0 = kind0?;
                 let Some(kind1) = kind1 else {
-                    return Some(BranchParamRegs::new_one(last0));
+                    return Some(BranchParamRegs::new_one(kind0));
                 };
                 let Some(kind2) = kind2 else {
                     match kind0 != kind1 {
-                        true => return Some(BranchParamRegs::new_two([last0, last1])),
-                        false => return Some(BranchParamRegs::new_one(last0)),
+                        true => return Some(BranchParamRegs::new_two([kind0, kind1])),
+                        false => return Some(BranchParamRegs::new_one(kind0)),
                     }
                 };
                 if kind0 == kind1 {
-                    return Some(BranchParamRegs::new_one(last0));
+                    return Some(BranchParamRegs::new_one(kind0));
                 }
                 if kind0 == kind2 || kind1 == kind2 {
-                    return Some(BranchParamRegs::new_two([last0, last1]));
+                    return Some(BranchParamRegs::new_two([kind0, kind1]));
                 }
                 match kind0 != kind2 && kind1 != kind2 {
-                    true => BranchParamRegs::new_three([last0, last1, last2]),
-                    false => BranchParamRegs::new_two([last0, last1]),
+                    true => BranchParamRegs::new_three([kind0, kind1, kind2]),
+                    false => BranchParamRegs::new_two([kind0, kind1]),
                 }
             }
             [.., last1, last0] => {
-                let [last1, last0] = [*last1, *last0];
-                let [kind1, kind0] = [last1, last0].map(RegKind::new);
+                let [kind1, kind0] = [*last1, *last0].map(RegKind::new);
                 let kind0 = kind0?;
                 let Some(kind1) = kind1 else {
-                    return Some(BranchParamRegs::new_one(last0));
+                    return Some(BranchParamRegs::new_one(kind0));
                 };
                 match kind0 != kind1 {
-                    true => BranchParamRegs::new_two([last0, last1]),
-                    false => BranchParamRegs::new_one(last0),
+                    true => BranchParamRegs::new_two([kind0, kind1]),
+                    false => BranchParamRegs::new_one(kind0),
                 }
             }
         };

@@ -442,9 +442,9 @@ impl FuncTranslator {
         params: BranchParams,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        for (depth, ty) in params.reg_tys().iter().enumerate() {
+        for (depth, kind) in params.reg_tys().iter().enumerate() {
             let value = self.stack.peek(depth);
-            debug_assert_eq!(*ty, value.ty());
+            debug_assert!(kind.matches_ty(value.ty()));
             self.encode_copy_rx_op(value, fuel_pos)?;
         }
         Ok(())
