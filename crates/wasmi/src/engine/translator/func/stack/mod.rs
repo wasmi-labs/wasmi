@@ -254,7 +254,7 @@ impl Stack {
     }
 
     /// Creates [`BranchParams`] from `ty` and the control flow `kind`.
-    fn branch_params(&self, block_ty: BlockType, kind: ControlFrameKind) -> BranchParams {
+    pub fn branch_params(&self, block_ty: BlockType, kind: ControlFrameKind) -> BranchParams {
         block_ty.func_type_with(&self.engine, |func_ty| {
             self.branch_params_for(func_ty, kind)
         })
@@ -331,8 +331,10 @@ impl Stack {
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let block_height = self.block_height(ty);
         let branch_params = self.branch_params(ty, ControlFrameKind::Loop);
-        self.controls
+        let loop_frame = self
+            .controls
             .push_loop(ty, block_height, branch_params, label, fuel_pos);
+        self.push_branch_params(&loop_frame)?;
         Ok(())
     }
 

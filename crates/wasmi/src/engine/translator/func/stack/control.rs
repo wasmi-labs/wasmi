@@ -337,17 +337,19 @@ impl ControlStack {
         branch_params: BranchParams,
         label: LabelRef,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) {
+    ) -> LoopControlFrame {
         debug_assert!(!self.orphaned_else_operands);
-        self.frames.push(ControlFrame::from(LoopControlFrame {
+        let loop_frame = LoopControlFrame {
             ty,
             height: StackHeight::from(height),
             branch_params,
             is_branched_to: false,
             fuel_pos,
             label,
-        }));
+        };
+        self.frames.push(ControlFrame::from(loop_frame.clone()));
         self.fuel_pos = fuel_pos;
+        loop_frame
     }
 
     /// Pushes a new Wasm `if` onto the [`ControlStack`].
@@ -783,7 +785,7 @@ impl ControlFrameBase for BlockControlFrame {
 }
 
 /// A Wasm `loop` control frame.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LoopControlFrame {
     /// The block type of the [`LoopControlFrame`].
     ty: BlockType,
