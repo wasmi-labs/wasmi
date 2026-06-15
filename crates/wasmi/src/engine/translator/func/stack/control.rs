@@ -1,5 +1,3 @@
-#![expect(dead_code)] // TODO: remove
-
 use super::{Operand, Reset};
 use crate::{
     ValType,
