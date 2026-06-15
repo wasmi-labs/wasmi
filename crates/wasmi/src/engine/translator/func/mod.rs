@@ -427,9 +427,9 @@ impl FuncTranslator {
             return Ok(());
         }
         let mut result = params.temp_slots().head();
-        let start = params.len() - 1;
+        let start = params.len();
         let end = params.len_regs();
-        for depth in start..=end {
+        for depth in (end..start).rev() {
             let value = self.stack.peek(depth.into());
             let ty = value.ty();
             self.encode_copy_sx_op(result, value, fuel_pos)?;
