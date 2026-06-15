@@ -195,9 +195,7 @@ impl Stack {
             [.., last2, last1, last0] => {
                 let [last2, last1, last0] = [*last2, *last1, *last0];
                 let [kind2, kind1, kind0] = [last2, last1, last0].map(Self::ty_to_reg_kind);
-                let Some(kind0) = kind0 else {
-                    return None
-                };
+                let kind0 = kind0?;
                 let Some(kind1) = kind1 else {
                     return Some(BranchParamRegs::new_one(last0));
                 };
@@ -221,9 +219,7 @@ impl Stack {
             [.., last1, last0] => {
                 let [last1, last0] = [*last1, *last0];
                 let [kind1, kind0] = [last1, last0].map(Self::ty_to_reg_kind);
-                let Some(kind0) = kind0 else {
-                    return None
-                };
+                let kind0 = kind0?;
                 let Some(kind1) = kind1 else {
                     return Some(BranchParamRegs::new_one(last0));
                 };
