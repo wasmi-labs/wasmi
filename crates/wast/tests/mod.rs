@@ -249,6 +249,11 @@ macro_rules! foreach_test {
             fn wasmi_fuse_br_f64_le("wasmi/tests/fuse-br/f64_le");
             fn wasmi_fuse_br_f64_gt("wasmi/tests/fuse-br/f64_gt");
             fn wasmi_fuse_br_f64_ge("wasmi/tests/fuse-br/f64_ge");
+            // Wasmi: fused copy + br_if
+            fn wasmi_copy_br_if_direction("wasmi/tests/copy-br-if/direction");
+            fn wasmi_copy_br_if_slot_condition("wasmi/tests/copy-br-if/slot-condition");
+            fn wasmi_copy_br_if_f64_value("wasmi/tests/copy-br-if/f64-value");
+            fn wasmi_copy_br_if_no_fuse("wasmi/tests/copy-br-if/no-fuse");
             // Wasmi: fuse if + cmp
             fn wasmi_fuse_if_i32_ge_s("wasmi/tests/fuse-if/i32_ge_s");
             fn wasmi_fuse_if_i32_ge_u("wasmi/tests/fuse-if/i32_ge_u");
