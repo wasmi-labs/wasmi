@@ -309,8 +309,9 @@ impl Stack {
             required_cells_for_tys(func_ty.results())
         })?;
         let temp_slots = BoundedSlotSpan::new(temp_slots, temp_slots_len);
-        let temp_len = ty.func_type_with(&self.engine, FuncType::len_results);
-        let branch_params = BranchParams::new(temp_slots, temp_len, None);
+        let branch_params = ty.func_type_with(&self.engine, |func_ty| {
+            self.branch_params_for(temp_slots, func_ty, ControlFrameKind::Block)
+        })?;
         self.controls
             .push_block(ty, 0, branch_params, label, fuel_pos);
         Ok(())
