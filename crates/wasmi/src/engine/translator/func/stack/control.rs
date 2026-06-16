@@ -99,7 +99,7 @@ impl BranchParams {
     }
 
     /// Returns `true` if `kind` is claimed by `self`.
-    fn claims_reg(&self, kind: RegKind) -> bool {
+    pub fn claims_reg(&self, kind: RegKind) -> bool {
         self.regs().contains(&kind)
     }
 }
