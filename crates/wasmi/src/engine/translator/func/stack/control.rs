@@ -86,7 +86,7 @@ impl BranchParams {
     /// Returns the [`RegKind`] of all branch parameter operands expected in accumulator registers.
     ///
     /// The order is reversed from the back, thus the first [`RegKind`] refers to the last operand etc.
-    pub fn reg_tys(&self) -> &[RegKind] {
+    pub fn regs(&self) -> &[RegKind] {
         self.regs
             .as_ref()
             .map(BranchParamRegs::as_slice)
