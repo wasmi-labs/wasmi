@@ -5,7 +5,8 @@ use crate::{
         BlockType,
         translator::func::{Pos, labels::LabelRef, stack::operands::RegisterMap},
     },
-    ir::{self, SlotSpan},
+    ir,
+    ir::BoundedSlotSpan,
 };
 use alloc::vec::{Drain, Vec};
 use core::slice;
@@ -36,7 +37,7 @@ impl From<usize> for StackHeight {
 #[derive(Debug, Copy, Clone)]
 pub struct BranchParams {
     /// The span of slots for the branch params expected in temporary operands.
-    temp_slots: SlotSpan,
+    temp_slots: BoundedSlotSpan,
     /// The number of branch parameter operands expected in temporary stack slots.
     temp_len: u16,
     /// The branch params expected in accumulator registers if any.
@@ -50,7 +51,7 @@ pub struct BranchParams {
 
 impl BranchParams {
     /// Creates a new [`BranchParams`] from its raw parts.
-    pub fn new(temp_slots: SlotSpan, temp_len: u16, regs: Option<BranchParamRegs>) -> Self {
+    pub fn new(temp_slots: BoundedSlotSpan, temp_len: u16, regs: Option<BranchParamRegs>) -> Self {
         Self {
             temp_slots,
             temp_len,
@@ -93,8 +94,8 @@ impl BranchParams {
             .unwrap_or(&[])
     }
 
-    /// Returns the [`SlotSpan`] for branch parameter operands that are expected in temporary stack slots.
-    pub fn temp_slots(&self) -> SlotSpan {
+    /// Returns the [`BoundedSlotSpan`] for branch parameter operands that are expected in temporary stack slots.
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
         self.temp_slots
     }
 

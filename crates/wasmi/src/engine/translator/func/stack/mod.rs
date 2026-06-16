@@ -36,9 +36,10 @@ use crate::{
     core::TypedRawVal,
     engine::{
         BlockType,
+        required_cells_for_tys,
         translator::func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
     },
-    ir::{self, SlotSpan},
+    ir::{self, BoundedSlotSpan, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -184,11 +185,22 @@ impl Stack {
     }
 
     /// Returns the branch slots for the control frame with `len_params` operand parameters.
-    fn branch_slots(&self, len_params: usize) -> SlotSpan {
-        match len_params {
+    fn branch_slots(
+        &self,
+        func_ty: &FuncType,
+        kind: ControlFrameKind,
+    ) -> Result<BoundedSlotSpan, Error> {
+        let len_params = usize::from(func_ty.len_params());
+        let slots = match len_params {
             0 => self.operands.next_temp_slots(),
-            _ => self.operands.get(len_params - 1).temp_slots().span(),
-        }
+            _ => self.operands.get(len_params - 1usize).temp_slots().span(),
+        };
+        let param_tys = match kind {
+            ControlFrameKind::Loop => func_ty.params(),
+            _ => func_ty.results(),
+        };
+        let len_slots = required_cells_for_tys(param_tys)?;
+        Ok(BoundedSlotSpan::new(slots, len_slots))
     }
 
     /// Creates [`BranchParamRegs`] from `tys` if any.
@@ -240,9 +252,12 @@ impl Stack {
     }
 
     /// Creates [`BranchParams`] from `ty` and the control flow `kind`.
-    fn branch_params_for(&self, func_ty: &FuncType, kind: ControlFrameKind) -> BranchParams {
-        let len_params = func_ty.len_params();
-        let temp_slots = self.branch_slots(len_params.into());
+    fn branch_params_for(
+        &self,
+        temp_slots: BoundedSlotSpan,
+        func_ty: &FuncType,
+        kind: ControlFrameKind,
+    ) -> Result<BranchParams, Error> {
         let (tys, len_tys) = match kind {
             ControlFrameKind::Loop => (func_ty.params(), func_ty.len_params()),
             _ => (func_ty.results(), func_ty.len_results()),
@@ -250,13 +265,18 @@ impl Stack {
         let regs = Self::branch_params_regs(tys);
         let regs_len = regs.as_ref().map(BranchParamRegs::len).unwrap_or(0);
         let temp_len = len_tys - regs_len;
-        BranchParams::new(temp_slots, temp_len, regs)
+        Ok(BranchParams::new(temp_slots, temp_len, regs))
     }
 
     /// Creates [`BranchParams`] from `ty` and the control flow `kind`.
-    pub fn branch_params(&self, block_ty: BlockType, kind: ControlFrameKind) -> BranchParams {
+    pub fn branch_params(
+        &self,
+        block_ty: BlockType,
+        kind: ControlFrameKind,
+    ) -> Result<BranchParams, Error> {
         block_ty.func_type_with(&self.engine, |func_ty| {
-            self.branch_params_for(func_ty, kind)
+            let temp_slots = self.branch_slots(func_ty, kind)?;
+            self.branch_params_for(temp_slots, func_ty, kind)
         })
     }
 
@@ -285,6 +305,10 @@ impl Stack {
         debug_assert!(self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let temp_slots = self.operands.next_temp_slots();
+        let temp_slots_len = ty.func_type_with(&self.engine, |func_ty| {
+            required_cells_for_tys(func_ty.results())
+        })?;
+        let temp_slots = BoundedSlotSpan::new(temp_slots, temp_slots_len);
         let temp_len = ty.func_type_with(&self.engine, FuncType::len_results);
         let branch_params = BranchParams::new(temp_slots, temp_len, None);
         self.controls
@@ -304,7 +328,7 @@ impl Stack {
     pub fn push_block(&mut self, ty: BlockType, label: LabelRef) -> Result<(), Error> {
         debug_assert!(!self.controls.is_empty());
         let block_height = self.block_height(ty);
-        let branch_params = self.branch_params(ty, ControlFrameKind::Block);
+        let branch_params = self.branch_params(ty, ControlFrameKind::Block)?;
         let consume_fuel = self.fuel_pos();
         self.controls
             .push_block(ty, block_height, branch_params, label, consume_fuel);
@@ -330,7 +354,7 @@ impl Stack {
         debug_assert!(!self.controls.is_empty());
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         let block_height = self.block_height(ty);
-        let branch_params = self.branch_params(ty, ControlFrameKind::Loop);
+        let branch_params = self.branch_params(ty, ControlFrameKind::Loop)?;
         let loop_frame = self
             .controls
             .push_loop(ty, block_height, branch_params, label, fuel_pos);
@@ -361,7 +385,7 @@ impl Stack {
         let else_operands = self.operands.peek(len_block_params);
         let registers = self.operands.get_registers();
         debug_assert!(len_block_params == else_operands.len());
-        let branch_params = self.branch_params(ty, ControlFrameKind::If);
+        let branch_params = self.branch_params(ty, ControlFrameKind::If)?;
         self.controls.push_if(
             ty,
             block_height,

@@ -1192,7 +1192,7 @@ impl FuncTranslator {
             let results = frame.branch_params().temp_slots();
             self.instrs.encode_branch(
                 frame.label(),
-                |offset| ir::BranchTableTarget::new(results, offset),
+                |offset| ir::BranchTableTarget::new(results.span(), offset),
                 fuel_pos,
                 0,
             )?;

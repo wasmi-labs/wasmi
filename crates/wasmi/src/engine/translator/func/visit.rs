@@ -131,7 +131,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let fuel_pos = self.stack.fuel_pos();
         let block_ty = BlockType::new(block_ty, &self.module);
-        let branch_params = self.stack.branch_params(block_ty, ControlFrameKind::Loop);
+        let branch_params = self.stack.branch_params(block_ty, ControlFrameKind::Loop)?;
         let len_params = block_ty.len_params(self.engine());
         self.copy_branch_params(branch_params, fuel_pos)?;
         self.preserve_all_locals(len_params.into())?;
