@@ -11,6 +11,7 @@ use crate::build::{
         BranchTableCopies,
         BranchTableOp,
         CallIndirectOp,
+        CmpBranchCopyOp,
         CmpBranchOp,
         GenericOp,
         GlobalGetOp,
@@ -116,6 +117,20 @@ impl Display for DisplayDecode<&'_ CmpBranchOp> {
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = CmpBranchOp<{lhs}, {rhs}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ CmpBranchCopyOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let result = op.result_field().ty;
+        let condition = op.condition_field().ty;
+        let value = op.value_field().ty;
+        writeln!(
+            f,
+            "pub type {camel_ident} = CmpBranchCopyOp<{result}, {condition}, {value}>;"
+        )
     }
 }
 

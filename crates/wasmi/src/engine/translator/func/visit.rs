@@ -279,13 +279,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_br_if(&mut self, depth: u32) -> Self::Output {
         bail_unreachable!(self);
         let condition = self.stack.pop();
-        if let Operand::Immediate(condition) = condition {
-            if i32::from(condition.val()) != 0 {
-                // Case (true): always takes the branch
-                self.visit_br(depth)?;
+        let condition_loc = match self.resolve_operand::<RawVal>(condition)? {
+            ResolvedOperand::Immediate(condition) => {
+                if i32::from(condition) != 0 {
+                    // Case (true): always takes the branch
+                    self.visit_br(depth)?;
+                }
+                return Ok(());
             }
-            return Ok(());
-        }
+            ResolvedOperand::Slot(condition) => Location::Slot(condition),
+            ResolvedOperand::Reg(ty) => Location::Reg(ty),
+        };
         let Ok(depth) = usize::try_from(depth) else {
             panic!("out of bounds depth: {depth}")
         };
@@ -301,6 +305,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         if !self.requires_branch_param_copies(depth) {
             // Case: no branch values are required to be copied
             self.encode_br_nez(condition, label)?;
+            return Ok(());
+        }
+        if let [reg] = branch_params.regs()
+            && branch_params.len_temps() == 0
+        {
+            // Case: just a single value needs to be copied to a register.
+            let value = self.stack.peek(0);
+            debug_assert!(reg.matches_ty(value.ty()));
+            self.encode_copy_br_nez(condition_loc, value, label)?;
             return Ok(());
         }
         // Case: fallback to copy branch parameters conditionally

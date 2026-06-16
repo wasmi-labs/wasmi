@@ -728,9 +728,45 @@ impl UpdateBranchOffset for Op {
     #[track_caller]
     fn update_branch_offset(&mut self, new_offset: BranchOffset) {
         match self {
-            // unconditional
+            // unconditional branches
 
             | Op::Branch { offset }
+
+            // copy + br_if
+            // u32
+            | Op::U32CopyBranchEqz_Rri { offset, .. }
+            | Op::U32CopyBranchNez_Rri { offset, .. }
+            | Op::U32CopyBranchEqz_Rsi { offset, .. }
+            | Op::U32CopyBranchNez_Rsi { offset, .. }
+            // u64
+            | Op::U64CopyBranchEqz_Rrs { offset, .. }
+            | Op::U64CopyBranchEqz_Rri { offset, .. }
+            | Op::U64CopyBranchNez_Rrs { offset, .. }
+            | Op::U64CopyBranchNez_Rri { offset, .. }
+            | Op::U64CopyBranchEqz_Rss { offset, .. }
+            | Op::U64CopyBranchEqz_Rsi { offset, .. }
+            | Op::U64CopyBranchNez_Rss { offset, .. }
+            | Op::U64CopyBranchNez_Rsi { offset, .. }
+            // f32
+            | Op::F32CopyBranchEqz_Rrs { offset, .. }
+            | Op::F32CopyBranchEqz_Rri { offset, .. }
+            | Op::F32CopyBranchNez_Rrs { offset, .. }
+            | Op::F32CopyBranchNez_Rri { offset, .. }
+            | Op::F32CopyBranchEqz_Rss { offset, .. }
+            | Op::F32CopyBranchEqz_Rsi { offset, .. }
+            | Op::F32CopyBranchNez_Rss { offset, .. }
+            | Op::F32CopyBranchNez_Rsi { offset, .. }
+            // f64
+            | Op::F64CopyBranchEqz_Rrs { offset, .. }
+            | Op::F64CopyBranchEqz_Rri { offset, .. }
+            | Op::F64CopyBranchNez_Rrs { offset, .. }
+            | Op::F64CopyBranchNez_Rri { offset, .. }
+            | Op::F64CopyBranchEqz_Rss { offset, .. }
+            | Op::F64CopyBranchEqz_Rsi { offset, .. }
+            | Op::F64CopyBranchNez_Rss { offset, .. }
+            | Op::F64CopyBranchNez_Rsi { offset, .. }
+
+            // conditional branches
 
             // i32
 

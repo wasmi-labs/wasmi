@@ -13,6 +13,7 @@ macro_rules! apply_macro_for_ops {
             Binary(BinaryOp),
             Ternary(TernaryOp),
             CmpBranch(CmpBranchOp),
+            CmpBranchCopy(CmpBranchCopyOp),
             BranchTable(BranchTableOp),
             Select(SelectOp),
             Load(LoadOp),
@@ -351,6 +352,58 @@ impl CmpBranchOp {
 
     pub fn fields(&self) -> [Field; 3] {
         [self.offset_field(), self.lhs_field(), self.rhs_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct CmpBranchCopyOp {
+    pub ident: Ident,
+    pub result_ty: Ty,
+    pub result: OperandKind,
+    pub condition: OperandKind,
+    pub value: OperandKind,
+}
+
+impl CmpBranchCopyOp {
+    pub fn new(
+        ident: Ident,
+        result_ty: Ty,
+        result: OperandKind,
+        condition: OperandKind,
+        value: OperandKind,
+    ) -> Self {
+        Self {
+            ident,
+            result_ty,
+            result,
+            condition,
+            value,
+        }
+    }
+
+    pub fn result_field(&self) -> Field {
+        Field::new(Ident::Result, self.result.field_ty(self.result_ty))
+    }
+
+    pub fn condition_field(&self) -> Field {
+        Field::new(Ident::Condition, self.condition.field_ty(Ty::U32))
+    }
+
+    pub fn value_field(&self) -> Field {
+        Field::new(Ident::Value, self.value.field_ty(self.result_ty))
+    }
+
+    pub fn offset_field(&self) -> Field {
+        Field::new(Ident::Offset, FieldTy::BranchOffset)
+    }
+
+    pub fn fields(&self) -> [Field; 4] {
+        [
+            self.result_field(),
+            self.condition_field(),
+            self.value_field(),
+            self.offset_field(),
+        ]
     }
 }
 

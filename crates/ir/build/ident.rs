@@ -113,6 +113,8 @@ define_ident!(
     Rotl: rotl,
     Rotr: rotr,
 
+    Eqz: eqz,
+    Nez: nez,
     Eq: eq,
     And: and,
     AndNot: and_not,

@@ -7,6 +7,7 @@ use crate::build::{
         BranchTableOp,
         CallIndirectOp,
         CallKind,
+        CmpBranchCopyOp,
         CmpBranchOp,
         GenericOp,
         GlobalGetOp,
@@ -340,6 +341,25 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
         write!(
             f,
             "{branch}{sep}{input_ident}{ident}_{lhs_suffix}{rhs_suffix}"
+        )
+    }
+}
+
+impl Display for DisplayIdent<&'_ CmpBranchCopyOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let ident_prefix = case.wrap(op.result_ty);
+        let branch = case.wrap(Ident::Branch);
+        let copy = case.wrap(Ident::Copy);
+        let ident = case.wrap(op.ident);
+        let result_suffix = case.wrap(Suffix(op.result));
+        let condition_suffix = SnakeCase(Suffix(op.condition));
+        let value_suffix = SnakeCase(Suffix(op.value));
+        write!(
+            f,
+            "{ident_prefix}{sep}{copy}{sep}{branch}{sep}{ident}_{result_suffix}{condition_suffix}{value_suffix}"
         )
     }
 }

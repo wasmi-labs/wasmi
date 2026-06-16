@@ -1998,6 +1998,71 @@ handler_binary! {
     fn f64_not_le_ris(F64NotLe_Ris) = eval::wasmi_f64_not_le;
 }
 
+macro_rules! handler_copy_cmp_branch {
+    ( $( fn $handler:ident($decode:ident, $value_ty:ty) = $eval:expr );* $(;)? ) => {
+        $(
+            execution_handler! {
+                fn $handler(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (next_ip, $crate::ir::decode::$decode { result, condition, value, offset }) = unsafe { decode_op(ip) };
+                    let condition = get_value(condition, sp, ireg, freg32, freg64);
+                    let (mut ireg, mut freg32, mut freg64) = (ireg, freg32, freg64);
+                    let ip = match $eval(condition, 0) {
+                        true => {
+                            let value: $value_ty = get_value(value, sp, ireg, freg32, freg64);
+                            (ireg, freg32, freg64) = $crate::engine::executor::handler::utils::set_value(
+                                result, value, sp, ireg, freg32, freg64
+                            );
+                            offset_ip(ip, offset)
+                        }
+                        false => next_ip,
+                    };
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
+            }
+        )*
+    };
+}
+handler_copy_cmp_branch! {
+    fn u32_copy_branch_eqz_rri(U32CopyBranchEqz_Rri, u32) = wasm::i32_eq;
+    fn u32_copy_branch_nez_rri(U32CopyBranchNez_Rri, u32) = wasm::i32_ne;
+    fn u32_copy_branch_eqz_rsi(U32CopyBranchEqz_Rsi, u32) = wasm::i32_eq;
+    fn u32_copy_branch_nez_rsi(U32CopyBranchNez_Rsi, u32) = wasm::i32_ne;
+    fn u64_copy_branch_eqz_rrs(U64CopyBranchEqz_Rrs, u64) = wasm::i32_eq;
+    fn u64_copy_branch_nez_rrs(U64CopyBranchNez_Rrs, u64) = wasm::i32_ne;
+    fn u64_copy_branch_eqz_rss(U64CopyBranchEqz_Rss, u64) = wasm::i32_eq;
+    fn u64_copy_branch_nez_rss(U64CopyBranchNez_Rss, u64) = wasm::i32_ne;
+    fn u64_copy_branch_eqz_rri(U64CopyBranchEqz_Rri, u64) = wasm::i32_eq;
+    fn u64_copy_branch_nez_rri(U64CopyBranchNez_Rri, u64) = wasm::i32_ne;
+    fn u64_copy_branch_eqz_rsi(U64CopyBranchEqz_Rsi, u64) = wasm::i32_eq;
+    fn u64_copy_branch_nez_rsi(U64CopyBranchNez_Rsi, u64) = wasm::i32_ne;
+    fn f32_copy_branch_eqz_rrs(F32CopyBranchEqz_Rrs, f32) = wasm::i32_eq;
+    fn f32_copy_branch_nez_rrs(F32CopyBranchNez_Rrs, f32) = wasm::i32_ne;
+    fn f32_copy_branch_eqz_rss(F32CopyBranchEqz_Rss, f32) = wasm::i32_eq;
+    fn f32_copy_branch_nez_rss(F32CopyBranchNez_Rss, f32) = wasm::i32_ne;
+    fn f32_copy_branch_eqz_rri(F32CopyBranchEqz_Rri, f32) = wasm::i32_eq;
+    fn f32_copy_branch_nez_rri(F32CopyBranchNez_Rri, f32) = wasm::i32_ne;
+    fn f32_copy_branch_eqz_rsi(F32CopyBranchEqz_Rsi, f32) = wasm::i32_eq;
+    fn f32_copy_branch_nez_rsi(F32CopyBranchNez_Rsi, f32) = wasm::i32_ne;
+    fn f64_copy_branch_eqz_rrs(F64CopyBranchEqz_Rrs, f64) = wasm::i32_eq;
+    fn f64_copy_branch_nez_rrs(F64CopyBranchNez_Rrs, f64) = wasm::i32_ne;
+    fn f64_copy_branch_eqz_rss(F64CopyBranchEqz_Rss, f64) = wasm::i32_eq;
+    fn f64_copy_branch_nez_rss(F64CopyBranchNez_Rss, f64) = wasm::i32_ne;
+    fn f64_copy_branch_eqz_rri(F64CopyBranchEqz_Rri, f64) = wasm::i32_eq;
+    fn f64_copy_branch_nez_rri(F64CopyBranchNez_Rri, f64) = wasm::i32_ne;
+    fn f64_copy_branch_eqz_rsi(F64CopyBranchEqz_Rsi, f64) = wasm::i32_eq;
+    fn f64_copy_branch_nez_rsi(F64CopyBranchNez_Rsi, f64) = wasm::i32_ne;
+}
+
 macro_rules! handler_cmp_branch {
     ( $( fn $handler:ident($decode:ident) = $eval:expr );* $(;)? ) => {
         $(

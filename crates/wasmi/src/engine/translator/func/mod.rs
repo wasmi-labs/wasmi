@@ -1674,6 +1674,333 @@ impl FuncTranslator {
         let fused_op_or_none = cmp_op.try_into_cmp_branch_instr(BranchOffset::uninit());
         Ok(fused_op_or_none)
     }
+}
+
+/// Either a [`Slot`] or an immediate operand.
+#[derive(Debug)]
+pub enum SlotOrImmediate<T> {
+    /// A slot operand.
+    Slot(Slot, ValType),
+    /// An immediate operand.
+    Immediate(T),
+}
+
+impl SlotOrImmediate<TypedRawVal> {
+    /// Returns the [`ValType`] of `self`.
+    pub fn ty(&self) -> ValType {
+        match self {
+            SlotOrImmediate::Slot(_, ty) => *ty,
+            SlotOrImmediate::Immediate(value) => value.ty(),
+        }
+    }
+}
+
+impl<T> SlotOrImmediate<T> {
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> SlotOrImmediate<U> {
+        match self {
+            SlotOrImmediate::Slot(slot, val_type) => SlotOrImmediate::Slot(slot, val_type),
+            SlotOrImmediate::Immediate(value) => SlotOrImmediate::Immediate(f(value)),
+        }
+    }
+}
+
+impl FuncTranslator {
+    /// Encodes a fused copy + `br_if` operator.
+    fn encode_copy_br_nez(
+        &mut self,
+        condition: Location,
+        value: Operand,
+        label: LabelRef,
+    ) -> Result<(), Error> {
+        debug_assert!(!value.in_reg());
+        debug_assert!(!matches!(value.ty(), ValType::V128));
+        let value = match self.resolve_operand::<TypedRawVal>(value)? {
+            ResolvedOperand::Reg(_) => unreachable!(),
+            ResolvedOperand::Slot(slot) => SlotOrImmediate::Slot(slot, value.ty()),
+            ResolvedOperand::Immediate(value) => SlotOrImmediate::Immediate(value),
+        };
+        let fusion = self.try_fuse_copy_branch_eqz(condition)?;
+        if fusion.is_some() {
+            self.instrs.drop_staged();
+        }
+        let variant = fusion.unwrap_or(FusedCopyBrIf::Nez { condition });
+        let op = self.select_copy_branch_op(variant, value, BranchOffset::uninit());
+        let fuel_pos = self.stack.fuel_pos();
+        self.encode_branch_op(label, |offset| op.with_branch_offset(offset), fuel_pos)?;
+        Ok(())
+    }
+
+    fn select_copy_branch_op(
+        &self,
+        variant: FusedCopyBrIf,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        let condition = variant.condition();
+        let select_op = match variant {
+            FusedCopyBrIf::Nez { .. } => Self::select_copy_branch_nez_op,
+            FusedCopyBrIf::Eqz { .. } => Self::select_copy_branch_eqz_op,
+        };
+        select_op(self, condition, value, offset)
+    }
+
+    fn select_copy_branch_nez_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        match value.ty() {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef => {
+                self.select_u32_copy_branch_nez_op(condition, value, offset)
+            }
+            ValType::I64 => self.select_u64_copy_branch_nez_op(condition, value, offset),
+            ValType::F32 => self.select_f32_copy_branch_nez_op(condition, value, offset),
+            ValType::F64 => self.select_f64_copy_branch_nez_op(condition, value, offset),
+            ValType::V128 => unreachable!(),
+        }
+    }
+
+    fn select_u32_copy_branch_nez_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(
+            value.ty(),
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef
+        ));
+        let value = value.map(|value| value.raw()).map(u32::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_nez_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::u32_copy_branch_nez_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_nez_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::u32_copy_branch_nez_rsi(c, v, offset),
+        }
+    }
+
+    fn select_u64_copy_branch_nez_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(value.ty(), ValType::I64));
+        let value = value.map(u64::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_nez_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::u64_copy_branch_nez_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_nez_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::u64_copy_branch_nez_rsi(c, v, offset),
+        }
+    }
+
+    fn select_f32_copy_branch_nez_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(value.ty(), ValType::F32));
+        let value = value.map(f32::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::f32_copy_branch_nez_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::f32_copy_branch_nez_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::f32_copy_branch_nez_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::f32_copy_branch_nez_rsi(c, v, offset),
+        }
+    }
+
+    fn select_f64_copy_branch_nez_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(value.ty(), ValType::F64));
+        let value = value.map(f64::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::f64_copy_branch_nez_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::f64_copy_branch_nez_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::f64_copy_branch_nez_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::f64_copy_branch_nez_rsi(c, v, offset),
+        }
+    }
+
+    fn select_copy_branch_eqz_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        match value.ty() {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef => {
+                self.select_u32_copy_branch_eqz_op(condition, value, offset)
+            }
+            ValType::I64 => self.select_u64_copy_branch_eqz_op(condition, value, offset),
+            ValType::F32 => self.select_f32_copy_branch_eqz_op(condition, value, offset),
+            ValType::F64 => self.select_f64_copy_branch_eqz_op(condition, value, offset),
+            ValType::V128 => unreachable!(),
+        }
+    }
+
+    fn select_u32_copy_branch_eqz_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(
+            value.ty(),
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef
+        ));
+        let value = value.map(|value| value.raw()).map(u32::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_eqz_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::u32_copy_branch_eqz_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_eqz_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::u32_copy_branch_eqz_rsi(c, v, offset),
+        }
+    }
+
+    fn select_u64_copy_branch_eqz_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(value.ty(), ValType::I64));
+        let value = value.map(u64::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_eqz_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::u64_copy_branch_eqz_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::u64_copy_branch_eqz_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::u64_copy_branch_eqz_rsi(c, v, offset),
+        }
+    }
+
+    fn select_f32_copy_branch_eqz_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(value.ty(), ValType::F32));
+        let value = value.map(f32::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::f32_copy_branch_eqz_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::f32_copy_branch_eqz_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::f32_copy_branch_eqz_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::f32_copy_branch_eqz_rsi(c, v, offset),
+        }
+    }
+
+    fn select_f64_copy_branch_eqz_op(
+        &self,
+        condition: Location,
+        value: SlotOrImmediate<TypedRawVal>,
+        offset: BranchOffset,
+    ) -> Op {
+        use Location as Loc;
+        use SlotOrImmediate as SlotOrImm;
+        debug_assert!(matches!(value.ty(), ValType::F64));
+        let value = value.map(f64::from);
+        match (condition, value) {
+            (Loc::Reg(_), SlotOrImm::Slot(v, _)) => Op::f64_copy_branch_eqz_rrs(v, offset),
+            (Loc::Reg(_), SlotOrImm::Immediate(v)) => Op::f64_copy_branch_eqz_rri(v, offset),
+            (Loc::Slot(c), SlotOrImm::Slot(v, _)) => Op::f64_copy_branch_eqz_rss(c, v, offset),
+            (Loc::Slot(c), SlotOrImm::Immediate(v)) => Op::f64_copy_branch_eqz_rsi(c, v, offset),
+        }
+    }
+}
+
+/// State to capture how the staged [`Op`] can be fused with the `copy` + `br_if` operator.
+#[derive(Debug, Copy, Clone)]
+enum FusedCopyBrIf {
+    /// Branch if `condition` is _not_ equal to zero.
+    Nez { condition: Location },
+    /// Branch if `condition` is equal to zero.
+    Eqz { condition: Location },
+}
+
+impl FusedCopyBrIf {
+    pub fn condition(self) -> Location {
+        match self {
+            Self::Nez { condition } | Self::Eqz { condition } => condition,
+        }
+    }
+
+    pub fn eqz_r() -> Self {
+        Self::Eqz {
+            condition: Location::Reg(ValType::I32),
+        }
+    }
+
+    pub fn nez_r() -> Self {
+        Self::Nez {
+            condition: Location::Reg(ValType::I32),
+        }
+    }
+
+    pub fn eqz_s(condition: Slot) -> Self {
+        Self::Eqz {
+            condition: Location::Slot(condition),
+        }
+    }
+
+    pub fn nez_s(condition: Slot) -> Self {
+        Self::Nez {
+            condition: Location::Slot(condition),
+        }
+    }
+}
+
+impl FuncTranslator {
+    /// Try to fuse a copy + `br_if` operator.
+    fn try_fuse_copy_branch_eqz(
+        &mut self,
+        condition: Location,
+    ) -> Result<Option<FusedCopyBrIf>, Error> {
+        let Some(staged_op) = self.instrs.peek_staged() else {
+            // Case: cannot fuse without a known last instruction
+            return Ok(None);
+        };
+        let Some(ir::Location::Reg(result_ty)) = staged_op.result_loc() else {
+            // Case: cannot fuse without register result.
+            return Ok(None);
+        };
+        let Location::Reg(_ty) = condition else {
+            // Case: cannot fuse non-register operands
+            //  - locals have observable behavior.
+            //  - immediates cannot be the result of a previous instruction.
+            return Ok(None);
+        };
+        debug_assert!(matches!(result_ty, ValType::I32 | ValType::I64));
+        #[rustfmt::skip]
+        let fusion = match staged_op {
+            | Op::I32Eq_Rri { rhs: 0, .. } => FusedCopyBrIf::eqz_r(),
+            | Op::I32Eq_Rsi { lhs, rhs: 0, .. } => FusedCopyBrIf::eqz_s(lhs),
+            | Op::I32NotEq_Rri { rhs: 0, .. } => FusedCopyBrIf::nez_r(),
+            | Op::I32NotEq_Rsi { lhs, rhs: 0, .. } => FusedCopyBrIf::nez_s(lhs),
+            | _ => return Ok(None)
+        };
+        Ok(Some(fusion))
+    }
 
     /// Encodes a `i32.eqz`+`br_if` or `if` conditional branch instruction.
     fn encode_br_eqz(&mut self, condition: Operand, label: LabelRef) -> Result<(), Error> {

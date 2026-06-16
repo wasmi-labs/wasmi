@@ -8,6 +8,7 @@ use self::op::{
     BinaryOp,
     BranchTableOp,
     CallIndirect,
+    CmpBranchCopyOp,
     CmpBranchOp,
     GlobalGet,
     GlobalSet,

@@ -147,6 +147,7 @@ impl Op {
             Op::Binary(op) => op.result.result_loc(),
             Op::Ternary(_) => Some(Location::Slot),
             Op::CmpBranch(_) => None,
+            Op::CmpBranchCopy(op) => op.result.result_loc(),
             Op::BranchTable(_) => None,
             Op::Select(op) => op.result.result_loc(),
             Op::Load(op) => op.result.result_loc(),

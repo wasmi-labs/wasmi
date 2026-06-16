@@ -112,6 +112,30 @@ where
 }
 
 #[derive(Copy, Clone)]
+pub struct CmpBranchCopyOp<Res, Condition, Value> {
+    pub result: Res,
+    pub condition: Condition,
+    pub value: Value,
+    pub offset: BranchOffset,
+}
+
+impl<Res, Condition, Value> Decode for CmpBranchCopyOp<Res, Condition, Value>
+where
+    Res: Decode,
+    Condition: Decode,
+    Value: Decode,
+{
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            result: Decode::decode(decoder)?,
+            condition: Decode::decode(decoder)?,
+            value: Decode::decode(decoder)?,
+            offset: Decode::decode(decoder)?,
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct BranchTableOp<Index, Values> {
     pub len_targets: u32,
     pub index: Index,

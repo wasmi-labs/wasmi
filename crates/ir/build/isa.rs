@@ -9,6 +9,7 @@ use crate::build::{
         BranchTableOp,
         CallIndirectOp,
         CallKind,
+        CmpBranchCopyOp,
         CmpBranchOp,
         Field,
         GenericOp,
@@ -69,6 +70,7 @@ pub fn wasmi_isa(config: &Config) -> Isa {
     add_unary_ops(&mut isa);
     add_binary_ops(&mut isa);
     add_cmp_branch_ops(&mut isa);
+    add_cmp_branch_copy_ops(&mut isa);
     add_select_ops(&mut isa);
     add_load_ops(&mut isa);
     add_store_ops(&mut isa);
@@ -338,6 +340,27 @@ fn add_cmp_branch_ops(isa: &mut Isa) {
                     continue;
                 }
                 isa.push_op(CmpBranchOp::new(ident, input_ty, lhs, rhs));
+            }
+        }
+    }
+}
+
+fn add_cmp_branch_copy_ops(isa: &mut Isa) {
+    for result_ty in [Ty::U32, Ty::U64, Ty::F32, Ty::F64] {
+        for value in [OperandKind::Slot, OperandKind::Immediate] {
+            if matches!(result_ty, Ty::U32) && matches!(value, OperandKind::Slot) {
+                continue;
+            }
+            for condition in [OperandKind::Reg, OperandKind::Slot] {
+                for ident in [Ident::Eqz, Ident::Nez] {
+                    isa.push_op(CmpBranchCopyOp::new(
+                        ident,
+                        result_ty,
+                        OperandKind::Reg,
+                        condition,
+                        value,
+                    ));
+                }
             }
         }
     }

@@ -22,6 +22,18 @@ pub enum Location {
     Slot(Slot),
 }
 
+impl Location {
+    /// Returns a [`Location`] if `operand` is not an immediate value.
+    pub fn from_resolved<T>(operand: ResolvedOperand<T>) -> Option<Self> {
+        let loc = match operand {
+            ResolvedOperand::Reg(ty) => Self::Reg(ty),
+            ResolvedOperand::Slot(slot) => Self::Slot(slot),
+            ResolvedOperand::Immediate(_) => return None,
+        };
+        Some(loc)
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum ResolvedOperand<T> {
     /// The operand is a register.
