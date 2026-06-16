@@ -1,3 +1,5 @@
+#![expect(dead_code)] // TODO: remove
+
 #[macro_use]
 mod utils;
 mod encoder;
@@ -62,7 +64,7 @@ use crate::{
             },
             func::{
                 op::BinaryOpRhs,
-                stack::{Allocation, PreservedRegs, TempOperand},
+                stack::{Allocation, BranchParams, PreservedRegs, TempOperand},
             },
             utils::{ToBits, WasmInteger, required_cells_for_ty},
         },
@@ -362,89 +364,175 @@ impl FuncTranslator {
         Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
-    /// Convert all branch params up to `depth` to [`Operand::Temp`].
+    /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
     ///
     /// # Note
     ///
-    /// - The top-most `depth` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
-    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
+    /// - This does _not_ change or mutate the operand stack.
+    /// - Uses `fuel_pos` to bump fuel consumption if enabled.
     fn copy_branch_params(
         &mut self,
-        target: &impl ControlFrameBase,
+        params: BranchParams,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let len_branch_params = target.len_branch_params(&self.engine);
-        let Some(branch_slots) = target.branch_slots() else {
+        self.copy_branch_params_temps(params, fuel_pos)?;
+        self.copy_branch_params_regs(params, fuel_pos)?;
+        Ok(())
+    }
+
+    /// Copies the branch params that are expected in temporary stack slots.
+    ///
+    /// Part of [`Self::copy_branch_params`].
+    fn copy_branch_params_temps(
+        &mut self,
+        params: BranchParams,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let len_temps = params.len_temps();
+        if len_temps == 0 {
+            return Ok(());
+        }
+        let mut result = params.temp_slots().head();
+        let start = params.len();
+        let end = params.len_regs();
+        for depth in (end..start).rev() {
+            let value = self.stack.peek(depth.into());
+            let ty = value.ty();
+            self.encode_copy_sx_op(result, value, fuel_pos)?;
+            // TODO: enhance with copy op-fusion and support for `copy_span_{asc,des}`.
+            result = result.next_n(required_cells_for_ty(ty));
+        }
+        Ok(())
+    }
+
+    /// Copies the branch params that are expected in their respective registers.
+    ///
+    /// Part of [`Self::copy_branch_params`].
+    fn copy_branch_params_regs(
+        &mut self,
+        params: BranchParams,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        for (depth, kind) in params.regs().iter().enumerate() {
+            let value = self.stack.peek(depth);
+            debug_assert!(kind.matches_ty(value.ty()));
+            self.encode_copy_rx_op(value, fuel_pos)?;
+        }
+        Ok(())
+    }
+
+    /// Encodes a single `copy_rx` operator.
+    ///
+    /// # Note
+    ///
+    /// This won't encode a copy if `value` is already in its register.
+    fn encode_copy_rx_op(
+        &mut self,
+        value: Operand,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let Some(op) = Self::select_copy_rx_op(value, &self.layout)? else {
             return Ok(());
         };
-        self.encode_copies(branch_slots.span(), len_branch_params, fuel_pos)?;
+        self.instrs
+            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
         Ok(())
     }
 
-    /// Pushes the temporary results of the control `frame` onto the [`Stack`].
+    /// Returns the [`Op`] to copy `value` into its register.
     ///
-    /// # Note
-    ///
-    /// - Before pushing the results, the [`Stack`] is truncated to the `frame`'s height.
-    /// - Not all control frames have temporary results, e.g. Wasm `loop`s, Wasm `if`s with
-    ///   a compile-time known branch or Wasm `block`s that are never branched to, do not
-    ///   require to call this function.
-    fn push_frame_results(&mut self, frame: &impl ControlFrameBase) -> Result<(), Error> {
-        let height = frame.height();
-        self.stack.discard_local_regs();
-        self.stack.trunc(height);
-        frame
-            .ty()
-            .func_type_with(&self.engine, |func_ty| -> Result<(), Error> {
-                for result in func_ty.results() {
-                    self.stack.push_temp(*result, Allocation::None)?;
-                }
-                Ok(())
-            })?;
-        Ok(())
-    }
-
-    /// Encodes a copy instruction for the top-most `len_values` on the stack to `results`.
-    ///
-    /// # Note
-    ///
-    /// - This does _not_ pop values from the stack or manipulate the stack otherwise.
-    /// - This might allocate new function local constant values if necessary.
-    /// - This does _not_ encode a copy if the copy is a no-op.
-    fn encode_copies(
-        &mut self,
-        results: SlotSpan,
-        len_values: u16,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
-        match len_values {
-            0 => Ok(()),
-            1 => {
-                let result = results.head();
-                let value = self.stack.peek(0);
-                self.encode_copy(result, value, fuel_pos)?;
-                Ok(())
+    /// Returns `None` if `value` is already in its register.
+    fn select_copy_rx_op(value: Operand, layout: &StackLayout) -> Result<Option<Op>, Error> {
+        match value.ty() {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef => {
+                Self::select_u32_copy_rx_op(value, layout)
             }
-            _ => self.encode_copy_many(results, len_values, fuel_pos),
+            ValType::I64 => Self::select_u64_copy_rx_op(value, layout),
+            ValType::F32 => Self::select_f32_copy_rx_op(value, layout),
+            ValType::F64 => Self::select_f64_copy_rx_op(value, layout),
+            ValType::V128 => unreachable!(),
         }
     }
 
-    /// Convenience wrapper for [`Self::encode_copy_impl`].
-    fn encode_copy(
+    /// Returns the [`Op`] to copy `value` of type `u32` into its register.
+    ///
+    /// Returns `None` if `value` is already in its register.
+    fn select_u32_copy_rx_op(value: Operand, layout: &StackLayout) -> Result<Option<Op>, Error> {
+        let op = match value.resolve(layout)? {
+            ResolvedOperand::Reg(ty) => {
+                debug_assert!(matches!(
+                    ty,
+                    ValType::I32 | ValType::ExternRef | ValType::FuncRef
+                ));
+                return Ok(None);
+            }
+            ResolvedOperand::Slot(value) => Op::u64_copy_rs(value),
+            ResolvedOperand::Immediate(value) => Op::u32_copy_ri(u32::from(value.raw())),
+        };
+        Ok(Some(op))
+    }
+
+    /// Returns the [`Op`] to copy `value` of type `u64` into its register.
+    ///
+    /// Returns `None` if `value` is already in its register.
+    fn select_u64_copy_rx_op(value: Operand, layout: &StackLayout) -> Result<Option<Op>, Error> {
+        let op = match value.resolve_as::<u64>(layout)? {
+            ResolvedOperand::Reg(ty) => {
+                debug_assert_eq!(ty, ValType::I64);
+                return Ok(None);
+            }
+            ResolvedOperand::Slot(value) => Op::u64_copy_rs(value),
+            ResolvedOperand::Immediate(value) => Op::u64_copy_ri(value),
+        };
+        Ok(Some(op))
+    }
+
+    /// Returns the [`Op`] to copy `value` of type `f32` into its register.
+    ///
+    /// Returns `None` if `value` is already in its register.
+    fn select_f32_copy_rx_op(value: Operand, layout: &StackLayout) -> Result<Option<Op>, Error> {
+        let op = match value.resolve_as::<f32>(layout)? {
+            ResolvedOperand::Reg(ty) => {
+                debug_assert_eq!(ty, ValType::F32);
+                return Ok(None);
+            }
+            ResolvedOperand::Slot(value) => Op::f32_copy_rs(value),
+            ResolvedOperand::Immediate(value) => Op::f32_copy_ri(value),
+        };
+        Ok(Some(op))
+    }
+
+    /// Returns the [`Op`] to copy `value` of type `f64` into its register.
+    ///
+    /// Returns `None` if `value` is already in its register.
+    fn select_f64_copy_rx_op(value: Operand, layout: &StackLayout) -> Result<Option<Op>, Error> {
+        let op = match value.resolve_as::<f64>(layout)? {
+            ResolvedOperand::Reg(ty) => {
+                debug_assert_eq!(ty, ValType::F64);
+                return Ok(None);
+            }
+            ResolvedOperand::Slot(value) => Op::f64_copy_rs(value),
+            ResolvedOperand::Immediate(value) => Op::f64_copy_ri(value),
+        };
+        Ok(Some(op))
+    }
+
+    /// Convenience wrapper for [`Self::encode_copy_sx_op_impl`].
+    fn encode_copy_sx_op(
         &mut self,
         result: Slot,
         value: Operand,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Option<Pos<Op>>, Error> {
-        Self::encode_copy_impl(result, value, fuel_pos, &self.layout, &mut self.instrs)
+        Self::encode_copy_sx_op_impl(result, value, fuel_pos, &self.layout, &mut self.instrs)
     }
 
-    /// Encodes a single copy instruction.
+    /// Encodes a single `copy_sx` operator.
     ///
     /// # Note
     ///
     /// This won't encode a copy if `result` and `value` yields a no-op copy.
-    fn encode_copy_impl(
+    fn encode_copy_sx_op_impl(
         result: Slot,
         value: Operand,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
@@ -585,7 +673,7 @@ impl FuncTranslator {
         len: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let Some(op) = Self::make_copy_span(results, values, len) else {
+        let Some(op) = Self::select_copy_span_op(results, values, len) else {
             // Case: results and values are equal and therefore the copy is a no-op
             return Ok(());
         };
@@ -599,7 +687,7 @@ impl FuncTranslator {
     /// Returns an [`Op::copy_span_asc`] or [`Op::copy_span_des`] depending on inputs.
     ///
     /// Returns `None` if the `copy_span` operation is a no-op.
-    fn make_copy_span(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
+    fn select_copy_span_op(results: SlotSpan, values: SlotSpan, len: u16) -> Option<Op> {
         if results == values {
             // Case: results and values are equal and therefore the copy is a no-op
             return None;
@@ -638,7 +726,7 @@ impl FuncTranslator {
             [val0] => {
                 let result = results.head();
                 let value = *val0;
-                self.encode_copy(result, value, fuel_pos)?;
+                self.encode_copy_sx_op(result, value, fuel_pos)?;
                 return Ok(());
             }
             _values => {}
@@ -667,7 +755,7 @@ impl FuncTranslator {
             let results = value.temp_slots();
             let result = results.head();
             let value = *value;
-            Self::encode_copy_impl(result, value, pos_fuel, layout, instrs)?;
+            Self::encode_copy_sx_op_impl(result, value, pos_fuel, layout, instrs)?;
             copied_slots = copied_slots
                 .checked_add(results.len())
                 .ok_or(TranslationError::SlotOutOfBounds)?;
@@ -781,57 +869,58 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    /// Returns `true` if the [`ControlFrame`] at `depth` requires copying for its branch parameters.
+    /// Returns `true` if there is a need to copy branch parameters for the frame at `depth` with the current stack.
+    ///
+    /// # Dev. Note
+    ///
+    /// We take `depth` to a frame instead of a reference to the frame directly
+    /// to avoid some borrow-checking issues at users.
     ///
     /// # Note
     ///
-    /// Some instructions can be encoded in a more efficient way if no branch parameter copies are required.
+    /// Conditional branches can be encoded in a more efficient way
+    /// if no branch parameter copies are required.
     fn requires_branch_param_copies(&self, depth: usize) -> bool {
         let frame = self.stack.peek_control(depth);
-        let len_branch_params = usize::from(frame.len_branch_params(&self.engine));
+        let branch_params = frame.branch_params();
+        let len_params = usize::from(branch_params.len());
+        if len_params == 0 {
+            // The frame has no branch params and thus no copies need to be performed.
+            return false;
+        }
         let frame_height = frame.height();
-        let height_matches = frame_height == (self.stack.height() - len_branch_params);
-        let only_temps = (0..len_branch_params)
+        let height_matches = frame_height == (self.stack.height() - len_params);
+        let has_temp_params = branch_params.len_temps() > 0;
+        if !height_matches && has_temp_params {
+            // If the height does not match we need to copy
+            return true;
+        }
+        let len_regs = usize::from(branch_params.len_regs());
+        let temp_params_require_copies = (len_regs..len_params)
             .map(|depth| self.stack.peek(depth))
-            .all(|o| o.is_temp() && !o.in_reg());
-        let can_avoid_copies = height_matches && only_temps;
-        !can_avoid_copies
+            .any(|o| !(o.is_temp() && !o.in_reg()));
+        if temp_params_require_copies {
+            // The branch paramters expected in temporary stack slots require copy operations.
+            return true;
+        }
+        let reg_params_require_copies = (0..len_regs)
+            .map(|depth| self.stack.peek(depth))
+            .any(|o| !o.in_reg());
+        if reg_params_require_copies {
+            // The branch paramters expected in registers require copy operations.
+            return true;
+        }
+        false
     }
 
     fn copy_operand_to_reg(&mut self, operand: Operand) -> Result<(), Error> {
-        #[cold]
-        #[inline(never)]
-        fn unsupported_v128(operand: Operand) -> ! {
-            unimplemented!(
-                "operands of type `v128` cannot be put in registers but found: {operand:?}"
-            )
-        }
         let ty = operand.ty();
-        let operator = match self.resolve_operand::<RawVal>(operand)? {
-            ResolvedOperand::Reg(ty) => {
-                // Case: No copy needed as operand already resides in register.
-                self.push_result_reg(ty)?;
-                return Ok(());
-            }
-            ResolvedOperand::Slot(value) => match ty {
-                ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                    Op::u64_copy_rs(value)
-                }
-                ValType::F32 => Op::f32_copy_rs(value),
-                ValType::F64 => Op::f64_copy_rs(value),
-                ValType::V128 => unsupported_v128(operand),
-            },
-            ResolvedOperand::Immediate(value) => match ty {
-                ValType::FuncRef | ValType::ExternRef | ValType::I32 => {
-                    Op::u32_copy_ri(u32::from(value))
-                }
-                ValType::I64 => Op::u64_copy_ri(u64::from(value)),
-                ValType::F32 => Op::f32_copy_ri(f32::from(value)),
-                ValType::F64 => Op::f64_copy_ri(f64::from(value)),
-                ValType::V128 => unsupported_v128(operand),
-            },
+        let Some(op) = Self::select_copy_rx_op(operand, &self.layout)? else {
+            // Case: No copy needed as operand already resides in register.
+            self.push_result_reg(ty)?;
+            return Ok(());
         };
-        self.push_op_with_result_reg(ty, operator, FuelCostsProvider::base)?;
+        self.push_op_with_result_reg(ty, op, FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -846,7 +935,7 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Slot, Error> {
         let result = operand.temp_slots().head();
-        self.encode_copy(result, operand, fuel_pos)?;
+        self.encode_copy_sx_op(result, operand, fuel_pos)?;
         Ok(result)
     }
 
@@ -1081,12 +1170,11 @@ impl FuncTranslator {
         &mut self,
         table: wasmparser::BrTable,
         index: Location,
-        len_values: u16,
+        default_branch_params: BranchParams,
     ) -> Result<(), Error> {
         let len_targets = table.len() + 1;
         debug_assert_eq!(self.immediates.len(), len_targets as usize);
-        let fuel_pos = self.stack.fuel_pos();
-        let values = self.try_form_slot_span_or_move(usize::from(len_values), fuel_pos)?;
+        let values = default_branch_params.temp_slots();
         let op = match index {
             Location::Reg(_) => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
@@ -1100,9 +1188,7 @@ impl FuncTranslator {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            let Some(results) = frame.branch_slots() else {
-                panic!("must have frame results since `br_table` requires to copy values");
-            };
+            let results = frame.branch_params().temp_slots();
             self.instrs.encode_branch(
                 frame.label(),
                 |offset| ir::BranchTableTarget::new(results.span(), offset),
@@ -1321,9 +1407,9 @@ impl FuncTranslator {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if self.reachable {
-                self.copy_branch_params(&frame, fuel_pos)?;
+                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
-            self.push_frame_results(&frame)?;
+            self.stack.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable |= frame.is_branched_to();
@@ -1358,7 +1444,7 @@ impl FuncTranslator {
         let has_results = len_results >= 1;
         let fuel_pos = frame.fuel_pos();
         if is_end_of_then_reachable && has_results {
-            self.copy_branch_params(&frame, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             self.encode_branch_op(frame.label(), Op::branch, fuel_pos)?;
         }
         self.instrs.pin_label_if_unpinned(else_label)?;
@@ -1370,9 +1456,9 @@ impl FuncTranslator {
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
             let fuel_pos = self.instrs.encode_consume_fuel_op()?;
-            self.copy_branch_params(&frame, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
-        self.push_frame_results(&frame)?;
+        self.stack.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
         self.reachable = true;
         Ok(())
@@ -1400,9 +1486,9 @@ impl FuncTranslator {
         };
         let fuel_pos = frame.fuel_pos();
         if end_of_else_reachable {
-            self.copy_branch_params(&frame, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
         }
-        self.push_frame_results(&frame)?;
+        self.stack.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
         self.reachable = reachable;
         Ok(())
@@ -1417,9 +1503,9 @@ impl FuncTranslator {
         let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if end_is_reachable {
-                self.copy_branch_params(&frame, fuel_pos)?;
+                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
             }
-            self.push_frame_results(&frame)?;
+            self.stack.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable = end_is_reachable || frame.is_branched_to();
@@ -2792,7 +2878,7 @@ impl FuncTranslator {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
                 let fuel_pos = self.stack.fuel_pos();
                 let result = result.temp_slots().head();
-                self.encode_copy(result, lhs, fuel_pos)?;
+                self.encode_copy_sx_op(result, lhs, fuel_pos)?;
             }
             self.stack.push_immediate(0_i64)?; // hi-bits
             return Ok(true);
