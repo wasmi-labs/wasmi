@@ -18,7 +18,14 @@ use crate::{
                 LocalSetCodegen,
                 Operand,
                 op,
-                stack::{AcquiredTarget, Allocation, IfReachability, Location, ResolvedOperand},
+                stack::{
+                    AcquiredTarget,
+                    Allocation,
+                    IfReachability,
+                    Location,
+                    RegKind,
+                    ResolvedOperand,
+                },
             },
         },
     },
@@ -315,17 +322,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
             return self.visit_br(default_target);
         }
-        if let Operand::Immediate(index) = index {
-            // Case: the `br_table` index is a constant value, therefore always taking the same branch.
-            // Note: `usize::MAX` is used to fallback to the default target.
-            let chosen_index = usize::try_from(u32::from(index.val())).unwrap_or(usize::MAX);
-            let chosen_target = table
-                .targets()
-                .nth(chosen_index)
-                .transpose()?
-                .unwrap_or(default_target);
-            return self.visit_br(chosen_target);
-        }
+        let index_loc = match self.resolve_operand::<RawVal>(index)? {
+            ResolvedOperand::Slot(index) => Location::Slot(index),
+            ResolvedOperand::Reg(ty) => Location::Reg(ty),
+            ResolvedOperand::Immediate(index) => {
+                // Case: the `br_table` index is a constant value, therefore always taking the same branch.
+                // Note: `usize::MAX` is used to fallback to the default target.
+                let chosen_index = usize::try_from(u32::from(index)).unwrap_or(usize::MAX);
+                let chosen_target = table
+                    .targets()
+                    .nth(chosen_index)
+                    .transpose()?
+                    .unwrap_or(default_target);
+                return self.visit_br(chosen_target);
+            }
+        };
         Self::copy_targets_from_br_table(&table, &mut self.immediates)?;
         let targets = &self.immediates[..];
         if targets
@@ -341,15 +352,38 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(default_target) = usize::try_from(default_target) else {
             panic!("out of bounds `default_target` does not fit into `usize`: {default_target}");
         };
-        let index = self.copy_immediate_to_slot(index)?;
-        let len_branch_params = self
-            .stack
-            .peek_control(default_target)
-            .branch_params()
-            .len();
-        match len_branch_params {
-            0 => self.encode_br_table_0(table, index)?,
-            n => self.encode_br_table_n(table, index, n)?,
+        let fuel_pos = self.stack.fuel_pos();
+        let default_frame = self.stack.peek_control(default_target);
+        let default_height = default_frame.height();
+        let equal_heights = targets.iter().all(|target| {
+            // - This is true if all branch targets have the same stack height.
+            // - If all branch targets share the same height there is no need to
+            //   perform per-branch copies.
+            let depth = u32::from(*target) as usize;
+            self.stack.peek_control(depth).height() == default_height
+        });
+        let default_branch_params = default_frame.branch_params();
+        let index_loc = match index_loc {
+            Location::Slot(index) => Location::Slot(index),
+            Location::Reg(_) => {
+                // We need to preserve `index: Reg` to a `Slot` since it
+                // would be overwritten by copying the branch parameters.
+                match default_branch_params.claims_reg(RegKind::Ireg) {
+                    true => {
+                        let temp_result = index.temp_slots().head();
+                        self.encode_copy_sx_op(temp_result, index, fuel_pos)?;
+                        Location::Slot(temp_result)
+                    }
+                    false => index_loc,
+                }
+            }
+        };
+        self.copy_branch_params(default_branch_params, fuel_pos)?;
+        let required_temp_copies = default_branch_params.len_temps() != 0;
+        let requires_branch_copies = required_temp_copies && equal_heights;
+        match requires_branch_copies {
+            false => self.encode_br_table_0(table, index_loc)?,
+            true => self.encode_br_table_n(table, index_loc, default_branch_params)?,
         };
         self.reachable = false;
         Ok(())

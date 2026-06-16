@@ -1170,12 +1170,11 @@ impl FuncTranslator {
         &mut self,
         table: wasmparser::BrTable,
         index: Location,
-        len_values: u16,
+        default_branch_params: BranchParams,
     ) -> Result<(), Error> {
         let len_targets = table.len() + 1;
         debug_assert_eq!(self.immediates.len(), len_targets as usize);
-        let fuel_pos = self.stack.fuel_pos();
-        let values = self.try_form_slot_span_or_move(usize::from(len_values), fuel_pos)?;
+        let values = default_branch_params.temp_slots();
         let op = match index {
             Location::Reg(_) => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
