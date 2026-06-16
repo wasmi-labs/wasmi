@@ -118,7 +118,8 @@ criterion_group! {
         bench_execute_json_parse,
         bench_execute_reverse_complement,
         bench_execute_regex_redux,
-        bench_execute_counter,
+        bench_execute_count_via_locals,
+        bench_execute_count_via_params,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
@@ -1103,11 +1104,27 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_counter(c: &mut Criterion) {
+fn bench_execute_count_via_locals(c: &mut Criterion) {
     const ITERATIONS: i32 = 1_000_000;
-    c.bench_function("execute/counter", |b| {
+    c.bench_function("execute/count/locals", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
-        let run = instance.get_typed_func::<i32, i32>(&store, "run").unwrap();
+        let run = instance
+            .get_typed_func::<i32, i32>(&store, "count-via-locals")
+            .unwrap();
+        b.iter(|| {
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, 0);
+        })
+    });
+}
+
+fn bench_execute_count_via_params(c: &mut Criterion) {
+    const ITERATIONS: i32 = 1_000_000;
+    c.bench_function("execute/count/params", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
+        let run = instance
+            .get_typed_func::<i32, i32>(&store, "count-via-params")
+            .unwrap();
         b.iter(|| {
             let result = run.call(&mut store, ITERATIONS).unwrap();
             assert_eq!(result, 0);
