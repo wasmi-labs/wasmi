@@ -898,7 +898,7 @@ impl FuncTranslator {
         let len_regs = usize::from(branch_params.len_regs());
         let temp_params_require_copies = (len_regs..len_params)
             .map(|depth| self.stack.peek(depth))
-            .any(|o| !(o.is_temp() && !o.in_reg()));
+            .any(|o| !o.is_temp() || o.in_reg());
         if temp_params_require_copies {
             // The branch paramters expected in temporary stack slots require copy operations.
             return true;
