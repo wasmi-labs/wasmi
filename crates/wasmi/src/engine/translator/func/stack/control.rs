@@ -100,10 +100,7 @@ impl BranchParams {
 
     /// Returns `true` if `kind` is claimed by `self`.
     fn claims_reg(&self, kind: RegKind) -> bool {
-        self.regs
-            .as_ref()
-            .map(|regs| regs.claims(kind))
-            .unwrap_or(false)
+        self.regs().contains(&kind)
     }
 }
 
