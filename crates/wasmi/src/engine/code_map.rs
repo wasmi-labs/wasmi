@@ -795,13 +795,13 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 pub struct CompiledFuncEntity {
     /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
     ops: Pin<Box<[u8]>>,
-    /// The number of stack slots used by the [`EngineFunc`] in total.
+    /// The total number of stack slots used by the [`EngineFunc`].
     ///
     /// # Note
     ///
     /// This includes stack slots to store the function local constant values,
     /// function parameters, function locals and dynamically used stack slots.
-    len_stack_slots: u16,
+    len_slots: u16,
 }
 
 impl CompiledFuncEntity {
@@ -811,7 +811,7 @@ impl CompiledFuncEntity {
     ///
     /// - If `ops` is empty.
     /// - If `ops` contains more than `i32::MAX` encoded bytes.
-    pub fn new(len_stack_slots: u16, ops: &[u8]) -> Self {
+    pub fn new(len_slots: u16, ops: &[u8]) -> Self {
         let ops: Pin<Box<[u8]>> = Pin::new(ops.into());
         assert!(
             !ops.is_empty(),
@@ -826,10 +826,7 @@ impl CompiledFuncEntity {
             "compiled function has too many instructions: {}",
             ops.len(),
         );
-        Self {
-            ops,
-            len_stack_slots,
-        }
+        Self { ops, len_slots }
     }
 }
 
@@ -847,7 +844,7 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
     fn from(func: &'a CompiledFuncEntity) -> Self {
         Self {
             ops: func.ops.as_ref(),
-            len_stack_slots: func.len_stack_slots,
+            len_stack_slots: func.len_slots,
         }
     }
 }
