@@ -181,6 +181,9 @@ impl Display for DisplayDecode<&'_ LoadOp> {
         let ptr_ty = match op.ptr {
             OperandKind::Reg => DisplayMaybe::Some(DisplayConcat((',', FieldTy::RegInt))),
             OperandKind::Slot => DisplayMaybe::Some(DisplayConcat((',', FieldTy::Slot))),
+            OperandKind::SlotAndReg => {
+                DisplayMaybe::Some(DisplayConcat((',', FieldTy::SlotAndRegInt)))
+            }
             OperandKind::Immediate => DisplayMaybe::None,
             OperandKind::Local(_index) => DisplayMaybe::None,
         };
@@ -213,7 +216,9 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             OffsetOperand::Offset16 => "Offset16",
         };
         let ptr_ty = match op.ptr {
-            OperandKind::Reg | OperandKind::Slot => Some(DisplayConcat((op.ptr_field().ty, ','))),
+            OperandKind::Reg | OperandKind::Slot | OperandKind::SlotAndReg => {
+                Some(DisplayConcat((op.ptr_field().ty, ',')))
+            }
             OperandKind::Immediate => None,
             OperandKind::Local(_index) => None,
         }

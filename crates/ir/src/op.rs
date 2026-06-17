@@ -12,6 +12,7 @@ use crate::{
     Offset16,
     Reg,
     Slot,
+    SlotAndReg,
     SlotSpan,
     core::{ShiftAmount, Sign, TrapCode, ValType},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
@@ -47,6 +48,13 @@ impl Slot {
     #[inline]
     pub fn location(&self) -> Location {
         Location::Slot(*self)
+    }
+}
+
+impl<T> SlotAndReg<T> {
+    #[inline]
+    pub fn location(&self) -> Location {
+        Location::Slot(self.slot)
     }
 }
 

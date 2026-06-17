@@ -1,4 +1,4 @@
-use crate::{Error, SlotSpan};
+use crate::{Error, Slot, SlotSpan};
 use core::{
     any::type_name,
     fmt::{Debug, Formatter, Write as _},
@@ -9,6 +9,40 @@ use core::{
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Local<const N: u16> {
     marker: PhantomData<fn()>,
+}
+
+pub struct SlotAndReg<T> {
+    pub slot: Slot,
+    pub reg: Reg<T>,
+}
+
+impl<T> Copy for SlotAndReg<T> {}
+impl<T> Clone for SlotAndReg<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<T> From<SlotAndReg<T>> for Slot {
+    fn from(value: SlotAndReg<T>) -> Self {
+        value.slot
+    }
+}
+impl<T> From<Slot> for SlotAndReg<T> {
+    fn from(slot: Slot) -> Self {
+        Self {
+            slot,
+            reg: Reg::default(),
+        }
+    }
+}
+
+impl<T> Debug for SlotAndReg<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SlotAndReg")
+            .field("slot", &self.slot)
+            .field("reg", &self.reg)
+            .finish()
+    }
 }
 
 /// A generic register type.

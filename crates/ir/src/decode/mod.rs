@@ -47,6 +47,7 @@ use crate::{
     OpCode,
     Reg,
     Slot,
+    SlotAndReg,
     SlotSpan,
     core::{ShiftAmount, Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
@@ -253,6 +254,16 @@ impl<const N: u16> Decode for Local<N> {
     #[inline]
     fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self::default())
+    }
+}
+
+impl<T> Decode for SlotAndReg<T> {
+    #[inline]
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self {
+            slot: <Slot as Decode>::decode(decoder)?,
+            reg: <Reg<T> as Decode>::decode(decoder)?,
+        })
     }
 }
 

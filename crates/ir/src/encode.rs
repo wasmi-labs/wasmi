@@ -13,6 +13,7 @@ use crate::{
     OpCode,
     Reg,
     Slot,
+    SlotAndReg,
     SlotSpan,
     core::{ShiftAmount, Sign, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
@@ -254,6 +255,18 @@ impl<const N: u16> Encode for Local<N> {
         E: Encoder,
     {
         encoder.write_bytes(&[])
+    }
+}
+
+impl<T> Encode for SlotAndReg<T> {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        let pos = self.slot.encode(encoder)?;
+        self.reg.encode(encoder)?;
+        Ok(pos)
     }
 }
 
