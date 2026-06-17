@@ -230,6 +230,7 @@ impl BinaryOpCaps {
     pub const NONE: Self = Self(0b0000);
     pub const COMMUTATIVE: Self = Self(0b0001);
     pub const CMP: Self = Self(0b0010);
+    pub const SLOT_RESULT: Self = Self(0b0100);
 
     pub fn is_cmp(self) -> bool {
         (self & Self::CMP).0 != 0
@@ -237,6 +238,10 @@ impl BinaryOpCaps {
 
     pub fn is_commutative(self) -> bool {
         (self & Self::COMMUTATIVE).0 != 0
+    }
+
+    pub fn allows_slot_result(self) -> bool {
+        (self & Self::SLOT_RESULT).0 != 0
     }
 }
 

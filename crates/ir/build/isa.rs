@@ -197,7 +197,7 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::NotLt, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP),
         (Ident::NotLe, Ty::I32, Ty::F64, Ty::F64, BinaryOpCaps::CMP),
         // i32
-        (Ident::Add, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Add, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE | BinaryOpCaps::SLOT_RESULT),
         (Ident::Sub, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::NONE),
         (Ident::Mul, Ty::I32, Ty::I32, Ty::I32, BinaryOpCaps::COMMUTATIVE),
         (Ident::Div, Ty::I32, Ty::I32, Ty::NonZeroI32, BinaryOpCaps::NONE),
@@ -213,7 +213,7 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Rotl, Ty::I32, Ty::I32, Ty::ShiftAmount, BinaryOpCaps::NONE),
         (Ident::Rotr, Ty::I32, Ty::I32, Ty::ShiftAmount, BinaryOpCaps::NONE),
         // i64
-        (Ident::Add, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
+        (Ident::Add, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE | BinaryOpCaps::SLOT_RESULT),
         (Ident::Sub, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::NONE),
         (Ident::Mul, Ty::I64, Ty::I64, Ty::I64, BinaryOpCaps::COMMUTATIVE),
         (Ident::Div, Ty::I64, Ty::I64, Ty::NonZeroI64, BinaryOpCaps::NONE),
@@ -246,26 +246,25 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Copysign, Ty::F64, Ty::F64, Ty::SignF64, BinaryOpCaps::NONE),
     ];
     for (ident, result_ty, lhs_ty, rhs_ty, caps) in ops {
-        for lhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
-            for rhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
-                if lhs == rhs && (lhs.is_reg() || lhs.is_immediate()) {
-                    // Both operands must not be registers or immediates.
-                    continue;
+        let results = match caps.allows_slot_result() {
+            true => &[OperandKind::Reg, OperandKind::SlotAndReg][..],
+            false => &[OperandKind::Reg][..],
+        };
+        for result in results.iter().copied() {
+            for lhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                for rhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+                    if lhs == rhs && (lhs.is_reg() || lhs.is_immediate()) {
+                        // Both operands must not be registers or immediates.
+                        continue;
+                    }
+                    if caps.is_commutative() && lhs > rhs {
+                        // Commutative operators don't need variants with swapped operand order.
+                        continue;
+                    }
+                    isa.push_op(BinaryOp::new(
+                        ident, result_ty, lhs_ty, rhs_ty, result, lhs, rhs, caps,
+                    ));
                 }
-                if caps.is_commutative() && lhs > rhs {
-                    // Commutative operators don't need variants with swapped operand order.
-                    continue;
-                }
-                isa.push_op(BinaryOp::new(
-                    ident,
-                    result_ty,
-                    lhs_ty,
-                    rhs_ty,
-                    OperandKind::Reg,
-                    lhs,
-                    rhs,
-                    caps,
-                ));
             }
         }
     }
