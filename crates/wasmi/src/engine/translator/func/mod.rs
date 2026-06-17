@@ -117,8 +117,6 @@ pub struct FuncTranslator {
     layout: StackLayout,
     /// Constructs and encodes function instructions.
     instrs: OpEncoder,
-    /// Temporary buffer for operands.
-    operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
     immediates: Vec<TypedRawVal>,
 }
@@ -134,8 +132,6 @@ pub struct FuncTranslatorAllocations {
     layout: StackLayout,
     /// Constructs and encodes function instructions.
     instrs: OpEncoderAllocations,
-    /// Temporary buffer for operands.
-    operands: Vec<Operand>,
     /// Temporary buffer for immediate values.
     immediates: Vec<TypedRawVal>,
 }
@@ -146,7 +142,6 @@ impl Reset for FuncTranslatorAllocations {
         self.locals.reset();
         self.layout.reset();
         self.instrs.reset();
-        self.operands.clear();
         self.immediates.clear();
     }
 }
@@ -213,7 +208,6 @@ impl ReusableAllocations for FuncTranslator {
             locals: self.locals,
             layout: self.layout,
             instrs: self.instrs.into_allocations(),
-            operands: self.operands,
             immediates: self.immediates,
         }
     }
@@ -237,7 +231,6 @@ impl FuncTranslator {
             locals,
             layout,
             instrs,
-            operands,
             immediates,
         } = alloc.into_reset();
         let stack = Stack::new(&engine, stack);
@@ -251,7 +244,6 @@ impl FuncTranslator {
             locals,
             layout,
             instrs,
-            operands,
             immediates,
         };
         translator.init_func_params()?;
