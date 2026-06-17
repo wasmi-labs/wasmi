@@ -844,13 +844,13 @@ impl Stack {
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
-        callee_size: usize,
+        callee_slots: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self
             .frames
             .push(caller_ip, callee_ip, callee_params, callee_instance)?;
-        self.values.push(start, callee_size, callee_params.len())
+        self.values.push(start, callee_slots, callee_params.len())
     }
 
     /// Adjusts `self` after returning from a function.
@@ -879,7 +879,7 @@ impl Stack {
         &mut self,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
-        callee_size: usize,
+        callee_size: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self.frames.replace(callee_ip, callee_instance)?;
@@ -1085,9 +1085,10 @@ impl ValueStack {
 
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
-    fn push(&mut self, start: SpOffset, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
-        let len_params = usize::from(len_params);
+    fn push(&mut self, start: SpOffset, len_slots: u16, len_params: u16) -> Result<Sp, TrapCode> {
         debug_assert!(len_params <= len_slots);
+        let len_slots = usize::from(len_slots);
+        let len_params = usize::from(len_params);
         if len_slots == 0 {
             return Ok(Sp::dangling());
         }
@@ -1104,9 +1105,10 @@ impl ValueStack {
     fn replace(
         &mut self,
         callee_start: SpOffset,
-        callee_size: usize,
+        callee_size: u16,
         callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
+        let callee_size = usize::from(callee_size);
         let params_len = usize::from(callee_params.len());
         let params_start = usize::from(u16::from(callee_params.span().head()));
         let params_end = params_start.wrapping_add(params_len);

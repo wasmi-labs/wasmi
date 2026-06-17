@@ -171,13 +171,7 @@ pub fn init_wasm_func_call<'a, T>(
     //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
     let instance = resolve_instance(store.prune(), &instance).into();
-    let callee_sp = stack.push_frame(
-        None,
-        callee_ip,
-        callee_params,
-        usize::from(frame_size),
-        Some(instance),
-    )?;
+    let callee_sp = stack.push_frame(None, callee_ip, callee_params, frame_size, Some(instance))?;
     let (ireg, freg32, freg64) = stack.regs();
     Ok(WasmFuncCall {
         store,
