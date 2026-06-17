@@ -1352,7 +1352,13 @@ impl FuncTranslator {
         label: LabelRef,
         branch_eqz: bool,
     ) -> Result<(), Error> {
-        if self.try_fuse_branch_cmp(condition, label, branch_eqz)? {
+        if let Some(fused_op) = self.fused_cmp_branch(condition, branch_eqz)? {
+            let (fuel_pos, _) = self.instrs.drop_staged();
+            self.encode_branch_op(
+                label,
+                |offset| fused_op.with_branch_offset(offset),
+                fuel_pos,
+            )?;
             return Ok(());
         }
         let condition = match self.resolve_operand::<i32>(condition)? {
@@ -1389,51 +1395,6 @@ impl FuncTranslator {
             fuel_pos,
         )?;
         Ok(())
-    }
-
-    /// Try to fuse a cmp+branch [`Op`] with optional negation.
-    fn try_fuse_branch_cmp(
-        &mut self,
-        condition: Operand,
-        label: LabelRef,
-        negate: bool,
-    ) -> Result<bool, Error> {
-        let Some(staged_op) = self.instrs.peek_staged() else {
-            // Case: cannot fuse without a known last instruction
-            return Ok(false);
-        };
-        let Some(ir::Location::Reg(result_ty)) = staged_op.result_loc() else {
-            // Case: cannot fuse without register result.
-            return Ok(false);
-        };
-        let ResolvedOperand::Reg(_ty) = condition.resolve(&self.layout)? else {
-            // Case: cannot fuse non-register operands
-            //  - locals have observable behavior.
-            //  - immediates cannot be the result of a previous instruction.
-            return Ok(false);
-        };
-        debug_assert!(matches!(result_ty, ValType::I32 | ValType::I64));
-        let cmp_op = match negate {
-            false => staged_op,
-            true => match staged_op.negate_cmp_instr() {
-                Some(negated) => negated,
-                None => {
-                    // Note: cannot negate staged [`Op`], thus it is not a `cmp` operator and thus not fusable.
-                    return Ok(false);
-                }
-            },
-        };
-        let Some(fused_cmp_branch) = cmp_op.try_into_cmp_branch_instr(BranchOffset::uninit())
-        else {
-            return Ok(false);
-        };
-        let (fuel_pos, _) = self.instrs.drop_staged();
-        self.encode_branch_op(
-            label,
-            |offset| fused_cmp_branch.with_branch_offset(offset),
-            fuel_pos,
-        )?;
-        Ok(true)
     }
 
     /// Generically translates a `call` or `return_call` Wasm operator.
