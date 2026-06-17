@@ -35,7 +35,17 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
     ir,
-    ir::{Address, BoundedSlotSpan, BranchOffset, Local, Offset16, Slot, SlotSpan, index},
+    ir::{
+        Address,
+        BoundedSlotSpan,
+        BranchOffset,
+        Local,
+        Offset16,
+        Slot,
+        SlotAndReg,
+        SlotSpan,
+        index,
+    },
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -347,6 +357,60 @@ where
         freg64: Freg64,
     ) -> (Ireg, Freg32, Freg64) {
         <Slot as SetValue<T>>::set_value(Slot::from(N), src, sp, ireg, freg32, freg64)
+    }
+}
+
+impl<T> SetValue<T> for SlotAndReg<i64>
+where
+    T: StoreToCells + Into<Ireg> + Copy,
+{
+    #[inline]
+    fn set_value(
+        dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        let (ireg, freg32, freg64) = set_value(dst.slot, src, sp, ireg, freg32, freg64);
+        set_value(dst.reg, src, sp, ireg, freg32, freg64)
+    }
+}
+
+impl<T> SetValue<T> for SlotAndReg<f32>
+where
+    T: StoreToCells + Into<Freg32> + Copy,
+{
+    #[inline]
+    fn set_value(
+        dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        let (ireg, freg32, freg64) = set_value(dst.slot, src, sp, ireg, freg32, freg64);
+        set_value(dst.reg, src, sp, ireg, freg32, freg64)
+    }
+}
+
+impl<T> SetValue<T> for SlotAndReg<f64>
+where
+    T: StoreToCells + Into<Freg64> + Copy,
+{
+    #[inline]
+    fn set_value(
+        dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        let (ireg, freg32, freg64) = set_value(dst.slot, src, sp, ireg, freg32, freg64);
+        set_value(dst.reg, src, sp, ireg, freg32, freg64)
     }
 }
 

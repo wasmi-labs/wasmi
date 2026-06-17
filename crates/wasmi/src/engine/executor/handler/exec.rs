@@ -1552,6 +1552,10 @@ handler_binary! {
     fn i32_add_rri(I32Add_Rri) = wasm::i32_add;
     fn i32_add_rss(I32Add_Rss) = wasm::i32_add;
     fn i32_add_rsi(I32Add_Rsi) = wasm::i32_add;
+    fn i32_add_rs_rs(I32Add_Rs_rs) = wasm::i32_add;
+    fn i32_add_rs_ri(I32Add_Rs_ri) = wasm::i32_add;
+    fn i32_add_rs_ss(I32Add_Rs_ss) = wasm::i32_add;
+    fn i32_add_rs_si(I32Add_Rs_si) = wasm::i32_add;
     fn i32_mul_rrr(I32Mul_Rrr) = wasm::i32_mul;
     fn i32_mul_rrs(I32Mul_Rrs) = wasm::i32_mul;
     fn i32_mul_rri(I32Mul_Rri) = wasm::i32_mul;
@@ -1700,6 +1704,10 @@ handler_binary! {
     fn i64_add_rri(I64Add_Rri) = wasm::i64_add;
     fn i64_add_rss(I64Add_Rss) = wasm::i64_add;
     fn i64_add_rsi(I64Add_Rsi) = wasm::i64_add;
+    fn i64_add_rs_rs(I64Add_Rs_rs) = wasm::i64_add;
+    fn i64_add_rs_ri(I64Add_Rs_ri) = wasm::i64_add;
+    fn i64_add_rs_ss(I64Add_Rs_ss) = wasm::i64_add;
+    fn i64_add_rs_si(I64Add_Rs_si) = wasm::i64_add;
     fn i64_mul_rrr(I64Mul_Rrr) = wasm::i64_mul;
     fn i64_mul_rrs(I64Mul_Rrs) = wasm::i64_mul;
     fn i64_mul_rri(I64Mul_Rri) = wasm::i64_mul;

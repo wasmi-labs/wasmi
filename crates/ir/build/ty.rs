@@ -127,6 +127,9 @@ pub enum Ty {
 pub enum FieldTy {
     Slot,
     SlotSpan,
+    SlotAndRegInt,
+    SlotAndRegF32,
+    SlotAndRegF64,
     RegInt,
     RegF32,
     RegF64,
@@ -221,6 +224,9 @@ impl Display for FieldTy {
         let s = match self {
             Self::Slot => "Slot",
             Self::SlotSpan => "SlotSpan",
+            Self::SlotAndRegInt => "SlotAndReg<i64>",
+            Self::SlotAndRegF32 => "SlotAndReg<f32>",
+            Self::SlotAndRegF64 => "SlotAndReg<f64>",
             Self::RegInt => "Reg<i64>",
             Self::RegF32 => "Reg<f32>",
             Self::RegF64 => "Reg<f64>",

@@ -61,7 +61,7 @@ use crate::{
             },
             func::{
                 op::BinaryOpRhs,
-                stack::{Allocation, BranchParams, PreservedRegs},
+                stack::{Allocation, BranchParams, PreservedRegs, RegKind},
             },
             utils::{ToBits, WasmInteger, required_cells_for_ty},
         },
@@ -75,6 +75,7 @@ use crate::{
         Offset16,
         Op,
         Slot,
+        SlotAndReg,
         SlotSpan,
         index::{self, Memory},
     },
@@ -804,6 +805,36 @@ impl FuncTranslator {
         Ok(instr)
     }
 
+    /// Returns `Some` if the staged [`Op`] can be fused with a `copy_sr` with `result`.
+    ///
+    /// Returns `None` otherwise.
+    fn fuse_copy_sr(&self, result: Slot, input_ty: ValType) -> Option<Op> {
+        if !RegKind::Ireg.matches_ty(input_ty) {
+            // This check is required to filter out incorrect fusions
+            // where input is not originating from the staged operator.
+            //
+            // Today, all fused operators have an `ireg` result.
+            // We need to change this logic if we add more fused operators later.
+            return None;
+        }
+        let result = SlotAndReg::from(result);
+        let staged_op = self.instrs.peek_staged()?;
+        let op = match staged_op {
+            // i32
+            Op::I32Add_Rrs { rhs, .. } => Op::i32_add_rs_rs(result, rhs),
+            Op::I32Add_Rri { rhs, .. } => Op::i32_add_rs_ri(result, rhs),
+            Op::I32Add_Rss { lhs, rhs, .. } => Op::i32_add_rs_ss(result, lhs, rhs),
+            Op::I32Add_Rsi { lhs, rhs, .. } => Op::i32_add_rs_si(result, lhs, rhs),
+            // i64
+            Op::I64Add_Rrs { rhs, .. } => Op::i64_add_rs_rs(result, rhs),
+            Op::I64Add_Rri { rhs, .. } => Op::i64_add_rs_ri(result, rhs),
+            Op::I64Add_Rss { lhs, rhs, .. } => Op::i64_add_rs_ss(result, lhs, rhs),
+            Op::I64Add_Rsi { lhs, rhs, .. } => Op::i64_add_rs_si(result, lhs, rhs),
+            _ => return None,
+        };
+        Some(op)
+    }
+
     /// Pushes a result register operand onto the stack.
     ///
     /// If a register operand of an equivalent type is already on the stack
@@ -813,9 +844,15 @@ impl FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         if let Some(operand) = self.stack.dealloc_reg(ty) {
             let result = operand.temp_slots().head();
-            let copy_op = Self::select_copy_sr_op(result, operand.ty())?;
+            let op = match self.fuse_copy_sr(result, ty) {
+                Some(fused_op) => {
+                    self.instrs.drop_staged();
+                    fused_op
+                }
+                None => Self::select_copy_sr_op(result, operand.ty())?,
+            };
             self.instrs
-                .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
+                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
         };
         self.stack.push_temp(ty, Allocation::Reg)?;
         Ok(())
@@ -1217,7 +1254,7 @@ impl FuncTranslator {
         }
         let unfused_op = Self::select_copy_sx_op(result, input, &self.layout)?
             .expect("already filtered out no-op copies above");
-        let fused_op = self.fused_local_set(local_idx, input)?;
+        let fused_op = self.fused_local_set(result, input)?;
         let staged_fuel = match fused_op {
             Some(_) => {
                 let (_, fuel_used) = self.instrs.drop_staged();
@@ -1267,7 +1304,13 @@ impl FuncTranslator {
     /// - The `local` argument reflects the local index and `input` is the `input` operand of the `local.set`.
     /// - This does not unstage or drop the staged [`Op`], nor does it encode the fused [`Op`].
     /// - This only returns the resulting fused [`Op`] if any for later consideration.
-    fn fused_local_set(&self, local: LocalIdx, input: Operand) -> Result<Option<Op>, Error> {
+    fn fused_local_set(&self, result: Slot, input: Operand) -> Result<Option<Op>, Error> {
+        if let ResolvedOperand::Reg(_) = self.resolve_operand::<TypedRawVal>(input)? {
+            if let Some(fused_op) = self.fuse_copy_sr(result, input.ty()) {
+                // The staged operator can be fused with a `copy_sr` operator.
+                return Ok(Some(fused_op));
+            }
+        }
         let Some(mut staged) = self.instrs.peek_staged() else {
             // Cannot replace result if no staged operator exists.
             return Ok(None);
@@ -1289,8 +1332,7 @@ impl FuncTranslator {
             return Ok(None);
         }
         // All checks passed, now replace result and return new fused `Op`.
-        let new_result = self.layout.local_to_slot(local)?;
-        *old_result = new_result;
+        *old_result = result;
         Ok(Some(staged))
     }
 

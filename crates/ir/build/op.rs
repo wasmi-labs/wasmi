@@ -87,6 +87,8 @@ pub enum OperandKind {
     Immediate,
     /// The operand is a fixed stack slot value.
     Local(u16),
+    /// The operand is both a slot and a register value.
+    SlotAndReg,
 }
 
 impl OperandKind {
@@ -108,6 +110,11 @@ impl OperandKind {
                 _ => FieldTy::RegInt,
             },
             OperandKind::Local(index) => FieldTy::Local(index),
+            OperandKind::SlotAndReg => match hint {
+                Ty::F32 | Ty::SignF32 => FieldTy::SlotAndRegF32,
+                Ty::F64 | Ty::SignF64 => FieldTy::SlotAndRegF64,
+                _ => FieldTy::SlotAndRegInt,
+            },
         }
     }
 }
@@ -223,6 +230,7 @@ impl BinaryOpCaps {
     pub const NONE: Self = Self(0b0000);
     pub const COMMUTATIVE: Self = Self(0b0001);
     pub const CMP: Self = Self(0b0010);
+    pub const SLOT_RESULT: Self = Self(0b0100);
 
     pub fn is_cmp(self) -> bool {
         (self & Self::CMP).0 != 0
@@ -230,6 +238,10 @@ impl BinaryOpCaps {
 
     pub fn is_commutative(self) -> bool {
         (self & Self::COMMUTATIVE).0 != 0
+    }
+
+    pub fn allows_slot_result(self) -> bool {
+        (self & Self::SLOT_RESULT).0 != 0
     }
 }
 
@@ -532,6 +544,7 @@ impl LoadOp {
             OperandKind::Immediate => FieldTy::Address,
             OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Local(index) => FieldTy::Local(index),
+            OperandKind::SlotAndReg => FieldTy::SlotAndRegInt,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -542,8 +555,7 @@ impl LoadOp {
                 OffsetOperand::Offset => FieldTy::U64,
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
-            OperandKind::Immediate => return None,
-            OperandKind::Local(_index) => return None,
+            _ => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -667,6 +679,7 @@ impl StoreOp {
             OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Immediate => FieldTy::Address,
             OperandKind::Local(index) => FieldTy::Local(index),
+            OperandKind::SlotAndReg => FieldTy::SlotAndRegInt,
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -677,8 +690,7 @@ impl StoreOp {
                 OffsetOperand::Offset16 => FieldTy::Offset16,
                 OffsetOperand::Offset => FieldTy::U64,
             },
-            OperandKind::Immediate => return None,
-            OperandKind::Local(_index) => return None,
+            _ => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -686,7 +698,9 @@ impl StoreOp {
     pub fn value_field(&self) -> Field {
         let value = self.value;
         let field_ty = match value {
-            OperandKind::Slot | OperandKind::Reg => value.field_ty(self.value_ty),
+            OperandKind::Slot | OperandKind::Reg | OperandKind::SlotAndReg => {
+                value.field_ty(self.value_ty)
+            }
             OperandKind::Immediate => match self.kind {
                 StoreKind::Value => FieldTy::from(self.value_ty),
                 StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
@@ -997,6 +1011,11 @@ impl ReplaceLaneOp {
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
             OperandKind::Slot => FieldTy::Slot,
+            OperandKind::SlotAndReg => match self.ty.item_ty() {
+                FieldTy::F32 => FieldTy::SlotAndRegF32,
+                FieldTy::F64 => FieldTy::SlotAndRegF64,
+                _ => FieldTy::SlotAndRegInt,
+            },
             OperandKind::Reg => match self.ty.item_ty() {
                 FieldTy::F32 => FieldTy::RegF32,
                 FieldTy::F64 => FieldTy::RegF64,

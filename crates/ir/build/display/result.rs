@@ -43,12 +43,20 @@ impl Display for DisplayResultLoc<&'_ Op> {
 impl Display for DisplayResultMut<&'_ Isa> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let variants = DisplaySequence::new(
+        let variants_slot = DisplaySequence::new(
             "\n",
             self.value
                 .ops
                 .iter()
                 .filter(|op| op.has_result_slot())
+                .map(|op| DisplayResultMut::new(op, indent.inc_by(3))),
+        );
+        let variants_slot_and_reg = DisplaySequence::new(
+            "\n",
+            self.value
+                .ops
+                .iter()
+                .filter(|op| op.has_result_slot_and_reg())
                 .map(|op| DisplayResultMut::new(op, indent.inc_by(3))),
         );
         let variants_loc = DisplaySequence::new(
@@ -74,7 +82,8 @@ impl Display for DisplayResultMut<&'_ Isa> {
             {indent}    /// Returns a shared reference to the result [`Slot`] of `self` if any.\n\
             {indent}    pub fn result_ref(&self) -> Option<&Slot> {{\n\
             {indent}        let res = match self {{\n\
-                                {variants} => result,\n\
+                                {variants_slot} => result,\n\
+                                {variants_slot_and_reg} => &result.slot,\n\
             {indent}            _ => return None,\n\
             {indent}        }};\n\
             {indent}        Some(res)\n\
@@ -83,7 +92,8 @@ impl Display for DisplayResultMut<&'_ Isa> {
             {indent}    /// Returns an exclusive reference to the result [`Slot`] of `self` if any.\n\
             {indent}    pub fn result_mut(&mut self) -> Option<&mut Slot> {{\n\
             {indent}        let res = match self {{\n\
-                                {variants} => result,\n\
+                                {variants_slot} => result,\n\
+                                {variants_slot_and_reg} => &mut result.slot,\n\
             {indent}            _ => return None,\n\
             {indent}        }};\n\
             {indent}        Some(res)\n\
@@ -109,6 +119,8 @@ pub enum Location {
     Reg,
     /// The operand resides in a stack slot.
     Slot,
+    /// The operand resides in both a stack slot and a register.
+    SlotAndReg,
 }
 
 impl<const N: usize> GenericOp<N> {
@@ -132,6 +144,7 @@ impl OperandKind {
         match self {
             OperandKind::Reg => Some(Location::Reg),
             OperandKind::Slot => Some(Location::Slot),
+            OperandKind::SlotAndReg => Some(Location::SlotAndReg),
             OperandKind::Local(_) => None,
             OperandKind::Immediate => unreachable!(),
         }
@@ -170,5 +183,10 @@ impl Op {
     /// Returns `true` if `self` has a `Slot` result field.
     pub fn has_result_slot(&self) -> bool {
         matches!(self.result_loc(), Some(Location::Slot))
+    }
+
+    /// Returns `true` if `self` has a `Slot` result field.
+    pub fn has_result_slot_and_reg(&self) -> bool {
+        matches!(self.result_loc(), Some(Location::SlotAndReg))
     }
 }
