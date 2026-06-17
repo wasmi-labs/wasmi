@@ -164,7 +164,8 @@ pub fn init_wasm_func_call<'a, T>(
 ) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
     let compiled_func = code.get(Some(store.inner.fuel_mut()), engine_func)?;
     let callee_ip = Ip::from(compiled_func.ops());
-    let frame_size = compiled_func.len_stack_slots();
+    let len_local_slots = compiled_func.len_local_slots();
+    let len_stack_slots = compiled_func.len_stack_slots();
     // Note: using a length of 0 for `callee_params` simply has the effect that all frame
     //       cells are initialized to zero which is a safe default. There currently is not
     //       an easy and efficient way to get the number of parameter cells at this point
@@ -175,7 +176,8 @@ pub fn init_wasm_func_call<'a, T>(
         None,
         callee_ip,
         callee_params,
-        usize::from(frame_size),
+        len_local_slots,
+        len_stack_slots,
         Some(instance),
     )?;
     let (ireg, freg32, freg64) = stack.regs();

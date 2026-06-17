@@ -116,6 +116,8 @@ pub struct OperandStack {
     ///
     /// This field is required to optimize [`OperandStack::preserve_all_locals`].
     len_locals: usize,
+    /// The total number of stack slots used for locals.
+    local_slots: u16,
     /// The current top-most temporary stack offset.
     ///
     /// # Note
@@ -250,6 +252,7 @@ impl Reset for OperandStack {
         self.operands.clear();
         self.local_heads.reset();
         self.len_locals = 0;
+        self.local_slots = 0;
         self.temp_offset = 0;
         self.max_offset = 0;
         self.regs.reset();
@@ -271,7 +274,7 @@ impl OperandStack {
         let required_cells = amount
             .checked_mul(cells_per_item)
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
-        self.push_temp_offset(required_cells)?;
+        self.push_local_slots(required_cells)?;
         Ok(())
     }
 
@@ -342,6 +345,27 @@ impl OperandStack {
         self.regs = registers;
     }
 
+    /// Returns the total number of stack slots used for locals.
+    pub fn get_local_slots(&self) -> u16 {
+        self.local_slots
+    }
+
+    /// Pushes the total number of local slots by `delta`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if too many local slots are in use.
+    fn push_local_slots(&mut self, delta: u16) -> Result<(), Error> {
+        debug_assert_eq!(self.local_slots, self.max_offset);
+        let Some(new_value) = self.local_slots.checked_add(delta) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
+        };
+        self.local_slots = new_value;
+        self.temp_offset = new_value;
+        self.max_offset = self.max_offset.max(self.temp_offset);
+        Ok(())
+    }
+
     /// Pushes the offset for temporary operands by `delta`.
     ///
     /// Returns the temporary offset before this operation.
@@ -351,9 +375,10 @@ impl OperandStack {
     /// Returns an error if the new temporary offset is out of bounds.
     fn push_temp_offset(&mut self, delta: u16) -> Result<SlotSpan, Error> {
         let old_offset = self.temp_offset;
-        self.temp_offset = old_offset
-            .checked_add(delta)
-            .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
+        let Some(new_value) = old_offset.checked_add(delta) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
+        };
+        self.temp_offset = new_value;
         self.max_offset = self.max_offset.max(self.temp_offset);
         Ok(SlotSpan::new(Slot::from(old_offset)))
     }

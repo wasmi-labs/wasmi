@@ -795,7 +795,13 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 pub struct CompiledFuncEntity {
     /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
     ops: Pin<Box<[u8]>>,
-    /// The number of stack slots used by the [`EngineFunc`] in total.
+    /// The total number of stack slots for locals for the [`EngineFunc`].
+    ///
+    /// # Note
+    ///
+    /// This includes defined Wasm function parameters and locals.
+    len_local_slots: u16,
+    /// The total number of stack slots used by the [`EngineFunc`].
     ///
     /// # Note
     ///
@@ -807,11 +813,17 @@ pub struct CompiledFuncEntity {
 impl CompiledFuncEntity {
     /// Create a new initialized [`CompiledFuncEntity`].
     ///
+    /// # Note
+    ///
+    /// - `len_locals` is the total number of stack slots used for function parameters or locals.
+    /// - `len_slots`: is the total number of stack slots used by the function.
+    ///
     /// # Panics
     ///
     /// - If `ops` is empty.
     /// - If `ops` contains more than `i32::MAX` encoded bytes.
-    pub fn new(len_stack_slots: u16, ops: &[u8]) -> Self {
+    pub fn new(len_local_slots: u16, len_stack_slots: u16, ops: &[u8]) -> Self {
+        debug_assert!(len_local_slots <= len_stack_slots);
         let ops: Pin<Box<[u8]>> = Pin::new(ops.into());
         assert!(
             !ops.is_empty(),
@@ -828,6 +840,7 @@ impl CompiledFuncEntity {
         );
         Self {
             ops,
+            len_local_slots,
             len_stack_slots,
         }
     }
@@ -838,7 +851,9 @@ impl CompiledFuncEntity {
 pub struct CompiledFuncRef<'a> {
     /// The sequence of encoded [`Op`]s of the [`CompiledFuncEntity`].
     ops: Pin<&'a [u8]>,
-    /// The number of stack slots used by the [`EngineFunc`] in total.
+    /// The total number of stack slots used for locals of the [`EngineFunc`].
+    len_local_slots: u16,
+    /// The number of stack slots used by the [`EngineFunc`].
     len_stack_slots: u16,
 }
 
@@ -847,6 +862,7 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
     fn from(func: &'a CompiledFuncEntity) -> Self {
         Self {
             ops: func.ops.as_ref(),
+            len_local_slots: func.len_local_slots,
             len_stack_slots: func.len_stack_slots,
         }
     }
@@ -859,7 +875,13 @@ impl<'a> CompiledFuncRef<'a> {
         self.ops.get_ref()
     }
 
-    /// Returns the number of stack slots used by the [`EngineFunc`].
+    /// Returns the total number of stack slots used for locals of the [`EngineFunc`].
+    #[inline]
+    pub fn len_local_slots(&self) -> u16 {
+        self.len_local_slots
+    }
+
+    /// Returns the total number of stack slots used by the [`EngineFunc`].
     #[inline]
     pub fn len_stack_slots(&self) -> u16 {
         self.len_stack_slots

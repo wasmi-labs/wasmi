@@ -844,13 +844,15 @@ impl Stack {
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
-        callee_size: usize,
+        callee_locals: u16,
+        callee_slots: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self
             .frames
             .push(caller_ip, callee_ip, callee_params, callee_instance)?;
-        self.values.push(start, callee_size, callee_params.len())
+        self.values
+            .push(start, callee_locals, callee_slots, callee_params.len())
     }
 
     /// Adjusts `self` after returning from a function.
@@ -879,11 +881,13 @@ impl Stack {
         &mut self,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
-        callee_size: usize,
+        callee_locals: u16,
+        callee_size: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self.frames.replace(callee_ip, callee_instance)?;
-        self.values.replace(start, callee_size, callee_params)
+        self.values
+            .replace(start, callee_locals, callee_size, callee_params)
     }
 }
 
@@ -1085,16 +1089,39 @@ impl ValueStack {
 
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
-    fn push(&mut self, start: SpOffset, len_slots: usize, len_params: u16) -> Result<Sp, TrapCode> {
+    fn push(
+        &mut self,
+        start: SpOffset,
+        len_local_slots: u16,
+        len_stack_slots: u16,
+        len_params: u16,
+    ) -> Result<Sp, TrapCode> {
+        debug_assert!(
+            len_params <= len_stack_slots,
+            "number of parameter slots must be smaller than or equal to the number of total stack slots but found: \
+            #params = {len_params}, #slots = {len_stack_slots}",
+        );
+        debug_assert!(
+            len_params <= len_local_slots,
+            "number of parameter slots must be smaller than or equal to the number of total local slots but found: \
+            #params = {len_params}, #locals = {len_local_slots}",
+        );
+        debug_assert!(
+            len_local_slots <= len_stack_slots,
+            "number of local slots must be smaller than or equal to the number of total slots but found: \
+            #locals = {len_local_slots}, #slots = {len_stack_slots}",
+        );
+        let len_local_slots = usize::from(len_local_slots);
+        let len_stack_slots = usize::from(len_stack_slots);
         let len_params = usize::from(len_params);
-        debug_assert!(len_params <= len_slots);
-        if len_slots == 0 {
+        if len_stack_slots == 0 {
             return Ok(Sp::dangling());
         }
-        let end = start.add(len_slots)?;
+        let end = start.add(len_stack_slots)?;
         self.grow_if_needed(end)?;
         let start_locals = start.into_inner().wrapping_add(len_params);
-        self.cells[start_locals..end.into_inner()].fill_with(Cell::default);
+        let end_locals = start.into_inner().wrapping_add(len_local_slots);
+        self.cells[start_locals..end_locals].fill_with(Cell::default);
         let sp = self.sp(start);
         Ok(sp)
     }
@@ -1104,9 +1131,13 @@ impl ValueStack {
     fn replace(
         &mut self,
         callee_start: SpOffset,
-        callee_size: usize,
+        callee_locals: u16,
+        callee_size: u16,
         callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
+        debug_assert!(callee_locals <= callee_size);
+        let callee_locals = usize::from(callee_locals);
+        let callee_size = usize::from(callee_size);
         let params_len = usize::from(callee_params.len());
         let params_start = usize::from(u16::from(callee_params.span().head()));
         let params_end = params_start.wrapping_add(params_len);
@@ -1119,7 +1150,7 @@ impl ValueStack {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
         callee_cells.copy_within(params_start..params_end, 0);
-        callee_cells[params_len..callee_size].fill_with(Cell::default);
+        callee_cells[params_len..callee_locals].fill_with(Cell::default);
         let sp = self.sp(callee_start);
         Ok(sp)
     }

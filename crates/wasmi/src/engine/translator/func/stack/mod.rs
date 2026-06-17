@@ -117,6 +117,11 @@ impl Stack {
         self.operands.height()
     }
 
+    /// Returns the total number of stack slots used for locals on the [`Stack`].
+    pub fn get_local_slots(&self) -> u16 {
+        self.operands.get_local_slots()
+    }
+
     /// Returns the maximum stack offset of the [`Stack`].
     ///
     /// # Note
