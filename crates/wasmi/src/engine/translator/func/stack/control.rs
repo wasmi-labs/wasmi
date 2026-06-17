@@ -182,11 +182,6 @@ impl BranchParamRegs {
             }
         }
     }
-
-    /// Returns `true` if `kind` is claimed by `self`.
-    fn claims(&self, kind: RegKind) -> bool {
-        self.as_slice().contains(&kind)
-    }
 }
 
 /// The kind of a register.

@@ -37,7 +37,7 @@ use crate::{
     engine::{
         BlockType,
         required_cells_for_tys,
-        translator::func::{LocalIdx, Pos, labels::LabelRef, stack::operands::PeekedOperands},
+        translator::func::{LocalIdx, Pos, labels::LabelRef},
     },
     ir::{self, BoundedSlotSpan, SlotSpan},
 };
@@ -576,13 +576,6 @@ impl Stack {
     #[inline]
     pub fn peek(&self, depth: usize) -> Operand {
         self.operands.get(depth)
-    }
-
-    /// Returns an iterator yielding the top-most `len` operands from the stack.
-    ///
-    /// Operands are yieleded in insertion order.
-    pub fn peek_n(&self, len: usize) -> PeekedOperands<'_> {
-        self.operands.peek(len)
     }
 
     /// Pops the top-most [`Operand`] from the [`Stack`].
