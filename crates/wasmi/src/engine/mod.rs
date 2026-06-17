@@ -3,6 +3,7 @@
 mod block_type;
 mod code_map;
 mod config;
+pub mod eval;
 mod executor;
 mod func_types;
 mod limits;
@@ -13,7 +14,6 @@ mod utils;
 pub(crate) use self::{
     block_type::BlockType,
     executor::{
-        Cell,
         InOutParams,
         InOutResults,
         Inst,

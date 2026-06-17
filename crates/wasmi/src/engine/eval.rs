@@ -1,4 +1,7 @@
-use crate::{TrapCode, core::wasm, ir::Sign};
+use crate::{
+    TrapCode,
+    core::{ShiftAmount, Sign, wasm},
+};
 use core::{
     num::NonZero,
     ops::{Div, Rem},
@@ -36,44 +39,44 @@ pub fn wasmi_u64_rem_ssi(lhs: u64, rhs: NonZero<u64>) -> u64 {
     <u64 as Rem<NonZero<u64>>>::rem(lhs, rhs)
 }
 
-pub fn wasmi_i32_shl_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_shl(lhs, i32::from(rhs))
+pub fn wasmi_i32_shl_ssi(lhs: i32, rhs: ShiftAmount) -> i32 {
+    wasm::i32_shl(lhs, i32::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i32_shr_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_shr_s(lhs, i32::from(rhs))
+pub fn wasmi_i32_shr_ssi(lhs: i32, rhs: ShiftAmount) -> i32 {
+    wasm::i32_shr_s(lhs, i32::from(u8::from(rhs)))
 }
 
-pub fn wasmi_u32_shr_ssi(lhs: u32, rhs: u8) -> u32 {
-    wasm::i32_shr_u(lhs, u32::from(rhs))
+pub fn wasmi_u32_shr_ssi(lhs: u32, rhs: ShiftAmount) -> u32 {
+    wasm::i32_shr_u(lhs, u32::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i32_rotl_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_rotl(lhs, i32::from(rhs))
+pub fn wasmi_i32_rotl_ssi(lhs: i32, rhs: ShiftAmount) -> i32 {
+    wasm::i32_rotl(lhs, i32::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i32_rotr_ssi(lhs: i32, rhs: u8) -> i32 {
-    wasm::i32_rotr(lhs, i32::from(rhs))
+pub fn wasmi_i32_rotr_ssi(lhs: i32, rhs: ShiftAmount) -> i32 {
+    wasm::i32_rotr(lhs, i32::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i64_shl_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_shl(lhs, i64::from(rhs))
+pub fn wasmi_i64_shl_ssi(lhs: i64, rhs: ShiftAmount) -> i64 {
+    wasm::i64_shl(lhs, i64::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i64_shr_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_shr_s(lhs, i64::from(rhs))
+pub fn wasmi_i64_shr_ssi(lhs: i64, rhs: ShiftAmount) -> i64 {
+    wasm::i64_shr_s(lhs, i64::from(u8::from(rhs)))
 }
 
-pub fn wasmi_u64_shr_ssi(lhs: u64, rhs: u8) -> u64 {
-    wasm::i64_shr_u(lhs, u64::from(rhs))
+pub fn wasmi_u64_shr_ssi(lhs: u64, rhs: ShiftAmount) -> u64 {
+    wasm::i64_shr_u(lhs, u64::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i64_rotl_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_rotl(lhs, i64::from(rhs))
+pub fn wasmi_i64_rotl_ssi(lhs: i64, rhs: ShiftAmount) -> i64 {
+    wasm::i64_rotl(lhs, i64::from(u8::from(rhs)))
 }
 
-pub fn wasmi_i64_rotr_ssi(lhs: i64, rhs: u8) -> i64 {
-    wasm::i64_rotr(lhs, i64::from(rhs))
+pub fn wasmi_i64_rotr_ssi(lhs: i64, rhs: ShiftAmount) -> i64 {
+    wasm::i64_rotr(lhs, i64::from(u8::from(rhs)))
 }
 
 pub fn wasmi_i32_and(lhs: i32, rhs: i32) -> bool {

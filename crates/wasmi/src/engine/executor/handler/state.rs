@@ -28,14 +28,7 @@ use crate::{
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{
-    cmp,
-    marker::PhantomData,
-    mem,
-    ops,
-    ptr::{self, NonNull},
-    slice,
-};
+use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -155,7 +148,16 @@ impl DoneReason {
 #[repr(transparent)]
 pub struct Inst {
     /// The underlying reference to the [`InstanceEntity`].
-    value: NonNull<InstanceEntity>,
+    ///
+    /// # Note
+    ///
+    /// - We use a `f64` to represent [`Inst`] to avoid using a
+    ///   general purpose (integer) register as they are not as
+    ///   available as floating point registers on most platforms.
+    /// - Since [`Inst`] is only accessed by operators that are
+    ///   considered "slow" anyways an additional conversion between
+    ///   integer and float won't be a terrible trade-off.
+    value: f64,
     /// Indicates to the compiler that this type is similar in behavior as
     /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
     marker: PhantomData<*const InstanceEntity>,
@@ -163,8 +165,10 @@ pub struct Inst {
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
+        let value =
+            f64::from_ne_bytes(((entity as *const InstanceEntity as usize) as u64).to_ne_bytes());
         Self {
-            value: entity.into(),
+            value,
             marker: PhantomData,
         }
     }
@@ -172,12 +176,18 @@ impl From<&'_ InstanceEntity> for Inst {
 
 impl PartialEq for Inst {
     fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
+        ptr::addr_eq(self.as_ptr(), other.as_ptr())
     }
 }
 impl Eq for Inst {}
 
 impl Inst {
+    /// Converts the underlying representation back into its original pointer value.
+    fn as_ptr(&self) -> *const InstanceEntity {
+        let bits = u64::from_ne_bytes(self.value.to_ne_bytes());
+        bits as usize as *const InstanceEntity
+    }
+
     /// Returns a shared reference to the referenced [`InstanceEntity`].
     ///
     /// # Safety
@@ -190,7 +200,7 @@ impl Inst {
     ///   mutably accessed for the entire duration of the returned
     ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { self.value.as_ref() }
+        unsafe { &*self.as_ptr() }
     }
 }
 
@@ -382,6 +392,21 @@ impl Ip {
         let value = unsafe { self.value.byte_add(delta) };
         Self { value }
     }
+
+    /// Aligns `self` relative to `base`.
+    #[inline(always)]
+    pub fn align_relative_to(self, base: Ip) -> Self {
+        const ALIGN: usize = core::mem::align_of::<usize>();
+        if cfg!(feature = "indirect-dispatch") {
+            return self;
+        }
+        let base_addr = base.value as usize;
+        let offset = (self.value as usize) - base_addr;
+        let aligned_offset = offset.next_multiple_of(ALIGN);
+        Self {
+            value: (base_addr + aligned_offset) as *mut u8,
+        }
+    }
 }
 
 /// # Safety
@@ -481,8 +506,8 @@ impl Sp {
 
     /// Offsets `self` by `slot` to access the [`Cell`] associated to it.
     pub fn offset(self, slot: Slot) -> Self {
-        let delta = usize::from(u16::from(slot));
-        let value = unsafe { self.value.add(delta) };
+        let delta = slot.byte_offset();
+        let value = unsafe { self.value.cast::<u8>().add(delta).cast::<Cell>() };
         Self { value }
     }
 
@@ -523,13 +548,13 @@ impl Sp {
 /// and already occupied by other execution handler parameters.
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(transparent)]
-pub struct Bits64(f64);
+pub struct Bits64(u64);
 
 impl Bits64 {
     /// Constructs `Self` from `bytes` in native-endian order.
     #[inline]
     pub fn from_ne_bytes(bytes: [u8; 8]) -> Self {
-        Self(f64::from_ne_bytes(bytes))
+        Self(u64::from_ne_bytes(bytes))
     }
 
     /// Converts `self` to its bytes in native-endian order.
@@ -633,12 +658,12 @@ impl_reg_lossless_conversions! {
 }
 
 macro_rules! impl_reg_lossy_conversions {
-    ( $($ty:ty as $reg:ty: $base:ty),* $(,)? ) => {
+    ( $($ty:ty as $reg:ty: $base:ty = $extend:expr),* $(,)? ) => {
         $(
             impl From<$ty> for $reg {
                 #[inline]
                 fn from(value: $ty) -> Self {
-                    Self::from(value as $base)
+                    Self::from($extend(value))
                 }
             }
 
@@ -653,13 +678,27 @@ macro_rules! impl_reg_lossy_conversions {
 }
 impl_reg_lossy_conversions! {
     // unsigned
-    u8 as Ireg: u64,
-    u16 as Ireg: u64,
-    u32 as Ireg: u64,
+    u8 as Ireg: u64 = u64::from,
+    u16 as Ireg: u64 = u64::from,
+    u32 as Ireg: u64 = u64::from,
     // signed
-    i8 as Ireg: i64,
-    i16 as Ireg: i64,
-    i32 as Ireg: i64,
+    i8 as Ireg: u64 = |v| u64::from(v as u8),
+    i16 as Ireg: u64 = |v| u64::from(v as u16),
+    i32 as Ireg: u64 = |v| u64::from(v as u32),
+}
+
+impl From<bool> for Ireg {
+    #[inline]
+    fn from(value: bool) -> Self {
+        Self::from(u64::from(value))
+    }
+}
+
+impl From<Ireg> for bool {
+    #[inline]
+    fn from(value: Ireg) -> Self {
+        u64::from(value) != 0
+    }
 }
 
 impl From<RawRef> for Ireg {
@@ -686,6 +725,12 @@ pub struct Stack {
     values: ValueStack,
     /// The underlying call stack.
     frames: CallStack,
+    /// The value of the integer register (GPR).
+    ireg: Ireg,
+    /// The value of the `f32` register.
+    freg32: Freg32,
+    /// The value of the `f64` register.
+    freg64: Freg64,
 }
 
 type ReturnCallHost = Control<(Ip, Sp, Inst), Sp>;
@@ -696,6 +741,9 @@ impl Stack {
         Self {
             values: ValueStack::new(config.min_stack_height(), config.max_stack_height()),
             frames: CallStack::new(config.max_recursion_depth()),
+            ireg: Ireg::default(),
+            freg32: Freg32::default(),
+            freg64: Freg64::default(),
         }
     }
 
@@ -704,6 +752,9 @@ impl Stack {
         Self {
             values: ValueStack::empty(),
             frames: CallStack::empty(),
+            ireg: Ireg::default(),
+            freg32: Freg32::default(),
+            freg64: Freg64::default(),
         }
     }
 
@@ -711,6 +762,14 @@ impl Stack {
     pub fn reset(&mut self) {
         self.values.reset();
         self.frames.reset();
+        self.ireg = Ireg::default();
+        self.freg32 = Freg32::default();
+        self.freg64 = Freg64::default();
+    }
+
+    /// Returns the state of all registers.
+    pub fn regs(&self) -> (Ireg, Freg32, Freg64) {
+        (self.ireg, self.freg32, self.freg64)
     }
 
     /// Returns the total number of heap allocated bytes of `self`.
@@ -734,17 +793,24 @@ impl Stack {
         self.frames.sync_ip(ip);
     }
 
+    /// Synchronizes the register states of the top-most function frame.
+    pub fn sync_regs(&mut self, ireg: Ireg, freg32: Freg32, freg64: Freg64) {
+        self.ireg = ireg;
+        self.freg32 = freg32;
+        self.freg64 = freg64;
+    }
+
     /// Restores the top-most function frame and its [`Ip`], [`Sp`] and [`Inst`].
     ///
     /// # Note
     ///
     /// This is useful and required to resume a function execution that yielded back to the host.
-    pub fn restore_frame(&mut self) -> (Ip, Sp, Inst) {
+    pub fn restore_frame(&mut self) -> (Ip, Sp, Inst, Ireg, Freg32, Freg64) {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
         };
         let sp = self.values.sp_or_dangling(start);
-        (ip, sp, instance)
+        (ip, sp, instance, self.ireg, self.freg32, self.freg64)
     }
 
     /// Prepares `self` for a host function tail call.

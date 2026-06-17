@@ -28,6 +28,9 @@ pub struct WasmFuncCall<'a, T, State> {
     callee_sp: Sp,
     instance: Inst,
     state: State,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 }
 
 impl<'a, T, State> WasmFuncCall<'a, T, State> {
@@ -40,6 +43,9 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
             callee_sp: self.callee_sp,
             instance: self.instance,
             state,
+            ireg: self.ireg,
+            freg32: self.freg32,
+            freg64: self.freg64,
         }
     }
 }
@@ -112,9 +118,9 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
             mem0,
             mem0_len,
             self.instance,
-            Ireg::from(0_u64),
-            Freg32::from(0.0_f32),
-            Freg64::from(0.0_f64),
+            self.ireg,
+            self.freg32,
+            self.freg64,
         )
     }
 }
@@ -172,6 +178,7 @@ pub fn init_wasm_func_call<'a, T>(
         usize::from(frame_size),
         Some(instance),
     )?;
+    let (ireg, freg32, freg64) = stack.regs();
     Ok(WasmFuncCall {
         store,
         stack,
@@ -180,6 +187,9 @@ pub fn init_wasm_func_call<'a, T>(
         callee_sp,
         instance,
         state: PhantomData,
+        ireg,
+        freg32,
+        freg64,
     })
 }
 
@@ -188,7 +198,7 @@ pub fn resume_wasm_func_call<'a, T>(
     code: &'a CodeMap,
     stack: &'a mut Stack,
 ) -> Result<WasmFuncCall<'a, T, state::Resumed>, Error> {
-    let (callee_ip, callee_sp, instance) = stack.restore_frame();
+    let (callee_ip, callee_sp, instance, ireg, freg32, freg64) = stack.restore_frame();
     Ok(WasmFuncCall {
         store,
         stack,
@@ -197,6 +207,9 @@ pub fn resume_wasm_func_call<'a, T>(
         callee_sp,
         instance,
         state: PhantomData,
+        ireg,
+        freg32,
+        freg64,
     })
 }
 

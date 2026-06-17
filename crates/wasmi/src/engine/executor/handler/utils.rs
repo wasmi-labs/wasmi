@@ -12,7 +12,16 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, WriteAs},
+    core::{
+        CoreElementSegment,
+        CoreGlobal,
+        CoreMemory,
+        CoreTable,
+        RawVal,
+        ShiftAmount,
+        Sign,
+        WriteAs,
+    },
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -26,7 +35,7 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
     ir,
-    ir::{Address, BoundedSlotSpan, BranchOffset, Offset16, Sign, Slot, SlotSpan, index},
+    ir::{Address, BoundedSlotSpan, BranchOffset, Local, Offset16, Slot, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -34,18 +43,19 @@ use crate::{
 use core::num::NonZero;
 
 macro_rules! consume_fuel {
-    ($state:expr, $ip:expr, $fuel:expr, $eval:expr) => {{
+    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $fuel:expr, $eval:expr $(,)? ) => {{
         if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
             $fuel.consume_fuel_if($eval)
         {
-            out_of_fuel!($state, $ip, required_fuel)
+            out_of_fuel!($state, $ip, $ireg, $freg32, $freg64, required_fuel)
         }
     }};
 }
 
 macro_rules! out_of_fuel {
-    ($state:expr, $ip:expr, $required_fuel:expr) => {{
+    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $required_fuel:expr) => {{
         $state.stack.sync_ip($ip);
+        $state.stack.sync_regs($ireg, $freg32, $freg64);
         done!(
             $state,
             $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
@@ -163,6 +173,8 @@ impl_get_value!(
     Sign<f64>,
     Address,
     Offset16,
+    ShiftAmount,
+    V128,
 );
 #[cfg(feature = "simd")]
 impl_get_value!([ImmLaneIdx<32>; 16]);
@@ -170,7 +182,7 @@ impl_get_value!([ImmLaneIdx<32>; 16]);
 macro_rules! impl_get_value_for_ireg {
     ( $($prim:ty),* $(,)? ) => {
         $(
-            impl GetValue<$prim> for ir::Ireg {
+            impl GetValue<$prim> for ir::Reg<i64> {
                 #[inline]
                 fn get_value(_src: Self, _sp: Sp, ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $prim {
                     <$prim as From<Ireg>>::from(ireg)
@@ -179,16 +191,23 @@ macro_rules! impl_get_value_for_ireg {
         )*
     };
 }
-impl_get_value_for_ireg!(i8, i16, i32, i64, u8, u16, u32, u64);
+impl_get_value_for_ireg!(bool, i8, i16, i32, i64, u8, u16, u32, u64, ShiftAmount);
 
-impl GetValue<f32> for ir::Freg32 {
+impl From<Ireg> for ShiftAmount {
+    #[inline]
+    fn from(value: Ireg) -> Self {
+        Self::from(u8::from(value))
+    }
+}
+
+impl GetValue<f32> for ir::Reg<f32> {
     #[inline]
     fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, freg32: Freg32, _freg64: Freg64) -> f32 {
         f32::from(freg32)
     }
 }
 
-impl GetValue<f64> for ir::Freg64 {
+impl GetValue<f64> for ir::Reg<f64> {
     #[inline]
     fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, freg64: Freg64) -> f64 {
         f64::from(freg64)
@@ -262,7 +281,7 @@ pub trait SetValue<T> {
     ) -> (Ireg, Freg32, Freg64);
 }
 
-impl<T> SetValue<T> for ir::Ireg
+impl<T> SetValue<T> for ir::Reg<i64>
 where
     T: Into<Ireg>,
 {
@@ -279,7 +298,7 @@ where
     }
 }
 
-impl<T> SetValue<T> for ir::Freg32
+impl<T> SetValue<T> for ir::Reg<f32>
 where
     T: Into<Freg32>,
 {
@@ -296,7 +315,7 @@ where
     }
 }
 
-impl<T> SetValue<T> for ir::Freg64
+impl<T> SetValue<T> for ir::Reg<f64>
 where
     T: Into<Freg64>,
 {
@@ -310,6 +329,23 @@ where
         _freg64: Freg64,
     ) -> (Ireg, Freg32, Freg64) {
         (ireg, freg32, src.into())
+    }
+}
+
+impl<const N: u16, T> SetValue<T> for Local<N>
+where
+    T: StoreToCells,
+{
+    #[inline]
+    fn set_value(
+        _dst: Self,
+        src: T,
+        sp: Sp,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> (Ireg, Freg32, Freg64) {
+        <Slot as SetValue<T>>::set_value(Slot::from(N), src, sp, ireg, freg32, freg64)
     }
 }
 
@@ -419,6 +455,8 @@ pub fn exec_return(
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
+    debug_assert_ne!(dst, src);
+    debug_assert!(len > 0);
     let op = match dst.head() <= src.head() {
         true => exec_copy_span_asc,
         false => exec_copy_span_des,
@@ -427,22 +465,30 @@ pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 }
 
 pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
-    debug_assert!(dst.head() <= src.head());
-    let dst = dst.iter(len);
-    let src = src.iter(len);
-    for (dst, src) in dst.into_iter().zip(src) {
-        let src: u64 = get_slot_value(src, sp);
-        set_slot_value(dst, src, sp);
+    debug_assert!(dst.head() < src.head());
+    debug_assert!(len > 0);
+    let mut dst = dst.head();
+    let mut src = src.head();
+    let dst_end = dst.next_n(len);
+    while dst != dst_end {
+        let value: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, value, sp);
+        dst = dst.next();
+        src = src.next();
     }
 }
 
 pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
-    debug_assert!(dst.head() >= src.head());
-    let dst = dst.iter(len);
-    let src = src.iter(len);
-    for (dst, src) in dst.into_iter().zip(src).rev() {
-        let src: u64 = get_slot_value(src, sp);
-        set_slot_value(dst, src, sp);
+    debug_assert!(dst.head() > src.head());
+    debug_assert!(len > 0);
+    let dst_end = dst.head();
+    let mut dst = dst.head().next_n(len);
+    let mut src = src.head().next_n(len);
+    while dst != dst_end {
+        dst = dst.prev();
+        src = src.prev();
+        let value: u64 = get_slot_value(src, sp);
+        set_slot_value(dst, value, sp);
     }
 }
 
@@ -563,15 +609,22 @@ impl_resolve_from_store! {
     fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
-pub fn resolve_indirect_func(
-    index: Slot,
+#[expect(clippy::too_many_arguments)]
+pub fn resolve_indirect_func<I>(
+    index: I,
     table: index::Table,
     func_type: index::FuncType,
     state: &mut VmState<'_>,
     sp: Sp,
     instance: Inst,
-) -> Result<Func, TrapCode> {
-    let index = get_slot_value(index, sp);
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> Result<Func, TrapCode>
+where
+    I: GetValue<u64>,
+{
+    let index = get_value(index, sp, ireg, freg32, freg64);
     let table = fetch_table(instance, table);
     let table = resolve_table(state.store, &table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;

@@ -6,31 +6,35 @@ mod op;
 
 use self::op::{
     BinaryOp,
+    BranchTableOp,
+    CallIndirect,
     CmpBranchOp,
-    LoadOp_Si,
-    LoadOp_Ss,
-    LoadOpMem0Offset16_Ss,
+    GlobalGet,
+    GlobalSet,
+    LoadAtOp,
+    LoadOp,
+    LoadOpMem0Offset16,
     ReturnOp,
     SelectOp,
-    StoreOp_I,
-    StoreOp_S,
-    StoreOpMem0Offset16_S,
+    StoreAtOp,
+    StoreOp,
+    StoreOpMem0Offset16,
     TableGet,
     TableSet,
     UnaryOp,
 };
 #[cfg(feature = "simd")]
 use self::op::{
-    LoadLaneOp_Ss,
-    LoadLaneOpMem0Offset16_Ss,
-    StoreLaneOp_S,
-    StoreLaneOpMem0Offset16_S,
+    LoadLaneOp,
+    LoadLaneOpMem0Offset16,
+    StoreLaneOp,
+    StoreLaneOpMem0Offset16,
     TernaryOp,
     V128ExtractLaneOp,
     V128ReplaceLaneOp,
 };
 #[cfg(feature = "simd")]
-use crate::core::simd::ImmLaneIdx;
+use crate::core::{V128, simd::ImmLaneIdx};
 use crate::{
     Address,
     BlockFuel,
@@ -38,17 +42,15 @@ use crate::{
     BranchOffset,
     BranchTableTarget,
     FixedSlotSpan,
+    Local,
     Offset16,
     OpCode,
     Reg,
-    Sign,
     Slot,
     SlotSpan,
-    core::TrapCode,
-    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
+    core::{ShiftAmount, Sign, TrapCode},
+    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
 };
-#[expect(unused_imports)]
-use crate::{Freg32, Freg64, Ireg};
 use core::{
     error::Error as CoreError,
     fmt,
@@ -139,6 +141,20 @@ impl_decode_for_primitive!(
     u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64
 );
 
+impl Decode for RawSlot {
+    #[inline]
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self(<_ as Decode>::decode(decoder)?))
+    }
+}
+
+impl Decode for Slot {
+    #[inline]
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self(<RawSlot as Decode>::decode(decoder)?))
+    }
+}
+
 macro_rules! impl_decode_using {
     ( $($ty:ty as $as:ty = $e:expr),* $(,)? ) => {
         $(
@@ -155,7 +171,6 @@ impl_decode_using! {
     Offset16 as u16 = Into::into,
     BranchOffset as i32 = Into::into,
     BlockFuel as u64 = Into::into,
-    Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
     InternalFunc as u32 = Into::into,
@@ -164,10 +179,15 @@ impl_decode_using! {
     Table as u32 = Into::into,
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
+    ShiftAmount as u8 = Into::into,
 
     Sign<f32> as bool = Sign::new,
     Sign<f64> as bool = Sign::new,
     SlotSpan as Slot = SlotSpan::new,
+}
+#[cfg(feature = "simd")]
+impl_decode_using! {
+    V128 as u128 = Into::into,
 }
 
 macro_rules! impl_decode_fallible_using {
@@ -229,11 +249,25 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
     }
 }
 
+impl<const N: u16> Decode for Local<N> {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
+    }
+}
+
 include!(concat!(env!("OUT_DIR"), "/decode.rs"));
 
 impl<T> Decode for Reg<T> {
     #[inline]
     fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self::default())
+    }
+}
+
+impl Decode for () {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(())
     }
 }

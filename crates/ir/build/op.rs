@@ -1,4 +1,4 @@
-use crate::build::{FieldTy, Ident, Layout, SnakeCase, Ty};
+use crate::build::{FieldTy, Ident, LaneWidth, Layout, SimdTy, SnakeCase, Ty};
 use core::{
     fmt::{self, Display},
     ops::{BitAnd, BitOr},
@@ -13,18 +13,22 @@ macro_rules! apply_macro_for_ops {
             Binary(BinaryOp),
             Ternary(TernaryOp),
             CmpBranch(CmpBranchOp),
+            BranchTable(BranchTableOp),
             Select(SelectOp),
             Load(LoadOp),
             Store(StoreOp),
+            GlobalGet(GlobalGetOp),
+            GlobalSet(GlobalSetOp),
             TableGet(TableGetOp),
             TableSet(TableSetOp),
+            CallIndirect(CallIndirectOp),
             Generic0(GenericOp<0>),
             Generic1(GenericOp<1>),
             Generic2(GenericOp<2>),
             Generic3(GenericOp<3>),
             Generic4(GenericOp<4>),
             Generic5(GenericOp<5>),
-            V128ReplaceLane(V128ReplaceLaneOp),
+            V128ReplaceLane(ReplaceLaneOp),
             V128ExtractLane(V128ExtractLaneOp),
         }
     };
@@ -76,24 +80,34 @@ impl Display for Field {
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum OperandKind {
     /// The operand is a register value.
-    #[expect(dead_code)]
     Reg,
     /// The operand is a [`Slot`] index.
     Slot,
     /// The operand is an immediate value.
     Immediate,
+    /// The operand is a fixed stack slot value.
+    Local(u16),
 }
 
 impl OperandKind {
+    pub fn is_reg(&self) -> bool {
+        matches!(self, Self::Reg)
+    }
+
+    pub fn is_immediate(&self) -> bool {
+        matches!(self, Self::Immediate)
+    }
+
     pub fn field_ty(self, hint: Ty) -> FieldTy {
         match self {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::from(hint),
             OperandKind::Reg => match hint {
-                Ty::F32 | Ty::SignF32 => FieldTy::Freg32,
-                Ty::F64 | Ty::SignF64 => FieldTy::Freg64,
-                _ => FieldTy::Ireg,
+                Ty::F32 | Ty::SignF32 => FieldTy::RegF32,
+                Ty::F64 | Ty::SignF64 => FieldTy::RegF64,
+                _ => FieldTy::RegInt,
             },
+            OperandKind::Local(index) => FieldTy::Local(index),
         }
     }
 }
@@ -107,12 +121,6 @@ pub struct GenericOp<const N: usize> {
 impl<const N: usize> GenericOp<N> {
     pub fn new(ident: Ident, fields: [Field; N]) -> Self {
         Self { ident, fields }
-    }
-
-    pub fn has_result(&self) -> bool {
-        self.fields
-            .iter()
-            .any(|field| matches!(field.ident, Ident::Result))
     }
 }
 
@@ -347,6 +355,49 @@ impl CmpBranchOp {
 }
 
 #[derive(Copy, Clone)]
+pub struct BranchTableOp {
+    pub copies: BranchTableCopies,
+    pub index: OperandKind,
+}
+
+#[derive(Copy, Clone)]
+pub enum BranchTableCopies {
+    /// No values are being copied when taking a branch.
+    None,
+    /// A span of values are being copied when taking a branch.
+    Span,
+}
+
+impl BranchTableOp {
+    pub fn new(copies: BranchTableCopies, index: OperandKind) -> Self {
+        Self { copies, index }
+    }
+
+    pub fn len_targets_field(&self) -> Field {
+        Field::new(Ident::LenTargets, FieldTy::U32)
+    }
+
+    pub fn index_field(&self) -> Field {
+        Field::new(Ident::Index, self.index.field_ty(Ty::U32))
+    }
+
+    pub fn values_field(&self) -> Option<Field> {
+        match self.copies {
+            BranchTableCopies::None => None,
+            BranchTableCopies::Span => Some(Field::new(Ident::Values, FieldTy::BoundedSlotSpan)),
+        }
+    }
+
+    pub fn fields(&self) -> [Option<Field>; 3] {
+        [
+            Some(self.len_targets_field()),
+            Some(self.index_field()),
+            self.values_field(),
+        ]
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct SelectOp {
     pub result_ty: Ty,
     pub result: OperandKind,
@@ -479,7 +530,8 @@ impl LoadOp {
         let ptr_ty = match self.ptr {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
-            OperandKind::Reg => FieldTy::Ireg,
+            OperandKind::Reg => FieldTy::RegInt,
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -491,6 +543,7 @@ impl LoadOp {
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
             OperandKind::Immediate => return None,
+            OperandKind::Local(_index) => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -611,8 +664,9 @@ impl StoreOp {
     pub fn ptr_field(&self) -> Field {
         let ptr_ty = match self.ptr {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Reg => FieldTy::Ireg,
+            OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Immediate => FieldTy::Address,
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Ptr, ptr_ty)
     }
@@ -624,6 +678,7 @@ impl StoreOp {
                 OffsetOperand::Offset => FieldTy::U64,
             },
             OperandKind::Immediate => return None,
+            OperandKind::Local(_index) => return None,
         };
         Some(Field::new(Ident::Offset, offset_ty))
     }
@@ -637,6 +692,7 @@ impl StoreOp {
                 StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
                 StoreKind::Lane { width } => FieldTy::from(width),
             },
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Value, field_ty)
     }
@@ -719,18 +775,75 @@ impl StoreKind {
 }
 
 #[derive(Copy, Clone)]
+pub struct GlobalGetOp {
+    /// The type of the global variable value.
+    pub result_ty: Ty,
+    /// The result location of the `global.get`.
+    pub result: OperandKind,
+}
+
+impl GlobalGetOp {
+    pub fn new(result_ty: Ty, result: OperandKind) -> Self {
+        Self { result_ty, result }
+    }
+
+    pub fn result_field(&self) -> Field {
+        let result_ty = self.result.field_ty(self.result_ty);
+        Field::new(Ident::Result, result_ty)
+    }
+
+    pub fn global_field(&self) -> Field {
+        Field::new(Ident::Global, FieldTy::Global)
+    }
+
+    pub fn fields(&self) -> [Field; 2] {
+        [self.global_field(), self.result_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct GlobalSetOp {
+    /// The type of the global variable value.
+    pub value_ty: Ty,
+    /// The result location of the `global.get`.
+    pub value: OperandKind,
+}
+
+impl GlobalSetOp {
+    pub fn new(value_ty: Ty, value: OperandKind) -> Self {
+        Self { value_ty, value }
+    }
+
+    pub fn value_field(&self) -> Field {
+        let value_ty = self.value.field_ty(self.value_ty);
+        Field::new(Ident::Value, value_ty)
+    }
+
+    pub fn global_field(&self) -> Field {
+        Field::new(Ident::Global, FieldTy::Global)
+    }
+
+    pub fn fields(&self) -> [Field; 2] {
+        [self.global_field(), self.value_field()]
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct TableGetOp {
+    /// The result operand.
+    pub result: OperandKind,
     /// The `index` type.
     pub index: OperandKind,
 }
 
 impl TableGetOp {
-    pub fn new(index: OperandKind) -> Self {
-        Self { index }
+    pub fn new(result: OperandKind, index: OperandKind) -> Self {
+        Self { result, index }
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        let result_ty = self.result.field_ty(Ty::U32);
+        Field::new(Ident::Result, result_ty)
     }
 
     pub fn index_field(&self) -> Field {
@@ -780,109 +893,46 @@ impl TableSetOp {
 }
 
 #[derive(Copy, Clone)]
-pub enum LaneWidth {
-    W8,
-    W16,
-    W32,
-    W64,
-}
-
-impl From<LaneWidth> for FieldTy {
-    fn from(value: LaneWidth) -> Self {
-        match value {
-            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
-            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
-            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
-            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
-        }
-    }
-}
-
-impl Display for LaneWidth {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let width = u8::from(*self);
-        let len_lanes = self.len_lanes();
-        write!(f, "{width}x{len_lanes}")
-    }
-}
-
-impl From<LaneWidth> for u8 {
-    fn from(width: LaneWidth) -> Self {
-        match width {
-            LaneWidth::W8 => 8,
-            LaneWidth::W16 => 16,
-            LaneWidth::W32 => 32,
-            LaneWidth::W64 => 64,
-        }
-    }
-}
-
-impl LaneWidth {
-    pub fn len_lanes(self) -> u8 {
-        match self {
-            Self::W8 => 16,
-            Self::W16 => 8,
-            Self::W32 => 4,
-            Self::W64 => 2,
-        }
-    }
-
-    pub fn to_laneidx(self) -> FieldTy {
-        match self {
-            Self::W8 => FieldTy::ImmLaneIdx16,
-            Self::W16 => FieldTy::ImmLaneIdx8,
-            Self::W32 => FieldTy::ImmLaneIdx4,
-            Self::W64 => FieldTy::ImmLaneIdx2,
-        }
-    }
+pub enum CallKind {
+    Nested,
+    Tail,
 }
 
 #[derive(Copy, Clone)]
-pub enum SimdTy {
-    I8x16,
-    U8x16,
-    I16x8,
-    U16x8,
-    U32x4,
-    U64x2,
+pub struct CallIndirectOp {
+    pub kind: CallKind,
+    pub index: OperandKind,
 }
 
-impl From<SimdTy> for Ty {
-    fn from(value: SimdTy) -> Self {
-        match value {
-            SimdTy::I8x16 => Self::I8x16,
-            SimdTy::U8x16 => Self::U8x16,
-            SimdTy::I16x8 => Self::I16x8,
-            SimdTy::U16x8 => Self::U16x8,
-            SimdTy::U32x4 => Self::U32x4,
-            SimdTy::U64x2 => Self::U64x2,
-        }
+impl CallIndirectOp {
+    pub fn new(kind: CallKind, index: OperandKind) -> Self {
+        Self { kind, index }
     }
-}
 
-impl From<SimdTy> for LaneWidth {
-    fn from(value: SimdTy) -> Self {
-        match value {
-            SimdTy::I8x16 => Self::W8,
-            SimdTy::U8x16 => Self::W8,
-            SimdTy::I16x8 => Self::W16,
-            SimdTy::U16x8 => Self::W16,
-            SimdTy::U32x4 => Self::W32,
-            SimdTy::U64x2 => Self::W64,
-        }
+    pub fn func_type_field(&self) -> Field {
+        Field::new(Ident::FuncType, FieldTy::FuncType)
     }
-}
 
-impl SimdTy {
-    pub fn lane_ty(self) -> FieldTy {
-        match self {
-            SimdTy::I8x16 => FieldTy::ImmLaneIdx16,
-            SimdTy::U8x16 => FieldTy::ImmLaneIdx16,
-            SimdTy::I16x8 => FieldTy::ImmLaneIdx8,
-            SimdTy::U16x8 => FieldTy::ImmLaneIdx8,
-            SimdTy::U32x4 => FieldTy::ImmLaneIdx4,
-            SimdTy::U64x2 => FieldTy::ImmLaneIdx2,
-        }
+    pub fn table_field(&self) -> Field {
+        Field::new(Ident::Table, FieldTy::Table)
+    }
+
+    pub fn params_field(&self) -> Field {
+        Field::new(Ident::Params, FieldTy::BoundedSlotSpan)
+    }
+
+    pub fn index_field(&self) -> Field {
+        let index_ty = self.index.field_ty(Ty::U32);
+        Field::new(Ident::Index, index_ty)
+    }
+
+    pub fn fields(&self) -> [Field; 4] {
+        [
+            self.table_field(),
+            self.func_type_field(),
+            self.params_field(),
+            self.index_field(),
+        ]
     }
 }
 
@@ -897,7 +947,17 @@ impl V128ExtractLaneOp {
     }
 
     pub fn result_field(&self) -> Field {
-        Field::new(Ident::Result, FieldTy::Slot)
+        let result_ty = match self.ty {
+            SimdTy::I8x16
+            | SimdTy::U8x16
+            | SimdTy::I16x8
+            | SimdTy::U16x8
+            | SimdTy::U32x4
+            | SimdTy::U64x2 => FieldTy::RegInt,
+            SimdTy::F32x4 => FieldTy::RegF32,
+            SimdTy::F64x2 => FieldTy::RegF64,
+        };
+        Field::new(Ident::Result, result_ty)
     }
 
     pub fn value_field(&self) -> Field {
@@ -914,16 +974,16 @@ impl V128ExtractLaneOp {
 }
 
 #[derive(Copy, Clone)]
-pub struct V128ReplaceLaneOp {
+pub struct ReplaceLaneOp {
     /// The type of the value to be splatted.
-    pub width: LaneWidth,
+    pub ty: SimdTy,
     /// The `value` used for replacing.
     pub value: OperandKind,
 }
 
-impl V128ReplaceLaneOp {
-    pub fn new(width: LaneWidth, value: OperandKind) -> Self {
-        Self { width, value }
+impl ReplaceLaneOp {
+    pub fn new(ty: SimdTy, value: OperandKind) -> Self {
+        Self { ty, value }
     }
 
     pub fn result_field(&self) -> Field {
@@ -937,25 +997,19 @@ impl V128ReplaceLaneOp {
     pub fn value_field(&self) -> Field {
         let value_ty = match self.value {
             OperandKind::Slot => FieldTy::Slot,
-            OperandKind::Reg => FieldTy::Ireg,
-            OperandKind::Immediate => match self.width {
-                LaneWidth::W8 => FieldTy::U8,
-                LaneWidth::W16 => FieldTy::U16,
-                LaneWidth::W32 => FieldTy::U32,
-                LaneWidth::W64 => FieldTy::U64,
+            OperandKind::Reg => match self.ty.item_ty() {
+                FieldTy::F32 => FieldTy::RegF32,
+                FieldTy::F64 => FieldTy::RegF64,
+                _ => FieldTy::RegInt,
             },
+            OperandKind::Immediate => self.ty.item_ty(),
+            OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Value, value_ty)
     }
 
     pub fn lane_field(&self) -> Field {
-        let lane_ty = match self.width {
-            LaneWidth::W8 => FieldTy::ImmLaneIdx16,
-            LaneWidth::W16 => FieldTy::ImmLaneIdx8,
-            LaneWidth::W32 => FieldTy::ImmLaneIdx4,
-            LaneWidth::W64 => FieldTy::ImmLaneIdx2,
-        };
-        Field::new(Ident::Lane, lane_ty)
+        Field::new(Ident::Lane, self.ty.lane_ty())
     }
 
     pub fn fields(&self) -> [Field; 4] {

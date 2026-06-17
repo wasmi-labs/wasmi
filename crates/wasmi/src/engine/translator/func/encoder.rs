@@ -18,7 +18,7 @@ use crate::{
     ir::{self, BlockFuel, BranchOffset, Encode as _, Op, OpCode},
 };
 use alloc::vec::Vec;
-use core::{cmp, fmt, marker::PhantomData, mem};
+use core::{cmp, fmt, iter, marker::PhantomData};
 
 /// Fuel amount required by certain operators.
 type FuelUsed = u64;
@@ -124,6 +124,15 @@ impl EncodedOps {
     fn take_reporting_pos(&mut self) -> Option<ReportingPos> {
         self.temp.take()
     }
+
+    /// Truncates the buffer to `pos`.
+    ///
+    /// This clears everything that has been encoded to `self` after `pos`.
+    fn truncate(&mut self, pos: impl Into<BytePos>) {
+        let new_len = pos.into().0;
+        debug_assert!(new_len <= self.buffer.len());
+        self.buffer.truncate(new_len);
+    }
 }
 
 impl ir::Encoder for EncodedOps {
@@ -173,6 +182,10 @@ pub struct OpEncoder {
     ///
     /// - This allows the last [`Op`] to be peeked, inspected and manipulated.
     /// - For example, this is useful to perform op-code fusion or adjusting the result slot.
+    ///
+    /// # Invariant
+    ///
+    /// If `staged` is `Some`, the staged operator has already been encoded as the last [`Op`] in `ops`.
     staged: Option<StagedOp>,
     /// The fuel costs of instructions.
     ///
@@ -189,6 +202,8 @@ pub struct OpEncoder {
 pub struct StagedOp {
     /// The staged [`Op`].
     op: Op,
+    /// The position of the encoded staged [`Op`].
+    pos: Pos<Op>,
     /// Fuel information for the staged [`Op`].
     ///
     /// - The [`Op::ConsumeFuel`] operator associated to the staged [`Op`] if any.
@@ -198,15 +213,18 @@ pub struct StagedOp {
 
 impl StagedOp {
     /// Creates a new [`StagedOp`] from `op` and `fuel`.
-    pub fn new(op: Op, fuel: Option<(Pos<BlockFuel>, FuelUsed)>) -> Self {
-        Self { op, fuel }
+    pub fn new(op: Op, pos: Pos<Op>, fuel: Option<(Pos<BlockFuel>, FuelUsed)>) -> Self {
+        Self { op, pos, fuel }
     }
 
-    /// Replaces the current [`Op`] with `op`.
+    /// Updates the current [`Op`] of `self` with `op`.
     ///
-    /// Returns the [`Op`] being replaced.
-    pub fn replace(&mut self, op: Op) -> Op {
-        mem::replace(&mut self.op, op)
+    /// # Note
+    ///
+    /// There is no need to update `pos` or `fuel` since both stay
+    /// the same given that the staged [`Op`] is always last.
+    pub fn update(&mut self, op: Op) {
+        self.op = op;
     }
 }
 
@@ -264,7 +282,8 @@ impl OpEncoder {
     ///
     /// If there is a staged [`Op`].
     pub fn pin_label(&mut self, lref: LabelRef) -> Result<(), Error> {
-        self.try_encode_staged()?;
+        self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         let next_pos = Pos::from(self.ops.next_pos());
         self.labels.pin_label(lref, next_pos);
         Ok(())
@@ -280,7 +299,8 @@ impl OpEncoder {
     ///
     /// If there is a staged [`Op`].
     pub fn pin_label_if_unpinned(&mut self, lref: LabelRef) -> Result<(), Error> {
-        self.try_encode_staged()?;
+        self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         let next_pos = Pos::from(self.ops.next_pos());
         self.labels.pin_label_if_unpinned(lref, next_pos);
         Ok(())
@@ -314,39 +334,39 @@ impl OpEncoder {
     /// Sets the staged [`Op`] to `new_staged` and encodes the previously staged [`Op`] if any.
     ///
     /// Returns the [`Pos<Op>`] of the staged [`Op`] if it was encoded.
-    pub fn stage(
+    pub fn stage_op(
         &mut self,
         new_staged: Op,
         fuel_op: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<Pos<Op>, Error> {
+    ) -> Result<(), Error> {
+        self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
+        let pos = self.encode_impl(new_staged)?;
         let fuel = match (fuel_op, &self.fuel_costs) {
             (None, None) => None,
             (Some(fuel_op), Some(fuel_costs)) => Some((fuel_op, fuel_selector.select(fuel_costs))),
             _ => unreachable!(),
         };
-        let new_staged = StagedOp::new(new_staged, fuel);
-        if let Some(old_staged) = self.staged.replace(new_staged) {
-            self.encode_staged(old_staged)?;
-        }
-        Ok(Pos::from(self.ops.next_pos()))
+        self.staged = Some(StagedOp::new(new_staged, pos, fuel));
+        Ok(())
     }
 
-    /// Encodes the staged [`Op`] if there is any.
+    /// Commits the staged [`Op`] if there is any.
     ///
     /// # Note
     ///
     /// - After this operation there will be no more staged [`Op`].
     /// - Does nothing if there is no staged [`Op`].
-    pub fn try_encode_staged(&mut self) -> Result<(), Error> {
+    pub fn commit_staged_if_any(&mut self) -> Result<(), Error> {
         if let Some(staged) = self.staged.take() {
-            self.encode_staged(staged)?;
+            self.commit_staged(staged)?;
         }
         debug_assert!(self.staged.is_none());
         Ok(())
     }
 
-    /// Encodes the `staged_op`.
+    /// Commits the `staged_op`.
     ///
     /// - Bumps fuel consumption of the associated [`Op::ConsumeFuel`] operator.
     /// - Returns the [`Pos<Op>`] of the encoded [`StagedOp`].
@@ -355,13 +375,12 @@ impl OpEncoder {
     ///
     /// If the staged operator unexpectedly issued [`BranchOffset`] or [`BlockFuel`] fields.
     /// Those operators may never be staged and must be taken care of directly.
-    fn encode_staged(&mut self, staged: StagedOp) -> Result<Pos<Op>, Error> {
+    fn commit_staged(&mut self, staged: StagedOp) -> Result<(), Error> {
         if let Some((fuel_pos, fuel_used)) = staged.fuel {
             self.bump_fuel_consumption_by(Some(fuel_pos), fuel_used)?;
         }
-        let pos = self.encode_impl(staged.op)?;
         debug_assert!(self.ops.temp.is_none());
-        Ok(pos)
+        Ok(())
     }
 
     /// Drops the staged [`Op`] without encoding it.
@@ -376,6 +395,7 @@ impl OpEncoder {
             panic!("could not drop staged `Op` since there was none")
         };
         debug_assert!(self.staged.is_none());
+        self.ops.truncate(staged.pos);
         let fuel_pos = staged.fuel.map(|(pos, _)| pos);
         let fuel_used = staged.fuel.map(|(_, used)| used).unwrap_or(0);
         (fuel_pos, fuel_used)
@@ -389,12 +409,14 @@ impl OpEncoder {
     /// # Panics (Debug)
     ///
     /// If there currently is no staged [`Op`] that can be replaced.
-    pub fn replace_staged(&mut self, new_staged: Op) -> Result<Pos<Op>, Error> {
+    pub fn replace_staged(&mut self, new_staged: Op) -> Result<(), Error> {
         let Some(staged) = self.staged.as_mut() else {
             panic!("expected a staged `Op` but found `None`")
         };
-        staged.replace(new_staged);
-        Ok(Pos::from(self.ops.next_pos()))
+        staged.update(new_staged);
+        self.ops.truncate(staged.pos);
+        self.encode_impl(new_staged)?;
+        Ok(())
     }
 
     /// Encodes an item of type `T` to the [`OpEncoder`] and returns its [`Pos`].
@@ -402,14 +424,15 @@ impl OpEncoder {
     /// # Note
     ///
     /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
-    pub fn encode<T: ir::Encode>(
+    pub fn encode_op(
         &mut self,
-        op: T,
+        op: Op,
         fuel_pos: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
-    ) -> Result<Pos<T>, Error> {
-        self.try_encode_staged()?;
+    ) -> Result<Pos<Op>, Error> {
+        self.commit_staged_if_any()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
+        self.pad_to_op_alignment()?;
         let pos = self.encode_impl(op)?;
         debug_assert!(self.ops.take_reporting_pos().is_none());
         debug_assert!(self.staged.is_none());
@@ -421,12 +444,13 @@ impl OpEncoder {
     /// # Note
     ///
     /// The pushed [`Op::ConsumeFuel`] is initialized with base fuel costs.
-    pub fn encode_consume_fuel(&mut self) -> Result<Option<Pos<BlockFuel>>, Error> {
+    pub fn encode_consume_fuel_op(&mut self) -> Result<Option<Pos<BlockFuel>>, Error> {
         let Some(fuel_costs) = &self.fuel_costs else {
             return Ok(None);
         };
         let consumed_fuel = BlockFuel::from(fuel_costs.base());
-        self.try_encode_staged()?;
+        self.commit_staged_if_any()?;
+        self.pad_to_op_alignment()?;
         Op::consume_fuel(consumed_fuel).encode(&mut self.ops)?;
         let Some(ReportingPos::BlockFuel(pos)) = self.ops.take_reporting_pos() else {
             unreachable!("expected encoded `BlockFuel` entry but found none")
@@ -450,14 +474,13 @@ impl OpEncoder {
     where
         T: ir::Encode + UpdateBranchOffset,
     {
-        self.try_encode_staged()?;
+        self.commit_staged_if_any()?;
         self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
         let offset = self.try_resolve_label(dst)?;
         let item = make_branch(offset);
         let pos_item = self.encode_impl(item)?;
-        let pos_offset = match self.ops.take_reporting_pos() {
-            Some(ReportingPos::BranchOffset(pos)) => pos,
-            _ => panic!("missing encoded position for `BranchOffset`"),
+        let Some(ReportingPos::BranchOffset(pos_offset)) = self.ops.take_reporting_pos() else {
+            unreachable!("expected encoded position for `BranchOffset` entry but found none");
         };
         if !self.labels.is_pinned(dst) {
             self.labels
@@ -480,6 +503,25 @@ impl OpEncoder {
         let pos = self.ops.next_pos();
         op.encode(&mut self.ops)?;
         Ok(Pos::from(pos))
+    }
+
+    /// Pads the encoded operator buffer with zero bytes until its length is [`Op`] aligned.
+    ///
+    /// This is used to encode new [`Op`] at properly aligned offsets within the buffer.
+    /// The alignment is equal to the alignment of function pointers, e.g. `fn()`.
+    ///
+    /// Does nothing if the buffer is already aligned.
+    pub fn pad_to_op_alignment(&mut self) -> Result<(), Error> {
+        const ALIGN: usize = core::mem::align_of::<fn()>();
+        if cfg!(feature = "indirect-dispatch") {
+            // Only pad to alignment when `indirect-dispatch` is disabled.
+            return Ok(());
+        }
+        let len = self.ops.buffer.len();
+        let aligned_len = len.next_multiple_of(ALIGN);
+        let padding_len = aligned_len - len;
+        self.ops.buffer.extend(iter::repeat_n(0_u8, padding_len));
+        Ok(())
     }
 
     /// Bumps consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `fuel_selector(fuel_costs)`.

@@ -1,14 +1,15 @@
 use super::{Operand, Reset};
 use crate::{
-    Engine,
+    ValType,
     engine::{
         BlockType,
-        translator::func::{Pos, labels::LabelRef},
+        translator::func::{Pos, labels::LabelRef, stack::operands::RegisterMap},
     },
     ir,
     ir::BoundedSlotSpan,
 };
 use alloc::vec::{Drain, Vec};
+use core::slice;
 
 #[cfg(doc)]
 use crate::ir::Op;
@@ -32,6 +33,195 @@ impl From<usize> for StackHeight {
     }
 }
 
+/// The branch parameters of a control flow `block`, `if` or `loop`.
+#[derive(Debug, Copy, Clone)]
+pub struct BranchParams {
+    /// The span of slots for the branch params expected in temporary operands.
+    temp_slots: BoundedSlotSpan,
+    /// The number of branch parameter operands expected in temporary stack slots.
+    temp_len: u16,
+    /// The branch params expected in accumulator registers if any.
+    ///
+    /// # Dev. Note
+    ///
+    /// This can be `None` if all branch params are of type [`ValType::V128`]
+    /// or if the number of branch params is zero (0).
+    regs: Option<BranchParamRegs>,
+}
+
+impl BranchParams {
+    /// Creates a new [`BranchParams`] from its raw parts.
+    pub fn new(temp_slots: BoundedSlotSpan, temp_len: u16, regs: Option<BranchParamRegs>) -> Self {
+        Self {
+            temp_slots,
+            temp_len,
+            regs,
+        }
+    }
+
+    /// Returns `true` if no branch parameters exist.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Returns the total number of branch parameter operands.
+    ///
+    /// # Note
+    ///
+    /// This includes the branch parameter operands expected in temporary stack slots
+    /// as well as the branch parameter operands expected in accumulator registers.
+    pub fn len(&self) -> u16 {
+        self.len_temps() + self.len_regs()
+    }
+
+    /// Returns the number of branch parameter operands expected in accumulator registers.
+    pub fn len_regs(&self) -> u16 {
+        self.regs.as_ref().map(BranchParamRegs::len).unwrap_or(0)
+    }
+
+    /// Returns the number of branch parameter operands expected in temporary stack slots.
+    pub fn len_temps(&self) -> u16 {
+        self.temp_len
+    }
+
+    /// Returns the [`RegKind`] of all branch parameter operands expected in accumulator registers.
+    ///
+    /// The order is reversed from the back, thus the first [`RegKind`] refers to the last operand etc.
+    pub fn regs(&self) -> &[RegKind] {
+        self.regs
+            .as_ref()
+            .map(BranchParamRegs::as_slice)
+            .unwrap_or(&[])
+    }
+
+    /// Returns the [`BoundedSlotSpan`] for branch parameter operands that are expected in temporary stack slots.
+    pub fn temp_slots(&self) -> BoundedSlotSpan {
+        self.temp_slots
+    }
+
+    /// Returns `true` if `kind` is claimed by `self`.
+    pub fn claims_reg(&self, kind: RegKind) -> bool {
+        self.regs().contains(&kind)
+    }
+}
+
+/// The branch parameters that are expected in accumulator registers.
+#[derive(Debug, Copy, Clone)]
+pub enum BranchParamRegs {
+    /// The last branch parameter is expected in its accumulator.
+    One(RegKind),
+    /// The last 2 branch parameters are expected in their accumulators.
+    ///
+    /// # Note
+    ///
+    /// - Item at index `0` refers to the last operand, item at index `1` to the 2nd last.
+    /// - All [`RegKind`] must be unequal.
+    Two([RegKind; 2]),
+    /// The last 3 branch parameters are expected in their accumulators.
+    ///
+    /// # Note
+    ///
+    /// - Items at indices refer to the following operands:
+    ///     - index `0`: last operand
+    ///     - index `1`: 2nd last operand
+    ///     - index `2`: 3rd last operand
+    /// - All [`RegKind`] must be unequal.
+    Three([RegKind; 3]),
+}
+
+impl BranchParamRegs {
+    /// Create a new [`BranchParamRegs::One`] from `ty`.
+    pub fn new_one(kind: RegKind) -> Self {
+        Self::One(kind)
+    }
+
+    /// Create a new [`BranchParamRegs::Two`] from `tys`.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `tys` contains the same [`ValType`] more than once.
+    pub fn new_two(kinds: [RegKind; 2]) -> Self {
+        debug_assert_ne!(kinds[0], kinds[1]);
+        Self::Two(kinds)
+    }
+
+    /// Create a new [`BranchParamRegs::Three`] from `tys`.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `tys` contains the same [`ValType`] more than once.
+    pub fn new_three(kinds: [RegKind; 3]) -> Self {
+        debug_assert_ne!(kinds[0], kinds[1]);
+        debug_assert_ne!(kinds[0], kinds[2]);
+        debug_assert_ne!(kinds[1], kinds[2]);
+        Self::Three(kinds)
+    }
+
+    /// Returns the number of branch params expected in accumulator registers.
+    pub fn len(&self) -> u16 {
+        match self {
+            Self::One(_) => 1,
+            Self::Two(_) => 2,
+            Self::Three(_) => 3,
+        }
+    }
+
+    /// Returns a slice over the type of branch params expected in accumulator registers.
+    pub fn as_slice(&self) -> &[RegKind] {
+        match self {
+            Self::One(kind) => slice::from_ref(kind),
+            Self::Two(kinds) => {
+                debug_assert_ne!(kinds[0], kinds[1]);
+                &kinds[..]
+            }
+            Self::Three(kinds) => {
+                debug_assert_ne!(kinds[0], kinds[1]);
+                debug_assert_ne!(kinds[0], kinds[2]);
+                debug_assert_ne!(kinds[1], kinds[2]);
+                &kinds[..]
+            }
+        }
+    }
+}
+
+/// The kind of a register.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum RegKind {
+    /// The general purpose register for `i32` and `i64` values.
+    Ireg,
+    /// The `f32` register.
+    Freg32,
+    /// The `f64` register.
+    Freg64,
+}
+
+impl RegKind {
+    /// Creates a [`RegKind`] from a [`ValType`] if possible.
+    ///
+    /// Returns `None` if there is no register kind available to `ty`.
+    pub fn new(ty: ValType) -> Option<Self> {
+        let kind = match ty {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => Self::Ireg,
+            ValType::F32 => Self::Freg32,
+            ValType::F64 => Self::Freg64,
+            ValType::V128 => return None,
+        };
+        Some(kind)
+    }
+
+    /// Returns `true` if `self` matches `ty`.
+    pub fn matches_ty(&self, ty: ValType) -> bool {
+        match self {
+            RegKind::Ireg => matches!(
+                ty,
+                ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64
+            ),
+            RegKind::Freg32 => matches!(ty, ValType::F32),
+            RegKind::Freg64 => matches!(ty, ValType::F64),
+        }
+    }
+}
+
 /// The Wasm control stack.
 #[derive(Debug, Default)]
 pub struct ControlStack {
@@ -45,7 +235,7 @@ pub struct ControlStack {
     /// fuel consumption instruction since this information is accessed commonly.
     ///
     /// [`Op`]: crate::ir::Op
-    consume_fuel_instr: Option<Pos<ir::BlockFuel>>,
+    fuel_pos: Option<Pos<ir::BlockFuel>>,
     /// Special operand stack to memorize operands for `else` control frames.
     else_operands: ElseOperands,
     /// This is `true` if an `if` with else providers was just popped from the stack.
@@ -103,9 +293,9 @@ impl ControlStack {
     ///
     /// Returns `None` otherwise.
     #[inline]
-    pub fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
+    pub fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
         debug_assert!(!self.is_empty());
-        self.consume_fuel_instr
+        self.fuel_pos
     }
 
     /// Returns `true` if `self` is empty.
@@ -129,20 +319,20 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
-        branch_slots: BoundedSlotSpan,
+        branch_params: BranchParams,
         label: LabelRef,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) {
         debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(BlockControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
+            branch_params,
             is_branched_to: false,
-            consume_fuel,
+            fuel_pos,
             label,
         }));
-        self.consume_fuel_instr = consume_fuel;
+        self.fuel_pos = fuel_pos;
     }
 
     /// Pushes a new Wasm `loop` onto the [`ControlStack`].
@@ -150,20 +340,22 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
-        branch_slots: BoundedSlotSpan,
+        branch_params: BranchParams,
         label: LabelRef,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
-    ) {
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> LoopControlFrame {
         debug_assert!(!self.orphaned_else_operands);
-        self.frames.push(ControlFrame::from(LoopControlFrame {
+        let loop_frame = LoopControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
+            branch_params,
             is_branched_to: false,
-            consume_fuel,
+            fuel_pos,
             label,
-        }));
-        self.consume_fuel_instr = consume_fuel;
+        };
+        self.frames.push(ControlFrame::from(loop_frame.clone()));
+        self.fuel_pos = fuel_pos;
+        loop_frame
     }
 
     /// Pushes a new Wasm `if` onto the [`ControlStack`].
@@ -172,26 +364,28 @@ impl ControlStack {
         &mut self,
         ty: BlockType,
         height: usize,
-        branch_slots: BoundedSlotSpan,
+        branch_params: BranchParams,
         label: LabelRef,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
         reachability: IfReachability,
         else_operands: impl IntoIterator<Item = Operand>,
+        registers: RegisterMap,
     ) {
         debug_assert!(!self.orphaned_else_operands);
         self.frames.push(ControlFrame::from(IfControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
+            branch_params,
             is_branched_to: false,
-            consume_fuel,
+            fuel_pos,
             label,
             reachability,
+            registers,
         }));
         if matches!(reachability, IfReachability::Both { .. }) {
             self.else_operands.push(else_operands);
         }
-        self.consume_fuel_instr = consume_fuel;
+        self.fuel_pos = fuel_pos;
     }
 
     /// Pushes a new Wasm `else` onto the [`ControlStack`].
@@ -200,13 +394,13 @@ impl ControlStack {
     pub fn push_else(
         &mut self,
         if_frame: IfControlFrame,
-        consume_fuel: Option<Pos<ir::BlockFuel>>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
         is_end_of_then_reachable: bool,
     ) {
         debug_assert!(!self.orphaned_else_operands);
         let ty = if_frame.ty();
         let height = if_frame.height();
-        let branch_slots = if_frame.branch_slots;
+        let branch_params = if_frame.branch_params;
         let label = if_frame.label();
         let is_branched_to = if_frame.is_branched_to();
         let reachability = match if_frame.reachability {
@@ -221,13 +415,13 @@ impl ControlStack {
         self.frames.push(ControlFrame::from(ElseControlFrame {
             ty,
             height: StackHeight::from(height),
-            branch_slots,
+            branch_params,
             is_branched_to,
-            consume_fuel,
+            fuel_pos,
             label,
             reachability,
         }));
-        self.consume_fuel_instr = consume_fuel;
+        self.fuel_pos = fuel_pos;
     }
 
     /// Pops the top-most [`ControlFrame`] and returns it if any.
@@ -235,8 +429,8 @@ impl ControlStack {
         debug_assert!(!self.orphaned_else_operands);
         let frame = self.frames.pop()?;
         if !matches!(frame, ControlFrame::Block(_) | ControlFrame::Unreachable(_)) {
-            // Need to replace the cached top-most `consume_fuel_instr`.
-            self.consume_fuel_instr = self.get(0).consume_fuel_instr();
+            // Need to replace the cached top-most `fuel_pos`.
+            self.fuel_pos = self.get(0).fuel_pos();
         }
         self.orphaned_else_operands = match &frame {
             ControlFrame::If(frame) => {
@@ -292,6 +486,10 @@ impl ControlStack {
 pub struct ControlFrameMut<'a>(&'a mut ControlFrame);
 
 impl<'a> ControlFrameBase for ControlFrameMut<'a> {
+    fn kind(&self) -> ControlFrameKind {
+        self.0.kind()
+    }
+
     fn ty(&self) -> BlockType {
         self.0.ty()
     }
@@ -300,8 +498,8 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
         self.0.height()
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        self.0.branch_slots()
+    fn branch_params(&self) -> BranchParams {
+        self.0.branch_params()
     }
 
     fn label(&self) -> LabelRef {
@@ -316,13 +514,8 @@ impl<'a> ControlFrameBase for ControlFrameMut<'a> {
         self.0.branch_to()
     }
 
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.0.len_branch_params(engine)
-    }
-
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        self.0.consume_fuel_instr()
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
+        self.0.fuel_pos()
     }
 }
 
@@ -413,16 +606,17 @@ impl From<ControlFrameKind> for ControlFrame {
 
 /// Trait implemented by control frame types that share a common API.
 pub trait ControlFrameBase {
+    /// Returns the [`ControlFrameKind`] of the control frame.
+    fn kind(&self) -> ControlFrameKind;
+
     /// Returns the [`BlockType`] of the control frame.
     fn ty(&self) -> BlockType;
 
     /// Returns the height of the control frame.
     fn height(&self) -> usize;
 
-    /// Returns the branch slots of the control frame as [`BoundedSlotSpan`].
-    ///
-    /// Returns `None` if no values need to be copied for branching.
-    fn branch_slots(&self) -> Option<BoundedSlotSpan>;
+    /// Returns the [`BranchParams`] of the control frame.
+    fn branch_params(&self) -> BranchParams;
 
     /// Returns the branch label of `self`.
     fn label(&self) -> LabelRef;
@@ -433,17 +627,25 @@ pub trait ControlFrameBase {
     /// Makes `self` aware that there is a branch to it.
     fn branch_to(&mut self);
 
-    /// Returns the number of operands required for branching to `self`.
-    // TODO: remove in favor of `branch_slots`
-    fn len_branch_params(&self, engine: &Engine) -> u16;
-
     /// Returns a reference to the [`Op::ConsumeFuel`] of `self`.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>>;
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>>;
 }
 
 impl ControlFrameBase for ControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        match self {
+            ControlFrame::Block(frame) => frame.kind(),
+            ControlFrame::Loop(frame) => frame.kind(),
+            ControlFrame::If(frame) => frame.kind(),
+            ControlFrame::Else(frame) => frame.kind(),
+            ControlFrame::Unreachable(_) => {
+                panic!("invalid query for unreachable control frame: `ControlFrameBase::kind`")
+            }
+        }
+    }
+
     fn ty(&self) -> BlockType {
         match self {
             ControlFrame::Block(frame) => frame.ty(),
@@ -468,15 +670,15 @@ impl ControlFrameBase for ControlFrame {
         }
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
+    fn branch_params(&self) -> BranchParams {
         match self {
-            ControlFrame::Block(frame) => frame.branch_slots(),
-            ControlFrame::Loop(frame) => frame.branch_slots(),
-            ControlFrame::If(frame) => frame.branch_slots(),
-            ControlFrame::Else(frame) => frame.branch_slots(),
+            ControlFrame::Block(frame) => frame.branch_params(),
+            ControlFrame::Loop(frame) => frame.branch_params(),
+            ControlFrame::If(frame) => frame.branch_params(),
+            ControlFrame::Else(frame) => frame.branch_params(),
             ControlFrame::Unreachable(_) => {
                 panic!(
-                    "invalid query for unreachable control frame: `ControlFrameBase::branch_slots`"
+                    "invalid query for unreachable control frame: `ControlFrameBase::branch_params`"
                 )
             }
         }
@@ -520,31 +722,14 @@ impl ControlFrameBase for ControlFrame {
         }
     }
 
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
         match self {
-            ControlFrame::Block(frame) => frame.len_branch_params(engine),
-            ControlFrame::Loop(frame) => frame.len_branch_params(engine),
-            ControlFrame::If(frame) => frame.len_branch_params(engine),
-            ControlFrame::Else(frame) => frame.len_branch_params(engine),
+            ControlFrame::Block(frame) => frame.fuel_pos(),
+            ControlFrame::Loop(frame) => frame.fuel_pos(),
+            ControlFrame::If(frame) => frame.fuel_pos(),
+            ControlFrame::Else(frame) => frame.fuel_pos(),
             ControlFrame::Unreachable(_) => {
-                panic!(
-                    "invalid query for unreachable control frame: `ControlFrame::len_branch_params`"
-                )
-            }
-        }
-    }
-
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        match self {
-            ControlFrame::Block(frame) => frame.consume_fuel_instr(),
-            ControlFrame::Loop(frame) => frame.consume_fuel_instr(),
-            ControlFrame::If(frame) => frame.consume_fuel_instr(),
-            ControlFrame::Else(frame) => frame.consume_fuel_instr(),
-            ControlFrame::Unreachable(_) => {
-                panic!(
-                    "invalid query for unreachable control frame: `ControlFrame::consume_fuel_instr`"
-                )
+                panic!("invalid query for unreachable control frame: `ControlFrame::fuel_pos`")
             }
         }
     }
@@ -557,8 +742,8 @@ pub struct BlockControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`BlockControlFrame`].
-    branch_slots: BoundedSlotSpan,
+    /// The [`BranchParams`] of the [`BlockControlFrame`].
+    branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`BlockControlFrame`].
     is_branched_to: bool,
     /// The [`BlockControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -566,12 +751,16 @@ pub struct BlockControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Pos<ir::BlockFuel>>,
+    fuel_pos: Option<Pos<ir::BlockFuel>>,
     /// The label used to branch to the [`BlockControlFrame`].
     label: LabelRef,
 }
 
 impl ControlFrameBase for BlockControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::Block
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -580,11 +769,8 @@ impl ControlFrameBase for BlockControlFrame {
         self.height.into()
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
+    fn branch_params(&self) -> BranchParams {
+        self.branch_params
     }
 
     fn label(&self) -> LabelRef {
@@ -599,25 +785,20 @@ impl ControlFrameBase for BlockControlFrame {
         self.is_branched_to = true;
     }
 
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_results(engine)
-    }
-
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        self.consume_fuel
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
+        self.fuel_pos
     }
 }
 
 /// A Wasm `loop` control frame.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LoopControlFrame {
     /// The block type of the [`LoopControlFrame`].
     ty: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`LoopControlFrame`].
-    branch_slots: BoundedSlotSpan,
+    /// The [`BranchParams`] of the [`LoopControlFrame`].
+    branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`LoopControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -625,12 +806,16 @@ pub struct LoopControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Pos<ir::BlockFuel>>,
+    fuel_pos: Option<Pos<ir::BlockFuel>>,
     /// The label used to branch to the [`LoopControlFrame`].
     label: LabelRef,
 }
 
 impl ControlFrameBase for LoopControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::Loop
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -639,11 +824,8 @@ impl ControlFrameBase for LoopControlFrame {
         self.height.into()
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
+    fn branch_params(&self) -> BranchParams {
+        self.branch_params
     }
 
     fn label(&self) -> LabelRef {
@@ -658,13 +840,8 @@ impl ControlFrameBase for LoopControlFrame {
         self.is_branched_to = true;
     }
 
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_params(engine)
-    }
-
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        self.consume_fuel
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
+        self.fuel_pos
     }
 }
 
@@ -675,8 +852,8 @@ pub struct IfControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`IfControlFrame`].
-    branch_slots: BoundedSlotSpan,
+    /// The [`BranchParams`] of the [`IfControlFrame`].
+    branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`IfControlFrame`].
     is_branched_to: bool,
     /// The [`IfControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -684,11 +861,15 @@ pub struct IfControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Pos<ir::BlockFuel>>,
+    fuel_pos: Option<Pos<ir::BlockFuel>>,
     /// The label used to branch to the [`IfControlFrame`].
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
     reachability: IfReachability,
+    /// The state of registers on the stack upon entering the `if` block.
+    ///
+    /// This is used to restore the register state upon entering the `else` block.
+    registers: RegisterMap,
 }
 
 impl IfControlFrame {
@@ -708,9 +889,18 @@ impl IfControlFrame {
             IfReachability::OnlyThen => false,
         }
     }
+
+    /// Returns the state of registers on the stack upon entering the `if` block.
+    pub(super) fn registers(&self) -> RegisterMap {
+        self.registers
+    }
 }
 
 impl ControlFrameBase for IfControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::If
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -719,11 +909,8 @@ impl ControlFrameBase for IfControlFrame {
         self.height.into()
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
+    fn branch_params(&self) -> BranchParams {
+        self.branch_params
     }
 
     fn label(&self) -> LabelRef {
@@ -738,13 +925,8 @@ impl ControlFrameBase for IfControlFrame {
         self.is_branched_to = true;
     }
 
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_results(engine)
-    }
-
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        self.consume_fuel
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
+        self.fuel_pos
     }
 }
 
@@ -780,8 +962,8 @@ pub struct ElseControlFrame {
     ty: BlockType,
     /// The value stack height upon entering the [`ElseControlFrame`].
     height: StackHeight,
-    /// The [`BoundedSlotSpan`] referring to the results of the [`ElseControlFrame`].
-    branch_slots: BoundedSlotSpan,
+    /// The [`BranchParams`] of the [`ElseControlFrame`].
+    branch_params: BranchParams,
     /// This is `true` if there is at least one branch to this [`ElseControlFrame`].
     is_branched_to: bool,
     /// The [`LoopControlFrame`]'s [`Op::ConsumeFuel`] if fuel metering is enabled.
@@ -789,7 +971,7 @@ pub struct ElseControlFrame {
     /// # Note
     ///
     /// This is `Some` if fuel metering is enabled and `None` otherwise.
-    consume_fuel: Option<Pos<ir::BlockFuel>>,
+    fuel_pos: Option<Pos<ir::BlockFuel>>,
     /// The label used to branch to the [`ElseControlFrame`].
     label: LabelRef,
     /// The reachability of the `then` and `else` blocks.
@@ -856,6 +1038,10 @@ impl ElseControlFrame {
 }
 
 impl ControlFrameBase for ElseControlFrame {
+    fn kind(&self) -> ControlFrameKind {
+        ControlFrameKind::Else
+    }
+
     fn ty(&self) -> BlockType {
         self.ty
     }
@@ -864,11 +1050,8 @@ impl ControlFrameBase for ElseControlFrame {
         self.height.into()
     }
 
-    fn branch_slots(&self) -> Option<BoundedSlotSpan> {
-        if self.branch_slots.is_empty() {
-            return None;
-        }
-        Some(self.branch_slots)
+    fn branch_params(&self) -> BranchParams {
+        self.branch_params
     }
 
     fn label(&self) -> LabelRef {
@@ -883,13 +1066,8 @@ impl ControlFrameBase for ElseControlFrame {
         self.is_branched_to = true;
     }
 
-    fn len_branch_params(&self, engine: &Engine) -> u16 {
-        // TODO: remove in favor of `branch_slots`
-        self.ty.len_results(engine)
-    }
-
-    fn consume_fuel_instr(&self) -> Option<Pos<ir::BlockFuel>> {
-        self.consume_fuel
+    fn fuel_pos(&self) -> Option<Pos<ir::BlockFuel>> {
+        self.fuel_pos
     }
 }
 

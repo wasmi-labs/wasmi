@@ -1,6 +1,7 @@
 use crate::{
     V128,
     core::{
+        ShiftAmount,
         simd,
         simd::{ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8, ImmLaneIdx16},
     },
@@ -11,65 +12,48 @@ use crate::{
         utils::{IntoControl as _, get_value},
     },
 };
+use core::convert::identity;
 
-execution_handler! {
-    fn copy_imm128(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::CopyImm128 {
-                result,
-                value_lo,
-                value_hi,
-            },
-        ) = unsafe { decode_op(ip) };
-        let value_lo: u64 = get_value(value_lo, sp, ireg, freg32, freg64);
-        let value_hi: u64 = get_value(value_hi, sp, ireg, freg32, freg64);
-        let v128: V128 = V128::from((u128::from(value_hi) << 64) | u128::from(value_lo));
-        set_value!(result, v128, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+macro_rules! execution_handler_for_v128_select {
+    ( $(fn $snake_name:ident($camel_name:ident));* $(;)? ) => {
+        $(
+            execution_handler! {
+                fn $snake_name(
+                    state: &mut VmState,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let (
+                        ip,
+                        crate::ir::decode::$camel_name {
+                            result,
+                            condition,
+                            true_val,
+                            false_val,
+                        },
+                    ) = unsafe { decode_op(ip) };
+                    let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
+                    let selected = match condition {
+                        true => true_val,
+                        false => false_val,
+                    };
+                    let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
+                    set_value!(result, selected, sp, ireg, freg32, freg64);
+                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                }
+            }
+        )*
+    };
 }
-
-execution_handler! {
-    fn v128_select_ssss(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::V128Select_Ssss {
-                result,
-                condition,
-                true_val,
-                false_val,
-            },
-        ) = unsafe { decode_op(ip) };
-        let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
-        let selected = match condition {
-            true => true_val,
-            false => false_val,
-        };
-        let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
-        set_value!(result, selected, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
+execution_handler_for_v128_select! {
+    fn v128_select_srss(V128Select_Srss);
+    fn v128_select_ssss(V128Select_Ssss);
 }
 
 macro_rules! impl_splat_bytes {
@@ -82,21 +66,32 @@ macro_rules! impl_splat_bytes {
     }
 }
 impl_splat_bytes! {
-    fn splat8(value: u8) -> V128 = simd::i8x16_splat;
-    fn splat16(value: u16) -> V128 = simd::i16x8_splat;
-    fn splat32(value: u32) -> V128 = simd::i32x4_splat;
-    fn splat64(value: u64) -> V128 = simd::i64x2_splat;
+    fn splat_u8(value: u8) -> V128 = simd::i8x16_splat;
+    fn splat_u16(value: u16) -> V128 = simd::i16x8_splat;
+    fn splat_u32(value: u32) -> V128 = simd::i32x4_splat;
+    fn splat_u64(value: u64) -> V128 = simd::i64x2_splat;
+    fn splat_f32(value: f32) -> V128 = simd::f32x4_splat;
+    fn splat_f64(value: f64) -> V128 = simd::f64x2_splat;
 }
 
 handler_unary! {
-    fn v128_splat8_ss(V128Splat8_Ss) = splat8;
-    fn v128_splat8_si(V128Splat8_Si) = splat8;
-    fn v128_splat16_ss(V128Splat16_Ss) = splat16;
-    fn v128_splat16_si(V128Splat16_Si) = splat16;
-    fn v128_splat32_ss(V128Splat32_Ss) = splat32;
-    fn v128_splat32_si(V128Splat32_Si) = splat32;
-    fn v128_splat64_ss(V128Splat64_Ss) = splat64;
-    fn v128_splat64_si(V128Splat64_Si) = splat64;
+    fn v128_copy_ss(V128Copy_Ss) = identity::<V128>;
+    fn v128_copy_si(V128Copy_Si) = identity::<V128>;
+
+    fn v128_splat_u8_sr(V128SplatU8_Sr) = splat_u8;
+    fn v128_splat_u8_ss(V128SplatU8_Ss) = splat_u8;
+    fn v128_splat_u8_si(V128SplatU8_Si) = splat_u8;
+    fn v128_splat_u16_sr(V128SplatU16_Sr) = splat_u16;
+    fn v128_splat_u16_ss(V128SplatU16_Ss) = splat_u16;
+    fn v128_splat_u16_si(V128SplatU16_Si) = splat_u16;
+    fn v128_splat_u32_sr(V128SplatU32_Sr) = splat_u32;
+    fn v128_splat_u32_ss(V128SplatU32_Ss) = splat_u32;
+    fn v128_splat_u32_si(V128SplatU32_Si) = splat_u32;
+    fn v128_splat_u64_sr(V128SplatU64_Sr) = splat_u64;
+    fn v128_splat_u64_ss(V128SplatU64_Ss) = splat_u64;
+    fn v128_splat_u64_si(V128SplatU64_Si) = splat_u64;
+    fn v128_splat_f32_sr(V128SplatF32_Sr) = splat_f32;
+    fn v128_splat_f64_sr(V128SplatF64_Sr) = splat_f64;
 
     fn v128_not_ss(V128Not_Ss) = simd::v128_not;
     fn v128_any_true_ss(V128AnyTrue_Ss) = simd::v128_any_true;
@@ -271,31 +266,43 @@ handler_binary! {
 }
 
 macro_rules! wrap_shift {
-    ($f:expr) => {{ |v128: V128, rhs: u8| -> V128 { $f(v128, u32::from(rhs)) } }};
+    ($f:expr) => {{ |v128: V128, rhs: ShiftAmount| -> V128 { $f(v128, u32::from(u8::from(rhs))) } }};
 }
 handler_binary! {
+    fn i8x16_shl_ssr(I8x16Shl_Ssr) = wrap_shift!(simd::i8x16_shl);
     fn i8x16_shl_sss(I8x16Shl_Sss) = wrap_shift!(simd::i8x16_shl);
     fn i8x16_shl_ssi(I8x16Shl_Ssi) = wrap_shift!(simd::i8x16_shl);
+    fn i8x16_shr_ssr(I8x16Shr_Ssr) = wrap_shift!(simd::i8x16_shr_s);
     fn i8x16_shr_sss(I8x16Shr_Sss) = wrap_shift!(simd::i8x16_shr_s);
     fn i8x16_shr_ssi(I8x16Shr_Ssi) = wrap_shift!(simd::i8x16_shr_s);
+    fn u8x16_shr_ssr(U8x16Shr_Ssr) = wrap_shift!(simd::i8x16_shr_u);
     fn u8x16_shr_sss(U8x16Shr_Sss) = wrap_shift!(simd::i8x16_shr_u);
     fn u8x16_shr_ssi(U8x16Shr_Ssi) = wrap_shift!(simd::i8x16_shr_u);
+    fn i16x8_shl_ssr(I16x8Shl_Ssr) = wrap_shift!(simd::i16x8_shl);
     fn i16x8_shl_sss(I16x8Shl_Sss) = wrap_shift!(simd::i16x8_shl);
     fn i16x8_shl_ssi(I16x8Shl_Ssi) = wrap_shift!(simd::i16x8_shl);
+    fn i16x8_shr_ssr(I16x8Shr_Ssr) = wrap_shift!(simd::i16x8_shr_s);
     fn i16x8_shr_sss(I16x8Shr_Sss) = wrap_shift!(simd::i16x8_shr_s);
     fn i16x8_shr_ssi(I16x8Shr_Ssi) = wrap_shift!(simd::i16x8_shr_s);
+    fn u16x8_shr_ssr(U16x8Shr_Ssr) = wrap_shift!(simd::i16x8_shr_u);
     fn u16x8_shr_sss(U16x8Shr_Sss) = wrap_shift!(simd::i16x8_shr_u);
     fn u16x8_shr_ssi(U16x8Shr_Ssi) = wrap_shift!(simd::i16x8_shr_u);
+    fn i32x4_shl_ssr(I32x4Shl_Ssr) = wrap_shift!(simd::i32x4_shl);
     fn i32x4_shl_sss(I32x4Shl_Sss) = wrap_shift!(simd::i32x4_shl);
     fn i32x4_shl_ssi(I32x4Shl_Ssi) = wrap_shift!(simd::i32x4_shl);
+    fn i32x4_shr_ssr(I32x4Shr_Ssr) = wrap_shift!(simd::i32x4_shr_s);
     fn i32x4_shr_sss(I32x4Shr_Sss) = wrap_shift!(simd::i32x4_shr_s);
     fn i32x4_shr_ssi(I32x4Shr_Ssi) = wrap_shift!(simd::i32x4_shr_s);
+    fn u32x4_shr_ssr(U32x4Shr_Ssr) = wrap_shift!(simd::i32x4_shr_u);
     fn u32x4_shr_sss(U32x4Shr_Sss) = wrap_shift!(simd::i32x4_shr_u);
     fn u32x4_shr_ssi(U32x4Shr_Ssi) = wrap_shift!(simd::i32x4_shr_u);
+    fn i64x2_shl_ssr(I64x2Shl_Ssr) = wrap_shift!(simd::i64x2_shl);
     fn i64x2_shl_sss(I64x2Shl_Sss) = wrap_shift!(simd::i64x2_shl);
     fn i64x2_shl_ssi(I64x2Shl_Ssi) = wrap_shift!(simd::i64x2_shl);
+    fn i64x2_shr_ssr(I64x2Shr_Ssr) = wrap_shift!(simd::i64x2_shr_s);
     fn i64x2_shr_sss(I64x2Shr_Sss) = wrap_shift!(simd::i64x2_shr_s);
     fn i64x2_shr_ssi(I64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_s);
+    fn u64x2_shr_ssr(U64x2Shr_Ssr) = wrap_shift!(simd::i64x2_shr_u);
     fn u64x2_shr_sss(U64x2Shr_Sss) = wrap_shift!(simd::i64x2_shr_u);
     fn u64x2_shr_ssi(U64x2Shr_Ssi) = wrap_shift!(simd::i64x2_shr_u);
 }
@@ -333,12 +340,14 @@ macro_rules! handler_extract_lane {
     };
 }
 handler_extract_lane! {
-    fn i8x16_extract_lane_ss(I8x16ExtractLane_Ss) = simd::i8x16_extract_lane_s;
-    fn u8x16_extract_lane_ss(U8x16ExtractLane_Ss) = simd::i8x16_extract_lane_u;
-    fn i16x8_extract_lane_ss(I16x8ExtractLane_Ss) = simd::i16x8_extract_lane_s;
-    fn u16x8_extract_lane_ss(U16x8ExtractLane_Ss) = simd::i16x8_extract_lane_u;
-    fn u32x4_extract_lane_ss(U32x4ExtractLane_Ss) = simd::i32x4_extract_lane;
-    fn u64x2_extract_lane_ss(U64x2ExtractLane_Ss) = simd::i64x2_extract_lane;
+    fn i8x16_extract_lane_rs(I8x16ExtractLane_Rs) = simd::i8x16_extract_lane_s;
+    fn u8x16_extract_lane_rs(U8x16ExtractLane_Rs) = simd::i8x16_extract_lane_u;
+    fn i16x8_extract_lane_rs(I16x8ExtractLane_Rs) = simd::i16x8_extract_lane_s;
+    fn u16x8_extract_lane_rs(U16x8ExtractLane_Rs) = simd::i16x8_extract_lane_u;
+    fn u32x4_extract_lane_rs(U32x4ExtractLane_Rs) = simd::i32x4_extract_lane;
+    fn u64x2_extract_lane_rs(U64x2ExtractLane_Rs) = simd::i64x2_extract_lane;
+    fn f32x4_extract_lane_rs(F32x4ExtractLane_Rs) = simd::f32x4_extract_lane;
+    fn f64x2_extract_lane_rs(F64x2ExtractLane_Rs) = simd::f64x2_extract_lane;
 }
 
 macro_rules! impl_replace_lane {
@@ -356,6 +365,8 @@ impl_replace_lane! {
     fn v128_replace_lane16x8(v128: V128, lane: ImmLaneIdx8, item: u16) -> V128 = simd::i16x8_replace_lane;
     fn v128_replace_lane32x4(v128: V128, lane: ImmLaneIdx4, item: u32) -> V128 = simd::i32x4_replace_lane;
     fn v128_replace_lane64x2(v128: V128, lane: ImmLaneIdx2, item: u64) -> V128 = simd::i64x2_replace_lane;
+    fn f32x4_replace_lane(v128: V128, lane: ImmLaneIdx4, item: f32) -> V128 = simd::f32x4_replace_lane;
+    fn f64x2_replace_lane(v128: V128, lane: ImmLaneIdx2, item: f64) -> V128 = simd::f64x2_replace_lane;
 }
 
 macro_rules! handler_extract_lane {
@@ -393,14 +404,20 @@ macro_rules! handler_extract_lane {
     };
 }
 handler_extract_lane! {
-    fn v128_replace_lane8x16_sss(V128ReplaceLane8x16_Sss) = v128_replace_lane8x16;
-    fn v128_replace_lane8x16_ssi(V128ReplaceLane8x16_Ssi) = v128_replace_lane8x16;
-    fn v128_replace_lane16x8_sss(V128ReplaceLane16x8_Sss) = v128_replace_lane16x8;
-    fn v128_replace_lane16x8_ssi(V128ReplaceLane16x8_Ssi) = v128_replace_lane16x8;
-    fn v128_replace_lane32x4_sss(V128ReplaceLane32x4_Sss) = v128_replace_lane32x4;
-    fn v128_replace_lane32x4_ssi(V128ReplaceLane32x4_Ssi) = v128_replace_lane32x4;
-    fn v128_replace_lane64x2_sss(V128ReplaceLane64x2_Sss) = v128_replace_lane64x2;
-    fn v128_replace_lane64x2_ssi(V128ReplaceLane64x2_Ssi) = v128_replace_lane64x2;
+    fn u8x16_replace_lane_ssr(U8x16ReplaceLane_Ssr) = v128_replace_lane8x16;
+    fn u8x16_replace_lane_sss(U8x16ReplaceLane_Sss) = v128_replace_lane8x16;
+    fn u8x16_replace_lane_ssi(U8x16ReplaceLane_Ssi) = v128_replace_lane8x16;
+    fn u16x8_replace_lane_ssr(U16x8ReplaceLane_Ssr) = v128_replace_lane16x8;
+    fn u16x8_replace_lane_sss(U16x8ReplaceLane_Sss) = v128_replace_lane16x8;
+    fn u16x8_replace_lane_ssi(U16x8ReplaceLane_Ssi) = v128_replace_lane16x8;
+    fn u32x4_replace_lane_ssr(U32x4ReplaceLane_Ssr) = v128_replace_lane32x4;
+    fn u32x4_replace_lane_sss(U32x4ReplaceLane_Sss) = v128_replace_lane32x4;
+    fn u32x4_replace_lane_ssi(U32x4ReplaceLane_Ssi) = v128_replace_lane32x4;
+    fn u64x2_replace_lane_ssr(U64x2ReplaceLane_Ssr) = v128_replace_lane64x2;
+    fn u64x2_replace_lane_sss(U64x2ReplaceLane_Sss) = v128_replace_lane64x2;
+    fn u64x2_replace_lane_ssi(U64x2ReplaceLane_Ssi) = v128_replace_lane64x2;
+    fn f32x4_replace_lane_ssr(F32x4ReplaceLane_Ssr) = f32x4_replace_lane;
+    fn f64x2_replace_lane_ssr(F64x2ReplaceLane_Ssr) = f64x2_replace_lane;
 }
 
 macro_rules! handler_ternary {
@@ -441,39 +458,65 @@ handler_ternary! {
     fn f64x2_relaxed_nmadd_ssss(F64x2RelaxedNmadd_Ssss, a, b, c) = simd::f64x2_relaxed_nmadd;
 }
 
-handler_load_ss! {
+handler_load! {
+    fn v128_load_sr(V128Load_Sr) = simd::v128_load;
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
 
+    fn i16x8_load_widen8x8_sr(I16x8LoadWiden8x8_Sr) = simd::v128_load8x8_s;
     fn i16x8_load_widen8x8_ss(I16x8LoadWiden8x8_Ss) = simd::v128_load8x8_s;
+    fn u16x8_load_widen8x8_sr(U16x8LoadWiden8x8_Sr) = simd::v128_load8x8_u;
     fn u16x8_load_widen8x8_ss(U16x8LoadWiden8x8_Ss) = simd::v128_load8x8_u;
+    fn i32x4_load_widen16x4_sr(I32x4LoadWiden16x4_Sr) = simd::v128_load16x4_s;
     fn i32x4_load_widen16x4_ss(I32x4LoadWiden16x4_Ss) = simd::v128_load16x4_s;
+    fn u32x4_load_widen16x4_sr(U32x4LoadWiden16x4_Sr) = simd::v128_load16x4_u;
     fn u32x4_load_widen16x4_ss(U32x4LoadWiden16x4_Ss) = simd::v128_load16x4_u;
+    fn i64x2_load_widen32x2_sr(I64x2LoadWiden32x2_Sr) = simd::v128_load32x2_s;
     fn i64x2_load_widen32x2_ss(I64x2LoadWiden32x2_Ss) = simd::v128_load32x2_s;
+    fn u64x2_load_widen32x2_sr(U64x2LoadWiden32x2_Sr) = simd::v128_load32x2_u;
     fn u64x2_load_widen32x2_ss(U64x2LoadWiden32x2_Ss) = simd::v128_load32x2_u;
 
+    fn v128_load_splat8_sr(V128LoadSplat8_Sr) = simd::v128_load8_splat;
     fn v128_load_splat8_ss(V128LoadSplat8_Ss) = simd::v128_load8_splat;
+    fn v128_load_splat16_sr(V128LoadSplat16_Sr) = simd::v128_load16_splat;
     fn v128_load_splat16_ss(V128LoadSplat16_Ss) = simd::v128_load16_splat;
+    fn v128_load_splat32_sr(V128LoadSplat32_Sr) = simd::v128_load32_splat;
     fn v128_load_splat32_ss(V128LoadSplat32_Ss) = simd::v128_load32_splat;
+    fn v128_load_splat64_sr(V128LoadSplat64_Sr) = simd::v128_load64_splat;
     fn v128_load_splat64_ss(V128LoadSplat64_Ss) = simd::v128_load64_splat;
+    fn v128_load_low32_sr(V128LoadLow32_Sr) = simd::v128_load32_zero;
     fn v128_load_low32_ss(V128LoadLow32_Ss) = simd::v128_load32_zero;
+    fn v128_load_low64_sr(V128LoadLow64_Sr) = simd::v128_load64_zero;
     fn v128_load_low64_ss(V128LoadLow64_Ss) = simd::v128_load64_zero;
 }
 
 handler_load_mem0_offset16_ss! {
+    fn v128_load_mem0_offset16_sr(V128LoadMem0Offset16_Sr) = simd::v128_load;
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
 
+    fn i16x8_load_widen8x8_mem0_offset16_sr(I16x8LoadWiden8x8Mem0Offset16_Sr) = simd::v128_load8x8_s;
     fn i16x8_load_widen8x8_mem0_offset16_ss(I16x8LoadWiden8x8Mem0Offset16_Ss) = simd::v128_load8x8_s;
+    fn u16x8_load_widen8x8_mem0_offset16_sr(U16x8LoadWiden8x8Mem0Offset16_Sr) = simd::v128_load8x8_u;
     fn u16x8_load_widen8x8_mem0_offset16_ss(U16x8LoadWiden8x8Mem0Offset16_Ss) = simd::v128_load8x8_u;
+    fn i32x4_load_widen16x4_mem0_offset16_sr(I32x4LoadWiden16x4Mem0Offset16_Sr) = simd::v128_load16x4_s;
     fn i32x4_load_widen16x4_mem0_offset16_ss(I32x4LoadWiden16x4Mem0Offset16_Ss) = simd::v128_load16x4_s;
+    fn u32x4_load_widen16x4_mem0_offset16_sr(U32x4LoadWiden16x4Mem0Offset16_Sr) = simd::v128_load16x4_u;
     fn u32x4_load_widen16x4_mem0_offset16_ss(U32x4LoadWiden16x4Mem0Offset16_Ss) = simd::v128_load16x4_u;
+    fn i64x2_load_widen32x2_mem0_offset16_sr(I64x2LoadWiden32x2Mem0Offset16_Sr) = simd::v128_load32x2_s;
     fn i64x2_load_widen32x2_mem0_offset16_ss(I64x2LoadWiden32x2Mem0Offset16_Ss) = simd::v128_load32x2_s;
+    fn u64x2_load_widen32x2_mem0_offset16_sr(U64x2LoadWiden32x2Mem0Offset16_Sr) = simd::v128_load32x2_u;
     fn u64x2_load_widen32x2_mem0_offset16_ss(U64x2LoadWiden32x2Mem0Offset16_Ss) = simd::v128_load32x2_u;
 
+    fn v128_load_splat8_mem0_offset16_sr(V128LoadSplat8Mem0Offset16_Sr) = simd::v128_load8_splat;
     fn v128_load_splat8_mem0_offset16_ss(V128LoadSplat8Mem0Offset16_Ss) = simd::v128_load8_splat;
+    fn v128_load_splat16_mem0_offset16_sr(V128LoadSplat16Mem0Offset16_Sr) = simd::v128_load16_splat;
     fn v128_load_splat16_mem0_offset16_ss(V128LoadSplat16Mem0Offset16_Ss) = simd::v128_load16_splat;
+    fn v128_load_splat32_mem0_offset16_sr(V128LoadSplat32Mem0Offset16_Sr) = simd::v128_load32_splat;
     fn v128_load_splat32_mem0_offset16_ss(V128LoadSplat32Mem0Offset16_Ss) = simd::v128_load32_splat;
+    fn v128_load_splat64_mem0_offset16_sr(V128LoadSplat64Mem0Offset16_Sr) = simd::v128_load64_splat;
     fn v128_load_splat64_mem0_offset16_ss(V128LoadSplat64Mem0Offset16_Ss) = simd::v128_load64_splat;
+    fn v128_load_low32_mem0_offset16_sr(V128LoadLow32Mem0Offset16_Sr) = simd::v128_load32_zero;
     fn v128_load_low32_mem0_offset16_ss(V128LoadLow32Mem0Offset16_Ss) = simd::v128_load32_zero;
+    fn v128_load_low64_mem0_offset16_sr(V128LoadLow64Mem0Offset16_Sr) = simd::v128_load64_zero;
     fn v128_load_low64_mem0_offset16_ss(V128LoadLow64Mem0Offset16_Ss) = simd::v128_load64_zero;
 }
 
@@ -518,9 +561,13 @@ macro_rules! handler_load_lane {
     };
 }
 handler_load_lane! {
+    fn v128_load_lane8_srs(V128LoadLane8_Srs) = simd::v128_load8_lane;
     fn v128_load_lane8_sss(V128LoadLane8_Sss) = simd::v128_load8_lane;
+    fn v128_load_lane16_srs(V128LoadLane16_Srs) = simd::v128_load16_lane;
     fn v128_load_lane16_sss(V128LoadLane16_Sss) = simd::v128_load16_lane;
+    fn v128_load_lane32_srs(V128LoadLane32_Srs) = simd::v128_load32_lane;
     fn v128_load_lane32_sss(V128LoadLane32_Sss) = simd::v128_load32_lane;
+    fn v128_load_lane64_srs(V128LoadLane64_Srs) = simd::v128_load64_lane;
     fn v128_load_lane64_sss(V128LoadLane64_Sss) = simd::v128_load64_lane;
 }
 
@@ -553,17 +600,23 @@ macro_rules! handler_load_lane_mem0_offset16 {
     };
 }
 handler_load_lane_mem0_offset16! {
+    fn v128_load_lane8_mem0_offset16_srs(V128LoadLane8Mem0Offset16_Srs) = simd::v128_load8_lane;
     fn v128_load_lane8_mem0_offset16_sss(V128LoadLane8Mem0Offset16_Sss) = simd::v128_load8_lane;
+    fn v128_load_lane16_mem0_offset16_srs(V128LoadLane16Mem0Offset16_Srs) = simd::v128_load16_lane;
     fn v128_load_lane16_mem0_offset16_sss(V128LoadLane16Mem0Offset16_Sss) = simd::v128_load16_lane;
+    fn v128_load_lane32_mem0_offset16_srs(V128LoadLane32Mem0Offset16_Srs) = simd::v128_load32_lane;
     fn v128_load_lane32_mem0_offset16_sss(V128LoadLane32Mem0Offset16_Sss) = simd::v128_load32_lane;
+    fn v128_load_lane64_mem0_offset16_srs(V128LoadLane64Mem0Offset16_Srs) = simd::v128_load64_lane;
     fn v128_load_lane64_mem0_offset16_sss(V128LoadLane64Mem0Offset16_Sss) = simd::v128_load64_lane;
 }
 
 handler_store_sx! {
+    fn v128_store_rs(V128Store_Rs, V128) = simd::v128_store;
     fn v128_store_ss(V128Store_Ss, V128) = simd::v128_store;
 }
 
 handler_store_mem0_offset16_sx! {
+    fn v128_store_mem0_offset16_rs(V128StoreMem0Offset16_Rs, V128) = simd::v128_store;
     fn v128_store_mem0_offset16_ss(V128StoreMem0Offset16_Ss, V128) = simd::v128_store;
 }
 
@@ -600,9 +653,13 @@ macro_rules! handler_store_lane_ss {
     };
 }
 handler_store_lane_ss! {
+    fn v128_store_lane8_rs(V128StoreLane8_Rs) = simd::v128_store8_lane;
     fn v128_store_lane8_ss(V128StoreLane8_Ss) = simd::v128_store8_lane;
+    fn v128_store_lane16_rs(V128StoreLane16_Rs) = simd::v128_store16_lane;
     fn v128_store_lane16_ss(V128StoreLane16_Ss) = simd::v128_store16_lane;
+    fn v128_store_lane32_rs(V128StoreLane32_Rs) = simd::v128_store32_lane;
     fn v128_store_lane32_ss(V128StoreLane32_Ss) = simd::v128_store32_lane;
+    fn v128_store_lane64_rs(V128StoreLane64_Rs) = simd::v128_store64_lane;
     fn v128_store_lane64_ss(V128StoreLane64_Ss) = simd::v128_store64_lane;
 }
 
@@ -637,8 +694,12 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
     };
 }
 handler_store_lane_mem0_offset16_ss! {
+    fn v128_store_lane8_mem0_offset16_rs(V128StoreLane8Mem0Offset16_Rs) = simd::v128_store8_lane;
     fn v128_store_lane8_mem0_offset16_ss(V128StoreLane8Mem0Offset16_Ss) = simd::v128_store8_lane;
+    fn v128_store_lane16_mem0_offset16_rs(V128StoreLane16Mem0Offset16_Rs) = simd::v128_store16_lane;
     fn v128_store_lane16_mem0_offset16_ss(V128StoreLane16Mem0Offset16_Ss) = simd::v128_store16_lane;
+    fn v128_store_lane32_mem0_offset16_rs(V128StoreLane32Mem0Offset16_Rs) = simd::v128_store32_lane;
     fn v128_store_lane32_mem0_offset16_ss(V128StoreLane32Mem0Offset16_Ss) = simd::v128_store32_lane;
+    fn v128_store_lane64_mem0_offset16_rs(V128StoreLane64Mem0Offset16_Rs) = simd::v128_store64_lane;
     fn v128_store_lane64_mem0_offset16_ss(V128StoreLane64Mem0Offset16_Ss) = simd::v128_store64_lane;
 }

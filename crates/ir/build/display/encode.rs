@@ -4,10 +4,15 @@ use crate::build::{
     isa::Isa,
     op::{
         BinaryOp,
+        BranchTableOp,
+        CallIndirectOp,
         CmpBranchOp,
         Field,
         GenericOp,
+        GlobalGetOp,
+        GlobalSetOp,
         LoadOp,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
         StoreOp,
@@ -16,7 +21,6 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
     },
 };
 use core::fmt::{self, Display};
@@ -108,12 +112,16 @@ impl_display_encode! {
     BinaryOp,
     TernaryOp,
     CmpBranchOp,
+    CallIndirectOp,
+    BranchTableOp,
     SelectOp,
     LoadOp,
+    GlobalGetOp,
+    GlobalSetOp,
     StoreOp,
     TableGetOp,
     TableSetOp,
-    V128ReplaceLaneOp,
+    ReplaceLaneOp,
     V128ExtractLaneOp,
 }
 

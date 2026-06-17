@@ -24,35 +24,13 @@ impl SlotSpan {
     }
 
     /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
-    pub fn iter_sized(self, len: usize) -> SlotSpanIter {
-        SlotSpanIter::new(self.0, len)
-    }
-
-    /// Returns a [`SlotSpanIter`] yielding `len` [`Slot`]s.
     pub fn iter(self, len: u16) -> SlotSpanIter {
-        SlotSpanIter::new_u16(self.0, len)
+        SlotSpanIter::new(self.0, len)
     }
 
     /// Returns the head [`Slot`] of the [`SlotSpan`].
     pub fn head(self) -> Slot {
         self.0
-    }
-
-    /// Returns an exclusive reference to the head [`Slot`] of the [`SlotSpan`].
-    pub fn head_mut(&mut self) -> &mut Slot {
-        &mut self.0
-    }
-
-    /// Returns `true` if `copy_span results <- values` has overlapping copies.
-    ///
-    /// # Examples
-    ///
-    /// - `[ ]`: empty never overlaps
-    /// - `[ 1 <- 0 ]`: single element never overlaps
-    /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]`: no overlap
-    /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    pub fn has_overlapping_copies(results: Self, values: Self, len: u16) -> bool {
-        SlotSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 }
 
@@ -82,15 +60,6 @@ impl<const N: u16> FixedSlotSpan<N> {
             return Err(Error::StackSlotOutOfBounds);
         }
         Ok(Self { span })
-    }
-
-    /// Creates a new [`SlotSpan`] starting with the given `start` [`Slot`].
-    ///
-    /// # Safety
-    ///
-    /// The caller is responsible for making sure that `span` is valid for a length of `N`.
-    pub unsafe fn new_unchecked(span: SlotSpan) -> Self {
-        Self { span }
     }
 
     /// Returns a [`SlotSpanIter`] yielding `N` [`Slot`]s.
@@ -239,39 +208,16 @@ pub struct SlotSpanIter {
 }
 
 impl SlotSpanIter {
-    /// Creates a [`SlotSpanIter`] from then given raw `start` and `end` [`Slot`].
-    pub fn from_raw_parts(start: Slot, end: Slot) -> Self {
-        debug_assert!(u16::from(start) <= u16::from(end));
-        Self {
-            next: start,
-            last: end,
-        }
-    }
-
     /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
     ///
     /// # Panics
     ///
     /// If the `start..end` [`Slot`] span indices are out of bounds.
-    fn new(start: Slot, len: usize) -> Self {
-        let len = u16::try_from(len)
-            .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
-        Self::new_u16(start, len)
-    }
-
-    /// Creates a new [`SlotSpanIter`] for the given `start` [`Slot`] and length `len`.
-    ///
-    /// # Panics
-    ///
-    /// If the `start..end` [`Slot`] span indices are out of bounds.
-    fn new_u16(start: Slot, len: u16) -> Self {
+    fn new(start: Slot, len: u16) -> Self {
         let next = start;
-        let last = start
-            .0
-            .checked_add(len)
-            .map(Slot)
-            .expect("overflowing register index for register span");
-        Self::from_raw_parts(next, last)
+        let last = start.next_n(len);
+        debug_assert!(next <= last);
+        Self { next, last }
     }
 
     /// Creates a [`SlotSpan`] from this [`SlotSpanIter`].
@@ -280,13 +226,13 @@ impl SlotSpanIter {
     }
 
     /// Returns the remaining number of [`Slot`]s yielded by the [`SlotSpanIter`].
-    pub fn len_as_u16(&self) -> u16 {
-        self.last.0.abs_diff(self.next.0)
+    pub fn len(&self) -> u16 {
+        u16::from(self.last).abs_diff(u16::from(self.next))
     }
 
     /// Returns `true` if `self` yields no more [`Slot`]s.
     pub fn is_empty(&self) -> bool {
-        self.len_as_u16() == 0
+        self.next == self.last
     }
 
     /// Returns `true` if `copy_span results <- values` has overlapping copies.
@@ -347,6 +293,6 @@ impl DoubleEndedIterator for SlotSpanIter {
 
 impl ExactSizeIterator for SlotSpanIter {
     fn len(&self) -> usize {
-        usize::from(SlotSpanIter::len_as_u16(self))
+        usize::from(SlotSpanIter::len(self))
     }
 }

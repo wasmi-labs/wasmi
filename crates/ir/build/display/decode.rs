@@ -2,21 +2,25 @@ use crate::build::{
     Isa,
     display::{
         Indent,
-        Suffix,
         ident::DisplayIdent,
         utils::{DisplayConcat, DisplayMaybe, DisplaySequence, IntoDisplayMaybe as _},
     },
     ident::{CamelCase, Ident, SnakeCase},
     op::{
         BinaryOp,
+        BranchTableCopies,
+        BranchTableOp,
+        CallIndirectOp,
         CmpBranchOp,
         GenericOp,
-        LaneWidth,
+        GlobalGetOp,
+        GlobalSetOp,
         LoadKind,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
         StoreOp,
@@ -25,9 +29,8 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
     },
-    ty::FieldTy,
+    ty::{FieldTy, LaneWidth},
 };
 use core::fmt::{self, Display};
 
@@ -73,9 +76,10 @@ impl Display for DisplayDecode<&'_ ReturnOp> {
 
 impl Display for DisplayDecode<&'_ UnaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let camel_ident = DisplayIdent::camel(self.value);
-        let result_ty = self.value.result_field().ty;
-        let value_ty = self.value.value_field().ty;
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let result_ty = op.result_field().ty;
+        let value_ty = op.value_field().ty;
         writeln!(
             f,
             "pub type {camel_ident} = UnaryOp<{result_ty}, {value_ty}>;"
@@ -87,7 +91,7 @@ impl Display for DisplayDecode<&'_ BinaryOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
-        let res = self.value.result_field().ty;
+        let res = op.result_field().ty;
         let lhs = op.lhs_field().ty;
         let rhs = op.rhs_field().ty;
         writeln!(f, "pub type {camel_ident} = BinaryOp<{res}, {lhs}, {rhs}>;")
@@ -115,6 +119,22 @@ impl Display for DisplayDecode<&'_ CmpBranchOp> {
     }
 }
 
+impl Display for DisplayDecode<&'_ BranchTableOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let index = op.index_field().ty;
+        let values_generic = match op.copies {
+            BranchTableCopies::None => FieldTy::EmptyTuple,
+            BranchTableCopies::Span => FieldTy::BoundedSlotSpan,
+        };
+        writeln!(
+            f,
+            "pub type {camel_ident} = BranchTableOp<{index}, {values_generic}>;"
+        )
+    }
+}
+
 impl Display for DisplayDecode<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
@@ -134,6 +154,10 @@ impl Display for DisplayDecode<&'_ LoadOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let at_suffix = match op.ptr {
+            OperandKind::Immediate => "At",
+            _ => "",
+        };
         let mem0_suffix = match op.mem {
             MemoryOperand::Immediate => "",
             MemoryOperand::Mem0 => "Mem0",
@@ -153,13 +177,17 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             _ => (None, DisplayMaybe::None),
         };
         let lane_suffix = lane_suffix.display_maybe();
-        let result_suffix = CamelCase(Suffix(OperandKind::Slot));
-        let ptr_suffix = SnakeCase(Suffix(op.ptr));
         let result_ty = op.result.field_ty(op.result_ty);
-        let generics = DisplayConcat(('<', result_ty, lane_param, '>'));
+        let ptr_ty = match op.ptr {
+            OperandKind::Reg => DisplayMaybe::Some(DisplayConcat((',', FieldTy::RegInt))),
+            OperandKind::Slot => DisplayMaybe::Some(DisplayConcat((',', FieldTy::Slot))),
+            OperandKind::Immediate => DisplayMaybe::None,
+            OperandKind::Local(_index) => DisplayMaybe::None,
+        };
+        let generics = DisplayConcat(('<', result_ty, ptr_ty, lane_param, '>'));
         writeln!(
             f,
-            "pub type {camel_ident} = Load{lane_suffix}Op{mem0_suffix}{offset16_suffix}_{result_suffix}{ptr_suffix}{generics};"
+            "pub type {camel_ident} = Load{lane_suffix}{at_suffix}Op{mem0_suffix}{offset16_suffix}{generics};"
         )
     }
 }
@@ -172,6 +200,10 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .laneidx_field()
             .map(|_| CamelCase(Ident::Lane))
             .display_maybe();
+        let at_suffix = match op.ptr {
+            OperandKind::Immediate => "At",
+            _ => "",
+        };
         let mem0_suffix = match op.mem {
             MemoryOperand::Immediate => "",
             MemoryOperand::Mem0 => "Mem0",
@@ -180,7 +212,12 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             OffsetOperand::Offset => "",
             OffsetOperand::Offset16 => "Offset16",
         };
-        let ptr_suffix = CamelCase(Suffix(op.ptr));
+        let ptr_ty = match op.ptr {
+            OperandKind::Reg | OperandKind::Slot => Some(DisplayConcat((op.ptr_field().ty, ','))),
+            OperandKind::Immediate => None,
+            OperandKind::Local(_index) => None,
+        }
+        .display_maybe();
         let value_ty = op.value_field().ty;
         let laneidx_ty = op
             .laneidx_field()
@@ -189,8 +226,26 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             .display_maybe();
         writeln!(
             f,
-            "pub type {camel_ident} = Store{lane_ident}Op{mem0_suffix}{offset16_suffix}_{ptr_suffix}<{value_ty}{laneidx_ty}>;"
+            "pub type {camel_ident} = Store{lane_ident}{at_suffix}Op{mem0_suffix}{offset16_suffix}<{ptr_ty}{value_ty}{laneidx_ty}>;"
         )
+    }
+}
+
+impl Display for DisplayDecode<&'_ GlobalGetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let result_ty = op.result_field().ty;
+        writeln!(f, "pub type {camel_ident} = GlobalGet<{result_ty}>;")
+    }
+}
+
+impl Display for DisplayDecode<&'_ GlobalSetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let value_ty = op.value_field().ty;
+        writeln!(f, "pub type {camel_ident} = GlobalSet<{value_ty}>;")
     }
 }
 
@@ -213,6 +268,15 @@ impl Display for DisplayDecode<&'_ TableSetOp> {
             f,
             "pub type {camel_ident} = TableSet<{index_ty}, {value_ty}>;"
         )
+    }
+}
+
+impl Display for DisplayDecode<&'_ CallIndirectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let op = self.value;
+        let camel_ident = DisplayIdent::camel(op);
+        let index_ty = op.index_field().ty;
+        writeln!(f, "pub type {camel_ident} = CallIndirect<{index_ty}>;")
     }
 }
 
@@ -259,12 +323,12 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
     }
 }
 
-impl Display for DisplayDecode<&'_ V128ReplaceLaneOp> {
+impl Display for DisplayDecode<&'_ ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
         let value_ty = op.value_field().ty;
-        let len_lanes = op.width.len_lanes();
+        let len_lanes = LaneWidth::from(op.ty).len_lanes();
         writeln!(
             f,
             "pub type {camel_ident} = V128ReplaceLaneOp<{value_ty}, {len_lanes}>;"
@@ -276,10 +340,11 @@ impl Display for DisplayDecode<&'_ V128ExtractLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
+        let res = op.result_field().ty;
         let len_lanes = LaneWidth::from(op.ty).len_lanes();
         writeln!(
             f,
-            "pub type {camel_ident} = V128ExtractLaneOp<{len_lanes}>;"
+            "pub type {camel_ident} = V128ExtractLaneOp<{len_lanes}, {res}>;"
         )
     }
 }

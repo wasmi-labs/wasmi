@@ -1,10 +1,25 @@
 use crate::{Error, SlotSpan};
 use core::{
-    fmt::{Debug, Formatter},
+    any::type_name,
+    fmt::{Debug, Formatter, Write as _},
     marker::PhantomData,
 };
 
+/// A fixed local or stack slot index.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Local<const N: u16> {
+    marker: PhantomData<fn()>,
+}
+
 /// A generic register type.
+///
+/// # Note
+///
+/// The generic `T` is either `i64`, `f32` or `f64`.
+///
+/// - `Reg<i64>`: used for `i32`, `i64`, `externref` and `funcref`
+/// - `Reg<f32>`: used for `f32`
+/// - `Reg<f64>`: used for `f64`
 pub struct Reg<T> {
     /// Tells the compiler that `T` is not used within.
     marker: PhantomData<fn() -> T>,
@@ -25,42 +40,16 @@ impl<T> Default for Reg<T> {
     }
 }
 
-mod marker {
-    /// Marker for the integer GPR register.
-    pub enum Int {}
-
-    /// Marker for the `f32` register.
-    pub enum F32 {}
-
-    /// Marker for the `f64` register.
-    pub enum F64 {}
-}
-
-/// The general purpose (integer) register.
-pub type Ireg = Reg<marker::Int>;
-impl Debug for Ireg {
+impl<T> Debug for Reg<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        f.write_str("Ireg")
+        f.write_str("Reg<")?;
+        f.write_str(type_name::<T>())?;
+        f.write_char('>')?;
+        Ok(())
     }
 }
 
-/// The `f32` register.
-pub type Freg32 = Reg<marker::F32>;
-impl Debug for Freg32 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        f.write_str("Freg32")
-    }
-}
-
-/// The `f64` register.
-pub type Freg64 = Reg<marker::F64>;
-impl Debug for Freg64 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        f.write_str("Freg64")
-    }
-}
-
-/// An [`Op::BranchTableSpan`](crate::Op::BranchTableSpan) branching target.
+/// A branching target for branch tables that copy some values upon taking a branch.
 #[derive(Debug, Copy, Clone)]
 pub struct BranchTableTarget {
     /// The result stack slots of the branch target.
@@ -79,78 +68,6 @@ impl BranchTableTarget {
 /// Error that may occur upon converting values to [`Address`] and [`Offset16`].
 #[derive(Debug, Copy, Clone)]
 pub struct OutOfBoundsConst;
-
-/// The sign of a value.
-#[derive(Debug)]
-pub struct Sign<T> {
-    /// Whether the sign value is positive.
-    pub(crate) is_positive: bool,
-    /// Required for the Rust compiler.
-    marker: PhantomData<fn() -> T>,
-}
-
-impl<T> Clone for Sign<T> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<T> Copy for Sign<T> {}
-
-impl<T> PartialEq for Sign<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.is_positive == other.is_positive
-    }
-}
-
-impl<T> Eq for Sign<T> {}
-
-impl<T> Sign<T> {
-    /// Create a new typed [`Sign`] with the given value.
-    pub(crate) fn new(is_positive: bool) -> Self {
-        Self {
-            is_positive,
-            marker: PhantomData,
-        }
-    }
-
-    /// Creates a new typed [`Sign`] that has positive polarity.
-    pub fn pos() -> Self {
-        Self::new(true)
-    }
-
-    /// Creates a new typed [`Sign`] that has negative polarity.
-    pub fn neg() -> Self {
-        Self::new(false)
-    }
-
-    /// Returns `true` if [`Sign`] is positive.
-    pub(crate) fn is_positive(self) -> bool {
-        self.is_positive
-    }
-}
-
-macro_rules! impl_sign_for {
-    ( $($ty:ty),* $(,)? ) => {
-        $(
-            impl From<$ty> for Sign<$ty> {
-                fn from(value: $ty) -> Self {
-                    Self::new(value.is_sign_positive())
-                }
-            }
-
-            impl From<Sign<$ty>> for $ty {
-                fn from(sign: Sign<$ty>) -> Self {
-                    match sign.is_positive {
-                        true => 1.0,
-                        false => -1.0,
-                    }
-                }
-            }
-        )*
-    };
-}
-impl_sign_for!(f32, f64);
 
 /// A signed offset for branch instructions.
 ///

@@ -1,14 +1,21 @@
 use crate::build::{
-    display::utils::{DisplayConcat, IntoDisplayMaybe as _},
+    display::utils::{DisplayConcat, DisplayMaybe, IntoDisplayMaybe as _},
     ident::{CamelCase, Case, Ident, Sep, SnakeCase},
     op::{
         BinaryOp,
+        BranchTableCopies,
+        BranchTableOp,
+        CallIndirectOp,
+        CallKind,
         CmpBranchOp,
         GenericOp,
+        GlobalGetOp,
+        GlobalSetOp,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
         OperandKind,
+        ReplaceLaneOp,
         ReturnOp,
         SelectOp,
         StoreOp,
@@ -17,9 +24,8 @@ use crate::build::{
         TernaryOp,
         UnaryOp,
         V128ExtractLaneOp,
-        V128ReplaceLaneOp,
     },
-    ty::{Layout, Ty},
+    ty::{Layout, SimdTy, Ty},
 };
 use core::fmt::{self, Display};
 
@@ -61,6 +67,7 @@ impl Display for CamelCase<Ty> {
             | Ty::I32 => "I32",
             | Ty::I64 => "I64",
             | Ty::U8 => "U8",
+            | Ty::U16 => "U16",
             | Ty::U32 => "U32",
             | Ty::U64 => "U64",
             | Ty::NonZeroI32 => "I32",
@@ -82,6 +89,7 @@ impl Display for CamelCase<Ty> {
             | Ty::U64x2 => "U64x2",
             | Ty::F32x4 => "F32x4",
             | Ty::F64x2 => "F64x2",
+            | Ty::ShiftAmount => "U8",
         };
         f.write_str(s)
     }
@@ -97,6 +105,7 @@ impl Display for SnakeCase<Ty> {
             Ty::I32 => "i32",
             Ty::I64 => "i64",
             Ty::U8 => "u8",
+            Ty::U16 => "u16",
             Ty::U32 => "u32",
             Ty::U64 => "u64",
             Ty::NonZeroI32 => "i32",
@@ -118,6 +127,7 @@ impl Display for SnakeCase<Ty> {
             Ty::U64x2 => "u64x2",
             Ty::F32x4 => "f32x4",
             Ty::F64x2 => "f64x2",
+            Ty::ShiftAmount => "u8",
         };
         f.write_str(s)
     }
@@ -158,6 +168,38 @@ impl Display for IdentSuffix<Layout> {
     }
 }
 
+impl Display for CamelCase<SimdTy> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self.0 {
+            SimdTy::I8x16 => "I8x16",
+            SimdTy::U8x16 => "U8x16",
+            SimdTy::I16x8 => "I16x8",
+            SimdTy::U16x8 => "U16x8",
+            SimdTy::U32x4 => "U32x4",
+            SimdTy::U64x2 => "U64x2",
+            SimdTy::F32x4 => "F32x4",
+            SimdTy::F64x2 => "F64x2",
+        };
+        f.write_str(s)
+    }
+}
+
+impl Display for SnakeCase<SimdTy> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self.0 {
+            SimdTy::I8x16 => "i8x16",
+            SimdTy::U8x16 => "u8x16",
+            SimdTy::I16x8 => "i16x8",
+            SimdTy::U16x8 => "u16x8",
+            SimdTy::U32x4 => "u32x4",
+            SimdTy::U64x2 => "u64x2",
+            SimdTy::F32x4 => "f32x4",
+            SimdTy::F64x2 => "f64x2",
+        };
+        f.write_str(s)
+    }
+}
+
 /// [`Display`] wrapper for types that can act as operator identifier suffices.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
@@ -190,6 +232,7 @@ impl Display for CamelCase<Suffix<OperandKind>> {
             OperandKind::Slot => "S",
             OperandKind::Reg => "R",
             OperandKind::Immediate => "I",
+            OperandKind::Local(index) => return write!(f, "S{index}"),
         };
         f.write_str(s)
     }
@@ -201,6 +244,7 @@ impl Display for SnakeCase<Suffix<OperandKind>> {
             OperandKind::Slot => "s",
             OperandKind::Reg => "r",
             OperandKind::Immediate => "i",
+            OperandKind::Local(index) => return write!(f, "s{index}"),
         };
         f.write_str(s)
     }
@@ -300,6 +344,24 @@ impl Display for DisplayIdent<&'_ CmpBranchOp> {
     }
 }
 
+impl Display for DisplayIdent<&'_ BranchTableOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::BranchTable);
+        let copies_suffix = match op.copies {
+            BranchTableCopies::None => DisplayMaybe::None,
+            BranchTableCopies::Span => {
+                let sep = case.wrap(Sep);
+                let span = case.wrap(Ident::Span);
+                DisplayMaybe::Some(DisplayConcat((sep, span)))
+            }
+        };
+        let index_suffix = case.wrap(Suffix(op.index));
+        write!(f, "{ident}{copies_suffix}_{index_suffix}")
+    }
+}
+
 impl Display for DisplayIdent<&'_ SelectOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
@@ -345,7 +407,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let op = self.value;
         let sep = case.wrap(Sep);
         let ident = case.wrap(Ident::Load);
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(op.result));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
         let v128_suffix = op
             .v128_field()
@@ -406,12 +468,37 @@ impl<const N: usize> Display for DisplayIdent<&'_ GenericOp<N>> {
     }
 }
 
+impl Display for DisplayIdent<&'_ GlobalGetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let ident = case.wrap(Ident::GlobalGet);
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let result_ty = case.wrap(op.result_ty);
+        let result_suffix = case.wrap(Suffix(op.result));
+        write!(f, "{ident}{sep}{result_ty}_{result_suffix}")
+    }
+}
+
+impl Display for DisplayIdent<&'_ GlobalSetOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let ident = case.wrap(Ident::GlobalSet);
+        let sep = case.wrap(Sep);
+        let op = self.value;
+        let value_ty = case.wrap(op.value_ty);
+        let value_suffix = case.wrap(Suffix(op.value));
+        write!(f, "{ident}{sep}{value_ty}_{value_suffix}")
+    }
+}
+
 impl Display for DisplayIdent<&'_ TableGetOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let ident = case.wrap(Ident::TableGet);
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
-        let index_suffix = SnakeCase(Suffix(self.value.index));
+        let op = self.value;
+        let result_suffix = case.wrap(Suffix(op.result));
+        let index_suffix = SnakeCase(Suffix(op.index));
         write!(f, "{ident}_{result_suffix}{index_suffix}")
     }
 }
@@ -426,32 +513,48 @@ impl Display for DisplayIdent<&'_ TableSetOp> {
     }
 }
 
+impl Display for DisplayIdent<&'_ CallIndirectOp> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let case = self.case;
+        let op = self.value;
+        let ident = case.wrap(Ident::CallIndirect);
+        let sep = case.wrap(Sep);
+        let return_ident = case.wrap(Ident::Return);
+        let prefix = match op.kind {
+            CallKind::Nested => None,
+            CallKind::Tail => Some(DisplayConcat((return_ident, sep))),
+        }
+        .display_maybe();
+        let index_suffix = case.wrap(Suffix(op.index));
+        write!(f, "{prefix}{ident}_{index_suffix}")
+    }
+}
+
 impl Display for DisplayIdent<&'_ V128ExtractLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let op = self.value;
         let ident = case.wrap(Ident::ExtractLane);
         let lane_ty = case.wrap(IdentPrefix(Ty::from(op.ty)));
-        let result_suffix = case.wrap(Suffix(OperandKind::Slot));
+        let result_suffix = case.wrap(Suffix(OperandKind::Reg));
         let v128_suffix = SnakeCase(Suffix(OperandKind::Slot));
         write!(f, "{lane_ty}{ident}_{result_suffix}{v128_suffix}")
     }
 }
 
-impl Display for DisplayIdent<&'_ V128ReplaceLaneOp> {
+impl Display for DisplayIdent<&'_ ReplaceLaneOp> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let case = self.case;
         let op = self.value;
-        let sep = case.wrap(Sep);
-        let v128 = case.wrap(Ident::V128);
         let ident = case.wrap(Ident::ReplaceLane);
-        let width = op.width;
+        let ty = case.wrap(op.ty);
+        let sep = case.wrap(Sep);
         let result_suffix = case.wrap(Suffix(OperandKind::Slot));
         let v128_suffix = SnakeCase(Suffix(OperandKind::Slot));
         let value_suffix = SnakeCase(Suffix(op.value));
         write!(
             f,
-            "{v128}{sep}{ident}{width}_{result_suffix}{v128_suffix}{value_suffix}"
+            "{ty}{sep}{ident}_{result_suffix}{v128_suffix}{value_suffix}"
         )
     }
 }

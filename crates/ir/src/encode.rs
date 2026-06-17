@@ -1,5 +1,5 @@
 #[cfg(feature = "simd")]
-use crate::core::simd::ImmLaneIdx;
+use crate::core::{V128, simd::ImmLaneIdx};
 use crate::{
     Address,
     BlockFuel,
@@ -7,15 +7,15 @@ use crate::{
     BranchOffset,
     BranchTableTarget,
     FixedSlotSpan,
+    Local,
     Offset16,
     Op,
     OpCode,
     Reg,
-    Sign,
     Slot,
     SlotSpan,
-    core::TrapCode,
-    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
+    core::{ShiftAmount, Sign, TrapCode},
+    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
 };
 use core::num::NonZero;
 
@@ -138,6 +138,20 @@ impl_encode_for_primitive!(
     u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64
 );
 
+impl Encode for RawSlot {
+    #[inline]
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        self.0.encode(encoder)
+    }
+}
+
+impl Encode for Slot {
+    #[inline]
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
+        self.0.encode(encoder)
+    }
+}
+
 macro_rules! impl_encode_using {
     ( $($ty:ty as $prim:ty = $e:expr),* $(,)? ) => {
         $(
@@ -154,7 +168,6 @@ impl_encode_using! {
     bool as u8 = Into::into,
     Offset16 as u16 = Into::into,
     Address as u64 = Into::into,
-    Slot as u16 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
     InternalFunc as u32 = Into::into,
@@ -163,15 +176,20 @@ impl_encode_using! {
     Table as u32 = Into::into,
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
+    ShiftAmount as u8 = Into::into,
 
-    Sign<f32> as bool = Sign::is_positive,
-    Sign<f64> as bool = Sign::is_positive,
+    Sign<f32> as bool = Sign::is_pos,
+    Sign<f64> as bool = Sign::is_pos,
     SlotSpan as Slot = SlotSpan::head,
     NonZero<i32> as i32 = NonZero::get,
     NonZero<i64> as i64 = NonZero::get,
     NonZero<u32> as u32 = NonZero::get,
     NonZero<u64> as u64 = NonZero::get,
     TrapCode as u8 = |code: TrapCode| -> u8 { code as _ },
+}
+#[cfg(feature = "simd")]
+impl_encode_using! {
+    V128 as u128 = |v128: V128| -> u128 { v128.as_u128() },
 }
 
 #[cfg(feature = "simd")]
@@ -226,6 +244,16 @@ impl<const N: usize, T: Encode> Encode for [T; N] {
             item.encode(encoder)?;
         }
         Ok(pos)
+    }
+}
+
+impl<const N: u16> Encode for Local<N> {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.write_bytes(&[])
     }
 }
 

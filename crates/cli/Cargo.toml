@@ -39,7 +39,7 @@ run = []
 wast = ["wasmi_wast"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
-stable = []
+stable = ["wasmi/stable"]
 unstable = ["wasmi/unstable"]
 
 # We need to put this [profile.release] section due to this bug in Cargo:

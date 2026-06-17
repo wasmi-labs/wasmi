@@ -1,4 +1,4 @@
-use super::{LocalIdx, Operand, Reset};
+use super::{LocalIdx, Reset};
 use crate::{
     Error,
     ValType,
@@ -6,7 +6,7 @@ use crate::{
         TranslationError,
         translator::{func::LocalOperand, utils::required_cells_for_ty},
     },
-    ir::{BoundedSlotSpan, Slot, SlotSpan},
+    ir::Slot,
 };
 use alloc::vec::Vec;
 
@@ -41,22 +41,6 @@ impl IntoLocalIdx for &'_ LocalOperand {
     #[inline]
     fn into_local_idx(self) -> LocalIdx {
         self.local_index()
-    }
-}
-
-pub trait LocalValType {
-    fn ty(self) -> ValType;
-}
-
-impl LocalValType for LocalOperand {
-    fn ty(self) -> ValType {
-        LocalOperand::ty(&self)
-    }
-}
-
-impl LocalValType for &'_ LocalOperand {
-    fn ty(self) -> ValType {
-        LocalOperand::ty(self)
     }
 }
 
@@ -120,32 +104,6 @@ impl StackLayout {
         StackSpace::Temp
     }
 
-    /// Converts the `operand` into the associated [`Slot`].
-    ///
-    /// # Note
-    ///
-    /// Forwards to [`StackLayout::local_to_slot`] if possible.
-    ///
-    ///
-    /// # Errors
-    ///
-    /// If the forwarded method returned an error.
-    ///
-    /// # Panics
-    ///
-    /// If `operand` is an [`ImmediateOperand`].
-    ///
-    /// [`ImmediateOperand`]: crate::engine::translator::func::ImmediateOperand
-    pub fn operand_to_slot(&mut self, operand: Operand) -> Result<Slot, Error> {
-        match operand {
-            Operand::Local(operand) => self.local_to_slot(operand),
-            Operand::Temp(operand) => Ok(operand.temp_slots().head()),
-            Operand::Immediate(operand) => {
-                panic!("cannot convert `ImmediateOperand` to stack `Slot` but got: {operand:?}")
-            }
-        }
-    }
-
     /// Converts the local `index` into the associated [`Slot`].
     ///
     /// # Errors
@@ -153,7 +111,6 @@ impl StackLayout {
     /// If `index` cannot be converted into a [`Slot`].
     #[inline]
     pub fn local_to_slot(&self, item: impl IntoLocalIdx) -> Result<Slot, Error> {
-        // TODO: replace usage with `local_to_slots` method
         let index = item.into_local_idx();
         debug_assert!(
             (u32::from(index) as usize) < self.len_locals(),
@@ -164,21 +121,6 @@ impl StackLayout {
         };
         let offset = self.local_offsets[usize::from(index)];
         Ok(Slot::from(offset))
-    }
-
-    /// Converts the local `index` into the associated [`Slot`].
-    ///
-    /// # Errors
-    ///
-    /// If `index` cannot be converted into a [`Slot`].
-    #[inline]
-    pub fn local_to_slots<L>(&self, item: L) -> Result<BoundedSlotSpan, Error>
-    where
-        L: IntoLocalIdx + LocalValType,
-    {
-        let head = self.local_to_slot(item)?;
-        let len = required_cells_for_ty(item.ty());
-        Ok(BoundedSlotSpan::new(SlotSpan::new(head), len))
     }
 }
 

@@ -1,4 +1,5 @@
-use crate::{F32, F64, RawVal, V128, ValType};
+use crate::{F32, F64, RawVal, ShiftAmount, Sign, V128, ValType};
+use core::num::NonZero;
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -29,6 +30,27 @@ impl_typed_for! {
     F32 => ValType::F32;
     F64 => ValType::F64;
     V128 => ValType::V128;
+    ShiftAmount => ValType::I32;
+}
+
+impl Typed for NonZero<i32> {
+    const TY: ValType = <i32 as Typed>::TY;
+}
+impl Typed for NonZero<u32> {
+    const TY: ValType = <u32 as Typed>::TY;
+}
+impl Typed for NonZero<i64> {
+    const TY: ValType = <i64 as Typed>::TY;
+}
+impl Typed for NonZero<u64> {
+    const TY: ValType = <u64 as Typed>::TY;
+}
+
+impl Typed for Sign<f32> {
+    const TY: ValType = <f32 as Typed>::TY;
+}
+impl Typed for Sign<f64> {
+    const TY: ValType = <f64 as Typed>::TY;
 }
 
 impl From<TypedRawVal> for RawVal {
@@ -77,6 +99,8 @@ macro_rules! impl_from_typed_value_for {
         $(
             $( #[$attr] )*
             impl From<TypedRawVal> for $ty {
+                #[track_caller]
+                #[inline]
                 fn from(typed_value: TypedRawVal) -> Self {
                     // # Note
                     //
