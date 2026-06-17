@@ -188,11 +188,13 @@ impl WasmTranslator<'_> for FuncTranslator {
         // operators need to be encoded as their fallbacks which requires to allocate more function
         // local constant values, thus increasing the size of the function frame.
         self.instrs.update_branch_offsets()?;
-        let Some(frame_size) = self.frame_size() else {
+        let len_local_slots = self.stack.get_local_slots();
+        let Some(len_stack_slots) = self.len_stack_slots() else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         finalize(CompiledFuncEntity::new(
-            frame_size,
+            len_local_slots,
+            len_stack_slots,
             self.instrs.encoded_ops(),
         ));
         Ok(self.into_allocations())
@@ -282,15 +284,15 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Returns the frame size of the to-be-compiled function.
+    /// Returns the total number of stack slots used by the compiled function.
     ///
-    /// Returns `None` if the frame size is out of bounds.
-    fn frame_size(&self) -> Option<u16> {
-        let frame_size = self
+    /// Returns `None` if the this number is out of bounds.
+    fn len_stack_slots(&self) -> Option<u16> {
+        let len_stack_slots = self
             .stack
             .max_stack_offset()
             .checked_add(self.locals.len())?;
-        u16::try_from(frame_size).ok()
+        u16::try_from(len_stack_slots).ok()
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.

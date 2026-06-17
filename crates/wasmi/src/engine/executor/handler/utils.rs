@@ -63,18 +63,19 @@ macro_rules! out_of_fuel {
     }};
 }
 
-pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, u16), Error> {
+pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, u16, u16), Error> {
     let fuel_mut = state.store.inner_mut().fuel_mut();
     let compiled_func = state.code.get(Some(fuel_mut), func)?;
     let ip = Ip::from(compiled_func.ops());
-    let len_slots = compiled_func.len_stack_slots();
-    Ok((ip, len_slots))
+    let len_local_slots = compiled_func.len_local_slots();
+    let len_stack_slots = compiled_func.len_stack_slots();
+    Ok((ip, len_local_slots, len_stack_slots))
 }
 
 macro_rules! compile_or_get_func {
     ($state:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func($state, $func) {
-            Ok((ip, size)) => (ip, size),
+            Ok((ip, len_local_slots, len_stack_slots)) => (ip, len_local_slots, len_stack_slots),
             Err(error) => done!($state, DoneReason::error(error)),
         }
     }};
@@ -671,10 +672,17 @@ pub fn call_wasm(
     func: EngineFunc,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, callee_slots) = compile_or_get_func!(state, func);
+    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func!(state, func);
     let callee_sp = state
         .stack
-        .push_frame(Some(caller_ip), callee_ip, params, callee_slots, instance)
+        .push_frame(
+            Some(caller_ip),
+            callee_ip,
+            params,
+            len_local_slots,
+            len_stack_slots,
+            instance,
+        )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
 }
@@ -685,10 +693,16 @@ pub fn return_call_wasm(
     func: EngineFunc,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, size) = compile_or_get_func!(state, func);
+    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func!(state, func);
     let callee_sp = state
         .stack
-        .replace_frame(callee_ip, params, size, instance)
+        .replace_frame(
+            callee_ip,
+            params,
+            len_local_slots,
+            len_stack_slots,
+            instance,
+        )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
 }
