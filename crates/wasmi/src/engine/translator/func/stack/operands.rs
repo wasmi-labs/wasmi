@@ -275,7 +275,6 @@ impl OperandStack {
             .checked_mul(cells_per_item)
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
         self.push_local_slots(required_cells)?;
-        self.push_temp_offset(required_cells)?;
         Ok(())
     }
 
@@ -357,10 +356,13 @@ impl OperandStack {
     ///
     /// Returns an error if too many local slots are in use.
     fn push_local_slots(&mut self, delta: u16) -> Result<(), Error> {
+        debug_assert_eq!(self.local_slots, self.max_offset);
         let Some(new_value) = self.local_slots.checked_add(delta) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         self.local_slots = new_value;
+        self.temp_offset = new_value;
+        self.max_offset = self.max_offset.max(self.temp_offset);
         Ok(())
     }
 
@@ -373,9 +375,10 @@ impl OperandStack {
     /// Returns an error if the new temporary offset is out of bounds.
     fn push_temp_offset(&mut self, delta: u16) -> Result<SlotSpan, Error> {
         let old_offset = self.temp_offset;
-        self.temp_offset = old_offset
-            .checked_add(delta)
-            .ok_or_else(|| Error::from(TranslationError::AllocatedTooManySlots))?;
+        let Some(new_value) = old_offset.checked_add(delta) else {
+            return Err(Error::from(TranslationError::AllocatedTooManySlots));
+        };
+        self.temp_offset = new_value;
         self.max_offset = self.max_offset.max(self.temp_offset);
         Ok(SlotSpan::new(Slot::from(old_offset)))
     }
