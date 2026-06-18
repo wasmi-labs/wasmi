@@ -1820,7 +1820,7 @@ impl FuncTranslator {
             ResolvedOperand::Slot(lhs) => Op::i32_add_rsi(lhs, -rhs),
             ResolvedOperand::Immediate(_) => return Ok(false),
         };
-        self.push_op_with_result_reg(ValType::I32, op, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(ValType::I32, op, FuelCostsProvider::base)?;
         Ok(true)
     }
 
@@ -1837,7 +1837,7 @@ impl FuncTranslator {
             ResolvedOperand::Slot(lhs) => Op::i64_add_rsi(lhs, -rhs),
             ResolvedOperand::Immediate(_) => return Ok(false),
         };
-        self.push_op_with_result_reg(ValType::I64, op, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(ValType::I64, op, FuelCostsProvider::base)?;
         Ok(true)
     }
 
