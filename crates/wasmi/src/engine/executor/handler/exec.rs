@@ -1575,10 +1575,8 @@ handler_binary! {
     fn i32_bitxor_rsi(I32BitXor_Rsi) = wasm::i32_bitxor;
     // i32: non-commutative
     fn i32_sub_rrs(I32Sub_Rrs) = wasm::i32_sub;
-    fn i32_sub_rri(I32Sub_Rri) = wasm::i32_sub;
     fn i32_sub_rsr(I32Sub_Rsr) = wasm::i32_sub;
     fn i32_sub_rss(I32Sub_Rss) = wasm::i32_sub;
-    fn i32_sub_rsi(I32Sub_Rsi) = wasm::i32_sub;
     fn i32_sub_rir(I32Sub_Rir) = wasm::i32_sub;
     fn i32_sub_ris(I32Sub_Ris) = wasm::i32_sub;
     fn i32_div_rrs(I32Div_Rrs) = wasm::i32_div_s;
@@ -1727,10 +1725,8 @@ handler_binary! {
     fn i64_bitxor_rsi(I64BitXor_Rsi) = wasm::i64_bitxor;
     // i64: non-commutative
     fn i64_sub_rrs(I64Sub_Rrs) = wasm::i64_sub;
-    fn i64_sub_rri(I64Sub_Rri) = wasm::i64_sub;
     fn i64_sub_rsr(I64Sub_Rsr) = wasm::i64_sub;
     fn i64_sub_rss(I64Sub_Rss) = wasm::i64_sub;
-    fn i64_sub_rsi(I64Sub_Rsi) = wasm::i64_sub;
     fn i64_sub_rir(I64Sub_Rir) = wasm::i64_sub;
     fn i64_sub_ris(I64Sub_Ris) = wasm::i64_sub;
     fn i64_div_rrs(I64Div_Rrs) = wasm::i64_div_s;

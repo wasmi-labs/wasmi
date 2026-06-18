@@ -1753,7 +1753,10 @@ impl FuncTranslator {
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
+    fn translate_binary<T: BinaryOp>(
+        &mut self,
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Rhs) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T::Lhs: From<TypedRawVal> + Copy,
         T::Rhs: Copy,
@@ -1778,6 +1781,11 @@ impl FuncTranslator {
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
             return self.translate_binary_consteval(lhs, rhs, T::consteval);
         }
+        if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
+            if opt_rhs_imm(self, lhs, rhs)? {
+                return Ok(());
+            }
+        }
         let operator = match (l, r) {
             (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
                 Some(op) => op,
@@ -1797,6 +1805,41 @@ impl FuncTranslator {
         };
         self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
         Ok(())
+    }
+
+    /// Lowers an `i32.sub` into a `i32.add` if possible.
+    ///
+    /// # Returns
+    ///
+    /// - Returns `Ok(true)` is lowering was successful.
+    /// - Returns `Ok(false)` otherwise.
+    fn try_lower_i32_sub(&mut self, lhs: Operand, rhs: i32) -> Result<bool, Error> {
+        debug_assert!(matches!(lhs.ty(), ValType::I32));
+        let neg_rhs = rhs.wrapping_neg();
+        let op = match self.resolve_operand::<i32>(lhs)? {
+            ResolvedOperand::Reg(_) => Op::i32_add_rri(neg_rhs),
+            ResolvedOperand::Slot(lhs) => Op::i32_add_rsi(lhs, neg_rhs),
+            ResolvedOperand::Immediate(_) => return Ok(false),
+        };
+        self.stage_op_with_result_reg(ValType::I32, op, FuelCostsProvider::base)?;
+        Ok(true)
+    }
+
+    /// Lowers an `i64.sub` into a `i64.add` if possible.
+    ///
+    /// # Returns
+    ///
+    /// - Returns `Ok(true)` is lowering was successful.
+    /// - Returns `Ok(false)` otherwise.
+    fn try_lower_i64_sub(&mut self, lhs: Operand, rhs: i64) -> Result<bool, Error> {
+        debug_assert!(matches!(lhs.ty(), ValType::I64));
+        let op = match self.resolve_operand::<i64>(lhs)? {
+            ResolvedOperand::Reg(_) => Op::i64_add_rri(-rhs),
+            ResolvedOperand::Slot(lhs) => Op::i64_add_rsi(lhs, -rhs),
+            ResolvedOperand::Immediate(_) => return Ok(false),
+        };
+        self.stage_op_with_result_reg(ValType::I64, op, FuelCostsProvider::base)?;
+        Ok(true)
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.

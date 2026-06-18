@@ -261,6 +261,13 @@ fn add_binary_ops(isa: &mut Isa) {
                         // Commutative operators don't need variants with swapped operand order.
                         continue;
                     }
+                    if matches!(ident, Ident::Sub)
+                        && matches!(rhs_ty, Ty::I32 | Ty::I64)
+                        && matches!(rhs, OperandKind::Immediate)
+                    {
+                        // Note: `isub` operators with immediate `rhs` are lowered to `iadd`.
+                        continue;
+                    }
                     isa.push_op(BinaryOp::new(
                         ident, result_ty, lhs_ty, rhs_ty, result, lhs, rhs, caps,
                     ));
