@@ -1815,9 +1815,10 @@ impl FuncTranslator {
     /// - Returns `Ok(false)` otherwise.
     fn try_lower_i32_sub(&mut self, lhs: Operand, rhs: i32) -> Result<bool, Error> {
         debug_assert!(matches!(lhs.ty(), ValType::I32));
+        let neg_rhs = rhs.wrapping_neg();
         let op = match self.resolve_operand::<i32>(lhs)? {
-            ResolvedOperand::Reg(_) => Op::i32_add_rri(-rhs),
-            ResolvedOperand::Slot(lhs) => Op::i32_add_rsi(lhs, -rhs),
+            ResolvedOperand::Reg(_) => Op::i32_add_rri(neg_rhs),
+            ResolvedOperand::Slot(lhs) => Op::i32_add_rsi(lhs, neg_rhs),
             ResolvedOperand::Immediate(_) => return Ok(false),
         };
         self.stage_op_with_result_reg(ValType::I32, op, FuelCostsProvider::base)?;
