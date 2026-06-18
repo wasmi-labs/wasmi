@@ -516,10 +516,10 @@ impl_binary_op_for! {
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_sub;
         fn op_rrs = I32Sub_Rrs;
-        fn op_rri = I32Sub_Rri;
+        fn op_rri = I32Add_Rri; // unreachable due to lowering
         fn op_rsr = I32Sub_Rsr;
         fn op_rss = I32Sub_Rss;
-        fn op_rsi = I32Sub_Rsi;
+        fn op_rsi = I32Add_Rsi; // unreachable due to lowering
         fn op_rir = I32Sub_Rir;
         fn op_ris = I32Sub_Ris;
     }
@@ -727,10 +727,10 @@ impl_binary_op_for! {
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_sub;
         fn op_rrs = I64Sub_Rrs;
-        fn op_rri = I64Sub_Rri;
+        fn op_rri = I64Add_Rri; // unreachable due to lowering
         fn op_rsr = I64Sub_Rsr;
         fn op_rss = I64Sub_Rss;
-        fn op_rsi = I64Sub_Rsi;
+        fn op_rsi = I64Add_Rsi; // unreachable due to lowering
         fn op_rir = I64Sub_Rir;
         fn op_ris = I64Sub_Ris;
     }
