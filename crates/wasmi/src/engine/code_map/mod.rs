@@ -498,9 +498,11 @@ impl FuncEntity {
                     continue 'outer;
                 }
                 state::FAILED_TO_COMPILE => {
+                    hint::cold_path();
                     return Err(Error::from(TranslationError::LazyCompilationFailed));
                 }
                 state::UNCOMPILED => {
+                    hint::cold_path();
                     if self
                         .state
                         .compare_exchange(
