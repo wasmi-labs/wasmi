@@ -659,7 +659,7 @@ impl CodeMap {
         let funcs = self.funcs.lock();
         let func = match funcs.get(func) {
             Some(func) => func,
-            None => panic!("failed to resolve function at {func:?}"),
+            None => panic!("missing function entry at: {func:?}"),
         };
         func.init_compiled(entity);
     }
@@ -681,7 +681,7 @@ impl CodeMap {
         let funcs = self.funcs.lock();
         let func = match funcs.get(func) {
             Some(func) => func,
-            None => panic!("failed to resolve function at {func:?}"),
+            None => panic!("missing function entry at: {func:?}"),
         };
         func.init_uncompiled(UncompiledFuncEntity::new(
             func_idx,
