@@ -1,6 +1,8 @@
 use crate::{collections::arena::ArenaKey, ir::index::InternalFunc};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
+///
+/// [`CodeMap`]: super::CodeMap
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EngineFunc(u32);
 

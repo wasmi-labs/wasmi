@@ -94,6 +94,8 @@ impl fmt::Debug for Funcs {
 /// - Since [`Funcs`] is append only, this stale view is never invalid but maybe outdated.
 /// - Upon execution an [`Engine`] derives a [`FuncsRef`] view of the current [`Funcs`]
 ///   state and then uses that to drive most of the call-based executions to avoid mutex locks.
+///
+/// [`Engine`]: crate::Engine
 pub struct FuncsRef<'a> {
     /// The live buckets that store [`FuncEntity`] definitions.
     buckets: &'a [Option<RawFuncsBucket>],
@@ -279,7 +281,7 @@ pub struct FuncsBucket {
 }
 
 impl FuncsBucket {
-    /// Creates a new [`FuncBucket`] with a fixed `size`.
+    /// Creates a new [`FuncsBucket`] with a fixed `size`.
     #[inline]
     pub fn new(size: usize) -> Self {
         Self {
@@ -469,14 +471,6 @@ impl FuncEntity {
     }
 
     /// Compiles `self` and returns a view to the [`CompiledFuncRef`].
-    ///
-    /// # Note
-    ///
-    /// - If `self` has already been compiled `Ok(None)` is returned.
-    /// - In this case the caller is supposed to use [`FuncEntity::get`]
-    ///   to query the [`CompiledFuncRef`].
-    /// - If this method returns with `Ok`, `self` can be assumed to be
-    ///   compiled from that point on.
     ///
     /// # Errors
     ///
