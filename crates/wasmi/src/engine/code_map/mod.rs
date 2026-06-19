@@ -16,7 +16,7 @@ use crate::{
     Error,
     TrapCode,
     collections::arena::ArenaKey,
-    core::{Fuel, FuelCostsProvider},
+    core::{Fuel, FuelCostsProvider, hint},
     engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
     errors::FuelError,
     ir::index::InternalFunc,
@@ -26,7 +26,6 @@ use alloc::boxed::Box;
 use core::{
     cell::UnsafeCell,
     fmt,
-    hint,
     iter,
     mem::{self, ManuallyDrop, MaybeUninit},
     pin::Pin,
@@ -191,9 +190,8 @@ impl Funcs {
         fn get_(this: &Funcs, bucket: usize, slot: usize) -> Option<&FuncEntity> {
             this.bucket_ref_at(bucket)?.get(slot)
         }
-
-        if !self.contains(func) {
-            hint::cold_path();
+        use crate::core::hint::unlikely;
+        if unlikely(!self.contains(func)) {
             return None;
         }
         let (bucket, slot) = Self::locate(func);
@@ -490,19 +488,20 @@ impl FuncEntity {
         fuel: Option<&mut Fuel>,
         features: &WasmFeatures,
     ) -> Result<CompiledFuncRef<'_>, Error> {
+        use core::hint::spin_loop;
         'outer: loop {
             match self.state.load(Ordering::Acquire) {
                 state::COMPILED => break 'outer,
                 state::COMPILING => {
-                    hint::spin_loop();
+                    spin_loop();
                     continue 'outer;
                 }
                 state::FAILED_TO_COMPILE => {
-                    hint::cold_path();
+                    hint::cold();
                     return Err(Error::from(TranslationError::LazyCompilationFailed));
                 }
                 state::UNCOMPILED => {
-                    hint::cold_path();
+                    hint::cold();
                     if self
                         .state
                         .compare_exchange(
@@ -514,7 +513,7 @@ impl FuncEntity {
                         .is_err()
                     {
                         // Case: lost the race -> re-observe state
-                        hint::spin_loop();
+                        spin_loop();
                         continue 'outer;
                     }
                     // Case: won the race -> take ownership of the uncompiled payload, leave `undefined`
