@@ -95,7 +95,6 @@ impl fmt::Debug for Funcs {
 /// - Since [`Funcs`] is append only, this stale view is never invalid but maybe outdated.
 /// - Upon execution an [`Engine`] derives a [`FuncsRef`] view of the current [`Funcs`]
 ///   state and then uses that to drive most of the call-based executions to avoid mutex locks.
-#[expect(dead_code)] // TODO: make use of this type
 pub struct FuncsRef<'a> {
     /// The live buckets that store [`FuncEntity`] definitions.
     buckets: &'a [Option<RawFuncsBucket>],
