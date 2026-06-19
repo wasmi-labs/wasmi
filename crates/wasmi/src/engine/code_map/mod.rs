@@ -15,10 +15,11 @@ use crate::{
     Config,
     Error,
     TrapCode,
-    collections::arena::Arena,
+    collections::arena::ArenaKey,
     core::{Fuel, FuelCostsProvider},
     engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
     errors::FuelError,
+    ir::index::InternalFunc,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::boxed::Box;
@@ -28,15 +29,12 @@ use core::{
     hint,
     iter,
     mem::{self, ManuallyDrop, MaybeUninit},
-    ops::Range,
     pin::Pin,
     ptr::{self, NonNull},
     slice,
     sync::atomic::{AtomicU8, Ordering},
 };
 use spin::Mutex;
-use wasmi_collections::arena::ArenaKey;
-use wasmi_ir::index::InternalFunc;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 #[cfg(doc)]
@@ -53,7 +51,7 @@ const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
 
 /// A data structure to store and manage [`FuncEntity`] definitions.
 #[derive(Debug)]
-pub struct CodeMap2 {
+pub struct CodeMap {
     /// The append-only storage for all [`FuncEntity`] definitions.
     funcs: Mutex<Funcs>,
     /// Shared Wasm features across all [`FuncEntity`] definitions within the [`CodeMap`].
@@ -97,6 +95,7 @@ impl fmt::Debug for Funcs {
 /// - Since [`Funcs`] is append only, this stale view is never invalid but maybe outdated.
 /// - Upon execution an [`Engine`] derives a [`FuncsRef`] view of the current [`Funcs`]
 ///   state and then uses that to drive most of the call-based executions to avoid mutex locks.
+#[expect(dead_code)] // TODO: make use of this type
 pub struct FuncsRef<'a> {
     /// The live buckets that store [`FuncEntity`] definitions.
     buckets: &'a [Option<RawFuncsBucket>],
@@ -113,11 +112,12 @@ impl<'a> From<&'a Funcs> for FuncsRef<'a> {
     }
 }
 
+#[expect(dead_code)] // TODO: make use of this type
 impl FuncsRef<'_> {
-    /// Returns a shared reference to the [`FuncEntity2`] of `func` if any.
+    /// Returns a shared reference to the [`FuncEntity`] of `func` if any.
     ///
     /// Returns `None` if `n` is out of bounds.
-    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity2> {
+    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
         if !self.contains(func) {
             return None;
         }
@@ -143,7 +143,7 @@ impl FuncsRef<'_> {
 #[test]
 fn size_of_funcs_type() {
     const EXPECTED_SIZE: usize =
-        (MAX_BUCKETS * mem::size_of::<*mut FuncEntity2>()) + (2 * mem::size_of::<usize>());
+        (MAX_BUCKETS * mem::size_of::<*mut FuncEntity>()) + (2 * mem::size_of::<usize>());
     assert_eq!(core::mem::size_of::<Funcs>(), EXPECTED_SIZE);
 }
 
@@ -183,10 +183,10 @@ impl Funcs {
         ))
     }
 
-    /// Returns a shared reference to the [`FuncEntity2`] of `func` if any.
+    /// Returns a shared reference to the [`FuncEntity`] of `func` if any.
     ///
     /// Returns `None` if `n` is out of bounds.
-    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity2> {
+    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
         if !self.contains(func) {
             return None;
         }
@@ -212,7 +212,7 @@ impl Funcs {
             return 0;
         }
         let j = (len as u64 - 1) + (1 << LEN_BUCKET0_LOG2);
-        let msb = 63 - j.leading_zeros() as usize; // const-stable
+        let msb = 63 - j.leading_zeros() as usize;
         (msb - LEN_BUCKET0_LOG2) + 1
     }
 
@@ -257,21 +257,21 @@ impl Drop for Funcs {
 /// The information about its length needs to be fed and managed from outside.
 #[derive(Copy, Clone)]
 pub struct RawFuncsBucket {
-    /// The raw pointer to the bucket's [`FuncEntity2`] definitions.
-    funcs: NonNull<FuncEntity2>,
+    /// The raw pointer to the bucket's [`FuncEntity`] definitions.
+    funcs: NonNull<FuncEntity>,
 }
 
-/// A fixed-size bucket of [`FuncEntity2`] definitions.
+/// A fixed-size bucket of [`FuncEntity`] definitions.
 pub struct FuncsBucket {
-    /// The heap allocation that stores the [`FuncEntity2`] definitions of this bucket.
-    funcs: Box<[FuncEntity2]>,
+    /// The heap allocation that stores the [`FuncEntity`] definitions of this bucket.
+    funcs: Box<[FuncEntity]>,
 }
 
 impl FuncsBucket {
     /// Creates a new [`FuncBucket`] with a fixed `size`.
     pub fn new(size: usize) -> Self {
         Self {
-            funcs: iter::repeat_with(FuncEntity2::uninit).take(size).collect(),
+            funcs: iter::repeat_with(FuncEntity::uninit).take(size).collect(),
         }
     }
 
@@ -279,8 +279,7 @@ impl FuncsBucket {
     pub fn into_raw_parts(self) -> (RawFuncsBucket, usize) {
         let len = self.funcs.len();
         // Safety: `Box` is guaranteed to be non-null.
-        let funcs =
-            unsafe { NonNull::new_unchecked(Box::into_raw(self.funcs) as *mut FuncEntity2) };
+        let funcs = unsafe { NonNull::new_unchecked(Box::into_raw(self.funcs) as *mut FuncEntity) };
         (RawFuncsBucket { funcs }, len)
     }
 
@@ -297,11 +296,11 @@ impl FuncsBucket {
     }
 }
 
-/// A fixed-size bucket of [`FuncEntity2`] definitions.
+/// A fixed-size bucket of [`FuncEntity`] definitions.
 #[derive(Debug)]
 pub struct FuncsBucketRef<'a> {
-    /// The shared [`FuncEntity2`] definitions of this bucket.
-    funcs: &'a [FuncEntity2],
+    /// The shared [`FuncEntity`] definitions of this bucket.
+    funcs: &'a [FuncEntity],
 }
 
 impl<'a> FuncsBucketRef<'a> {
@@ -315,8 +314,8 @@ impl<'a> FuncsBucketRef<'a> {
         Self { funcs }
     }
 
-    /// Returns a shared reference to the [`FuncEntity2`] at index `n` if any.
-    pub fn get(&self, n: usize) -> Option<&'a FuncEntity2> {
+    /// Returns a shared reference to the [`FuncEntity`] at index `n` if any.
+    pub fn get(&self, n: usize) -> Option<&'a FuncEntity> {
         self.funcs.get(n)
     }
 }
@@ -326,17 +325,17 @@ impl<'a> FuncsBucketRef<'a> {
 /// # Dev. Note
 ///
 /// We use `#[repr(C)]` to dictate field ordering which is important for the executor
-/// since the executes uses direct pointers to [`FuncEntity2`] instances once they are
+/// since the executes uses direct pointers to [`FuncEntity`] instances once they are
 /// known to be compiled.
 #[repr(C)]
-pub struct FuncEntity2 {
+pub struct FuncEntity {
     /// Payload; which field is active (if any) is determined by `state`.
     data: UnsafeCell<FuncEntityData>,
     /// Synchronization authority *and* discriminant. One of the consts in `state` module below.
     state: AtomicU8,
 }
 
-impl Drop for FuncEntity2 {
+impl Drop for FuncEntity {
     fn drop(&mut self) {
         match self.state.load(Ordering::Acquire) {
             | state::UNINIT | state::COMPILING | state::FAILED_TO_COMPILE => {}
@@ -353,19 +352,19 @@ impl Drop for FuncEntity2 {
     }
 }
 
-impl fmt::Debug for FuncEntity2 {
+impl fmt::Debug for FuncEntity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let state = unsafe { self.data_mut() };
         match self.state.load(Ordering::Acquire) {
-            state::UNINIT => f.debug_struct("FuncEntity2::Uninit").finish(),
-            state::COMPILING => f.debug_struct("FuncEntity2::Compiling").finish(),
-            state::FAILED_TO_COMPILE => f.debug_struct("FuncEntity2::FailedToCompile").finish(),
+            state::UNINIT => f.debug_struct("FuncEntity::Uninit").finish(),
+            state::COMPILING => f.debug_struct("FuncEntity::Compiling").finish(),
+            state::FAILED_TO_COMPILE => f.debug_struct("FuncEntity::FailedToCompile").finish(),
             state::COMPILED => f
-                .debug_struct("FuncEntity2::Compiled")
+                .debug_struct("FuncEntity::Compiled")
                 .field("state", unsafe { &state.compiled })
                 .finish(),
             state::UNCOMPILED => f
-                .debug_struct("FuncEntity2::Uncompiled")
+                .debug_struct("FuncEntity::Uncompiled")
                 .field("state", unsafe { &state.uncompiled })
                 .finish(),
             _ => unreachable!(),
@@ -373,8 +372,8 @@ impl fmt::Debug for FuncEntity2 {
     }
 }
 
-impl FuncEntity2 {
-    /// Creates an uninitialized [`FuncEntity2`].
+impl FuncEntity {
+    /// Creates an uninitialized [`FuncEntity`].
     pub fn uninit() -> Self {
         Self {
             data: UnsafeCell::new(FuncEntityData { undefined: () }),
@@ -415,7 +414,6 @@ impl FuncEntity2 {
     ///
     /// It is the caller's responsibility to assert that `self.data` is in the `undefined` state.
     unsafe fn set_compiled(&self, compiled: CompiledFuncEntity) {
-        // Safety: exclusive during build; previous union field is `undefined` (no Drop).
         let data = unsafe { self.data_mut() };
         data.compiled = ManuallyDrop::new(compiled);
         self.state.store(state::COMPILED, Ordering::Release);
@@ -427,7 +425,6 @@ impl FuncEntity2 {
     ///
     /// It is the caller's responsibility to assert that `self.data` is in the `undefined` state.
     unsafe fn set_uncompiled(&self, uncompiled: UncompiledFuncEntity) {
-        // Safety: exclusive during build; previous union field is `undefined` (no Drop).
         let data = unsafe { self.data_mut() };
         data.uncompiled = ManuallyDrop::new(uncompiled);
         self.state.store(state::UNCOMPILED, Ordering::Release);
@@ -450,6 +447,7 @@ impl FuncEntity2 {
     /// # Safety
     ///
     /// It is the caller's responsibility that no other references to this data are alive.
+    #[allow(clippy::mut_from_ref)] // same API as `UnsafeCell::as_mut_unchecked`
     unsafe fn data_mut(&self) -> &mut FuncEntityData {
         unsafe { &mut *self.data.get() }
     }
@@ -459,7 +457,7 @@ impl FuncEntity2 {
     /// # Note
     ///
     /// - If `self` has already been compiled `Ok(None)` is returned.
-    /// - In this case the caller is supposed to use [`FuncEntity2::get`]
+    /// - In this case the caller is supposed to use [`FuncEntity::get`]
     ///   to query the [`CompiledFuncRef`].
     /// - If this method returns with `Ok`, `self` can be assumed to be
     ///   compiled from that point on.
@@ -544,7 +542,7 @@ impl FuncEntity2 {
     }
 }
 
-/// The internal representation of a [`FuncEntity2`] in its various states.
+/// The internal representation of a [`FuncEntity`] in its various states.
 union FuncEntityData {
     /// Used in [`state::UNINIT`], [`state::COMPILING`] and [`state::FAILED_TO_COMPILE`] states.
     undefined: (),
@@ -556,18 +554,18 @@ union FuncEntityData {
 
 // # Safety
 //
-// `FuncEntity2`, `Funcs`, `RawFuncsBucket` and `FuncsRef` form an append-only,
+// `FuncEntity`, `Funcs`, `RawFuncsBucket` and `FuncsRef` form an append-only,
 // pointer-stable function store. They are `!Send`/`!Sync` by default (because of
-// the `UnsafeCell` in `FuncEntity2` and the `NonNull` in `RawFuncsBucket`), so the
+// the `UnsafeCell` in `FuncEntity` and the `NonNull` in `RawFuncsBucket`), so the
 // impls below are written by hand. Their soundness rests on three invariants that
 // the rest of this module upholds:
 //
 // 1. Append-only & pointer-stable. Buckets are only ever appended; they are never
 //    moved, reallocated, or freed until the entire `Funcs` is dropped. Hence every
-//    `FuncEntity2` keeps a stable address and any in-bounds reference/pointer stays
+//    `FuncEntity` keeps a stable address and any in-bounds reference/pointer stays
 //    valid for as long as the store is alive.
 //
-// 2. Publication through the atomic discriminant. Every write to a `FuncEntity2`'s
+// 2. Publication through the atomic discriminant. Every write to a `FuncEntity`'s
 //    `data` payload happens either before the entity is reachable by another thread
 //    (during module build) or by the single thread that won the
 //    `UNCOMPILED -> COMPILING` compare-exchange, which holds exclusive logical
@@ -576,7 +574,7 @@ union FuncEntityData {
 //    access to `data` behind an `Acquire` load of `state`. This release/acquire
 //    pairing establishes the happens-before that makes the `UnsafeCell` accesses
 //    free of data races, and a payload observed in the `COMPILED` state is
-//    immutable from then on. No `&mut FuncEntity2` is ever formed after creation;
+//    immutable from then on. No `&mut FuncEntity` is ever formed after creation;
 //    all interior mutation goes through the `UnsafeCell` under this protocol.
 //
 // 3. Thread-agnostic payloads. The payloads (`UncompiledFuncEntity`,
@@ -584,18 +582,18 @@ union FuncEntityData {
 //    bytecode, validator resources) and carry no thread affinity, so moving or
 //    sharing them across threads is itself sound.
 //
-// Safety: `FuncEntity2` is just owned data plus an atomic discriminant; sending it
+// Safety: `FuncEntity` is just owned data plus an atomic discriminant; sending it
 //         transfers thread-agnostic owned data (invariant 3), and sharing
-//         `&FuncEntity2` is sound because every interior mutation is synchronized
+//         `&FuncEntity` is sound because every interior mutation is synchronized
 //         through `state` via release/acquire (invariant 2).
-unsafe impl Send for FuncEntity2 {}
-unsafe impl Sync for FuncEntity2 {}
+unsafe impl Send for FuncEntity {}
+unsafe impl Sync for FuncEntity {}
 
 // Safety: `Funcs` and `RawFuncsBucket` are owning handles into heap allocations of
-//         `FuncEntity2`. Since `FuncEntity2: Send + Sync` and the allocations have
+//         `FuncEntity`. Since `FuncEntity: Send + Sync` and the allocations have
 //         no thread affinity, sending/sharing them is equivalent to sending/sharing
-//         `Box<[FuncEntity2]>` / `&[FuncEntity2]` (invariant 1). `Funcs` is, in
-//         addition, only ever mutated behind `CodeMap2`'s `Mutex`.
+//         `Box<[FuncEntity]>` / `&[FuncEntity]` (invariant 1). `Funcs` is, in
+//         addition, only ever mutated behind `CodeMap`'s `Mutex`.
 unsafe impl Send for Funcs {}
 unsafe impl Sync for Funcs {}
 unsafe impl Send for RawFuncsBucket {}
@@ -603,7 +601,7 @@ unsafe impl Sync for RawFuncsBucket {}
 
 // Safety: `FuncsRef` is a read-only (possibly stale) snapshot of the append-only
 //         buckets. It only ever reads immutable bucket pointers and hands out
-//         `&FuncEntity2`, so it inherits the guarantees above (invariants 1 & 2).
+//         `&FuncEntity`, so it inherits the guarantees above (invariants 1 & 2).
 unsafe impl Send for FuncsRef<'_> {}
 unsafe impl Sync for FuncsRef<'_> {}
 
@@ -620,8 +618,8 @@ mod state {
     pub const COMPILED: u8 = 4;
 }
 
-impl CodeMap2 {
-    /// Creates a new [`CodeMap2`].
+impl CodeMap {
+    /// Creates a new [`CodeMap`].
     pub fn new(config: &Config) -> Self {
         Self {
             funcs: Mutex::new(Funcs::default()),
@@ -686,10 +684,10 @@ impl CodeMap2 {
         ));
     }
 
-    /// Returns a shared reference to the [`FuncEntity2`] of `func` if contained by `self`.
+    /// Returns a shared reference to the [`FuncEntity`] of `func` if contained by `self`.
     #[track_caller]
     #[inline]
-    pub fn get_ref(&self, func: EngineFunc) -> Option<&FuncEntity2> {
+    pub fn get_ref(&self, func: EngineFunc) -> Option<&FuncEntity> {
         let funcs = self.funcs.lock();
         let entity = funcs.get(func)?;
         // Safety: `Funcs` is append-only and entity buckets never move/free until engine drop.
@@ -729,375 +727,11 @@ impl CodeMap2 {
     ///
     /// Thus any shared [`CompiledFuncRef`] can safely outlive the internal `Mutex` lock.
     #[inline]
-    fn adjust_cref_lifetime<'a>(cref: &'_ FuncEntity2) -> &'a FuncEntity2 {
+    fn adjust_cref_lifetime<'a>(cref: &'_ FuncEntity) -> &'a FuncEntity {
         // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
         //         `MutexGuard` which is safe because `CodeMap` is append-only and the
         //         returned `CompiledFuncRef` only references `Pin`ned data.
-        unsafe { mem::transmute::<&'_ FuncEntity2, &'a FuncEntity2>(cref) }
-    }
-}
-
-/// Datastructure to efficiently store information about compiled functions.
-#[derive(Debug)]
-pub struct CodeMap {
-    funcs: Mutex<Arena<EngineFunc, FuncEntity>>,
-    features: WasmFeatures,
-}
-
-impl CodeMap {
-    /// Creates a new [`CodeMap`].
-    pub fn new(config: &Config) -> Self {
-        Self {
-            funcs: Mutex::new(Arena::default()),
-            features: config.wasm_features(),
-        }
-    }
-
-    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
-    ///
-    /// # Note
-    ///
-    /// Before using the [`CodeMap`] all [`EngineFunc`]s must be initialized with either of:
-    ///
-    /// - [`CodeMap::init_func_as_compiled`]
-    /// - [`CodeMap::init_func_as_uncompiled`]
-    pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
-        let Range { start, end } = match self.funcs.lock().alloc_many(amount) {
-            Ok(keys) => keys,
-            Err(err) => panic!("failed to alloc funcs: {err}"),
-        };
-        EngineFuncSpan::new(start, end)
-    }
-
-    /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`EngineFunc`].
-    pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntity) {
-        let mut funcs = self.funcs.lock();
-        let func = match funcs.get_mut(func) {
-            Ok(func) => func,
-            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
-        };
-        func.init_compiled(entity);
-    }
-
-    /// Initializes the [`EngineFunc`] for lazy translation.
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`EngineFunc`].
-    pub fn init_func_as_uncompiled(
-        &self,
-        func: EngineFunc,
-        func_idx: FuncIdx,
-        bytes: &[u8],
-        module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
-    ) {
-        let mut funcs = self.funcs.lock();
-        let func = match funcs.get_mut(func) {
-            Ok(func) => func,
-            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
-        };
-        func.init_uncompiled(UncompiledFuncEntity::new(
-            func_idx,
-            bytes,
-            module.clone(),
-            func_to_validate,
-        ));
-    }
-
-    /// Returns the [`FuncEntity`] of the [`EngineFunc`].
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[track_caller]
-    #[inline]
-    pub fn get<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: EngineFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        match self.get_compiled(func) {
-            Some(cref) => Ok(cref),
-            None => self.compile_or_wait(fuel, func),
-        }
-    }
-
-    /// Compile `func` or wait for result if another process already started compilation.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[cold]
-    #[inline]
-    fn compile_or_wait<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: EngineFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        match self.get_uncompiled(func) {
-            Some(entity) => self.compile(fuel, func, entity),
-            None => self.wait_for_compilation(func),
-        }
-    }
-
-    /// Returns the [`CompiledFuncRef`] of `func` if possible, otherwise returns `None`.
-    #[inline]
-    fn get_compiled(&self, func: EngineFunc) -> Option<CompiledFuncRef<'_>> {
-        let funcs = self.funcs.lock();
-        let entity = match funcs.get(func) {
-            Ok(entity) => entity,
-            Err(err) => {
-                // Safety: this is just called internally with function indices
-                //         that are known to be valid. Since this is a performance
-                //         critical path we need to leave out this check.
-                unsafe { unreachable_unchecked!("failed to resolve function at {func:?}: {err}") }
-            }
-        };
-        let cref = entity.get_compiled()?;
-        Some(self.adjust_cref_lifetime(cref))
-    }
-
-    /// Returns the [`UncompiledFuncEntity`] of `func` if possible, otherwise returns `None`.
-    ///
-    /// After this operation `func` will be in [`FuncEntity::Compiling`] state.
-    #[inline]
-    fn get_uncompiled(&self, func: EngineFunc) -> Option<UncompiledFuncEntity> {
-        let mut funcs = self.funcs.lock();
-        let func = match funcs.get_mut(func) {
-            Ok(func) => func,
-            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
-        };
-        func.get_uncompiled()
-    }
-
-    /// Prolongs the lifetime of `cref` to `self`.
-    ///
-    /// # Safety
-    ///
-    /// This is safe since
-    ///
-    /// - [`CompiledFuncRef`] only references `Pin`ned data
-    /// - [`CodeMap`] is an append-only data structure
-    ///
-    /// Thus any shared [`CompiledFuncRef`] can safely outlive the internal `Mutex` lock.
-    #[inline]
-    fn adjust_cref_lifetime<'a>(&'a self, cref: CompiledFuncRef<'_>) -> CompiledFuncRef<'a> {
-        // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
-        //         `MutexGuard` which is safe because `CodeMap` is append-only and the
-        //         returned `CompiledFuncRef` only references `Pin`ned data.
-        unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
-    }
-
-    /// Compile and validate the [`UncompiledFuncEntity`] identified by `func`.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[inline]
-    fn compile<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: EngineFunc,
-        mut uncompiled: UncompiledFuncEntity,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        // Note: It is important that compilation happens without locking the `CodeMap`
-        //       since compilation can take a prolonged time.
-        let compiled_func = uncompiled.compile(fuel, &self.features);
-        let mut funcs = self.funcs.lock();
-        let entity = match funcs.get_mut(func) {
-            Ok(func) => func,
-            Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
-        };
-        match compiled_func {
-            Ok(compiled_func) => {
-                let cref = entity.set_compiled(compiled_func);
-                Ok(self.adjust_cref_lifetime(cref))
-            }
-            Err(error) if error.as_trap_code() == Some(TrapCode::OutOfFuel) => {
-                entity.set_uncompiled(uncompiled);
-                Err(error)
-            }
-            Err(error) => {
-                entity.set_failed_to_compile();
-                Err(error)
-            }
-        }
-    }
-
-    /// Wait until `func` has finished compilation.
-    ///
-    /// In this case compilation of `func` is driven by another thread.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[cold]
-    #[inline(never)]
-    fn wait_for_compilation(&self, func: EngineFunc) -> Result<CompiledFuncRef<'_>, Error> {
-        'wait: loop {
-            let funcs = self.funcs.lock();
-            let entity = match funcs.get(func) {
-                Ok(func) => func,
-                Err(err) => panic!("failed to resolve function at {func:?}: {err}"),
-            };
-            match entity {
-                FuncEntity::Compiling => continue 'wait,
-                FuncEntity::Compiled(func) => {
-                    let cref = CompiledFuncRef::from(func);
-                    return Ok(self.adjust_cref_lifetime(cref));
-                }
-                FuncEntity::FailedToCompile => {
-                    return Err(Error::from(TranslationError::LazyCompilationFailed));
-                }
-                FuncEntity::Uncompiled(_) | FuncEntity::Uninit => {
-                    panic!("unexpected function state: {entity:?}")
-                }
-            }
-        }
-    }
-}
-
-/// An internal function entity.
-///
-/// Either an already compiled or still uncompiled function entity.
-#[derive(Debug)]
-enum FuncEntity {
-    /// The function entity has not yet been initialized.
-    Uninit,
-    /// An internal function that has not yet been compiled.
-    Uncompiled(UncompiledFuncEntity),
-    /// The function entity is currently compiling.
-    Compiling,
-    /// The function entity failed to compile lazily.
-    FailedToCompile,
-    /// An internal function that has already been compiled.
-    Compiled(CompiledFuncEntity),
-}
-
-impl Default for FuncEntity {
-    #[inline]
-    fn default() -> Self {
-        Self::Uninit
-    }
-}
-
-impl FuncEntity {
-    /// Initializes the [`FuncEntity`] with a [`CompiledFuncEntity`].
-    ///
-    /// # Panics
-    ///
-    /// If `func` has already been initialized.
-    #[inline]
-    pub fn init_compiled(&mut self, entity: CompiledFuncEntity) {
-        assert!(matches!(self, Self::Uninit));
-        *self = Self::Compiled(entity);
-    }
-
-    /// Initializes the [`FuncEntity`] to an uncompiled state.
-    ///
-    /// # Panics
-    ///
-    /// If `func` has already been initialized.
-    #[inline]
-    pub fn init_uncompiled(&mut self, entity: UncompiledFuncEntity) {
-        assert!(matches!(self, Self::Uninit));
-        *self = Self::Uncompiled(entity);
-    }
-
-    /// Returns the [`CompiledFuncEntity`] if possible.
-    ///
-    /// Returns `None` if the [`FuncEntity`] has not yet been compiled.
-    #[inline]
-    pub fn get_compiled(&self) -> Option<CompiledFuncRef<'_>> {
-        match self {
-            FuncEntity::Compiled(func) => Some(func.into()),
-            _ => None,
-        }
-    }
-
-    /// Returns the [`UncompiledFuncEntity`] if possible.
-    ///
-    /// # Errors
-    ///
-    /// Returns a proper error if the [`FuncEntity`] is not uncompiled.
-    #[inline]
-    pub fn get_uncompiled(&mut self) -> Option<UncompiledFuncEntity> {
-        match self {
-            Self::Uncompiled(_) => {}
-            _ => return None,
-        };
-        match mem::replace(self, Self::Compiling) {
-            Self::Uncompiled(func) => Some(func),
-            _ => {
-                // Safety: we just asserted that `self` must be an uncompiled function
-                //         since otherwise we would have returned `None` above.
-                //         Since this is a performance critical path we need to leave out this check.
-                unsafe {
-                    unreachable_unchecked!("expected uncompiled function but found: {self:?}")
-                }
-            }
-        }
-    }
-
-    /// Sets the state back to [`UncompiledFuncEntity`] if possible.
-    ///
-    /// # Panics
-    ///
-    /// If the current state was not [`FuncEntity::Compiling`].
-    #[inline]
-    pub fn set_uncompiled(&mut self, uncompiled: UncompiledFuncEntity) {
-        match mem::replace(self, FuncEntity::Uncompiled(uncompiled)) {
-            Self::Compiling => {}
-            unexpected => {
-                // Safety: we just asserted that `self` must be an uncompiled function
-                //         since otherwise we would have returned `None` above.
-                //         Since this is a performance critical path we need to leave out this check.
-                unsafe {
-                    unreachable_unchecked!(
-                        "can only set `Compiling` back to `UncompiledFuncEntity` but found: {unexpected:?}"
-                    )
-                }
-            }
-        }
-    }
-
-    /// Sets the [`FuncEntity`] as [`CompiledFuncEntity`].
-    ///
-    /// Returns a [`CompiledFuncRef`] to the [`CompiledFuncEntity`].
-    ///
-    /// # Panics
-    ///
-    /// If `func` has already been initialized.
-    #[inline]
-    pub fn set_compiled(&mut self, entity: CompiledFuncEntity) -> CompiledFuncRef<'_> {
-        assert!(matches!(self, Self::Compiling));
-        *self = Self::Compiled(entity);
-        let Self::Compiled(entity) = self else {
-            panic!("just initialized `self` as compiled")
-        };
-        CompiledFuncRef::from(&*entity)
-    }
-
-    /// Signals a failed compilation for the [`FuncEntity`].
-    ///
-    /// # Panics
-    ///
-    /// If `func` is not in compiling state.
-    #[inline]
-    pub fn set_failed_to_compile(&mut self) {
-        assert!(matches!(self, Self::Compiling));
-        *self = Self::FailedToCompile;
+        unsafe { mem::transmute::<&'_ FuncEntity, &'a FuncEntity>(cref) }
     }
 }
 
