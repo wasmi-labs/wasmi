@@ -718,7 +718,7 @@ impl CodeMap {
         func: EngineFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
         let Some(entity) = self.get_ref(func) else {
-            panic!("invalid EngineFunc {func:?}")
+            panic!("missing function entry at: {func:?}")
         };
         entity.get_or_compile(fuel, &self.features)
     }
