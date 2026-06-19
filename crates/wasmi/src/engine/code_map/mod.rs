@@ -186,11 +186,19 @@ impl Funcs {
     ///
     /// Returns `None` if `n` is out of bounds.
     pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
+        #[inline]
+        fn get_(this: &Funcs, bucket: usize, slot: usize) -> Option<&FuncEntity> {
+            this.bucket_ref_at(bucket)?.get(slot)
+        }
+
         if !self.contains(func) {
             return None;
         }
         let (bucket, slot) = Self::locate(func);
-        self.bucket_ref_at(bucket)?.get(slot)
+        let Some(entity) = get_(self, bucket, slot) else {
+            unsafe { unreachable_unchecked!() } // func is known to be contained
+        };
+        Some(entity)
     }
 
     /// Maps a global function `index` to its `(bucket, slot)` position.
