@@ -185,6 +185,7 @@ impl Funcs {
     /// Returns a shared reference to the [`FuncEntity`] of `func` if any.
     ///
     /// Returns `None` if `n` is out of bounds.
+    #[inline]
     pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
         #[inline]
         fn get_(this: &Funcs, bucket: usize, slot: usize) -> Option<&FuncEntity> {
@@ -192,6 +193,7 @@ impl Funcs {
         }
 
         if !self.contains(func) {
+            hint::cold_path();
             return None;
         }
         let (bucket, slot) = Self::locate(func);
@@ -224,11 +226,13 @@ impl Funcs {
     }
 
     /// Returns the number of functions stored in the bucket at index `n`.
+    #[inline]
     fn size_of_bucket_at(n: usize) -> usize {
         1usize << (LEN_BUCKET0_LOG2 + n)
     }
 
     /// Returns the [`FuncsBucketRef`] at index `n` if any.
+    #[inline]
     fn bucket_ref_at(&self, n: usize) -> Option<FuncsBucketRef<'_>> {
         let raw = (*self.buckets.get(n)?).as_ref().copied()?;
         // Safety: bucket `n` was allocated with `size_of_bucket_at(n)` entities and is never freed
@@ -237,11 +241,13 @@ impl Funcs {
     }
 
     /// Converts `func` into its underlying `u32` index.
+    #[inline]
     fn func_to_index(func: EngineFunc) -> u32 {
         u32::from(InternalFunc::from(func))
     }
 
     /// Returns `true` if `func` is contained in `self`.
+    #[inline]
     fn contains(&self, func: EngineFunc) -> bool {
         func.into_usize() < self.len_funcs
     }
@@ -276,6 +282,7 @@ pub struct FuncsBucket {
 
 impl FuncsBucket {
     /// Creates a new [`FuncBucket`] with a fixed `size`.
+    #[inline]
     pub fn new(size: usize) -> Self {
         Self {
             funcs: iter::repeat_with(FuncEntity::uninit).take(size).collect(),
@@ -295,6 +302,7 @@ impl FuncsBucket {
     /// # Safety
     ///
     /// It is the caller's responsibility to provide a valid `raw` and `len` argument.
+    #[inline]
     pub unsafe fn from_raw_parts(raw: RawFuncsBucket, len: usize) -> FuncsBucket {
         let funcs = ptr::slice_from_raw_parts_mut(raw.funcs.as_ptr(), len);
         FuncsBucket {
@@ -316,12 +324,14 @@ impl<'a> FuncsBucketRef<'a> {
     /// # Safety
     ///
     /// It is the caller's responsibility to provide a valid `raw` and `len` argument.
+    #[inline]
     pub unsafe fn from_raw_parts(raw: RawFuncsBucket, len: usize) -> FuncsBucketRef<'a> {
         let funcs = unsafe { slice::from_raw_parts(raw.funcs.as_ptr(), len) };
         Self { funcs }
     }
 
     /// Returns a shared reference to the [`FuncEntity`] at index `n` if any.
+    #[inline]
     pub fn get(&self, n: usize) -> Option<&'a FuncEntity> {
         self.funcs.get(n)
     }
@@ -381,6 +391,7 @@ impl fmt::Debug for FuncEntity {
 
 impl FuncEntity {
     /// Creates an uninitialized [`FuncEntity`].
+    #[inline]
     pub fn uninit() -> Self {
         Self {
             data: UnsafeCell::new(FuncEntityData { undefined: () }),
@@ -473,6 +484,7 @@ impl FuncEntity {
     ///
     /// - If translation or Wasm validation of `func` failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[inline]
     pub fn get_or_compile(
         &self,
         fuel: Option<&mut Fuel>,
