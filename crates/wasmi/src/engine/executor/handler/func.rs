@@ -162,7 +162,7 @@ pub fn init_wasm_func_call<'a, T>(
     engine_func: EngineFunc,
     instance: Instance,
 ) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
-    let compiled_func = code.get(Some(store.inner.fuel_mut()), engine_func)?;
+    let compiled_func = code.get_or_compile(Some(store.inner.fuel_mut()), engine_func)?;
     let callee_ip = Ip::from(compiled_func.ops());
     let len_local_slots = compiled_func.len_local_slots();
     let len_stack_slots = compiled_func.len_stack_slots();

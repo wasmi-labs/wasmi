@@ -216,7 +216,7 @@ impl<'a> CodeView<'a> {
     /// - If `fuel` ran out in case fuel consumption is enabled.
     #[track_caller]
     #[inline]
-    pub fn get(
+    pub fn get_or_compile(
         &self,
         fuel: Option<&mut Fuel>,
         func: EngineFunc,
