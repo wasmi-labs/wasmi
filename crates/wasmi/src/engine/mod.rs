@@ -35,7 +35,7 @@ pub(crate) use self::{
     },
 };
 use self::{
-    code_map::{CodeMap, CompiledFuncEntity},
+    code_map::{CodeMap, CodeView, CompiledFuncEntity},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
 };

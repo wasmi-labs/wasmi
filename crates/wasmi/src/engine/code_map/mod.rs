@@ -27,11 +27,11 @@ use core::{
     cell::UnsafeCell,
     fmt,
     iter,
-    mem::{self, ManuallyDrop, MaybeUninit},
+    mem::{ManuallyDrop, MaybeUninit},
     pin::Pin,
     ptr::{self, NonNull},
     slice,
-    sync::atomic::{AtomicU8, Ordering},
+    sync::atomic::{AtomicU8, AtomicUsize, Ordering},
 };
 use spin::Mutex;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
@@ -51,108 +51,273 @@ const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
 /// A data structure to store and manage [`FuncEntity`] definitions.
 #[derive(Debug)]
 pub struct CodeMap {
-    /// The append-only storage for all [`FuncEntity`] definitions.
-    funcs: Mutex<Funcs>,
+    /// The append-only, lock-free-readable storage for all [`FuncEntity`] definitions.
+    funcs: Funcs,
+    /// Serializes concurrent writers ([`Self::alloc_funcs`]); readers never take this lock.
+    alloc_lock: Mutex<()>,
     /// Shared Wasm features across all [`FuncEntity`] definitions within the [`CodeMap`].
     features: WasmFeatures,
+}
+
+impl CodeMap {
+    /// Creates a new [`CodeMap`].
+    pub fn new(config: &Config) -> Self {
+        Self {
+            funcs: Funcs::default(),
+            alloc_lock: Mutex::new(()),
+            features: config.wasm_features(),
+        }
+    }
+
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
+    ///
+    /// # Note
+    ///
+    /// Before using the [`CodeMap`] all [`EngineFunc`]s must be initialized with either of:
+    ///
+    /// - [`CodeMap::init_func_as_compiled`]
+    /// - [`CodeMap::init_func_as_uncompiled`]
+    pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
+        // The writer lock serializes concurrent allocators; readers never take it.
+        let _guard = self.alloc_lock.lock();
+        match self.funcs.alloc_funcs(amount) {
+            Ok(span) => span,
+            Err(err) => panic!("failed to alloc funcs: {err}"),
+        }
+    }
+
+    /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
+    pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntity) {
+        let func = match self.funcs.get(func) {
+            Some(func) => func,
+            None => panic!("missing function entry at: {func:?}"),
+        };
+        func.init_compiled(entity);
+    }
+
+    /// Initializes the [`EngineFunc`] for lazy translation.
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
+    pub fn init_func_as_uncompiled(
+        &self,
+        func: EngineFunc,
+        func_idx: FuncIdx,
+        bytes: &[u8],
+        module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) {
+        let func = match self.funcs.get(func) {
+            Some(func) => func,
+            None => panic!("missing function entry at: {func:?}"),
+        };
+        func.init_uncompiled(UncompiledFuncEntity::new(
+            func_idx,
+            bytes,
+            module.clone(),
+            func_to_validate,
+        ));
+    }
+
+    /// Returns a cheap, lock-free [`CodeView`] snapshot of this [`CodeMap`].
+    ///
+    /// # Note
+    ///
+    /// The snapshot borrows `self` and caches the currently published function count; it is used by
+    /// the executor to resolve calls without locking or per-call atomics.
+    #[inline]
+    pub fn view(&self) -> CodeView<'_> {
+        // Note: a single `Acquire` load establishes the happens-before for every bucket published before
+        //       this length; subsequent per-call reads through the snapshot are plain (non-atomic).
+        let len_funcs = self.funcs.len_funcs.load(Ordering::Acquire);
+        CodeView {
+            code_map: self,
+            len_funcs,
+        }
+    }
+}
+
+/// A cheap, lock-free, stale-but-valid snapshot of a [`CodeMap`].
+///
+/// Borrows the source [`CodeMap`] and caches the number of published functions, so the executor
+/// can resolve functions without locking and without any atomic load on the per-call path.
+///
+/// # Note
+///
+/// - Represents a potentially stale view: functions appended after the snapshot are not visible
+///   until [`CodeView::refresh`] is called. Since [`Funcs`] is append-only and pointer-stable, a
+///   stale view is never invalid, only outdated.
+/// - Holding `&CodeMap` is sound under both Stacked and Tree Borrows because no `&mut CodeMap`
+///   (or `&mut Funcs`) is ever formed while a view is alive: all publication goes through interior
+///   mutability under the writer lock.
+/// - Upon execution an [`Engine`] derives a [`CodeView`] of the current [`CodeMap`] state and uses
+///   it to drive call-based executions without taking the writer lock. After a host function call
+///   the view must be [`refresh`](CodeView::refresh)ed, since the host may have appended functions
+///   (e.g. by compiling and instantiating new modules) that the resuming Wasm can reach.
+///
+/// [`Engine`]: crate::Engine
+#[derive(Copy, Clone)]
+pub struct CodeView<'a> {
+    /// The source [`CodeMap`]. The bucket-array base address and `features` are stable for its
+    /// lifetime; only the published function count grows (tracked by `len_funcs`).
+    code_map: &'a CodeMap,
+    /// Cached number of published [`FuncEntity`] definitions; bounds visibility.
+    ///
+    /// # Note
+    ///
+    /// This is only updated by [`CodeView::refresh`], so the per-call read path performs no atomic load.
+    len_funcs: usize,
+}
+
+impl fmt::Debug for CodeView<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CodeView")
+            .field("len_funcs", &self.len_funcs)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<'a> CodeView<'a> {
+    /// Re-materializes the snapshot to reflect functions published since it was last (re)created.
+    ///
+    /// Must be called after a host function call: the host may have compiled and/or instantiated
+    /// new Wasm modules (appending to the [`CodeMap`]) that the resuming Wasm code can then reach.
+    #[inline]
+    pub fn refresh(&mut self) {
+        self.len_funcs = self.code_map.funcs.len_funcs.load(Ordering::Acquire);
+    }
+
+    /// Returns a shared reference to the [`FuncEntity`] of `func` if visible in this snapshot.
+    ///
+    /// Returns `None` if `func` is not (yet) visible to this snapshot.
+    #[inline]
+    pub fn get_ref(&self, func: EngineFunc) -> Option<&'a FuncEntity> {
+        // Safety: `len_funcs` is loaded via acquire upon creation of `self` so that `buckets` are published.
+        unsafe { self.code_map.funcs.get_within(func, self.len_funcs) }
+    }
+
+    /// Returns the [`CompiledFuncRef`] of `func`, compiling it lazily if still uncompiled.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `fuel` ran out in case fuel consumption is enabled.
+    #[track_caller]
+    #[inline]
+    pub fn get(
+        &self,
+        fuel: Option<&mut Fuel>,
+        func: EngineFunc,
+    ) -> Result<CompiledFuncRef<'a>, Error> {
+        let Some(entity) = self.get_ref(func) else {
+            panic!("missing function entry at: {func:?}")
+        };
+        entity.get_or_compile(fuel, &self.code_map.features)
+    }
 }
 
 /// An append-only collection for [`FuncEntity`] definitions.
 pub struct Funcs {
     /// The buckets to store the [`FuncEntity`] definitions append-only.
     ///
-    /// Each bucket is twice the size of its predecessor.
-    buckets: [Option<RawFuncsBucket>; MAX_BUCKETS],
-    /// The number of occupied [`FuncsBucket`] items in `buckets`.
-    len_buckets: usize,
-    /// The number of [`FuncEntity`] definitions stored across all `buckets`.
-    len_funcs: usize,
+    /// # Note
+    ///
+    /// - Each bucket is twice the size of its predecessor.
+    /// - The first `required_buckets_for_len(len_funcs)` slots are `Some` and, once published,
+    ///   are never written or moved again.
+    /// - The `buckets` array lives behind an [`UnsafeCell`] so that new buckets can be
+    ///   published through a shared `&Funcs` (no `&mut Funcs` is ever formed), which is what lets a
+    ///   [`CodeView`] snapshot read `buckets` lock-free and without atomics on the per-call path.
+    buckets: UnsafeCell<[Option<RawFuncsBucket>; MAX_BUCKETS]>,
+    /// The number of [`FuncEntity`] definitions published across all `buckets`.
+    ///
+    /// This doubles as the publication flag:
+    ///
+    /// - writers stores the new bucket pointers before `Release`-storing `len_funcs`
+    /// - readers `Acquire`-loads `len_funcs` before reading any bucket
+    ///
+    /// Combined, both establish the happens-before that makes the [`UnsafeCell`] reads data-race free.
+    /// The number of occupied buckets is derived via [`Funcs::required_buckets_for_len`].
+    len_funcs: AtomicUsize,
+}
+
+/// Iterator over the occupied buckets of [`Funcs`].
+pub struct Buckets<'a> {
+    /// The slice of occupied buckets.
+    buckets: &'a [Option<RawFuncsBucket>],
+    /// The bucket index that is yielded next if any.
+    n: usize,
+}
+
+impl<'a> Buckets<'a> {
+    fn new(funcs: &'a Funcs) -> Self {
+        let len_funcs = funcs.len_funcs.load(Ordering::Acquire);
+        let len_buckets = Funcs::required_buckets_for_len(len_funcs);
+        let base: *const Option<RawFuncsBucket> = funcs.buckets.get().cast();
+        // Safety: the `Acquire` load above synchronizes-with the publication of buckets
+        //         `[0, len_buckets)`, which are frozen (written once, never again). Building the
+        //         slice from a raw pointer of exactly `len_buckets` confines the shared borrow to
+        //         that frozen prefix, so it never aliases the tail a concurrent `alloc_funcs` may be
+        //         writing.
+        let buckets = unsafe { slice::from_raw_parts(base, len_buckets) };
+        Self { buckets, n: 0 }
+    }
+}
+
+impl<'a> Iterator for Buckets<'a> {
+    type Item = FuncsBucketRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let bucket = self.buckets.get(self.n)?;
+        let raw = bucket.as_ref().copied()?;
+        let len_bucket = Funcs::size_of_bucket_at(self.n);
+        let bucket = unsafe { FuncsBucketRef::from_raw_parts(raw, len_bucket) };
+        self.n += 1;
+        Some(bucket)
+    }
+}
+
+/// [`Debug`](fmt::Debug) wrapper to show buckets as list for [`Funcs`].
+pub struct DebugBuckets<'a>(&'a Funcs);
+impl fmt::Debug for DebugBuckets<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_list();
+        for bucket in self.0.buckets() {
+            dbg.entry(&bucket);
+        }
+        dbg.finish()
+    }
 }
 
 impl fmt::Debug for Funcs {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut n = 0;
-        let buckets = self.buckets.map(|raw| {
-            let len = Self::size_of_bucket_at(n);
-            let bucket = unsafe { FuncsBucketRef::from_raw_parts(raw?, len) };
-            n += 1;
-            Some(bucket)
-        });
+        let buckets = DebugBuckets(self);
         f.debug_struct("Funcs")
             .field("buckets", &buckets)
-            .field("len_buckets", &self.len_buckets)
             .field("len_funcs", &self.len_funcs)
             .finish()
     }
 }
 
-/// A shared view of [`Funcs`] to avoid having to go through `Mutex` upon access.
-///
-/// # Note
-///
-/// - This represents a potentially stale view of a [`Funcs`] source.
-/// - Since [`Funcs`] is append only, this stale view is never invalid but maybe outdated.
-/// - Upon execution an [`Engine`] derives a [`FuncsRef`] view of the current [`Funcs`]
-///   state and then uses that to drive most of the call-based executions to avoid mutex locks.
-///
-/// [`Engine`]: crate::Engine
-pub struct FuncsRef<'a> {
-    /// The live buckets that store [`FuncEntity`] definitions.
-    buckets: &'a [Option<RawFuncsBucket>],
-    /// The number of [`FuncEntity`] definitions stored across all live `buckets`.
-    len_funcs: usize,
-}
-
-impl<'a> From<&'a Funcs> for FuncsRef<'a> {
-    fn from(funcs: &'a Funcs) -> Self {
-        Self {
-            buckets: &funcs.buckets[..funcs.len_buckets],
-            len_funcs: funcs.len_funcs,
-        }
-    }
-}
-
-#[expect(dead_code)] // TODO: make use of this type
-impl FuncsRef<'_> {
-    /// Returns a shared reference to the [`FuncEntity`] of `func` if any.
-    ///
-    /// Returns `None` if `n` is out of bounds.
-    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
-        if !self.contains(func) {
-            return None;
-        }
-        let (bucket, slot) = Funcs::locate(func);
-        self.bucket_ref_at(bucket)?.get(slot)
-    }
-
-    /// Returns the [`FuncsBucketRef`] at index `n` if any.
-    fn bucket_ref_at(&self, n: usize) -> Option<FuncsBucketRef<'_>> {
-        let raw = (*self.buckets.get(n)?).as_ref().copied()?;
-        let len = Funcs::size_of_bucket_at(n);
-        // Safety: bucket `n` was allocated with `size_of_bucket_at(n)` entities and is never freed
-        //         until `Funcs` is dropped.
-        Some(unsafe { FuncsBucketRef::from_raw_parts(raw, len) })
-    }
-
-    /// Returns `true` if `func` is contained in `self`.
-    fn contains(&self, func: EngineFunc) -> bool {
-        func.into_usize() < self.len_funcs
-    }
-}
-
 #[test]
 fn size_of_funcs_type() {
-    const EXPECTED_SIZE: usize =
-        (MAX_BUCKETS * mem::size_of::<*mut FuncEntity>()) + (2 * mem::size_of::<usize>());
+    const EXPECTED_SIZE: usize = (MAX_BUCKETS * core::mem::size_of::<*mut FuncEntity>())
+        + core::mem::size_of::<AtomicUsize>();
     assert_eq!(core::mem::size_of::<Funcs>(), EXPECTED_SIZE);
 }
 
 impl Default for Funcs {
     fn default() -> Self {
         Self {
-            buckets: [const { None }; MAX_BUCKETS],
-            len_buckets: 0,
-            len_funcs: 0,
+            buckets: UnsafeCell::new([const { None }; MAX_BUCKETS]),
+            len_funcs: AtomicUsize::new(0),
         }
     }
 }
@@ -163,44 +328,73 @@ impl Funcs {
     /// # Note
     ///
     /// All function entities allocated this way are initialized to an undefined state.
-    pub fn alloc_funcs(&mut self, n: usize) -> Result<EngineFuncSpan, Error> {
-        let start = self.len_funcs;
+    ///
+    /// # Synchronization
+    ///
+    /// Must be called under the [`CodeMap`] writer lock so that concurrent allocators are
+    /// serialized. New bucket slots are written through a raw element pointer (never via
+    /// `&mut Funcs` or `&mut [_]`) and are disjoint from any slot a concurrent reader may
+    /// observe (reader slots are `< required_buckets_for_len(start)`).
+    fn alloc_funcs(&self, n: usize) -> Result<EngineFuncSpan, Error> {
+        let start = self.len_funcs.load(Ordering::Relaxed);
         let end = start
             .checked_add(n)
             .filter(|&end| end <= MAX_FUNCS)
             .unwrap(); // TODO: proper error handling
+        let current_buckets = Self::required_buckets_for_len(start);
         let needed = Self::required_buckets_for_len(end);
-        while self.len_buckets < needed {
-            let bucket = FuncsBucket::new(Self::size_of_bucket_at(self.len_buckets));
+        let base = self.buckets.get().cast::<Option<RawFuncsBucket>>();
+        for n in current_buckets..needed {
+            let bucket = FuncsBucket::new(Self::size_of_bucket_at(n));
             let (raw, _len) = bucket.into_raw_parts();
-            self.buckets[self.len_buckets] = Some(raw);
-            self.len_buckets += 1;
+            // Safety: slot `n` is
+            //   - freshly allocated
+            //   - not yet published
+            //   - disjoint from any slot a concurrent reader may observe
+            unsafe { base.add(n).write(Some(raw)) };
         }
-        self.len_funcs = end;
+        // Finally, store the updated `len_funcs` to publish the `self.buckets` changes.
+        self.len_funcs.store(end, Ordering::Release);
         Ok(EngineFuncSpan::new(
             EngineFunc::from(InternalFunc::from(start as u32)),
             EngineFunc::from(InternalFunc::from(end as u32)),
         ))
     }
 
-    /// Returns a shared reference to the [`FuncEntity`] of `func` if any.
+    /// Returns a shared reference to the [`FuncEntity`] of `func` if published.
     ///
-    /// Returns `None` if `n` is out of bounds.
+    /// Returns `None` if `func` is out of bounds.
     #[inline]
     pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
-        #[inline]
-        fn get_(this: &Funcs, bucket: usize, slot: usize) -> Option<&FuncEntity> {
-            this.bucket_ref_at(bucket)?.get(slot)
-        }
+        let len_funcs = self.len_funcs.load(Ordering::Acquire);
+        // Safety: we just loaded `len_funcs` via acquire so that `buckets` are published.
+        unsafe { self.get_within(func, len_funcs) }
+    }
+
+    /// Returns a shared reference to the [`FuncEntity`] of `func` if in bounds.
+    ///
+    ///  # Safety
+    ///
+    /// - It is the callers responsibility to make sure that `self.len_funcs` is loaded via `Acquire`
+    ///   so the buckets backing funcs are guaranteed to be published.
+    /// - Furthermore, the caller is responsible to provide `len_funcs` that matches the exact number
+    ///   of occupied (`Some`) buckets in `self`.
+    #[inline]
+    pub unsafe fn get_within(&self, func: EngineFunc, len_funcs: usize) -> Option<&FuncEntity> {
         use crate::core::hint::unlikely;
-        if unlikely(!self.contains(func)) {
+        if unlikely(func.into_usize() >= len_funcs) {
             return None;
         }
         let (bucket, slot) = Self::locate(func);
-        let Some(entity) = get_(self, bucket, slot) else {
-            unsafe { unreachable_unchecked!() } // func is known to be contained
+        // Safety: `func < len_funcs` implies `bucket` is published; a plain read suffices since the
+        //         `Acquire` that produced `len_funcs` established the happens-before with publication.
+        let base = self.buckets.get().cast::<Option<RawFuncsBucket>>();
+        let Some(raw) = (unsafe { *base.add(bucket) }) else {
+            unsafe { unreachable_unchecked!() } // bucket of a contained func is always published
         };
-        Some(entity)
+        let bucket_ref =
+            unsafe { FuncsBucketRef::from_raw_parts(raw, Self::size_of_bucket_at(bucket)) };
+        bucket_ref.get(slot)
     }
 
     /// Maps a global function `index` to its `(bucket, slot)` position.
@@ -231,33 +425,26 @@ impl Funcs {
         1usize << (LEN_BUCKET0_LOG2 + n)
     }
 
-    /// Returns the [`FuncsBucketRef`] at index `n` if any.
-    #[inline]
-    fn bucket_ref_at(&self, n: usize) -> Option<FuncsBucketRef<'_>> {
-        let raw = (*self.buckets.get(n)?).as_ref().copied()?;
-        // Safety: bucket `n` was allocated with `size_of_bucket_at(n)` entities and is never freed
-        //         until `Funcs` is dropped.
-        Some(unsafe { FuncsBucketRef::from_raw_parts(raw, Self::size_of_bucket_at(n)) })
-    }
-
     /// Converts `func` into its underlying `u32` index.
     #[inline]
     fn func_to_index(func: EngineFunc) -> u32 {
         u32::from(InternalFunc::from(func))
     }
 
-    /// Returns `true` if `func` is contained in `self`.
-    #[inline]
-    fn contains(&self, func: EngineFunc) -> bool {
-        func.into_usize() < self.len_funcs
+    /// Returns an iterator over the occupied buckets of `self`.
+    fn buckets(&self) -> Buckets<'_> {
+        Buckets::new(self)
     }
 }
 
 impl Drop for Funcs {
     fn drop(&mut self) {
-        let buckets = mem::replace(&mut self.buckets, [const { None }; MAX_BUCKETS]);
-        for (n, raw_bucket) in buckets.into_iter().enumerate() {
-            let Some(raw_bucket) = raw_bucket else { return };
+        // We have exclusive access in `drop`, so no atomics/`UnsafeCell` synchronization is needed.
+        let buckets = self.buckets.get_mut();
+        for (n, raw_bucket) in buckets.iter_mut().enumerate() {
+            let Some(raw_bucket) = raw_bucket.take() else {
+                break;
+            };
             let len = Self::size_of_bucket_at(n);
             let bucket = unsafe { FuncsBucket::from_raw_parts(raw_bucket, len) };
             drop(bucket)
@@ -520,11 +707,13 @@ impl FuncEntity {
                         }
                         Err(error) if matches!(error.as_trap_code(), Some(TrapCode::OutOfFuel)) => {
                             // Case: ran out of fuel during translation -> may retry
+                            hint::cold();
                             unsafe { self.set_uncompiled(uncompiled) };
                             return Err(error);
                         }
                         Err(error) => {
                             // Case: translation failed unexpectedly -> no retry
+                            hint::cold();
                             self.state
                                 .store(state::FAILED_TO_COMPILE, Ordering::Release);
                             return Err(error);
@@ -566,58 +755,35 @@ union FuncEntityData {
     compiled: ManuallyDrop<CompiledFuncEntity>,
 }
 
-// # Safety
+// # Safety:
 //
-// `FuncEntity`, `Funcs`, `RawFuncsBucket` and `FuncsRef` form an append-only,
-// pointer-stable function store. They are `!Send`/`!Sync` by default (because of
-// the `UnsafeCell` in `FuncEntity` and the `NonNull` in `RawFuncsBucket`), so the
-// impls below are written by hand. Their soundness rests on three invariants that
-// the rest of this module upholds:
+// `FuncEntity`, `Funcs`, `RawFuncsBucket` are `!Send`/`!Sync` by default.
+// This is due to the `UnsafeCell`s in `FuncEntity` and `Funcs` and the `NonNull` in `RawFuncsBucket`.
 //
-// 1. Append-only & pointer-stable. Buckets are only ever appended; they are never
-//    moved, reallocated, or freed until the entire `Funcs` is dropped. Hence every
-//    `FuncEntity` keeps a stable address and any in-bounds reference/pointer stays
-//    valid for as long as the store is alive.
+// The impls below rely on three invariants upheld throughout this module:
 //
-// 2. Publication through the atomic discriminant. Every write to a `FuncEntity`'s
-//    `data` payload happens either before the entity is reachable by another thread
-//    (during module build) or by the single thread that won the
-//    `UNCOMPILED -> COMPILING` compare-exchange, which holds exclusive logical
-//    ownership of the payload for the duration of compilation. Each such write is
-//    completed before a `Release` store to `state`, and every reader gates its
-//    access to `data` behind an `Acquire` load of `state`. This release/acquire
-//    pairing establishes the happens-before that makes the `UnsafeCell` accesses
-//    free of data races, and a payload observed in the `COMPILED` state is
-//    immutable from then on. No `&mut FuncEntity` is ever formed after creation;
-//    all interior mutation goes through the `UnsafeCell` under this protocol.
+// 1. Pointer-stable: buckets are only appended — never moved, reallocated, or freed until
+//    `Funcs` is dropped — so every `FuncEntity` keeps a valid address for the store's life.
+// 2. Synchronized mutation: a `FuncEntity`'s `data` is written only before the entity is shared,
+//    or by the thread that won the `UNCOMPILED -> COMPILING` CAS, and always before a `Release`
+//    to `state`; readers gate `data` behind an `Acquire` of `state`. No `&mut FuncEntity` is ever
+//    formed after creation, and a `COMPILED` payload is immutable from then on.
+// 3. Thread-agnostic payloads: `UncompiledFuncEntity`/`CompiledFuncEntity` own their data
+//    (`Arc`-backed `ModuleHeader`, boxed bytecode, validator resources) with no thread affinity.
 //
-// 3. Thread-agnostic payloads. The payloads (`UncompiledFuncEntity`,
-//    `CompiledFuncEntity`) own their data (an `Arc`-backed `ModuleHeader`, boxed
-//    bytecode, validator resources) and carry no thread affinity, so moving or
-//    sharing them across threads is itself sound.
-//
-// Safety: `FuncEntity` is just owned data plus an atomic discriminant; sending it
-//         transfers thread-agnostic owned data (invariant 3), and sharing
-//         `&FuncEntity` is sound because every interior mutation is synchronized
-//         through `state` via release/acquire (invariant 2).
+// - `FuncEntity` is owned data + an atomic discriminant: sending moves thread-agnostic data (3);
+//   sharing is race-free because every interior mutation is published through `state` (2).
+// - `Funcs` and `RawFuncsBucket` are owning handles into `Send + Sync` `FuncEntity` allocations (1),
+//   so sharing them is like sharing `Box<[FuncEntity]>` or `&[FuncEntity]`.
+// - New buckets are published through `Funcs` `UnsafeCell` under the writer lock and ordered against
+//   readers by the `len_funcs` atomic, so a reader only touches frozen slots disjoint from any a
+//   concurrent writer writes.
 unsafe impl Send for FuncEntity {}
 unsafe impl Sync for FuncEntity {}
-
-// Safety: `Funcs` and `RawFuncsBucket` are owning handles into heap allocations of
-//         `FuncEntity`. Since `FuncEntity: Send + Sync` and the allocations have
-//         no thread affinity, sending/sharing them is equivalent to sending/sharing
-//         `Box<[FuncEntity]>` / `&[FuncEntity]` (invariant 1). `Funcs` is, in
-//         addition, only ever mutated behind `CodeMap`'s `Mutex`.
 unsafe impl Send for Funcs {}
 unsafe impl Sync for Funcs {}
 unsafe impl Send for RawFuncsBucket {}
 unsafe impl Sync for RawFuncsBucket {}
-
-// Safety: `FuncsRef` is a read-only (possibly stale) snapshot of the append-only
-//         buckets. It only ever reads immutable bucket pointers and hands out
-//         `&FuncEntity`, so it inherits the guarantees above (invariants 1 & 2).
-unsafe impl Send for FuncsRef<'_> {}
-unsafe impl Sync for FuncsRef<'_> {}
 
 mod state {
     /// The function has not been allocated but not initialized, yet.
@@ -630,123 +796,6 @@ mod state {
     pub const FAILED_TO_COMPILE: u8 = 3;
     /// The function has been allocated, initialized and compiled.
     pub const COMPILED: u8 = 4;
-}
-
-impl CodeMap {
-    /// Creates a new [`CodeMap`].
-    pub fn new(config: &Config) -> Self {
-        Self {
-            funcs: Mutex::new(Funcs::default()),
-            features: config.wasm_features(),
-        }
-    }
-
-    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
-    ///
-    /// # Note
-    ///
-    /// Before using the [`CodeMap`] all [`EngineFunc`]s must be initialized with either of:
-    ///
-    /// - [`CodeMap::init_func_as_compiled`]
-    /// - [`CodeMap::init_func_as_uncompiled`]
-    pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
-        match self.funcs.lock().alloc_funcs(amount) {
-            Ok(span) => span,
-            Err(err) => panic!("failed to alloc funcs: {err}"),
-        }
-    }
-
-    /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`EngineFunc`].
-    pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntity) {
-        let funcs = self.funcs.lock();
-        let func = match funcs.get(func) {
-            Some(func) => func,
-            None => panic!("missing function entry at: {func:?}"),
-        };
-        func.init_compiled(entity);
-    }
-
-    /// Initializes the [`EngineFunc`] for lazy translation.
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`EngineFunc`].
-    pub fn init_func_as_uncompiled(
-        &self,
-        func: EngineFunc,
-        func_idx: FuncIdx,
-        bytes: &[u8],
-        module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
-    ) {
-        let funcs = self.funcs.lock();
-        let func = match funcs.get(func) {
-            Some(func) => func,
-            None => panic!("missing function entry at: {func:?}"),
-        };
-        func.init_uncompiled(UncompiledFuncEntity::new(
-            func_idx,
-            bytes,
-            module.clone(),
-            func_to_validate,
-        ));
-    }
-
-    /// Returns a shared reference to the [`FuncEntity`] of `func` if contained by `self`.
-    #[track_caller]
-    #[inline]
-    pub fn get_ref(&self, func: EngineFunc) -> Option<&FuncEntity> {
-        let funcs = self.funcs.lock();
-        let entity = funcs.get(func)?;
-        // Safety: `Funcs` is append-only and entity buckets never move/free until engine drop.
-        //         Therefore, the reference may outlive the guard.
-        Some(Self::adjust_cref_lifetime(entity))
-    }
-
-    /// Returns the [`CompiledFuncRef`] of the `func`.
-    ///
-    /// This might compile `func` if it is still uncompiled.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[track_caller]
-    #[inline]
-    pub fn get<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: EngineFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        let Some(entity) = self.get_ref(func) else {
-            panic!("missing function entry at: {func:?}")
-        };
-        entity.get_or_compile(fuel, &self.features)
-    }
-
-    /// Prolongs the lifetime of `cref` to `self`.
-    ///
-    /// # Safety
-    ///
-    /// This is safe since
-    ///
-    /// - [`CompiledFuncRef`] only references `Pin`ned data
-    /// - [`CodeMap`] is an append-only data structure
-    ///
-    /// Thus any shared [`CompiledFuncRef`] can safely outlive the internal `Mutex` lock.
-    #[inline]
-    fn adjust_cref_lifetime<'a>(cref: &'_ FuncEntity) -> &'a FuncEntity {
-        // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
-        //         `MutexGuard` which is safe because `CodeMap` is append-only and the
-        //         returned `CompiledFuncRef` only references `Pin`ned data.
-        unsafe { mem::transmute::<&'_ FuncEntity, &'a FuncEntity>(cref) }
-    }
 }
 
 /// A function type index into the Wasm module.

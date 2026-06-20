@@ -4,7 +4,7 @@ use crate::{
     Instance,
     Store,
     engine::{
-        CodeMap,
+        CodeView,
         EngineFunc,
         LiftFromCells,
         LowerToCells,
@@ -23,7 +23,7 @@ use core::marker::PhantomData;
 pub struct WasmFuncCall<'a, T, State> {
     store: &'a mut Store<T>,
     stack: &'a mut Stack,
-    code: &'a CodeMap,
+    code: CodeView<'a>,
     callee_ip: Ip,
     callee_sp: Sp,
     instance: Inst,
@@ -157,7 +157,7 @@ impl<'a, T> WasmFuncCall<'a, T, state::Done> {
 
 pub fn init_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
-    code: &'a CodeMap,
+    code: CodeView<'a>,
     stack: &'a mut Stack,
     engine_func: EngineFunc,
     instance: Instance,
@@ -197,7 +197,7 @@ pub fn init_wasm_func_call<'a, T>(
 
 pub fn resume_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
-    code: &'a CodeMap,
+    code: CodeView<'a>,
     stack: &'a mut Stack,
 ) -> Result<WasmFuncCall<'a, T, state::Resumed>, Error> {
     let (callee_ip, callee_sp, instance, ireg, freg32, freg64) = stack.restore_frame();
