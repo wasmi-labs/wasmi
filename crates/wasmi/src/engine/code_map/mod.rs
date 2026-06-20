@@ -583,7 +583,7 @@ impl fmt::Debug for FuncEntry {
 impl FuncEntry {
     /// Creates an uninitialized [`FuncEntry`].
     #[inline]
-    pub fn uninit() -> Self {
+    fn uninit() -> Self {
         Self {
             data: UnsafeCell::new(FuncEntryData { undefined: () }),
             state: AtomicU8::new(state::UNINIT),
