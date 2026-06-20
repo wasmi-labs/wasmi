@@ -800,6 +800,7 @@ pub fn call_host(
             )
         },
     }
+    state.code.refresh();
     Control::Continue(sp)
 }
 
@@ -836,6 +837,7 @@ pub fn return_call_host(
             )
         },
     }
+    state.code.refresh();
     match control {
         Control::Continue((ip, sp, instance)) => Control::Continue((ip, sp, instance)),
         Control::Break(sp) => done!(state, DoneReason::Return(sp)),
