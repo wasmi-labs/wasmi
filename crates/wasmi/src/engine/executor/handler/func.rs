@@ -159,10 +159,12 @@ pub fn init_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
     code: CodeView<'a>,
     stack: &'a mut Stack,
-    engine_func: EngineFunc,
+    func: EngineFunc,
     instance: Instance,
 ) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
-    let compiled_func = code.get_or_compile(Some(store.inner.fuel_mut()), engine_func)?;
+    let Some(compiled_func) = code.get_or_compile(Some(store.inner.fuel_mut()), func)? else {
+        panic!("missing function entry at: {func:?}")
+    };
     let callee_ip = Ip::from(compiled_func.ops());
     let len_local_slots = compiled_func.len_local_slots();
     let len_stack_slots = compiled_func.len_stack_slots();

@@ -210,6 +210,8 @@ impl<'a> CodeView<'a> {
 
     /// Returns the [`CompiledFuncRef`] of `func`, compiling it lazily if still uncompiled.
     ///
+    /// Returns `None` if the `func` index is out of bounds for `self`.
+    ///
     /// # Errors
     ///
     /// - If translation or Wasm validation of `func` failed.
@@ -220,11 +222,12 @@ impl<'a> CodeView<'a> {
         &self,
         fuel: Option<&mut Fuel>,
         func: EngineFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        let Some(entity) = self.entry(func) else {
-            panic!("missing function entry at: {func:?}")
+    ) -> Result<Option<CompiledFuncRef<'a>>, Error> {
+        let Some(entry) = self.entry(func) else {
+            return Ok(None);
         };
-        entity.get_or_compile(fuel, &self.code_map.features)
+        let compiled = entry.get_or_compile(fuel, &self.code_map.features)?;
+        Ok(Some(compiled))
     }
 
     /// Returns the [`WasmFeatures`] of the underlying [`CodeMap`].
