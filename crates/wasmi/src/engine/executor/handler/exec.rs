@@ -291,7 +291,13 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
-        // Safety: TODO
+        // Safety:
+        //
+        // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
+        //
+        //  - the used `with_exposed_provenance` recovers the original provenance.
+        //  - its allocation is never moved or freed while this bytecode runs.
+        //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
         let (callee_ip, callee_sp) = call_func_entry(state, caller_ip, params, func, None)?;
         dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
@@ -380,7 +386,13 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
-        // Safety: TODO
+        // Safety:
+        //
+        // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
+        //
+        //  - the used `with_exposed_provenance` recovers the original provenance.
+        //  - its allocation is never moved or freed while this bytecode runs.
+        //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
         let (callee_ip, callee_sp) = return_call_func_entry(state, params, func, None)?;
         dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
