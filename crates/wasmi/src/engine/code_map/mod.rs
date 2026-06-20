@@ -670,8 +670,25 @@ impl FuncEntry {
     ///
     /// - If translation or Wasm validation of `func` failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[inline]
+    #[inline(always)]
     pub fn get_or_compile(
+        &self,
+        fuel: Option<&mut Fuel>,
+        features: &WasmFeatures,
+    ) -> Result<CompiledFuncRef<'_>, Error> {
+        if self.state.load(Ordering::Acquire) == state::COMPILED {
+            // Case: hot-path when `self` is already compiled
+            return Ok(unsafe { self.assume_compiled() });
+        }
+        self.compile(fuel, features)
+    }
+
+    /// Out-of-line slow path of [`FuncEntry::get_or_compile`].
+    ///
+    /// Drives the compile / wait / fail state machine for an `self` that is not yet compiled.
+    #[cold]
+    #[inline(never)]
+    fn compile(
         &self,
         fuel: Option<&mut Fuel>,
         features: &WasmFeatures,
@@ -689,7 +706,6 @@ impl FuncEntry {
                     return Err(Error::from(TranslationError::LazyCompilationFailed));
                 }
                 state::UNCOMPILED => {
-                    hint::cold();
                     if self
                         .state
                         .compare_exchange(
