@@ -228,6 +228,11 @@ impl<'a> CodeView<'a> {
         };
         entity.get_or_compile(fuel, &self.code_map.features)
     }
+
+    /// Returns the [`WasmFeatures`] of the underlying [`CodeMap`].
+    pub fn features(&self) -> &WasmFeatures {
+        &self.code_map.features
+    }
 }
 
 /// An append-only collection for [`FuncEntity`] definitions.
