@@ -1,42 +1,20 @@
-use crate::{collections::arena::ArenaKey, ir::index::InternalFunc};
-
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 ///
 /// [`CodeMap`]: super::CodeMap
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EngineFunc(u32);
 
-impl From<EngineFunc> for InternalFunc {
-    fn from(value: EngineFunc) -> Self {
-        InternalFunc::from(value.0)
+impl From<u32> for EngineFunc {
+    #[inline]
+    fn from(value: u32) -> Self {
+        Self(value)
     }
 }
 
-impl From<InternalFunc> for EngineFunc {
-    fn from(index: InternalFunc) -> Self {
-        Self(u32::from(index))
-    }
-}
-
-impl EngineFunc {
-    /// Creates a new [`EngineFunc`] from the given `u32` index.
-    ///
-    /// # Note
-    ///
-    /// This is a test-only API and not meant for code outside of tests.
-    #[cfg(test)]
-    pub fn from_u32(index: u32) -> Self {
-        Self(index)
-    }
-}
-
-impl ArenaKey for EngineFunc {
-    fn into_usize(self) -> usize {
-        self.0.into_usize()
-    }
-
-    fn from_usize(value: usize) -> Option<Self> {
-        <_ as ArenaKey>::from_usize(value).map(Self)
+impl From<EngineFunc> for u32 {
+    #[inline]
+    fn from(func: EngineFunc) -> Self {
+        func.0
     }
 }
 

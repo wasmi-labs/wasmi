@@ -15,11 +15,9 @@ use crate::{
     Config,
     Error,
     TrapCode,
-    collections::arena::ArenaKey,
     core::{Fuel, FuelCostsProvider, hint},
     engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
     errors::FuelError,
-    ir::index::InternalFunc,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::boxed::Box;
@@ -368,8 +366,8 @@ impl Funcs {
         // Finally, store the updated `len_funcs` to publish the `self.buckets` changes.
         self.len_funcs.store(end, Ordering::Release);
         Ok(EngineFuncSpan::new(
-            EngineFunc::from(InternalFunc::from(start as u32)),
-            EngineFunc::from(InternalFunc::from(end as u32)),
+            EngineFunc::from(start as u32),
+            EngineFunc::from(end as u32),
         ))
     }
 
@@ -394,7 +392,7 @@ impl Funcs {
     #[inline]
     pub unsafe fn get_within(&self, func: EngineFunc, len_funcs: usize) -> Option<&FuncEntity> {
         use crate::core::hint::unlikely;
-        if unlikely(func.into_usize() >= len_funcs) {
+        if unlikely(u32::from(func) as usize >= len_funcs) {
             return None;
         }
         let (bucket, slot) = Self::locate(func);
@@ -412,7 +410,7 @@ impl Funcs {
     /// Maps a global function `index` to its `(bucket, slot)` position.
     #[inline]
     fn locate(func: EngineFunc) -> (usize, usize) {
-        let index = Self::func_to_index(func);
+        let index = u32::from(func);
         let j = u64::from(index) + LEN_BUCKET0;
         let msb = 63 - j.leading_zeros() as usize; // floor(log2(j))
         let bucket = msb - LEN_BUCKET0_LOG2;
@@ -435,12 +433,6 @@ impl Funcs {
     #[inline]
     fn size_of_bucket_at(n: usize) -> usize {
         1usize << (LEN_BUCKET0_LOG2 + n)
-    }
-
-    /// Converts `func` into its underlying `u32` index.
-    #[inline]
-    fn func_to_index(func: EngineFunc) -> u32 {
-        u32::from(InternalFunc::from(func))
     }
 
     /// Returns an iterator over the occupied buckets of `self`.
