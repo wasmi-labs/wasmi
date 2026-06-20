@@ -35,7 +35,7 @@ pub(crate) use self::{
     },
 };
 use self::{
-    code_map::{CodeMap, CompiledFuncEntity},
+    code_map::{CodeMap, CodeView, CompiledFuncEntry},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
 };
@@ -60,6 +60,7 @@ use crate::{
     Func,
     FuncType,
     StoreContextMut,
+    engine::code_map::FuncEntry,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::{
@@ -184,6 +185,11 @@ impl Engine {
     /// Allocates a new function type to the [`Engine`].
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
+    }
+
+    /// Returns a reference to the [`FuncEntry`] at `func` if any.
+    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
+        self.inner.resolve_func(func)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -614,6 +620,11 @@ impl EngineInner {
         self.func_types.write().alloc_func_type(func_type)
     }
 
+    /// Returns a reference to the [`FuncEntry`] at `func` if any.
+    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
+        self.code_map.view().entry(func)
+    }
+
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
     ///
     /// # Panics
@@ -751,7 +762,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`EngineFunc`].
-    fn init_func(&self, engine_func: EngineFunc, func_entity: CompiledFuncEntity) {
+    fn init_func(&self, engine_func: EngineFunc, func_entity: CompiledFuncEntry) {
         self.code_map
             .init_func_as_compiled(engine_func, func_entity)
     }

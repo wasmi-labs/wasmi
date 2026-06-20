@@ -18,7 +18,7 @@ pub use self::{
     },
     inout::{InOutParams, InOutResults},
 };
-use super::code_map::CodeMap;
+use super::code_map::{CodeMap, CodeView};
 use crate::{
     Error,
     Func,
@@ -207,8 +207,8 @@ impl EngineInner {
 /// The internal state of the Wasmi engine.
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
-    /// Shared and reusable generic engine resources.
-    code_map: &'engine CodeMap,
+    /// A cheap, lock-free snapshot of the engine's [`CodeMap`].
+    code: CodeView<'engine>,
     /// The value and call stacks.
     stack: &'engine mut Stack,
 }
@@ -216,7 +216,10 @@ pub struct EngineExecutor<'engine> {
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] for the given [`Stack`].
     fn new(code_map: &'engine CodeMap, stack: &'engine mut Stack) -> Self {
-        Self { code_map, stack }
+        Self {
+            code: code_map.view(),
+            stack,
+        }
     }
 
     /// Executes the given [`Func`] using the given `params`.
@@ -246,7 +249,7 @@ impl<'engine> EngineExecutor<'engine> {
                 let instance = *wasm_func.instance();
                 let engine_func = wasm_func.func_body();
                 let call =
-                    init_wasm_func_call(store, self.code_map, self.stack, engine_func, instance)?;
+                    init_wasm_func_call(store, self.code, self.stack, engine_func, instance)?;
                 call.write_params(params).execute()?.write_results(results)
             }
             FuncEntity::Host(host_func) => {
@@ -282,7 +285,7 @@ impl<'engine> EngineExecutor<'engine> {
         Params: LowerToCells,
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code_map, self.stack)?
+        let value = resume_wasm_func_call(store, self.code, self.stack)?
             .provide_host_results(params, params_slots)
             .execute()?
             .write_results(results);
@@ -305,7 +308,7 @@ impl<'engine> EngineExecutor<'engine> {
     where
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code_map, self.stack)?
+        let value = resume_wasm_func_call(store, self.code, self.stack)?
             .execute()?
             .write_results(results);
         Ok(value)
