@@ -174,7 +174,7 @@ impl_decode_using! {
     BlockFuel as u64 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
-    InternalFunc as u32 = Into::into,
+    InternalFunc as usize = Into::into,
     Global as u32 = Into::into,
     Memory as u16 = Into::into,
     Table as u32 = Into::into,

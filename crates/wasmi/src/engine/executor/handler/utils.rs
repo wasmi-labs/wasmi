@@ -25,6 +25,7 @@ use crate::{
     engine::{
         DedupFuncType,
         EngineFunc,
+        FuncEntity as FuncEntry,
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
@@ -70,6 +71,28 @@ macro_rules! out_of_fuel {
             $state,
             $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
         )
+    }};
+}
+
+pub fn compile_or_get_func_entry(
+    state: &mut VmState,
+    func: &FuncEntry,
+) -> Result<(Ip, u16, u16), Error> {
+    let fuel_mut = state.store.inner_mut().fuel_mut();
+    let features = state.code.features();
+    let compiled_func = func.get_or_compile(Some(fuel_mut), features)?;
+    let ip = Ip::from(compiled_func.ops());
+    let len_local_slots = compiled_func.len_local_slots();
+    let len_stack_slots = compiled_func.len_stack_slots();
+    Ok((ip, len_local_slots, len_stack_slots))
+}
+
+macro_rules! compile_or_get_func_entry {
+    ($state:expr, $func:expr) => {{
+        match $crate::engine::executor::handler::utils::compile_or_get_func_entry($state, $func) {
+            Ok((ip, len_local_slots, len_stack_slots)) => (ip, len_local_slots, len_stack_slots),
+            Err(error) => done!($state, DoneReason::error(error)),
+        }
     }};
 }
 
@@ -729,6 +752,28 @@ pub fn update_instance(
     (new_instance, mem0, mem0_len)
 }
 
+pub fn call_func_entry(
+    state: &mut VmState,
+    caller_ip: Ip,
+    params: BoundedSlotSpan,
+    func: &FuncEntry,
+    instance: Option<Inst>,
+) -> Control<(Ip, Sp), Break> {
+    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
+    let callee_sp = state
+        .stack
+        .push_frame(
+            Some(caller_ip),
+            callee_ip,
+            params,
+            len_local_slots,
+            len_stack_slots,
+            instance,
+        )
+        .into_control()?;
+    Control::Continue((callee_ip, callee_sp))
+}
+
 pub fn call_wasm(
     state: &mut VmState,
     caller_ip: Ip,
@@ -741,6 +786,26 @@ pub fn call_wasm(
         .stack
         .push_frame(
             Some(caller_ip),
+            callee_ip,
+            params,
+            len_local_slots,
+            len_stack_slots,
+            instance,
+        )
+        .into_control()?;
+    Control::Continue((callee_ip, callee_sp))
+}
+
+pub fn return_call_func_entry(
+    state: &mut VmState,
+    params: BoundedSlotSpan,
+    func: &FuncEntry,
+    instance: Option<Inst>,
+) -> Control<(Ip, Sp), Break> {
+    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
+    let callee_sp = state
+        .stack
+        .replace_frame(
             callee_ip,
             params,
             len_local_slots,

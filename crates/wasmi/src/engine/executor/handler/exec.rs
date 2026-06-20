@@ -18,7 +18,7 @@ use crate::{
     TrapCode,
     core::{CoreTable, RawRef, ReadAs, wasm},
     engine::{
-        EngineFunc,
+        FuncEntity as FuncEntry,
         eval,
         executor::handler::{
             Control,
@@ -27,7 +27,7 @@ use crate::{
             utils::{
                 GetValue,
                 IntoControl as _,
-                call_wasm,
+                call_func_entry,
                 call_wasm_or_host,
                 exec_copy_span,
                 exec_copy_span_asc,
@@ -50,6 +50,7 @@ use crate::{
                 resolve_memory,
                 resolve_table,
                 resolve_table_mut,
+                return_call_func_entry,
                 return_call_host,
                 return_call_wasm,
                 set_global,
@@ -63,7 +64,7 @@ use crate::{
     ir::{self, BoundedSlotSpan, Slot, SlotSpan, index},
     store::StoreError,
 };
-use core::cmp;
+use core::{cmp, ptr};
 
 #[inline(always)]
 unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
@@ -290,8 +291,9 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
-        let func = EngineFunc::from(func);
-        let (callee_ip, callee_sp) = call_wasm(state, caller_ip, params, func, None)?;
+        // Safety: TODO
+        let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
+        let (callee_ip, callee_sp) = call_func_entry(state, caller_ip, params, func, None)?;
         dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -378,8 +380,9 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
-        let func = EngineFunc::from(func);
-        let (callee_ip, callee_sp) = return_call_wasm(state, params, func, None)?;
+        // Safety: TODO
+        let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
+        let (callee_ip, callee_sp) = return_call_func_entry(state, params, func, None)?;
         dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }

@@ -51,6 +51,7 @@ use crate::{
         BlockType,
         CompiledFuncEntity,
         TranslationError,
+        code_map::FuncEntity,
         translator::{
             WasmTranslator,
             comparator::{
@@ -1456,7 +1457,13 @@ impl FuncTranslator {
             Some(engine_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
-                call_internal(params, index::InternalFunc::from(engine_func))
+                let Some(func_entity) = self.engine().resolve_func(engine_func) else {
+                    unreachable!("missing func entry at: {engine_func:?}")
+                };
+                call_internal(
+                    params,
+                    index::InternalFunc::from(func_entity as *const FuncEntity as usize),
+                )
             }
             None => {
                 // Case: We are calling an imported function and must use the

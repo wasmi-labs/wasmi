@@ -1,6 +1,7 @@
 //! Definitions for thin-wrapper index types.
 
 use crate::Error;
+use core::fmt::{self, Write};
 
 macro_rules! for_each_index {
     ($mac:ident) => {
@@ -9,8 +10,6 @@ macro_rules! for_each_index {
             Func(pub(crate) u32);
             /// A Wasm function type index.
             FuncType(pub(crate) u32);
-            /// A Wasmi internal function index.
-            InternalFunc(pub(crate) u32);
             /// A Wasm global variable index.
             Global(pub(crate) u32);
             /// A Wasm linear memory index.
@@ -52,6 +51,34 @@ macro_rules! define_index {
     };
 }
 for_each_index!(define_index);
+
+/// A raw-reference to an internal Wasmi function entry.
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct InternalFunc(pub(crate) usize);
+
+impl From<InternalFunc> for usize {
+    #[inline]
+    fn from(value: InternalFunc) -> usize {
+        value.0
+    }
+}
+
+impl From<usize> for InternalFunc {
+    #[inline]
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl fmt::Debug for InternalFunc {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("InternalFunc")?;
+        f.write_char('(')?;
+        f.write_fmt(core::format_args!("0x{:X}", self.0))?;
+        f.write_char(')')?;
+        Ok(())
+    }
+}
 
 impl Memory {
     /// Returns `true` if `self` refers to the default linear memory which always is at index 0.
