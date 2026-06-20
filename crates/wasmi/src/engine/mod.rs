@@ -187,7 +187,7 @@ impl Engine {
         self.inner.alloc_func_type(func_type)
     }
 
-    /// Returns a reference to the [`FuncEntity`] at `func` if any.
+    /// Returns a reference to the [`FuncEntry`] at `func` if any.
     pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
         self.inner.resolve_func(func)
     }
@@ -620,7 +620,7 @@ impl EngineInner {
         self.func_types.write().alloc_func_type(func_type)
     }
 
-    /// Returns a reference to the [`FuncEntity`] at `func` if any.
+    /// Returns a reference to the [`FuncEntry`] at `func` if any.
     pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
         self.code_map.view().entry(func)
     }
