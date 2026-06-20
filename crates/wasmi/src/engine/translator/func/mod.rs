@@ -49,9 +49,9 @@ use crate::{
     core::{FuelCostsProvider, IndexType, RawRef, RawVal, Typed, TypedRawVal},
     engine::{
         BlockType,
-        CompiledFuncEntity,
+        CompiledFuncEntry,
         TranslationError,
-        code_map::FuncEntity,
+        code_map::FuncEntry,
         translator::{
             WasmTranslator,
             comparator::{
@@ -181,7 +181,7 @@ impl WasmTranslator<'_> for FuncTranslator {
 
     fn finish(
         mut self,
-        finalize: impl FnOnce(CompiledFuncEntity),
+        finalize: impl FnOnce(CompiledFuncEntry),
     ) -> Result<Self::Allocations, Error> {
         // Note: `update_branch_offsets` might change `frame_size` so we need to compute it prior.
         //
@@ -194,7 +194,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         let Some(len_stack_slots) = self.len_stack_slots() else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
-        finalize(CompiledFuncEntity::new(
+        finalize(CompiledFuncEntry::new(
             len_local_slots,
             len_stack_slots,
             self.instrs.encoded_ops(),
@@ -1462,7 +1462,7 @@ impl FuncTranslator {
                 };
                 call_internal(
                     params,
-                    index::InternalFunc::from(func_entity as *const FuncEntity as usize),
+                    index::InternalFunc::from(func_entity as *const FuncEntry as usize),
                 )
             }
             None => {

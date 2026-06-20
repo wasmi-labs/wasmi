@@ -35,7 +35,7 @@ pub(crate) use self::{
     },
 };
 use self::{
-    code_map::{CodeMap, CodeView, CompiledFuncEntity},
+    code_map::{CodeMap, CodeView, CompiledFuncEntry},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
 };
@@ -60,7 +60,7 @@ use crate::{
     Func,
     FuncType,
     StoreContextMut,
-    engine::code_map::FuncEntity,
+    engine::code_map::FuncEntry,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::{
@@ -188,7 +188,7 @@ impl Engine {
     }
 
     /// Returns a reference to the [`FuncEntity`] at `func` if any.
-    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntity> {
+    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
         self.inner.resolve_func(func)
     }
 
@@ -621,7 +621,7 @@ impl EngineInner {
     }
 
     /// Returns a reference to the [`FuncEntity`] at `func` if any.
-    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntity> {
+    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
         self.code_map.view().get_ref(func)
     }
 
@@ -762,7 +762,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`EngineFunc`].
-    fn init_func(&self, engine_func: EngineFunc, func_entity: CompiledFuncEntity) {
+    fn init_func(&self, engine_func: EngineFunc, func_entity: CompiledFuncEntry) {
         self.code_map
             .init_func_as_compiled(engine_func, func_entity)
     }

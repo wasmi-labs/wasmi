@@ -15,7 +15,7 @@ pub use self::{
     func::{FuncTranslator, FuncTranslatorAllocations},
     utils::required_cells_for_tys,
 };
-use super::code_map::CompiledFuncEntity;
+use super::code_map::CompiledFuncEntry;
 use crate::{
     Error,
     engine::EngineFunc,
@@ -139,7 +139,7 @@ pub trait WasmTranslator<'parser>:
     ///
     /// - Initialized the [`EngineFunc`] in the [`Engine`].
     /// - Returns the allocations used for translation.
-    fn finish(self, finalize: impl FnOnce(CompiledFuncEntity)) -> Result<Self::Allocations, Error>;
+    fn finish(self, finalize: impl FnOnce(CompiledFuncEntry)) -> Result<Self::Allocations, Error>;
 }
 
 impl<T> ValidatingFuncTranslator<T> {
@@ -212,7 +212,7 @@ where
 
     fn finish(
         mut self,
-        finalize: impl FnOnce(CompiledFuncEntity),
+        finalize: impl FnOnce(CompiledFuncEntry),
     ) -> Result<Self::Allocations, Error> {
         let pos = self.current_pos();
         self.validator.finish(pos)?;
@@ -457,10 +457,7 @@ impl WasmTranslator<'_> for LazyFuncTranslator {
     fn update_pos(&mut self, _pos: usize) {}
 
     #[inline]
-    fn finish(
-        self,
-        _finalize: impl FnOnce(CompiledFuncEntity),
-    ) -> Result<Self::Allocations, Error> {
+    fn finish(self, _finalize: impl FnOnce(CompiledFuncEntry)) -> Result<Self::Allocations, Error> {
         Ok(())
     }
 }

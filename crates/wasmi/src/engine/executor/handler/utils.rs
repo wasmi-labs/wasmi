@@ -25,7 +25,7 @@ use crate::{
     engine::{
         DedupFuncType,
         EngineFunc,
-        FuncEntity as FuncEntry,
+        FuncEntry,
         executor::{
             LoadFromCellsByValue,
             StoreToCells,

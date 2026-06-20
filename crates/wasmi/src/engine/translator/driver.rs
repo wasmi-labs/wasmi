@@ -1,6 +1,6 @@
 use crate::{
     Error,
-    engine::{WasmTranslator, code_map::CompiledFuncEntity},
+    engine::{WasmTranslator, code_map::CompiledFuncEntry},
 };
 use wasmparser::{BinaryReader, FunctionBody};
 
@@ -38,7 +38,7 @@ where
     /// Starts translation of the Wasm stream into Wasmi bytecode.
     pub fn translate(
         mut self,
-        finalize: impl FnOnce(CompiledFuncEntity),
+        finalize: impl FnOnce(CompiledFuncEntry),
     ) -> Result<T::Allocations, Error> {
         if self.translator.setup(self.bytes)? {
             let allocations = self.translator.finish(finalize)?;
@@ -54,7 +54,7 @@ where
     fn finish(
         mut self,
         offset: usize,
-        finalize: impl FnOnce(CompiledFuncEntity),
+        finalize: impl FnOnce(CompiledFuncEntry),
     ) -> Result<T::Allocations, Error> {
         self.translator.update_pos(offset);
         self.translator.finish(finalize)

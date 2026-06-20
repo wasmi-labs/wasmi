@@ -53,14 +53,14 @@ const LEN_BUCKET0: u64 = 1 << LEN_BUCKET0_LOG2;
 /// Derived from [`MAX_FUNCS`].
 const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
 
-/// A data structure to store and manage [`FuncEntity`] definitions.
+/// A data structure to store and manage [`FuncEntry`] definitions.
 #[derive(Debug)]
 pub struct CodeMap {
-    /// The append-only, lock-free-readable storage for all [`FuncEntity`] definitions.
+    /// The append-only, lock-free-readable storage for all [`FuncEntry`] definitions.
     funcs: Funcs,
     /// Serializes concurrent writers ([`Self::alloc_funcs`]); readers never take this lock.
     alloc_lock: Mutex<()>,
-    /// Shared Wasm features across all [`FuncEntity`] definitions within the [`CodeMap`].
+    /// Shared Wasm features across all [`FuncEntry`] definitions within the [`CodeMap`].
     features: WasmFeatures,
 }
 
@@ -91,13 +91,13 @@ impl CodeMap {
         }
     }
 
-    /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
+    /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntry`].
     ///
     /// # Panics
     ///
     /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`EngineFunc`].
-    pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntity) {
+    pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntry) {
         let func = match self.funcs.get(func) {
             Some(func) => func,
             None => panic!("missing function entry at: {func:?}"),
@@ -123,7 +123,7 @@ impl CodeMap {
             Some(func) => func,
             None => panic!("missing function entry at: {func:?}"),
         };
-        func.init_uncompiled(UncompiledFuncEntity::new(
+        func.init_uncompiled(UncompiledFuncEntry::new(
             func_idx,
             bytes,
             module.clone(),
@@ -173,7 +173,7 @@ pub struct CodeView<'a> {
     /// The source [`CodeMap`]. The bucket-array base address and `features` are stable for its
     /// lifetime; only the published function count grows (tracked by `len_funcs`).
     code_map: &'a CodeMap,
-    /// Cached number of published [`FuncEntity`] definitions; bounds visibility.
+    /// Cached number of published [`FuncEntry`] definitions; bounds visibility.
     ///
     /// # Note
     ///
@@ -199,11 +199,11 @@ impl<'a> CodeView<'a> {
         self.len_funcs = self.code_map.funcs.len_funcs.load(Ordering::Acquire);
     }
 
-    /// Returns a shared reference to the [`FuncEntity`] of `func` if visible in this snapshot.
+    /// Returns a shared reference to the [`FuncEntry`] of `func` if visible in this snapshot.
     ///
     /// Returns `None` if `func` is not (yet) visible to this snapshot.
     #[inline]
-    pub fn get_ref(&self, func: EngineFunc) -> Option<&'a FuncEntity> {
+    pub fn get_ref(&self, func: EngineFunc) -> Option<&'a FuncEntry> {
         // Safety: `len_funcs` is loaded via acquire upon creation of `self` so that `buckets` are published.
         unsafe { self.code_map.funcs.get_within(func, self.len_funcs) }
     }
@@ -233,9 +233,9 @@ impl<'a> CodeView<'a> {
     }
 }
 
-/// An append-only collection for [`FuncEntity`] definitions.
+/// An append-only collection for [`FuncEntry`] definitions.
 pub struct Funcs {
-    /// The buckets to store the [`FuncEntity`] definitions append-only.
+    /// The buckets to store the [`FuncEntry`] definitions append-only.
     ///
     /// # Note
     ///
@@ -246,7 +246,7 @@ pub struct Funcs {
     ///   published through a shared `&Funcs` (no `&mut Funcs` is ever formed), which is what lets a
     ///   [`CodeView`] snapshot read `buckets` lock-free and without atomics on the per-call path.
     buckets: UnsafeCell<[Option<RawFuncsBucket>; MAX_BUCKETS]>,
-    /// The number of [`FuncEntity`] definitions published across all `buckets`.
+    /// The number of [`FuncEntry`] definitions published across all `buckets`.
     ///
     /// This doubles as the publication flag:
     ///
@@ -318,7 +318,7 @@ impl fmt::Debug for Funcs {
 
 #[test]
 fn size_of_funcs_type() {
-    const EXPECTED_SIZE: usize = (MAX_BUCKETS * core::mem::size_of::<*mut FuncEntity>())
+    const EXPECTED_SIZE: usize = (MAX_BUCKETS * core::mem::size_of::<*mut FuncEntry>())
         + core::mem::size_of::<AtomicUsize>();
     assert_eq!(core::mem::size_of::<Funcs>(), EXPECTED_SIZE);
 }
@@ -371,17 +371,17 @@ impl Funcs {
         ))
     }
 
-    /// Returns a shared reference to the [`FuncEntity`] of `func` if published.
+    /// Returns a shared reference to the [`FuncEntry`] of `func` if published.
     ///
     /// Returns `None` if `func` is out of bounds.
     #[inline]
-    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntity> {
+    pub fn get(&self, func: EngineFunc) -> Option<&FuncEntry> {
         let len_funcs = self.len_funcs.load(Ordering::Acquire);
         // Safety: we just loaded `len_funcs` via acquire so that `buckets` are published.
         unsafe { self.get_within(func, len_funcs) }
     }
 
-    /// Returns a shared reference to the [`FuncEntity`] of `func` if in bounds.
+    /// Returns a shared reference to the [`FuncEntry`] of `func` if in bounds.
     ///
     ///  # Safety
     ///
@@ -390,7 +390,7 @@ impl Funcs {
     /// - Furthermore, the caller is responsible to provide `len_funcs` that matches the exact number
     ///   of occupied (`Some`) buckets in `self`.
     #[inline]
-    pub unsafe fn get_within(&self, func: EngineFunc, len_funcs: usize) -> Option<&FuncEntity> {
+    pub unsafe fn get_within(&self, func: EngineFunc, len_funcs: usize) -> Option<&FuncEntry> {
         use crate::core::hint::unlikely;
         if unlikely(u32::from(func) as usize >= len_funcs) {
             return None;
@@ -461,14 +461,14 @@ impl Drop for Funcs {
 /// The information about its length needs to be fed and managed from outside.
 #[derive(Copy, Clone)]
 pub struct RawFuncsBucket {
-    /// The raw pointer to the bucket's [`FuncEntity`] definitions.
-    funcs: NonNull<FuncEntity>,
+    /// The raw pointer to the bucket's [`FuncEntry`] definitions.
+    funcs: NonNull<FuncEntry>,
 }
 
-/// A fixed-size bucket of [`FuncEntity`] definitions.
+/// A fixed-size bucket of [`FuncEntry`] definitions.
 pub struct FuncsBucket {
-    /// The heap allocation that stores the [`FuncEntity`] definitions of this bucket.
-    funcs: Box<[FuncEntity]>,
+    /// The heap allocation that stores the [`FuncEntry`] definitions of this bucket.
+    funcs: Box<[FuncEntry]>,
 }
 
 impl FuncsBucket {
@@ -476,7 +476,7 @@ impl FuncsBucket {
     #[inline]
     pub fn new(size: usize) -> Self {
         Self {
-            funcs: iter::repeat_with(FuncEntity::uninit).take(size).collect(),
+            funcs: iter::repeat_with(FuncEntry::uninit).take(size).collect(),
         }
     }
 
@@ -484,7 +484,7 @@ impl FuncsBucket {
     pub fn into_raw_parts(self) -> (RawFuncsBucket, usize) {
         let len = self.funcs.len();
         // Safety: `Box` is guaranteed to be non-null.
-        let funcs = unsafe { NonNull::new_unchecked(Box::into_raw(self.funcs) as *mut FuncEntity) };
+        let funcs = unsafe { NonNull::new_unchecked(Box::into_raw(self.funcs) as *mut FuncEntry) };
         (RawFuncsBucket { funcs }, len)
     }
 
@@ -502,11 +502,11 @@ impl FuncsBucket {
     }
 }
 
-/// A fixed-size bucket of [`FuncEntity`] definitions.
+/// A fixed-size bucket of [`FuncEntry`] definitions.
 #[derive(Debug)]
 pub struct FuncsBucketRef<'a> {
-    /// The shared [`FuncEntity`] definitions of this bucket.
-    funcs: &'a [FuncEntity],
+    /// The shared [`FuncEntry`] definitions of this bucket.
+    funcs: &'a [FuncEntry],
 }
 
 impl<'a> FuncsBucketRef<'a> {
@@ -521,9 +521,9 @@ impl<'a> FuncsBucketRef<'a> {
         Self { funcs }
     }
 
-    /// Returns a shared reference to the [`FuncEntity`] at index `n` if any.
+    /// Returns a shared reference to the [`FuncEntry`] at index `n` if any.
     #[inline]
-    pub fn get(&self, n: usize) -> Option<&'a FuncEntity> {
+    pub fn get(&self, n: usize) -> Option<&'a FuncEntry> {
         self.funcs.get(n)
     }
 }
@@ -533,17 +533,17 @@ impl<'a> FuncsBucketRef<'a> {
 /// # Dev. Note
 ///
 /// We use `#[repr(C)]` to dictate field ordering which is important for the executor
-/// since the executes uses direct pointers to [`FuncEntity`] instances once they are
+/// since the executes uses direct pointers to [`FuncEntry`] instances once they are
 /// known to be compiled.
 #[repr(C)]
-pub struct FuncEntity {
+pub struct FuncEntry {
     /// Payload; which field is active (if any) is determined by `state`.
-    data: UnsafeCell<FuncEntityData>,
+    data: UnsafeCell<FuncEntryData>,
     /// Synchronization authority *and* discriminant. One of the consts in `state` module below.
     state: AtomicU8,
 }
 
-impl Drop for FuncEntity {
+impl Drop for FuncEntry {
     fn drop(&mut self) {
         match self.state.load(Ordering::Acquire) {
             | state::UNINIT | state::COMPILING | state::FAILED_TO_COMPILE => {}
@@ -560,19 +560,19 @@ impl Drop for FuncEntity {
     }
 }
 
-impl fmt::Debug for FuncEntity {
+impl fmt::Debug for FuncEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let state = unsafe { self.data_mut() };
         match self.state.load(Ordering::Acquire) {
-            state::UNINIT => f.debug_struct("FuncEntity::Uninit").finish(),
-            state::COMPILING => f.debug_struct("FuncEntity::Compiling").finish(),
-            state::FAILED_TO_COMPILE => f.debug_struct("FuncEntity::FailedToCompile").finish(),
+            state::UNINIT => f.debug_struct("FuncEntry::Uninit").finish(),
+            state::COMPILING => f.debug_struct("FuncEntry::Compiling").finish(),
+            state::FAILED_TO_COMPILE => f.debug_struct("FuncEntry::FailedToCompile").finish(),
             state::COMPILED => f
-                .debug_struct("FuncEntity::Compiled")
+                .debug_struct("FuncEntry::Compiled")
                 .field("state", unsafe { &state.compiled })
                 .finish(),
             state::UNCOMPILED => f
-                .debug_struct("FuncEntity::Uncompiled")
+                .debug_struct("FuncEntry::Uncompiled")
                 .field("state", unsafe { &state.uncompiled })
                 .finish(),
             _ => unreachable!(),
@@ -580,12 +580,12 @@ impl fmt::Debug for FuncEntity {
     }
 }
 
-impl FuncEntity {
-    /// Creates an uninitialized [`FuncEntity`].
+impl FuncEntry {
+    /// Creates an uninitialized [`FuncEntry`].
     #[inline]
     pub fn uninit() -> Self {
         Self {
-            data: UnsafeCell::new(FuncEntityData { undefined: () }),
+            data: UnsafeCell::new(FuncEntryData { undefined: () }),
             state: AtomicU8::new(state::UNINIT),
         }
     }
@@ -595,69 +595,69 @@ impl FuncEntity {
         self.state.load(Ordering::Relaxed) != state::UNINIT
     }
 
-    /// Initializes the [`FuncEntity`] with a [`CompiledFuncEntity`].
+    /// Initializes the [`FuncEntry`] with a [`CompiledFuncEntry`].
     ///
     /// # Panics
     ///
     /// If `func` has already been initialized.
-    pub fn init_compiled(&self, compiled: CompiledFuncEntity) {
+    pub fn init_compiled(&self, compiled: CompiledFuncEntry) {
         assert!(!self.is_initialized(), "func has already been initialized");
         // Safety: exclusive during build; previous union field is `undefined` (no Drop).
         unsafe { self.set_compiled(compiled) }
     }
 
-    /// Initializes the [`FuncEntity`] to an uncompiled state.
+    /// Initializes the [`FuncEntry`] to an uncompiled state.
     ///
     /// # Panics
     ///
     /// If `func` has already been initialized.
-    pub fn init_uncompiled(&self, uncompiled: UncompiledFuncEntity) {
+    pub fn init_uncompiled(&self, uncompiled: UncompiledFuncEntry) {
         assert!(!self.is_initialized(), "func has already been initialized");
         // Safety: exclusive during build; previous union field is `undefined` (no Drop).
         unsafe { self.set_uncompiled(uncompiled) }
     }
 
-    /// Initializes the [`FuncEntity`] to an uncompiled state.
+    /// Initializes the [`FuncEntry`] to an uncompiled state.
     ///
     /// # Safety
     ///
     /// It is the caller's responsibility to assert that `self.data` is in the `undefined` state.
-    unsafe fn set_compiled(&self, compiled: CompiledFuncEntity) {
+    unsafe fn set_compiled(&self, compiled: CompiledFuncEntry) {
         let data = unsafe { self.data_mut() };
         data.compiled = ManuallyDrop::new(compiled);
         self.state.store(state::COMPILED, Ordering::Release);
     }
 
-    /// Initializes the [`FuncEntity`] to an uncompiled state.
+    /// Initializes the [`FuncEntry`] to an uncompiled state.
     ///
     /// # Safety
     ///
     /// It is the caller's responsibility to assert that `self.data` is in the `undefined` state.
-    unsafe fn set_uncompiled(&self, uncompiled: UncompiledFuncEntity) {
+    unsafe fn set_uncompiled(&self, uncompiled: UncompiledFuncEntry) {
         let data = unsafe { self.data_mut() };
         data.uncompiled = ManuallyDrop::new(uncompiled);
         self.state.store(state::UNCOMPILED, Ordering::Release);
     }
 
-    /// Takes [`UncompiledFuncEntity`] from `self.data` and leaves behind an `undefined` state.
+    /// Takes [`UncompiledFuncEntry`] from `self.data` and leaves behind an `undefined` state.
     ///
     /// # Safety
     ///
     /// It is the caller's responsibility to ensure that `self.data` has been is in `uncompiled` state.
-    unsafe fn take_uncompiled(&self) -> UncompiledFuncEntity {
+    unsafe fn take_uncompiled(&self) -> UncompiledFuncEntry {
         let data = unsafe { self.data_mut() };
         let uncompiled = unsafe { ManuallyDrop::take(&mut data.uncompiled) };
         data.undefined = ();
         uncompiled
     }
 
-    /// Returns an exclusive reference to the [`FuncEntityData`] of `self`.
+    /// Returns an exclusive reference to the [`FuncEntryData`] of `self`.
     ///
     /// # Safety
     ///
     /// It is the caller's responsibility that no other references to this data are alive.
     #[allow(clippy::mut_from_ref)] // same API as `UnsafeCell::as_mut_unchecked`
-    unsafe fn data_mut(&self) -> &mut FuncEntityData {
+    unsafe fn data_mut(&self) -> &mut FuncEntryData {
         unsafe { &mut *self.data.get() }
     }
 
@@ -734,7 +734,7 @@ impl FuncEntity {
     ///
     /// # Safety
     ///
-    /// It is the caller's responsibility to only call this method on [`FuncEntity`]
+    /// It is the caller's responsibility to only call this method on [`FuncEntry`]
     /// values that are guaranteed to have been successfully compiled prior.
     ///
     /// # Errors
@@ -749,41 +749,41 @@ impl FuncEntity {
     }
 }
 
-/// The internal representation of a [`FuncEntity`] in its various states.
-union FuncEntityData {
+/// The internal representation of a [`FuncEntry`] in its various states.
+union FuncEntryData {
     /// Used in [`state::UNINIT`], [`state::COMPILING`] and [`state::FAILED_TO_COMPILE`] states.
     undefined: (),
     /// Used in the [`state::UNCOMPILED`] state.
-    uncompiled: ManuallyDrop<UncompiledFuncEntity>,
+    uncompiled: ManuallyDrop<UncompiledFuncEntry>,
     /// Used in the [`state::COMPILED`] state.
-    compiled: ManuallyDrop<CompiledFuncEntity>,
+    compiled: ManuallyDrop<CompiledFuncEntry>,
 }
 
 // # Safety:
 //
-// `FuncEntity`, `Funcs`, `RawFuncsBucket` are `!Send`/`!Sync` by default.
-// This is due to the `UnsafeCell`s in `FuncEntity` and `Funcs` and the `NonNull` in `RawFuncsBucket`.
+// `FuncEntry`, `Funcs`, `RawFuncsBucket` are `!Send`/`!Sync` by default.
+// This is due to the `UnsafeCell`s in `FuncEntry` and `Funcs` and the `NonNull` in `RawFuncsBucket`.
 //
 // The impls below rely on three invariants upheld throughout this module:
 //
 // 1. Pointer-stable: buckets are only appended — never moved, reallocated, or freed until
-//    `Funcs` is dropped — so every `FuncEntity` keeps a valid address for the store's life.
-// 2. Synchronized mutation: a `FuncEntity`'s `data` is written only before the entity is shared,
+//    `Funcs` is dropped — so every `FuncEntry` keeps a valid address for the store's life.
+// 2. Synchronized mutation: a `FuncEntry`'s `data` is written only before the entity is shared,
 //    or by the thread that won the `UNCOMPILED -> COMPILING` CAS, and always before a `Release`
-//    to `state`; readers gate `data` behind an `Acquire` of `state`. No `&mut FuncEntity` is ever
+//    to `state`; readers gate `data` behind an `Acquire` of `state`. No `&mut FuncEntry` is ever
 //    formed after creation, and a `COMPILED` payload is immutable from then on.
-// 3. Thread-agnostic payloads: `UncompiledFuncEntity`/`CompiledFuncEntity` own their data
+// 3. Thread-agnostic payloads: `UncompiledFuncEntry`/`CompiledFuncEntry` own their data
 //    (`Arc`-backed `ModuleHeader`, boxed bytecode, validator resources) with no thread affinity.
 //
-// - `FuncEntity` is owned data + an atomic discriminant: sending moves thread-agnostic data (3);
+// - `FuncEntry` is owned data + an atomic discriminant: sending moves thread-agnostic data (3);
 //   sharing is race-free because every interior mutation is published through `state` (2).
-// - `Funcs` and `RawFuncsBucket` are owning handles into `Send + Sync` `FuncEntity` allocations (1),
-//   so sharing them is like sharing `Box<[FuncEntity]>` or `&[FuncEntity]`.
+// - `Funcs` and `RawFuncsBucket` are owning handles into `Send + Sync` `FuncEntry` allocations (1),
+//   so sharing them is like sharing `Box<[FuncEntry]>` or `&[FuncEntry]`.
 // - New buckets are published through `Funcs` `UnsafeCell` under the writer lock and ordered against
 //   readers by the `len_funcs` atomic, so a reader only touches frozen slots disjoint from any a
 //   concurrent writer writes.
-unsafe impl Send for FuncEntity {}
-unsafe impl Sync for FuncEntity {}
+unsafe impl Send for FuncEntry {}
+unsafe impl Sync for FuncEntry {}
 unsafe impl Send for Funcs {}
 unsafe impl Sync for Funcs {}
 unsafe impl Send for RawFuncsBucket {}
@@ -808,7 +808,7 @@ mod state {
 pub struct TypeIndex(u32);
 
 /// An internal uncompiled function entity.
-pub struct UncompiledFuncEntity {
+pub struct UncompiledFuncEntry {
     /// The index of the function within the Wasm module.
     func_index: FuncIdx,
     /// The Wasm binary bytes.
@@ -820,12 +820,12 @@ pub struct UncompiledFuncEntity {
     module: ModuleHeader,
     /// Optional Wasm validation information.
     ///
-    /// This is `Some` if the [`UncompiledFuncEntity`] is to be validated upon compilation.
+    /// This is `Some` if the [`UncompiledFuncEntry`] is to be validated upon compilation.
     validation: Option<(TypeIndex, ValidatorResources)>,
 }
 
-impl UncompiledFuncEntity {
-    /// Creates a new [`UncompiledFuncEntity`].
+impl UncompiledFuncEntry {
+    /// Creates a new [`UncompiledFuncEntry`].
     pub fn new(
         func_index: FuncIdx,
         bytes: &[u8],
@@ -851,7 +851,7 @@ impl UncompiledFuncEntity {
         }
     }
 
-    /// Compile the [`UncompiledFuncEntity`].
+    /// Compile the [`UncompiledFuncEntry`].
     ///
     /// # Panics
     ///
@@ -866,7 +866,7 @@ impl UncompiledFuncEntity {
         &mut self,
         fuel: Option<&mut Fuel>,
         features: &WasmFeatures,
-    ) -> Result<CompiledFuncEntity, Error> {
+    ) -> Result<CompiledFuncEntry, Error> {
         /// The amount of fuel required to compile a function body per byte.
         ///
         /// This does _not_ include validation.
@@ -948,9 +948,9 @@ impl UncompiledFuncEntity {
     }
 }
 
-impl fmt::Debug for UncompiledFuncEntity {
+impl fmt::Debug for UncompiledFuncEntry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("UncompiledFuncEntity")
+        f.debug_struct("UncompiledFuncEntry")
             .field("func_idx", &self.func_index)
             .field("bytes", &self.bytes)
             .field("module", &self.module)
@@ -961,8 +961,8 @@ impl fmt::Debug for UncompiledFuncEntity {
 
 /// Meta information about a [`EngineFunc`].
 #[derive(Debug)]
-pub struct CompiledFuncEntity {
-    /// The sequence of [`Op`] of the [`CompiledFuncEntity`].
+pub struct CompiledFuncEntry {
+    /// The sequence of [`Op`] of the [`CompiledFuncEntry`].
     ops: Pin<Box<[u8]>>,
     /// The total number of stack slots for locals for the [`EngineFunc`].
     ///
@@ -979,8 +979,8 @@ pub struct CompiledFuncEntity {
     len_stack_slots: u16,
 }
 
-impl CompiledFuncEntity {
-    /// Create a new initialized [`CompiledFuncEntity`].
+impl CompiledFuncEntry {
+    /// Create a new initialized [`CompiledFuncEntry`].
     ///
     /// # Note
     ///
@@ -1019,7 +1019,7 @@ impl CompiledFuncEntity {
 /// A shared reference to the data of a [`EngineFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CompiledFuncRef<'a> {
-    /// The sequence of encoded [`Op`]s of the [`CompiledFuncEntity`].
+    /// The sequence of encoded [`Op`]s of the [`CompiledFuncEntry`].
     ops: Pin<&'a [u8]>,
     /// The total number of stack slots used for locals of the [`EngineFunc`].
     len_local_slots: u16,
@@ -1027,9 +1027,9 @@ pub struct CompiledFuncRef<'a> {
     len_stack_slots: u16,
 }
 
-impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
+impl<'a> From<&'a CompiledFuncEntry> for CompiledFuncRef<'a> {
     #[inline]
-    fn from(func: &'a CompiledFuncEntity) -> Self {
+    fn from(func: &'a CompiledFuncEntry) -> Self {
         Self {
             ops: func.ops.as_ref(),
             len_local_slots: func.len_local_slots,
