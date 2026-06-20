@@ -997,17 +997,18 @@ impl CompiledFuncEntity {
     pub fn new(len_local_slots: u16, len_stack_slots: u16, ops: &[u8]) -> Self {
         debug_assert!(len_local_slots <= len_stack_slots);
         let ops: Pin<Box<[u8]>> = Pin::new(ops.into());
-        assert!(
+        debug_assert!(
             !ops.is_empty(),
             "compiled functions must have at least one instruction"
         );
-        assert!(
-            // Generally, Wasmi has no issues with more than `i32::MAX` instructions.
-            // However, Wasmi's branch instructions can jump across at most `i32::MAX`
-            // forwards or `i32::MIN` instructions backwards and thus having more than
-            // `i32::MAX` instructions might introduce problems.
+        debug_assert!(
+            // Wasmi's branch instructions can jump across at most
+            //  - `i32::MAX` bytes forwards
+            //  - `i32::MIN` bytes backwards
+            // Therefore, having more than `i32::MAX` bytes of operators allows for the
+            // existence of branches that overflow these spans.
             ops.len() <= i32::MAX as usize,
-            "compiled function has too many instructions: {}",
+            "compiled function has too many operators: {}",
             ops.len(),
         );
         Self {
