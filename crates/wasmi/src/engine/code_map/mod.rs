@@ -1005,8 +1005,8 @@ impl CompiledFuncEntity {
             // Wasmi's branch instructions can jump across at most
             //  - `i32::MAX` bytes forwards
             //  - `i32::MIN` bytes backwards
-            // Therefore, having more than `i32::MAX` bytes of operators allows for the
-            // existence of branches that overflow these spans.
+            // Therefore, having more than `i32::MAX` bytes of operators allows
+            // for the existence of branches that overflow these spans.
             ops.len() <= i32::MAX as usize,
             "compiled function has too many operators: {}",
             ops.len(),
