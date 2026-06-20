@@ -97,12 +97,10 @@ macro_rules! compile_or_get_func_entry {
 }
 
 pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, u16, u16), Error> {
-    let fuel_mut = state.store.inner_mut().fuel_mut();
-    let compiled_func = state.code.get(Some(fuel_mut), func)?;
-    let ip = Ip::from(compiled_func.ops());
-    let len_local_slots = compiled_func.len_local_slots();
-    let len_stack_slots = compiled_func.len_stack_slots();
-    Ok((ip, len_local_slots, len_stack_slots))
+    let Some(func_entry) = state.code.get_ref(func) else {
+        unreachable!("missing function entry at: {func:?}")
+    };
+    compile_or_get_func_entry(state, func_entry)
 }
 
 macro_rules! compile_or_get_func {
