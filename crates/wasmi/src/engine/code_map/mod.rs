@@ -43,7 +43,7 @@ use crate::ir::Op;
 const LEN_BUCKET0_LOG2: usize = 5;
 
 /// The maximum allowed number of functions in a [`CodeMap`].
-const MAX_FUNCS: usize = 10_000_000;
+const MAX_FUNCS: usize = 100_000_000;
 
 /// The number of buckets required to satisfy [`LEN_BUCKET0_LOG2`] and [`MAX_FUNCS`].
 const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
