@@ -772,6 +772,7 @@ pub fn call_func_entry(
     Control::Continue((callee_ip, callee_sp))
 }
 
+#[inline(never)]
 pub fn call_wasm(
     state: &mut VmState,
     caller_ip: Ip,
@@ -814,6 +815,7 @@ pub fn return_call_func_entry(
     Control::Continue((callee_ip, callee_sp))
 }
 
+#[inline(never)]
 pub fn return_call_wasm(
     state: &mut VmState,
     params: BoundedSlotSpan,
