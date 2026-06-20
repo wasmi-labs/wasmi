@@ -60,6 +60,7 @@ use crate::{
     Func,
     FuncType,
     StoreContextMut,
+    engine::code_map::FuncEntity,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::{
@@ -184,6 +185,11 @@ impl Engine {
     /// Allocates a new function type to the [`Engine`].
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
+    }
+
+    /// Returns a reference to the [`FuncEntity`] at `func` if any.
+    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntity> {
+        self.inner.resolve_func(func)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -612,6 +618,11 @@ impl EngineInner {
     /// Allocates a new function type to the [`EngineInner`].
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.func_types.write().alloc_func_type(func_type)
+    }
+
+    /// Returns a reference to the [`FuncEntity`] at `func` if any.
+    pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntity> {
+        self.code_map.view().get_ref(func)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
