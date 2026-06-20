@@ -39,8 +39,11 @@ use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 #[cfg(doc)]
 use crate::ir::Op;
 
-/// How many functions are stored in the first bucket.
+/// The number of functions stored in the first bucket represented as `log2`.
 const LEN_BUCKET0_LOG2: usize = 5;
+
+/// The number of functions stored in the first bucket.
+const LEN_BUCKET0: u64 = 1 << LEN_BUCKET0_LOG2;
 
 /// The maximum allowed number of functions in a [`CodeMap`].
 const MAX_FUNCS: usize = 100_000_000;
@@ -401,7 +404,7 @@ impl Funcs {
     #[inline]
     fn locate(func: EngineFunc) -> (usize, usize) {
         let index = Self::func_to_index(func);
-        let j = u64::from(index) + (1 << LEN_BUCKET0_LOG2);
+        let j = u64::from(index) + LEN_BUCKET0;
         let msb = 63 - j.leading_zeros() as usize; // floor(log2(j))
         let bucket = msb - LEN_BUCKET0_LOG2;
         let slot = (j - (1u64 << msb)) as usize;
@@ -414,7 +417,7 @@ impl Funcs {
         if len == 0 {
             return 0;
         }
-        let j = (len as u64 - 1) + (1 << LEN_BUCKET0_LOG2);
+        let j = (len as u64 - 1) + LEN_BUCKET0;
         let msb = 63 - j.leading_zeros() as usize;
         (msb - LEN_BUCKET0_LOG2) + 1
     }
