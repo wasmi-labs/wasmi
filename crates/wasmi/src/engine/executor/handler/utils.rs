@@ -97,7 +97,7 @@ macro_rules! compile_or_get_func_entry {
 }
 
 pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, u16, u16), Error> {
-    let Some(func_entry) = state.code.get_ref(func) else {
+    let Some(func_entry) = state.code.entry(func) else {
         unreachable!("missing function entry at: {func:?}")
     };
     compile_or_get_func_entry(state, func_entry)

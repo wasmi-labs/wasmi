@@ -622,7 +622,7 @@ impl EngineInner {
 
     /// Returns a reference to the [`FuncEntity`] at `func` if any.
     pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
-        self.code_map.view().get_ref(func)
+        self.code_map.view().entry(func)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.

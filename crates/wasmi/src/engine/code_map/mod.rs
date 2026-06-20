@@ -203,7 +203,7 @@ impl<'a> CodeView<'a> {
     ///
     /// Returns `None` if `func` is not (yet) visible to this snapshot.
     #[inline]
-    pub fn get_ref(&self, func: EngineFunc) -> Option<&'a FuncEntry> {
+    pub fn entry(&self, func: EngineFunc) -> Option<&'a FuncEntry> {
         // Safety: `len_funcs` is loaded via acquire upon creation of `self` so that `buckets` are published.
         unsafe { self.code_map.funcs.get_within(func, self.len_funcs) }
     }
@@ -221,7 +221,7 @@ impl<'a> CodeView<'a> {
         fuel: Option<&mut Fuel>,
         func: EngineFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
-        let Some(entity) = self.get_ref(func) else {
+        let Some(entity) = self.entry(func) else {
             panic!("missing function entry at: {func:?}")
         };
         entity.get_or_compile(fuel, &self.code_map.features)
