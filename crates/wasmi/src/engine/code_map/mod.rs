@@ -600,7 +600,7 @@ impl FuncEntry {
     /// # Panics
     ///
     /// If `func` has already been initialized.
-    pub fn init_compiled(&self, compiled: CompiledFuncEntry) {
+    fn init_compiled(&self, compiled: CompiledFuncEntry) {
         assert!(!self.is_initialized(), "func has already been initialized");
         // Safety: exclusive during build; previous union field is `undefined` (no Drop).
         unsafe { self.set_compiled(compiled) }
@@ -611,7 +611,7 @@ impl FuncEntry {
     /// # Panics
     ///
     /// If `func` has already been initialized.
-    pub fn init_uncompiled(&self, uncompiled: UncompiledFuncEntry) {
+    fn init_uncompiled(&self, uncompiled: UncompiledFuncEntry) {
         assert!(!self.is_initialized(), "func has already been initialized");
         // Safety: exclusive during build; previous union field is `undefined` (no Drop).
         unsafe { self.set_uncompiled(uncompiled) }
@@ -808,7 +808,7 @@ mod state {
 pub struct TypeIndex(u32);
 
 /// An internal uncompiled function entity.
-pub struct UncompiledFuncEntry {
+struct UncompiledFuncEntry {
     /// The index of the function within the Wasm module.
     func_index: FuncIdx,
     /// The Wasm binary bytes.
