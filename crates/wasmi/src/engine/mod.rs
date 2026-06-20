@@ -13,6 +13,7 @@ mod utils;
 
 pub(crate) use self::{
     block_type::BlockType,
+    code_map::ResultRegs,
     executor::{
         InOutParams,
         InOutResults,
@@ -31,6 +32,7 @@ pub(crate) use self::{
         LazyFuncTranslator,
         ValidatingFuncTranslator,
         WasmTranslator,
+        len_result_regs,
         required_cells_for_tys,
     },
 };

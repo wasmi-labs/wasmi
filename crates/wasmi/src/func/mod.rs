@@ -22,7 +22,7 @@ use crate::{
     Engine,
     Error,
     Val,
-    engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
+    engine::{InOutParams, InOutResults, Inst, ResultRegs, ResumableCall, required_cells_for_tys},
     store::Stored,
 };
 use alloc::{boxed::Box, sync::Arc};
@@ -63,6 +63,9 @@ pub struct HostFuncEntity {
     len_param_cells: u16,
     /// The number of cells required to represent the results of the [`HostFuncEntity`].
     len_result_cells: u16,
+    /// Describes which results the host function delivers, so a `return_call` to it can mirror
+    /// them into accumulator registers for a caller that expects results in registers.
+    result_regs: ResultRegs,
     /// The function type of the host function.
     ty: DedupFuncType,
     /// A reference to the trampoline of the host function.
@@ -82,13 +85,21 @@ impl HostFuncEntity {
             //       at most have 1000 results which should always fit.
             panic!("host function requires too many cells for its results: {ty:?}")
         };
+        let result_regs = ResultRegs::new(ty.results());
         let ty = engine.alloc_func_type(ty.clone());
         Self {
             len_param_cells,
             len_result_cells,
+            result_regs,
             ty,
             func,
         }
+    }
+
+    /// Returns the results the host function delivers in accumulator registers under the
+    /// register-based return ABI (used to mirror host results for `return_call`).
+    pub fn result_regs(&self) -> ResultRegs {
+        self.result_regs
     }
 
     /// Returns the number of cells required to represent the parameters of the [`HostFuncEntity`].

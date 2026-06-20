@@ -26,6 +26,7 @@ use crate::{
         DedupFuncType,
         EngineFunc,
         FuncEntry,
+        code_map::ResultRegs,
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
@@ -77,26 +78,30 @@ macro_rules! out_of_fuel {
 pub fn compile_or_get_func_entry(
     state: &mut VmState,
     func: &FuncEntry,
-) -> Result<(Ip, u16, u16), Error> {
+) -> Result<(Ip, u16, u16, ResultRegs), Error> {
     let fuel_mut = state.store.inner_mut().fuel_mut();
     let features = state.code.features();
     let compiled_func = func.get_or_compile(Some(fuel_mut), features)?;
     let ip = Ip::from(compiled_func.ops());
     let len_local_slots = compiled_func.len_local_slots();
     let len_stack_slots = compiled_func.len_stack_slots();
-    Ok((ip, len_local_slots, len_stack_slots))
+    let result_regs = compiled_func.result_regs();
+    Ok((ip, len_local_slots, len_stack_slots, result_regs))
 }
 
 macro_rules! compile_or_get_func_entry {
     ($state:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func_entry($state, $func) {
-            Ok((ip, len_local_slots, len_stack_slots)) => (ip, len_local_slots, len_stack_slots),
+            Ok(compiled) => compiled,
             Err(error) => done!($state, DoneReason::error(error)),
         }
     }};
 }
 
-pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip, u16, u16), Error> {
+pub fn compile_or_get_func(
+    state: &mut VmState,
+    func: EngineFunc,
+) -> Result<(Ip, u16, u16, ResultRegs), Error> {
     let Some(func_entry) = state.code.entry(func) else {
         unreachable!("missing function entry at: {func:?}")
     };
@@ -106,7 +111,7 @@ pub fn compile_or_get_func(state: &mut VmState, func: EngineFunc) -> Result<(Ip,
 macro_rules! compile_or_get_func {
     ($state:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func($state, $func) {
-            Ok((ip, len_local_slots, len_stack_slots)) => (ip, len_local_slots, len_stack_slots),
+            Ok(compiled) => compiled,
             Err(error) => done!($state, DoneReason::error(error)),
         }
     }};
@@ -529,15 +534,67 @@ pub fn exec_return(
     freg32: Freg32,
     freg64: Freg64,
 ) -> Done {
-    let Some((ip, sp, mem0, mem0_len, instance)) =
+    let Some((ip, caller_sp, mem0, mem0_len, instance, result_regs)) =
         state.stack.pop_frame(state.store, mem0, mem0_len, instance)
     else {
         // No more frames on the call stack -> break out of execution!
+        //
+        // Persist the accumulator registers so the host (root call) boundary can spill any
+        // results returned in registers back into the result slots (see `ResultRegs`).
+        state.stack.sync_regs(ireg, freg32, freg64);
         done!(state, DoneReason::Return(sp))
     };
+    // Spill results returned in accumulator registers into the result slots of the returning
+    // frame when its caller expects them in slots (imported/indirect calls). For `call_internal`
+    // callers `result_regs` is empty and this is a no-op, keeping results in accumulators.
+    spill_result_regs(result_regs, sp, ireg, freg32, freg64);
     dispatch!(
-        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
+        state, ip, caller_sp, mem0, mem0_len, instance, ireg, freg32, freg64
     )
+}
+
+/// Spills the results returned in accumulator registers into their result slots.
+///
+/// # Note
+///
+/// No-op when `regs` is empty, which is the case for `call_internal` callers that read results
+/// directly from accumulator registers.
+pub fn spill_result_regs(regs: ResultRegs, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) {
+    if regs.is_empty() {
+        return;
+    }
+    if let Some(slot) = regs.ireg() {
+        set_slot_value(slot, u64::from(ireg), sp);
+    }
+    if let Some(slot) = regs.freg32() {
+        set_slot_value(slot, f32::from(freg32), sp);
+    }
+    if let Some(slot) = regs.freg64() {
+        set_slot_value(slot, f64::from(freg64), sp);
+    }
+}
+
+/// Loads the results a host function wrote to its result slots into accumulator registers.
+///
+/// # Note
+///
+/// Mirror of [`spill_result_regs`]: used by a `return_call` to a host function so that a caller
+/// expecting results in accumulator registers reads them there. The result slots remain valid,
+/// so a caller expecting results in slots is unaffected.
+pub fn load_result_regs(regs: ResultRegs, sp: Sp) -> (Ireg, Freg32, Freg64) {
+    let ireg = match regs.ireg() {
+        Some(slot) => Ireg::from(get_slot_value::<u64>(slot, sp)),
+        None => Ireg::default(),
+    };
+    let freg32 = match regs.freg32() {
+        Some(slot) => Freg32::from(get_slot_value::<f32>(slot, sp)),
+        None => Freg32::default(),
+    };
+    let freg64 = match regs.freg64() {
+        Some(slot) => Freg64::from(get_slot_value::<f64>(slot, sp)),
+        None => Freg64::default(),
+    };
+    (ireg, freg32, freg64)
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
@@ -757,7 +814,8 @@ pub fn call_func_entry(
     func: &FuncEntry,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
+    let (callee_ip, len_local_slots, len_stack_slots, _result_regs) =
+        compile_or_get_func_entry!(state, func);
     let callee_sp = state
         .stack
         .push_frame(
@@ -767,6 +825,9 @@ pub fn call_func_entry(
             len_local_slots,
             len_stack_slots,
             instance,
+            // Internal callers read the callee's results directly from accumulator registers,
+            // so no spill to slots is required on return.
+            ResultRegs::default(),
         )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
@@ -780,7 +841,8 @@ pub fn call_wasm(
     func: EngineFunc,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func!(state, func);
+    let (callee_ip, len_local_slots, len_stack_slots, result_regs) =
+        compile_or_get_func!(state, func);
     let callee_sp = state
         .stack
         .push_frame(
@@ -790,6 +852,9 @@ pub fn call_wasm(
             len_local_slots,
             len_stack_slots,
             instance,
+            // Imported/indirect callers expect results in slots, so the callee's accumulator
+            // results are spilled to slots upon return.
+            result_regs,
         )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
@@ -801,7 +866,10 @@ pub fn return_call_func_entry(
     func: &FuncEntry,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
+    // Note: a tail call inherits the caller frame's result-spill obligation, so `replace_frame`
+    //       keeps the existing `ResultRegs` and the callee's own descriptor is unused here.
+    let (callee_ip, len_local_slots, len_stack_slots, _result_regs) =
+        compile_or_get_func_entry!(state, func);
     let callee_sp = state
         .stack
         .replace_frame(
@@ -822,7 +890,8 @@ pub fn return_call_wasm(
     func: EngineFunc,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func!(state, func);
+    let (callee_ip, len_local_slots, len_stack_slots, _result_regs) =
+        compile_or_get_func!(state, func);
     let callee_sp = state
         .stack
         .replace_frame(
@@ -875,10 +944,10 @@ pub fn return_call_host(
     host_func: HostFuncEntity,
     params: BoundedSlotSpan,
     instance: Inst,
-) -> Control<(Ip, Sp, Inst), Break> {
+) -> Control<(Ip, Sp, Inst, Ireg, Freg32, Freg64), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
-    let (control, inout) = state
+    let (control, result_base, inout) = state
         .stack
         .return_prepare_host_frame(params, host_func.len_result_cells(), instance)
         .into_control()?;
@@ -903,9 +972,22 @@ pub fn return_call_host(
         },
     }
     state.code.refresh();
+    // Mirror the host results from their slots into accumulator registers so that a caller which
+    // expects results in registers (e.g. reached via `call_internal`) reads them there. The slots
+    // remain valid, so a caller expecting results in slots is unaffected.
+    let result_regs = host_func.result_regs();
     match control {
-        Control::Continue((ip, sp, instance)) => Control::Continue((ip, sp, instance)),
-        Control::Break(sp) => done!(state, DoneReason::Return(sp)),
+        Control::Continue((ip, sp, instance)) => {
+            let (ireg, freg32, freg64) = load_result_regs(result_regs, result_base);
+            Control::Continue((ip, sp, instance, ireg, freg32, freg64))
+        }
+        Control::Break(sp) => {
+            // Returning to the host (root frame): persist the mirrored registers so the host call
+            // boundary spills consistent values back into the result slots.
+            let (ireg, freg32, freg64) = load_result_regs(result_regs, result_base);
+            state.stack.sync_regs(ireg, freg32, freg64);
+            done!(state, DoneReason::Return(sp))
+        }
     }
 }
 

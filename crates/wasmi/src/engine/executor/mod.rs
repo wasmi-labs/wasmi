@@ -20,6 +20,7 @@ pub use self::{
 };
 use super::code_map::{CodeMap, CodeView};
 use crate::{
+    AsContext,
     Error,
     Func,
     FuncEntity,
@@ -30,6 +31,7 @@ use crate::{
         ResumableCallBase,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
+        code_map::ResultRegs,
         executor::handler::{init_host_func_call, init_wasm_func_call},
     },
     ir::SlotSpan,
@@ -139,8 +141,10 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let caller_results = invocation.caller_results();
+        let result_regs = ResultRegs::new(invocation.common.func().ty(ctx.as_context()).results());
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let outcome = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
+        let outcome =
+            executor.resume_func_host_trap(ctx.store, params, caller_results, results, result_regs);
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
@@ -179,8 +183,9 @@ impl EngineInner {
     where
         Results: LiftFromCells,
     {
+        let result_regs = ResultRegs::new(invocation.common.func().ty(ctx.as_context()).results());
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
+        let outcome = executor.resume_func_out_of_fuel(ctx.store, results, result_regs);
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
@@ -243,6 +248,9 @@ impl<'engine> EngineExecutor<'engine> {
         Results: LiftFromCells,
     {
         self.stack.reset();
+        // Spill descriptor for results the root function returns in accumulator registers, which
+        // the host reads from result slots and cannot read from registers.
+        let result_regs = ResultRegs::new(func.ty(&*store).results());
         let results = match store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
@@ -250,7 +258,9 @@ impl<'engine> EngineExecutor<'engine> {
                 let engine_func = wasm_func.func_body();
                 let call =
                     init_wasm_func_call(store, self.code, self.stack, engine_func, instance)?;
-                call.write_params(params).execute()?.write_results(results)
+                let mut call = call.write_params(params).execute()?;
+                call.spill_result_regs(result_regs);
+                call.write_results(results)
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
@@ -280,16 +290,17 @@ impl<'engine> EngineExecutor<'engine> {
         params: Params,
         params_slots: SlotSpan,
         results: Results,
+        result_regs: ResultRegs,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
         Params: LowerToCells,
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code, self.stack)?
-            .provide_host_results(params, params_slots)
-            .execute()?
-            .write_results(results);
-        Ok(value)
+        let mut call = resume_wasm_func_call(store, self.code, self.stack)?
+            .provide_host_results(params, params_slots, result_regs)
+            .execute()?;
+        call.spill_result_regs(result_regs);
+        Ok(call.write_results(results))
     }
 
     /// Resumes the execution of the given [`Func`] using `params` after running out of fuel.
@@ -304,13 +315,13 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: Results,
+        result_regs: ResultRegs,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code, self.stack)?
-            .execute()?
-            .write_results(results);
-        Ok(value)
+        let mut call = resume_wasm_func_call(store, self.code, self.stack)?.execute()?;
+        call.spill_result_regs(result_regs);
+        Ok(call.write_results(results))
     }
 }

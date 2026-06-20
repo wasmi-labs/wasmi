@@ -180,6 +180,11 @@ impl ResumableCallCommon {
         &mut self.stack
     }
 
+    /// Returns the resumed root [`Func`].
+    pub(super) fn func(&self) -> Func {
+        self.func
+    }
+
     /// Prepares the `outputs` buffer for call resumption.
     ///
     /// # Errors

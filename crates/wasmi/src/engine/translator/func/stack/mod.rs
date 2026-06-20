@@ -39,7 +39,7 @@ use crate::{
         required_cells_for_tys,
         translator::func::{LocalIdx, Pos, labels::LabelRef},
     },
-    ir::{self, BoundedSlotSpan, SlotSpan},
+    ir::{self, BoundedSlotSpan, Slot, SlotSpan},
 };
 
 #[cfg(doc)]
@@ -70,6 +70,21 @@ impl Reset for StackAllocations {
         self.operands.reset();
         self.controls.reset();
     }
+}
+
+/// Returns the number of trailing function results passed in accumulator registers.
+///
+/// # Note
+///
+/// These results are returned in accumulator registers rather than stack slots and therefore
+/// must be spilled back into the result slots at the host (root call) boundary, since the host
+/// cannot read accumulator registers. Computed from the result types alone, so it agrees with
+/// [`Stack::result_params`] for the same [`FuncType`].
+pub fn len_result_regs(tys: &[ValType]) -> u16 {
+    Stack::branch_params_regs(tys)
+        .as_ref()
+        .map(BranchParamRegs::len)
+        .unwrap_or(0)
 }
 
 impl ReusableAllocations for Stack {
@@ -270,6 +285,29 @@ impl Stack {
         let regs = Self::branch_params_regs(tys);
         let regs_len = regs.as_ref().map(BranchParamRegs::len).unwrap_or(0);
         let temp_len = len_tys - regs_len;
+        Ok(BranchParams::new(temp_slots, temp_len, regs))
+    }
+
+    /// Creates the [`BranchParams`] describing where a function's results are expected.
+    ///
+    /// # Note
+    ///
+    /// - The results expected in stack slots occupy the function's result slot span starting at
+    ///   [`Slot`] `0`, so that the caller (or host) reads them from a known location.
+    /// - The trailing suffix of results may be returned in accumulator registers instead (see
+    ///   [`len_result_regs`]).
+    /// - Both the callee (when emitting `return`) and the caller (when allocating call results)
+    ///   derive this layout from the shared [`FuncType`], so they always agree without any
+    ///   coordination, even under lazy or separate compilation.
+    pub fn result_params(&self, func_ty: &FuncType) -> Result<BranchParams, Error> {
+        let results = func_ty.results();
+        let len_results = func_ty.len_results();
+        let regs = Self::branch_params_regs(results);
+        let regs_len = regs.as_ref().map(BranchParamRegs::len).unwrap_or(0);
+        let temp_len = len_results - regs_len;
+        let temp_tys = &results[..usize::from(temp_len)];
+        let temp_cells = required_cells_for_tys(temp_tys)?;
+        let temp_slots = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), temp_cells);
         Ok(BranchParams::new(temp_slots, temp_len, regs))
     }
 

@@ -7,6 +7,7 @@ use crate::{
         ResumableHostTrapError,
         ResumableOutOfFuelError,
         StackConfig,
+        code_map::ResultRegs,
         executor::{
             Cell,
             CellError,
@@ -819,7 +820,7 @@ impl Stack {
         callee_params: BoundedSlotSpan,
         results_len: u16,
         caller_instance: Inst,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, Sp, InOutParams<'a>), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
         self.values
             .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
@@ -839,6 +840,7 @@ impl Stack {
 
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
+    #[expect(clippy::too_many_arguments)]
     pub fn push_frame(
         &mut self,
         caller_ip: Option<Ip>,
@@ -847,10 +849,15 @@ impl Stack {
         callee_locals: u16,
         callee_slots: u16,
         callee_instance: Option<Inst>,
+        result_regs: ResultRegs,
     ) -> Result<Sp, TrapCode> {
-        let start = self
-            .frames
-            .push(caller_ip, callee_ip, callee_params, callee_instance)?;
+        let start = self.frames.push(
+            caller_ip,
+            callee_ip,
+            callee_params,
+            callee_instance,
+            result_regs,
+        )?;
         self.values
             .push(start, callee_locals, callee_slots, callee_params.len())
     }
@@ -862,8 +869,8 @@ impl Stack {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
-    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
-        let (ip, start, changed_instance) = self.frames.pop()?;
+    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst, ResultRegs)> {
+        let (ip, start, changed_instance, result_regs) = self.frames.pop()?;
         let sp = self.values.sp_or_dangling(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
@@ -872,7 +879,7 @@ impl Stack {
             }
             None => (mem0, mem0_len, instance),
         };
-        Some((ip, sp, mem0, mem0_len, instance))
+        Some((ip, sp, mem0, mem0_len, instance, result_regs))
     }
 
     /// Adjusts `self` for a function tail call.
@@ -1026,7 +1033,7 @@ impl ValueStack {
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, Sp, InOutParams<'a>), TrapCode> {
         let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
@@ -1042,7 +1049,8 @@ impl ValueStack {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
                 None => ReturnCallHost::Break(sp),
             };
-            return Ok((control, inout));
+            // No results to mirror into registers, so the result base is irrelevant.
+            return Ok((control, Sp::dangling(), inout));
         }
         let params_start = callee_start.add(params_offset)?;
         let params_end = params_start.add(params_len)?;
@@ -1050,6 +1058,9 @@ impl ValueStack {
         let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let caller_sp = self.sp(caller_start);
+        // The host writes its results starting at `callee_start`; this is the base from which a
+        // `return_call` to a host function mirrors results into accumulator registers.
+        let result_base = self.sp(callee_start);
         let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
@@ -1060,7 +1071,7 @@ impl ValueStack {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
             None => ReturnCallHost::Break(caller_sp),
         };
-        Ok((control, inout))
+        Ok((control, result_base, inout))
     }
 
     /// Prepares `self` for a host function call.
@@ -1296,7 +1307,7 @@ impl CallStack {
     ) -> (SpOffset, Option<(Ip, SpOffset, Inst)>) {
         let callee_start = self.top_start();
         let caller = match self.pop() {
-            Some((ip, start, instance)) => {
+            Some((ip, start, instance, _result_regs)) => {
                 let instance = instance.unwrap_or(callee_instance);
                 Some((ip, start, instance))
             }
@@ -1313,6 +1324,7 @@ impl CallStack {
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         instance: Option<Inst>,
+        result_regs: ResultRegs,
     ) -> Result<SpOffset, TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
@@ -1331,12 +1343,13 @@ impl CallStack {
             ip: callee_ip,
             start,
             instance: prev_instance,
+            result_regs,
         });
         Ok(start)
     }
 
     /// Adjusts `self` after returning from a function.
-    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>)> {
+    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>, ResultRegs)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
         };
@@ -1346,7 +1359,7 @@ impl CallStack {
         if let Some(instance) = popped.instance {
             self.instance = Some(instance);
         }
-        Some((ip, start, popped.instance))
+        Some((ip, start, popped.instance, popped.result_regs))
     }
 
     /// Adjusts `self` for a function tail call.
@@ -1397,6 +1410,14 @@ pub struct Frame {
     /// This is only `Some` if [`Frame`] and its caller originate from different
     /// Wasm instances and thus execution needs to change the currently used [`Inst`].
     instance: Option<Inst>,
+    /// Describes which of this frame's results, returned in accumulator registers, must be
+    /// spilled to result slots upon return because its caller expects them in slots.
+    ///
+    /// # Note
+    ///
+    /// Empty for `call_internal` callers (which read results directly from accumulators) and for
+    /// the root frame (whose results are spilled by the host call boundary instead).
+    result_regs: ResultRegs,
 }
 
 /// The offset of an [`Sp`] of a [`Stack`].

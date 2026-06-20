@@ -8,6 +8,7 @@ use crate::{
         EngineFunc,
         LiftFromCells,
         LowerToCells,
+        code_map::ResultRegs,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
             state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, Stack, VmState},
@@ -127,22 +128,47 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
 
 impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
     pub fn provide_host_results<Params>(
-        self,
+        mut self,
         params: Params,
         slots: SlotSpan,
+        result_regs: ResultRegs,
     ) -> WasmFuncCall<'a, T, state::Init>
     where
         Params: LowerToCells,
     {
-        let mut sp = self.callee_sp.offset(slots.head());
+        let base = self.callee_sp.offset(slots.head());
+        let mut sp = base;
         let Ok(_) = params.lower_to_cells(&*self.store, &mut sp) else {
             panic!("failed to store provided host results to cells")
         };
+        // Mirror the provided results into accumulator registers so that resuming a `return_call`
+        // to a host function delivers them to a caller that expects results in registers. The
+        // slots remain valid, so a caller expecting results in slots is unaffected.
+        let (ireg, freg32, freg64) = utils::load_result_regs(result_regs, base);
+        self.ireg = ireg;
+        self.freg32 = freg32;
+        self.freg64 = freg64;
         self.new_state(PhantomData)
     }
 }
 
 impl<'a, T> WasmFuncCall<'a, T, state::Done> {
+    /// Spills results returned in accumulator registers into their result slots.
+    ///
+    /// # Note
+    ///
+    /// Required at the host (root call) boundary since the host reads all results from the
+    /// result slots and cannot read accumulator registers. The final accumulator register
+    /// values were persisted by [`exec_return`](super::utils::exec_return) upon returning from
+    /// the root function.
+    pub fn spill_result_regs(&mut self, regs: ResultRegs) {
+        if regs.is_empty() {
+            return;
+        }
+        let (ireg, freg32, freg64) = self.stack.regs();
+        utils::spill_result_regs(regs, self.state.sp, ireg, freg32, freg64);
+    }
+
     pub fn write_results<Results>(self, results: Results) -> Results::Value
     where
         Results: LiftFromCells,
@@ -181,6 +207,8 @@ pub fn init_wasm_func_call<'a, T>(
         len_local_slots,
         len_stack_slots,
         Some(instance),
+        // The root frame's results are spilled by the host call boundary, not on return.
+        ResultRegs::default(),
     )?;
     let (ireg, freg32, freg64) = stack.regs();
     Ok(WasmFuncCall {

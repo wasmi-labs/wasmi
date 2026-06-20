@@ -15,9 +15,16 @@ use crate::{
     Config,
     Error,
     TrapCode,
+    ValType,
     core::{Fuel, FuelCostsProvider, hint},
-    engine::{ResumableOutOfFuelError, utils::unreachable_unchecked},
+    engine::{
+        ResumableOutOfFuelError,
+        len_result_regs,
+        required_cells_for_tys,
+        utils::unreachable_unchecked,
+    },
     errors::FuelError,
+    ir::Slot,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::boxed::Box;
@@ -978,6 +985,76 @@ impl fmt::Debug for UncompiledFuncEntry {
     }
 }
 
+/// Describes which trailing function results are returned in accumulator registers, and the
+/// result [`Slot`] each must be spilled to when its caller expects results in stack slots.
+///
+/// # Note
+///
+/// - The return ABI assigns at most one result per accumulator kind (the suffix result kinds are
+///   pairwise distinct), so a single destination [`Slot`] per accumulator fully describes it.
+/// - An empty descriptor means no result is returned in a register (e.g. `call_internal` callers
+///   read results directly from accumulators and never spill).
+#[derive(Debug, Default, Copy, Clone)]
+pub struct ResultRegs {
+    /// Destination slot of the result returned in the integer accumulator, if any.
+    ireg: Option<Slot>,
+    /// Destination slot of the result returned in the `f32` accumulator, if any.
+    freg32: Option<Slot>,
+    /// Destination slot of the result returned in the `f64` accumulator, if any.
+    freg64: Option<Slot>,
+}
+
+impl ResultRegs {
+    /// Computes the [`ResultRegs`] for a function with the given `result_tys`.
+    ///
+    /// Derived from the result types alone, matching the return ABI emitted during translation.
+    pub fn new(result_tys: &[ValType]) -> Self {
+        let mut this = Self::default();
+        let len_regs = usize::from(len_result_regs(result_tys));
+        if len_regs == 0 {
+            return this;
+        }
+        let split = result_tys.len() - len_regs;
+        let Ok(mut offset) = required_cells_for_tys(&result_tys[..split]) else {
+            return this;
+        };
+        for ty in &result_tys[split..] {
+            let slot = Slot::from(offset);
+            match ty {
+                ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
+                    this.ireg = Some(slot)
+                }
+                ValType::F32 => this.freg32 = Some(slot),
+                ValType::F64 => this.freg64 = Some(slot),
+                ValType::V128 => unreachable!("`v128` results are never returned in registers"),
+            }
+            // Note: results returned in accumulator registers occupy exactly one cell each.
+            offset += 1;
+        }
+        this
+    }
+
+    /// Returns `true` if no result is returned in an accumulator register.
+    pub fn is_empty(&self) -> bool {
+        self.ireg.is_none() && self.freg32.is_none() && self.freg64.is_none()
+    }
+
+    /// Destination slot of the result returned in the integer accumulator, if any.
+    pub fn ireg(&self) -> Option<Slot> {
+        self.ireg
+    }
+
+    /// Destination slot of the result returned in the `f32` accumulator, if any.
+    pub fn freg32(&self) -> Option<Slot> {
+        self.freg32
+    }
+
+    /// Destination slot of the result returned in the `f64` accumulator, if any.
+    pub fn freg64(&self) -> Option<Slot> {
+        self.freg64
+    }
+}
+
 /// Meta information about a [`EngineFunc`].
 #[derive(Debug)]
 pub struct CompiledFuncEntry {
@@ -996,6 +1073,8 @@ pub struct CompiledFuncEntry {
     /// This includes stack slots to store the function local constant values,
     /// function parameters, function locals and dynamically used stack slots.
     len_stack_slots: u16,
+    /// Describes which results the [`EngineFunc`] returns in accumulator registers.
+    result_regs: ResultRegs,
 }
 
 impl CompiledFuncEntry {
@@ -1010,7 +1089,12 @@ impl CompiledFuncEntry {
     ///
     /// - If `ops` is empty.
     /// - If `ops` contains more than `i32::MAX` encoded bytes.
-    pub fn new(len_local_slots: u16, len_stack_slots: u16, ops: &[u8]) -> Self {
+    pub fn new(
+        len_local_slots: u16,
+        len_stack_slots: u16,
+        ops: &[u8],
+        result_regs: ResultRegs,
+    ) -> Self {
         debug_assert!(len_local_slots <= len_stack_slots);
         let ops: Pin<Box<[u8]>> = Pin::new(ops.into());
         debug_assert!(
@@ -1031,6 +1115,7 @@ impl CompiledFuncEntry {
             ops,
             len_local_slots,
             len_stack_slots,
+            result_regs,
         }
     }
 }
@@ -1044,6 +1129,8 @@ pub struct CompiledFuncRef<'a> {
     len_local_slots: u16,
     /// The number of stack slots used by the [`EngineFunc`].
     len_stack_slots: u16,
+    /// Describes which results the [`EngineFunc`] returns in accumulator registers.
+    result_regs: ResultRegs,
 }
 
 impl<'a> From<&'a CompiledFuncEntry> for CompiledFuncRef<'a> {
@@ -1053,6 +1140,7 @@ impl<'a> From<&'a CompiledFuncEntry> for CompiledFuncRef<'a> {
             ops: func.ops.as_ref(),
             len_local_slots: func.len_local_slots,
             len_stack_slots: func.len_stack_slots,
+            result_regs: func.result_regs,
         }
     }
 }
@@ -1074,5 +1162,11 @@ impl<'a> CompiledFuncRef<'a> {
     #[inline]
     pub fn len_stack_slots(&self) -> u16 {
         self.len_stack_slots
+    }
+
+    /// Returns the results the [`EngineFunc`] returns in accumulator registers.
+    #[inline]
+    pub fn result_regs(&self) -> ResultRegs {
+        self.result_regs
     }
 }
