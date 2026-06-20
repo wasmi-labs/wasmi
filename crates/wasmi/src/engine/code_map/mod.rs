@@ -42,13 +42,17 @@ use crate::ir::Op;
 /// The number of functions stored in the first bucket represented as `log2`.
 const LEN_BUCKET0_LOG2: usize = 5;
 
-/// The number of functions stored in the first bucket.
-const LEN_BUCKET0: u64 = 1 << LEN_BUCKET0_LOG2;
-
 /// The maximum allowed number of functions in a [`CodeMap`].
 const MAX_FUNCS: usize = 100_000_000;
 
+/// The number of functions stored in the first bucket.
+///
+/// Derived from [`LEN_BUCKET0_LOG2`].
+const LEN_BUCKET0: u64 = 1 << LEN_BUCKET0_LOG2;
+
 /// The number of buckets required to satisfy [`LEN_BUCKET0_LOG2`] and [`MAX_FUNCS`].
+///
+/// Derived from [`MAX_FUNCS`].
 const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
 
 /// A data structure to store and manage [`FuncEntity`] definitions.
