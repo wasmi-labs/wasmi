@@ -38,14 +38,28 @@ impl Context {
             config.consume_fuel(true);
         }
         config.compilation_mode(compilation_mode);
-        config.wasm_custom_page_sizes(true);
-        config.wasm_wide_arithmetic(true);
+        #[cfg(feature = "validate")]
+        {
+            config.wasm_custom_page_sizes(true);
+            config.wasm_wide_arithmetic(true);
+        }
         let engine = wasmi::Engine::new(&config);
         let wasm =
             fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
-        let module = wasmi::Module::new(&engine, wasm).map_err(|error| {
-            anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
-        })?;
+        let module = {
+            #[cfg(feature = "validate")]
+            {
+                wasmi::Module::new(&engine, &wasm[..])
+            }
+            #[cfg(not(feature = "validate"))]
+            {
+                // SAFETY: Without the `validate` feature the Wasmi CLI does not validate its
+                //         inputs. It is the user's responsibility to only feed valid Wasm;
+                //         feeding invalid Wasm is undefined behavior.
+                unsafe { wasmi::Module::new_unchecked(&engine, &wasm[..]) }
+            }
+        }
+        .map_err(|error| anyhow!("failed to compile Wasm module {wasm_file:?}: {error}"))?;
         let mut store = wasmi::Store::new(&engine, store_ctx);
         if let Some(fuel) = fuel {
             store.set_fuel(fuel).unwrap_or_else(|error| {
