@@ -140,9 +140,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let block_ty = BlockType::new(block_ty, &self.module);
         let branch_params = self.stack.branch_params(block_ty, ControlFrameKind::Loop)?;
         let len_params = block_ty.len_params(self.engine());
+        self.preserve_temp_regs(fuel_pos, len_params.into())?;
         self.copy_branch_params(branch_params, fuel_pos)?;
         self.preserve_all_locals(len_params.into())?;
-        self.preserve_temp_regs(fuel_pos, len_params.into())?;
         let continue_label = self.instrs.new_label();
         self.instrs.pin_label(continue_label)?;
         let fuel_pos = self.instrs.encode_consume_fuel_op()?;
