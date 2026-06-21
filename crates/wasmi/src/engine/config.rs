@@ -41,6 +41,10 @@ pub enum CompilationMode {
     Lazy,
 }
 
+// Note: without the `validate` feature there is no `features` field, so every
+//       field equals its default; clippy then suggests deriving `Default`, but
+//       the manual impl is still required for the `validate`-enabled build.
+#[cfg_attr(not(feature = "validate"), allow(clippy::derivable_impls))]
 impl Default for Config {
     fn default() -> Self {
         Self {
