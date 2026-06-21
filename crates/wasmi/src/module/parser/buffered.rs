@@ -6,7 +6,9 @@ use super::{
     ModuleParser,
 };
 use crate::{Error, Module};
-use wasmparser::{Chunk, Payload, Validator};
+#[cfg(feature = "validate")]
+use wasmparser::Validator;
+use wasmparser::{Chunk, Payload};
 
 #[cfg_attr(not(feature = "validate"), allow(unused_mut, unused_variables))]
 impl ModuleParser {

@@ -46,6 +46,7 @@ use crate::{
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
+#[cfg(feature = "validate")]
 use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 
 /// A parsed and validated WebAssembly module.
@@ -283,6 +284,7 @@ impl Module {
     /// If Wasm validation for `wasm` fails for the given [`Config`] provided via `engine`.
     ///
     /// [`Config`]: crate::Config
+    #[cfg(feature = "validate")]
     pub fn validate(engine: &Engine, wasm: &[u8]) -> Result<(), Error> {
         let mut validator = Validator::new_with_features(engine.config().wasm_features());
         for payload in Parser::new(0).parse_all(wasm) {
