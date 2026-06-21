@@ -551,7 +551,7 @@ execution_handler! {
 }
 
 macro_rules! handler_return {
-    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
+    ( $( fn $handler:ident($op:ident, $reg:expr) = $eval:expr );* $(;)? ) => {
         $(
             execution_handler! {
                 fn $handler(
@@ -567,7 +567,7 @@ macro_rules! handler_return {
                 ) -> Done = {
                     let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
                     let value = get_value(value, sp, ireg, freg32, freg64);
-                    set_value!(Slot::from(0), $eval(value), sp, ireg, freg32, freg64);
+                    set_value!($reg, $eval(value), sp, ireg, freg32, freg64);
                     exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -575,12 +575,13 @@ macro_rules! handler_return {
     };
 }
 handler_return! {
-    fn return_u64_r(ReturnU64_R) = identity::<u64>;
-    fn return_u64_s(ReturnU64_S) = identity::<u64>;
-    fn return_u32_i(ReturnU32_I) = identity::<u32>;
-    fn return_u64_i(ReturnU64_I) = identity::<u64>;
-    fn return_f32_r(ReturnF32_R) = identity::<f32>;
-    fn return_f64_r(ReturnF64_R) = identity::<f64>;
+    fn return_u64_s(ReturnU64_S, crate::ir::Reg::<i64>::default()) = identity::<u64>;
+    fn return_u64_i(ReturnU64_I, crate::ir::Reg::<i64>::default()) = identity::<u64>;
+    fn return_u32_i(ReturnU32_I, crate::ir::Reg::<i64>::default()) = identity::<u32>;
+    fn return_f32_s(ReturnF32_S, crate::ir::Reg::<f32>::default()) = identity::<f32>;
+    fn return_f32_i(ReturnF32_I, crate::ir::Reg::<f32>::default()) = identity::<f32>;
+    fn return_f64_s(ReturnF64_S, crate::ir::Reg::<f64>::default()) = identity::<f64>;
+    fn return_f64_i(ReturnF64_I, crate::ir::Reg::<f64>::default()) = identity::<f64>;
 }
 
 execution_handler! {

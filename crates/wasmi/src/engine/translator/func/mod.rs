@@ -1029,6 +1029,12 @@ impl FuncTranslator {
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let func_ty = self.func_type();
         let params = self.stack.result_params(&func_ty)?;
+        // Fast path: a function returning a single value in an accumulator register lowers to one
+        // fused return op that loads the value into its accumulator (or a plain `return` if it is
+        // already there), mirroring the single-op return of a non-accumulator ISA.
+        if params.len_temps() == 0 && params.len_regs() == 1 {
+            return self.encode_return_single(fuel_pos);
+        }
         // Note: the prefix results expected in stack slots are moved to temporary slots _before_
         //       the suffix results are placed into accumulator registers. Otherwise a prefix
         //       result still residing in a register could be clobbered by a suffix copy.
@@ -1043,6 +1049,48 @@ impl FuncTranslator {
         self.copy_branch_params_regs(params, fuel_pos)?;
         self.instrs
             .encode_op(instr, fuel_pos, FuelCostsProvider::base)
+    }
+
+    /// Encodes a return operator for a function returning a single value in an accumulator register.
+    ///
+    /// # Note
+    ///
+    /// Emits a single fused return op that loads the result into its accumulator register and
+    /// returns, or a plain `return` when the value already resides in its accumulator. Mirrors
+    /// [`Self::select_copy_rx_op`], but fuses the load into the return.
+    fn encode_return_single(
+        &mut self,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<Pos<Op>, Error> {
+        let value = self.stack.peek(0);
+        let op = match value.ty() {
+            ValType::I32 | ValType::FuncRef | ValType::ExternRef => {
+                match value.resolve(&self.layout)? {
+                    ResolvedOperand::Reg(_) => Op::r#return(),
+                    ResolvedOperand::Slot(value) => Op::return_u64_s(value),
+                    ResolvedOperand::Immediate(value) => Op::return_u32_i(u32::from(value.raw())),
+                }
+            }
+            ValType::I64 => match value.resolve_as::<u64>(&self.layout)? {
+                ResolvedOperand::Reg(_) => Op::r#return(),
+                ResolvedOperand::Slot(value) => Op::return_u64_s(value),
+                ResolvedOperand::Immediate(value) => Op::return_u64_i(value),
+            },
+            ValType::F32 => match value.resolve_as::<f32>(&self.layout)? {
+                ResolvedOperand::Reg(_) => Op::r#return(),
+                ResolvedOperand::Slot(value) => Op::return_f32_s(value),
+                ResolvedOperand::Immediate(value) => Op::return_f32_i(value),
+            },
+            ValType::F64 => match value.resolve_as::<f64>(&self.layout)? {
+                ResolvedOperand::Reg(_) => Op::r#return(),
+                ResolvedOperand::Slot(value) => Op::return_f64_s(value),
+                ResolvedOperand::Immediate(value) => Op::return_f64_i(value),
+            },
+            // Note: `v128` is never a single accumulator-register result; it stays in slots and is
+            //       handled by the generic prefix/`return_span` path in `encode_return`.
+            ValType::V128 => unreachable!("`v128` is never returned in an accumulator register"),
+        };
+        self.instrs.encode_op(op, fuel_pos, FuelCostsProvider::base)
     }
 
     /// Moves the prefix function-result operands (those expected in stack slots) into a
