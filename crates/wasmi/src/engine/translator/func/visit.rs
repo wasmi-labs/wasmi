@@ -537,7 +537,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::F64 => Op::global_get_f64_r(global_idx),
             _ => unreachable!(),
         };
-        self.stage_op_with_result_reg(content, operator, FuelCostsProvider::instance)?;
+        self.push_op_with_result_reg(content, operator, FuelCostsProvider::instance)?;
         Ok(())
     }
 
