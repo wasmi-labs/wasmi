@@ -222,6 +222,7 @@ impl Module {
     /// - If Wasmi cannot translate the Wasm bytecode.
     ///
     /// [`Config`]: crate::Config
+    #[cfg(feature = "validate")]
     pub fn new(engine: &Engine, wasm: impl AsRef<[u8]>) -> Result<Self, Error> {
         let wasm = wasm.as_ref();
         #[cfg(feature = "wat")]

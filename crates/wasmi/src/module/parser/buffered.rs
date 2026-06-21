@@ -19,12 +19,10 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
+    #[cfg(feature = "validate")]
     pub fn parse_buffered(mut self, buffer: &[u8]) -> Result<Module, Error> {
         let features = self.engine.config().wasm_features();
-        #[cfg(feature = "validate")]
-        {
-            self.validator = Some(Validator::new_with_features(features));
-        }
+        self.validator = Some(Validator::new_with_features(features));
         // SAFETY: we just pre-populated the Wasm module parser with a validator
         //         thus calling this method is safe.
         unsafe { self.parse_buffered_impl(buffer) }
