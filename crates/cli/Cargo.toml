@@ -19,7 +19,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-wasmi = { workspace = true }
+wasmi = { workspace = true, features = ["validate"] }
 wasmi_wasi = { workspace = true, optional = true }
 wasmi_wast = { workspace = true, optional = true }
 anyhow = "1"
