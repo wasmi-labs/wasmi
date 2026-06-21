@@ -421,8 +421,10 @@ impl Stack {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
-        self.push_else_operands(&if_frame)?;
-        self.operands.set_registers(if_frame.registers());
+        if if_frame.is_else_reachable() {
+            self.push_else_operands(&if_frame)?;
+            self.operands.set_registers(if_frame.registers());
+        }
         self.controls
             .push_else(if_frame, fuel_pos, is_end_of_then_reachable);
         Ok(())
