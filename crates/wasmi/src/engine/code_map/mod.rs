@@ -10,7 +10,8 @@ mod utils;
 
 pub use self::span::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter};
 use self::utils::SmallByteSlice;
-use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
+use super::ValidatingFuncTranslator;
+use super::{FuncToValidate, FuncTranslationDriver, FuncTranslator, TranslationError};
 use crate::{
     Config,
     Error,
@@ -117,7 +118,7 @@ impl CodeMap {
         func_idx: FuncIdx,
         bytes: &[u8],
         module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: Option<FuncToValidate>,
     ) {
         let func = match self.funcs.get(func) {
             Some(func) => func,
@@ -849,7 +850,7 @@ impl UncompiledFuncEntry {
         func_index: FuncIdx,
         bytes: &[u8],
         module: ModuleHeader,
-        func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
+        func_to_validate: impl Into<Option<FuncToValidate>>,
     ) -> Self {
         let validation = func_to_validate.into().map(|func_to_validate| {
             assert_eq!(

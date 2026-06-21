@@ -69,7 +69,14 @@ use alloc::{
 };
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
-use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
+#[cfg(feature = "validate")]
+use wasmparser::FuncValidatorAllocations;
+
+/// `wasmparser` validation info for a function; uninhabited when `validate` is off.
+#[cfg(feature = "validate")]
+pub(crate) type FuncToValidate = wasmparser::FuncToValidate<wasmparser::ValidatorResources>;
+#[cfg(not(feature = "validate"))]
+pub(crate) enum FuncToValidate {}
 
 #[cfg(doc)]
 use crate::Store;
@@ -237,7 +244,7 @@ impl Engine {
         offset: usize,
         bytes: &[u8],
         module: ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: Option<FuncToValidate>,
     ) -> Result<(), Error> {
         self.inner.translate_func(
             func_index,
@@ -290,7 +297,7 @@ impl Engine {
         func: EngineFunc,
         bytes: &[u8],
         module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: Option<FuncToValidate>,
     ) {
         self.inner
             .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
@@ -655,7 +662,7 @@ impl EngineInner {
         offset: usize,
         bytes: &[u8],
         module: ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: Option<FuncToValidate>,
     ) -> Result<(), Error> {
         let features = self.config().wasm_features();
         match (self.config.get_compilation_mode(), func_to_validate) {
@@ -784,7 +791,7 @@ impl EngineInner {
         func: EngineFunc,
         bytes: &[u8],
         module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: Option<FuncToValidate>,
     ) {
         self.code_map
             .init_func_as_uncompiled(func, func_idx, bytes, module, func_to_validate)

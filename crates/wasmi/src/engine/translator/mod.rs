@@ -15,7 +15,7 @@ pub use self::{
     func::{FuncTranslator, FuncTranslatorAllocations},
     utils::required_cells_for_tys,
 };
-use super::code_map::CompiledFuncEntry;
+use super::{FuncToValidate, code_map::CompiledFuncEntry};
 use crate::{
     Error,
     engine::EngineFunc,
@@ -361,7 +361,7 @@ impl Validation {
     }
 
     /// Returns the [`FuncToValidate`] if `self` is checked.
-    pub fn take_func_to_validate(&mut self) -> Option<FuncToValidate<ValidatorResources>> {
+    pub fn take_func_to_validate(&mut self) -> Option<FuncToValidate> {
         let features = self.features();
         match mem::replace(self, Self::Unchecked(features)) {
             Self::Checked(func_to_validate) => Some(func_to_validate),
@@ -385,7 +385,7 @@ impl LazyFuncTranslator {
         func_idx: FuncIdx,
         engine_func: EngineFunc,
         module: ModuleHeader,
-        func_to_validate: FuncToValidate<ValidatorResources>,
+        func_to_validate: FuncToValidate,
     ) -> Self {
         Self {
             func_idx,
