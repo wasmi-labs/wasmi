@@ -10,6 +10,8 @@ mod simd;
 mod stack;
 mod visit;
 
+pub use self::stack::{BranchParamRegs, RegKind, result_reg_kinds};
+
 #[cfg(doc)]
 use self::stack::ImmediateOperand;
 
@@ -46,7 +48,7 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawRef, RawVal, Typed, TypedRawVal},
+    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedRawVal},
     engine::{
         BlockType,
         CompiledFuncEntry,
@@ -62,9 +64,9 @@ use crate::{
             },
             func::{
                 op::BinaryOpRhs,
-                stack::{Allocation, BranchParams, PreservedRegs, RegKind},
+                stack::{Allocation, BranchParams, PreservedRegs},
             },
-            utils::{ToBits, WasmInteger, required_cells_for_ty},
+            utils::{WasmInteger, required_cells_for_ty},
         },
     },
     ir::{
@@ -329,32 +331,6 @@ impl FuncTranslator {
     /// Returns the [`Engine`] for which the function is compiled.
     fn engine(&self) -> &Engine {
         &self.engine
-    }
-
-    /// Copy the top-most `len` operands to [`Operand::Temp`] values.
-    ///
-    /// Returns a [`SlotSpan`] to the copied operands.
-    ///
-    /// # Note
-    ///
-    /// - The top-most `len` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
-    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn move_operands_to_temp(
-        &mut self,
-        len: usize,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<BoundedSlotSpan, Error> {
-        debug_assert!(len > 0);
-        let mut copied_cells: u16 = 0;
-        for n in 0..len {
-            let operand = self.stack.operand_to_temp(n);
-            copied_cells = copied_cells
-                .checked_add(operand.temp_slots().len())
-                .ok_or(TranslationError::SlotAccessOutOfBounds)?;
-            self.copy_operand_to_temp(operand, fuel_pos)?;
-        }
-        let first = self.stack.peek(len - 1).temp_slots().head();
-        Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
     /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
@@ -1042,64 +1018,59 @@ impl FuncTranslator {
     }
 
     /// Encodes a generic return operator.
+    ///
+    /// # Note
+    ///
+    /// Function results are placed according to the result [`BranchParams`]: a trailing suffix
+    /// of results is returned in accumulator registers, the remaining prefix in the function's
+    /// result slot span starting at [`Slot`] `0`. The suffix is forwarded to the caller through
+    /// the accumulator registers; only the host (root call) boundary has to spill them back to
+    /// slots.
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
-        let len_results = self.func_type_with(FuncType::len_results);
-        let instr = match len_results {
-            0 => Op::Return {},
-            1 => self.encode_return_value(fuel_pos)?,
+        let func_ty = self.func_type();
+        let params = self.stack.result_params(&func_ty)?;
+        // Note: the prefix results expected in stack slots are moved to temporary slots _before_
+        //       the suffix results are placed into accumulator registers. Otherwise a prefix
+        //       result still residing in a register could be clobbered by a suffix copy.
+        let instr = match params.len_temps() {
+            0 => Op::r#return(),
             _ => {
-                let len_results = usize::from(len_results);
-                let results = self.move_operands_to_temp(len_results, fuel_pos)?;
-                Self::make_return_span(results)
+                let prefix = self.move_prefix_to_temp(params, fuel_pos)?;
+                Self::make_return_span(prefix)
             }
         };
-        let instr = self
-            .instrs
-            .encode_op(instr, fuel_pos, FuelCostsProvider::base)?;
-        Ok(instr)
+        // Place the suffix results into their accumulator registers (skips no-op copies).
+        self.copy_branch_params_regs(params, fuel_pos)?;
+        self.instrs
+            .encode_op(instr, fuel_pos, FuelCostsProvider::base)
     }
 
-    /// Encodes a return operator that returns a single value.
-    fn encode_return_value(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
-        let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
-            ValType::V128 => {
-                let returned = BoundedSlotSpan::new(SlotSpan::new(slot), 2);
-                Self::make_return_span(returned)
-            }
-            _ => Op::return_u64_s(slot),
-        };
-        let value = self.stack.peek(0);
-        let ty = value.ty();
-        let op = match value.resolve(&self.layout)? {
-            ResolvedOperand::Reg(ty) => match ty {
-                | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                    Op::return_u64_r()
-                }
-                | ValType::F32 => Op::return_f32_r(),
-                | ValType::F64 => Op::return_f64_r(),
-                | ValType::V128 => {
-                    // Note: `v128` values may not occupy register operands for now.
-                    unreachable!()
-                }
-            },
-            ResolvedOperand::Slot(value) => return_slot_for_ty(ty, value),
-            ResolvedOperand::Immediate(value) => match value.ty() {
-                ValType::I32 => Op::return_u32_i(i32::from(value).to_bits()),
-                ValType::I64 => Op::return_u64_i(i64::from(value).to_bits()),
-                ValType::F32 => Op::return_u32_i(f32::from(value).to_bits()),
-                ValType::F64 => Op::return_u64_i(f64::from(value).to_bits()),
-                ValType::FuncRef | ValType::ExternRef => {
-                    Op::return_u32_i(u32::from(RawRef::from(value.raw())))
-                }
-                ValType::V128 => {
-                    let value = self.stack.peek(0);
-                    let temp_slot = self.copy_operand_to_temp(value, fuel_pos)?;
-                    let returned = BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2);
-                    Self::make_return_span(returned)
-                }
-            },
-        };
-        Ok(op)
+    /// Moves the prefix function-result operands (those expected in stack slots) into a
+    /// contiguous temporary [`Slot`] span and returns it.
+    ///
+    /// # Note
+    ///
+    /// The trailing suffix results expected in accumulator registers (the last
+    /// `params.len_regs()` operands) are left in place — they must already have been copied
+    /// into their accumulator registers via [`Self::copy_branch_params_regs`].
+    fn move_prefix_to_temp(
+        &mut self,
+        params: BranchParams,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<BoundedSlotSpan, Error> {
+        let len = usize::from(params.len());
+        let len_regs = usize::from(params.len_regs());
+        debug_assert!(len_regs < len);
+        let mut copied_cells: u16 = 0;
+        for depth in len_regs..len {
+            let operand = self.stack.operand_to_temp(depth);
+            copied_cells = copied_cells
+                .checked_add(operand.temp_slots().len())
+                .ok_or(TranslationError::SlotAccessOutOfBounds)?;
+            self.copy_operand_to_temp(operand, fuel_pos)?;
+        }
+        let first = self.stack.peek(len - 1).temp_slots().head();
+        Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
     }
 
     /// Translates the end of a Wasm `block` control frame.
@@ -1523,8 +1494,18 @@ impl FuncTranslator {
             self.copy_operand_to_temp(operand, fuel_pos)?;
         }
         let params = BoundedSlotSpan::new(params_start, params_len);
-        for result in ty.results() {
-            self.stack.push_temp(*result, Allocation::None)?;
+        // Every call — internal, imported, or indirect — receives a trailing suffix of results in
+        // accumulator registers (matching the callee's register-based return ABI). A Wasm callee
+        // delivers them via `exec_return` forwarding; a host callee writes results to slots, which
+        // the host-call bridge then loads into the accumulators. The split is derived from the
+        // shared `FuncType`, so caller and callee always agree.
+        let len_temps = usize::from(self.stack.result_params(ty)?.len_temps());
+        for (n, result) in ty.results().iter().enumerate() {
+            let alloc = match n < len_temps {
+                true => Allocation::None,
+                false => Allocation::Reg,
+            };
+            self.stack.push_temp(*result, alloc)?;
         }
         Ok(params)
     }

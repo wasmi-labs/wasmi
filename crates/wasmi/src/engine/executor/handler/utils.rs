@@ -23,9 +23,11 @@ use crate::{
         WriteAs,
     },
     engine::{
+        BranchParamRegs,
         DedupFuncType,
         EngineFunc,
         FuncEntry,
+        RegKind,
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
@@ -533,11 +535,80 @@ pub fn exec_return(
         state.stack.pop_frame(state.store, mem0, mem0_len, instance)
     else {
         // No more frames on the call stack -> break out of execution!
+        //
+        // Persist the accumulator registers so the host (root call) boundary can spill any
+        // results returned in registers back into the result slots (see `spill_result_regs`).
+        state.stack.sync_regs(ireg, freg32, freg64);
         done!(state, DoneReason::Return(sp))
     };
     dispatch!(
         state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
     )
+}
+
+/// Spills the results returned in accumulator registers into their result slots.
+///
+/// # Note
+///
+/// No-op when `regs` is empty, which is the case for `call_internal` callers that read results
+/// directly from accumulator registers.
+pub fn spill_result_regs(
+    regs: Option<BranchParamRegs>,
+    len_result_cells: u16,
+    sp: Sp,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) {
+    let Some(regs) = regs else { return };
+    for (j, kind) in regs.as_slice().iter().enumerate() {
+        let slot = suffix_slot(len_result_cells, j);
+        match kind {
+            RegKind::Ireg => set_slot_value(slot, u64::from(ireg), sp),
+            RegKind::Freg32 => set_slot_value(slot, f32::from(freg32), sp),
+            RegKind::Freg64 => set_slot_value(slot, f64::from(freg64), sp),
+        }
+    }
+}
+
+/// Loads the results a host function wrote to its result slots into accumulator registers.
+///
+/// # Note
+///
+/// Mirror of [`spill_result_regs`]: used by a call to a host function so that a caller expecting
+/// results in accumulator registers reads them there. The result slots remain valid, so a caller
+/// expecting results in slots is unaffected.
+pub fn load_result_regs(
+    regs: Option<BranchParamRegs>,
+    len_result_cells: u16,
+    sp: Sp,
+) -> (Ireg, Freg32, Freg64) {
+    let mut ireg = Ireg::default();
+    let mut freg32 = Freg32::default();
+    let mut freg64 = Freg64::default();
+    let Some(regs) = regs else {
+        return (ireg, freg32, freg64);
+    };
+    for (j, kind) in regs.as_slice().iter().enumerate() {
+        let slot = suffix_slot(len_result_cells, j);
+        match kind {
+            RegKind::Ireg => ireg = Ireg::from(get_slot_value::<u64>(slot, sp)),
+            RegKind::Freg32 => freg32 = Freg32::from(get_slot_value::<f32>(slot, sp)),
+            RegKind::Freg64 => freg64 = Freg64::from(get_slot_value::<f64>(slot, sp)),
+        }
+    }
+    (ireg, freg32, freg64)
+}
+
+/// Returns the result [`Slot`] of the `j`-th register-returned suffix result.
+///
+/// # Note
+///
+/// The suffix register-results occupy the last `regs.len()` cells of the result region — one cell
+/// each, since `v128` never occupies a register. [`BranchParamRegs::as_slice`] lists them from the
+/// last operand backwards, so index `j` maps to the cell at `len_result_cells - 1 - j`.
+fn suffix_slot(len_result_cells: u16, j: usize) -> Slot {
+    Slot::from(len_result_cells - 1 - j as u16)
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
@@ -844,7 +915,7 @@ pub fn call_host(
     params: BoundedSlotSpan,
     instance: Option<Inst>,
     call_hooks: CallHooks,
-) -> Control<Sp, Break> {
+) -> Control<(Sp, Ireg, Freg32, Freg64), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
     let (sp, inout) = state
@@ -866,7 +937,17 @@ pub fn call_host(
         },
     }
     state.code.refresh();
-    Control::Continue(sp)
+    // Mirror the host's slot-results into accumulator registers so that the caller — which under
+    // the register-based return ABI expects its result suffix in registers — reads them there.
+    // The host wrote its results starting at the call's result base (`sp` offset by the params
+    // head); the slots remain valid, so a caller expecting results in slots is unaffected.
+    let result_base = sp.offset(params.span().head());
+    let (ireg, freg32, freg64) = load_result_regs(
+        host_func.result_regs(),
+        host_func.len_result_cells(),
+        result_base,
+    );
+    Control::Continue((sp, ireg, freg32, freg64))
 }
 
 pub fn return_call_host(
@@ -875,10 +956,10 @@ pub fn return_call_host(
     host_func: HostFuncEntity,
     params: BoundedSlotSpan,
     instance: Inst,
-) -> Control<(Ip, Sp, Inst), Break> {
+) -> Control<(Ip, Sp, Inst, Ireg, Freg32, Freg64), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
-    let (control, inout) = state
+    let (control, result_base, inout) = state
         .stack
         .return_prepare_host_frame(params, host_func.len_result_cells(), instance)
         .into_control()?;
@@ -903,12 +984,30 @@ pub fn return_call_host(
         },
     }
     state.code.refresh();
+    // Mirror the host results from their slots into accumulator registers so that a caller which
+    // expects results in registers (e.g. reached via `call_internal`) reads them there. The host
+    // wrote them at the popped frame's base (`result_base`), not the grandcaller's continuation
+    // `sp`; the slots remain valid, so a caller expecting results in slots is unaffected.
+    let result_regs = host_func.result_regs();
+    let len_result_cells = host_func.len_result_cells();
     match control {
-        Control::Continue((ip, sp, instance)) => Control::Continue((ip, sp, instance)),
-        Control::Break(sp) => done!(state, DoneReason::Return(sp)),
+        Control::Continue((ip, sp, instance)) => {
+            let (ireg, freg32, freg64) =
+                load_result_regs(result_regs, len_result_cells, result_base);
+            Control::Continue((ip, sp, instance, ireg, freg32, freg64))
+        }
+        Control::Break(sp) => {
+            // Returning to the host (root frame): persist the mirrored registers so the host call
+            // boundary spills consistent values back into the result slots.
+            let (ireg, freg32, freg64) =
+                load_result_regs(result_regs, len_result_cells, result_base);
+            state.stack.sync_regs(ireg, freg32, freg64);
+            done!(state, DoneReason::Return(sp))
+        }
     }
 }
 
+#[expect(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn call_wasm_or_host(
     state: &mut VmState,
     caller_ip: Ip,
@@ -917,7 +1016,10 @@ pub fn call_wasm_or_host(
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
-) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst, Ireg, Freg32, Freg64), Break> {
     let func_entity = resolve_func(state.store, &func);
     let next_state = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
@@ -928,11 +1030,16 @@ pub fn call_wasm_or_host(
                 call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, callee_sp, mem0, mem0_len, instance)
+            // Forward the caller's accumulators unchanged: the Wasm callee overwrites them on
+            // dispatch-in (it reads its parameters from slots, not registers) and delivers its own
+            // result suffix in the accumulators upon return via `exec_return`.
+            (
+                callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64,
+            )
         }
         FuncEntity::Host(host_func) => {
             let host_func = *host_func;
-            let sp = call_host(
+            let (sp, ireg, freg32, freg64) = call_host(
                 state,
                 func,
                 Some(caller_ip),
@@ -945,7 +1052,9 @@ pub fn call_wasm_or_host(
             // which can trigger memory.grow, invalidating the cached mem0
             // pointer. Re-extract to avoid stale pointer dereference.
             let (mem0, mem0_len) = extract_mem0(state.store, instance);
-            (caller_ip, sp, mem0, mem0_len, instance)
+            (
+                caller_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
+            )
         }
     };
     Control::Continue(next_state)

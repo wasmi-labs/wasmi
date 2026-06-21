@@ -25,13 +25,16 @@ pub(crate) use self::{
     },
     func_types::DedupFuncType,
     translator::{
+        BranchParamRegs,
         FuncTranslationDriver,
         FuncTranslator,
         FuncTranslatorAllocations,
         LazyFuncTranslator,
+        RegKind,
         ValidatingFuncTranslator,
         WasmTranslator,
         required_cells_for_tys,
+        result_reg_kinds,
     },
 };
 use self::{

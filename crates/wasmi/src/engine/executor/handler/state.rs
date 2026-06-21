@@ -819,7 +819,7 @@ impl Stack {
         callee_params: BoundedSlotSpan,
         results_len: u16,
         caller_instance: Inst,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, Sp, InOutParams<'a>), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
         self.values
             .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
@@ -1026,7 +1026,7 @@ impl ValueStack {
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, Sp, InOutParams<'a>), TrapCode> {
         let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
@@ -1042,7 +1042,8 @@ impl ValueStack {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
                 None => ReturnCallHost::Break(sp),
             };
-            return Ok((control, inout));
+            // No results to mirror into registers, so the result base is irrelevant.
+            return Ok((control, Sp::dangling(), inout));
         }
         let params_start = callee_start.add(params_offset)?;
         let params_end = params_start.add(params_len)?;
@@ -1050,6 +1051,9 @@ impl ValueStack {
         let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let caller_sp = self.sp(caller_start);
+        // The host writes its results starting at `callee_start`; this is the base from which a
+        // `return_call` to a host function mirrors results into accumulator registers.
+        let result_base = self.sp(callee_start);
         let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
@@ -1060,7 +1064,7 @@ impl ValueStack {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
             None => ReturnCallHost::Break(caller_sp),
         };
-        Ok((control, inout))
+        Ok((control, result_base, inout))
     }
 
     /// Prepares `self` for a host function call.

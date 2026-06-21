@@ -318,8 +318,9 @@ execution_handler! {
     ) -> Done = {
         let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
-        let (ip, sp, mem0, mem0_len, instance) =
-            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+        let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = call_wasm_or_host(
+            state, caller_ip, func, params, mem0, mem0_len, instance, ireg, freg32, freg64,
+        )?;
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -360,8 +361,11 @@ macro_rules! call_indirect_execution_handler {
                             freg32,
                             freg64,
                         ).into_control()?;
-                    let (callee_ip, sp, mem0, mem0_len, instance) =
-                        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+                    let (callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) =
+                        call_wasm_or_host(
+                            state, caller_ip, func, params, mem0, mem0_len, instance, ireg, freg32,
+                            freg64,
+                        )?;
                     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
@@ -414,7 +418,7 @@ execution_handler! {
         let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
         let func_entity = resolve_func(state.store, &func);
-        let (callee_ip, sp, new_instance) = match func_entity {
+        let (callee_ip, sp, new_instance, ireg, freg32, freg64) = match func_entity {
             FuncEntity::Wasm(func) => {
                 let wasm_func = func.func_body();
                 let callee_instance = *func.instance();
@@ -425,7 +429,9 @@ execution_handler! {
                 };
                 let (callee_ip, callee_sp) =
                     return_call_wasm(state, params, wasm_func, changed_instance)?;
-                (callee_ip, callee_sp, callee_instance)
+                // The tail-callee returns through this frame's continuation, so the accumulators
+                // are forwarded unchanged (the Wasm callee overwrites them on dispatch-in).
+                (callee_ip, callee_sp, callee_instance, ireg, freg32, freg64)
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
@@ -475,7 +481,7 @@ macro_rules! return_call_indirect_execution_handler {
                             freg64,
                         ).into_control()?;
                     let func_entity = resolve_func(state.store, &func);
-                    let (callee_ip, sp, callee_instance) = match func_entity {
+                    let (callee_ip, sp, callee_instance, ireg, freg32, freg64) = match func_entity {
                         FuncEntity::Wasm(func) => {
                             let wasm_func = func.func_body();
                             let callee_instance = *func.instance();
@@ -486,7 +492,8 @@ macro_rules! return_call_indirect_execution_handler {
                             };
                             let (callee_ip, callee_sp) =
                                 return_call_wasm(state, params, wasm_func, changed_instance)?;
-                            (callee_ip, callee_sp, callee_instance)
+                            // Forward the accumulators unchanged for a tail call to a Wasm function.
+                            (callee_ip, callee_sp, callee_instance, ireg, freg32, freg64)
                         }
                         FuncEntity::Host(host_func) => {
                             let host_func = *host_func;

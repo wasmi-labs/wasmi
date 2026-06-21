@@ -20,17 +20,21 @@ pub use self::{
 };
 use super::code_map::{CodeMap, CodeView};
 use crate::{
+    AsContext,
     Error,
     Func,
     FuncEntity,
     Store,
     StoreContextMut,
     engine::{
+        BranchParamRegs,
         EngineInner,
         ResumableCallBase,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
         executor::handler::{init_host_func_call, init_wasm_func_call},
+        required_cells_for_tys,
+        result_reg_kinds,
     },
     ir::SlotSpan,
 };
@@ -139,8 +143,18 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let caller_results = invocation.caller_results();
+        let func_ty = invocation.common.func().ty(ctx.as_context());
+        let result_regs = result_reg_kinds(func_ty.results());
+        let len_result_cells = required_cells_for_tys(func_ty.results()).unwrap_or(0);
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let outcome = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
+        let outcome = executor.resume_func_host_trap(
+            ctx.store,
+            params,
+            caller_results,
+            results,
+            result_regs,
+            len_result_cells,
+        );
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
@@ -179,8 +193,12 @@ impl EngineInner {
     where
         Results: LiftFromCells,
     {
+        let func_ty = invocation.common.func().ty(ctx.as_context());
+        let result_regs = result_reg_kinds(func_ty.results());
+        let len_result_cells = required_cells_for_tys(func_ty.results()).unwrap_or(0);
         let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
-        let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
+        let outcome =
+            executor.resume_func_out_of_fuel(ctx.store, results, result_regs, len_result_cells);
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
@@ -243,6 +261,12 @@ impl<'engine> EngineExecutor<'engine> {
         Results: LiftFromCells,
     {
         self.stack.reset();
+        // Descriptor for results the root function returns in accumulator registers, which the host
+        // reads from result slots and cannot read from registers. The slots are the last cells of
+        // the result region, so only the kinds plus the total result-cell count are needed.
+        let func_ty = func.ty(&*store);
+        let result_regs = result_reg_kinds(func_ty.results());
+        let len_result_cells = required_cells_for_tys(func_ty.results()).unwrap_or(0);
         let results = match store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
@@ -250,7 +274,9 @@ impl<'engine> EngineExecutor<'engine> {
                 let engine_func = wasm_func.func_body();
                 let call =
                     init_wasm_func_call(store, self.code, self.stack, engine_func, instance)?;
-                call.write_params(params).execute()?.write_results(results)
+                let mut call = call.write_params(params).execute()?;
+                call.spill_result_regs(result_regs, len_result_cells);
+                call.write_results(results)
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
@@ -280,16 +306,18 @@ impl<'engine> EngineExecutor<'engine> {
         params: Params,
         params_slots: SlotSpan,
         results: Results,
+        result_regs: Option<BranchParamRegs>,
+        len_result_cells: u16,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
         Params: LowerToCells,
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code, self.stack)?
-            .provide_host_results(params, params_slots)
-            .execute()?
-            .write_results(results);
-        Ok(value)
+        let mut call = resume_wasm_func_call(store, self.code, self.stack)?
+            .provide_host_results(params, params_slots, result_regs, len_result_cells)
+            .execute()?;
+        call.spill_result_regs(result_regs, len_result_cells);
+        Ok(call.write_results(results))
     }
 
     /// Resumes the execution of the given [`Func`] using `params` after running out of fuel.
@@ -304,13 +332,14 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: Results,
+        result_regs: Option<BranchParamRegs>,
+        len_result_cells: u16,
     ) -> Result<Results::Value, ExecutionOutcome>
     where
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code, self.stack)?
-            .execute()?
-            .write_results(results);
-        Ok(value)
+        let mut call = resume_wasm_func_call(store, self.code, self.stack)?.execute()?;
+        call.spill_result_regs(result_regs, len_result_cells);
+        Ok(call.write_results(results))
     }
 }
