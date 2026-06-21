@@ -59,6 +59,7 @@ impl ModuleParser {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
         let mut parser = WasmParser::new(0);
+        #[cfg(feature = "validate")]
         parser.set_features(engine.config().wasm_features());
         Self {
             engine: engine.clone(),

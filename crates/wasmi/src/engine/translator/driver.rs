@@ -25,8 +25,16 @@ where
         translator: T,
     ) -> Result<Self, Error> {
         let offset = offset.into().unwrap_or(0);
-        let features = translator.features();
-        let reader = BinaryReader::new_features(bytes, offset, features);
+        let reader = {
+            #[cfg(feature = "validate")]
+            {
+                BinaryReader::new_features(bytes, offset, translator.features())
+            }
+            #[cfg(not(feature = "validate"))]
+            {
+                BinaryReader::new(bytes, offset)
+            }
+        };
         let func_body = FunctionBody::new(reader);
         Ok(Self {
             func_body,
