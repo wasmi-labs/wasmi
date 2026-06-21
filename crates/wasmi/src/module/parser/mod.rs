@@ -20,6 +20,8 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::ops::Range;
+#[cfg(feature = "validate")]
+use wasmparser::Validator;
 use wasmparser::{
     CustomSectionReader,
     DataSectionReader,
@@ -35,7 +37,6 @@ use wasmparser::{
     Payload,
     TableSectionReader,
     TypeSectionReader,
-    Validator,
 };
 
 #[cfg(doc)]
@@ -48,6 +49,7 @@ pub struct ModuleParser {
     /// The engine used for translation.
     engine: Engine,
     /// The Wasm validator used throughout stream parsing.
+    #[cfg(feature = "validate")]
     validator: Option<Validator>,
     /// The underlying Wasm parser.
     parser: WasmParser,
@@ -55,6 +57,7 @@ pub struct ModuleParser {
     engine_funcs: u32,
 }
 
+#[cfg_attr(not(feature = "validate"), allow(unused_mut, unused_variables))]
 impl ModuleParser {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
@@ -63,6 +66,7 @@ impl ModuleParser {
         parser.set_features(engine.config().wasm_features());
         Self {
             engine: engine.clone(),
+            #[cfg(feature = "validate")]
             validator: None,
             parser,
             engine_funcs: 0,
@@ -71,6 +75,7 @@ impl ModuleParser {
 
     /// Processes the end of the Wasm binary.
     fn process_end(&mut self, offset: usize) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             // This only checks if the number of code section entries and data segments match
             // their expected numbers thus we must avoid this check in header-only mode because
@@ -87,6 +92,7 @@ impl ModuleParser {
         encoding: Encoding,
         range: Range<usize>,
     ) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.version(num, encoding, &range)?;
         }
@@ -107,6 +113,7 @@ impl ModuleParser {
         section: TypeSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.type_section(&section)?;
         }
@@ -147,6 +154,7 @@ impl ModuleParser {
         section: ImportSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.import_section(&section)?;
         }
@@ -176,6 +184,7 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.function_section(&section)?;
         }
@@ -205,6 +214,7 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyTables { limit }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.table_section(&section)?;
         }
@@ -238,6 +248,7 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyMemories { limit }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.memory_section(&section)?;
         }
@@ -267,6 +278,7 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyGlobals { limit }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.global_section(&section)?;
         }
@@ -291,6 +303,7 @@ impl ModuleParser {
         section: ExportSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.export_section(&section)?;
         }
@@ -319,6 +332,7 @@ impl ModuleParser {
         range: Range<usize>,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.start_section(func, &range)?;
         }
@@ -352,6 +366,7 @@ impl ModuleParser {
                 }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.element_section(&section)?;
         }
@@ -376,6 +391,7 @@ impl ModuleParser {
                 }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.data_count_section(count, &range)?;
         }
@@ -403,6 +419,7 @@ impl ModuleParser {
                 }));
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             // Note: data section does not belong to the Wasm module header.
             //
@@ -456,6 +473,7 @@ impl ModuleParser {
                 }
             }
         }
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.code_section_start(count, &range)?;
         }
@@ -495,9 +513,18 @@ impl ModuleParser {
         let (func, engine_func) = self.next_func(header);
         let module = header.clone();
         let offset = func_body.get_binary_reader().original_position();
-        let func_to_validate = match &mut self.validator {
-            Some(validator) => Some(validator.code_section_entry(&func_body)?),
-            None => None,
+        let func_to_validate = {
+            #[cfg(feature = "validate")]
+            {
+                match &mut self.validator {
+                    Some(validator) => Some(validator.code_section_entry(&func_body)?),
+                    None => None,
+                }
+            }
+            #[cfg(not(feature = "validate"))]
+            {
+                None
+            }
         };
         self.engine
             .translate_func(func, engine_func, offset, bytes, module, func_to_validate)?;
@@ -519,6 +546,7 @@ impl ModuleParser {
 
     /// Process an unexpected, unsupported or malformed Wasm module section payload.
     fn process_invalid_payload(&mut self, payload: Payload<'_>) -> Result<(), Error> {
+        #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             if let Err(error) = validator.payload(&payload) {
                 return Err(Error::from(error));
