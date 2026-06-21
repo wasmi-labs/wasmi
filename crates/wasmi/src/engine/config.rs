@@ -10,6 +10,7 @@ pub struct Config {
     /// The limits set on the value stack and call stack.
     pub(crate) stack: StackConfig,
     /// The Wasm features used when validating or translating functions.
+    #[cfg(feature = "validate")]
     features: WasmFeatures,
     /// Is `true` if Wasmi executions shall consume fuel.
     consume_fuel: bool,
@@ -40,10 +41,15 @@ pub enum CompilationMode {
     Lazy,
 }
 
+// Note: without the `validate` feature there is no `features` field, so every
+//       field equals its default; clippy then suggests deriving `Default`, but
+//       the manual impl is still required for the `validate`-enabled build.
+#[cfg_attr(not(feature = "validate"), allow(clippy::derivable_impls))]
 impl Default for Config {
     fn default() -> Self {
         Self {
             stack: StackConfig::default(),
+            #[cfg(feature = "validate")]
             features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
@@ -56,6 +62,7 @@ impl Default for Config {
 
 impl Config {
     /// Returns the default [`WasmFeatures`].
+    #[cfg(feature = "validate")]
     fn default_features() -> WasmFeatures {
         let mut features = WasmFeatures::empty();
         features.set(WasmFeatures::MUTABLE_GLOBAL, true);
@@ -146,6 +153,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
+    #[cfg(feature = "validate")]
     pub fn wasm_mutable_global(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MUTABLE_GLOBAL, enable);
         self
@@ -158,6 +166,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
+    #[cfg(feature = "validate")]
     pub fn wasm_sign_extension(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::SIGN_EXTENSION, enable);
         self
@@ -171,6 +180,7 @@ impl Config {
     ///
     /// [`saturating-float-to-int`]:
     /// https://github.com/WebAssembly/nontrapping-float-to-int-conversions
+    #[cfg(feature = "validate")]
     pub fn wasm_saturating_float_to_int(&mut self, enable: bool) -> &mut Self {
         self.features
             .set(WasmFeatures::SATURATING_FLOAT_TO_INT, enable);
@@ -184,6 +194,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`multi-value`]: https://github.com/WebAssembly/multi-value
+    #[cfg(feature = "validate")]
     pub fn wasm_multi_value(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MULTI_VALUE, enable);
         self
@@ -196,6 +207,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`multi-memory`]: https://github.com/WebAssembly/multi-memory
+    #[cfg(feature = "validate")]
     pub fn wasm_multi_memory(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MULTI_MEMORY, enable);
         self
@@ -208,6 +220,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
+    #[cfg(feature = "validate")]
     pub fn wasm_bulk_memory(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::BULK_MEMORY, enable);
         self
@@ -220,6 +233,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`reference-types`]: https://github.com/WebAssembly/reference-types
+    #[cfg(feature = "validate")]
     pub fn wasm_reference_types(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::REFERENCE_TYPES, enable);
         self.features.set(WasmFeatures::GC_TYPES, enable);
@@ -233,6 +247,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`tail-call`]: https://github.com/WebAssembly/tail-call
+    #[cfg(feature = "validate")]
     pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::TAIL_CALL, enable);
         self
@@ -245,6 +260,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`extended-const`]: https://github.com/WebAssembly/extended-const
+    #[cfg(feature = "validate")]
     pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::EXTENDED_CONST, enable);
         self
@@ -257,6 +273,7 @@ impl Config {
     /// Disabled by default.
     ///
     /// [`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
+    #[cfg(feature = "validate")]
     pub fn wasm_custom_page_sizes(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::CUSTOM_PAGE_SIZES, enable);
         self
@@ -269,6 +286,7 @@ impl Config {
     /// Disabled by default.
     ///
     /// [`memory64`]: https://github.com/WebAssembly/memory64
+    #[cfg(feature = "validate")]
     pub fn wasm_memory64(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MEMORY64, enable);
         self
@@ -279,6 +297,7 @@ impl Config {
     /// Disabled by default.
     ///
     /// [`wide-arithmetic`]: https://github.com/WebAssembly/wide-arithmetic
+    #[cfg(feature = "validate")]
     pub fn wasm_wide_arithmetic(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::WIDE_ARITHMETIC, enable);
         self
@@ -289,7 +308,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`simd`]: https://github.com/WebAssembly/simd
-    #[cfg(feature = "simd")]
+    #[cfg(all(feature = "simd", feature = "validate"))]
     pub fn wasm_simd(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::SIMD, enable);
         self
@@ -300,7 +319,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
-    #[cfg(feature = "simd")]
+    #[cfg(all(feature = "simd", feature = "validate"))]
     pub fn wasm_relaxed_simd(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::RELAXED_SIMD, enable);
         self
@@ -309,6 +328,7 @@ impl Config {
     /// Enable or disable Wasm floating point (`f32` and `f64`) instructions and types.
     ///
     /// Enabled by default.
+    #[cfg(feature = "validate")]
     pub fn floats(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::FLOATS, enable);
         self
@@ -396,7 +416,14 @@ impl Config {
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
+    #[cfg(feature = "validate")]
     pub(crate) fn wasm_features(&self) -> WasmFeatures {
         self.features
+    }
+
+    /// Returns the [`WasmFeatures`] represented by the [`Config`].
+    #[cfg(not(feature = "validate"))]
+    pub(crate) fn wasm_features(&self) -> WasmFeatures {
+        WasmFeatures::default()
     }
 }

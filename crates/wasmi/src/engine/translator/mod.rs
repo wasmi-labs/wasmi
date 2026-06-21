@@ -15,26 +15,23 @@ pub use self::{
     func::{FuncTranslator, FuncTranslatorAllocations},
     utils::required_cells_for_tys,
 };
-use super::code_map::CompiledFuncEntry;
+use super::{FuncToValidate, code_map::CompiledFuncEntry};
 use crate::{
     Error,
     engine::EngineFunc,
     module::{FuncIdx, ModuleHeader},
 };
 use core::{fmt, mem};
-use wasmparser::{
-    BinaryReaderError,
-    FuncToValidate,
-    FuncValidatorAllocations,
-    ValidatorResources,
-    VisitOperator,
-    WasmFeatures,
-};
+#[cfg(feature = "validate")]
+use wasmparser::{BinaryReaderError, FuncValidatorAllocations};
+use wasmparser::{VisitOperator, WasmFeatures};
 
 /// The used function validator type.
+#[cfg(feature = "validate")]
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
 /// A Wasm to Wasmi IR function translator that also validates its input.
+#[cfg(feature = "validate")]
 pub struct ValidatingFuncTranslator<T> {
     /// The current position in the Wasm binary while parsing operators.
     pos: usize,
@@ -45,6 +42,7 @@ pub struct ValidatingFuncTranslator<T> {
 }
 
 /// Reusable heap allocations for function validation and translation.
+#[cfg(feature = "validate")]
 #[derive(Default)]
 pub struct ReusableAllocations<T> {
     pub translation: T,
@@ -101,6 +99,7 @@ pub trait WasmTranslator<'parser>:
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error>;
 
     /// Returns a reference to the [`WasmFeatures`] used by the [`WasmTranslator`].
+    #[cfg_attr(not(feature = "validate"), allow(dead_code))]
     fn features(&self) -> WasmFeatures;
 
     /// Translates the given local variables for the translated function.
@@ -142,6 +141,7 @@ pub trait WasmTranslator<'parser>:
     fn finish(self, finalize: impl FnOnce(CompiledFuncEntry)) -> Result<Self::Allocations, Error>;
 }
 
+#[cfg(feature = "validate")]
 impl<T> ValidatingFuncTranslator<T> {
     /// Creates a new [`ValidatingFuncTranslator`].
     pub fn new(validator: FuncValidator, translator: T) -> Result<Self, Error> {
@@ -173,6 +173,7 @@ impl<T> ValidatingFuncTranslator<T> {
     }
 }
 
+#[cfg(feature = "validate")]
 impl<'parser, T> WasmTranslator<'parser> for ValidatingFuncTranslator<T>
 where
     T: WasmTranslator<'parser>,
@@ -226,6 +227,7 @@ where
     }
 }
 
+#[cfg(feature = "validate")]
 macro_rules! impl_visit_operator {
     ( @mvp BrTable { $arg:ident: $argty:ty } => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // We need to special case the `BrTable` operand since its
@@ -282,6 +284,7 @@ macro_rules! impl_visit_operator {
     () => {};
 }
 
+#[cfg(feature = "validate")]
 impl<'a, T> VisitOperator<'a> for ValidatingFuncTranslator<T>
 where
     T: WasmTranslator<'a>,
@@ -298,7 +301,7 @@ where
     wasmparser::for_each_visit_operator!(impl_visit_operator);
 }
 
-#[cfg(feature = "simd")]
+#[cfg(all(feature = "simd", feature = "validate"))]
 macro_rules! impl_visit_simd_operator {
     ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
@@ -313,7 +316,7 @@ macro_rules! impl_visit_simd_operator {
     () => {};
 }
 
-#[cfg(feature = "simd")]
+#[cfg(all(feature = "simd", feature = "validate"))]
 impl<'a, T> wasmparser::VisitSimdOperator<'a> for ValidatingFuncTranslator<T>
 where
     T: WasmTranslator<'a>,
@@ -337,7 +340,8 @@ pub struct LazyFuncTranslator {
 /// Information about Wasm validation for lazy translation.
 enum Validation {
     /// Wasm validation is performed.
-    Checked(FuncToValidate<ValidatorResources>),
+    #[cfg(feature = "validate")]
+    Checked(FuncToValidate),
     /// Wasm validation is checked.
     ///
     /// # Dev. Note
@@ -349,21 +353,30 @@ enum Validation {
 impl Validation {
     /// Returns `true` if `self` performs validates Wasm upon lazy translation.
     pub fn is_checked(&self) -> bool {
-        matches!(self, Self::Checked(_))
+        #[cfg(feature = "validate")]
+        {
+            matches!(self, Self::Checked(_))
+        }
+        #[cfg(not(feature = "validate"))]
+        {
+            false
+        }
     }
 
     /// Returns the [`WasmFeatures`] used for Wasm parsing and validation.
     pub fn features(&self) -> WasmFeatures {
         match self {
+            #[cfg(feature = "validate")]
             Validation::Checked(func_to_validate) => func_to_validate.features,
             Validation::Unchecked(wasm_features) => *wasm_features,
         }
     }
 
     /// Returns the [`FuncToValidate`] if `self` is checked.
-    pub fn take_func_to_validate(&mut self) -> Option<FuncToValidate<ValidatorResources>> {
+    pub fn take_func_to_validate(&mut self) -> Option<FuncToValidate> {
         let features = self.features();
         match mem::replace(self, Self::Unchecked(features)) {
+            #[cfg(feature = "validate")]
             Self::Checked(func_to_validate) => Some(func_to_validate),
             Self::Unchecked(_) => None,
         }
@@ -381,11 +394,12 @@ impl fmt::Debug for Validation {
 
 impl LazyFuncTranslator {
     /// Create a new [`LazyFuncTranslator`].
+    #[cfg(feature = "validate")]
     pub fn new(
         func_idx: FuncIdx,
         engine_func: EngineFunc,
         module: ModuleHeader,
-        func_to_validate: FuncToValidate<ValidatorResources>,
+        func_to_validate: FuncToValidate,
     ) -> Self {
         Self {
             func_idx,

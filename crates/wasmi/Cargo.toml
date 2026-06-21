@@ -22,7 +22,7 @@ exclude = [
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
-wasmparser = { workspace = true, features = ["validate", "features"] }
+wasmparser = { workspace = true, features = [] }
 wat = { workspace = true, optional = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
@@ -35,7 +35,7 @@ assert_matches = "1.5"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["stable", "std", "wat"]
+default = ["stable", "std", "wat", "validate"]
 std = [
     "wasmi_ir/std",
     "wasmi_core/std",
@@ -53,6 +53,7 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
+validate = ["wasmparser/validate", "wasmparser/features"]
 stable = []
 unstable = []
 

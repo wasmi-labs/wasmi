@@ -10,7 +10,9 @@ mod utils;
 
 pub use self::span::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter};
 use self::utils::SmallByteSlice;
-use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
+#[cfg(feature = "validate")]
+use super::ValidatingFuncTranslator;
+use super::{FuncToValidate, FuncTranslationDriver, FuncTranslator, TranslationError};
 use crate::{
     Config,
     Error,
@@ -32,7 +34,9 @@ use core::{
     sync::atomic::{AtomicU8, AtomicUsize, Ordering},
 };
 use spin::Mutex;
-use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
+#[cfg(feature = "validate")]
+use wasmparser::ValidatorResources;
+use wasmparser::WasmFeatures;
 
 #[cfg(doc)]
 use crate::ir::Op;
@@ -117,7 +121,7 @@ impl CodeMap {
         func_idx: FuncIdx,
         bytes: &[u8],
         module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: Option<FuncToValidate>,
     ) {
         let func = match self.funcs.get(func) {
             Some(func) => func,
@@ -822,6 +826,7 @@ mod state {
 }
 
 /// A function type index into the Wasm module.
+#[cfg(feature = "validate")]
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct TypeIndex(u32);
@@ -840,6 +845,7 @@ struct UncompiledFuncEntry {
     /// Optional Wasm validation information.
     ///
     /// This is `Some` if the [`UncompiledFuncEntry`] is to be validated upon compilation.
+    #[cfg(feature = "validate")]
     validation: Option<(TypeIndex, ValidatorResources)>,
 }
 
@@ -849,8 +855,11 @@ impl UncompiledFuncEntry {
         func_index: FuncIdx,
         bytes: &[u8],
         module: ModuleHeader,
-        func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
+        #[cfg_attr(not(feature = "validate"), expect(unused_variables))] func_to_validate: impl Into<
+            Option<FuncToValidate>,
+        >,
     ) -> Self {
+        #[cfg(feature = "validate")]
         let validation = func_to_validate.into().map(|func_to_validate| {
             assert_eq!(
                 func_to_validate.index,
@@ -866,6 +875,7 @@ impl UncompiledFuncEntry {
             func_index,
             bytes,
             module,
+            #[cfg(feature = "validate")]
             validation,
         }
     }
@@ -881,6 +891,7 @@ impl UncompiledFuncEntry {
     ///
     /// - If function translation failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[cfg_attr(not(feature = "validate"), allow(unused_variables))]
     fn compile(
         &mut self,
         fuel: Option<&mut Fuel>,
@@ -908,7 +919,16 @@ impl UncompiledFuncEntry {
 
         let func_idx = self.func_index;
         let wasm_bytes = self.bytes.as_slice();
-        let needs_validation = self.validation.is_some();
+        let needs_validation = {
+            #[cfg(feature = "validate")]
+            {
+                self.validation.is_some()
+            }
+            #[cfg(not(feature = "validate"))]
+            {
+                false
+            }
+        };
         let compilation_fuel = |_costs: &FuelCostsProvider| {
             let len_bytes = wasm_bytes.len() as u64;
             let fuel_per_byte = match needs_validation {
@@ -933,7 +953,18 @@ impl UncompiledFuncEntry {
             )
         };
         let mut result = MaybeUninit::uninit();
-        match self.validation.take() {
+        let validation = {
+            #[cfg(feature = "validate")]
+            {
+                self.validation.take()
+            }
+            #[cfg(not(feature = "validate"))]
+            {
+                <Option<FuncToValidate>>::None
+            }
+        };
+        match validation {
+            #[cfg(feature = "validate")]
             Some((type_index, resources)) => {
                 let allocs = engine.get_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
@@ -969,12 +1000,13 @@ impl UncompiledFuncEntry {
 
 impl fmt::Debug for UncompiledFuncEntry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("UncompiledFuncEntry")
-            .field("func_idx", &self.func_index)
+        let mut dbg = f.debug_struct("UncompiledFuncEntry");
+        dbg.field("func_idx", &self.func_index)
             .field("bytes", &self.bytes)
-            .field("module", &self.module)
-            .field("validate", &self.validation.is_some())
-            .finish()
+            .field("module", &self.module);
+        #[cfg(feature = "validate")]
+        dbg.field("validate", &self.validation.is_some());
+        dbg.finish()
     }
 }
 

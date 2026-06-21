@@ -19,7 +19,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-wasmi = { workspace = true }
+wasmi = { workspace = true, features = ["std"] }
 wasmi_wasi = { workspace = true, optional = true }
 wasmi_wast = { workspace = true, optional = true }
 anyhow = "1"
@@ -29,14 +29,19 @@ clap = { version = "4", features = ["derive"] }
 assert_cmd = "2.0.7"
 
 [features]
-default = ["stable", "run", "wast", "wasi", "wat"]
+default = ["stable", "run", "wast", "wasi", "wat", "validate"]
 hash-collections = ["wasmi/hash-collections"]
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 simd = ["wasmi/simd"]
 wasi = ["wasmi_wasi"]
-wat = ["wasmi/wat"]
+# Note: `wat` (and `wast`) imply `validate` because parsing the Wasm text format
+#       and running the spec testsuite only make sense with Wasm validation enabled.
+wat = ["wasmi/wat", "validate"]
 run = []
-wast = ["wasmi_wast"]
+wast = ["wasmi_wast", "validate"]
+# Enables Wasm validation. Without it the CLI compiles `Module` via the `unsafe`
+# unchecked path and never validates its inputs (only safe for trusted Wasm).
+validate = ["wasmi/validate"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
 stable = ["wasmi/stable"]

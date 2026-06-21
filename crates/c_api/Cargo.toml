@@ -15,7 +15,7 @@ exclude.workspace = true
 links = "wasmi_c_api"
 
 [dependencies]
-wasmi = { workspace = true }
+wasmi = { workspace = true, features = ["validate"] }
 wasmi_c_api_macros = { workspace = true }
 
 [lib]

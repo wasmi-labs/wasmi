@@ -6,8 +6,11 @@ use super::{
     ModuleParser,
 };
 use crate::{Error, Module};
-use wasmparser::{Chunk, Payload, Validator};
+#[cfg(feature = "validate")]
+use wasmparser::Validator;
+use wasmparser::{Chunk, Payload};
 
+#[cfg_attr(not(feature = "validate"), allow(unused_mut, unused_variables))]
 impl ModuleParser {
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
@@ -16,6 +19,7 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
+    #[cfg(feature = "validate")]
     pub fn parse_buffered(mut self, buffer: &[u8]) -> Result<Module, Error> {
         let features = self.engine.config().wasm_features();
         self.validator = Some(Validator::new_with_features(features));
