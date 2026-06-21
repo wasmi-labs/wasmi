@@ -11,6 +11,8 @@ mod resumable;
 mod translator;
 mod utils;
 
+#[cfg(feature = "validate")]
+pub(crate) use self::translator::ValidatingFuncTranslator;
 pub(crate) use self::{
     block_type::BlockType,
     executor::{
@@ -29,7 +31,6 @@ pub(crate) use self::{
         FuncTranslator,
         FuncTranslatorAllocations,
         LazyFuncTranslator,
-        ValidatingFuncTranslator,
         WasmTranslator,
         required_cells_for_tys,
     },
@@ -262,6 +263,7 @@ impl Engine {
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "validate")]
     pub(crate) fn get_allocs(&self) -> (FuncTranslatorAllocations, FuncValidatorAllocations) {
         self.inner.get_allocs()
     }
@@ -272,6 +274,7 @@ impl Engine {
     }
 
     /// Recycles the given [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "validate")]
     pub(crate) fn recycle_allocs(
         &self,
         translation: FuncTranslatorAllocations,
@@ -485,6 +488,7 @@ pub struct ReusableAllocationStack {
     /// Allocations required by Wasm function translators.
     translation: Vec<FuncTranslatorAllocations>,
     /// Allocations required by Wasm function validators.
+    #[cfg(feature = "validate")]
     validation: Vec<FuncValidatorAllocations>,
 }
 
@@ -493,6 +497,7 @@ impl Default for ReusableAllocationStack {
         Self {
             max_height: 1,
             translation: Vec::new(),
+            #[cfg(feature = "validate")]
             validation: Vec::new(),
         }
     }
@@ -500,13 +505,14 @@ impl Default for ReusableAllocationStack {
 
 impl core::fmt::Debug for ReusableAllocationStack {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        f.debug_struct("ReusableAllocationStack")
-            .field("translation", &self.translation)
-            // Note: FuncValidatorAllocations is missing Debug impl at the time of writing this commit.
-            //       We should derive Debug as soon as FuncValidatorAllocations has a Debug impl in future
-            //       wasmparser versions.
-            .field("validation", &self.validation.len())
-            .finish()
+        let mut dbg = f.debug_struct("ReusableAllocationStack");
+        dbg.field("translation", &self.translation);
+        // Note: FuncValidatorAllocations is missing Debug impl at the time of writing this commit.
+        //       We should derive Debug as soon as FuncValidatorAllocations has a Debug impl in future
+        //       wasmparser versions.
+        #[cfg(feature = "validate")]
+        dbg.field("validation", &self.validation.len());
+        dbg.finish()
     }
 }
 
@@ -517,6 +523,7 @@ impl ReusableAllocationStack {
     }
 
     /// Returns reusable [`FuncValidatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "validate")]
     pub fn get_validation_allocs(&mut self) -> FuncValidatorAllocations {
         self.validation.pop().unwrap_or_default()
     }
@@ -531,6 +538,7 @@ impl ReusableAllocationStack {
     }
 
     /// Recycles the given [`FuncValidatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "validate")]
     pub fn recycle_validation_allocs(&mut self, recycled: FuncValidatorAllocations) {
         debug_assert!(self.validation.len() <= self.max_height);
         if self.validation.len() >= self.max_height {
@@ -666,6 +674,7 @@ impl EngineInner {
     ) -> Result<(), Error> {
         let features = self.config().wasm_features();
         match (self.config.get_compilation_mode(), func_to_validate) {
+            #[cfg(feature = "validate")]
             (CompilationMode::Eager, Some(func_to_validate)) => {
                 let (translation_allocs, validation_allocs) = self.get_allocs();
                 let validator = func_to_validate.into_validator(validation_allocs);
@@ -682,6 +691,7 @@ impl EngineInner {
                     .translate(|func_entity| self.init_func(engine_func, func_entity))?;
                 self.recycle_translation_allocs(allocs);
             }
+            #[cfg(feature = "validate")]
             (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
                 let allocs = self.get_validation_allocs();
                 let translator =
@@ -694,6 +704,7 @@ impl EngineInner {
             }
             (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
                 let translator = match func_to_validate {
+                    #[cfg(feature = "validate")]
                     Some(func_to_validate) => {
                         LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate)
                     }
@@ -714,6 +725,7 @@ impl EngineInner {
     }
 
     /// Returns reusable [`FuncValidatorAllocations`] from the [`Engine`].
+    #[cfg(feature = "validate")]
     fn get_validation_allocs(&self) -> FuncValidatorAllocations {
         self.allocs.lock().get_validation_allocs()
     }
@@ -725,6 +737,7 @@ impl EngineInner {
     /// This method is a bit more efficient than calling both
     /// - [`EngineInner::get_translation_allocs`]
     /// - [`EngineInner::get_validation_allocs`]
+    #[cfg(feature = "validate")]
     fn get_allocs(&self) -> (FuncTranslatorAllocations, FuncValidatorAllocations) {
         let mut allocs = self.allocs.lock();
         let translation = allocs.get_translation_allocs();
@@ -738,6 +751,7 @@ impl EngineInner {
     }
 
     /// Recycles the given [`FuncValidatorAllocations`] in the [`Engine`].
+    #[cfg(feature = "validate")]
     fn recycle_validation_allocs(&self, allocs: FuncValidatorAllocations) {
         self.allocs.lock().recycle_validation_allocs(allocs)
     }
@@ -749,6 +763,7 @@ impl EngineInner {
     /// This method is a bit more efficient than calling both
     /// - [`EngineInner::recycle_translation_allocs`]
     /// - [`EngineInner::recycle_validation_allocs`]
+    #[cfg(feature = "validate")]
     fn recycle_allocs(
         &self,
         translation: FuncTranslatorAllocations,
