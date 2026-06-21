@@ -304,7 +304,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`simd`]: https://github.com/WebAssembly/simd
-    #[cfg(feature = "simd")]
+    #[cfg(all(feature = "simd", feature = "validate"))]
     pub fn wasm_simd(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::SIMD, enable);
         self
@@ -315,7 +315,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
-    #[cfg(feature = "simd")]
+    #[cfg(all(feature = "simd", feature = "validate"))]
     pub fn wasm_relaxed_simd(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::RELAXED_SIMD, enable);
         self
