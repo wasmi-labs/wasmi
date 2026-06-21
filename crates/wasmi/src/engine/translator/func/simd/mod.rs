@@ -112,7 +112,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.operand_to_slot(input)?;
-        self.stage_op_with_result_reg(
+        self.push_op_with_result_reg(
             <R as Typed>::TY,
             make_instr(input, lane),
             FuelCostsProvider::simd,
