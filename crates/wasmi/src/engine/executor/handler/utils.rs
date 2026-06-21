@@ -552,7 +552,8 @@ pub fn exec_return(
 ///
 /// No-op when `regs` is empty, which is the case for `call_internal` callers that read results
 /// directly from accumulator registers.
-pub fn spill_result_regs(
+#[inline]
+pub fn spill_result_regs_if_any(
     regs: Option<BranchParamRegs>,
     len_result_cells: u16,
     sp: Sp,
@@ -561,6 +562,17 @@ pub fn spill_result_regs(
     freg64: Freg64,
 ) {
     let Some(regs) = regs else { return };
+    spill_result_regs(regs, len_result_cells, sp, ireg, freg32, freg64)
+}
+
+fn spill_result_regs(
+    regs: BranchParamRegs,
+    len_result_cells: u16,
+    sp: Sp,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
+) {
     for (j, kind) in regs.as_slice().iter().enumerate() {
         let slot = suffix_slot(len_result_cells, j);
         match kind {
@@ -578,17 +590,26 @@ pub fn spill_result_regs(
 /// Mirror of [`spill_result_regs`]: used by a call to a host function so that a caller expecting
 /// results in accumulator registers reads them there. The result slots remain valid, so a caller
 /// expecting results in slots is unaffected.
-pub fn load_result_regs(
+#[inline]
+pub fn load_result_regs_or_default(
     regs: Option<BranchParamRegs>,
+    len_result_cells: u16,
+    sp: Sp,
+) -> (Ireg, Freg32, Freg64) {
+    let Some(regs) = regs else {
+        return (Ireg::default(), Freg32::default(), Freg64::default());
+    };
+    load_result_regs(regs, len_result_cells, sp)
+}
+
+fn load_result_regs(
+    regs: BranchParamRegs,
     len_result_cells: u16,
     sp: Sp,
 ) -> (Ireg, Freg32, Freg64) {
     let mut ireg = Ireg::default();
     let mut freg32 = Freg32::default();
     let mut freg64 = Freg64::default();
-    let Some(regs) = regs else {
-        return (ireg, freg32, freg64);
-    };
     for (j, kind) in regs.as_slice().iter().enumerate() {
         let slot = suffix_slot(len_result_cells, j);
         match kind {
@@ -942,7 +963,7 @@ pub fn call_host(
     // The host wrote its results starting at the call's result base (`sp` offset by the params
     // head); the slots remain valid, so a caller expecting results in slots is unaffected.
     let result_base = sp.offset(params.span().head());
-    let (ireg, freg32, freg64) = load_result_regs(
+    let (ireg, freg32, freg64) = load_result_regs_or_default(
         host_func.result_regs(),
         host_func.len_result_cells(),
         result_base,
@@ -993,14 +1014,14 @@ pub fn return_call_host(
     match control {
         Control::Continue((ip, sp, instance)) => {
             let (ireg, freg32, freg64) =
-                load_result_regs(result_regs, len_result_cells, result_base);
+                load_result_regs_or_default(result_regs, len_result_cells, result_base);
             Control::Continue((ip, sp, instance, ireg, freg32, freg64))
         }
         Control::Break(sp) => {
             // Returning to the host (root frame): persist the mirrored registers so the host call
             // boundary spills consistent values back into the result slots.
             let (ireg, freg32, freg64) =
-                load_result_regs(result_regs, len_result_cells, result_base);
+                load_result_regs_or_default(result_regs, len_result_cells, result_base);
             state.stack.sync_regs(ireg, freg32, freg64);
             done!(state, DoneReason::Return(sp))
         }

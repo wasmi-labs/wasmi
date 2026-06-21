@@ -145,7 +145,8 @@ impl<'a, T> WasmFuncCall<'a, T, state::Resumed> {
         // Mirror the provided results into accumulator registers so that resuming a `return_call`
         // to a host function delivers them to a caller that expects results in registers. The
         // slots remain valid, so a caller expecting results in slots is unaffected.
-        let (ireg, freg32, freg64) = utils::load_result_regs(result_regs, len_result_cells, base);
+        let (ireg, freg32, freg64) =
+            utils::load_result_regs_or_default(result_regs, len_result_cells, base);
         self.ireg = ireg;
         self.freg32 = freg32;
         self.freg64 = freg64;
@@ -167,7 +168,14 @@ impl<'a, T> WasmFuncCall<'a, T, state::Done> {
             return;
         }
         let (ireg, freg32, freg64) = self.stack.regs();
-        utils::spill_result_regs(regs, len_result_cells, self.state.sp, ireg, freg32, freg64);
+        utils::spill_result_regs_if_any(
+            regs,
+            len_result_cells,
+            self.state.sp,
+            ireg,
+            freg32,
+            freg64,
+        );
     }
 
     pub fn write_results<Results>(self, results: Results) -> Results::Value
