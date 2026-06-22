@@ -8,6 +8,100 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.3` - 2026-06-22
+
+### Added
+
+- Added a new `validate` crate feature to `wasmi` and `wasmi_cli` crates. 🚀
+  - This feature controls whether Wasmi support Wasm validation.
+  - The feature is enabled by default with `--no-default-features`.
+  - Users who have full control over the Wasm inputs to Wasmi may
+    have a great need for this as this can reduce binary artifact sizes
+    by ~200-300kB.
+  - PR: [#1902]
+- Added new `libm` crate feature to Wasmi. [#1860]
+  - This allows to enforce `libm` usage.
+- Added support to Wasmi CLI to print `funcref` and `externref` with `null` value. [#1839]
+- Add support for hexdec encoded integer args to Wasmi CLI. [#1851]
+
+### Changed
+
+- Wasmi IR operators now store their results in accumulator registers. 🚀
+  - With this, Wasmi uses the same interpreter architecture as the fastest Wasm interpreters, Wasm3 and Stitch.
+  - Benchmarks concluded that Wasmi is on par and sometimes even exceeds performance of its competition now.
+  - PRs:
+    - [#1827]: Definitions for new Wasmi IR
+    - [#1855]: Adjustments Wasmi Translator & Executor
+  - Follow-up Optimizations:
+    - [#1895]: Adds specialized `i{32,64}.add` operator variants.
+    - [#1896]: Adds lowering from `isub` to `iadd` operators.
+    - [#1905]: Make more SIMD operators return results in accumulator registers.
+- New Wasmi execution optimizations: 🚀
+  - Re-designed `CodeMap` to be lock-free & append-only. [#1898]
+    - Wasmi makes full use of these `CodeMap` attributes which significantly
+      improves Wasm to Wasm function call performance.
+  - Only zero-initialize non-parameter function locals upon Wasm call. [#1893]
+    - This significantly improves Wasm to Wasm function call performance.
+  - CLI: disallow `v128` argument types. [#1848]
+    - With this Wasmi CLI now mirrors Wasmtime CLI's behavior.
+  - Improve `instance` preservation of same-instance calls. [#1878]
+  - Translate `ref.is_null` via `i32.eqz` instead of `i64.eqz`. [#1861]
+
+### Fixed
+
+- Fix operand order in `v128_select_ssss` translation. [#1834]
+  - Thanks to [@shumbo](https://github.com/shumbo) for the fix!
+- Fix re-extraction of `mem0` after host function calls. [#1837]
+  - Thanks to [@npiesco](https://github.com/npiesco) for the fix!
+- Fixed incorrect NaN behavior for `f{32,64}.{ceil,floor,trunc}`. [#1860]
+
+### Internal
+
+- Automatically create release artifacts for Wasmi GitHub releases. [#1906]
+- Added flag to steer LLVM away from bad codegen. [#1873]
+- Added missing `std` crate feature forward from `wasmi` to `wasmi_ir`. [#1862]
+- Update Wasmtime fuzzing oracle to v45. [#1867]
+- Make benchmarks test properly under Windows. [#1885]
+- Fixed a bug that `wat` based tests were not ignored on `!wat`. [#1883]
+- Added a whole variety of new Rust based benchmarks:
+  - PRs:
+    - [#1870] : `sort`, `matrix_mul`, `prime_sieve`
+    - [#1871] : `n-body`: physics simulation
+    - [#1872] : `argon2`: password hashing
+    - [#1877] :
+      - `mandelbrot`
+      - `spetralnorm`
+      - `json_parsing`
+      - `compression`
+      - `word_count`
+
+[#1827]: https://github.com/wasmi-labs/wasmi/pull/1827
+[#1855]: https://github.com/wasmi-labs/wasmi/pull/1855
+[#1895]: https://github.com/wasmi-labs/wasmi/pull/1895
+[#1896]: https://github.com/wasmi-labs/wasmi/pull/1896
+[#1905]: https://github.com/wasmi-labs/wasmi/pull/1905
+[#1898]: https://github.com/wasmi-labs/wasmi/pull/1898
+[#1893]: https://github.com/wasmi-labs/wasmi/pull/1893
+[#1902]: https://github.com/wasmi-labs/wasmi/pull/1902
+[#1839]: https://github.com/wasmi-labs/wasmi/pull/1839
+[#1834]: https://github.com/wasmi-labs/wasmi/pull/1834
+[#1837]: https://github.com/wasmi-labs/wasmi/pull/1837
+[#1848]: https://github.com/wasmi-labs/wasmi/pull/1848
+[#1851]: https://github.com/wasmi-labs/wasmi/pull/1851
+[#1860]: https://github.com/wasmi-labs/wasmi/pull/1860
+[#1861]: https://github.com/wasmi-labs/wasmi/pull/1861
+[#1862]: https://github.com/wasmi-labs/wasmi/pull/1862
+[#1878]: https://github.com/wasmi-labs/wasmi/pull/1878
+[#1867]: https://github.com/wasmi-labs/wasmi/pull/1867
+[#1870]: https://github.com/wasmi-labs/wasmi/pull/1870
+[#1871]: https://github.com/wasmi-labs/wasmi/pull/1871
+[#1872]: https://github.com/wasmi-labs/wasmi/pull/1872
+[#1877]: https://github.com/wasmi-labs/wasmi/pull/1877
+[#1883]: https://github.com/wasmi-labs/wasmi/pull/1883
+[#1906]: https://github.com/wasmi-labs/wasmi/pull/1906
+[#1873]: https://github.com/wasmi-labs/wasmi/pull/1873
+[#1885]: https://github.com/wasmi-labs/wasmi/pull/1885
+
 ## `2.0.0-beta.2` - 2026-03-03
 
 ### Added
