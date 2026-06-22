@@ -18,6 +18,7 @@
 //! [`BTreeMap`]: std::collections::BTreeMap
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
     clippy::cast_lossless,
     clippy::missing_errors_doc,
