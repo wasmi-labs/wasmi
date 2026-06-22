@@ -1,0 +1,254 @@
+name: Release - Build CLI Artifacts
+
+# Builds the `wasmi` CLI for every supported platform and feature set whenever a
+# semver release tag (`vX.Y.Z` or `vX.Y.Z-suffix`) is pushed, then attaches the
+# archives to a *draft* GitHub Release for review before publishing.
+#
+# It can also be run manually (`workflow_dispatch`) to (re)build the artifacts for
+# an existing tag, e.g. when a tagged release run failed.
+#
+# Safety / least-privilege notes:
+#   * No personal access tokens or secrets are used — only the ephemeral,
+#     repo-scoped `GITHUB_TOKEN` provided automatically by Actions.
+#   * The default permission for the whole workflow is `contents: read`. Only the
+#     small `release` job (which compiles nothing) is granted `contents: write`,
+#     so third-party build dependencies never see a write-capable token.
+#   * The Release is created with the built-in `gh` CLI, so the write token is
+#     never handed to a third-party action.
+#   * All third-party actions are pinned by full commit SHA.
+
+on:
+  push:
+    tags:
+      # Coarse glob (GitHub tag filters are not full regex); the `setup` job below
+      # validates the tag against a strict semver regex.
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing git tag to (re)build & attach artifacts to, e.g. v2.0.0'
+        required: true
+
+# Deny-by-default: read-only for every job unless a job opts into more.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Resolve & validate the release tag once, share it with the other jobs.
+  # ---------------------------------------------------------------------------
+  setup:
+    name: Resolve release tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      prerelease: ${{ steps.resolve.outputs.prerelease }}
+    steps:
+      - name: Resolve and validate tag
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${{ github.ref_name }}"
+          fi
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'; then
+            echo "::error::Tag '$tag' is not a valid release tag (expected vX.Y.Z or vX.Y.Z-suffix)"
+            exit 1
+          fi
+          # Mark tags with a suffix (e.g. -beta.2, -rc.1) as prereleases.
+          if printf '%s' "$tag" | grep -q '-'; then
+            prerelease=true
+          else
+            prerelease=false
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "Resolved release tag: $tag (prerelease=$prerelease)"
+
+  # ---------------------------------------------------------------------------
+  # Build + package the CLI for each platform × feature set (read-only token).
+  # ---------------------------------------------------------------------------
+  build:
+    name: ${{ matrix.platform.token }} (${{ matrix.featureset.name }})
+    needs: setup
+    runs-on: ${{ matrix.platform.runner }}
+    env:
+      # Optimize the release builds without editing the (commented-out) profile in
+      # crates/cli/Cargo.toml. The workspace already sets `codegen-units = 1`.
+      CARGO_PROFILE_RELEASE_LTO: fat
+      CARGO_PROFILE_RELEASE_STRIP: symbols
+      CARGO_TERM_COLOR: always
+    strategy:
+      fail-fast: false
+      matrix:
+        featureset:
+          # `full` == default features (`stable,run,wast,wasi,wat,validate`) + `simd`.
+          - name: full
+            features: run,wat,wast,wasi,validate,stable,simd
+          # `minimal` == smallest useful CLI: run validated modules only.
+          - name: minimal
+            features: run,validate
+        # Exactly the subset of Wasmtime's target-triples that matches our
+        # {x86_64, aarch64} × {Linux, macOS, Windows} scope. All native runners.
+        platform:
+          - token: x86_64-linux
+            target: x86_64-unknown-linux-gnu
+            runner: ubuntu-22.04
+            os: unix
+          - token: aarch64-linux
+            target: aarch64-unknown-linux-gnu
+            runner: ubuntu-22.04-arm
+            os: unix
+          - token: x86_64-musl
+            target: x86_64-unknown-linux-musl
+            runner: ubuntu-22.04
+            os: unix
+          - token: aarch64-musl
+            target: aarch64-unknown-linux-musl
+            runner: ubuntu-22.04-arm
+            os: unix
+          - token: x86_64-macos
+            target: x86_64-apple-darwin
+            runner: macos-13
+            os: unix
+          - token: aarch64-macos
+            target: aarch64-apple-darwin
+            runner: macos-14
+            os: unix
+          - token: x86_64-windows
+            target: x86_64-pc-windows-msvc
+            runner: windows-2022
+            os: windows
+          - token: aarch64-windows
+            target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
+            os: windows
+    steps:
+      - name: Checkout (tag ${{ needs.setup.outputs.tag }})
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v5.0.0
+        with:
+          ref: ${{ needs.setup.outputs.tag }}
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.platform.target }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: ${{ matrix.platform.target }}-${{ matrix.featureset.name }}
+
+      - name: Build wasmi CLI
+        shell: bash
+        run: >-
+          cargo build
+          --profile bench
+          --locked
+          --package wasmi_cli
+          --no-default-features
+          --features ${{ matrix.featureset.features }}
+          --target ${{ matrix.platform.target }}
+
+      - name: Smoke test binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="target/${{ matrix.platform.target }}/release/wasmi"
+          if [ "${{ matrix.platform.os }}" = "windows" ]; then
+            bin="${bin}.exe"
+          fi
+          "$bin" --version
+
+      - name: Package (tar.xz)
+        if: matrix.platform.os == 'unix'
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="wasmi-${{ needs.setup.outputs.tag }}-${{ matrix.platform.token }}-${{ matrix.featureset.name }}"
+          mkdir -p "dist/${name}"
+          cp "target/${{ matrix.platform.target }}/release/wasmi" "dist/${name}/"
+          cp LICENSE-APACHE LICENSE-MIT "dist/${name}/"
+          cp crates/cli/README.md "dist/${name}/README.md"
+          ( cd dist && tar -caf "${name}.tar.xz" "${name}" )
+          rm -rf "dist/${name}"
+          echo "ARTIFACT=dist/${name}.tar.xz" >> "$GITHUB_ENV"
+
+      - name: Package (zip)
+        if: matrix.platform.os == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $name = "wasmi-${{ needs.setup.outputs.tag }}-${{ matrix.platform.token }}-${{ matrix.featureset.name }}"
+          $staging = "dist/$name"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "target/${{ matrix.platform.target }}/release/wasmi.exe" "$staging/"
+          Copy-Item "LICENSE-APACHE","LICENSE-MIT" $staging/
+          Copy-Item "crates/cli/README.md" "$staging/README.md"
+          Compress-Archive -Path $staging -DestinationPath "dist/$name.zip"
+          Remove-Item -Recurse -Force $staging
+          "ARTIFACT=dist/$name.zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: wasmi-${{ needs.setup.outputs.tag }}-${{ matrix.platform.token }}-${{ matrix.featureset.name }}
+          path: ${{ env.ARTIFACT }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Collect artifacts, generate checksums, publish a *draft* GitHub Release.
+  # This is the only job with write access — and it compiles nothing.
+  # ---------------------------------------------------------------------------
+  release:
+    name: Publish draft release
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ needs.setup.outputs.tag }}"
+          ( cd artifacts && sha256sum *.tar.xz *.zip > "wasmi-${tag}-SHA256SUMS" )
+          echo "Artifacts to release:"
+          ls -la artifacts
+          echo "Checksums:"
+          cat "artifacts/wasmi-${tag}-SHA256SUMS"
+
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ needs.setup.outputs.tag }}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists; (re)uploading assets with --clobber"
+            gh release upload "$tag" artifacts/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            echo "Creating draft release $tag"
+            flags=(--draft --title "$tag" --notes "Automated draft release for $tag. Review the attached artifacts, then publish.")
+            if [ "${{ needs.setup.outputs.prerelease }}" = "true" ]; then
+              flags+=(--prerelease)
+            fi
+            gh release create "$tag" artifacts/* --repo "$GITHUB_REPOSITORY" "${flags[@]}"
+          fi
