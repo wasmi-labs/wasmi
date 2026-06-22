@@ -84,17 +84,24 @@ jobs:
       # crates/cli/Cargo.toml. The workspace already sets `codegen-units = 1`.
       CARGO_PROFILE_RELEASE_LTO: fat
       CARGO_PROFILE_RELEASE_STRIP: symbols
+      # Per feature set: `full` => 3 (max speed, the release default), `minimal` => "s"
+      # (optimize for size). Every other build setting is identical for both.
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: ${{ matrix.featureset.opt_level }}
       CARGO_TERM_COLOR: always
     strategy:
       fail-fast: false
       matrix:
         featureset:
           # `full` == default features (`stable,run,wast,wasi,wat,validate`) + `simd`.
+          # Built at opt-level 3 (the release default) for maximum speed.
           - name: full
             features: run,wat,wast,wasi,validate,stable,simd
+            opt_level: "3"
           # `minimal` == smallest useful CLI: run validated modules only.
+          # Built at opt-level "s" to shrink the binary further.
           - name: minimal
             features: run,validate
+            opt_level: "s"
         # Exactly the subset of Wasmtime's target-triples that matches our
         # {x86_64, aarch64} × {Linux, macOS, Windows} scope. All native runners.
         #
