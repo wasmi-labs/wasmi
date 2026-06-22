@@ -102,7 +102,7 @@ jobs:
         # they set the glibc floor of the `-gnu` artifacts (ubuntu-22.04 => glibc 2.35),
         # so a lower/older pin means the binaries run on more (older) systems.
         # `ubuntu-latest` would silently RAISE that floor over time. When GitHub retires
-        # this image you'll first get a deprecation warning, then a hard job failure
+        # this image we'll first get a deprecation warning, then a hard job failure
         # (never a bad release) — bump to the next-oldest available LTS (e.g.
         # ubuntu-24.04 / ubuntu-24.04-arm). The `-musl` legs are statically linked, so
         # their Ubuntu version is cosmetic — just bump all four together.
