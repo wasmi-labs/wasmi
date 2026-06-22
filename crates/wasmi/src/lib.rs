@@ -73,6 +73,7 @@
 //! | `validate` | `wasmi`<br>`wasmi_cli` | Enable Wasm validation support. Turning this off allows user with control over their inputs to slim down Wasmi's binary size significantly. <br><br> Enabled by default. |
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
     clippy::cast_lossless,
     clippy::missing_errors_doc,
