@@ -1843,9 +1843,10 @@ impl FuncTranslator {
     /// - Returns `Ok(false)` otherwise.
     fn try_lower_i64_sub(&mut self, lhs: Operand, rhs: i64) -> Result<bool, Error> {
         debug_assert!(matches!(lhs.ty(), ValType::I64));
+        let rhs_neg = rhs.wrapping_neg();
         let op = match self.resolve_operand::<i64>(lhs)? {
-            ResolvedOperand::Reg(_) => Op::i64_add_rri(-rhs),
-            ResolvedOperand::Slot(lhs) => Op::i64_add_rsi(lhs, -rhs),
+            ResolvedOperand::Reg(_) => Op::i64_add_rri(rhs_neg),
+            ResolvedOperand::Slot(lhs) => Op::i64_add_rsi(lhs, rhs_neg),
             ResolvedOperand::Immediate(_) => return Ok(false),
         };
         self.stage_op_with_result_reg(ValType::I64, op, FuelCostsProvider::base)?;
