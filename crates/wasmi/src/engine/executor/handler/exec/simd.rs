@@ -8,7 +8,7 @@ use crate::{
     engine::executor::handler::{
         dispatch::Done,
         exec::decode_op,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
         utils::{IntoControl as _, get_value},
     },
 };
@@ -24,7 +24,6 @@ macro_rules! execution_handler_for_v128_select {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -45,7 +44,7 @@ macro_rules! execution_handler_for_v128_select {
                     };
                     let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
                     set_value!(result, selected, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -317,7 +316,6 @@ macro_rules! handler_extract_lane {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -333,7 +331,7 @@ macro_rules! handler_extract_lane {
                     let value = get_value(value, sp, ireg, freg32, freg64);
                     let extracted = $eval(value, lane);
                     set_value!(result, extracted, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -379,7 +377,6 @@ macro_rules! handler_extract_lane {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -397,7 +394,7 @@ macro_rules! handler_extract_lane {
                     let value = get_value(value, sp, ireg, freg32, freg64);
                     let replaced = $eval(v128, lane, value);
                     set_value!(result, replaced, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -430,7 +427,6 @@ macro_rules! handler_ternary {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -441,7 +437,7 @@ macro_rules! handler_ternary {
                     let $v2 = get_value($v2, sp, ireg, freg32, freg64);
                     let value = $eval($v0, $v1, $v2).into_control()?;
                     set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -530,7 +526,6 @@ macro_rules! handler_load_lane {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -549,12 +544,13 @@ macro_rules! handler_load_lane {
                     let ptr = get_value(ptr, sp, ireg, freg32, freg64);
                     let offset = get_value(offset, sp, ireg, freg32, freg64);
                     let v128 = get_value(v128, sp, ireg, freg32, freg64);
+                    let instance = state.instance;
                     let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
                         memory, mem0, mem0_len, instance, state,
                     );
                     let value = $eval(mem_bytes, ptr, offset, v128, lane).into_control()?;
                     set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -581,7 +577,6 @@ macro_rules! handler_load_lane_mem0_offset16 {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -593,7 +588,7 @@ macro_rules! handler_load_lane_mem0_offset16 {
                     let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
                     let value = $eval(mem_bytes, ptr, u64::from(u16::from(offset)), v128, lane).into_control()?;
                     set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -630,7 +625,6 @@ macro_rules! handler_store_lane_ss {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -642,11 +636,12 @@ macro_rules! handler_store_lane_ss {
                     let ptr = get_value(ptr, sp, ireg, freg32, freg64);
                     let offset = get_value(offset, sp, ireg, freg32, freg64);
                     let value = get_value(value, sp, ireg, freg32, freg64);
+                    let instance = state.instance;
                     let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
                         memory, mem0, mem0_len, instance, state,
                     );
                     $eval(mem_bytes, ptr, offset, value, lane).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*
@@ -673,7 +668,6 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     sp: Sp,
                     mem0: Mem0Ptr,
                     mem0_len: Mem0Len,
-                    instance: Inst,
                     ireg: Ireg,
                     freg32: Freg32,
                     freg64: Freg64,
@@ -687,7 +681,7 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     let value = get_value(value, sp, ireg, freg32, freg64);
                     let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
                     $eval(mem_bytes, ptr, u64::from(u16::from(offset)), value, lane).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
                 }
             }
         )*

@@ -2,7 +2,7 @@ use crate::{
     engine::executor::handler::{
         dispatch::{Break, Control, ExecutionOutcome},
         exec,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
     },
     ir,
     ir::OpCode,
@@ -14,7 +14,6 @@ pub struct NextState {
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
@@ -23,13 +22,11 @@ pub struct NextState {
 pub type Done = Control<NextState, Break>;
 
 #[inline(always)]
-#[expect(clippy::too_many_arguments)]
 pub fn control_continue(
     ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
@@ -39,7 +36,6 @@ pub fn control_continue(
         sp,
         mem0,
         mem0_len,
-        instance,
         ireg,
         freg32,
         freg64,
@@ -53,14 +49,13 @@ macro_rules! dispatch {
         $sp:expr,
         $mem0:expr,
         $mem0_len:expr,
-        $instance:expr,
         $ireg:expr,
         $freg32:expr,
         $freg64:expr $(,)?
     ) => {{
         let _: &mut VmState = $state;
         return $crate::engine::executor::handler::dispatch::backend::control_continue(
-            $ip, $sp, $mem0, $mem0_len, $instance, $ireg, $freg32, $freg64,
+            $ip, $sp, $mem0, $mem0_len, $ireg, $freg32, $freg64,
         );
     }};
 }
@@ -86,7 +81,6 @@ pub fn execute_until_done(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
@@ -96,7 +90,6 @@ pub fn execute_until_done(
         sp,
         mem0,
         mem0_len,
-        instance,
         ireg,
         freg32,
         freg64,
@@ -110,7 +103,6 @@ pub struct Executor {
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
@@ -193,13 +185,12 @@ macro_rules! impl_executor_handlers {
             #[cfg_attr(all(feature = "indirect-dispatch", debug_assertions), inline(never))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
             fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
-                match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
-                    Done::Continue(NextState { ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64 }) => {
+                match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.ireg, self.freg32, self.freg64) {
+                    Done::Continue(NextState { ip, sp, mem0, mem0_len, ireg, freg32, freg64 }) => {
                         self.ip = ip;
                         self.sp = sp;
                         self.mem0 = mem0;
                         self.mem0_len = mem0_len;
-                        self.instance = instance;
                         self.ireg = ireg;
                         self.freg32 = freg32;
                         self.freg64 = freg64;

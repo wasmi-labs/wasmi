@@ -2,7 +2,7 @@ use crate::{
     engine::executor::handler::{
         dispatch::{Break, Control, ExecutionOutcome, decode_handler, decode_op_code},
         exec,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
     },
     ir,
     ir::OpCode,
@@ -29,7 +29,6 @@ pub type Handler = fn(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
@@ -43,7 +42,6 @@ pub type Handler = extern "sysv64" fn(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
@@ -69,15 +67,12 @@ macro_rules! dispatch {
         $sp:expr,
         $mem0:expr,
         $mem0_len:expr,
-        $instance:expr,
         $ireg:expr,
         $freg32:expr,
         $freg64:expr $(,)?
     ) => {{
         let handler = $crate::engine::executor::handler::dispatch::backend::fetch_handler($ip);
-        return handler(
-            $state, $ip, $sp, $mem0, $mem0_len, $instance, $ireg, $freg32, $freg64,
-        );
+        return handler($state, $ip, $sp, $mem0, $mem0_len, $ireg, $freg32, $freg64);
     }};
 }
 
@@ -89,15 +84,12 @@ macro_rules! dispatch {
         $sp:expr,
         $mem0:expr,
         $mem0_len:expr,
-        $instance:expr,
         $ireg:expr,
         $freg32:expr,
         $freg64:expr $(,)?
     ) => {{
         let handler = $crate::engine::executor::handler::dispatch::backend::fetch_handler($ip);
-        become handler(
-            $state, $ip, $sp, $mem0, $mem0_len, $instance, $ireg, $freg32, $freg64,
-        );
+        become handler($state, $ip, $sp, $mem0, $mem0_len, $ireg, $freg32, $freg64);
     }};
 }
 
@@ -108,15 +100,12 @@ pub fn execute_until_done(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
 ) -> Result<Sp, ExecutionOutcome> {
     let handler = fetch_handler(ip);
-    let Control::Break(reason) = handler(
-        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
-    );
+    let Control::Break(reason) = handler(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64);
     if let Some(trap_code) = reason.trap_code() {
         return Err(ExecutionOutcome::from(trap_code));
     }

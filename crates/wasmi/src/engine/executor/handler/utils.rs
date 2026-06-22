@@ -524,20 +524,22 @@ pub fn exec_return(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
 ) -> Done {
     let Some((ip, sp, mem0, mem0_len, instance)) =
-        state.stack.pop_frame(state.store, mem0, mem0_len, instance)
+        state
+            .stack
+            .pop_frame(state.store, mem0, mem0_len, state.instance)
     else {
         // No more frames on the call stack -> break out of execution!
         done!(state, DoneReason::Return(sp))
     };
-    dispatch!(
-        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
-    )
+    // The returned-to frame may belong to a different instance, so keep the
+    // instance cached in the `VmState` in sync before dispatching.
+    state.instance = instance;
+    dispatch!(state, ip, sp, mem0, mem0_len, ireg, freg32, freg64)
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
@@ -916,8 +918,8 @@ pub fn call_wasm_or_host(
     params: BoundedSlotSpan,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
-) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len), Break> {
+    let instance = state.instance;
     let func_entity = resolve_func(state.store, &func);
     let next_state = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
@@ -928,7 +930,10 @@ pub fn call_wasm_or_host(
                 call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
-            (callee_ip, callee_sp, mem0, mem0_len, instance)
+            // The callee may belong to a different instance, so keep the
+            // instance cached in the `VmState` in sync.
+            state.instance = instance;
+            (callee_ip, callee_sp, mem0, mem0_len)
         }
         FuncEntity::Host(host_func) => {
             let host_func = *host_func;
@@ -944,8 +949,9 @@ pub fn call_wasm_or_host(
             // Host functions may re-enter WASM (e.g. calling cabi_realloc)
             // which can trigger memory.grow, invalidating the cached mem0
             // pointer. Re-extract to avoid stale pointer dereference.
+            // The instance itself is unchanged across the host call.
             let (mem0, mem0_len) = extract_mem0(state.store, instance);
-            (caller_ip, sp, mem0, mem0_len, instance)
+            (caller_ip, sp, mem0, mem0_len)
         }
     };
     Control::Continue(next_state)

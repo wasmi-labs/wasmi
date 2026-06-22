@@ -28,21 +28,37 @@ use crate::{
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
+use core::{cmp, mem, ops, ptr, slice};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
     pub stack: &'vm mut Stack,
     pub code: CodeView<'vm>,
+    /// The currently executing Wasm [`Inst`]ance.
+    ///
+    /// # Note
+    ///
+    /// Since issue #1890 the instance no longer lives in an execution handler
+    /// argument but here, in the [`VmState`]. It is only updated when the
+    /// currently executing instance actually changes (i.e. on function calls
+    /// and returns), never per-instruction, to keep the hot dispatch path free
+    /// of additional stores.
+    pub instance: Inst,
     done_reason: Option<DoneReason>,
 }
 
 impl<'vm> VmState<'vm> {
-    pub fn new(store: &'vm mut PrunedStore, stack: &'vm mut Stack, code: CodeView<'vm>) -> Self {
+    pub fn new(
+        store: &'vm mut PrunedStore,
+        stack: &'vm mut Stack,
+        code: CodeView<'vm>,
+        instance: Inst,
+    ) -> Self {
         Self {
             store,
             stack,
             code,
+            instance,
             done_reason: None,
         }
     }
@@ -144,32 +160,26 @@ impl DoneReason {
 }
 
 /// A thin-wrapper around a non-owned [`InstanceEntity`].
+///
+/// # Note
+///
+/// Since issue #1890 the currently used [`Inst`] no longer lives in an
+/// execution handler argument but inside the [`VmState`] instead. This means
+/// it is no longer subject to the register pressure that previously forced us
+/// to represent it as an `f64`, so it can be a plain `*const InstanceEntity`
+/// pointer again. Keeping it a real pointer also preserves provenance (the
+/// `f64` representation laundered the pointer through `usize`).
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Inst {
-    /// The underlying reference to the [`InstanceEntity`].
-    ///
-    /// # Note
-    ///
-    /// - We use a `f64` to represent [`Inst`] to avoid using a
-    ///   general purpose (integer) register as they are not as
-    ///   available as floating point registers on most platforms.
-    /// - Since [`Inst`] is only accessed by operators that are
-    ///   considered "slow" anyways an additional conversion between
-    ///   integer and float won't be a terrible trade-off.
-    value: f64,
-    /// Indicates to the compiler that this type is similar in behavior as
-    /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
-    marker: PhantomData<*const InstanceEntity>,
+    /// The underlying pointer to the non-owned [`InstanceEntity`].
+    ptr: *const InstanceEntity,
 }
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
-        let value =
-            f64::from_ne_bytes(((entity as *const InstanceEntity as usize) as u64).to_ne_bytes());
         Self {
-            value,
-            marker: PhantomData,
+            ptr: entity as *const InstanceEntity,
         }
     }
 }
@@ -182,10 +192,9 @@ impl PartialEq for Inst {
 impl Eq for Inst {}
 
 impl Inst {
-    /// Converts the underlying representation back into its original pointer value.
+    /// Returns the underlying pointer to the [`InstanceEntity`].
     fn as_ptr(&self) -> *const InstanceEntity {
-        let bits = u64::from_ne_bytes(self.value.to_ne_bytes());
-        bits as usize as *const InstanceEntity
+        self.ptr
     }
 
     /// Returns a shared reference to the referenced [`InstanceEntity`].
