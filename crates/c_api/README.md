@@ -51,3 +51,18 @@ fn main() {
         .compile("your_library");
 }
 ```
+
+## `no_std` Support
+
+The `wasmi_c_api_impl` crate supports `no_std` by disabling its default features.
+
+For `no_std` builds, users may have to define their own `#[global_allocator]` and `#[panic_handler]`
+for the resulting final `staticlib` or `cdylib`.
+
+For targets without a pre-built `core`/`alloc`, build the standard library from
+source with nightly `-Z build-std`. Include `std` in the list (the host
+proc-macro dependency needs it) even though the artifact is `no_std`:
+
+```shell
+cargo +nightly build --no-default-features -Z build-std=core,alloc,std --target <target>
+```
