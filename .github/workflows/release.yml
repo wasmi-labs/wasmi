@@ -136,9 +136,12 @@ jobs:
             target: aarch64-unknown-linux-musl
             runner: ubuntu-22.04-arm
             os: unix
+          # macOS: `macos-15-intel` is GitHub's last Intel image (x86_64 macOS on Actions
+          # sunsets ~Fall 2027). When it's retired, drop this leg and instead cross-compile
+          # `x86_64-apple-darwin` on the Apple-Silicon runner below. `macos-14` is Apple Silicon.
           - token: x86_64-macos
             target: x86_64-apple-darwin
-            runner: macos-13
+            runner: macos-15-intel
             os: unix
           - token: aarch64-macos
             target: aarch64-apple-darwin
