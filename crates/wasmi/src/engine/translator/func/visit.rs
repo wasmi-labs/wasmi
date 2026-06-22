@@ -421,6 +421,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_drop(&mut self) -> Self::Output {
         bail_unreachable!(self);
         _ = self.stack.pop();
+        self.instrs.commit_staged_if_any()?;
         Ok(())
     }
 

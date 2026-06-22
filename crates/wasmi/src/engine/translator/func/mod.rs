@@ -1365,7 +1365,10 @@ impl FuncTranslator {
             //  - immediates cannot be the result of a previous instruction.
             return Ok(None);
         };
-        debug_assert!(matches!(result_ty, ValType::I32 | ValType::I64));
+        debug_assert!(
+            matches!(result_ty, ValType::I32 | ValType::I64),
+            "unexpected condition type: {result_ty:?}"
+        );
         let cmp_op = match negate {
             false => staged_op,
             true => match staged_op.negate_cmp_instr() {
