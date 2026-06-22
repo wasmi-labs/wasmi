@@ -84,19 +84,35 @@ jobs:
       # crates/cli/Cargo.toml. The workspace already sets `codegen-units = 1`.
       CARGO_PROFILE_RELEASE_LTO: fat
       CARGO_PROFILE_RELEASE_STRIP: symbols
+      # Per feature set: `full` => 3 (max speed, the release default), `minimal` => "s"
+      # (optimize for size). Every other build setting is identical for both.
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: ${{ matrix.featureset.opt_level }}
       CARGO_TERM_COLOR: always
     strategy:
       fail-fast: false
       matrix:
         featureset:
           # `full` == default features (`stable,run,wast,wasi,wat,validate`) + `simd`.
+          # Built at opt-level 3 (the release default) for maximum speed.
           - name: full
             features: run,wat,wast,wasi,validate,stable,simd
+            opt_level: "3"
           # `minimal` == smallest useful CLI: run validated modules only.
+          # Built at opt-level "s" to shrink the binary further.
           - name: minimal
             features: run,validate
+            opt_level: "s"
         # Exactly the subset of Wasmtime's target-triples that matches our
         # {x86_64, aarch64} × {Linux, macOS, Windows} scope. All native runners.
+        #
+        # The Ubuntu versions below are intentionally PINNED (not `ubuntu-latest`):
+        # they set the glibc floor of the `-gnu` artifacts (ubuntu-22.04 => glibc 2.35),
+        # so a lower/older pin means the binaries run on more (older) systems.
+        # `ubuntu-latest` would silently RAISE that floor over time. When GitHub retires
+        # this image we'll first get a deprecation warning, then a hard job failure
+        # (never a bad release) — bump to the next-oldest available LTS (e.g.
+        # ubuntu-24.04 / ubuntu-24.04-arm). The `-musl` legs are statically linked, so
+        # their Ubuntu version is cosmetic — just bump all four together.
         platform:
           - token: x86_64-linux
             target: x86_64-unknown-linux-gnu
@@ -152,12 +168,31 @@ jobs:
         shell: bash
         run: >-
           cargo build
-          --profile bench
+          --release
           --locked
           --package wasmi_cli
           --no-default-features
           --features ${{ matrix.featureset.features }}
           --target ${{ matrix.platform.target }}
+
+      - name: Strip binary (minimal builds)
+        # `minimal` artifacts target small size, so strip with the platform's `strip`
+        # tool — it removes more than Cargo's `strip = symbols` alone. Runs *before*
+        # the smoke test so CI validates the final stripped binary. Skipped on Windows
+        # (MSVC keeps debug info in a separate .pdb, so the .exe has nothing to strip
+        # and `strip` isn't on the runners).
+        if: matrix.featureset.name == 'minimal' && matrix.platform.os == 'unix'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="target/${{ matrix.platform.target }}/release/wasmi"
+          strip "$bin"
+          # On Apple Silicon a binary must carry a valid (ad-hoc) code signature to run;
+          # `strip` modifies the binary and invalidates the linker's signature, so re-sign.
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            codesign --sign - --force "$bin"
+          fi
+          ls -l "$bin"
 
       - name: Smoke test binary
         shell: bash
