@@ -161,7 +161,7 @@ jobs:
         shell: bash
         run: >-
           cargo build
-          --profile bench
+          --release
           --locked
           --package wasmi_cli
           --no-default-features
