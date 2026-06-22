@@ -175,6 +175,25 @@ jobs:
           --features ${{ matrix.featureset.features }}
           --target ${{ matrix.platform.target }}
 
+      - name: Strip binary (minimal builds)
+        # `minimal` artifacts target small size, so strip with the platform's `strip`
+        # tool — it removes more than Cargo's `strip = symbols` alone. Runs *before*
+        # the smoke test so CI validates the final stripped binary. Skipped on Windows
+        # (MSVC keeps debug info in a separate .pdb, so the .exe has nothing to strip
+        # and `strip` isn't on the runners).
+        if: matrix.featureset.name == 'minimal' && matrix.platform.os == 'unix'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="target/${{ matrix.platform.target }}/release/wasmi"
+          strip "$bin"
+          # On Apple Silicon a binary must carry a valid (ad-hoc) code signature to run;
+          # `strip` modifies the binary and invalidates the linker's signature, so re-sign.
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            codesign --sign - --force "$bin"
+          fi
+          ls -l "$bin"
+
       - name: Smoke test binary
         shell: bash
         run: |
