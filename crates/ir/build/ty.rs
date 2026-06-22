@@ -123,6 +123,41 @@ pub enum Ty {
     ShiftAmount,
 }
 
+impl Ty {
+    /// Returns `true` if `self` is a `v128` type.
+    pub fn is_v128(&self) -> bool {
+        matches!(self, |Self::V128| Self::I8x16
+            | Self::I16x8
+            | Self::I32x4
+            | Self::I64x2
+            | Self::U8x16
+            | Self::U16x8
+            | Self::U32x4
+            | Self::U64x2
+            | Self::F32x4
+            | Self::F64x2)
+    }
+
+    /// Returns `true` if `self` is a scalar value type.
+    pub fn is_scalar(&self) -> bool {
+        matches!(self, |Self::Bits8| Self::Bits16
+            | Self::Bits32
+            | Self::Bits64
+            | Self::I32
+            | Self::I64
+            | Self::U8
+            | Self::U16
+            | Self::U32
+            | Self::U64
+            | Self::NonZeroI32
+            | Self::NonZeroI64
+            | Self::NonZeroU32
+            | Self::NonZeroU64
+            | Self::F32
+            | Self::F64)
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum FieldTy {
     Slot,

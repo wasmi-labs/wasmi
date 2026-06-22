@@ -268,8 +268,12 @@ impl Display for DisplayIdent<&'_ UnaryOp> {
         let case = self.case;
         let op = self.value;
         let ident = case.wrap(op.ident);
-        let ident_prefix = case.wrap(IdentPrefix(op.result_ty));
-        let ident_suffix = match op.value_ty != op.result_ty {
+        let prefix_ty = match (op.result_ty.is_v128(), op.value_ty.is_v128()) {
+            (true, true) | (true, false) | (false, false) => op.result_ty,
+            (false, true) => op.value_ty,
+        };
+        let ident_prefix = case.wrap(IdentPrefix(prefix_ty));
+        let ident_suffix = match op.value_ty != prefix_ty {
             true => Some(IdentSuffix(op.value_ty)),
             false => None,
         };

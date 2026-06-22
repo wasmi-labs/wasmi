@@ -94,16 +94,16 @@ handler_unary! {
     fn v128_splat_f64_sr(V128SplatF64_Sr) = splat_f64;
 
     fn v128_not_ss(V128Not_Ss) = simd::v128_not;
-    fn v128_any_true_ss(V128AnyTrue_Ss) = simd::v128_any_true;
+    fn v128_any_true_rs(V128AnyTrue_Rs) = simd::v128_any_true;
     fn i8x16_abs_ss(I8x16Abs_Ss) = simd::i8x16_abs;
     fn i8x16_neg_ss(I8x16Neg_Ss) = simd::i8x16_neg;
     fn i8x16_popcnt_ss(I8x16Popcnt_Ss) = simd::i8x16_popcnt;
-    fn i8x16_all_true_ss(I8x16AllTrue_Ss) = simd::i8x16_all_true;
-    fn i8x16_bitmask_ss(I8x16Bitmask_Ss) = simd::i8x16_bitmask;
+    fn i8x16_all_true_rs(I8x16AllTrue_Rs) = simd::i8x16_all_true;
+    fn i8x16_bitmask_rs(I8x16Bitmask_Rs) = simd::i8x16_bitmask;
     fn i16x8_abs_ss(I16x8Abs_Ss) = simd::i16x8_abs;
     fn i16x8_neg_ss(I16x8Neg_Ss) = simd::i16x8_neg;
-    fn i16x8_all_true_ss(I16x8AllTrue_Ss) = simd::i16x8_all_true;
-    fn i16x8_bitmask_ss(I16x8Bitmask_Ss) = simd::i16x8_bitmask;
+    fn i16x8_all_true_rs(I16x8AllTrue_Rs) = simd::i16x8_all_true;
+    fn i16x8_bitmask_rs(I16x8Bitmask_Rs) = simd::i16x8_bitmask;
     fn i16x8_extadd_pairwise_i8x16_ss(I16x8ExtaddPairwiseI8x16_Ss) = simd::i16x8_extadd_pairwise_i8x16_s;
     fn u16x8_extadd_pairwise_i8x16_ss(U16x8ExtaddPairwiseI8x16_Ss) = simd::i16x8_extadd_pairwise_i8x16_u;
     fn i16x8_extend_low_i8x16_ss(I16x8ExtendLowI8x16_Ss) = simd::i16x8_extend_low_i8x16_s;
@@ -112,8 +112,8 @@ handler_unary! {
     fn u16x8_extend_high_i8x16_ss(U16x8ExtendHighI8x16_Ss) = simd::i16x8_extend_high_i8x16_u;
     fn i32x4_abs_ss(I32x4Abs_Ss) = simd::i32x4_abs;
     fn i32x4_neg_ss(I32x4Neg_Ss) = simd::i32x4_neg;
-    fn i32x4_all_true_ss(I32x4AllTrue_Ss) = simd::i32x4_all_true;
-    fn i32x4_bitmask_ss(I32x4Bitmask_Ss) = simd::i32x4_bitmask;
+    fn i32x4_all_true_rs(I32x4AllTrue_Rs) = simd::i32x4_all_true;
+    fn i32x4_bitmask_rs(I32x4Bitmask_Rs) = simd::i32x4_bitmask;
     fn i32x4_extadd_pairwise_i16x8_ss(I32x4ExtaddPairwiseI16x8_Ss) = simd::i32x4_extadd_pairwise_i16x8_s;
     fn u32x4_extadd_pairwise_i16x8_ss(U32x4ExtaddPairwiseI16x8_Ss) = simd::i32x4_extadd_pairwise_i16x8_u;
     fn i32x4_extend_low_i16x8_ss(I32x4ExtendLowI16x8_Ss) = simd::i32x4_extend_low_i16x8_s;
@@ -122,8 +122,8 @@ handler_unary! {
     fn u32x4_extend_high_i16x8_ss(U32x4ExtendHighI16x8_Ss) = simd::i32x4_extend_high_i16x8_u;
     fn i64x2_abs_ss(I64x2Abs_Ss) = simd::i64x2_abs;
     fn i64x2_neg_ss(I64x2Neg_Ss) = simd::i64x2_neg;
-    fn i64x2_all_true_ss(I64x2AllTrue_Ss) = simd::i64x2_all_true;
-    fn i64x2_bitmask_ss(I64x2Bitmask_Ss) = simd::i64x2_bitmask;
+    fn i64x2_all_true_rs(I64x2AllTrue_Rs) = simd::i64x2_all_true;
+    fn i64x2_bitmask_rs(I64x2Bitmask_Rs) = simd::i64x2_bitmask;
     fn i64x2_extend_low_i32x4_ss(I64x2ExtendLowI32x4_Ss) = simd::i64x2_extend_low_i32x4_s;
     fn u64x2_extend_low_i32x4_ss(U64x2ExtendLowI32x4_Ss) = simd::i64x2_extend_low_i32x4_u;
     fn i64x2_extend_high_i32x4_ss(I64x2ExtendHighI32x4_Ss) = simd::i64x2_extend_high_i32x4_s;
