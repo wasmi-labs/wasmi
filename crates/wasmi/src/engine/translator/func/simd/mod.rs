@@ -153,7 +153,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm unary instruction.
-    fn translate_simd_unary<T>(
+    fn translate_simd_unary_sx<T>(
         &mut self,
         make_instr: fn(result: Slot, input: Slot) -> Op,
         const_eval: fn(input: V128) -> T,
@@ -175,6 +175,28 @@ impl FuncTranslator {
             |result| make_instr(result, input),
             FuelCostsProvider::simd,
         )?;
+        Ok(())
+    }
+
+    /// Generically translate a Wasm unary instruction.
+    fn translate_simd_unary_rx<T>(
+        &mut self,
+        make_instr: fn(input: Slot) -> Op,
+        const_eval: fn(input: V128) -> T,
+    ) -> Result<(), Error>
+    where
+        T: Into<TypedRawVal> + Typed,
+    {
+        bail_unreachable!(self);
+        let input = self.stack.pop();
+        if let Operand::Immediate(input) = input {
+            // Case: the input is an immediate so we can const-eval the result.
+            let result = const_eval(input.val().into());
+            self.stack.push_immediate(result)?;
+            return Ok(());
+        };
+        let input = self.operand_to_slot(input)?;
+        self.push_op_with_result_reg(<T as Typed>::TY, make_instr(input), FuelCostsProvider::simd)?;
         Ok(())
     }
 

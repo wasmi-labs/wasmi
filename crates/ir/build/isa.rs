@@ -1094,12 +1094,12 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         (Ident::Neg, Ty::I8x16, Ty::I8x16),
         (Ident::Popcnt, Ty::I8x16, Ty::I8x16),
         (Ident::AllTrue, Ty::I8x16, Ty::I8x16),
-        (Ident::Bitmask, Ty::I8x16, Ty::I8x16),
+        (Ident::Bitmask, Ty::I32, Ty::I8x16),
         // SIMD: `i16x8` Unary Ops
         (Ident::Abs, Ty::I16x8, Ty::I16x8),
         (Ident::Neg, Ty::I16x8, Ty::I16x8),
         (Ident::AllTrue, Ty::I16x8, Ty::I16x8),
-        (Ident::Bitmask, Ty::I16x8, Ty::I16x8),
+        (Ident::Bitmask, Ty::I32, Ty::I16x8),
         (Ident::ExtaddPairwise, Ty::I16x8, Ty::I8x16),
         (Ident::ExtaddPairwise, Ty::U16x8, Ty::I8x16),
         (Ident::ExtendLow, Ty::I16x8, Ty::I8x16),
@@ -1110,7 +1110,7 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         (Ident::Abs, Ty::I32x4, Ty::I32x4),
         (Ident::Neg, Ty::I32x4, Ty::I32x4),
         (Ident::AllTrue, Ty::I32x4, Ty::I32x4),
-        (Ident::Bitmask, Ty::I32x4, Ty::I32x4),
+        (Ident::Bitmask, Ty::I32, Ty::I32x4),
         (Ident::ExtaddPairwise, Ty::I32x4, Ty::I16x8),
         (Ident::ExtaddPairwise, Ty::U32x4, Ty::I16x8),
         (Ident::ExtendLow, Ty::I32x4, Ty::I16x8),
@@ -1121,7 +1121,7 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         (Ident::Abs, Ty::I64x2, Ty::I64x2),
         (Ident::Neg, Ty::I64x2, Ty::I64x2),
         (Ident::AllTrue, Ty::I64x2, Ty::I64x2),
-        (Ident::Bitmask, Ty::I64x2, Ty::I64x2),
+        (Ident::Bitmask, Ty::I32, Ty::I64x2),
         (Ident::ExtendLow, Ty::I64x2, Ty::I32x4),
         (Ident::ExtendLow, Ty::U64x2, Ty::I32x4),
         (Ident::ExtendHigh, Ty::I64x2, Ty::I32x4),
@@ -1155,11 +1155,16 @@ fn add_simd_unary_ops(isa: &mut Isa) {
         (Ident::ConvertLow, Ty::F64x2, Ty::U32x4),
     ];
     for (ident, result_ty, value_ty) in kinds {
+        let result = match result_ty {
+            ty if ty.is_v128() => OperandKind::Slot,
+            ty if ty.is_scalar() => OperandKind::Reg,
+            _ => unreachable!(),
+        };
         isa.push_op(UnaryOp::new(
             ident,
             result_ty,
             value_ty,
-            OperandKind::Slot,
+            result,
             OperandKind::Slot,
         ));
     }

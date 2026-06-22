@@ -565,7 +565,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_not(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::v128_not_ss, simd::v128_not)
+        self.translate_simd_unary_sx(Op::v128_not_ss, simd::v128_not)
     }
 
     fn visit_v128_and(&mut self) -> Self::Output {
@@ -589,27 +589,27 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_any_true(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::v128_any_true_ss, simd::v128_any_true)
+        self.translate_simd_unary_sx(Op::v128_any_true_ss, simd::v128_any_true)
     }
 
     fn visit_i8x16_abs(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i8x16_abs_ss, simd::i8x16_abs)
+        self.translate_simd_unary_sx(Op::i8x16_abs_ss, simd::i8x16_abs)
     }
 
     fn visit_i8x16_neg(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i8x16_neg_ss, simd::i8x16_neg)
+        self.translate_simd_unary_sx(Op::i8x16_neg_ss, simd::i8x16_neg)
     }
 
     fn visit_i8x16_popcnt(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i8x16_popcnt_ss, simd::i8x16_popcnt)
+        self.translate_simd_unary_sx(Op::i8x16_popcnt_ss, simd::i8x16_popcnt)
     }
 
     fn visit_i8x16_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i8x16_all_true_ss, simd::i8x16_all_true)
+        self.translate_simd_unary_sx(Op::i8x16_all_true_ss, simd::i8x16_all_true)
     }
 
     fn visit_i8x16_bitmask(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i8x16_bitmask_ss, simd::i8x16_bitmask)
+        self.translate_simd_unary_rx(Op::i8x16_bitmask_rs, simd::i8x16_bitmask)
     }
 
     fn visit_i8x16_narrow_i16x8_s(&mut self) -> Self::Output {
@@ -692,25 +692,25 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i16x8_extadd_pairwise_i8x16_ss,
             simd::i16x8_extadd_pairwise_i8x16_s,
         )
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u16x8_extadd_pairwise_i8x16_ss,
             simd::i16x8_extadd_pairwise_i8x16_u,
         )
     }
 
     fn visit_i16x8_abs(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i16x8_abs_ss, simd::i16x8_abs)
+        self.translate_simd_unary_sx(Op::i16x8_abs_ss, simd::i16x8_abs)
     }
 
     fn visit_i16x8_neg(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i16x8_neg_ss, simd::i16x8_neg)
+        self.translate_simd_unary_sx(Op::i16x8_neg_ss, simd::i16x8_neg)
     }
 
     fn visit_i16x8_q15mulr_sat_s(&mut self) -> Self::Output {
@@ -718,11 +718,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i16x8_all_true_ss, simd::i16x8_all_true)
+        self.translate_simd_unary_sx(Op::i16x8_all_true_ss, simd::i16x8_all_true)
     }
 
     fn visit_i16x8_bitmask(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i16x8_bitmask_ss, simd::i16x8_bitmask)
+        self.translate_simd_unary_rx(Op::i16x8_bitmask_rs, simd::i16x8_bitmask)
     }
 
     fn visit_i16x8_narrow_i32x4_s(&mut self) -> Self::Output {
@@ -734,28 +734,28 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_extend_low_i8x16_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i16x8_extend_low_i8x16_ss,
             simd::i16x8_extend_low_i8x16_s,
         )
     }
 
     fn visit_i16x8_extend_high_i8x16_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i16x8_extend_high_i8x16_ss,
             simd::i16x8_extend_high_i8x16_s,
         )
     }
 
     fn visit_i16x8_extend_low_i8x16_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u16x8_extend_low_i8x16_ss,
             simd::i16x8_extend_low_i8x16_u,
         )
     }
 
     fn visit_i16x8_extend_high_i8x16_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u16x8_extend_high_i8x16_ss,
             simd::i16x8_extend_high_i8x16_u,
         )
@@ -865,58 +865,58 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_extadd_pairwise_i16x8_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i32x4_extadd_pairwise_i16x8_ss,
             simd::i32x4_extadd_pairwise_i16x8_s,
         )
     }
 
     fn visit_i32x4_extadd_pairwise_i16x8_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u32x4_extadd_pairwise_i16x8_ss,
             simd::i32x4_extadd_pairwise_i16x8_u,
         )
     }
 
     fn visit_i32x4_abs(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i32x4_abs_ss, simd::i32x4_abs)
+        self.translate_simd_unary_sx(Op::i32x4_abs_ss, simd::i32x4_abs)
     }
 
     fn visit_i32x4_neg(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i32x4_neg_ss, simd::i32x4_neg)
+        self.translate_simd_unary_sx(Op::i32x4_neg_ss, simd::i32x4_neg)
     }
 
     fn visit_i32x4_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i32x4_all_true_ss, simd::i32x4_all_true)
+        self.translate_simd_unary_sx(Op::i32x4_all_true_ss, simd::i32x4_all_true)
     }
 
     fn visit_i32x4_bitmask(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i32x4_bitmask_ss, simd::i32x4_bitmask)
+        self.translate_simd_unary_rx(Op::i32x4_bitmask_rs, simd::i32x4_bitmask)
     }
 
     fn visit_i32x4_extend_low_i16x8_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i32x4_extend_low_i16x8_ss,
             simd::i32x4_extend_low_i16x8_s,
         )
     }
 
     fn visit_i32x4_extend_high_i16x8_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i32x4_extend_high_i16x8_ss,
             simd::i32x4_extend_high_i16x8_s,
         )
     }
 
     fn visit_i32x4_extend_low_i16x8_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u32x4_extend_low_i16x8_ss,
             simd::i32x4_extend_low_i16x8_u,
         )
     }
 
     fn visit_i32x4_extend_high_i16x8_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u32x4_extend_high_i16x8_ss,
             simd::i32x4_extend_high_i16x8_u,
         )
@@ -1010,44 +1010,44 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_abs(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i64x2_abs_ss, simd::i64x2_abs)
+        self.translate_simd_unary_sx(Op::i64x2_abs_ss, simd::i64x2_abs)
     }
 
     fn visit_i64x2_neg(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i64x2_neg_ss, simd::i64x2_neg)
+        self.translate_simd_unary_sx(Op::i64x2_neg_ss, simd::i64x2_neg)
     }
 
     fn visit_i64x2_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i64x2_all_true_ss, simd::i64x2_all_true)
+        self.translate_simd_unary_sx(Op::i64x2_all_true_ss, simd::i64x2_all_true)
     }
 
     fn visit_i64x2_bitmask(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i64x2_bitmask_ss, simd::i64x2_bitmask)
+        self.translate_simd_unary_rx(Op::i64x2_bitmask_rs, simd::i64x2_bitmask)
     }
 
     fn visit_i64x2_extend_low_i32x4_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i64x2_extend_low_i32x4_ss,
             simd::i64x2_extend_low_i32x4_s,
         )
     }
 
     fn visit_i64x2_extend_high_i32x4_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i64x2_extend_high_i32x4_ss,
             simd::i64x2_extend_high_i32x4_s,
         )
     }
 
     fn visit_i64x2_extend_low_i32x4_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u64x2_extend_low_i32x4_ss,
             simd::i64x2_extend_low_i32x4_u,
         )
     }
 
     fn visit_i64x2_extend_high_i32x4_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u64x2_extend_high_i32x4_ss,
             simd::i64x2_extend_high_i32x4_u,
         )
@@ -1121,31 +1121,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_ceil(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_ceil_ss, simd::f32x4_ceil)
+        self.translate_simd_unary_sx(Op::f32x4_ceil_ss, simd::f32x4_ceil)
     }
 
     fn visit_f32x4_floor(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_floor_ss, simd::f32x4_floor)
+        self.translate_simd_unary_sx(Op::f32x4_floor_ss, simd::f32x4_floor)
     }
 
     fn visit_f32x4_trunc(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_trunc_ss, simd::f32x4_trunc)
+        self.translate_simd_unary_sx(Op::f32x4_trunc_ss, simd::f32x4_trunc)
     }
 
     fn visit_f32x4_nearest(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_nearest_ss, simd::f32x4_nearest)
+        self.translate_simd_unary_sx(Op::f32x4_nearest_ss, simd::f32x4_nearest)
     }
 
     fn visit_f32x4_abs(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_abs_ss, simd::f32x4_abs)
+        self.translate_simd_unary_sx(Op::f32x4_abs_ss, simd::f32x4_abs)
     }
 
     fn visit_f32x4_neg(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_neg_ss, simd::f32x4_neg)
+        self.translate_simd_unary_sx(Op::f32x4_neg_ss, simd::f32x4_neg)
     }
 
     fn visit_f32x4_sqrt(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_sqrt_ss, simd::f32x4_sqrt)
+        self.translate_simd_unary_sx(Op::f32x4_sqrt_ss, simd::f32x4_sqrt)
     }
 
     fn visit_f32x4_add(&mut self) -> Self::Output {
@@ -1181,31 +1181,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f64x2_ceil(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_ceil_ss, simd::f64x2_ceil)
+        self.translate_simd_unary_sx(Op::f64x2_ceil_ss, simd::f64x2_ceil)
     }
 
     fn visit_f64x2_floor(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_floor_ss, simd::f64x2_floor)
+        self.translate_simd_unary_sx(Op::f64x2_floor_ss, simd::f64x2_floor)
     }
 
     fn visit_f64x2_trunc(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_trunc_ss, simd::f64x2_trunc)
+        self.translate_simd_unary_sx(Op::f64x2_trunc_ss, simd::f64x2_trunc)
     }
 
     fn visit_f64x2_nearest(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_nearest_ss, simd::f64x2_nearest)
+        self.translate_simd_unary_sx(Op::f64x2_nearest_ss, simd::f64x2_nearest)
     }
 
     fn visit_f64x2_abs(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_abs_ss, simd::f64x2_abs)
+        self.translate_simd_unary_sx(Op::f64x2_abs_ss, simd::f64x2_abs)
     }
 
     fn visit_f64x2_neg(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_neg_ss, simd::f64x2_neg)
+        self.translate_simd_unary_sx(Op::f64x2_neg_ss, simd::f64x2_neg)
     }
 
     fn visit_f64x2_sqrt(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f64x2_sqrt_ss, simd::f64x2_sqrt)
+        self.translate_simd_unary_sx(Op::f64x2_sqrt_ss, simd::f64x2_sqrt)
     }
 
     fn visit_f64x2_add(&mut self) -> Self::Output {
@@ -1241,58 +1241,58 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_trunc_sat_f32x4_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::i32x4_trunc_sat_f32x4_ss, simd::i32x4_trunc_sat_f32x4_s)
+        self.translate_simd_unary_sx(Op::i32x4_trunc_sat_f32x4_ss, simd::i32x4_trunc_sat_f32x4_s)
     }
 
     fn visit_i32x4_trunc_sat_f32x4_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::u32x4_trunc_sat_f32x4_ss, simd::i32x4_trunc_sat_f32x4_u)
+        self.translate_simd_unary_sx(Op::u32x4_trunc_sat_f32x4_ss, simd::i32x4_trunc_sat_f32x4_u)
     }
 
     fn visit_f32x4_convert_i32x4_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_convert_i32x4_ss, simd::f32x4_convert_i32x4_s)
+        self.translate_simd_unary_sx(Op::f32x4_convert_i32x4_ss, simd::f32x4_convert_i32x4_s)
     }
 
     fn visit_f32x4_convert_i32x4_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(Op::f32x4_convert_u32x4_ss, simd::f32x4_convert_i32x4_u)
+        self.translate_simd_unary_sx(Op::f32x4_convert_u32x4_ss, simd::f32x4_convert_i32x4_u)
     }
 
     fn visit_i32x4_trunc_sat_f64x2_s_zero(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::i32x4_trunc_sat_zero_f64x2_ss,
             simd::i32x4_trunc_sat_f64x2_s_zero,
         )
     }
 
     fn visit_i32x4_trunc_sat_f64x2_u_zero(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::u32x4_trunc_sat_zero_f64x2_ss,
             simd::i32x4_trunc_sat_f64x2_u_zero,
         )
     }
 
     fn visit_f64x2_convert_low_i32x4_s(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::f64x2_convert_low_i32x4_ss,
             simd::f64x2_convert_low_i32x4_s,
         )
     }
 
     fn visit_f64x2_convert_low_i32x4_u(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::f64x2_convert_low_u32x4_ss,
             simd::f64x2_convert_low_i32x4_u,
         )
     }
 
     fn visit_f32x4_demote_f64x2_zero(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::f32x4_demote_zero_f64x2_ss,
             simd::f32x4_demote_f64x2_zero,
         )
     }
 
     fn visit_f64x2_promote_low_f32x4(&mut self) -> Self::Output {
-        self.translate_simd_unary(
+        self.translate_simd_unary_sx(
             Op::f64x2_promote_low_f32x4_ss,
             simd::f64x2_promote_low_f32x4,
         )
