@@ -87,6 +87,10 @@ jobs:
       # Per feature set: `full` => 3 (max speed, the release default), `minimal` => "s"
       # (optimize for size). Every other build setting is identical for both.
       CARGO_PROFILE_RELEASE_OPT_LEVEL: ${{ matrix.featureset.opt_level }}
+      # Per feature set: `full` keeps unwinding; `minimal` uses `abort` to drop unwind
+      # tables/landing pads for a smaller binary (safe — the minimal CLI has no
+      # `catch_unwind` in its dependency tree; that only lives in `wasmi_c_api_impl`).
+      CARGO_PROFILE_RELEASE_PANIC: ${{ matrix.featureset.panic }}
       CARGO_TERM_COLOR: always
     strategy:
       fail-fast: false
@@ -97,11 +101,13 @@ jobs:
           - name: full
             features: run,wat,wast,wasi,validate,stable,simd
             opt_level: "3"
+            panic: unwind
           # `minimal` == smallest useful CLI: run validated modules only.
-          # Built at opt-level "s" to shrink the binary further.
+          # Built at opt-level "s" + panic=abort to shrink the binary further.
           - name: minimal
             features: run,validate
             opt_level: "s"
+            panic: abort
         # Exactly the subset of Wasmtime's target-triples that matches our
         # {x86_64, aarch64} × {Linux, macOS, Windows} scope. All native runners.
         #
