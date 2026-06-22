@@ -589,7 +589,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_any_true(&mut self) -> Self::Output {
-        self.translate_simd_unary_sx(Op::v128_any_true_ss, simd::v128_any_true)
+        self.translate_simd_unary_rx(Op::v128_any_true_rs, simd::v128_any_true)
     }
 
     fn visit_i8x16_abs(&mut self) -> Self::Output {
@@ -605,7 +605,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary_sx(Op::i8x16_all_true_ss, simd::i8x16_all_true)
+        self.translate_simd_unary_rx(Op::i8x16_all_true_rs, simd::i8x16_all_true)
     }
 
     fn visit_i8x16_bitmask(&mut self) -> Self::Output {
@@ -718,7 +718,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary_sx(Op::i16x8_all_true_ss, simd::i16x8_all_true)
+        self.translate_simd_unary_rx(Op::i16x8_all_true_rs, simd::i16x8_all_true)
     }
 
     fn visit_i16x8_bitmask(&mut self) -> Self::Output {
@@ -887,7 +887,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary_sx(Op::i32x4_all_true_ss, simd::i32x4_all_true)
+        self.translate_simd_unary_rx(Op::i32x4_all_true_rs, simd::i32x4_all_true)
     }
 
     fn visit_i32x4_bitmask(&mut self) -> Self::Output {
@@ -1018,7 +1018,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_all_true(&mut self) -> Self::Output {
-        self.translate_simd_unary_sx(Op::i64x2_all_true_ss, simd::i64x2_all_true)
+        self.translate_simd_unary_rx(Op::i64x2_all_true_rs, simd::i64x2_all_true)
     }
 
     fn visit_i64x2_bitmask(&mut self) -> Self::Output {
