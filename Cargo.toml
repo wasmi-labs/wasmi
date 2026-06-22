@@ -36,7 +36,7 @@ wasmi_core = { version = "2.0.0-beta.3", path = "crates/core", default-features 
 wasmi_ir = { version = "2.0.0-beta.3", path = "crates/ir", default-features = false }
 wasmi_collections = { version = "2.0.0-beta.3", path = "crates/collections", default-features = false }
 wasmi_wast = { version = "2.0.0-beta.3", path = "crates/wast", default-features = false }
-wasmi_c_api_impl = { version = "2.0.0-beta.3", path = "crates/c_api" }
+wasmi_c_api_impl = { version = "2.0.0-beta.3", path = "crates/c_api", default-features = false }
 wasmi_c_api_macros = { version = "2.0.0-beta.3", path = "crates/c_api/macro" }
 wasmi_fuzz = { version = "2.0.0-beta.3", path = "crates/fuzz" }
 
