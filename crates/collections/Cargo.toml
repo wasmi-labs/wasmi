@@ -53,3 +53,6 @@ normal = [
     # Needed to suppress weird `udep` warnings. Maybe a `cargo-udep` bug?
     "string-interner"
 ]
+
+[package.metadata.docs.rs]
+all-features = true
