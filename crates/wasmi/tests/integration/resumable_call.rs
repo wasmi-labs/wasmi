@@ -391,3 +391,85 @@ fn run_test_typed(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
         assert_eq!(call.unwrap_finished(), 4);
     }
 }
+
+/// Regression test for <https://github.com/wasmi-labs/wasmi/issues/1859>.
+///
+/// With the default `CompilationMode::LazyTranslation` and fuel metering enabled, running out of
+/// fuel *during the lazy translation* of a resumable call's root function (before any of its
+/// instructions execute) used to produce a resumable handle over an empty call stack. Resuming it
+/// then panicked with "the currently used instance must be present".
+///
+/// Such an out-of-fuel must instead be reported as a plain, non-resumable out-of-fuel error: there
+/// is no frame to resume into. This mirrors the behavior of Wasmi `main` (2.0.x).
+#[test]
+fn out_of_fuel_during_root_translation_is_non_resumable() {
+    let wasm = r#"
+        (module
+            (func (export "hello")
+                (loop $loop (br $loop))
+            )
+        )
+    "#;
+    let mut config = Config::default();
+    config.consume_fuel(true); // default: CompilationMode::LazyTranslation
+    let engine = Engine::new(&config);
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, ());
+    let linker = <Linker<()>>::new(&engine);
+    // Give enough fuel to instantiate, then starve the upcoming call so that lazy translation of
+    // `hello` runs out of fuel before the function's call frame is pushed.
+    store.set_fuel(1000).unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    let hello = instance.get_func(&store, "hello").unwrap();
+    store.set_fuel(1).unwrap();
+
+    // Must NOT panic and must NOT yield a resumable handle: a clean, non-resumable out-of-fuel error.
+    let error = hello
+        .call_resumable(&mut store, &[], &mut [])
+        .expect_err("running out of fuel during translation must be a (non-resumable) error");
+    assert!(matches!(
+        error.kind(),
+        ErrorKind::TrapCode(TrapCode::OutOfFuel)
+    ));
+}
+
+/// Companion to [`out_of_fuel_during_root_translation_is_non_resumable`].
+///
+/// Ensures the demotion above does not regress genuine *execution-time* out-of-fuel resumption:
+/// once the root function is translated, running out of fuel while executing it must still yield a
+/// resumable handle that can be resumed (repeatedly) without panicking.
+#[test]
+fn out_of_fuel_during_root_execution_is_resumable() {
+    let wasm = r#"
+        (module
+            (func (export "hello")
+                (loop $loop (br $loop))
+            )
+        )
+    "#;
+    let mut config = Config::default();
+    config.consume_fuel(true); // default: CompilationMode::LazyTranslation
+    let engine = Engine::new(&config);
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, ());
+    let linker = <Linker<()>>::new(&engine);
+    // Plenty of fuel: translation succeeds and the infinite loop runs until it exhausts fuel
+    // *during execution*, which is the genuinely resumable case.
+    store.set_fuel(10_000).unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    let hello = instance.get_func(&store, "hello").unwrap();
+
+    let mut handle = hello.call_resumable(&mut store, &[], &mut []).unwrap();
+    for _ in 0..5 {
+        match handle {
+            ResumableCall::OutOfFuel(next) => {
+                // Refuel and resume: this is the path that previously could not be reached for the
+                // root translation case, and must keep working for the execution case.
+                store.set_fuel(10_000).unwrap();
+                handle = next.resume(&mut store, &mut []).unwrap();
+            }
+            ResumableCall::Finished => panic!("an infinite loop must never finish"),
+            ResumableCall::HostTrap(_) => panic!("unexpected host trap"),
+        }
+    }
+}
