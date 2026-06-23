@@ -7,6 +7,14 @@ use core::{
     ops::{Div, Rem},
 };
 
+pub fn wasmi_f32_nabs(value: f32) -> f32 {
+    wasm::f32_neg(wasm::f32_abs(value))
+}
+
+pub fn wasmi_f64_nabs(value: f64) -> f64 {
+    wasm::f64_neg(wasm::f64_abs(value))
+}
+
 pub fn wasmi_i32_div_ssi(lhs: i32, rhs: NonZero<i32>) -> Result<i32, TrapCode> {
     wasm::i32_div_s(lhs, rhs.get())
 }

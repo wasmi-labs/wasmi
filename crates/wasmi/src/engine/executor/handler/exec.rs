@@ -1456,6 +1456,8 @@ handler_unary! {
     fn f32_abs_rr(F32Abs_Rr) = wasm::f32_abs;
     fn f32_neg_rs(F32Neg_Rs) = wasm::f32_neg;
     fn f32_neg_rr(F32Neg_Rr) = wasm::f32_neg;
+    fn f32_nabs_rs(F32Nabs_Rs) = eval::wasmi_f32_nabs;
+    fn f32_nabs_rr(F32Nabs_Rr) = eval::wasmi_f32_nabs;
     fn f32_ceil_rs(F32Ceil_Rs) = wasm::f32_ceil;
     fn f32_ceil_rr(F32Ceil_Rr) = wasm::f32_ceil;
     fn f32_floor_rs(F32Floor_Rs) = wasm::f32_floor;
@@ -1481,6 +1483,8 @@ handler_unary! {
     fn f64_abs_rr(F64Abs_Rr) = wasm::f64_abs;
     fn f64_neg_rs(F64Neg_Rs) = wasm::f64_neg;
     fn f64_neg_rr(F64Neg_Rr) = wasm::f64_neg;
+    fn f64_nabs_rs(F64Nabs_Rs) = eval::wasmi_f64_nabs;
+    fn f64_nabs_rr(F64Nabs_Rr) = eval::wasmi_f64_nabs;
     fn f64_ceil_rs(F64Ceil_Rs) = wasm::f64_ceil;
     fn f64_ceil_rr(F64Ceil_Rr) = wasm::f64_ceil;
     fn f64_floor_rs(F64Floor_Rs) = wasm::f64_floor;
