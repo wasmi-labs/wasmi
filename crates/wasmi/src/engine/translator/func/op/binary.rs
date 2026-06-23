@@ -5,7 +5,7 @@ use crate::{
     TrapCode,
     core::{IntoShiftAmount, RawVal, ShiftAmount, Sign, Typed, wasm},
     engine::eval,
-    ir::{Op, Reg, Slot},
+    ir::{Op, Slot},
 };
 use core::num::NonZero;
 
@@ -54,10 +54,10 @@ macro_rules! impl_commutative_binary_op_for {
                 fn consteval = $consteval:expr;
 
                 $( fn op_rrr = $op_rrr:expr; )?
-                fn op_rrs = $op_rrs:ident;
-                fn op_rri = $op_rri:ident;
-                fn op_rss = $op_rss:ident;
-                fn op_rsi = $op_rsi:ident;
+                fn op_rrs = $op_rrs:expr;
+                fn op_rri = $op_rri:expr;
+                fn op_rss = $op_rss:expr;
+                fn op_rsi = $op_rsi:expr;
             }
         )*
     ) => {
@@ -78,19 +78,19 @@ macro_rules! impl_commutative_binary_op_for {
                 )?
 
                 fn op_rrs(rhs: Slot) -> Op {
-                    Op::$op_rrs { result: Reg::default(), lhs: Reg::default(), rhs }
+                    $op_rrs(rhs)
                 }
 
                 fn op_rri(rhs: Self::Input) -> Op {
-                    Op::$op_rri { result: Reg::default(), lhs: Reg::default(), rhs }
+                    $op_rri(rhs)
                 }
 
                 fn op_rss(lhs: Slot, rhs: Slot) -> Op {
-                    Op::$op_rss { result: Reg::default(), lhs, rhs }
+                    $op_rss(lhs, rhs)
                 }
 
                 fn op_rsi(lhs: Slot, rhs: Self::Input) -> Op {
-                    Op::$op_rsi { result: Reg::default(), lhs, rhs }
+                    $op_rsi(lhs, rhs)
                 }
             }
         )*
@@ -109,13 +109,13 @@ macro_rules! impl_binary_op_for {
                 fn consteval = $consteval:expr;
 
                 $( fn op_rrr = $op_rrr:expr; )?
-                fn op_rrs = $op_rrs:ident;
-                fn op_rri = $op_rri:ident;
-                fn op_rsr = $op_rsr:ident;
-                fn op_rss = $op_rss:ident;
-                fn op_rsi = $op_rsi:ident;
-                fn op_rir = $op_rir:ident;
-                fn op_ris = $op_ris:ident;
+                fn op_rrs = $op_rrs:expr;
+                fn op_rri = $op_rri:expr;
+                fn op_rsr = $op_rsr:expr;
+                fn op_rss = $op_rss:expr;
+                fn op_rsi = $op_rsi:expr;
+                fn op_rir = $op_rir:expr;
+                fn op_ris = $op_ris:expr;
             }
         )*
     ) => {
@@ -141,31 +141,31 @@ macro_rules! impl_binary_op_for {
                 )?
 
                 fn op_rrs(rhs: Slot) -> Op {
-                    Op::$op_rrs { result: Reg::default(), lhs: Reg::default(), rhs }
+                    $op_rrs(rhs)
                 }
 
                 fn op_rri(rhs: Self::Rhs) -> Op {
-                    Op::$op_rri { result: Reg::default(), lhs: Reg::default(), rhs }
+                    $op_rri(rhs)
                 }
 
                 fn op_rsr(lhs: Slot) -> Op {
-                    Op::$op_rsr { result: Reg::default(), lhs, rhs: Reg::default() }
+                    $op_rsr(lhs)
                 }
 
                 fn op_rss(lhs: Slot, rhs: Slot) -> Op {
-                    Op::$op_rss { result: Reg::default(), lhs, rhs }
+                    $op_rss(lhs, rhs)
                 }
 
                 fn op_rsi(lhs: Slot, rhs: Self::Rhs) -> Op {
-                    Op::$op_rsi { result: Reg::default(), lhs, rhs }
+                    $op_rsi(lhs, rhs)
                 }
 
                 fn op_rir(lhs: Self::Lhs) -> Op {
-                    Op::$op_rir { result: Reg::default(), lhs, rhs: Reg::default() }
+                    $op_rir(lhs)
                 }
 
                 fn op_ris(lhs: Self::Lhs, rhs: Slot) -> Op {
-                    Op::$op_ris { result: Reg::default(), lhs, rhs }
+                    $op_ris(lhs, rhs)
                 }
             }
         )*
@@ -179,60 +179,60 @@ impl_commutative_binary_op_for! {
         type Result = bool;
         type Input = i32;
         fn consteval = wasm::i32_eq;
-        fn op_rrs = I32Eq_Rrs;
-        fn op_rri = I32Eq_Rri;
-        fn op_rss = I32Eq_Rss;
-        fn op_rsi = I32Eq_Rsi;
+        fn op_rrs = Op::i32_eq_rrs;
+        fn op_rri = Op::i32_eq_rri;
+        fn op_rss = Op::i32_eq_rss;
+        fn op_rsi = Op::i32_eq_rsi;
     }
 
     impl CommutativeBinaryOp for I32NotEq {
         type Result = bool;
         type Input = i32;
         fn consteval = wasm::i32_ne;
-        fn op_rrs = I32NotEq_Rrs;
-        fn op_rri = I32NotEq_Rri;
-        fn op_rss = I32NotEq_Rss;
-        fn op_rsi = I32NotEq_Rsi;
+        fn op_rrs = Op::i32_not_eq_rrs;
+        fn op_rri = Op::i32_not_eq_rri;
+        fn op_rss = Op::i32_not_eq_rss;
+        fn op_rsi = Op::i32_not_eq_rsi;
     }
 
     impl CommutativeBinaryOp for I32And {
         type Result = bool;
         type Input = i32;
         fn consteval = eval::wasmi_i32_and;
-        fn op_rrs = I32And_Rrs;
-        fn op_rri = I32And_Rri;
-        fn op_rss = I32And_Rss;
-        fn op_rsi = I32And_Rsi;
+        fn op_rrs = Op::i32_and_rrs;
+        fn op_rri = Op::i32_and_rri;
+        fn op_rss = Op::i32_and_rss;
+        fn op_rsi = Op::i32_and_rsi;
     }
 
     impl CommutativeBinaryOp for I32NotAnd {
         type Result = bool;
         type Input = i32;
         fn consteval = eval::wasmi_i32_not_and;
-        fn op_rrs = I32NotAnd_Rrs;
-        fn op_rri = I32NotAnd_Rri;
-        fn op_rss = I32NotAnd_Rss;
-        fn op_rsi = I32NotAnd_Rsi;
+        fn op_rrs = Op::i32_not_and_rrs;
+        fn op_rri = Op::i32_not_and_rri;
+        fn op_rss = Op::i32_not_and_rss;
+        fn op_rsi = Op::i32_not_and_rsi;
     }
 
     impl CommutativeBinaryOp for I32Or {
         type Result = bool;
         type Input = i32;
         fn consteval = eval::wasmi_i32_or;
-        fn op_rrs = I32Or_Rrs;
-        fn op_rri = I32Or_Rri;
-        fn op_rss = I32Or_Rss;
-        fn op_rsi = I32Or_Rsi;
+        fn op_rrs = Op::i32_or_rrs;
+        fn op_rri = Op::i32_or_rri;
+        fn op_rss = Op::i32_or_rss;
+        fn op_rsi = Op::i32_or_rsi;
     }
 
     impl CommutativeBinaryOp for I32NotOr {
         type Result = bool;
         type Input = i32;
         fn consteval = eval::wasmi_i32_not_or;
-        fn op_rrs = I32NotOr_Rrs;
-        fn op_rri = I32NotOr_Rri;
-        fn op_rss = I32NotOr_Rss;
-        fn op_rsi = I32NotOr_Rsi;
+        fn op_rrs = Op::i32_not_or_rrs;
+        fn op_rri = Op::i32_not_or_rri;
+        fn op_rss = Op::i32_not_or_rss;
+        fn op_rsi = Op::i32_not_or_rsi;
     }
 
     impl CommutativeBinaryOp for I32Add {
@@ -240,10 +240,10 @@ impl_commutative_binary_op_for! {
         type Input = i32;
         fn consteval = wasm::i32_add;
         fn op_rrr = Op::i32_mul_rri(2);
-        fn op_rrs = I32Add_Rrs;
-        fn op_rri = I32Add_Rri;
-        fn op_rss = I32Add_Rss;
-        fn op_rsi = I32Add_Rsi;
+        fn op_rrs = Op::i32_add_rrs;
+        fn op_rri = Op::i32_add_rri;
+        fn op_rss = Op::i32_add_rss;
+        fn op_rsi = Op::i32_add_rsi;
     }
 
     impl CommutativeBinaryOp for I32Mul {
@@ -251,40 +251,40 @@ impl_commutative_binary_op_for! {
         type Input = i32;
         fn consteval = wasm::i32_mul;
         fn op_rrr = Op::i32_mul_rrr();
-        fn op_rrs = I32Mul_Rrs;
-        fn op_rri = I32Mul_Rri;
-        fn op_rss = I32Mul_Rss;
-        fn op_rsi = I32Mul_Rsi;
+        fn op_rrs = Op::i32_mul_rrs;
+        fn op_rri = Op::i32_mul_rri;
+        fn op_rss = Op::i32_mul_rss;
+        fn op_rsi = Op::i32_mul_rsi;
     }
 
     impl CommutativeBinaryOp for I32BitAnd {
         type Result = i32;
         type Input = i32;
         fn consteval = wasm::i32_bitand;
-        fn op_rrs = I32BitAnd_Rrs;
-        fn op_rri = I32BitAnd_Rri;
-        fn op_rss = I32BitAnd_Rss;
-        fn op_rsi = I32BitAnd_Rsi;
+        fn op_rrs = Op::i32_bitand_rrs;
+        fn op_rri = Op::i32_bitand_rri;
+        fn op_rss = Op::i32_bitand_rss;
+        fn op_rsi = Op::i32_bitand_rsi;
     }
 
     impl CommutativeBinaryOp for I32BitOr {
         type Result = i32;
         type Input = i32;
         fn consteval = wasm::i32_bitor;
-        fn op_rrs = I32BitOr_Rrs;
-        fn op_rri = I32BitOr_Rri;
-        fn op_rss = I32BitOr_Rss;
-        fn op_rsi = I32BitOr_Rsi;
+        fn op_rrs = Op::i32_bitor_rrs;
+        fn op_rri = Op::i32_bitor_rri;
+        fn op_rss = Op::i32_bitor_rss;
+        fn op_rsi = Op::i32_bitor_rsi;
     }
 
     impl CommutativeBinaryOp for I32BitXor {
         type Result = i32;
         type Input = i32;
         fn consteval = wasm::i32_bitxor;
-        fn op_rrs = I32BitXor_Rrs;
-        fn op_rri = I32BitXor_Rri;
-        fn op_rss = I32BitXor_Rss;
-        fn op_rsi = I32BitXor_Rsi;
+        fn op_rrs = Op::i32_bitxor_rrs;
+        fn op_rri = Op::i32_bitxor_rri;
+        fn op_rss = Op::i32_bitxor_rss;
+        fn op_rsi = Op::i32_bitxor_rsi;
     }
 
     // i64
@@ -293,60 +293,60 @@ impl_commutative_binary_op_for! {
         type Result = bool;
         type Input = i64;
         fn consteval = wasm::i64_eq;
-        fn op_rrs = I64Eq_Rrs;
-        fn op_rri = I64Eq_Rri;
-        fn op_rss = I64Eq_Rss;
-        fn op_rsi = I64Eq_Rsi;
+        fn op_rrs = Op::i64_eq_rrs;
+        fn op_rri = Op::i64_eq_rri;
+        fn op_rss = Op::i64_eq_rss;
+        fn op_rsi = Op::i64_eq_rsi;
     }
 
     impl CommutativeBinaryOp for I64NotEq {
         type Result = bool;
         type Input = i64;
         fn consteval = wasm::i64_ne;
-        fn op_rrs = I64NotEq_Rrs;
-        fn op_rri = I64NotEq_Rri;
-        fn op_rss = I64NotEq_Rss;
-        fn op_rsi = I64NotEq_Rsi;
+        fn op_rrs = Op::i64_not_eq_rrs;
+        fn op_rri = Op::i64_not_eq_rri;
+        fn op_rss = Op::i64_not_eq_rss;
+        fn op_rsi = Op::i64_not_eq_rsi;
     }
 
     impl CommutativeBinaryOp for I64And {
         type Result = bool;
         type Input = i64;
         fn consteval = eval::wasmi_i64_and;
-        fn op_rrs = I64And_Rrs;
-        fn op_rri = I64And_Rri;
-        fn op_rss = I64And_Rss;
-        fn op_rsi = I64And_Rsi;
+        fn op_rrs = Op::i64_and_rrs;
+        fn op_rri = Op::i64_and_rri;
+        fn op_rss = Op::i64_and_rss;
+        fn op_rsi = Op::i64_and_rsi;
     }
 
     impl CommutativeBinaryOp for I64NotAnd {
         type Result = bool;
         type Input = i64;
         fn consteval = eval::wasmi_i64_not_and;
-        fn op_rrs = I64NotAnd_Rrs;
-        fn op_rri = I64NotAnd_Rri;
-        fn op_rss = I64NotAnd_Rss;
-        fn op_rsi = I64NotAnd_Rsi;
+        fn op_rrs = Op::i64_not_and_rrs;
+        fn op_rri = Op::i64_not_and_rri;
+        fn op_rss = Op::i64_not_and_rss;
+        fn op_rsi = Op::i64_not_and_rsi;
     }
 
     impl CommutativeBinaryOp for I64Or {
         type Result = bool;
         type Input = i64;
         fn consteval = eval::wasmi_i64_or;
-        fn op_rrs = I64Or_Rrs;
-        fn op_rri = I64Or_Rri;
-        fn op_rss = I64Or_Rss;
-        fn op_rsi = I64Or_Rsi;
+        fn op_rrs = Op::i64_or_rrs;
+        fn op_rri = Op::i64_or_rri;
+        fn op_rss = Op::i64_or_rss;
+        fn op_rsi = Op::i64_or_rsi;
     }
 
     impl CommutativeBinaryOp for I64NotOr {
         type Result = bool;
         type Input = i64;
         fn consteval = eval::wasmi_i64_not_or;
-        fn op_rrs = I64NotOr_Rrs;
-        fn op_rri = I64NotOr_Rri;
-        fn op_rss = I64NotOr_Rss;
-        fn op_rsi = I64NotOr_Rsi;
+        fn op_rrs = Op::i64_not_or_rrs;
+        fn op_rri = Op::i64_not_or_rri;
+        fn op_rss = Op::i64_not_or_rss;
+        fn op_rsi = Op::i64_not_or_rsi;
     }
 
     impl CommutativeBinaryOp for I64Add {
@@ -354,10 +354,10 @@ impl_commutative_binary_op_for! {
         type Input = i64;
         fn consteval = wasm::i64_add;
         fn op_rrr = Op::i64_mul_rri(2);
-        fn op_rrs = I64Add_Rrs;
-        fn op_rri = I64Add_Rri;
-        fn op_rss = I64Add_Rss;
-        fn op_rsi = I64Add_Rsi;
+        fn op_rrs = Op::i64_add_rrs;
+        fn op_rri = Op::i64_add_rri;
+        fn op_rss = Op::i64_add_rss;
+        fn op_rsi = Op::i64_add_rsi;
     }
 
     impl CommutativeBinaryOp for I64Mul {
@@ -365,40 +365,40 @@ impl_commutative_binary_op_for! {
         type Input = i64;
         fn consteval = wasm::i64_mul;
         fn op_rrr = Op::i64_mul_rrr();
-        fn op_rrs = I64Mul_Rrs;
-        fn op_rri = I64Mul_Rri;
-        fn op_rss = I64Mul_Rss;
-        fn op_rsi = I64Mul_Rsi;
+        fn op_rrs = Op::i64_mul_rrs;
+        fn op_rri = Op::i64_mul_rri;
+        fn op_rss = Op::i64_mul_rss;
+        fn op_rsi = Op::i64_mul_rsi;
     }
 
     impl CommutativeBinaryOp for I64BitAnd {
         type Result = i64;
         type Input = i64;
         fn consteval = wasm::i64_bitand;
-        fn op_rrs = I64BitAnd_Rrs;
-        fn op_rri = I64BitAnd_Rri;
-        fn op_rss = I64BitAnd_Rss;
-        fn op_rsi = I64BitAnd_Rsi;
+        fn op_rrs = Op::i64_bitand_rrs;
+        fn op_rri = Op::i64_bitand_rri;
+        fn op_rss = Op::i64_bitand_rss;
+        fn op_rsi = Op::i64_bitand_rsi;
     }
 
     impl CommutativeBinaryOp for I64BitOr {
         type Result = i64;
         type Input = i64;
         fn consteval = wasm::i64_bitor;
-        fn op_rrs = I64BitOr_Rrs;
-        fn op_rri = I64BitOr_Rri;
-        fn op_rss = I64BitOr_Rss;
-        fn op_rsi = I64BitOr_Rsi;
+        fn op_rrs = Op::i64_bitor_rrs;
+        fn op_rri = Op::i64_bitor_rri;
+        fn op_rss = Op::i64_bitor_rss;
+        fn op_rsi = Op::i64_bitor_rsi;
     }
 
     impl CommutativeBinaryOp for I64BitXor {
         type Result = i64;
         type Input = i64;
         fn consteval = wasm::i64_bitxor;
-        fn op_rrs = I64BitXor_Rrs;
-        fn op_rri = I64BitXor_Rri;
-        fn op_rss = I64BitXor_Rss;
-        fn op_rsi = I64BitXor_Rsi;
+        fn op_rrs = Op::i64_bitxor_rrs;
+        fn op_rri = Op::i64_bitxor_rri;
+        fn op_rss = Op::i64_bitxor_rss;
+        fn op_rsi = Op::i64_bitxor_rsi;
     }
 
     // f32
@@ -407,20 +407,20 @@ impl_commutative_binary_op_for! {
         type Result = bool;
         type Input = f32;
         fn consteval = wasm::f32_eq;
-        fn op_rrs = F32Eq_Rrs;
-        fn op_rri = F32Eq_Rri;
-        fn op_rss = F32Eq_Rss;
-        fn op_rsi = F32Eq_Rsi;
+        fn op_rrs = Op::f32_eq_rrs;
+        fn op_rri = Op::f32_eq_rri;
+        fn op_rss = Op::f32_eq_rss;
+        fn op_rsi = Op::f32_eq_rsi;
     }
 
     impl CommutativeBinaryOp for F32NotEq {
         type Result = bool;
         type Input = f32;
         fn consteval = wasm::f32_ne;
-        fn op_rrs = F32NotEq_Rrs;
-        fn op_rri = F32NotEq_Rri;
-        fn op_rss = F32NotEq_Rss;
-        fn op_rsi = F32NotEq_Rsi;
+        fn op_rrs = Op::f32_not_eq_rrs;
+        fn op_rri = Op::f32_not_eq_rri;
+        fn op_rss = Op::f32_not_eq_rss;
+        fn op_rsi = Op::f32_not_eq_rsi;
     }
 
     // f64
@@ -429,20 +429,20 @@ impl_commutative_binary_op_for! {
         type Result = bool;
         type Input = f64;
         fn consteval = wasm::f64_eq;
-        fn op_rrs = F64Eq_Rrs;
-        fn op_rri = F64Eq_Rri;
-        fn op_rss = F64Eq_Rss;
-        fn op_rsi = F64Eq_Rsi;
+        fn op_rrs = Op::f64_eq_rrs;
+        fn op_rri = Op::f64_eq_rri;
+        fn op_rss = Op::f64_eq_rss;
+        fn op_rsi = Op::f64_eq_rsi;
     }
 
     impl CommutativeBinaryOp for F64NotEq {
         type Result = bool;
         type Input = f64;
         fn consteval = wasm::f64_ne;
-        fn op_rrs = F64NotEq_Rrs;
-        fn op_rri = F64NotEq_Rri;
-        fn op_rss = F64NotEq_Rss;
-        fn op_rsi = F64NotEq_Rsi;
+        fn op_rrs = Op::f64_not_eq_rrs;
+        fn op_rri = Op::f64_not_eq_rri;
+        fn op_rss = Op::f64_not_eq_rss;
+        fn op_rsi = Op::f64_not_eq_rsi;
     }
 }
 
@@ -455,13 +455,13 @@ impl_binary_op_for! {
         type Rhs = i32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_lt_s;
-        fn op_rrs = I32Lt_Rrs;
-        fn op_rri = I32Lt_Rri;
-        fn op_rsr = I32Lt_Rsr;
-        fn op_rss = I32Lt_Rss;
-        fn op_rsi = I32Lt_Rsi;
-        fn op_rir = I32Lt_Rir;
-        fn op_ris = I32Lt_Ris;
+        fn op_rrs = Op::i32_lt_rrs;
+        fn op_rri = Op::i32_lt_rri;
+        fn op_rsr = Op::i32_lt_rsr;
+        fn op_rss = Op::i32_lt_rss;
+        fn op_rsi = Op::i32_lt_rsi;
+        fn op_rir = Op::i32_lt_rir;
+        fn op_ris = Op::i32_lt_ris;
     }
 
     impl BinaryOp for I32Le {
@@ -470,13 +470,13 @@ impl_binary_op_for! {
         type Rhs = i32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_le_s;
-        fn op_rrs = I32Le_Rrs;
-        fn op_rri = I32Le_Rri;
-        fn op_rsr = I32Le_Rsr;
-        fn op_rss = I32Le_Rss;
-        fn op_rsi = I32Le_Rsi;
-        fn op_rir = I32Le_Rir;
-        fn op_ris = I32Le_Ris;
+        fn op_rrs = Op::i32_le_rrs;
+        fn op_rri = Op::i32_le_rri;
+        fn op_rsr = Op::i32_le_rsr;
+        fn op_rss = Op::i32_le_rss;
+        fn op_rsi = Op::i32_le_rsi;
+        fn op_rir = Op::i32_le_rir;
+        fn op_ris = Op::i32_le_ris;
     }
 
     impl BinaryOp for U32Lt {
@@ -485,13 +485,13 @@ impl_binary_op_for! {
         type Rhs = u32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_lt_u;
-        fn op_rrs = U32Lt_Rrs;
-        fn op_rri = U32Lt_Rri;
-        fn op_rsr = U32Lt_Rsr;
-        fn op_rss = U32Lt_Rss;
-        fn op_rsi = U32Lt_Rsi;
-        fn op_rir = U32Lt_Rir;
-        fn op_ris = U32Lt_Ris;
+        fn op_rrs = Op::u32_lt_rrs;
+        fn op_rri = Op::u32_lt_rri;
+        fn op_rsr = Op::u32_lt_rsr;
+        fn op_rss = Op::u32_lt_rss;
+        fn op_rsi = Op::u32_lt_rsi;
+        fn op_rir = Op::u32_lt_rir;
+        fn op_ris = Op::u32_lt_ris;
     }
 
     impl BinaryOp for U32Le {
@@ -500,13 +500,13 @@ impl_binary_op_for! {
         type Rhs = u32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_le_u;
-        fn op_rrs = U32Le_Rrs;
-        fn op_rri = U32Le_Rri;
-        fn op_rsr = U32Le_Rsr;
-        fn op_rss = U32Le_Rss;
-        fn op_rsi = U32Le_Rsi;
-        fn op_rir = U32Le_Rir;
-        fn op_ris = U32Le_Ris;
+        fn op_rrs = Op::u32_le_rrs;
+        fn op_rri = Op::u32_le_rri;
+        fn op_rsr = Op::u32_le_rsr;
+        fn op_rss = Op::u32_le_rss;
+        fn op_rsi = Op::u32_le_rsi;
+        fn op_rir = Op::u32_le_rir;
+        fn op_ris = Op::u32_le_ris;
     }
 
     impl BinaryOp for I32Sub {
@@ -515,13 +515,13 @@ impl_binary_op_for! {
         type Rhs = i32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_sub;
-        fn op_rrs = I32Sub_Rrs;
-        fn op_rri = I32Add_Rri; // unreachable due to lowering
-        fn op_rsr = I32Sub_Rsr;
-        fn op_rss = I32Sub_Rss;
-        fn op_rsi = I32Add_Rsi; // unreachable due to lowering
-        fn op_rir = I32Sub_Rir;
-        fn op_ris = I32Sub_Ris;
+        fn op_rrs = Op::i32_sub_rrs;
+        fn op_rri = Op::i32_add_rri; // unreachable due to lowering
+        fn op_rsr = Op::i32_sub_rsr;
+        fn op_rss = Op::i32_sub_rss;
+        fn op_rsi = Op::i32_add_rsi; // unreachable due to lowering
+        fn op_rir = Op::i32_sub_rir;
+        fn op_ris = Op::i32_sub_ris;
     }
 
     impl BinaryOp for I32Div {
@@ -530,13 +530,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<i32>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i32_div_ssi;
-        fn op_rrs = I32Div_Rrs;
-        fn op_rri = I32Div_Rri;
-        fn op_rsr = I32Div_Rsr;
-        fn op_rss = I32Div_Rss;
-        fn op_rsi = I32Div_Rsi;
-        fn op_rir = I32Div_Rir;
-        fn op_ris = I32Div_Ris;
+        fn op_rrs = Op::i32_div_rrs;
+        fn op_rri = Op::i32_div_rri;
+        fn op_rsr = Op::i32_div_rsr;
+        fn op_rss = Op::i32_div_rss;
+        fn op_rsi = Op::i32_div_rsi;
+        fn op_rir = Op::i32_div_rir;
+        fn op_ris = Op::i32_div_ris;
     }
 
     impl BinaryOp for U32Div {
@@ -545,13 +545,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<u32>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u32_div_ssi;
-        fn op_rrs = U32Div_Rrs;
-        fn op_rri = U32Div_Rri;
-        fn op_rsr = U32Div_Rsr;
-        fn op_rss = U32Div_Rss;
-        fn op_rsi = U32Div_Rsi;
-        fn op_rir = U32Div_Rir;
-        fn op_ris = U32Div_Ris;
+        fn op_rrs = Op::u32_div_rrs;
+        fn op_rri = Op::u32_div_rri;
+        fn op_rsr = Op::u32_div_rsr;
+        fn op_rss = Op::u32_div_rss;
+        fn op_rsi = Op::u32_div_rsi;
+        fn op_rir = Op::u32_div_rir;
+        fn op_ris = Op::u32_div_ris;
     }
 
     impl BinaryOp for I32Rem {
@@ -560,13 +560,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<i32>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i32_rem_ssi;
-        fn op_rrs = I32Rem_Rrs;
-        fn op_rri = I32Rem_Rri;
-        fn op_rsr = I32Rem_Rsr;
-        fn op_rss = I32Rem_Rss;
-        fn op_rsi = I32Rem_Rsi;
-        fn op_rir = I32Rem_Rir;
-        fn op_ris = I32Rem_Ris;
+        fn op_rrs = Op::i32_rem_rrs;
+        fn op_rri = Op::i32_rem_rri;
+        fn op_rsr = Op::i32_rem_rsr;
+        fn op_rss = Op::i32_rem_rss;
+        fn op_rsi = Op::i32_rem_rsi;
+        fn op_rir = Op::i32_rem_rir;
+        fn op_ris = Op::i32_rem_ris;
     }
 
     impl BinaryOp for U32Rem {
@@ -575,13 +575,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<u32>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u32_rem_ssi;
-        fn op_rrs = U32Rem_Rrs;
-        fn op_rri = U32Rem_Rri;
-        fn op_rsr = U32Rem_Rsr;
-        fn op_rss = U32Rem_Rss;
-        fn op_rsi = U32Rem_Rsi;
-        fn op_rir = U32Rem_Rir;
-        fn op_ris = U32Rem_Ris;
+        fn op_rrs = Op::u32_rem_rrs;
+        fn op_rri = Op::u32_rem_rri;
+        fn op_rsr = Op::u32_rem_rsr;
+        fn op_rss = Op::u32_rem_rss;
+        fn op_rsi = Op::u32_rem_rsi;
+        fn op_rir = Op::u32_rem_rir;
+        fn op_ris = Op::u32_rem_ris;
     }
 
     impl BinaryOp for I32Shl {
@@ -590,13 +590,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_shl_ssi;
-        fn op_rrs = I32Shl_Rrs;
-        fn op_rri = I32Shl_Rri;
-        fn op_rsr = I32Shl_Rsr;
-        fn op_rss = I32Shl_Rss;
-        fn op_rsi = I32Shl_Rsi;
-        fn op_rir = I32Shl_Rir;
-        fn op_ris = I32Shl_Ris;
+        fn op_rrs = Op::i32_shl_rrs;
+        fn op_rri = Op::i32_shl_rri;
+        fn op_rsr = Op::i32_shl_rsr;
+        fn op_rss = Op::i32_shl_rss;
+        fn op_rsi = Op::i32_shl_rsi;
+        fn op_rir = Op::i32_shl_rir;
+        fn op_ris = Op::i32_shl_ris;
     }
 
     impl BinaryOp for I32Shr {
@@ -605,13 +605,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_shr_ssi;
-        fn op_rrs = I32Shr_Rrs;
-        fn op_rri = I32Shr_Rri;
-        fn op_rsr = I32Shr_Rsr;
-        fn op_rss = I32Shr_Rss;
-        fn op_rsi = I32Shr_Rsi;
-        fn op_rir = I32Shr_Rir;
-        fn op_ris = I32Shr_Ris;
+        fn op_rrs = Op::i32_shr_rrs;
+        fn op_rri = Op::i32_shr_rri;
+        fn op_rsr = Op::i32_shr_rsr;
+        fn op_rss = Op::i32_shr_rss;
+        fn op_rsi = Op::i32_shr_rsi;
+        fn op_rir = Op::i32_shr_rir;
+        fn op_ris = Op::i32_shr_ris;
     }
 
     impl BinaryOp for U32Shr {
@@ -620,13 +620,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<u32>;
         fn consteval = eval::wasmi_u32_shr_ssi;
-        fn op_rrs = U32Shr_Rrs;
-        fn op_rri = U32Shr_Rri;
-        fn op_rsr = U32Shr_Rsr;
-        fn op_rss = U32Shr_Rss;
-        fn op_rsi = U32Shr_Rsi;
-        fn op_rir = U32Shr_Rir;
-        fn op_ris = U32Shr_Ris;
+        fn op_rrs = Op::u32_shr_rrs;
+        fn op_rri = Op::u32_shr_rri;
+        fn op_rsr = Op::u32_shr_rsr;
+        fn op_rss = Op::u32_shr_rss;
+        fn op_rsi = Op::u32_shr_rsi;
+        fn op_rir = Op::u32_shr_rir;
+        fn op_ris = Op::u32_shr_ris;
     }
     impl BinaryOp for I32Rotl {
         type Result = i32;
@@ -634,13 +634,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_rotl_ssi;
-        fn op_rrs = I32Rotl_Rrs;
-        fn op_rri = I32Rotl_Rri;
-        fn op_rsr = I32Rotl_Rsr;
-        fn op_rss = I32Rotl_Rss;
-        fn op_rsi = I32Rotl_Rsi;
-        fn op_rir = I32Rotl_Rir;
-        fn op_ris = I32Rotl_Ris;
+        fn op_rrs = Op::i32_rotl_rrs;
+        fn op_rri = Op::i32_rotl_rri;
+        fn op_rsr = Op::i32_rotl_rsr;
+        fn op_rss = Op::i32_rotl_rss;
+        fn op_rsi = Op::i32_rotl_rsi;
+        fn op_rir = Op::i32_rotl_rir;
+        fn op_ris = Op::i32_rotl_ris;
     }
 
     impl BinaryOp for I32Rotr {
@@ -649,13 +649,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i32>;
         fn consteval = eval::wasmi_i32_rotr_ssi;
-        fn op_rrs = I32Rotr_Rrs;
-        fn op_rri = I32Rotr_Rri;
-        fn op_rsr = I32Rotr_Rsr;
-        fn op_rss = I32Rotr_Rss;
-        fn op_rsi = I32Rotr_Rsi;
-        fn op_rir = I32Rotr_Rir;
-        fn op_ris = I32Rotr_Ris;
+        fn op_rrs = Op::i32_rotr_rrs;
+        fn op_rri = Op::i32_rotr_rri;
+        fn op_rsr = Op::i32_rotr_rsr;
+        fn op_rss = Op::i32_rotr_rss;
+        fn op_rsi = Op::i32_rotr_rsi;
+        fn op_rir = Op::i32_rotr_rir;
+        fn op_ris = Op::i32_rotr_ris;
     }
 
     // i64
@@ -666,13 +666,13 @@ impl_binary_op_for! {
         type Rhs = i64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_lt_s;
-        fn op_rrs = I64Lt_Rrs;
-        fn op_rri = I64Lt_Rri;
-        fn op_rsr = I64Lt_Rsr;
-        fn op_rss = I64Lt_Rss;
-        fn op_rsi = I64Lt_Rsi;
-        fn op_rir = I64Lt_Rir;
-        fn op_ris = I64Lt_Ris;
+        fn op_rrs = Op::i64_lt_rrs;
+        fn op_rri = Op::i64_lt_rri;
+        fn op_rsr = Op::i64_lt_rsr;
+        fn op_rss = Op::i64_lt_rss;
+        fn op_rsi = Op::i64_lt_rsi;
+        fn op_rir = Op::i64_lt_rir;
+        fn op_ris = Op::i64_lt_ris;
     }
 
     impl BinaryOp for I64Le {
@@ -681,13 +681,13 @@ impl_binary_op_for! {
         type Rhs = i64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_le_s;
-        fn op_rrs = I64Le_Rrs;
-        fn op_rri = I64Le_Rri;
-        fn op_rsr = I64Le_Rsr;
-        fn op_rss = I64Le_Rss;
-        fn op_rsi = I64Le_Rsi;
-        fn op_rir = I64Le_Rir;
-        fn op_ris = I64Le_Ris;
+        fn op_rrs = Op::i64_le_rrs;
+        fn op_rri = Op::i64_le_rri;
+        fn op_rsr = Op::i64_le_rsr;
+        fn op_rss = Op::i64_le_rss;
+        fn op_rsi = Op::i64_le_rsi;
+        fn op_rir = Op::i64_le_rir;
+        fn op_ris = Op::i64_le_ris;
     }
 
     impl BinaryOp for U64Lt {
@@ -696,13 +696,13 @@ impl_binary_op_for! {
         type Rhs = u64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_lt_u;
-        fn op_rrs = U64Lt_Rrs;
-        fn op_rri = U64Lt_Rri;
-        fn op_rsr = U64Lt_Rsr;
-        fn op_rss = U64Lt_Rss;
-        fn op_rsi = U64Lt_Rsi;
-        fn op_rir = U64Lt_Rir;
-        fn op_ris = U64Lt_Ris;
+        fn op_rrs = Op::u64_lt_rrs;
+        fn op_rri = Op::u64_lt_rri;
+        fn op_rsr = Op::u64_lt_rsr;
+        fn op_rss = Op::u64_lt_rss;
+        fn op_rsi = Op::u64_lt_rsi;
+        fn op_rir = Op::u64_lt_rir;
+        fn op_ris = Op::u64_lt_ris;
     }
 
     impl BinaryOp for U64Le {
@@ -711,13 +711,13 @@ impl_binary_op_for! {
         type Rhs = u64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_le_u;
-        fn op_rrs = U64Le_Rrs;
-        fn op_rri = U64Le_Rri;
-        fn op_rsr = U64Le_Rsr;
-        fn op_rss = U64Le_Rss;
-        fn op_rsi = U64Le_Rsi;
-        fn op_rir = U64Le_Rir;
-        fn op_ris = U64Le_Ris;
+        fn op_rrs = Op::u64_le_rrs;
+        fn op_rri = Op::u64_le_rri;
+        fn op_rsr = Op::u64_le_rsr;
+        fn op_rss = Op::u64_le_rss;
+        fn op_rsi = Op::u64_le_rsi;
+        fn op_rir = Op::u64_le_rir;
+        fn op_ris = Op::u64_le_ris;
     }
 
     impl BinaryOp for I64Sub {
@@ -726,13 +726,13 @@ impl_binary_op_for! {
         type Rhs = i64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_sub;
-        fn op_rrs = I64Sub_Rrs;
-        fn op_rri = I64Add_Rri; // unreachable due to lowering
-        fn op_rsr = I64Sub_Rsr;
-        fn op_rss = I64Sub_Rss;
-        fn op_rsi = I64Add_Rsi; // unreachable due to lowering
-        fn op_rir = I64Sub_Rir;
-        fn op_ris = I64Sub_Ris;
+        fn op_rrs = Op::i64_sub_rrs;
+        fn op_rri = Op::i64_add_rri; // unreachable due to lowering
+        fn op_rsr = Op::i64_sub_rsr;
+        fn op_rss = Op::i64_sub_rss;
+        fn op_rsi = Op::i64_add_rsi; // unreachable due to lowering
+        fn op_rir = Op::i64_sub_rir;
+        fn op_ris = Op::i64_sub_ris;
     }
 
     impl BinaryOp for I64Div {
@@ -741,13 +741,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<i64>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i64_div_ssi;
-        fn op_rrs = I64Div_Rrs;
-        fn op_rri = I64Div_Rri;
-        fn op_rsr = I64Div_Rsr;
-        fn op_rss = I64Div_Rss;
-        fn op_rsi = I64Div_Rsi;
-        fn op_rir = I64Div_Rir;
-        fn op_ris = I64Div_Ris;
+        fn op_rrs = Op::i64_div_rrs;
+        fn op_rri = Op::i64_div_rri;
+        fn op_rsr = Op::i64_div_rsr;
+        fn op_rss = Op::i64_div_rss;
+        fn op_rsi = Op::i64_div_rsi;
+        fn op_rir = Op::i64_div_rir;
+        fn op_ris = Op::i64_div_ris;
     }
 
     impl BinaryOp for U64Div {
@@ -756,13 +756,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<u64>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u64_div_ssi;
-        fn op_rrs = U64Div_Rrs;
-        fn op_rri = U64Div_Rri;
-        fn op_rsr = U64Div_Rsr;
-        fn op_rss = U64Div_Rss;
-        fn op_rsi = U64Div_Rsi;
-        fn op_rir = U64Div_Rir;
-        fn op_ris = U64Div_Ris;
+        fn op_rrs = Op::u64_div_rrs;
+        fn op_rri = Op::u64_div_rri;
+        fn op_rsr = Op::u64_div_rsr;
+        fn op_rss = Op::u64_div_rss;
+        fn op_rsi = Op::u64_div_rsi;
+        fn op_rir = Op::u64_div_rir;
+        fn op_ris = Op::u64_div_ris;
     }
 
     impl BinaryOp for I64Rem {
@@ -771,13 +771,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<i64>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_i64_rem_ssi;
-        fn op_rrs = I64Rem_Rrs;
-        fn op_rri = I64Rem_Rri;
-        fn op_rsr = I64Rem_Rsr;
-        fn op_rss = I64Rem_Rss;
-        fn op_rsi = I64Rem_Rsi;
-        fn op_rir = I64Rem_Rir;
-        fn op_ris = I64Rem_Ris;
+        fn op_rrs = Op::i64_rem_rrs;
+        fn op_rri = Op::i64_rem_rri;
+        fn op_rsr = Op::i64_rem_rsr;
+        fn op_rss = Op::i64_rem_rss;
+        fn op_rsi = Op::i64_rem_rsi;
+        fn op_rir = Op::i64_rem_rir;
+        fn op_ris = Op::i64_rem_ris;
     }
 
     impl BinaryOp for U64Rem {
@@ -786,13 +786,13 @@ impl_binary_op_for! {
         type Rhs = NonZero<u64>;
         fn decode_rhs = decode_rhs_as_divisor;
         fn consteval = eval::wasmi_u64_rem_ssi;
-        fn op_rrs = U64Rem_Rrs;
-        fn op_rri = U64Rem_Rri;
-        fn op_rsr = U64Rem_Rsr;
-        fn op_rss = U64Rem_Rss;
-        fn op_rsi = U64Rem_Rsi;
-        fn op_rir = U64Rem_Rir;
-        fn op_ris = U64Rem_Ris;
+        fn op_rrs = Op::u64_rem_rrs;
+        fn op_rri = Op::u64_rem_rri;
+        fn op_rsr = Op::u64_rem_rsr;
+        fn op_rss = Op::u64_rem_rss;
+        fn op_rsi = Op::u64_rem_rsi;
+        fn op_rir = Op::u64_rem_rir;
+        fn op_ris = Op::u64_rem_ris;
     }
 
     impl BinaryOp for I64Shl {
@@ -801,13 +801,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_shl_ssi;
-        fn op_rrs = I64Shl_Rrs;
-        fn op_rri = I64Shl_Rri;
-        fn op_rsr = I64Shl_Rsr;
-        fn op_rss = I64Shl_Rss;
-        fn op_rsi = I64Shl_Rsi;
-        fn op_rir = I64Shl_Rir;
-        fn op_ris = I64Shl_Ris;
+        fn op_rrs = Op::i64_shl_rrs;
+        fn op_rri = Op::i64_shl_rri;
+        fn op_rsr = Op::i64_shl_rsr;
+        fn op_rss = Op::i64_shl_rss;
+        fn op_rsi = Op::i64_shl_rsi;
+        fn op_rir = Op::i64_shl_rir;
+        fn op_ris = Op::i64_shl_ris;
     }
 
     impl BinaryOp for I64Shr {
@@ -816,13 +816,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_shr_ssi;
-        fn op_rrs = I64Shr_Rrs;
-        fn op_rri = I64Shr_Rri;
-        fn op_rsr = I64Shr_Rsr;
-        fn op_rss = I64Shr_Rss;
-        fn op_rsi = I64Shr_Rsi;
-        fn op_rir = I64Shr_Rir;
-        fn op_ris = I64Shr_Ris;
+        fn op_rrs = Op::i64_shr_rrs;
+        fn op_rri = Op::i64_shr_rri;
+        fn op_rsr = Op::i64_shr_rsr;
+        fn op_rss = Op::i64_shr_rss;
+        fn op_rsi = Op::i64_shr_rsi;
+        fn op_rir = Op::i64_shr_rir;
+        fn op_ris = Op::i64_shr_ris;
     }
 
     impl BinaryOp for U64Shr {
@@ -831,13 +831,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<u64>;
         fn consteval = eval::wasmi_u64_shr_ssi;
-        fn op_rrs = U64Shr_Rrs;
-        fn op_rri = U64Shr_Rri;
-        fn op_rsr = U64Shr_Rsr;
-        fn op_rss = U64Shr_Rss;
-        fn op_rsi = U64Shr_Rsi;
-        fn op_rir = U64Shr_Rir;
-        fn op_ris = U64Shr_Ris;
+        fn op_rrs = Op::u64_shr_rrs;
+        fn op_rri = Op::u64_shr_rri;
+        fn op_rsr = Op::u64_shr_rsr;
+        fn op_rss = Op::u64_shr_rss;
+        fn op_rsi = Op::u64_shr_rsi;
+        fn op_rir = Op::u64_shr_rir;
+        fn op_ris = Op::u64_shr_ris;
     }
 
     impl BinaryOp for I64Rotl {
@@ -846,13 +846,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_rotl_ssi;
-        fn op_rrs = I64Rotl_Rrs;
-        fn op_rri = I64Rotl_Rri;
-        fn op_rsr = I64Rotl_Rsr;
-        fn op_rss = I64Rotl_Rss;
-        fn op_rsi = I64Rotl_Rsi;
-        fn op_rir = I64Rotl_Rir;
-        fn op_ris = I64Rotl_Ris;
+        fn op_rrs = Op::i64_rotl_rrs;
+        fn op_rri = Op::i64_rotl_rri;
+        fn op_rsr = Op::i64_rotl_rsr;
+        fn op_rss = Op::i64_rotl_rss;
+        fn op_rsi = Op::i64_rotl_rsi;
+        fn op_rir = Op::i64_rotl_rir;
+        fn op_ris = Op::i64_rotl_ris;
     }
 
     impl BinaryOp for I64Rotr {
@@ -861,13 +861,13 @@ impl_binary_op_for! {
         type Rhs = ShiftAmount;
         fn decode_rhs = decode_rhs_as_shift_amount::<i64>;
         fn consteval = eval::wasmi_i64_rotr_ssi;
-        fn op_rrs = I64Rotr_Rrs;
-        fn op_rri = I64Rotr_Rri;
-        fn op_rsr = I64Rotr_Rsr;
-        fn op_rss = I64Rotr_Rss;
-        fn op_rsi = I64Rotr_Rsi;
-        fn op_rir = I64Rotr_Rir;
-        fn op_ris = I64Rotr_Ris;
+        fn op_rrs = Op::i64_rotr_rrs;
+        fn op_rri = Op::i64_rotr_rri;
+        fn op_rsr = Op::i64_rotr_rsr;
+        fn op_rss = Op::i64_rotr_rss;
+        fn op_rsi = Op::i64_rotr_rsi;
+        fn op_rir = Op::i64_rotr_rir;
+        fn op_ris = Op::i64_rotr_ris;
     }
 
     // f32
@@ -878,13 +878,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_lt;
-        fn op_rrs = F32Lt_Rrs;
-        fn op_rri = F32Lt_Rri;
-        fn op_rsr = F32Lt_Rsr;
-        fn op_rss = F32Lt_Rss;
-        fn op_rsi = F32Lt_Rsi;
-        fn op_rir = F32Lt_Rir;
-        fn op_ris = F32Lt_Ris;
+        fn op_rrs = Op::f32_lt_rrs;
+        fn op_rri = Op::f32_lt_rri;
+        fn op_rsr = Op::f32_lt_rsr;
+        fn op_rss = Op::f32_lt_rss;
+        fn op_rsi = Op::f32_lt_rsi;
+        fn op_rir = Op::f32_lt_rir;
+        fn op_ris = Op::f32_lt_ris;
     }
 
     impl BinaryOp for F32Le {
@@ -893,13 +893,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_le;
-        fn op_rrs = F32Le_Rrs;
-        fn op_rri = F32Le_Rri;
-        fn op_rsr = F32Le_Rsr;
-        fn op_rss = F32Le_Rss;
-        fn op_rsi = F32Le_Rsi;
-        fn op_rir = F32Le_Rir;
-        fn op_ris = F32Le_Ris;
+        fn op_rrs = Op::f32_le_rrs;
+        fn op_rri = Op::f32_le_rri;
+        fn op_rsr = Op::f32_le_rsr;
+        fn op_rss = Op::f32_le_rss;
+        fn op_rsi = Op::f32_le_rsi;
+        fn op_rir = Op::f32_le_rir;
+        fn op_ris = Op::f32_le_ris;
     }
 
     impl BinaryOp for F32NotLt {
@@ -908,13 +908,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f32_not_lt;
-        fn op_rrs = F32NotLt_Rrs;
-        fn op_rri = F32NotLt_Rri;
-        fn op_rsr = F32NotLt_Rsr;
-        fn op_rss = F32NotLt_Rss;
-        fn op_rsi = F32NotLt_Rsi;
-        fn op_rir = F32NotLt_Rir;
-        fn op_ris = F32NotLt_Ris;
+        fn op_rrs = Op::f32_not_lt_rrs;
+        fn op_rri = Op::f32_not_lt_rri;
+        fn op_rsr = Op::f32_not_lt_rsr;
+        fn op_rss = Op::f32_not_lt_rss;
+        fn op_rsi = Op::f32_not_lt_rsi;
+        fn op_rir = Op::f32_not_lt_rir;
+        fn op_ris = Op::f32_not_lt_ris;
     }
 
     impl BinaryOp for F32NotLe {
@@ -923,13 +923,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f32_not_le;
-        fn op_rrs = F32NotLe_Rrs;
-        fn op_rri = F32NotLe_Rri;
-        fn op_rsr = F32NotLe_Rsr;
-        fn op_rss = F32NotLe_Rss;
-        fn op_rsi = F32NotLe_Rsi;
-        fn op_rir = F32NotLe_Rir;
-        fn op_ris = F32NotLe_Ris;
+        fn op_rrs = Op::f32_not_le_rrs;
+        fn op_rri = Op::f32_not_le_rri;
+        fn op_rsr = Op::f32_not_le_rsr;
+        fn op_rss = Op::f32_not_le_rss;
+        fn op_rsi = Op::f32_not_le_rsi;
+        fn op_rir = Op::f32_not_le_rir;
+        fn op_ris = Op::f32_not_le_ris;
     }
 
     impl BinaryOp for F32Add {
@@ -938,13 +938,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_add;
-        fn op_rrs = F32Add_Rrs;
-        fn op_rri = F32Add_Rri;
-        fn op_rsr = F32Add_Rsr;
-        fn op_rss = F32Add_Rss;
-        fn op_rsi = F32Add_Rsi;
-        fn op_rir = F32Add_Rir;
-        fn op_ris = F32Add_Ris;
+        fn op_rrs = Op::f32_add_rrs;
+        fn op_rri = Op::f32_add_rri;
+        fn op_rsr = Op::f32_add_rsr;
+        fn op_rss = Op::f32_add_rss;
+        fn op_rsi = Op::f32_add_rsi;
+        fn op_rir = Op::f32_add_rir;
+        fn op_ris = Op::f32_add_ris;
     }
 
     impl BinaryOp for F32Sub {
@@ -953,13 +953,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_sub;
-        fn op_rrs = F32Sub_Rrs;
-        fn op_rri = F32Sub_Rri;
-        fn op_rsr = F32Sub_Rsr;
-        fn op_rss = F32Sub_Rss;
-        fn op_rsi = F32Sub_Rsi;
-        fn op_rir = F32Sub_Rir;
-        fn op_ris = F32Sub_Ris;
+        fn op_rrs = Op::f32_sub_rrs;
+        fn op_rri = Op::f32_sub_rri;
+        fn op_rsr = Op::f32_sub_rsr;
+        fn op_rss = Op::f32_sub_rss;
+        fn op_rsi = Op::f32_sub_rsi;
+        fn op_rir = Op::f32_sub_rir;
+        fn op_ris = Op::f32_sub_ris;
     }
 
     impl BinaryOp for F32Mul {
@@ -969,13 +969,13 @@ impl_binary_op_for! {
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_mul;
         fn op_rrr = Op::f32_mul_rrr();
-        fn op_rrs = F32Mul_Rrs;
-        fn op_rri = F32Mul_Rri;
-        fn op_rsr = F32Mul_Rsr;
-        fn op_rss = F32Mul_Rss;
-        fn op_rsi = F32Mul_Rsi;
-        fn op_rir = F32Mul_Rir;
-        fn op_ris = F32Mul_Ris;
+        fn op_rrs = Op::f32_mul_rrs;
+        fn op_rri = Op::f32_mul_rri;
+        fn op_rsr = Op::f32_mul_rsr;
+        fn op_rss = Op::f32_mul_rss;
+        fn op_rsi = Op::f32_mul_rsi;
+        fn op_rir = Op::f32_mul_rir;
+        fn op_ris = Op::f32_mul_ris;
     }
 
     impl BinaryOp for F32Div {
@@ -984,13 +984,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_div;
-        fn op_rrs = F32Div_Rrs;
-        fn op_rri = F32Div_Rri;
-        fn op_rsr = F32Div_Rsr;
-        fn op_rss = F32Div_Rss;
-        fn op_rsi = F32Div_Rsi;
-        fn op_rir = F32Div_Rir;
-        fn op_ris = F32Div_Ris;
+        fn op_rrs = Op::f32_div_rrs;
+        fn op_rri = Op::f32_div_rri;
+        fn op_rsr = Op::f32_div_rsr;
+        fn op_rss = Op::f32_div_rss;
+        fn op_rsi = Op::f32_div_rsi;
+        fn op_rir = Op::f32_div_rir;
+        fn op_ris = Op::f32_div_ris;
     }
 
     impl BinaryOp for F32Min {
@@ -999,13 +999,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_min;
-        fn op_rrs = F32Min_Rrs;
-        fn op_rri = F32Min_Rri;
-        fn op_rsr = F32Min_Rsr;
-        fn op_rss = F32Min_Rss;
-        fn op_rsi = F32Min_Rsi;
-        fn op_rir = F32Min_Rir;
-        fn op_ris = F32Min_Ris;
+        fn op_rrs = Op::f32_min_rrs;
+        fn op_rri = Op::f32_min_rri;
+        fn op_rsr = Op::f32_min_rsr;
+        fn op_rss = Op::f32_min_rss;
+        fn op_rsi = Op::f32_min_rsi;
+        fn op_rir = Op::f32_min_rir;
+        fn op_ris = Op::f32_min_ris;
     }
 
     impl BinaryOp for F32Max {
@@ -1014,13 +1014,13 @@ impl_binary_op_for! {
         type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f32_max;
-        fn op_rrs = F32Max_Rrs;
-        fn op_rri = F32Max_Rri;
-        fn op_rsr = F32Max_Rsr;
-        fn op_rss = F32Max_Rss;
-        fn op_rsi = F32Max_Rsi;
-        fn op_rir = F32Max_Rir;
-        fn op_ris = F32Max_Ris;
+        fn op_rrs = Op::f32_max_rrs;
+        fn op_rri = Op::f32_max_rri;
+        fn op_rsr = Op::f32_max_rsr;
+        fn op_rss = Op::f32_max_rss;
+        fn op_rsi = Op::f32_max_rsi;
+        fn op_rir = Op::f32_max_rir;
+        fn op_ris = Op::f32_max_ris;
     }
 
     impl BinaryOp for F32Copysign {
@@ -1029,13 +1029,13 @@ impl_binary_op_for! {
         type Rhs = Sign<f32>;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f32_copysign_ssi;
-        fn op_rrs = F32Copysign_Rrs;
-        fn op_rri = F32Copysign_Rri;
-        fn op_rsr = F32Copysign_Rsr;
-        fn op_rss = F32Copysign_Rss;
-        fn op_rsi = F32Copysign_Rsi;
-        fn op_rir = F32Copysign_Rir;
-        fn op_ris = F32Copysign_Ris;
+        fn op_rrs = Op::f32_copysign_rrs;
+        fn op_rri = Op::f32_copysign_rri;
+        fn op_rsr = Op::f32_copysign_rsr;
+        fn op_rss = Op::f32_copysign_rss;
+        fn op_rsi = Op::f32_copysign_rsi;
+        fn op_rir = Op::f32_copysign_rir;
+        fn op_ris = Op::f32_copysign_ris;
     }
 
     // f64
@@ -1046,13 +1046,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_lt;
-        fn op_rrs = F64Lt_Rrs;
-        fn op_rri = F64Lt_Rri;
-        fn op_rsr = F64Lt_Rsr;
-        fn op_rss = F64Lt_Rss;
-        fn op_rsi = F64Lt_Rsi;
-        fn op_rir = F64Lt_Rir;
-        fn op_ris = F64Lt_Ris;
+        fn op_rrs = Op::f64_lt_rrs;
+        fn op_rri = Op::f64_lt_rri;
+        fn op_rsr = Op::f64_lt_rsr;
+        fn op_rss = Op::f64_lt_rss;
+        fn op_rsi = Op::f64_lt_rsi;
+        fn op_rir = Op::f64_lt_rir;
+        fn op_ris = Op::f64_lt_ris;
     }
 
     impl BinaryOp for F64Le {
@@ -1061,13 +1061,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_le;
-        fn op_rrs = F64Le_Rrs;
-        fn op_rri = F64Le_Rri;
-        fn op_rsr = F64Le_Rsr;
-        fn op_rss = F64Le_Rss;
-        fn op_rsi = F64Le_Rsi;
-        fn op_rir = F64Le_Rir;
-        fn op_ris = F64Le_Ris;
+        fn op_rrs = Op::f64_le_rrs;
+        fn op_rri = Op::f64_le_rri;
+        fn op_rsr = Op::f64_le_rsr;
+        fn op_rss = Op::f64_le_rss;
+        fn op_rsi = Op::f64_le_rsi;
+        fn op_rir = Op::f64_le_rir;
+        fn op_ris = Op::f64_le_ris;
     }
 
     impl BinaryOp for F64NotLt {
@@ -1076,13 +1076,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f64_not_lt;
-        fn op_rrs = F64NotLt_Rrs;
-        fn op_rri = F64NotLt_Rri;
-        fn op_rsr = F64NotLt_Rsr;
-        fn op_rss = F64NotLt_Rss;
-        fn op_rsi = F64NotLt_Rsi;
-        fn op_rir = F64NotLt_Rir;
-        fn op_ris = F64NotLt_Ris;
+        fn op_rrs = Op::f64_not_lt_rrs;
+        fn op_rri = Op::f64_not_lt_rri;
+        fn op_rsr = Op::f64_not_lt_rsr;
+        fn op_rss = Op::f64_not_lt_rss;
+        fn op_rsi = Op::f64_not_lt_rsi;
+        fn op_rir = Op::f64_not_lt_rir;
+        fn op_ris = Op::f64_not_lt_ris;
     }
 
     impl BinaryOp for F64NotLe {
@@ -1091,13 +1091,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f64_not_le;
-        fn op_rrs = F64NotLe_Rrs;
-        fn op_rri = F64NotLe_Rri;
-        fn op_rsr = F64NotLe_Rsr;
-        fn op_rss = F64NotLe_Rss;
-        fn op_rsi = F64NotLe_Rsi;
-        fn op_rir = F64NotLe_Rir;
-        fn op_ris = F64NotLe_Ris;
+        fn op_rrs = Op::f64_not_le_rrs;
+        fn op_rri = Op::f64_not_le_rri;
+        fn op_rsr = Op::f64_not_le_rsr;
+        fn op_rss = Op::f64_not_le_rss;
+        fn op_rsi = Op::f64_not_le_rsi;
+        fn op_rir = Op::f64_not_le_rir;
+        fn op_ris = Op::f64_not_le_ris;
     }
 
     impl BinaryOp for F64Add {
@@ -1106,13 +1106,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_add;
-        fn op_rrs = F64Add_Rrs;
-        fn op_rri = F64Add_Rri;
-        fn op_rsr = F64Add_Rsr;
-        fn op_rss = F64Add_Rss;
-        fn op_rsi = F64Add_Rsi;
-        fn op_rir = F64Add_Rir;
-        fn op_ris = F64Add_Ris;
+        fn op_rrs = Op::f64_add_rrs;
+        fn op_rri = Op::f64_add_rri;
+        fn op_rsr = Op::f64_add_rsr;
+        fn op_rss = Op::f64_add_rss;
+        fn op_rsi = Op::f64_add_rsi;
+        fn op_rir = Op::f64_add_rir;
+        fn op_ris = Op::f64_add_ris;
     }
 
     impl BinaryOp for F64Sub {
@@ -1121,13 +1121,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_sub;
-        fn op_rrs = F64Sub_Rrs;
-        fn op_rri = F64Sub_Rri;
-        fn op_rsr = F64Sub_Rsr;
-        fn op_rss = F64Sub_Rss;
-        fn op_rsi = F64Sub_Rsi;
-        fn op_rir = F64Sub_Rir;
-        fn op_ris = F64Sub_Ris;
+        fn op_rrs = Op::f64_sub_rrs;
+        fn op_rri = Op::f64_sub_rri;
+        fn op_rsr = Op::f64_sub_rsr;
+        fn op_rss = Op::f64_sub_rss;
+        fn op_rsi = Op::f64_sub_rsi;
+        fn op_rir = Op::f64_sub_rir;
+        fn op_ris = Op::f64_sub_ris;
     }
 
     impl BinaryOp for F64Mul {
@@ -1137,13 +1137,13 @@ impl_binary_op_for! {
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_mul;
         fn op_rrr = Op::f64_mul_rrr();
-        fn op_rrs = F64Mul_Rrs;
-        fn op_rri = F64Mul_Rri;
-        fn op_rsr = F64Mul_Rsr;
-        fn op_rss = F64Mul_Rss;
-        fn op_rsi = F64Mul_Rsi;
-        fn op_rir = F64Mul_Rir;
-        fn op_ris = F64Mul_Ris;
+        fn op_rrs = Op::f64_mul_rrs;
+        fn op_rri = Op::f64_mul_rri;
+        fn op_rsr = Op::f64_mul_rsr;
+        fn op_rss = Op::f64_mul_rss;
+        fn op_rsi = Op::f64_mul_rsi;
+        fn op_rir = Op::f64_mul_rir;
+        fn op_ris = Op::f64_mul_ris;
     }
 
     impl BinaryOp for F64Div {
@@ -1152,13 +1152,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_div;
-        fn op_rrs = F64Div_Rrs;
-        fn op_rri = F64Div_Rri;
-        fn op_rsr = F64Div_Rsr;
-        fn op_rss = F64Div_Rss;
-        fn op_rsi = F64Div_Rsi;
-        fn op_rir = F64Div_Rir;
-        fn op_ris = F64Div_Ris;
+        fn op_rrs = Op::f64_div_rrs;
+        fn op_rri = Op::f64_div_rri;
+        fn op_rsr = Op::f64_div_rsr;
+        fn op_rss = Op::f64_div_rss;
+        fn op_rsi = Op::f64_div_rsi;
+        fn op_rir = Op::f64_div_rir;
+        fn op_ris = Op::f64_div_ris;
     }
 
     impl BinaryOp for F64Min {
@@ -1167,13 +1167,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_min;
-        fn op_rrs = F64Min_Rrs;
-        fn op_rri = F64Min_Rri;
-        fn op_rsr = F64Min_Rsr;
-        fn op_rss = F64Min_Rss;
-        fn op_rsi = F64Min_Rsi;
-        fn op_rir = F64Min_Rir;
-        fn op_ris = F64Min_Ris;
+        fn op_rrs = Op::f64_min_rrs;
+        fn op_rri = Op::f64_min_rri;
+        fn op_rsr = Op::f64_min_rsr;
+        fn op_rss = Op::f64_min_rss;
+        fn op_rsi = Op::f64_min_rsi;
+        fn op_rir = Op::f64_min_rir;
+        fn op_ris = Op::f64_min_ris;
     }
 
     impl BinaryOp for F64Max {
@@ -1182,13 +1182,13 @@ impl_binary_op_for! {
         type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::f64_max;
-        fn op_rrs = F64Max_Rrs;
-        fn op_rri = F64Max_Rri;
-        fn op_rsr = F64Max_Rsr;
-        fn op_rss = F64Max_Rss;
-        fn op_rsi = F64Max_Rsi;
-        fn op_rir = F64Max_Rir;
-        fn op_ris = F64Max_Ris;
+        fn op_rrs = Op::f64_max_rrs;
+        fn op_rri = Op::f64_max_rri;
+        fn op_rsr = Op::f64_max_rsr;
+        fn op_rss = Op::f64_max_rss;
+        fn op_rsi = Op::f64_max_rsi;
+        fn op_rir = Op::f64_max_rir;
+        fn op_ris = Op::f64_max_ris;
     }
 
     impl BinaryOp for F64Copysign {
@@ -1197,13 +1197,13 @@ impl_binary_op_for! {
         type Rhs = Sign<f64>;
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = eval::wasmi_f64_copysign_ssi;
-        fn op_rrs = F64Copysign_Rrs;
-        fn op_rri = F64Copysign_Rri;
-        fn op_rsr = F64Copysign_Rsr;
-        fn op_rss = F64Copysign_Rss;
-        fn op_rsi = F64Copysign_Rsi;
-        fn op_rir = F64Copysign_Rir;
-        fn op_ris = F64Copysign_Ris;
+        fn op_rrs = Op::f64_copysign_rrs;
+        fn op_rri = Op::f64_copysign_rri;
+        fn op_rsr = Op::f64_copysign_rsr;
+        fn op_rss = Op::f64_copysign_rss;
+        fn op_rsi = Op::f64_copysign_rsi;
+        fn op_rir = Op::f64_copysign_rir;
+        fn op_ris = Op::f64_copysign_ris;
     }
 }
 
