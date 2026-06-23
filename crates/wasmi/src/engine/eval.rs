@@ -111,14 +111,6 @@ pub fn wasmi_i64_not_or(lhs: i64, rhs: i64) -> bool {
     !wasmi_i64_or(lhs, rhs)
 }
 
-pub fn wasmi_f32_copysign_ssi(lhs: f32, rhs: Sign<f32>) -> f32 {
-    wasm::f32_copysign(lhs, f32::from(rhs))
-}
-
-pub fn wasmi_f64_copysign_ssi(lhs: f64, rhs: Sign<f64>) -> f64 {
-    wasm::f64_copysign(lhs, f64::from(rhs))
-}
-
 pub fn wasmi_f32_not_le(lhs: f32, rhs: f32) -> bool {
     !wasm::f32_le(lhs, rhs)
 }
