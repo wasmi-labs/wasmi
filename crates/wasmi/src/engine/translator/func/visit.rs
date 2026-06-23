@@ -981,7 +981,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_sub(&mut self) -> Self::Output {
-        self.translate_binary_with_opt::<op::I32Sub>(Self::try_lower_i32_sub)
+        self.translate_binary::<op::I32Sub>()
     }
 
     #[inline(never)]
@@ -1071,7 +1071,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_sub(&mut self) -> Self::Output {
-        self.translate_binary_with_opt::<op::I64Sub>(Self::try_lower_i64_sub)
+        self.translate_binary::<op::I64Sub>()
     }
 
     #[inline(never)]
