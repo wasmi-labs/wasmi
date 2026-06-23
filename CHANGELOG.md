@@ -8,6 +8,20 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Fixed
+
+- Fixed a panic when resuming a call that ran out of fuel during the lazy translation of its root function. [#1859]
+  - With `CompilationMode::LazyTranslation` (the default) and fuel metering enabled, running out of
+    fuel while lazily translating the called function (before any of its instructions executed) produced
+    a resumable handle over an empty call stack. Resuming it panicked with
+    `the currently used instance must be present`.
+  - Such an out-of-fuel is now reported as a plain, non-resumable out-of-fuel error, matching Wasmi `main`.
+  - Thanks to [matthew-a-thomas](https://github.com/matthew-a-thomas) for the detailed bug report.
+
+[#1859]: https://github.com/wasmi-labs/wasmi/issues/1859
+
 ## `1.1.0` - 2026-06-12
 
 ### Changed
