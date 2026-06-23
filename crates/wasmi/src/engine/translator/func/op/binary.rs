@@ -516,10 +516,10 @@ impl_binary_op_for! {
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i32_sub;
         fn op_rrs = Op::i32_sub_rrs;
-        fn op_rri = Op::i32_add_rri; // unreachable due to lowering
+        fn op_rri = i32_sub_rri;
         fn op_rsr = Op::i32_sub_rsr;
         fn op_rss = Op::i32_sub_rss;
-        fn op_rsi = Op::i32_add_rsi; // unreachable due to lowering
+        fn op_rsi = i32_sub_rsi;
         fn op_rir = Op::i32_sub_rir;
         fn op_ris = Op::i32_sub_ris;
     }
@@ -727,10 +727,10 @@ impl_binary_op_for! {
         fn decode_rhs = decode_rhs_as_value;
         fn consteval = wasm::i64_sub;
         fn op_rrs = Op::i64_sub_rrs;
-        fn op_rri = Op::i64_add_rri; // unreachable due to lowering
+        fn op_rri = i64_sub_rri;
         fn op_rsr = Op::i64_sub_rsr;
         fn op_rss = Op::i64_sub_rss;
-        fn op_rsi = Op::i64_add_rsi; // unreachable due to lowering
+        fn op_rsi = i64_sub_rsi;
         fn op_rir = Op::i64_sub_rir;
         fn op_ris = Op::i64_sub_ris;
     }
@@ -1356,4 +1356,24 @@ fn f64_copysign_rsi(lhs: Slot, rhs: f64) -> Op {
         true => Op::f64_abs_rs(lhs),
         false => Op::f64_nabs_rs(lhs),
     }
+}
+
+/// Lowers an `i32_sub_rri(x, y)` into a `i32_add_rri(x, -y)`.
+fn i32_sub_rri(rhs: i32) -> Op {
+    Op::i32_add_rri(rhs.wrapping_neg())
+}
+
+/// Lowers an `i32_sub_rsi(x, y)` into a `i32_add_rsi(x, -y)`.
+fn i32_sub_rsi(lhs: Slot, rhs: i32) -> Op {
+    Op::i32_add_rsi(lhs, rhs.wrapping_neg())
+}
+
+/// Lowers an `i64_sub_rri(x, y)` into a `i64_add_rri(x, -y)`.
+fn i64_sub_rri(rhs: i64) -> Op {
+    Op::i64_add_rri(rhs.wrapping_neg())
+}
+
+/// Lowers an `i64_sub_rsi(x, y)` into a `i64_add_rsi(x, -y)`.
+fn i64_sub_rsi(lhs: Slot, rhs: i64) -> Op {
+    Op::i64_add_rsi(lhs, rhs.wrapping_neg())
 }
