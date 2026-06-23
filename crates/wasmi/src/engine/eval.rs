@@ -1,6 +1,6 @@
 use crate::{
     TrapCode,
-    core::{ShiftAmount, Sign, wasm},
+    core::{ShiftAmount, wasm},
 };
 use core::{
     num::NonZero,

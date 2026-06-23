@@ -139,7 +139,6 @@ mod core {
         ReadAs,
         ResourceLimiterRef,
         ShiftAmount,
-        Sign,
         Table as CoreTable,
         TableType as CoreTableType,
         Typed,

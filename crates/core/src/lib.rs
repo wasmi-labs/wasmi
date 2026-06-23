@@ -23,7 +23,6 @@ mod limiter;
 mod memory;
 mod raw;
 mod shift_amount;
-mod sign;
 mod table;
 mod trap;
 mod typed;
@@ -49,7 +48,6 @@ pub use self::{
     memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
     raw::{RawVal, ReadAs, WriteAs},
     shift_amount::{IntoShiftAmount, ShiftAmount},
-    sign::Sign,
     table::{
         ElementSegment,
         ElementSegmentRef,
