@@ -103,6 +103,7 @@ fn add_unary_ops(isa: &mut Isa) {
         // f32
         (Ident::Abs, Ty::F32, Ty::F32),
         (Ident::Neg, Ty::F32, Ty::F32),
+        (Ident::Nabs, Ty::F32, Ty::F32),
         (Ident::Ceil, Ty::F32, Ty::F32),
         (Ident::Floor, Ty::F32, Ty::F32),
         (Ident::Trunc, Ty::F32, Ty::F32),
@@ -116,6 +117,7 @@ fn add_unary_ops(isa: &mut Isa) {
         // f64
         (Ident::Abs, Ty::F64, Ty::F64),
         (Ident::Neg, Ty::F64, Ty::F64),
+        (Ident::Nabs, Ty::F64, Ty::F64),
         (Ident::Ceil, Ty::F64, Ty::F64),
         (Ident::Floor, Ty::F64, Ty::F64),
         (Ident::Trunc, Ty::F64, Ty::F64),
