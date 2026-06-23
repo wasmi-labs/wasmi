@@ -22,6 +22,7 @@ use crate::{
     FuncEntity,
     Store,
     StoreContextMut,
+    TrapCode,
 };
 
 use super::{code_map::CodeMap, ResumableError};
@@ -255,9 +256,19 @@ impl<'engine> EngineExecutor<'engine> {
                 self.stack.values.extend_by(len_results, do_nothing)?;
                 let instance = *wasm_func.instance();
                 let engine_func = wasm_func.func_body();
-                let compiled_func = self
-                    .code_map
-                    .get(Some(store.inner.fuel_mut()), engine_func)?;
+                let compiled_func =
+                    match self.code_map.get(Some(store.inner.fuel_mut()), engine_func) {
+                        Ok(compiled_func) => compiled_func,
+                        // A lazily-translated root function can run out of fuel *during translation*,
+                        // before its call frame is pushed onto the stack. Such an out-of-fuel error
+                        // must not be resumable: there is no frame to resume into and resuming would
+                        // panic (GitHub issue #1859). We demote it to a non-resumable out-of-fuel trap,
+                        // mirroring the behavior of Wasmi `main`.
+                        Err(error) if error.is_out_of_fuel() => {
+                            return Err(Error::from(TrapCode::OutOfFuel))
+                        }
+                        Err(error) => return Err(error),
+                    };
                 let (mut uninit_params, offsets) = self
                     .stack
                     .values
