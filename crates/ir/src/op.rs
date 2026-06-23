@@ -14,7 +14,7 @@ use crate::{
     Slot,
     SlotAndReg,
     SlotSpan,
-    core::{ShiftAmount, Sign, TrapCode, ValType},
+    core::{ShiftAmount, TrapCode, ValType},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;

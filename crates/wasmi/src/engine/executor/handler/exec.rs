@@ -1456,6 +1456,8 @@ handler_unary! {
     fn f32_abs_rr(F32Abs_Rr) = wasm::f32_abs;
     fn f32_neg_rs(F32Neg_Rs) = wasm::f32_neg;
     fn f32_neg_rr(F32Neg_Rr) = wasm::f32_neg;
+    fn f32_nabs_rs(F32Nabs_Rs) = eval::wasmi_f32_nabs;
+    fn f32_nabs_rr(F32Nabs_Rr) = eval::wasmi_f32_nabs;
     fn f32_ceil_rs(F32Ceil_Rs) = wasm::f32_ceil;
     fn f32_ceil_rr(F32Ceil_Rr) = wasm::f32_ceil;
     fn f32_floor_rs(F32Floor_Rs) = wasm::f32_floor;
@@ -1481,6 +1483,8 @@ handler_unary! {
     fn f64_abs_rr(F64Abs_Rr) = wasm::f64_abs;
     fn f64_neg_rs(F64Neg_Rs) = wasm::f64_neg;
     fn f64_neg_rr(F64Neg_Rr) = wasm::f64_neg;
+    fn f64_nabs_rs(F64Nabs_Rs) = eval::wasmi_f64_nabs;
+    fn f64_nabs_rr(F64Nabs_Rr) = eval::wasmi_f64_nabs;
     fn f64_ceil_rs(F64Ceil_Rs) = wasm::f64_ceil;
     fn f64_ceil_rr(F64Ceil_Rr) = wasm::f64_ceil;
     fn f64_floor_rs(F64Floor_Rs) = wasm::f64_floor;
@@ -1883,10 +1887,8 @@ handler_binary! {
     fn f32_max_rir(F32Max_Rir) = wasm::f32_max;
     fn f32_max_ris(F32Max_Ris) = wasm::f32_max;
     fn f32_copysign_rrs(F32Copysign_Rrs) = wasm::f32_copysign;
-    fn f32_copysign_rri(F32Copysign_Rri) = eval::wasmi_f32_copysign_ssi;
     fn f32_copysign_rsr(F32Copysign_Rsr) = wasm::f32_copysign;
     fn f32_copysign_rss(F32Copysign_Rss) = wasm::f32_copysign;
-    fn f32_copysign_rsi(F32Copysign_Rsi) = eval::wasmi_f32_copysign_ssi;
     fn f32_copysign_rir(F32Copysign_Rir) = wasm::f32_copysign;
     fn f32_copysign_ris(F32Copysign_Ris) = wasm::f32_copysign;
     // f32: comparisons
@@ -1972,10 +1974,8 @@ handler_binary! {
     fn f64_max_rir(F64Max_Rir) = wasm::f64_max;
     fn f64_max_ris(F64Max_Ris) = wasm::f64_max;
     fn f64_copysign_rrs(F64Copysign_Rrs) = wasm::f64_copysign;
-    fn f64_copysign_rri(F64Copysign_Rri) = eval::wasmi_f64_copysign_ssi;
     fn f64_copysign_rsr(F64Copysign_Rsr) = wasm::f64_copysign;
     fn f64_copysign_rss(F64Copysign_Rss) = wasm::f64_copysign;
-    fn f64_copysign_rsi(F64Copysign_Rsi) = eval::wasmi_f64_copysign_ssi;
     fn f64_copysign_rir(F64Copysign_Rir) = wasm::f64_copysign;
     fn f64_copysign_ris(F64Copysign_Ris) = wasm::f64_copysign;
     // f64: comparisons

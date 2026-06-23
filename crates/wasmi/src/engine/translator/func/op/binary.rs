@@ -3,7 +3,7 @@
 use super::IntoResult as _;
 use crate::{
     TrapCode,
-    core::{IntoShiftAmount, RawVal, ShiftAmount, Sign, Typed, wasm},
+    core::{IntoShiftAmount, RawVal, ShiftAmount, Typed, wasm},
     engine::eval,
     ir::{Op, Slot},
 };
@@ -1026,14 +1026,14 @@ impl_binary_op_for! {
     impl BinaryOp for F32Copysign {
         type Result = f32;
         type Lhs = f32;
-        type Rhs = Sign<f32>;
+        type Rhs = f32;
         fn decode_rhs = decode_rhs_as_value;
-        fn consteval = eval::wasmi_f32_copysign_ssi;
+        fn consteval = wasm::f32_copysign;
         fn op_rrs = Op::f32_copysign_rrs;
-        fn op_rri = Op::f32_copysign_rri;
+        fn op_rri = f32_copysign_rri;
         fn op_rsr = Op::f32_copysign_rsr;
         fn op_rss = Op::f32_copysign_rss;
-        fn op_rsi = Op::f32_copysign_rsi;
+        fn op_rsi = f32_copysign_rsi;
         fn op_rir = Op::f32_copysign_rir;
         fn op_ris = Op::f32_copysign_ris;
     }
@@ -1194,14 +1194,14 @@ impl_binary_op_for! {
     impl BinaryOp for F64Copysign {
         type Result = f64;
         type Lhs = f64;
-        type Rhs = Sign<f64>;
+        type Rhs = f64;
         fn decode_rhs = decode_rhs_as_value;
-        fn consteval = eval::wasmi_f64_copysign_ssi;
+        fn consteval = wasm::f64_copysign;
         fn op_rrs = Op::f64_copysign_rrs;
-        fn op_rri = Op::f64_copysign_rri;
+        fn op_rri = f64_copysign_rri;
         fn op_rsr = Op::f64_copysign_rsr;
         fn op_rss = Op::f64_copysign_rss;
-        fn op_rsi = Op::f64_copysign_rsi;
+        fn op_rsi = f64_copysign_rsi;
         fn op_rir = Op::f64_copysign_rir;
         fn op_ris = Op::f64_copysign_ris;
     }
@@ -1323,5 +1323,37 @@ where
     match <T as IntoShiftAmount>::into_shift_amount(shift_source) {
         Some(value) => BinaryOpRhs::Value(value),
         None => BinaryOpRhs::ReturnLhs,
+    }
+}
+
+/// Lowers a `f32_copysign_rri` operator.
+fn f32_copysign_rri(rhs: f32) -> Op {
+    match rhs.is_sign_positive() {
+        true => Op::f32_abs_rr(),
+        false => Op::f32_nabs_rr(),
+    }
+}
+
+/// Lowers a `f32_copysign_rsi` operator.
+fn f32_copysign_rsi(lhs: Slot, rhs: f32) -> Op {
+    match rhs.is_sign_positive() {
+        true => Op::f32_abs_rs(lhs),
+        false => Op::f32_nabs_rs(lhs),
+    }
+}
+
+/// Lowers a `f64_copysign_rri` operator.
+fn f64_copysign_rri(rhs: f64) -> Op {
+    match rhs.is_sign_positive() {
+        true => Op::f64_abs_rr(),
+        false => Op::f64_nabs_rr(),
+    }
+}
+
+/// Lowers a `f64_copysign_rsi` operator.
+fn f64_copysign_rsi(lhs: Slot, rhs: f64) -> Op {
+    match rhs.is_sign_positive() {
+        true => Op::f64_abs_rs(lhs),
+        false => Op::f64_nabs_rs(lhs),
     }
 }

@@ -166,6 +166,7 @@ define_ident!(
     Sext: sext,
     Abs: abs,
     Neg: neg,
+    Nabs: nabs,
     Ceil: ceil,
     Floor: floor,
     Trunc: trunc,

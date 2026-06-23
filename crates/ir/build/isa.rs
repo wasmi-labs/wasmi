@@ -103,6 +103,7 @@ fn add_unary_ops(isa: &mut Isa) {
         // f32
         (Ident::Abs, Ty::F32, Ty::F32),
         (Ident::Neg, Ty::F32, Ty::F32),
+        (Ident::Nabs, Ty::F32, Ty::F32),
         (Ident::Ceil, Ty::F32, Ty::F32),
         (Ident::Floor, Ty::F32, Ty::F32),
         (Ident::Trunc, Ty::F32, Ty::F32),
@@ -116,6 +117,7 @@ fn add_unary_ops(isa: &mut Isa) {
         // f64
         (Ident::Abs, Ty::F64, Ty::F64),
         (Ident::Neg, Ty::F64, Ty::F64),
+        (Ident::Nabs, Ty::F64, Ty::F64),
         (Ident::Ceil, Ty::F64, Ty::F64),
         (Ident::Floor, Ty::F64, Ty::F64),
         (Ident::Trunc, Ty::F64, Ty::F64),
@@ -235,7 +237,6 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Div, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
         (Ident::Min, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
         (Ident::Max, Ty::F32, Ty::F32, Ty::F32, BinaryOpCaps::NONE),
-        (Ident::Copysign, Ty::F32, Ty::F32, Ty::SignF32, BinaryOpCaps::NONE),
         // f64
         (Ident::Add, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
         (Ident::Sub, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
@@ -243,7 +244,6 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ident::Div, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
         (Ident::Min, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
         (Ident::Max, Ty::F64, Ty::F64, Ty::F64, BinaryOpCaps::NONE),
-        (Ident::Copysign, Ty::F64, Ty::F64, Ty::SignF64, BinaryOpCaps::NONE),
     ];
     for (ident, result_ty, lhs_ty, rhs_ty, caps) in ops {
         let results = match caps.allows_slot_result() {
@@ -275,6 +275,31 @@ fn add_binary_ops(isa: &mut Isa) {
             }
         }
     }
+    // Copysign opererator are special in that their immediate `rhs` variants are lowered to `f.abs` or `f.nabs`.
+    let copysign_ops = [
+        (Ty::F32, Ty::F32, Ty::SignF32),
+        (Ty::F64, Ty::F64, Ty::SignF64),
+    ];
+    for (result_ty, lhs_ty, rhs_ty) in copysign_ops {
+        for lhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            for rhs in [OperandKind::Reg, OperandKind::Slot] {
+                if let (OperandKind::Reg, OperandKind::Reg) = (lhs, rhs) {
+                    continue;
+                }
+                isa.push_op(BinaryOp::new(
+                    Ident::Copysign,
+                    result_ty,
+                    lhs_ty,
+                    rhs_ty,
+                    OperandKind::Reg,
+                    lhs,
+                    rhs,
+                    BinaryOpCaps::NONE,
+                ));
+            }
+        }
+    }
+    // Specialized `mul` ops where both `lhs` and `rhs` are the same accumulator register operand. (square)
     for ty in [Ty::I32, Ty::I64, Ty::F32, Ty::F64] {
         let caps = match ty {
             Ty::F32 | Ty::F64 => BinaryOpCaps::NONE,

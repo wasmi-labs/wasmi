@@ -1146,7 +1146,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_f32_neg(&mut self) -> Self::Output {
-        self.translate_unary::<op::F32Neg>()
+        self.translate_unary_with_opt::<op::F32Neg>(Self::try_lower_f32_copysign)
     }
 
     #[inline(never)]
@@ -1216,7 +1216,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_f64_neg(&mut self) -> Self::Output {
-        self.translate_unary::<op::F64Neg>()
+        self.translate_unary_with_opt::<op::F64Neg>(Self::try_lower_f64_copysign)
     }
 
     #[inline(never)]

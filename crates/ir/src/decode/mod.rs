@@ -49,7 +49,7 @@ use crate::{
     Slot,
     SlotAndReg,
     SlotSpan,
-    core::{ShiftAmount, Sign, TrapCode},
+    core::{ShiftAmount, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
 };
 use core::{
@@ -181,9 +181,6 @@ impl_decode_using! {
     Data as u32 = Into::into,
     Elem as u32 = Into::into,
     ShiftAmount as u8 = Into::into,
-
-    Sign<f32> as bool = Sign::new,
-    Sign<f64> as bool = Sign::new,
     SlotSpan as Slot = SlotSpan::new,
 }
 #[cfg(feature = "simd")]

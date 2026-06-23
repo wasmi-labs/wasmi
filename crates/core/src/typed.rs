@@ -1,4 +1,4 @@
-use crate::{F32, F64, RawVal, ShiftAmount, Sign, V128, ValType};
+use crate::{F32, F64, RawVal, ShiftAmount, V128, ValType};
 use core::num::NonZero;
 
 /// Types that are associated to a static Wasm type.
@@ -44,13 +44,6 @@ impl Typed for NonZero<i64> {
 }
 impl Typed for NonZero<u64> {
     const TY: ValType = <u64 as Typed>::TY;
-}
-
-impl Typed for Sign<f32> {
-    const TY: ValType = <f32 as Typed>::TY;
-}
-impl Typed for Sign<f64> {
-    const TY: ValType = <f64 as Typed>::TY;
 }
 
 impl From<TypedRawVal> for RawVal {
