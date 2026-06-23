@@ -1722,8 +1722,17 @@ impl FuncTranslator {
         Ok(slot)
     }
 
+    /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
+    fn translate_binary_commutative<T: CommutativeBinaryOp>(&mut self) -> Result<(), Error>
+    where
+        T::Input: From<TypedRawVal> + Copy,
+        T::Result: Into<TypedRawVal>,
+    {
+        self.translate_binary_commutative_with_opt::<T>(Self::no_opt_ri)
+    }
+
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary_commutative<T: CommutativeBinaryOp>(
+    fn translate_binary_commutative_with_opt<T: CommutativeBinaryOp>(
         &mut self,
         opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Input) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1763,7 +1772,17 @@ impl FuncTranslator {
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary<T: BinaryOp>(
+    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
+    where
+        T::Lhs: From<TypedRawVal> + Copy,
+        T::Rhs: Copy,
+        T::Result: Into<TypedRawVal>,
+    {
+        self.translate_binary_with_opt::<T>(Self::no_opt_ri)
+    }
+
+    /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
+    fn translate_binary_with_opt<T: BinaryOp>(
         &mut self,
         opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Rhs) -> Result<bool, Error>,
     ) -> Result<(), Error>
