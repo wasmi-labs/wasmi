@@ -1883,10 +1883,8 @@ handler_binary! {
     fn f32_max_rir(F32Max_Rir) = wasm::f32_max;
     fn f32_max_ris(F32Max_Ris) = wasm::f32_max;
     fn f32_copysign_rrs(F32Copysign_Rrs) = wasm::f32_copysign;
-    fn f32_copysign_rri(F32Copysign_Rri) = eval::wasmi_f32_copysign_ssi;
     fn f32_copysign_rsr(F32Copysign_Rsr) = wasm::f32_copysign;
     fn f32_copysign_rss(F32Copysign_Rss) = wasm::f32_copysign;
-    fn f32_copysign_rsi(F32Copysign_Rsi) = eval::wasmi_f32_copysign_ssi;
     fn f32_copysign_rir(F32Copysign_Rir) = wasm::f32_copysign;
     fn f32_copysign_ris(F32Copysign_Ris) = wasm::f32_copysign;
     // f32: comparisons
@@ -1972,10 +1970,8 @@ handler_binary! {
     fn f64_max_rir(F64Max_Rir) = wasm::f64_max;
     fn f64_max_ris(F64Max_Ris) = wasm::f64_max;
     fn f64_copysign_rrs(F64Copysign_Rrs) = wasm::f64_copysign;
-    fn f64_copysign_rri(F64Copysign_Rri) = eval::wasmi_f64_copysign_ssi;
     fn f64_copysign_rsr(F64Copysign_Rsr) = wasm::f64_copysign;
     fn f64_copysign_rss(F64Copysign_Rss) = wasm::f64_copysign;
-    fn f64_copysign_rsi(F64Copysign_Rsi) = eval::wasmi_f64_copysign_ssi;
     fn f64_copysign_rir(F64Copysign_Rir) = wasm::f64_copysign;
     fn f64_copysign_ris(F64Copysign_Ris) = wasm::f64_copysign;
     // f64: comparisons
