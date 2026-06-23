@@ -281,13 +281,20 @@ fn add_binary_ops(isa: &mut Isa) {
         (Ty::F64, Ty::F64, Ty::SignF64),
     ];
     for (result_ty, lhs_ty, rhs_ty) in copysign_ops {
-        for lhs in [OperandKind::Reg, OperandKind::Slot] {
-            for rhs in [OperandKind::Reg,OperandKind::Slot] {
+        for lhs in [OperandKind::Reg, OperandKind::Slot, OperandKind::Immediate] {
+            for rhs in [OperandKind::Reg, OperandKind::Slot] {
                 if let (OperandKind::Reg, OperandKind::Reg) = (lhs, rhs) {
-                    continue
+                    continue;
                 }
                 isa.push_op(BinaryOp::new(
-                    Ident::Copysign, result_ty, lhs_ty, rhs_ty, OperandKind::Reg, lhs, rhs, BinaryOpCaps::NONE,
+                    Ident::Copysign,
+                    result_ty,
+                    lhs_ty,
+                    rhs_ty,
+                    OperandKind::Reg,
+                    lhs,
+                    rhs,
+                    BinaryOpCaps::NONE,
                 ));
             }
         }
