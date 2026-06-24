@@ -470,6 +470,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let lowered_op = match copy_op {
+            #[cfg(feature = "simd")]
             Op::CopySpanAsc {
                 results,
                 values,
