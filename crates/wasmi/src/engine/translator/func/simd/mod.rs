@@ -342,7 +342,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_v128_load_low_zero<L: LoadOp>(
+    fn translate_v128_load_modify<L: LoadOp>(
         &mut self,
         memarg: MemArg,
         op_sr: fn(result: Slot) -> Op,

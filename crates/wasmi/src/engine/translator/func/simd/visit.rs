@@ -79,11 +79,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_load32_zero(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_v128_load_low_zero::<op::I32Load>(memarg, Op::v128_low_zero32_sr)
+        self.translate_v128_load_modify::<op::I32Load>(memarg, Op::v128_low_zero32_sr)
     }
 
     fn visit_v128_load64_zero(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_v128_load_low_zero::<op::I64Load>(memarg, Op::v128_low_zero64_sr)
+        self.translate_v128_load_modify::<op::I64Load>(memarg, Op::v128_low_zero64_sr)
     }
 
     fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
