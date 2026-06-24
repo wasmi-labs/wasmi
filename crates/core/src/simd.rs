@@ -1707,6 +1707,33 @@ impl V128 {
     }
 }
 
+macro_rules! impl_v128_widen_mxn {
+    (
+        $( fn $name:ident(bits: u64) -> V128 = ($n:ty => $w:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a specialized Wasmi `", stringify!($name), "` instruction.")]
+            #[doc = ""]
+            #[doc = concat!("Returns a [`V128`] where each lane is widened from `", stringify!($n), "` to `", stringify!($w), "`.")]
+            #[doc = ""]
+            #[doc = " # Note"]
+            #[doc = ""]
+            #[doc = concat!("The `bits` argument is reinterpreted as array of `", stringify!($n), "`.")]
+            pub fn $name(bits: u64) -> V128 {
+                V128::widen_nxm::<$n, $w>(bits)
+            }
+        )*
+    };
+}
+impl_v128_widen_mxn! {
+    fn v128_widen8x8_s(bits: u64) -> V128 = (i8 => i16);
+    fn v128_widen8x8_u(bits: u64) -> V128 = (u8 => u16);
+    fn v128_widen16x4_s(bits: u64) -> V128 = (i16 => i32);
+    fn v128_widen16x4_u(bits: u64) -> V128 = (u16 => u32);
+    fn v128_widen32x2_s(bits: u64) -> V128 = (i32 => i64);
+    fn v128_widen32x2_u(bits: u64) -> V128 = (u32 => u64);
+}
+
 macro_rules! impl_v128_load_mxn {
     (
         $( fn $name:ident(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = ($n:ty => $w:ty); )*
