@@ -157,7 +157,7 @@ handler_unary! {
     //       These are only ever generated as part of a `simd` load operator.
     //       Therefore, they only require a register `r` input operand.
     fn v128_low_zero32_sr(V128LowZero32_Sr) = simd::v128_low32_zero;
-    fn v128_low_zero64_sr(V128LowZero64_Sr) = simd::v128_low32_zero;
+    fn v128_low_zero64_sr(V128LowZero64_Sr) = simd::v128_low64_zero;
     fn u16x8_widen8x8_sr(U16x8Widen8x8_Sr) = simd::v128_widen8x8_u;
     fn i16x8_widen8x8_sr(I16x8Widen8x8_Sr) = simd::v128_widen8x8_s;
     fn u32x4_widen16x4_sr(U32x4Widen16x4_Sr) = simd::v128_widen16x4_u;
