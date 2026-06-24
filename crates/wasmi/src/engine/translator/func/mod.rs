@@ -388,13 +388,107 @@ impl FuncTranslator {
         let mut result = params.temp_slots().head();
         let start = params.len();
         let end = params.len_regs();
+        let mut prev = None;
         for depth in (end..start).rev() {
             let value = self.stack.peek(depth.into());
             let ty = value.ty();
-            self.encode_copy_sx_op(result, value, fuel_pos)?;
-            // TODO: enhance with copy op-fusion and support for `copy_span_{asc,des}`.
+            let copy_if_not_noop = Self::select_copy_sx_op(result, value, &self.layout)?;
             result = result.next_n(required_cells_for_ty(ty));
+            let Some(copy_op) = copy_if_not_noop else {
+                // Case: no-op copy instruction
+                continue;
+            };
+            let (new_prev, copy_op) = Self::copy_branch_params_temps_fuse(prev.take(), copy_op);
+            prev = new_prev;
+            self.copy_branch_params_temps_lower(copy_op, fuel_pos)?;
         }
+        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
+        self.copy_branch_params_temps_lower(prev.take(), fuel_pos)?;
+        Ok(())
+    }
+
+    /// Tries to fuse `prev` and `copy_op` if possible.
+    ///
+    /// Returns a pair of [`Option<Op>`]:
+    ///
+    /// - The first item represents the new `prev` after this operation.
+    /// - The second item represents the [`Op`] to be encoded if any.
+    fn copy_branch_params_temps_fuse(prev: Option<Op>, copy_op: Op) -> (Option<Op>, Option<Op>) {
+        let Op::U64Copy_Ss { result, value } = copy_op else {
+            // Case: only `u64_copy_ss` is fusable, so just return.
+            return (Some(copy_op), prev);
+        };
+        let Some(prev) = prev else {
+            // Case: no previous copy for op-code fusion.
+            return (Some(copy_op), None);
+        };
+        match prev {
+            Op::U64Copy_Ss {
+                result: prev_result,
+                value: prev_value,
+            } => {
+                let can_fuse = result == prev_result.next() && value == prev_value.next();
+                if can_fuse {
+                    let results = SlotSpan::new(prev_result);
+                    let values = SlotSpan::new(prev_value);
+                    let copy_span_op = match result < value {
+                        true => Op::copy_span_asc,
+                        false => Op::copy_span_des,
+                    };
+                    let prev = Some(copy_span_op(results, values, 2));
+                    return (prev, None);
+                }
+            }
+            Op::CopySpanAsc {
+                results,
+                values,
+                len,
+            } => {
+                let can_fuse =
+                    result == results.head().next_n(len) && value == values.head().next_n(len);
+                if can_fuse {
+                    let prev = Some(Op::CopySpanAsc {
+                        results,
+                        values,
+                        len: len + 1,
+                    });
+                    return (prev, None);
+                }
+            }
+            _ => {}
+        };
+        (Some(copy_op), Some(prev))
+    }
+
+    /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
+    fn copy_branch_params_temps_lower(
+        &mut self,
+        copy_op: Option<Op>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let Some(copy_op) = copy_op else {
+            return Ok(());
+        };
+        let lowered_op = match copy_op {
+            Op::CopySpanAsc {
+                results,
+                values,
+                len: 2,
+            }
+            | Op::CopySpanDes {
+                results,
+                values,
+                len: 2,
+            } => {
+                // Note: `copy_span_asc` with `len = 2` is equivalent to `v128_copy_ss` but less efficient.`
+                let result = results.head();
+                let value = values.head();
+                Op::v128_copy_ss(result, value)
+            }
+            op => op,
+        };
+        self.instrs
+            .encode_op(lowered_op, fuel_pos, FuelCostsProvider::base)?;
         Ok(())
     }
 
