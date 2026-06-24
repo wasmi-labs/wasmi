@@ -342,6 +342,30 @@ impl FuncTranslator {
         Ok(())
     }
 
+    fn translate_v128_load_low_zero<L: LoadOp>(
+        &mut self,
+        memarg: MemArg,
+        op_sr: fn(result: Slot) -> Op,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let ptr = self.stack.pop();
+        match self.select_load_op::<L>(ptr, memarg)? {
+            Op::Trap { trap_code } => {
+                self.translate_trap(trap_code)?;
+                return Ok(());
+            }
+            op => {
+                self.push_op_with_result_reg(
+                    <L as LoadOp>::Result::TY,
+                    op,
+                    FuelCostsProvider::load,
+                )?;
+            }
+        }
+        self.push_op_with_result_slot(ValType::V128, op_sr, FuelCostsProvider::simd)?;
+        Ok(())
+    }
+
     fn translate_v128_load_lane<L: LoadOp, T: op::SimdReplaceLane>(
         &mut self,
         memarg: MemArg,
