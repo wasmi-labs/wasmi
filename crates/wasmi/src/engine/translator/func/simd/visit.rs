@@ -31,7 +31,7 @@ macro_rules! swap_ops {
 
 impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_v128_load(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_simd_load::<simd_op::V128Load>(memarg)
+        self.translate_v128_load(memarg)
     }
 
     fn visit_v128_load8x8_s(&mut self, memarg: MemArg) -> Self::Output {

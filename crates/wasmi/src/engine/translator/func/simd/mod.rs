@@ -292,7 +292,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_simd_load<T: op::SimdLoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
+    fn translate_v128_load(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr_opd = self.stack.pop();
@@ -323,8 +323,8 @@ impl FuncTranslator {
             self.push_op_with_result_slot(
                 ValType::V128,
                 |result| match ptr_loc {
-                    Location::Reg(_) => T::op_sr_mem0_offset16(result, offset),
-                    Location::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
+                    Location::Reg(_) => Op::v128_load_mem0_offset16_sr(result, offset),
+                    Location::Slot(ptr) => Op::v128_load_mem0_offset16_ss(result, ptr, offset),
                 },
                 FuelCostsProvider::load,
             )?;
@@ -334,8 +334,8 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
-                Location::Reg(_) => T::op_sr(result, offset, memory),
-                Location::Slot(ptr) => T::op_ss(result, ptr, offset, memory),
+                Location::Reg(_) => Op::v128_load_sr(result, offset, memory),
+                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory),
             },
             FuelCostsProvider::load,
         )?;

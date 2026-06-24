@@ -3,7 +3,7 @@ use crate::{
     V128,
     core::{Typed, simd},
     engine::translator::utils::ToBits,
-    ir::{Offset16, Op, Slot, index::Memory},
+    ir::{Op, Slot},
 };
 
 pub trait SimdReplaceLane {
@@ -163,52 +163,5 @@ impl_replace_lane! {
         fn op_ssr = Op::f64x2_replace_lane_ssr;
         fn op_sss = Op::u64x2_replace_lane_sss;
         fn op_ssi = Op::u64x2_replace_lane_ssi;
-    }
-}
-
-pub trait SimdLoadOp {
-    fn op_sr(result: Slot, offset: u64, memory: Memory) -> Op;
-    fn op_ss(result: Slot, ptr: Slot, offset: u64, memory: Memory) -> Op;
-    fn op_sr_mem0_offset16(result: Slot, offset: Offset16) -> Op;
-    fn op_ss_mem0_offset16(result: Slot, ptr: Slot, offset: Offset16) -> Op;
-}
-
-macro_rules! impl_simd_load {
-    ( $(
-        impl SimdLoadOp for $name:ident {
-            fn op_sr = $store_sr:expr;
-            fn op_ss = $store_ss:expr;
-            fn op_sr_mem0_offset16 = $store_sr_mem0_offset16:expr;
-            fn op_ss_mem0_offset16 = $store_ss_mem0_offset16:expr;
-        }
-    )* ) => {
-        $(
-            pub enum $name {}
-            impl SimdLoadOp for $name {
-                fn op_sr(result: Slot, offset: u64, memory: Memory) -> Op {
-                    $store_sr(result, offset, memory)
-                }
-
-                fn op_ss(result: Slot, ptr: Slot, offset: u64, memory: Memory) -> Op {
-                    $store_ss(result, ptr, offset, memory)
-                }
-
-                fn op_sr_mem0_offset16(result: Slot, offset: Offset16) -> Op {
-                    $store_sr_mem0_offset16(result, offset)
-                }
-
-                fn op_ss_mem0_offset16(result: Slot, ptr: Slot, offset: Offset16) -> Op {
-                    $store_ss_mem0_offset16(result, ptr, offset)
-                }
-            }
-        )*
-    };
-}
-impl_simd_load! {
-    impl SimdLoadOp for V128Load {
-        fn op_sr = Op::v128_load_sr;
-        fn op_ss = Op::v128_load_ss;
-        fn op_sr_mem0_offset16 = Op::v128_load_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::v128_load_mem0_offset16_ss;
     }
 }
