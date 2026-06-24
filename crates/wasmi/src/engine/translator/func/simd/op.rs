@@ -211,46 +211,4 @@ impl_simd_load! {
         fn op_sr_mem0_offset16 = Op::v128_load_mem0_offset16_sr;
         fn op_ss_mem0_offset16 = Op::v128_load_mem0_offset16_ss;
     }
-
-    impl SimdLoadOp for I16x8Load8x8 {
-        fn op_sr = Op::i16x8_load_widen8x8_sr;
-        fn op_ss = Op::i16x8_load_widen8x8_ss;
-        fn op_sr_mem0_offset16 = Op::i16x8_load_widen8x8_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::i16x8_load_widen8x8_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for U16x8Load8x8 {
-        fn op_sr = Op::u16x8_load_widen8x8_sr;
-        fn op_ss = Op::u16x8_load_widen8x8_ss;
-        fn op_sr_mem0_offset16 = Op::u16x8_load_widen8x8_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::u16x8_load_widen8x8_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for I32x4Load16x4 {
-        fn op_sr = Op::i32x4_load_widen16x4_sr;
-        fn op_ss = Op::i32x4_load_widen16x4_ss;
-        fn op_sr_mem0_offset16 = Op::i32x4_load_widen16x4_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::i32x4_load_widen16x4_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for U32x4Load16x4 {
-        fn op_sr = Op::u32x4_load_widen16x4_sr;
-        fn op_ss = Op::u32x4_load_widen16x4_ss;
-        fn op_sr_mem0_offset16 = Op::u32x4_load_widen16x4_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::u32x4_load_widen16x4_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for I64x2Load32x2 {
-        fn op_sr = Op::i64x2_load_widen32x2_sr;
-        fn op_ss = Op::i64x2_load_widen32x2_ss;
-        fn op_sr_mem0_offset16 = Op::i64x2_load_widen32x2_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::i64x2_load_widen32x2_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for U64x2Load32x2 {
-        fn op_sr = Op::u64x2_load_widen32x2_sr;
-        fn op_ss = Op::u64x2_load_widen32x2_ss;
-        fn op_sr_mem0_offset16 = Op::u64x2_load_widen32x2_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::u64x2_load_widen32x2_mem0_offset16_ss;
-    }
 }
