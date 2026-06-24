@@ -64,6 +64,9 @@ impl Display for CamelCase<Ty> {
             | Ty::Bits16 => "16",
             | Ty::Bits32 => "32",
             | Ty::Bits64 => "64",
+            | Ty::Bits8x8 => "8x8",
+            | Ty::Bits16x4 => "16x4",
+            | Ty::Bits32x2 => "32x2",
             | Ty::I32 => "I32",
             | Ty::I64 => "I64",
             | Ty::U8 => "U8",
@@ -102,6 +105,9 @@ impl Display for SnakeCase<Ty> {
             Ty::Bits16 => "16",
             Ty::Bits32 => "32",
             Ty::Bits64 => "64",
+            Ty::Bits8x8 => "8x8",
+            Ty::Bits16x4 => "16x4",
+            Ty::Bits32x2 => "32x2",
             Ty::I32 => "i32",
             Ty::I64 => "i64",
             Ty::U8 => "u8",
@@ -214,7 +220,13 @@ impl Display for CamelCase<IdentSuffix<Ty>> {
 impl Display for SnakeCase<IdentSuffix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0.0 {
-            | Ty::Bits8 | Ty::Bits16 | Ty::Bits32 | Ty::Bits64 => {}
+            | Ty::Bits8
+            | Ty::Bits16
+            | Ty::Bits32
+            | Ty::Bits64
+            | Ty::Bits8x8
+            | Ty::Bits16x4
+            | Ty::Bits32x2 => {}
             _ => SnakeCase(Sep).fmt(f)?,
         }
         SnakeCase(self.0.0).fmt(f)

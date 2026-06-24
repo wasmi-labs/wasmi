@@ -1193,6 +1193,26 @@ fn add_simd_unary_ops(isa: &mut Isa) {
             OperandKind::Slot,
         ));
     }
+    // Wasmi specific operators:
+    let wasmi_ops = [
+        (Ident::LowZero, Ty::V128, Ty::Bits32),
+        (Ident::LowZero, Ty::V128, Ty::Bits64),
+        (Ident::Widen, Ty::U16x8, Ty::Bits8x8),
+        (Ident::Widen, Ty::I16x8, Ty::Bits8x8),
+        (Ident::Widen, Ty::U32x4, Ty::Bits16x4),
+        (Ident::Widen, Ty::I32x4, Ty::Bits16x4),
+        (Ident::Widen, Ty::U64x2, Ty::Bits32x2),
+        (Ident::Widen, Ty::I64x2, Ty::Bits32x2),
+    ];
+    for (ident, result_ty, value_ty) in wasmi_ops {
+        isa.push_op(UnaryOp::new(
+            ident,
+            result_ty,
+            value_ty,
+            OperandKind::Slot,
+            OperandKind::Reg,
+        ));
+    }
 }
 
 fn add_simd_load_ops(isa: &mut Isa) {

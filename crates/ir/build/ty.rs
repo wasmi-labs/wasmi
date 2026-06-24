@@ -69,6 +69,12 @@ pub enum Ty {
     Bits32,
     /// A generic 64-bit value.
     Bits64,
+    /// A generic 64-bit `8x8` array-like value.
+    Bits8x8,
+    /// A generic 64-bit `16x4` array-like value.
+    Bits16x4,
+    /// A generic 64-bit `32x2` array-like value.
+    Bits32x2,
     /// A general 32-bit integer type.
     I32,
     /// A general 64-bit integer type.
@@ -224,6 +230,9 @@ impl From<Ty> for FieldTy {
             | Ty::Bits16 => FieldTy::U16,
             | Ty::Bits32 => FieldTy::U32,
             | Ty::Bits64 => FieldTy::U64,
+            | Ty::Bits8x8 => FieldTy::U64,
+            | Ty::Bits16x4 => FieldTy::U64,
+            | Ty::Bits32x2 => FieldTy::U64,
             | Ty::I32 => FieldTy::I32,
             | Ty::I64 => FieldTy::I64,
             | Ty::U8 => FieldTy::U8,

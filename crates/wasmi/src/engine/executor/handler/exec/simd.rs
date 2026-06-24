@@ -152,6 +152,15 @@ handler_unary! {
     fn f32x4_convert_u32x4_ss(F32x4ConvertU32x4_Ss) = simd::f32x4_convert_i32x4_u;
     fn f64x2_convert_low_i32x4_ss(F64x2ConvertLowI32x4_Ss) = simd::f64x2_convert_low_i32x4_s;
     fn f64x2_convert_low_u32x4_ss(F64x2ConvertLowU32x4_Ss) = simd::f64x2_convert_low_i32x4_u;
+
+    fn v128_low_zero32_sr(V128LowZero32_Sr) = simd::v128_low32_zero;
+    fn v128_low_zero64_sr(V128LowZero64_Sr) = simd::v128_low32_zero;
+    fn u16x8_widen8x8_sr(U16x8Widen8x8_Sr) = simd::v128_widen8x8_u;
+    fn i16x8_widen8x8_sr(I16x8Widen8x8_Sr) = simd::v128_widen8x8_s;
+    fn u32x4_widen16x4_sr(U32x4Widen16x4_Sr) = simd::v128_widen16x4_u;
+    fn i32x4_widen16x4_sr(I32x4Widen16x4_Sr) = simd::v128_widen16x4_s;
+    fn u64x2_widen32x2_sr(U64x2Widen32x2_Sr) = simd::v128_widen32x2_u;
+    fn i64x2_widen32x2_sr(I64x2Widen32x2_Sr) = simd::v128_widen32x2_s;
 }
 
 handler_binary! {

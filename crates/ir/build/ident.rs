@@ -239,6 +239,7 @@ define_ident!(
     Widen: widen,
     Extend: extend,
     Low: low,
+    LowZero: low_zero,
     ExtractLane: extract_lane,
     ReplaceLane: replace_lane,
     Swizzle: swizzle,
