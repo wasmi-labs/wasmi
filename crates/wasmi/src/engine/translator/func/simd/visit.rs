@@ -106,39 +106,19 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_load8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_load_lane::<i8>(
-            memarg,
-            lane,
-            Op::v128_load_lane8_sss,
-            Op::v128_load_lane8_mem0_offset16_sss,
-        )
+        self.translate_v128_load_lane::<op::U32Load8, simd_op::I8x16ReplaceLane>(memarg, lane)
     }
 
     fn visit_v128_load16_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_load_lane::<i16>(
-            memarg,
-            lane,
-            Op::v128_load_lane16_sss,
-            Op::v128_load_lane16_mem0_offset16_sss,
-        )
+        self.translate_v128_load_lane::<op::U32Load16, simd_op::I16x8ReplaceLane>(memarg, lane)
     }
 
     fn visit_v128_load32_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_load_lane::<i32>(
-            memarg,
-            lane,
-            Op::v128_load_lane32_sss,
-            Op::v128_load_lane32_mem0_offset16_sss,
-        )
+        self.translate_v128_load_lane::<op::I32Load, simd_op::I32x4ReplaceLane>(memarg, lane)
     }
 
     fn visit_v128_load64_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_load_lane::<i64>(
-            memarg,
-            lane,
-            Op::v128_load_lane64_sss,
-            Op::v128_load_lane64_mem0_offset16_sss,
-        )
+        self.translate_v128_load_lane::<op::I64Load, simd_op::I64x2ReplaceLane>(memarg, lane)
     }
 
     fn visit_v128_store8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
