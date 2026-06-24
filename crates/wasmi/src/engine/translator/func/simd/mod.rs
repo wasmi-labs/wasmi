@@ -20,6 +20,7 @@ use crate::{
     engine::translator::{
         func::{
             Operand,
+            op::LoadOp,
             stack::{Location, ResolvedOperand},
         },
         utils::{ToBits, Wrap},
@@ -291,7 +292,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_simd_load<T: op::SimdLoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
+    fn translate_v128_load(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr_opd = self.stack.pop();
@@ -322,8 +323,8 @@ impl FuncTranslator {
             self.push_op_with_result_slot(
                 ValType::V128,
                 |result| match ptr_loc {
-                    Location::Reg(_) => T::op_sr_mem0_offset16(result, offset),
-                    Location::Slot(ptr) => T::op_ss_mem0_offset16(result, ptr, offset),
+                    Location::Reg(_) => Op::v128_load_mem0_offset16_sr(result, offset),
+                    Location::Slot(ptr) => Op::v128_load_mem0_offset16_ss(result, ptr, offset),
                 },
                 FuelCostsProvider::load,
             )?;
@@ -333,56 +334,66 @@ impl FuncTranslator {
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
-                Location::Reg(_) => T::op_sr(result, offset, memory),
-                Location::Slot(ptr) => T::op_ss(result, ptr, offset, memory),
+                Location::Reg(_) => Op::v128_load_sr(result, offset, memory),
+                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory),
             },
             FuelCostsProvider::load,
         )?;
         Ok(())
     }
 
-    fn translate_v128_load_lane<T: IntoLaneIdx + Typed>(
+    fn translate_v128_load_modify<L: LoadOp>(
+        &mut self,
+        memarg: MemArg,
+        op_sr: fn(result: Slot) -> Op,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let ptr = self.stack.pop();
+        match self.select_load_op::<L>(ptr, memarg)? {
+            Op::Trap { trap_code } => {
+                self.translate_trap(trap_code)?;
+                return Ok(());
+            }
+            op => {
+                self.push_op_with_result_reg(
+                    <L as LoadOp>::Result::TY,
+                    op,
+                    FuelCostsProvider::load,
+                )?;
+            }
+        }
+        self.push_op_with_result_slot(ValType::V128, op_sr, FuelCostsProvider::simd)?;
+        Ok(())
+    }
+
+    fn translate_v128_load_lane<L: LoadOp, T: op::SimdReplaceLane>(
         &mut self,
         memarg: MemArg,
         lane: u8,
-        load_lane: fn(
-            result: Slot,
-            ptr: Slot,
-            offset: u64,
-            memory: index::Memory,
-            v128: Slot,
-            lane: T::LaneIdx,
-        ) -> Op,
-        load_lane_mem0_offset16: fn(
-            result: Slot,
-            ptr: Slot,
-            offset: Offset16,
-            v128: Slot,
-            lane: T::LaneIdx,
-        ) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
-            panic!("encountered out of bounds lane: {lane}");
+        let Ok(lane) = <<T::Item as IntoLaneIdx>::LaneIdx>::try_from(lane) else {
+            panic!("encountered out of bounds lane index: {lane}");
         };
         let (ptr, v128) = self.stack.pop2();
-        let ptr = self.copy_operand_to_slot(ptr)?;
-        let v128 = self.copy_operand_to_slot(v128)?;
-        if memory.is_default() {
-            if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_op_with_result_slot(
-                    ValType::V128,
-                    |result| load_lane_mem0_offset16(result, ptr, offset, v128, lane),
-                    FuelCostsProvider::load,
-                )?;
+        match self.select_load_op::<L>(ptr, memarg)? {
+            Op::Trap { trap_code } => {
+                self.translate_trap(trap_code)?;
                 return Ok(());
             }
+            op => {
+                self.push_op_with_result_reg(
+                    <L as LoadOp>::Result::TY,
+                    op,
+                    FuelCostsProvider::load,
+                )?;
+            }
         }
+        let v128 = self.copy_operand_to_slot(v128)?;
         self.push_op_with_result_slot(
             ValType::V128,
-            |result| load_lane(result, ptr, offset, memory, v128, lane),
-            FuelCostsProvider::load,
+            |result| T::op_ssr(result, v128, lane),
+            FuelCostsProvider::simd,
         )?;
         Ok(())
     }

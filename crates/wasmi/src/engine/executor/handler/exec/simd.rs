@@ -152,6 +152,18 @@ handler_unary! {
     fn f32x4_convert_u32x4_ss(F32x4ConvertU32x4_Ss) = simd::f32x4_convert_i32x4_u;
     fn f64x2_convert_low_i32x4_ss(F64x2ConvertLowI32x4_Ss) = simd::f64x2_convert_low_i32x4_s;
     fn f64x2_convert_low_u32x4_ss(F64x2ConvertLowU32x4_Ss) = simd::f64x2_convert_low_i32x4_u;
+
+    // Note: below are Wasmi specific `simd` operator definitions.
+    //       These are only ever generated as part of a `simd` load operator.
+    //       Therefore, they only require a register `r` input operand.
+    fn v128_low_zero32_sr(V128LowZero32_Sr) = simd::v128_low32_zero;
+    fn v128_low_zero64_sr(V128LowZero64_Sr) = simd::v128_low64_zero;
+    fn u16x8_widen8x8_sr(U16x8Widen8x8_Sr) = simd::v128_widen8x8_u;
+    fn i16x8_widen8x8_sr(I16x8Widen8x8_Sr) = simd::v128_widen8x8_s;
+    fn u32x4_widen16x4_sr(U32x4Widen16x4_Sr) = simd::v128_widen16x4_u;
+    fn i32x4_widen16x4_sr(I32x4Widen16x4_Sr) = simd::v128_widen16x4_s;
+    fn u64x2_widen32x2_sr(U64x2Widen32x2_Sr) = simd::v128_widen32x2_u;
+    fn i64x2_widen32x2_sr(I64x2Widen32x2_Sr) = simd::v128_widen32x2_s;
 }
 
 handler_binary! {
@@ -461,153 +473,11 @@ handler_ternary! {
 handler_load! {
     fn v128_load_sr(V128Load_Sr) = simd::v128_load;
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
-
-    fn i16x8_load_widen8x8_sr(I16x8LoadWiden8x8_Sr) = simd::v128_load8x8_s;
-    fn i16x8_load_widen8x8_ss(I16x8LoadWiden8x8_Ss) = simd::v128_load8x8_s;
-    fn u16x8_load_widen8x8_sr(U16x8LoadWiden8x8_Sr) = simd::v128_load8x8_u;
-    fn u16x8_load_widen8x8_ss(U16x8LoadWiden8x8_Ss) = simd::v128_load8x8_u;
-    fn i32x4_load_widen16x4_sr(I32x4LoadWiden16x4_Sr) = simd::v128_load16x4_s;
-    fn i32x4_load_widen16x4_ss(I32x4LoadWiden16x4_Ss) = simd::v128_load16x4_s;
-    fn u32x4_load_widen16x4_sr(U32x4LoadWiden16x4_Sr) = simd::v128_load16x4_u;
-    fn u32x4_load_widen16x4_ss(U32x4LoadWiden16x4_Ss) = simd::v128_load16x4_u;
-    fn i64x2_load_widen32x2_sr(I64x2LoadWiden32x2_Sr) = simd::v128_load32x2_s;
-    fn i64x2_load_widen32x2_ss(I64x2LoadWiden32x2_Ss) = simd::v128_load32x2_s;
-    fn u64x2_load_widen32x2_sr(U64x2LoadWiden32x2_Sr) = simd::v128_load32x2_u;
-    fn u64x2_load_widen32x2_ss(U64x2LoadWiden32x2_Ss) = simd::v128_load32x2_u;
-
-    fn v128_load_splat8_sr(V128LoadSplat8_Sr) = simd::v128_load8_splat;
-    fn v128_load_splat8_ss(V128LoadSplat8_Ss) = simd::v128_load8_splat;
-    fn v128_load_splat16_sr(V128LoadSplat16_Sr) = simd::v128_load16_splat;
-    fn v128_load_splat16_ss(V128LoadSplat16_Ss) = simd::v128_load16_splat;
-    fn v128_load_splat32_sr(V128LoadSplat32_Sr) = simd::v128_load32_splat;
-    fn v128_load_splat32_ss(V128LoadSplat32_Ss) = simd::v128_load32_splat;
-    fn v128_load_splat64_sr(V128LoadSplat64_Sr) = simd::v128_load64_splat;
-    fn v128_load_splat64_ss(V128LoadSplat64_Ss) = simd::v128_load64_splat;
-    fn v128_load_low32_sr(V128LoadLow32_Sr) = simd::v128_load32_zero;
-    fn v128_load_low32_ss(V128LoadLow32_Ss) = simd::v128_load32_zero;
-    fn v128_load_low64_sr(V128LoadLow64_Sr) = simd::v128_load64_zero;
-    fn v128_load_low64_ss(V128LoadLow64_Ss) = simd::v128_load64_zero;
 }
 
 handler_load_mem0_offset16_ss! {
     fn v128_load_mem0_offset16_sr(V128LoadMem0Offset16_Sr) = simd::v128_load;
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
-
-    fn i16x8_load_widen8x8_mem0_offset16_sr(I16x8LoadWiden8x8Mem0Offset16_Sr) = simd::v128_load8x8_s;
-    fn i16x8_load_widen8x8_mem0_offset16_ss(I16x8LoadWiden8x8Mem0Offset16_Ss) = simd::v128_load8x8_s;
-    fn u16x8_load_widen8x8_mem0_offset16_sr(U16x8LoadWiden8x8Mem0Offset16_Sr) = simd::v128_load8x8_u;
-    fn u16x8_load_widen8x8_mem0_offset16_ss(U16x8LoadWiden8x8Mem0Offset16_Ss) = simd::v128_load8x8_u;
-    fn i32x4_load_widen16x4_mem0_offset16_sr(I32x4LoadWiden16x4Mem0Offset16_Sr) = simd::v128_load16x4_s;
-    fn i32x4_load_widen16x4_mem0_offset16_ss(I32x4LoadWiden16x4Mem0Offset16_Ss) = simd::v128_load16x4_s;
-    fn u32x4_load_widen16x4_mem0_offset16_sr(U32x4LoadWiden16x4Mem0Offset16_Sr) = simd::v128_load16x4_u;
-    fn u32x4_load_widen16x4_mem0_offset16_ss(U32x4LoadWiden16x4Mem0Offset16_Ss) = simd::v128_load16x4_u;
-    fn i64x2_load_widen32x2_mem0_offset16_sr(I64x2LoadWiden32x2Mem0Offset16_Sr) = simd::v128_load32x2_s;
-    fn i64x2_load_widen32x2_mem0_offset16_ss(I64x2LoadWiden32x2Mem0Offset16_Ss) = simd::v128_load32x2_s;
-    fn u64x2_load_widen32x2_mem0_offset16_sr(U64x2LoadWiden32x2Mem0Offset16_Sr) = simd::v128_load32x2_u;
-    fn u64x2_load_widen32x2_mem0_offset16_ss(U64x2LoadWiden32x2Mem0Offset16_Ss) = simd::v128_load32x2_u;
-
-    fn v128_load_splat8_mem0_offset16_sr(V128LoadSplat8Mem0Offset16_Sr) = simd::v128_load8_splat;
-    fn v128_load_splat8_mem0_offset16_ss(V128LoadSplat8Mem0Offset16_Ss) = simd::v128_load8_splat;
-    fn v128_load_splat16_mem0_offset16_sr(V128LoadSplat16Mem0Offset16_Sr) = simd::v128_load16_splat;
-    fn v128_load_splat16_mem0_offset16_ss(V128LoadSplat16Mem0Offset16_Ss) = simd::v128_load16_splat;
-    fn v128_load_splat32_mem0_offset16_sr(V128LoadSplat32Mem0Offset16_Sr) = simd::v128_load32_splat;
-    fn v128_load_splat32_mem0_offset16_ss(V128LoadSplat32Mem0Offset16_Ss) = simd::v128_load32_splat;
-    fn v128_load_splat64_mem0_offset16_sr(V128LoadSplat64Mem0Offset16_Sr) = simd::v128_load64_splat;
-    fn v128_load_splat64_mem0_offset16_ss(V128LoadSplat64Mem0Offset16_Ss) = simd::v128_load64_splat;
-    fn v128_load_low32_mem0_offset16_sr(V128LoadLow32Mem0Offset16_Sr) = simd::v128_load32_zero;
-    fn v128_load_low32_mem0_offset16_ss(V128LoadLow32Mem0Offset16_Ss) = simd::v128_load32_zero;
-    fn v128_load_low64_mem0_offset16_sr(V128LoadLow64Mem0Offset16_Sr) = simd::v128_load64_zero;
-    fn v128_load_low64_mem0_offset16_ss(V128LoadLow64Mem0Offset16_Ss) = simd::v128_load64_zero;
-}
-
-macro_rules! handler_load_lane {
-    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
-        $(
-            execution_handler! {
-                fn $handler(
-                    state: &mut VmState,
-                    ip: Ip,
-                    sp: Sp,
-                    mem0: Mem0Ptr,
-                    mem0_len: Mem0Len,
-                    instance: Inst,
-                    ireg: Ireg,
-                    freg32: Freg32,
-                    freg64: Freg64,
-                ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$op {
-                            result,
-                            ptr,
-                            offset,
-                            v128,
-                            lane,
-                            memory,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let v128 = get_value(v128, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
-                        memory, mem0, mem0_len, instance, state,
-                    );
-                    let value = $eval(mem_bytes, ptr, offset, v128, lane).into_control()?;
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-                }
-            }
-        )*
-    };
-}
-handler_load_lane! {
-    fn v128_load_lane8_srs(V128LoadLane8_Srs) = simd::v128_load8_lane;
-    fn v128_load_lane8_sss(V128LoadLane8_Sss) = simd::v128_load8_lane;
-    fn v128_load_lane16_srs(V128LoadLane16_Srs) = simd::v128_load16_lane;
-    fn v128_load_lane16_sss(V128LoadLane16_Sss) = simd::v128_load16_lane;
-    fn v128_load_lane32_srs(V128LoadLane32_Srs) = simd::v128_load32_lane;
-    fn v128_load_lane32_sss(V128LoadLane32_Sss) = simd::v128_load32_lane;
-    fn v128_load_lane64_srs(V128LoadLane64_Srs) = simd::v128_load64_lane;
-    fn v128_load_lane64_sss(V128LoadLane64_Sss) = simd::v128_load64_lane;
-}
-
-macro_rules! handler_load_lane_mem0_offset16 {
-    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
-        $(
-            execution_handler! {
-                fn $handler(
-                    state: &mut VmState,
-                    ip: Ip,
-                    sp: Sp,
-                    mem0: Mem0Ptr,
-                    mem0_len: Mem0Len,
-                    instance: Inst,
-                    ireg: Ireg,
-                    freg32: Freg32,
-                    freg64: Freg64,
-                ) -> Done = {
-                    let (ip, $crate::ir::decode::$op { result, ptr, offset, v128, lane }) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let v128 = get_value(v128, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    let value = $eval(mem_bytes, ptr, u64::from(u16::from(offset)), v128, lane).into_control()?;
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-                }
-            }
-        )*
-    };
-}
-handler_load_lane_mem0_offset16! {
-    fn v128_load_lane8_mem0_offset16_srs(V128LoadLane8Mem0Offset16_Srs) = simd::v128_load8_lane;
-    fn v128_load_lane8_mem0_offset16_sss(V128LoadLane8Mem0Offset16_Sss) = simd::v128_load8_lane;
-    fn v128_load_lane16_mem0_offset16_srs(V128LoadLane16Mem0Offset16_Srs) = simd::v128_load16_lane;
-    fn v128_load_lane16_mem0_offset16_sss(V128LoadLane16Mem0Offset16_Sss) = simd::v128_load16_lane;
-    fn v128_load_lane32_mem0_offset16_srs(V128LoadLane32Mem0Offset16_Srs) = simd::v128_load32_lane;
-    fn v128_load_lane32_mem0_offset16_sss(V128LoadLane32Mem0Offset16_Sss) = simd::v128_load32_lane;
-    fn v128_load_lane64_mem0_offset16_srs(V128LoadLane64Mem0Offset16_Srs) = simd::v128_load64_lane;
-    fn v128_load_lane64_mem0_offset16_sss(V128LoadLane64Mem0Offset16_Sss) = simd::v128_load64_lane;
 }
 
 handler_store_sx! {

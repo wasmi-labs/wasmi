@@ -60,36 +60,39 @@ impl<T> DisplayIdent<T> {
 impl Display for CamelCase<Ty> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self.0 {
-            | Ty::Bits8 => "8",
-            | Ty::Bits16 => "16",
-            | Ty::Bits32 => "32",
-            | Ty::Bits64 => "64",
-            | Ty::I32 => "I32",
-            | Ty::I64 => "I64",
-            | Ty::U8 => "U8",
-            | Ty::U16 => "U16",
-            | Ty::U32 => "U32",
-            | Ty::U64 => "U64",
-            | Ty::NonZeroI32 => "I32",
-            | Ty::NonZeroI64 => "I64",
-            | Ty::NonZeroU32 => "U32",
-            | Ty::NonZeroU64 => "U64",
-            | Ty::F32 => "F32",
-            | Ty::F64 => "F64",
-            | Ty::SignF32 => "F32",
-            | Ty::SignF64 => "F64",
-            | Ty::V128 => "V128",
-            | Ty::I8x16 => "I8x16",
-            | Ty::I16x8 => "I16x8",
-            | Ty::I32x4 => "I32x4",
-            | Ty::I64x2 => "I64x2",
-            | Ty::U8x16 => "U8x16",
-            | Ty::U16x8 => "U16x8",
-            | Ty::U32x4 => "U32x4",
-            | Ty::U64x2 => "U64x2",
-            | Ty::F32x4 => "F32x4",
-            | Ty::F64x2 => "F64x2",
-            | Ty::ShiftAmount => "U8",
+            Ty::Bits8 => "8",
+            Ty::Bits16 => "16",
+            Ty::Bits32 => "32",
+            Ty::Bits64 => "64",
+            Ty::Bits8x8 => "8x8",
+            Ty::Bits16x4 => "16x4",
+            Ty::Bits32x2 => "32x2",
+            Ty::I32 => "I32",
+            Ty::I64 => "I64",
+            Ty::U8 => "U8",
+            Ty::U16 => "U16",
+            Ty::U32 => "U32",
+            Ty::U64 => "U64",
+            Ty::NonZeroI32 => "I32",
+            Ty::NonZeroI64 => "I64",
+            Ty::NonZeroU32 => "U32",
+            Ty::NonZeroU64 => "U64",
+            Ty::F32 => "F32",
+            Ty::F64 => "F64",
+            Ty::SignF32 => "F32",
+            Ty::SignF64 => "F64",
+            Ty::V128 => "V128",
+            Ty::I8x16 => "I8x16",
+            Ty::I16x8 => "I16x8",
+            Ty::I32x4 => "I32x4",
+            Ty::I64x2 => "I64x2",
+            Ty::U8x16 => "U8x16",
+            Ty::U16x8 => "U16x8",
+            Ty::U32x4 => "U32x4",
+            Ty::U64x2 => "U64x2",
+            Ty::F32x4 => "F32x4",
+            Ty::F64x2 => "F64x2",
+            Ty::ShiftAmount => "U8",
         };
         f.write_str(s)
     }
@@ -102,6 +105,9 @@ impl Display for SnakeCase<Ty> {
             Ty::Bits16 => "16",
             Ty::Bits32 => "32",
             Ty::Bits64 => "64",
+            Ty::Bits8x8 => "8x8",
+            Ty::Bits16x4 => "16x4",
+            Ty::Bits32x2 => "32x2",
             Ty::I32 => "i32",
             Ty::I64 => "i64",
             Ty::U8 => "u8",
@@ -214,7 +220,13 @@ impl Display for CamelCase<IdentSuffix<Ty>> {
 impl Display for SnakeCase<IdentSuffix<Ty>> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0.0 {
-            | Ty::Bits8 | Ty::Bits16 | Ty::Bits32 | Ty::Bits64 => {}
+            | Ty::Bits8
+            | Ty::Bits16
+            | Ty::Bits32
+            | Ty::Bits64
+            | Ty::Bits8x8
+            | Ty::Bits16x4
+            | Ty::Bits32x2 => {}
             _ => SnakeCase(Sep).fmt(f)?,
         }
         SnakeCase(self.0.0).fmt(f)
@@ -415,12 +427,6 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let ident = case.wrap(Ident::Load);
         let result_suffix = case.wrap(Suffix(op.result));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
-        let v128_suffix = op
-            .v128_field()
-            .map(|_| OperandKind::Slot)
-            .map(Suffix)
-            .map(SnakeCase)
-            .display_maybe();
         let loaded_suffix = op.kind.loaded_layout().map(IdentSuffix).display_maybe();
         let ident_prefix = case.wrap(IdentPrefix(op.result_ty));
         let ident_suffix = op
@@ -433,7 +439,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let offset_suffix = self.map(op.offset);
         write!(
             f,
-            "{ident_prefix}{ident}{ident_suffix}{loaded_suffix}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}{v128_suffix}",
+            "{ident_prefix}{ident}{ident_suffix}{loaded_suffix}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}",
         )
     }
 }

@@ -2299,8 +2299,25 @@ impl FuncTranslator {
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
     fn translate_load<T: op::LoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.stack.pop();
+        match self.select_load_op::<T>(ptr, memarg)? {
+            Op::Trap { trap_code } => self.translate_trap(trap_code),
+            op => {
+                self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)
+            }
+        }
+    }
+
+    /// Returns a Wasmi `load` operator for `memarg` and `ptr` if any.
+    ///
+    /// Returns [`Op::Trap`] if `ptr` is known to be out of bounds for the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This chooses the right encoding for the given `load` instruction.
+    /// If `ptr+offset` is a constant value the address is pre-calculated.
+    fn select_load_op<T: op::LoadOp>(&mut self, ptr: Operand, memarg: MemArg) -> Result<Op, Error> {
+        let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr = self.resolve_operand_as_index(ptr, memory)?;
         'opt: {
             // Try to encode an optimized load operator if possible, otherwise fallback.
@@ -2316,20 +2333,18 @@ impl FuncTranslator {
                 ResolvedOperand::Slot(ptr) => T::op_rs_mem0_offset16(ptr, offset),
                 ResolvedOperand::Immediate(_) => break 'opt,
             };
-            self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
-            return Ok(());
+            return Ok(op);
         }
         // We need to encode a non-optimized fallback load operator.
         let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
         let op = match ptr {
             ResolvedOperand::Reg(_) => T::op_rr(offset, memory),
             ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
             ResolvedOperand::Immediate(address) => T::op_ri(address, memory),
         };
-        self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)?;
-        Ok(())
+        Ok(op)
     }
 
     /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.

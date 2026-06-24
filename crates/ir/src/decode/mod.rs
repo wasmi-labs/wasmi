@@ -25,8 +25,6 @@ use self::op::{
 };
 #[cfg(feature = "simd")]
 use self::op::{
-    LoadLaneOp,
-    LoadLaneOpMem0Offset16,
     StoreLaneOp,
     StoreLaneOpMem0Offset16,
     TernaryOp,

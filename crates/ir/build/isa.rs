@@ -1193,52 +1193,46 @@ fn add_simd_unary_ops(isa: &mut Isa) {
             OperandKind::Slot,
         ));
     }
+    // Wasmi specific operators:
+    let wasmi_ops = [
+        (Ident::LowZero, Ty::V128, Ty::Bits32),
+        (Ident::LowZero, Ty::V128, Ty::Bits64),
+        (Ident::Widen, Ty::U16x8, Ty::Bits8x8),
+        (Ident::Widen, Ty::I16x8, Ty::Bits8x8),
+        (Ident::Widen, Ty::U32x4, Ty::Bits16x4),
+        (Ident::Widen, Ty::I32x4, Ty::Bits16x4),
+        (Ident::Widen, Ty::U64x2, Ty::Bits32x2),
+        (Ident::Widen, Ty::I64x2, Ty::Bits32x2),
+    ];
+    for (ident, result_ty, value_ty) in wasmi_ops {
+        isa.push_op(UnaryOp::new(
+            ident,
+            result_ty,
+            value_ty,
+            OperandKind::Slot,
+            OperandKind::Reg,
+        ));
+    }
 }
 
 fn add_simd_load_ops(isa: &mut Isa) {
-    #[rustfmt::skip]
-    let ops = [
-        (LoadKind::Value, Ty::V128),
-        // load-widen
-        (LoadKind::Widen { layout: Layout::Bits8x8 }, Ty::I16x8),
-        (LoadKind::Widen { layout: Layout::Bits8x8 }, Ty::U16x8),
-        (LoadKind::Widen { layout: Layout::Bits16x4 }, Ty::I32x4),
-        (LoadKind::Widen { layout: Layout::Bits16x4 }, Ty::U32x4),
-        (LoadKind::Widen { layout: Layout::Bits32x2 }, Ty::I64x2),
-        (LoadKind::Widen { layout: Layout::Bits32x2 }, Ty::U64x2),
-        // load-splat
-        (LoadKind::Splat { layout: Layout::Bits8 }, Ty::V128),
-        (LoadKind::Splat { layout: Layout::Bits16 }, Ty::V128),
-        (LoadKind::Splat { layout: Layout::Bits32 }, Ty::V128),
-        (LoadKind::Splat { layout: Layout::Bits64 }, Ty::V128),
-        // load-low
-        (LoadKind::Low { layout: Layout::Bits32 }, Ty::V128),
-        (LoadKind::Low { layout: Layout::Bits64 }, Ty::V128),
-        // load-lane
-        (LoadKind::Lane { width: LaneWidth::W8 }, Ty::V128),
-        (LoadKind::Lane { width: LaneWidth::W16 }, Ty::V128),
-        (LoadKind::Lane { width: LaneWidth::W32 }, Ty::V128),
-        (LoadKind::Lane { width: LaneWidth::W64 }, Ty::V128),
-    ];
-    for (kind, result_ty) in ops {
-        for ptr in [OperandKind::Reg, OperandKind::Slot] {
-            isa.push_op(LoadOp::new(
-                kind,
-                result_ty,
-                OperandKind::Slot,
-                ptr,
-                MemoryOperand::Immediate,
-                OffsetOperand::Offset,
-            ));
-            isa.push_op(LoadOp::new(
-                kind,
-                result_ty,
-                OperandKind::Slot,
-                ptr,
-                MemoryOperand::Mem0,
-                OffsetOperand::Offset16,
-            ));
-        }
+    for ptr in [OperandKind::Reg, OperandKind::Slot] {
+        isa.push_op(LoadOp::new(
+            LoadKind::Value,
+            Ty::V128,
+            OperandKind::Slot,
+            ptr,
+            MemoryOperand::Immediate,
+            OffsetOperand::Offset,
+        ));
+        isa.push_op(LoadOp::new(
+            LoadKind::Value,
+            Ty::V128,
+            OperandKind::Slot,
+            ptr,
+            MemoryOperand::Mem0,
+            OffsetOperand::Offset16,
+        ));
     }
 }
 
