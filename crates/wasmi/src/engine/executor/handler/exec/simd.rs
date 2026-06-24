@@ -153,6 +153,9 @@ handler_unary! {
     fn f64x2_convert_low_i32x4_ss(F64x2ConvertLowI32x4_Ss) = simd::f64x2_convert_low_i32x4_s;
     fn f64x2_convert_low_u32x4_ss(F64x2ConvertLowU32x4_Ss) = simd::f64x2_convert_low_i32x4_u;
 
+    // Note: below are Wasmi specific `simd` operator definitions.
+    //       These are only ever generated as part of a `simd` load operator.
+    //       Therefore, they only require a register `r` input operand.
     fn v128_low_zero32_sr(V128LowZero32_Sr) = simd::v128_low32_zero;
     fn v128_low_zero64_sr(V128LowZero64_Sr) = simd::v128_low32_zero;
     fn u16x8_widen8x8_sr(U16x8Widen8x8_Sr) = simd::v128_widen8x8_u;
