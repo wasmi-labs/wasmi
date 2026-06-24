@@ -254,34 +254,6 @@ impl_simd_load! {
         fn op_ss_mem0_offset16 = Op::u64x2_load_widen32x2_mem0_offset16_ss;
     }
 
-    impl SimdLoadOp for V128Load8Splat {
-        fn op_sr = Op::v128_load_splat8_sr;
-        fn op_ss = Op::v128_load_splat8_ss;
-        fn op_sr_mem0_offset16 = Op::v128_load_splat8_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::v128_load_splat8_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for V128Load16Splat {
-        fn op_sr = Op::v128_load_splat16_sr;
-        fn op_ss = Op::v128_load_splat16_ss;
-        fn op_sr_mem0_offset16 = Op::v128_load_splat16_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::v128_load_splat16_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for V128Load32Splat {
-        fn op_sr = Op::v128_load_splat32_sr;
-        fn op_ss = Op::v128_load_splat32_ss;
-        fn op_sr_mem0_offset16 = Op::v128_load_splat32_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::v128_load_splat32_mem0_offset16_ss;
-    }
-
-    impl SimdLoadOp for V128Load64Splat {
-        fn op_sr = Op::v128_load_splat64_sr;
-        fn op_ss = Op::v128_load_splat64_ss;
-        fn op_sr_mem0_offset16 = Op::v128_load_splat64_mem0_offset16_sr;
-        fn op_ss_mem0_offset16 = Op::v128_load_splat64_mem0_offset16_ss;
-    }
-
     impl SimdLoadOp for V128Load32Zero {
         fn op_sr = Op::v128_load_low32_sr;
         fn op_ss = Op::v128_load_low32_ss;

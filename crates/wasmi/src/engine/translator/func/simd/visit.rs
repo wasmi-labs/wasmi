@@ -12,7 +12,7 @@ use crate::{
     ir::{Op, Slot},
 };
 use core::array;
-use wasmparser::{MemArg, VisitSimdOperator};
+use wasmparser::{MemArg, VisitOperator, VisitSimdOperator};
 
 impl FuncTranslator {
     /// Hacky utility method to convert an immediate value into an [`Operand`].
@@ -59,19 +59,23 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_load8_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_simd_load::<simd_op::V128Load8Splat>(memarg)
+        self.visit_i32_load8_u(memarg)?;
+        self.visit_i8x16_splat()
     }
 
     fn visit_v128_load16_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_simd_load::<simd_op::V128Load16Splat>(memarg)
+        self.visit_i32_load16_u(memarg)?;
+        self.visit_i16x8_splat()
     }
 
     fn visit_v128_load32_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_simd_load::<simd_op::V128Load32Splat>(memarg)
+        self.visit_i32_load(memarg)?;
+        self.visit_i32x4_splat()
     }
 
     fn visit_v128_load64_splat(&mut self, memarg: MemArg) -> Self::Output {
-        self.translate_simd_load::<simd_op::V128Load64Splat>(memarg)
+        self.visit_i64_load(memarg)?;
+        self.visit_i64x2_splat()
     }
 
     fn visit_v128_load32_zero(&mut self, memarg: MemArg) -> Self::Output {
