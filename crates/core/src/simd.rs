@@ -1680,7 +1680,7 @@ impl_split_into_for! {
 
 /// Allows to extend all items in an array from `T` to `Ext`.
 ///
-/// This is a helper trait to implement [`V128::load_nxm`] generically.
+/// This is a helper trait to implement [`V128::widen_nxm`] generically.
 trait ExtendArray<T> {
     type Output;
     fn extend_array(self) -> Self::Output;
