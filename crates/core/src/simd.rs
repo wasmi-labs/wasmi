@@ -1645,7 +1645,7 @@ impl_v128_loadN_lane_at_for! {
 /// Usually `T` is an array of `U` where `U` fits multiple times into `Self`.
 /// An example of this is that `u64` can be split into `[u32; 2]`.
 ///
-/// This is a helper trait to implement [`V128::load_nxm`] generically.
+/// This is a helper trait to implement [`V128::widen_nxm`] generically.
 trait SplitInto<T> {
     type Output;
     fn split_into(self) -> Self::Output;
