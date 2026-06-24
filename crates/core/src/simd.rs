@@ -1698,7 +1698,7 @@ where
 
 impl V128 {
     /// Interprets `bits` as array of `Narrow` and distribute the (sign) extended items as [`V128`].
-    fn load_nxm<Narrow, Wide>(bits: u64) -> V128
+    fn widen_nxm<Narrow, Wide>(bits: u64) -> V128
     where
         u64: SplitInto<Narrow, Output: ExtendArray<Wide, Output: Into<<Wide as IntoLanes>::Lanes>>>,
         Wide: IntoLanes,
@@ -1719,7 +1719,7 @@ macro_rules! impl_v128_load_mxn {
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
             pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
-                memory::load::<u64>(memory, ptr, offset).map(V128::load_nxm::<$n, $w>)
+                memory::load::<u64>(memory, ptr, offset).map(V128::widen_nxm::<$n, $w>)
             }
         )*
     };
@@ -1744,7 +1744,7 @@ macro_rules! impl_v128_load_mxn_at {
             ///
             /// If `address` loads out of bounds from `memory`.
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
-                memory::load_at::<u64>(memory, address).map(V128::load_nxm::<$n, $w>)
+                memory::load_at::<u64>(memory, address).map(V128::widen_nxm::<$n, $w>)
             }
         )*
     };
