@@ -567,28 +567,12 @@ impl LoadOp {
         }
     }
 
-    pub fn v128_field(&self) -> Option<Field> {
-        match self.kind {
-            LoadKind::Lane { .. } => Some(Field::new(Ident::V128, FieldTy::Slot)),
-            _ => None,
-        }
-    }
-
-    pub fn lane_field(&self) -> Option<Field> {
-        match self.kind {
-            LoadKind::Lane { width } => Some(Field::new(Ident::Lane, FieldTy::from(width))),
-            _ => None,
-        }
-    }
-
-    pub fn fields(&self) -> [Option<Field>; 6] {
+    pub fn fields(&self) -> [Option<Field>; 4] {
         [
             Some(self.result_field()),
             Some(self.ptr_field()),
             self.offset_field(),
             self.memory_field(),
-            self.v128_field(),
-            self.lane_field(),
         ]
     }
 }
@@ -600,14 +584,6 @@ pub enum LoadKind {
     Value,
     /// Loads a value and extends it to a larger integer value.
     Extend { layout: Layout },
-    /// Loads a value and splats it to a `v128` value.
-    Widen { layout: Layout },
-    /// Loads a value and splats it to a `v128` value.
-    Splat { layout: Layout },
-    /// Loads the low bits of a `v128` value.
-    Low { layout: Layout },
-    /// Loads and replaces a lane from a `v128` value.
-    Lane { width: LaneWidth },
 }
 
 impl LoadKind {
@@ -616,10 +592,6 @@ impl LoadKind {
         let suffix = match self {
             Self::Value => return None,
             Self::Extend { .. } => Ident::Extend,
-            Self::Widen { .. } => Ident::Widen,
-            Self::Splat { .. } => Ident::Splat,
-            Self::Low { .. } => Ident::Low,
-            Self::Lane { .. } => Ident::Lane,
         };
         Some(suffix)
     }
@@ -629,10 +601,6 @@ impl LoadKind {
         let layout = match self {
             LoadKind::Value => return None,
             LoadKind::Extend { layout } => *layout,
-            LoadKind::Widen { layout } => *layout,
-            LoadKind::Splat { layout } => *layout,
-            LoadKind::Low { layout } => *layout,
-            LoadKind::Lane { width } => Layout::from(*width),
         };
         Some(layout)
     }

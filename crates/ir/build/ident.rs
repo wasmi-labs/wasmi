@@ -238,7 +238,6 @@ define_ident!(
     Splat: splat,
     Widen: widen,
     Extend: extend,
-    Low: low,
     LowZero: low_zero,
     ExtractLane: extract_lane,
     ReplaceLane: replace_lane,

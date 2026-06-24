@@ -427,12 +427,6 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let ident = case.wrap(Ident::Load);
         let result_suffix = case.wrap(Suffix(op.result));
         let ptr_suffix = SnakeCase(Suffix(op.ptr));
-        let v128_suffix = op
-            .v128_field()
-            .map(|_| OperandKind::Slot)
-            .map(Suffix)
-            .map(SnakeCase)
-            .display_maybe();
         let loaded_suffix = op.kind.loaded_layout().map(IdentSuffix).display_maybe();
         let ident_prefix = case.wrap(IdentPrefix(op.result_ty));
         let ident_suffix = op
@@ -445,7 +439,7 @@ impl Display for DisplayIdent<&'_ LoadOp> {
         let offset_suffix = self.map(op.offset);
         write!(
             f,
-            "{ident_prefix}{ident}{ident_suffix}{loaded_suffix}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}{v128_suffix}",
+            "{ident_prefix}{ident}{ident_suffix}{loaded_suffix}{mem_suffix}{offset_suffix}_{result_suffix}{ptr_suffix}",
         )
     }
 }

@@ -15,7 +15,6 @@ use crate::build::{
         GenericOp,
         GlobalGetOp,
         GlobalSetOp,
-        LoadKind,
         LoadOp,
         MemoryOperand,
         OffsetOperand,
@@ -166,17 +165,6 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             OffsetOperand::Offset => "",
             OffsetOperand::Offset16 => "Offset16",
         };
-        let (lane_suffix, lane_param) = match op.kind {
-            LoadKind::Lane { width } => {
-                let lane_param = DisplayConcat((',', FieldTy::from(width)));
-                (
-                    Some(CamelCase(Ident::Lane)),
-                    Some(lane_param).display_maybe(),
-                )
-            }
-            _ => (None, DisplayMaybe::None),
-        };
-        let lane_suffix = lane_suffix.display_maybe();
         let result_ty = op.result.field_ty(op.result_ty);
         let ptr_ty = match op.ptr {
             OperandKind::Reg => DisplayMaybe::Some(DisplayConcat((',', FieldTy::RegInt))),
@@ -187,10 +175,10 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             OperandKind::Immediate => DisplayMaybe::None,
             OperandKind::Local(_index) => DisplayMaybe::None,
         };
-        let generics = DisplayConcat(('<', result_ty, ptr_ty, lane_param, '>'));
+        let generics = DisplayConcat(('<', result_ty, ptr_ty, '>'));
         writeln!(
             f,
-            "pub type {camel_ident} = Load{lane_suffix}{at_suffix}Op{mem0_suffix}{offset16_suffix}{generics};"
+            "pub type {camel_ident} = Load{at_suffix}Op{mem0_suffix}{offset16_suffix}{generics};"
         )
     }
 }
