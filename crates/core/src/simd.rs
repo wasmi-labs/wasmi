@@ -1475,6 +1475,25 @@ pub fn v128_load_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
     memory::load_at::<u128>(memory, address).map(V128::from)
 }
 
+macro_rules! impl_v128_lowN_zero_for {
+    (
+        $( fn $name:ident(bits: $bits_ty:ty) -> V128; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasmi specific `", stringify!($name), "` instruction.")]
+            #[doc = ""]
+            #[doc = concat!("Returns a [`V128`] value with the first `", stringify!($bits_ty), "` lane set to `bits` and all others to zero.")]
+            pub fn $name(bits: $bits_ty) -> V128 {
+                V128::splat::<$bits_ty>(0).replace_lane::<$bits_ty>(<$bits_ty as IntoLaneIdx>::LaneIdx::zero(), bits)
+            }
+        )*
+    };
+}
+impl_v128_lowN_zero_for! {
+    fn v128_low32_zero(bits: u32) -> V128;
+    fn v128_low64_zero(bits: u64) -> V128;
+}
+
 macro_rules! impl_v128_loadN_zero_for {
     (
         $( fn $name:ident(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = $ty:ty; )*
