@@ -414,71 +414,99 @@ impl FuncTranslator {
     /// - The first item represents the new `prev` after this operation.
     /// - The second item represents the [`Op`] to be encoded if any.
     fn copy_branch_params_temps_fuse(prev: Option<Op>, copy_op: Op) -> (Option<Op>, Option<Op>) {
-        let Op::U64Copy_Ss { result, value } = copy_op else {
-            // Case: only `u64_copy_ss` is fusable, so just return.
-            return (Some(copy_op), prev);
-        };
-        let Some(prev) = prev else {
-            // Case: no previous copy for op-code fusion.
-            return (Some(copy_op), None);
-        };
-        match prev {
-            Op::U64Copy_Ss {
-                result: prev_result,
-                value: prev_value,
-            } => {
-                let can_fuse_asc =
-                    result < value && result == prev_result.next() && value == prev_value.next();
-                if can_fuse_asc {
-                    let results = SlotSpan::new(prev_result);
-                    let values = SlotSpan::new(prev_value);
-                    let prev = Some(Op::copy_span_asc(results, values, 2));
-                    return (prev, None);
-                }
-                let can_fuse_des =
-                    result > value && result == prev_result.prev() && value == prev_value.prev();
-                if can_fuse_des {
-                    let results = SlotSpan::new(result);
-                    let values = SlotSpan::new(value);
-                    let prev = Some(Op::copy_span_des(results, values, 2));
-                    return (prev, None);
-                }
-            }
+        let (results, values, len) = match copy_op {
+            Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
+            Op::V128Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 2),
             Op::CopySpanAsc {
                 results,
                 values,
                 len,
-            } => {
-                let can_fuse =
-                    result == results.head().next_n(len) && value == values.head().next_n(len);
-                if can_fuse {
-                    let prev = Some(Op::CopySpanAsc {
-                        results,
-                        values,
-                        len: len + 1,
-                    });
-                    return (prev, None);
-                }
             }
-            Op::CopySpanDes {
+            | Op::CopySpanDes {
                 results,
                 values,
                 len,
-            } => {
-                let can_fuse =
-                    result == results.head().prev_n(len) && value == values.head().prev_n(len);
-                if can_fuse {
-                    let prev = Some(Op::CopySpanDes {
-                        results: SlotSpan::new(result),
-                        values: SlotSpan::new(value),
-                        len: len + 1,
-                    });
-                    return (prev, None);
-                }
-            }
-            _ => {}
+            } => (results, values, len),
+            _ => return (Some(copy_op), prev),
         };
-        (Some(copy_op), Some(prev))
+        match results < values {
+            true => Self::copy_branch_params_temps_fuse_asc(prev, results, values, len),
+            false => Self::copy_branch_params_temps_fuse_des(prev, results, values, len),
+        }
+    }
+
+    /// Tries to fuse `prev` and `copy_op` in ascending slot order if possible.
+    ///
+    /// Returns a pair of [`Option<Op>`]:
+    ///
+    /// - The first item represents the new `prev` after this operation.
+    /// - The second item represents the [`Op`] to be encoded if any.
+    fn copy_branch_params_temps_fuse_asc(
+        prev: Option<Op>,
+        new_results: SlotSpan,
+        new_values: SlotSpan,
+        new_len: u16,
+    ) -> (Option<Op>, Option<Op>) {
+        let copy_span = Op::copy_span_asc(new_results, new_values, new_len);
+        let Some(prev) = prev else {
+            // Case: no previous copy for op-code fusion.
+            return (Some(copy_span), None);
+        };
+        if let Op::CopySpanAsc {
+            results,
+            values,
+            len,
+        } = prev
+        {
+            let can_fuse = results.head() == results.head().next_n(len)
+                && values.head() == values.head().next_n(len);
+            if can_fuse {
+                let prev = Some(Op::CopySpanAsc {
+                    results,
+                    values,
+                    len: len + new_len,
+                });
+                return (prev, None);
+            }
+        }
+        (Some(copy_span), Some(prev))
+    }
+
+    /// Tries to fuse `prev` and `copy_op` in descending slot order if possible.
+    ///
+    /// Returns a pair of [`Option<Op>`]:
+    ///
+    /// - The first item represents the new `prev` after this operation.
+    /// - The second item represents the [`Op`] to be encoded if any.
+    fn copy_branch_params_temps_fuse_des(
+        prev: Option<Op>,
+        new_results: SlotSpan,
+        new_values: SlotSpan,
+        new_len: u16,
+    ) -> (Option<Op>, Option<Op>) {
+        let copy_span = Op::copy_span_des(new_results, new_values, new_len);
+        let Some(prev) = prev else {
+            // Case: no previous copy for op-code fusion.
+            return (Some(copy_span), None);
+        };
+        if let Op::CopySpanDes {
+            results,
+            values,
+            len,
+        } = prev
+        {
+            let can_fuse = results.head() == results.head().prev_n(new_len)
+                && values.head() == values.head().prev_n(new_len);
+            if can_fuse {
+                let prev = Some(Op::CopySpanDes {
+                    results: new_results,
+                    values: new_values,
+                    len: len + new_len,
+                });
+                return (prev, None);
+            }
+        }
+        (Some(copy_span), Some(prev))
     }
 
     /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
@@ -491,6 +519,20 @@ impl FuncTranslator {
             return Ok(());
         };
         let lowered_op = match copy_op {
+            Op::CopySpanAsc {
+                results,
+                values,
+                len: 1,
+            }
+            | Op::CopySpanDes {
+                results,
+                values,
+                len: 1,
+            } => {
+                let result = results.head();
+                let value = values.head();
+                Op::u64_copy_ss(result, value)
+            }
             #[cfg(feature = "simd")]
             Op::CopySpanAsc {
                 results,
