@@ -427,15 +427,20 @@ impl FuncTranslator {
                 result: prev_result,
                 value: prev_value,
             } => {
-                let can_fuse = result == prev_result.next() && value == prev_value.next();
-                if can_fuse {
+                let can_fuse_asc =
+                    result < value && result == prev_result.next() && value == prev_value.next();
+                if can_fuse_asc {
                     let results = SlotSpan::new(prev_result);
                     let values = SlotSpan::new(prev_value);
-                    let copy_span_op = match result < value {
-                        true => Op::copy_span_asc,
-                        false => Op::copy_span_des,
-                    };
-                    let prev = Some(copy_span_op(results, values, 2));
+                    let prev = Some(Op::copy_span_asc(results, values, 2));
+                    return (prev, None);
+                }
+                let can_fuse_des =
+                    result > value && result == prev_result.prev() && value == prev_value.prev();
+                if can_fuse_des {
+                    let results = SlotSpan::new(result);
+                    let values = SlotSpan::new(value);
+                    let prev = Some(Op::copy_span_des(results, values, 2));
                     return (prev, None);
                 }
             }
@@ -450,6 +455,22 @@ impl FuncTranslator {
                     let prev = Some(Op::CopySpanAsc {
                         results,
                         values,
+                        len: len + 1,
+                    });
+                    return (prev, None);
+                }
+            }
+            Op::CopySpanDes {
+                results,
+                values,
+                len,
+            } => {
+                let can_fuse =
+                    result == results.head().prev_n(len) && value == values.head().prev_n(len);
+                if can_fuse {
+                    let prev = Some(Op::CopySpanDes {
+                        results: SlotSpan::new(result),
+                        values: SlotSpan::new(value),
                         len: len + 1,
                     });
                     return (prev, None);
