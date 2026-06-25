@@ -431,6 +431,88 @@ struct FusedCopy {
 }
 
 impl FusedCopy {
+    /// Returns `Some` if `op` is a copy [`Op`] that can be fused.
+    ///
+    /// Otherwise returns `None`.
+    pub fn from_op(op: Op) -> Option<Self> {
+        let (results, values, len) = match op {
+            Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
+            #[cfg(feature = "simd")]
+            Op::V128Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 2),
+            Op::CopySpanAsc {
+                results,
+                values,
+                len,
+            }
+            | Op::CopySpanDes {
+                results,
+                values,
+                len,
+            } => (results, values, len),
+            _ => return None,
+        };
+        Some(Self::new(results, values, len))
+    }
+
+    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused.
+    ///
+    /// Otherwise returns `None`.
+    pub fn try_fuse(self, new: Self) -> Option<Self> {
+        if let Some(fused) = self.try_fuse_copy_asc(new) {
+            return Some(fused);
+        }
+        if let Some(fused) = self.try_fuse_copy_des(new) {
+            return Some(fused);
+        }
+        None
+    }
+
+    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
+    ///
+    /// Otherwise returns `None`.
+    fn try_fuse_copy_asc(self, new: Self) -> Option<Self> {
+        let can_fuse = new.results.head() == self.results.head().next_n(self.len)
+            && new.values.head() == self.values.head().next_n(self.len);
+        if can_fuse {
+            // Case: copy fusion in ascending slot order can be applied.
+            return Some(Self::new(self.results, self.values, self.len + new.len));
+        }
+        None
+    }
+
+    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in descending slot-order.
+    ///
+    /// Otherwise returns `None`.
+    fn try_fuse_copy_des(self, new: Self) -> Option<Self> {
+        let can_fuse = new.results.head() == self.results.head().prev_n(new.len)
+            && new.values.head() == self.values.head().prev_n(new.len);
+        if can_fuse {
+            // Case: copy fusion in descending slot order can be applied.
+            return Some(Self::new(new.results, new.values, self.len + new.len));
+        }
+        None
+    }
+
+    /// Lowers `self` back into an [`Op`] for encoding.
+    ///
+    /// This returns the an most efficient [`Op`] that preserve copy semantics.
+    pub fn into_op(self) -> Op {
+        let Self {
+            results,
+            values,
+            len,
+        } = self;
+        match len {
+            1 => Op::u64_copy_ss(results.head(), values.head()),
+            #[cfg(feature = "simd")]
+            2 => Op::v128_copy_ss(results.head(), values.head()),
+            _ if results < values => Op::copy_span_asc(results, values, len),
+            _ => Op::copy_span_des(results, values, len),
+        }
+    }
+}
+
+impl FusedCopy {
     /// Creates a new [`FusedCopy`] from its raw parts.
     pub fn new(results: SlotSpan, values: SlotSpan, len: u16) -> Self {
         Self {
@@ -468,68 +550,15 @@ impl FuncTranslator {
     /// - `Some` if `prev` was `None` and `copy_op` could be fused.
     /// - `None` otherwise.
     fn try_fuse_copy_if_any(prev: Option<FusedCopy>, copy_op: Op) -> Option<FusedCopy> {
-        let (new_results, new_values, new_len) = match copy_op {
-            Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
-            #[cfg(feature = "simd")]
-            Op::V128Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 2),
-            Op::CopySpanAsc {
-                results,
-                values,
-                len,
-            }
-            | Op::CopySpanDes {
-                results,
-                values,
-                len,
-            } => (results, values, len),
-            _ => return None,
-        };
+        let new = FusedCopy::from_op(copy_op)?;
         let Some(prev) = prev else {
-            return Some(FusedCopy::new(new_results, new_values, new_len));
+            // return Some(FusedCopy::new(new_results, new_values, new_len));
+            return Some(new);
         };
-        if let Some(fused) = Self::try_fuse_copy_asc(prev, new_results, new_values, new_len) {
-            return Some(fused);
-        }
-        if let Some(fused) = Self::try_fuse_copy_des(prev, new_results, new_values, new_len) {
+        if let Some(fused) = prev.try_fuse(new) {
             return Some(fused);
         }
         // Case: copy fusion was not applied.
-        None
-    }
-
-    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
-    ///
-    /// Otherwise returns `None`.
-    fn try_fuse_copy_asc(
-        prev: FusedCopy,
-        results: SlotSpan,
-        values: SlotSpan,
-        len: u16,
-    ) -> Option<FusedCopy> {
-        let can_fuse = results.head() == prev.results.head().next_n(prev.len)
-            && values.head() == prev.values.head().next_n(prev.len);
-        if can_fuse {
-            // Case: copy fusion in ascending slot order can be applied.
-            return Some(FusedCopy::new(prev.results, prev.values, prev.len + len));
-        }
-        None
-    }
-
-    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in descending slot-order.
-    ///
-    /// Otherwise returns `None`.
-    fn try_fuse_copy_des(
-        prev: FusedCopy,
-        results: SlotSpan,
-        values: SlotSpan,
-        len: u16,
-    ) -> Option<FusedCopy> {
-        let can_fuse = results.head() == prev.results.head().prev_n(len)
-            && values.head() == prev.values.head().prev_n(len);
-        if can_fuse {
-            // Case: copy fusion in descending slot order can be applied.
-            return Some(FusedCopy::new(results, values, prev.len + len));
-        }
         None
     }
 
@@ -539,20 +568,8 @@ impl FuncTranslator {
         fused_copy: Option<FusedCopy>,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let Some(fused_copy) = fused_copy else {
+        let Some(copy_op) = fused_copy.map(FusedCopy::into_op) else {
             return Ok(());
-        };
-        let FusedCopy {
-            results,
-            values,
-            len,
-        } = fused_copy;
-        let copy_op = match len {
-            1 => Op::u64_copy_ss(results.head(), values.head()),
-            #[cfg(feature = "simd")]
-            2 => Op::v128_copy_ss(results.head(), values.head()),
-            _ if results < values => Op::copy_span_asc(results, values, len),
-            _ => Op::copy_span_des(results, values, len),
         };
         self.instrs
             .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
