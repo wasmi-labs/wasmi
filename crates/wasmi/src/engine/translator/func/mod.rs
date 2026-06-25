@@ -398,12 +398,23 @@ impl FuncTranslator {
                 // Case: no-op copy instruction
                 continue;
             };
-            let (new_prev, copy_op) = Self::copy_branch_params_temps_fuse(prev.take(), copy_op);
-            prev = new_prev;
-            self.copy_branch_params_temps_lower(copy_op, fuel_pos)?;
+            self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
         }
         // The `prev` might still contain `Some` at this point, so we have to "flush" it.
-        self.copy_branch_params_temps_lower(prev.take(), fuel_pos)?;
+        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+        Ok(())
+    }
+
+    /// Encodes `copy_or` or fuses it with `prev` if possible.
+    fn encode_copy_or_fuse_sx(
+        &mut self,
+        prev: &mut Option<Op>,
+        copy_op: Op,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let (new_prev, copy_op) = Self::copy_branch_params_temps_fuse(prev.take(), copy_op);
+        *prev = new_prev;
+        self.encode_fused_copy_op_if_any(copy_op, fuel_pos)?;
         Ok(())
     }
 
@@ -473,7 +484,7 @@ impl FuncTranslator {
     }
 
     /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
-    fn copy_branch_params_temps_lower(
+    fn encode_fused_copy_op_if_any(
         &mut self,
         copy_op: Option<Op>,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
