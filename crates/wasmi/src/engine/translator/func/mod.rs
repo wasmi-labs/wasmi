@@ -459,8 +459,8 @@ impl FuncTranslator {
             len,
         } = prev
         {
-            let can_fuse = results.head() == results.head().next_n(len)
-                && values.head() == values.head().next_n(len);
+            let can_fuse = new_results.head() == results.head().next_n(len)
+                && new_values.head() == values.head().next_n(len);
             if can_fuse {
                 let prev = Some(Op::CopySpanAsc {
                     results,
@@ -496,8 +496,8 @@ impl FuncTranslator {
             len,
         } = prev
         {
-            let can_fuse = results.head() == results.head().prev_n(new_len)
-                && values.head() == values.head().prev_n(new_len);
+            let can_fuse = new_results.head() == results.head().prev_n(new_len)
+                && new_values.head() == values.head().prev_n(new_len);
             if can_fuse {
                 let prev = Some(Op::CopySpanDes {
                     results: new_results,
