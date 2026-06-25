@@ -552,7 +552,6 @@ impl FuncTranslator {
     fn try_fuse_copy_if_any(prev: Option<FusedCopy>, copy_op: Op) -> Option<FusedCopy> {
         let new = FusedCopy::from_op(copy_op)?;
         let Some(prev) = prev else {
-            // return Some(FusedCopy::new(new_results, new_values, new_len));
             return Some(new);
         };
         if let Some(fused) = prev.try_fuse(new) {
