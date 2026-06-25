@@ -414,7 +414,7 @@ impl FuncTranslator {
     /// - The first item represents the new `prev` after this operation.
     /// - The second item represents the [`Op`] to be encoded if any.
     fn copy_branch_params_temps_fuse(prev: Option<Op>, copy_op: Op) -> (Option<Op>, Option<Op>) {
-        let (results, values, len) = match copy_op {
+        let (new_results, new_values, new_len) = match copy_op {
             Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
             #[cfg(feature = "simd")]
             Op::V128Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 2),
@@ -430,38 +430,22 @@ impl FuncTranslator {
             } => (results, values, len),
             _ => return (Some(copy_op), prev),
         };
-        match results < values {
-            true => Self::copy_branch_params_temps_fuse_asc(prev, results, values, len),
-            false => Self::copy_branch_params_temps_fuse_des(prev, results, values, len),
-        }
-    }
-
-    /// Tries to fuse `prev` and `copy_op` in ascending slot order if possible.
-    ///
-    /// Returns a pair of [`Option<Op>`]:
-    ///
-    /// - The first item represents the new `prev` after this operation.
-    /// - The second item represents the [`Op`] to be encoded if any.
-    fn copy_branch_params_temps_fuse_asc(
-        prev: Option<Op>,
-        new_results: SlotSpan,
-        new_values: SlotSpan,
-        new_len: u16,
-    ) -> (Option<Op>, Option<Op>) {
         let copy_span = Op::copy_span_asc(new_results, new_values, new_len);
-        let Some(prev) = prev else {
-            // Case: no previous copy for op-code fusion.
-            return (Some(copy_span), None);
-        };
-        if let Op::CopySpanAsc {
+        let Some(Op::CopySpanAsc {
             results,
             values,
             len,
-        } = prev
+        }) = prev
+        else {
+            // Case: no fusable previous copy for op-code fusion.
+            return (Some(copy_span), None);
+        };
         {
-            let can_fuse = new_results.head() == results.head().next_n(len)
+            // Try to fuse in ascending slot order:
+            let can_fuse_asc = new_results.head() == results.head().next_n(len)
                 && new_values.head() == values.head().next_n(len);
-            if can_fuse {
+            if can_fuse_asc {
+                // Case: copy fusion in ascending slot order can be applied.
                 let prev = Some(Op::CopySpanAsc {
                     results,
                     values,
@@ -470,35 +454,12 @@ impl FuncTranslator {
                 return (prev, None);
             }
         }
-        (Some(copy_span), Some(prev))
-    }
-
-    /// Tries to fuse `prev` and `copy_op` in descending slot order if possible.
-    ///
-    /// Returns a pair of [`Option<Op>`]:
-    ///
-    /// - The first item represents the new `prev` after this operation.
-    /// - The second item represents the [`Op`] to be encoded if any.
-    fn copy_branch_params_temps_fuse_des(
-        prev: Option<Op>,
-        new_results: SlotSpan,
-        new_values: SlotSpan,
-        new_len: u16,
-    ) -> (Option<Op>, Option<Op>) {
-        let copy_span = Op::copy_span_des(new_results, new_values, new_len);
-        let Some(prev) = prev else {
-            // Case: no previous copy for op-code fusion.
-            return (Some(copy_span), None);
-        };
-        if let Op::CopySpanDes {
-            results,
-            values,
-            len,
-        } = prev
         {
-            let can_fuse = new_results.head() == results.head().prev_n(new_len)
+            // Try to fuse in ascending slot order:
+            let can_fuse_des = new_results.head() == results.head().prev_n(new_len)
                 && new_values.head() == values.head().prev_n(new_len);
-            if can_fuse {
+            if can_fuse_des {
+                // Case: copy fusion in descending slot order can be applied.
                 let prev = Some(Op::CopySpanDes {
                     results: new_results,
                     values: new_values,
@@ -507,7 +468,8 @@ impl FuncTranslator {
                 return (prev, None);
             }
         }
-        (Some(copy_span), Some(prev))
+        // Case: copy fusion was not applied.
+        (Some(copy_span), prev)
     }
 
     /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
@@ -524,11 +486,6 @@ impl FuncTranslator {
                 results,
                 values,
                 len: 1,
-            }
-            | Op::CopySpanDes {
-                results,
-                values,
-                len: 1,
             } => {
                 let result = results.head();
                 let value = values.head();
@@ -539,17 +496,20 @@ impl FuncTranslator {
                 results,
                 values,
                 len: 2,
-            }
-            | Op::CopySpanDes {
-                results,
-                values,
-                len: 2,
             } => {
                 // Note: `copy_span_asc` with `len = 2` is equivalent to `v128_copy_ss` but less efficient.
                 let result = results.head();
                 let value = values.head();
                 Op::v128_copy_ss(result, value)
             }
+            Op::CopySpanAsc {
+                results,
+                values,
+                len,
+            } => match results < values {
+                true => Op::copy_span_asc(results, values, len),
+                false => Op::copy_span_des(results, values, len),
+            },
             op => op,
         };
         self.instrs
