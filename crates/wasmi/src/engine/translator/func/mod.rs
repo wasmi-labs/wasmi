@@ -529,26 +529,27 @@ impl FuncTranslator {
         copy_op: Op,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
+        let prev_fused = prev.take();
         let Some(new) = FusedCopy::from_op(copy_op) else {
             // Case: `copy_op` is not fusable => just encode it directly.
             // Note: we need to flush `prev` to uphold order to emitted copy ops.
-            self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+            self.encode_fused_copy_op_if_any(prev_fused, fuel_pos)?;
             self.instrs
                 .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
             return Ok(());
         };
-        let Some(prev_copy) = prev.take() else {
+        let Some(prev_fused) = prev_fused else {
             // Case: no previous fused => just memorize `copy_op` for later.
             *prev = Some(new);
             return Ok(());
         };
-        if let Some(fused) = prev_copy.try_fuse(new) {
+        if let Some(new_fused) = prev_fused.try_fuse(new) {
             // Case: successfully fused => memorize fused op for later.
-            *prev = Some(fused);
+            *prev = Some(new_fused);
             return Ok(());
         }
         // Case: couldn't fuse => emit fused-so-far and start new fusion candidate.
-        self.encode_fused_copy_op_if_any(Some(prev_copy), fuel_pos)?;
+        self.encode_fused_copy_op_if_any(Some(prev_fused), fuel_pos)?;
         *prev = Some(new);
         Ok(())
     }
