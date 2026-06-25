@@ -529,34 +529,28 @@ impl FuncTranslator {
         copy_op: Op,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let prev_op = prev.take();
-        if let Some(fused_op) = Self::try_fuse_copy_if_any(prev_op, copy_op) {
-            *prev = Some(fused_op);
+        let Some(new) = FusedCopy::from_op(copy_op) else {
+            // Case: `copy_op` is not fusable => just encode it directly.
+            // Note: we need to flush `prev` to uphold order to emitted copy ops.
+            self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+            self.instrs
+                .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
+            return Ok(());
+        };
+        let Some(prev_copy) = prev.take() else {
+            // Case: no previous fused => just memorize `copy_op` for later.
+            *prev = Some(new);
+            return Ok(());
+        };
+        if let Some(fused) = prev_copy.try_fuse(new) {
+            // Case: successfully fused => memorize fused op for later.
+            *prev = Some(fused);
             return Ok(());
         }
-        self.encode_fused_copy_op_if_any(prev_op, fuel_pos)?;
-        self.instrs
-            .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
+        // Case: couldn't fuse => emit fused-so-far and start new fusion candidate.
+        self.encode_fused_copy_op_if_any(Some(prev_copy), fuel_pos)?;
+        *prev = Some(new);
         Ok(())
-    }
-
-    /// Tries to fuse `prev` and `copy_op` if possible.
-    ///
-    /// # Returns
-    ///
-    /// - `Some` if `prev` and `copy_op` was successfully fused.
-    /// - `Some` if `prev` was `None` and `copy_op` could be fused.
-    /// - `None` otherwise.
-    fn try_fuse_copy_if_any(prev: Option<FusedCopy>, copy_op: Op) -> Option<FusedCopy> {
-        let new = FusedCopy::from_op(copy_op)?;
-        let Some(prev) = prev else {
-            return Some(new);
-        };
-        if let Some(fused) = prev.try_fuse(new) {
-            return Some(fused);
-        }
-        // Case: copy fusion was not applied.
-        None
     }
 
     /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
