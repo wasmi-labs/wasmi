@@ -439,10 +439,10 @@ impl FuncTranslator {
             _ => return (Some(copy_op), prev),
         };
         let copy_span = Op::copy_span_asc(new_results, new_values, new_len);
-        if let Some(fused) = Self::try_fuse_asc(prev, new_results, new_values, new_len) {
+        if let Some(fused) = Self::try_fuse_copy_asc(prev, new_results, new_values, new_len) {
             return (Some(fused), None);
         }
-        if let Some(fused) = Self::try_fuse_des(prev, new_results, new_values, new_len) {
+        if let Some(fused) = Self::try_fuse_copy_des(prev, new_results, new_values, new_len) {
             return (Some(fused), None);
         }
         // Case: copy fusion was not applied.
@@ -452,7 +452,7 @@ impl FuncTranslator {
     /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
     ///
     /// Otherwise returns `None`.
-    fn try_fuse_asc(
+    fn try_fuse_copy_asc(
         prev: Option<Op>,
         new_results: SlotSpan,
         new_values: SlotSpan,
@@ -482,7 +482,7 @@ impl FuncTranslator {
     /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
     ///
     /// Otherwise returns `None`.
-    fn try_fuse_des(
+    fn try_fuse_copy_des(
         prev: Option<Op>,
         new_results: SlotSpan,
         new_values: SlotSpan,
