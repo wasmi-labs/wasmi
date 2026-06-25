@@ -392,13 +392,10 @@ impl FuncTranslator {
         for depth in (end..start).rev() {
             let value = self.stack.peek(depth.into());
             let ty = value.ty();
-            let copy_if_not_noop = Self::select_copy_sx_op(result, value, &self.layout)?;
-            result = result.next_n(required_cells_for_ty(ty));
-            let Some(copy_op) = copy_if_not_noop else {
-                // Case: no-op copy instruction
-                continue;
+            if let Some(copy_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
+                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
             };
-            self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
+            result = result.next_n(required_cells_for_ty(ty));
         }
         // The `prev` might still contain `Some` at this point, so we have to "flush" it.
         self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
