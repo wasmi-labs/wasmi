@@ -1,6 +1,6 @@
 use crate::ir::{Op, SlotSpan};
 
-/// Represents fused copy [`Op`] for copy fusion in the translator.
+/// Represents a fused copy [`Op`] for copy fusion in the translator.
 #[derive(Copy, Clone)]
 pub struct FusedCopy {
     /// The result slots of the fused copy [`Op`].
