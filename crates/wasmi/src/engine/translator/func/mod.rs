@@ -419,7 +419,7 @@ impl FuncTranslator {
     }
 }
 
-/// A memorized fused copy [`Op`] used by [`FuncTranslator::encode_copy_or_fuse_sx`].
+/// Represents fused copy [`Op`] used by [`FuncTranslator::encode_copy_or_fuse_sx`].
 #[derive(Copy, Clone)]
 struct FusedCopy {
     /// The result slots of the fused copy [`Op`].
@@ -463,7 +463,7 @@ impl FusedCopy {
         Some(Self::new(results, values, len))
     }
 
-    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused.
+    /// Returns `Some` if `self` and the `new` copy-span [`Op`] can be fused.
     ///
     /// Otherwise returns `None`.
     pub fn try_fuse(self, new: Self) -> Option<Self> {
@@ -476,7 +476,7 @@ impl FusedCopy {
         None
     }
 
-    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
+    /// Returns `Some` if `self` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_asc(self, new: Self) -> Option<Self> {
@@ -489,7 +489,7 @@ impl FusedCopy {
         None
     }
 
-    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in descending slot-order.
+    /// Returns `Some` if `self` and the `new` copy-span [`Op`] can be fused in descending slot-order.
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_des(self, new: Self) -> Option<Self> {
@@ -504,7 +504,7 @@ impl FusedCopy {
 
     /// Lowers `self` back into an [`Op`] for encoding.
     ///
-    /// This returns the an most efficient [`Op`] that preserve copy semantics.
+    /// This returns the an most efficient [`Op`] that preserves copy semantics.
     pub fn into_op(self) -> Op {
         let Self {
             results,
