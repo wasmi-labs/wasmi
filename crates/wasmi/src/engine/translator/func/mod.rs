@@ -439,45 +439,74 @@ impl FuncTranslator {
             _ => return (Some(copy_op), prev),
         };
         let copy_span = Op::copy_span_asc(new_results, new_values, new_len);
-        let Some(Op::CopySpanAsc {
-            results,
-            values,
-            len,
-        }) = prev
-        else {
-            // Case: no fusable previous copy for op-code fusion.
-            return (Some(copy_span), None);
-        };
-        {
-            // Try to fuse in ascending slot order:
-            let can_fuse_asc = new_results.head() == results.head().next_n(len)
-                && new_values.head() == values.head().next_n(len);
-            if can_fuse_asc {
-                // Case: copy fusion in ascending slot order can be applied.
-                let prev = Some(Op::CopySpanAsc {
-                    results,
-                    values,
-                    len: len + new_len,
-                });
-                return (prev, None);
-            }
+        if let Some(fused) = Self::try_fuse_asc(prev, new_results, new_values, new_len) {
+            return (Some(fused), None);
         }
-        {
-            // Try to fuse in ascending slot order:
-            let can_fuse_des = new_results.head() == results.head().prev_n(new_len)
-                && new_values.head() == values.head().prev_n(new_len);
-            if can_fuse_des {
-                // Case: copy fusion in descending slot order can be applied.
-                let prev = Some(Op::CopySpanDes {
-                    results: new_results,
-                    values: new_values,
-                    len: len + new_len,
-                });
-                return (prev, None);
-            }
+        if let Some(fused) = Self::try_fuse_des(prev, new_results, new_values, new_len) {
+            return (Some(fused), None);
         }
         // Case: copy fusion was not applied.
         (Some(copy_span), prev)
+    }
+
+    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
+    /// 
+    /// Otherwise returns `None`.
+    fn try_fuse_asc(
+        prev: Option<Op>,
+        new_results: SlotSpan,
+        new_values: SlotSpan,
+        new_len: u16,
+    ) -> Option<Op> {
+        let Op::CopySpanAsc {
+            results,
+            values,
+            len,
+        } = prev?
+        else {
+            return None;
+        };
+        let can_fuse_asc = new_results.head() == results.head().next_n(len)
+            && new_values.head() == values.head().next_n(len);
+        if can_fuse_asc {
+            // Case: copy fusion in ascending slot order can be applied.
+            return Some(Op::CopySpanAsc {
+                results,
+                values,
+                len: len + new_len,
+            });
+        }
+        None
+    }
+
+    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
+    /// 
+    /// Otherwise returns `None`.
+    fn try_fuse_des(
+        prev: Option<Op>,
+        new_results: SlotSpan,
+        new_values: SlotSpan,
+        new_len: u16,
+    ) -> Option<Op> {
+        let Op::CopySpanAsc {
+            results,
+            values,
+            len,
+        } = prev?
+        else {
+            return None;
+        };
+        let can_fuse_des = new_results.head() == results.head().prev_n(new_len)
+            && new_values.head() == values.head().prev_n(new_len);
+        if can_fuse_des {
+            // Case: copy fusion in ascending slot order can be applied.
+            return Some(Op::CopySpanAsc {
+                results,
+                values,
+                len: len + new_len,
+            });
+        }
+        None
     }
 
     /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
