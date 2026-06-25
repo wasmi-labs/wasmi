@@ -447,7 +447,8 @@ impl FuncTranslator {
             return Ok(());
         }
         // Case: couldn't fuse => emit fused-so-far and start new fusion candidate.
-        self.encode_fused_copy_op_if_any(Some(prev_fused), fuel_pos)?;
+        self.instrs
+            .encode_op(prev_fused.into_op(), fuel_pos, FuelCostsProvider::base)?;
         *prev = Some(new);
         Ok(())
     }
