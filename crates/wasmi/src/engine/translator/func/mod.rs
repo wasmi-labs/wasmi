@@ -510,9 +510,7 @@ impl FusedCopy {
             _ => Op::copy_span_des(results, values, len),
         }
     }
-}
 
-impl FusedCopy {
     /// Creates a new [`FusedCopy`] from its raw parts.
     pub fn new(results: SlotSpan, values: SlotSpan, len: u16) -> Self {
         Self {
