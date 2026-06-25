@@ -401,11 +401,35 @@ impl FuncTranslator {
         self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
         Ok(())
     }
+}
 
+/// A memorized fused copy [`Op`] used by [`FuncTranslator::encode_copy_or_fuse_sx`].
+#[derive(Copy, Clone)]
+struct FusedCopy {
+    /// The result slots of the fused copy [`Op`].
+    pub results: SlotSpan,
+    /// The value slots of the fused copy [`Op`].
+    pub values: SlotSpan,
+    /// The number of copied slots of the fused copy [`Op`].
+    pub len: u16,
+}
+
+impl FusedCopy {
+    /// Creates a new [`FusedCopy`] from its raw parts.
+    pub fn new(results: SlotSpan, values: SlotSpan, len: u16) -> Self {
+        Self {
+            results,
+            values,
+            len,
+        }
+    }
+}
+
+impl FuncTranslator {
     /// Encodes `copy_or` or fuses it with `prev` if possible.
     fn encode_copy_or_fuse_sx(
         &mut self,
-        prev: &mut Option<Op>,
+        prev: &mut Option<FusedCopy>,
         copy_op: Op,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
@@ -424,7 +448,7 @@ impl FuncTranslator {
     ///
     /// Returns `Some` if `prev` and `copy_op` was successfully fused.
     /// Returns `None` otherwise.
-    fn try_fuse_copy_if_any(prev: Option<Op>, copy_op: Op) -> Option<Op> {
+    fn try_fuse_copy_if_any(prev: Option<FusedCopy>, copy_op: Op) -> Option<FusedCopy> {
         let (new_results, new_values, new_len) = match copy_op {
             Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
             #[cfg(feature = "simd")]
@@ -442,7 +466,7 @@ impl FuncTranslator {
             _ => return None,
         };
         if prev.is_none() {
-            return Some(Op::copy_span_asc(new_results, new_values, new_len));
+            return Some(FusedCopy::new(new_results, new_values, new_len));
         }
         if let Some(fused) = Self::try_fuse_copy_asc(prev, new_results, new_values, new_len) {
             return Some(fused);
@@ -458,28 +482,21 @@ impl FuncTranslator {
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_asc(
-        prev: Option<Op>,
+        prev: Option<FusedCopy>,
         new_results: SlotSpan,
         new_values: SlotSpan,
         new_len: u16,
-    ) -> Option<Op> {
-        let Op::CopySpanAsc {
-            results,
-            values,
-            len,
-        } = prev?
-        else {
-            return None;
-        };
-        let can_fuse_asc = new_results.head() == results.head().next_n(len)
-            && new_values.head() == values.head().next_n(len);
+    ) -> Option<FusedCopy> {
+        let prev = prev?;
+        let can_fuse_asc = new_results.head() == prev.results.head().next_n(prev.len)
+            && new_values.head() == prev.values.head().next_n(prev.len);
         if can_fuse_asc {
             // Case: copy fusion in ascending slot order can be applied.
-            return Some(Op::CopySpanAsc {
-                results,
-                values,
-                len: len + new_len,
-            });
+            return Some(FusedCopy::new(
+                prev.results,
+                prev.values,
+                prev.len + new_len,
+            ));
         }
         None
     }
@@ -488,28 +505,17 @@ impl FuncTranslator {
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_des(
-        prev: Option<Op>,
+        prev: Option<FusedCopy>,
         new_results: SlotSpan,
         new_values: SlotSpan,
         new_len: u16,
-    ) -> Option<Op> {
-        let Op::CopySpanAsc {
-            results,
-            values,
-            len,
-        } = prev?
-        else {
-            return None;
-        };
-        let can_fuse_des = new_results.head() == results.head().prev_n(new_len)
-            && new_values.head() == values.head().prev_n(new_len);
+    ) -> Option<FusedCopy> {
+        let prev = prev?;
+        let can_fuse_des = new_results.head() == prev.results.head().prev_n(new_len)
+            && new_values.head() == prev.values.head().prev_n(new_len);
         if can_fuse_des {
             // Case: copy fusion in ascending slot order can be applied.
-            return Some(Op::CopySpanAsc {
-                results: new_results,
-                values: new_values,
-                len: len + new_len,
-            });
+            return Some(FusedCopy::new(new_results, new_values, prev.len + new_len));
         }
         None
     }
@@ -517,30 +523,23 @@ impl FuncTranslator {
     /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
     fn encode_fused_copy_op_if_any(
         &mut self,
-        copy_op: Option<Op>,
+        fused_copy: Option<FusedCopy>,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let Some(copy_op) = copy_op else {
+        let Some(fused_copy) = fused_copy else {
             return Ok(());
         };
-        // Note: we only care about `CopySpanAsc` and not `CopySpanDes` because during fusion
-        //       we only ever memorize `CopySpanAsc` since we can easily restore slot order here.
-        let copy_op = 'op: {
-            let Op::CopySpanAsc {
-                results,
-                values,
-                len,
-            } = copy_op
-            else {
-                break 'op copy_op;
-            };
-            match len {
-                1 => Op::u64_copy_ss(results.head(), values.head()),
-                #[cfg(feature = "simd")]
-                2 => Op::v128_copy_ss(results.head(), values.head()),
-                _ if results < values => Op::copy_span_asc(results, values, len),
-                _ => Op::copy_span_des(results, values, len),
-            }
+        let FusedCopy {
+            results,
+            values,
+            len,
+        } = fused_copy;
+        let copy_op = match len {
+            1 => Op::u64_copy_ss(results.head(), values.head()),
+            #[cfg(feature = "simd")]
+            2 => Op::v128_copy_ss(results.head(), values.head()),
+            _ if results < values => Op::copy_span_asc(results, values, len),
+            _ => Op::copy_span_des(results, values, len),
         };
         self.instrs
             .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
