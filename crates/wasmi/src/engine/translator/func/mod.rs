@@ -416,6 +416,7 @@ impl FuncTranslator {
     fn copy_branch_params_temps_fuse(prev: Option<Op>, copy_op: Op) -> (Option<Op>, Option<Op>) {
         let (results, values, len) = match copy_op {
             Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
+            #[cfg(feature = "simd")]
             Op::V128Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 2),
             Op::CopySpanAsc {
                 results,
