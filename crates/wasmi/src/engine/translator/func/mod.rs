@@ -409,19 +409,22 @@ impl FuncTranslator {
         copy_op: Op,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        let (new_prev, copy_op) = Self::try_fuse_copy_if_any(prev.take(), copy_op);
-        *prev = new_prev;
-        self.encode_fused_copy_op_if_any(copy_op, fuel_pos)?;
+        let prev_op = prev.take();
+        if let Some(fused_op) = Self::try_fuse_copy_if_any(prev_op, copy_op) {
+            *prev = Some(fused_op);
+            return Ok(());
+        }
+        self.encode_fused_copy_op_if_any(prev_op, fuel_pos)?;
+        self.instrs
+            .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Tries to fuse `prev` and `copy_op` if possible.
     ///
-    /// Returns a pair of [`Option<Op>`]:
-    ///
-    /// - The first item represents the new `prev` after this operation.
-    /// - The second item represents the [`Op`] to be encoded if any.
-    fn try_fuse_copy_if_any(prev: Option<Op>, copy_op: Op) -> (Option<Op>, Option<Op>) {
+    /// Returns `Some` if `prev` and `copy_op` was successfully fused.
+    /// Returns `None` otherwise.
+    fn try_fuse_copy_if_any(prev: Option<Op>, copy_op: Op) -> Option<Op> {
         let (new_results, new_values, new_len) = match copy_op {
             Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
             #[cfg(feature = "simd")]
@@ -436,17 +439,19 @@ impl FuncTranslator {
                 values,
                 len,
             } => (results, values, len),
-            _ => return (Some(copy_op), prev),
+            _ => return None,
         };
-        let copy_span = Op::copy_span_asc(new_results, new_values, new_len);
+        if prev.is_none() {
+            return Some(Op::copy_span_asc(new_results, new_values, new_len));
+        }
         if let Some(fused) = Self::try_fuse_copy_asc(prev, new_results, new_values, new_len) {
-            return (Some(fused), None);
+            return Some(fused);
         }
         if let Some(fused) = Self::try_fuse_copy_des(prev, new_results, new_values, new_len) {
-            return (Some(fused), None);
+            return Some(fused);
         }
         // Case: copy fusion was not applied.
-        (Some(copy_span), prev)
+        None
     }
 
     /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
