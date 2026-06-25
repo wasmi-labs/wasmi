@@ -442,7 +442,7 @@ impl FusedCopy {
 }
 
 impl FuncTranslator {
-    /// Encodes `copy_or` or fuses it with `prev` if possible.
+    /// Encodes `copy_op` or fuses it with `prev` if possible.
     fn encode_copy_or_fuse_sx(
         &mut self,
         prev: &mut Option<FusedCopy>,
@@ -462,8 +462,11 @@ impl FuncTranslator {
 
     /// Tries to fuse `prev` and `copy_op` if possible.
     ///
-    /// Returns `Some` if `prev` and `copy_op` was successfully fused.
-    /// Returns `None` otherwise.
+    /// # Returns
+    /// 
+    /// - `Some` if `prev` and `copy_op` was successfully fused.
+    /// - `Some` if `prev` was `None` and `copy_op` could be fused.
+    /// - `None` otherwise.
     fn try_fuse_copy_if_any(prev: Option<FusedCopy>, copy_op: Op) -> Option<FusedCopy> {
         let (new_results, new_values, new_len) = match copy_op {
             Op::U64Copy_Ss { result, value } => (SlotSpan::new(result), SlotSpan::new(value), 1),
@@ -517,7 +520,7 @@ impl FuncTranslator {
         None
     }
 
-    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
+    /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in descending slot-order.
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_des(
@@ -530,7 +533,7 @@ impl FuncTranslator {
         let can_fuse_des = new_results.head() == prev.results.head().prev_n(new_len)
             && new_values.head() == prev.values.head().prev_n(new_len);
         if can_fuse_des {
-            // Case: copy fusion in ascending slot order can be applied.
+            // Case: copy fusion in descending slot order can be applied.
             return Some(FusedCopy::new(new_results, new_values, prev.len + new_len));
         }
         None
