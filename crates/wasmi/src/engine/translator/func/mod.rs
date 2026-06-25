@@ -504,7 +504,7 @@ impl FusedCopy {
 
     /// Lowers `self` back into an [`Op`] for encoding.
     ///
-    /// This returns the an most efficient [`Op`] that preserves copy semantics.
+    /// This returns the most efficient [`Op`] that preserves copy semantics.
     pub fn into_op(self) -> Op {
         let Self {
             results,
