@@ -502,19 +502,15 @@ impl FuncTranslator {
     /// Otherwise returns `None`.
     fn try_fuse_copy_asc(
         prev: FusedCopy,
-        new_results: SlotSpan,
-        new_values: SlotSpan,
-        new_len: u16,
+        results: SlotSpan,
+        values: SlotSpan,
+        len: u16,
     ) -> Option<FusedCopy> {
-        let can_fuse_asc = new_results.head() == prev.results.head().next_n(prev.len)
-            && new_values.head() == prev.values.head().next_n(prev.len);
-        if can_fuse_asc {
+        let can_fuse = results.head() == prev.results.head().next_n(prev.len)
+            && values.head() == prev.values.head().next_n(prev.len);
+        if can_fuse {
             // Case: copy fusion in ascending slot order can be applied.
-            return Some(FusedCopy::new(
-                prev.results,
-                prev.values,
-                prev.len + new_len,
-            ));
+            return Some(FusedCopy::new(prev.results, prev.values, prev.len + len));
         }
         None
     }
@@ -524,15 +520,15 @@ impl FuncTranslator {
     /// Otherwise returns `None`.
     fn try_fuse_copy_des(
         prev: FusedCopy,
-        new_results: SlotSpan,
-        new_values: SlotSpan,
-        new_len: u16,
+        results: SlotSpan,
+        values: SlotSpan,
+        len: u16,
     ) -> Option<FusedCopy> {
-        let can_fuse_des = new_results.head() == prev.results.head().prev_n(new_len)
-            && new_values.head() == prev.values.head().prev_n(new_len);
-        if can_fuse_des {
+        let can_fuse = results.head() == prev.results.head().prev_n(len)
+            && values.head() == prev.values.head().prev_n(len);
+        if can_fuse {
             // Case: copy fusion in descending slot order can be applied.
-            return Some(FusedCopy::new(new_results, new_values, prev.len + new_len));
+            return Some(FusedCopy::new(results, values, prev.len + len));
         }
         None
     }
