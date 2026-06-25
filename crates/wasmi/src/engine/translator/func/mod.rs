@@ -483,39 +483,25 @@ impl FuncTranslator {
         };
         // Note: we only care about `CopySpanAsc` and not `CopySpanDes` because during fusion
         //       we only ever memorize `CopySpanAsc` since we can easily restore slot order here.
-        let lowered_op = match copy_op {
-            Op::CopySpanAsc {
-                results,
-                values,
-                len: 1,
-            } => {
-                let result = results.head();
-                let value = values.head();
-                Op::u64_copy_ss(result, value)
-            }
-            #[cfg(feature = "simd")]
-            Op::CopySpanAsc {
-                results,
-                values,
-                len: 2,
-            } => {
-                // Note: `copy_span_asc` with `len = 2` is equivalent to `v128_copy_ss` but less efficient.
-                let result = results.head();
-                let value = values.head();
-                Op::v128_copy_ss(result, value)
-            }
-            Op::CopySpanAsc {
+        let copy_op = 'op: {
+            let Op::CopySpanAsc {
                 results,
                 values,
                 len,
-            } => match results < values {
-                true => Op::copy_span_asc(results, values, len),
-                false => Op::copy_span_des(results, values, len),
-            },
-            op => op,
+            } = copy_op
+            else {
+                break 'op copy_op;
+            };
+            match len {
+                1 => Op::u64_copy_ss(results.head(), values.head()),
+                #[cfg(feature = "simd")]
+                2 => Op::v128_copy_ss(results.head(), values.head()),
+                _ if results < values => Op::copy_span_asc(results, values, len),
+                _ => Op::copy_span_des(results, values, len),
+            }
         };
         self.instrs
-            .encode_op(lowered_op, fuel_pos, FuelCostsProvider::base)?;
+            .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
         Ok(())
     }
 
