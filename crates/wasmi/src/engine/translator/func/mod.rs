@@ -450,7 +450,7 @@ impl FuncTranslator {
     }
 
     /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
-    /// 
+    ///
     /// Otherwise returns `None`.
     fn try_fuse_asc(
         prev: Option<Op>,
@@ -480,7 +480,7 @@ impl FuncTranslator {
     }
 
     /// Returns `Some` if `prev` and the `new` copy-span [`Op`] can be fused in ascending slot-order.
-    /// 
+    ///
     /// Otherwise returns `None`.
     fn try_fuse_des(
         prev: Option<Op>,
