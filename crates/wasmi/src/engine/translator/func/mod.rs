@@ -401,6 +401,22 @@ impl FuncTranslator {
         self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
         Ok(())
     }
+
+    /// Copies the branch params that are expected in their respective registers.
+    ///
+    /// Part of [`Self::copy_branch_params`].
+    fn copy_branch_params_regs(
+        &mut self,
+        params: BranchParams,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        for (depth, kind) in params.regs().iter().enumerate() {
+            let value = self.stack.peek(depth);
+            debug_assert!(kind.matches_ty(value.ty()));
+            self.encode_copy_rx_op(value, fuel_pos)?;
+        }
+        Ok(())
+    }
 }
 
 /// A memorized fused copy [`Op`] used by [`FuncTranslator::encode_copy_or_fuse_sx`].
@@ -543,22 +559,6 @@ impl FuncTranslator {
         };
         self.instrs
             .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
-        Ok(())
-    }
-
-    /// Copies the branch params that are expected in their respective registers.
-    ///
-    /// Part of [`Self::copy_branch_params`].
-    fn copy_branch_params_regs(
-        &mut self,
-        params: BranchParams,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
-        for (depth, kind) in params.regs().iter().enumerate() {
-            let value = self.stack.peek(depth);
-            debug_assert!(kind.matches_ty(value.ty()));
-            self.encode_copy_rx_op(value, fuel_pos)?;
-        }
         Ok(())
     }
 
