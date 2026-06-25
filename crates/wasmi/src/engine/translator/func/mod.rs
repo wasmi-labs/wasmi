@@ -1569,15 +1569,22 @@ impl FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         let mut params_start = self.stack.next_temp_slots();
         let mut params_len: u16 = 0;
+        let mut prev = None;
         for _ in 0..ty.len_params() {
-            let operand = self.stack.pop();
-            let slots = operand.temp_slots();
+            let param = self.stack.pop();
+            let slots = param.temp_slots();
             params_start = slots.span();
             params_len = params_len
                 .checked_add(slots.len())
                 .ok_or(TranslationError::AllocatedTooManySlots)?;
-            self.copy_operand_to_temp(operand, fuel_pos)?;
+            let result = slots.head();
+            let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? else {
+                continue;
+            };
+            self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
         }
+        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
+        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
         let params = BoundedSlotSpan::new(params_start, params_len);
         for result in ty.results() {
             self.stack.push_temp(*result, Allocation::None)?;
