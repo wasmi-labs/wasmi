@@ -1567,17 +1567,22 @@ impl FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         self.preserve_regs(fuel_pos)?;
         let fuel_pos = self.stack.fuel_pos();
-        let mut params_start = self.stack.next_temp_slots();
+        let params_start = match ty.len_params() {
+            0 => self.stack.next_temp_slots(),
+            n => {
+                let first_param = self.stack.peek(usize::from(n) - 1);
+                first_param.temp_slots().span()
+            }
+        };
         let mut params_len: u16 = 0;
         let mut prev = None;
-        for _ in 0..ty.len_params() {
-            let param = self.stack.pop();
-            let slots = param.temp_slots();
-            params_start = slots.span();
+        for depth in (0..ty.len_params()).rev() {
+            let param = self.stack.peek(depth.into());
+            let temp_slots = param.temp_slots();
             params_len = params_len
-                .checked_add(slots.len())
+                .checked_add(temp_slots.len())
                 .ok_or(TranslationError::AllocatedTooManySlots)?;
-            let result = slots.head();
+            let result = temp_slots.head();
             let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? else {
                 continue;
             };
@@ -1586,6 +1591,9 @@ impl FuncTranslator {
         // The `prev` might still contain `Some` at this point, so we have to "flush" it.
         self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
         let params = BoundedSlotSpan::new(params_start, params_len);
+        for _ in 0..ty.len_params() {
+            self.stack.pop();
+        }
         for result in ty.results() {
             self.stack.push_temp(*result, Allocation::None)?;
         }
