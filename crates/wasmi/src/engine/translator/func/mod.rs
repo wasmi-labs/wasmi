@@ -423,11 +423,11 @@ impl FuncTranslator {
 #[derive(Copy, Clone)]
 struct FusedCopy {
     /// The result slots of the fused copy [`Op`].
-    pub results: SlotSpan,
+    results: SlotSpan,
     /// The value slots of the fused copy [`Op`].
-    pub values: SlotSpan,
+    values: SlotSpan,
     /// The number of copied slots of the fused copy [`Op`].
-    pub len: u16,
+    len: u16,
 }
 
 impl FusedCopy {
