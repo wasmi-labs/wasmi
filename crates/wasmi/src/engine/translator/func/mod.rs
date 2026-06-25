@@ -431,6 +431,15 @@ struct FusedCopy {
 }
 
 impl FusedCopy {
+    /// Creates a new [`FusedCopy`] from its raw parts.
+    fn new(results: SlotSpan, values: SlotSpan, len: u16) -> Self {
+        Self {
+            results,
+            values,
+            len,
+        }
+    }
+
     /// Returns `Some` if `op` is a copy [`Op`] that can be fused.
     ///
     /// Otherwise returns `None`.
@@ -508,15 +517,6 @@ impl FusedCopy {
             2 => Op::v128_copy_ss(results.head(), values.head()),
             _ if results < values => Op::copy_span_asc(results, values, len),
             _ => Op::copy_span_des(results, values, len),
-        }
-    }
-
-    /// Creates a new [`FusedCopy`] from its raw parts.
-    pub fn new(results: SlotSpan, values: SlotSpan, len: u16) -> Self {
-        Self {
-            results,
-            values,
-            len,
         }
     }
 }
