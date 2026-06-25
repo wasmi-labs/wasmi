@@ -463,7 +463,7 @@ impl FuncTranslator {
     /// Tries to fuse `prev` and `copy_op` if possible.
     ///
     /// # Returns
-    /// 
+    ///
     /// - `Some` if `prev` and `copy_op` was successfully fused.
     /// - `Some` if `prev` was `None` and `copy_op` could be fused.
     /// - `None` otherwise.
@@ -484,9 +484,9 @@ impl FuncTranslator {
             } => (results, values, len),
             _ => return None,
         };
-        if prev.is_none() {
+        let Some(prev) = prev else {
             return Some(FusedCopy::new(new_results, new_values, new_len));
-        }
+        };
         if let Some(fused) = Self::try_fuse_copy_asc(prev, new_results, new_values, new_len) {
             return Some(fused);
         }
@@ -501,12 +501,11 @@ impl FuncTranslator {
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_asc(
-        prev: Option<FusedCopy>,
+        prev: FusedCopy,
         new_results: SlotSpan,
         new_values: SlotSpan,
         new_len: u16,
     ) -> Option<FusedCopy> {
-        let prev = prev?;
         let can_fuse_asc = new_results.head() == prev.results.head().next_n(prev.len)
             && new_values.head() == prev.values.head().next_n(prev.len);
         if can_fuse_asc {
@@ -524,12 +523,11 @@ impl FuncTranslator {
     ///
     /// Otherwise returns `None`.
     fn try_fuse_copy_des(
-        prev: Option<FusedCopy>,
+        prev: FusedCopy,
         new_results: SlotSpan,
         new_values: SlotSpan,
         new_len: u16,
     ) -> Option<FusedCopy> {
-        let prev = prev?;
         let can_fuse_des = new_results.head() == prev.results.head().prev_n(new_len)
             && new_values.head() == prev.values.head().prev_n(new_len);
         if can_fuse_des {
