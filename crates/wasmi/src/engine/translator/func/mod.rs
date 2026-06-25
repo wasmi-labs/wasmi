@@ -481,7 +481,7 @@ impl FuncTranslator {
                 values,
                 len: 2,
             } => {
-                // Note: `copy_span_asc` with `len = 2` is equivalent to `v128_copy_ss` but less efficient.`
+                // Note: `copy_span_asc` with `len = 2` is equivalent to `v128_copy_ss` but less efficient.
                 let result = results.head();
                 let value = values.head();
                 Op::v128_copy_ss(result, value)
