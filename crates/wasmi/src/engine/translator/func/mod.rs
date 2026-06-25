@@ -481,6 +481,8 @@ impl FuncTranslator {
         let Some(copy_op) = copy_op else {
             return Ok(());
         };
+        // Note: we only care about `CopySpanAsc` and not `CopySpanDes` because during fusion
+        //       we only ever memorize `CopySpanAsc` since we can easily restore slot order here.
         let lowered_op = match copy_op {
             Op::CopySpanAsc {
                 results,
