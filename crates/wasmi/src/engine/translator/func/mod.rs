@@ -532,7 +532,7 @@ impl FuncTranslator {
         let prev_fused = prev.take();
         let Some(new) = FusedCopy::from_op(copy_op) else {
             // Case: `copy_op` is not fusable => just encode it directly.
-            // Note: we need to flush `prev` to uphold order to emitted copy ops.
+            // Note: we need to flush `prev` to uphold order of emitted copy ops.
             self.encode_fused_copy_op_if_any(prev_fused, fuel_pos)?;
             self.instrs
                 .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
