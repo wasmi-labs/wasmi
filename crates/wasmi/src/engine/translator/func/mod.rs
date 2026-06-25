@@ -501,8 +501,8 @@ impl FuncTranslator {
         if can_fuse_des {
             // Case: copy fusion in ascending slot order can be applied.
             return Some(Op::CopySpanAsc {
-                results,
-                values,
+                results: new_results,
+                values: new_values,
                 len: len + new_len,
             });
         }
