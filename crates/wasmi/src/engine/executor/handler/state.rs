@@ -871,8 +871,8 @@ impl Stack {
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
-    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
-        let (ip, start, changed_instance) = self.frames.pop()?;
+    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst, Ireg, Freg32, Freg64)> {
+        let (ip, start, changed_instance, ireg, freg32, freg64) = self.frames.pop()?;
         let sp = self.values.sp_or_dangling(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
@@ -881,7 +881,7 @@ impl Stack {
             }
             None => (mem0, mem0_len, instance),
         };
-        Some((ip, sp, mem0, mem0_len, instance))
+        Some((ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64))
     }
 
     /// Adjusts `self` for a function tail call.
@@ -1305,7 +1305,7 @@ impl CallStack {
     ) -> (SpOffset, Option<(Ip, SpOffset, Inst)>) {
         let callee_start = self.top_start();
         let caller = match self.pop() {
-            Some((ip, start, instance)) => {
+            Some((ip, start, instance, _ireg, _freg32, _freg64)) => {
                 let instance = instance.unwrap_or(callee_instance);
                 Some((ip, start, instance))
             }
@@ -1351,7 +1351,7 @@ impl CallStack {
     }
 
     /// Adjusts `self` after returning from a function.
-    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>)> {
+    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>, Ireg, Freg32, Freg64)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
         };
@@ -1361,7 +1361,10 @@ impl CallStack {
         if let Some(instance) = popped.instance {
             self.instance = Some(instance);
         }
-        Some((ip, start, popped.instance))
+        let ireg = popped.ireg;
+        let freg32 = popped.freg32;
+        let freg64 = popped.freg64;
+        Some((ip, start, popped.instance, ireg, freg32, freg64))
     }
 
     /// Adjusts `self` for a function tail call.

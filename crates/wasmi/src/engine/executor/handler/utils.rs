@@ -514,11 +514,11 @@ pub fn exec_return(
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
+    _ireg: Ireg,
+    _freg32: Freg32,
+    _freg64: Freg64,
 ) -> Done {
-    let Some((ip, sp, mem0, mem0_len, instance)) =
+    let Some((ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)) =
         state.stack.pop_frame(state.store, mem0, mem0_len, instance)
     else {
         // No more frames on the call stack -> break out of execution!
