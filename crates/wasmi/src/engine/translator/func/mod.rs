@@ -642,10 +642,55 @@ impl FuncTranslator {
         if result == value {
             return None;
         }
-        let op = match ty {
-            #[cfg(feature = "simd")]
-            ValType::V128 => Op::v128_copy_ss(result, value),
-            _ => Op::u64_copy_ss(result, value),
+        #[cfg(feature = "simd")]
+        if matches!(ty, ValType::V128) {
+            return Some(Op::v128_copy_ss(result, value));
+        }
+        if let Some(op) = Self::try_select_copy_ssn_op(result, value) {
+            return Some(op);
+        }
+        if let Some(op) = Self::try_select_copy_sns_op(result, value) {
+            return Some(op);
+        }
+        Some(Op::u64_copy_ss(result, value))
+    }
+
+    /// Returns the [`Op`] to copy `value` into `result` if `result` in `0..10`.
+    ///
+    /// Otherwise returns `None`.
+    fn try_select_copy_sns_op(result: Slot, value: Slot) -> Option<Op> {
+        let op = match u16::from(result) {
+            0 => Op::u64_copy_s0s(value),
+            1 => Op::u64_copy_s1s(value),
+            2 => Op::u64_copy_s2s(value),
+            3 => Op::u64_copy_s3s(value),
+            4 => Op::u64_copy_s4s(value),
+            5 => Op::u64_copy_s5s(value),
+            6 => Op::u64_copy_s6s(value),
+            7 => Op::u64_copy_s7s(value),
+            8 => Op::u64_copy_s8s(value),
+            9 => Op::u64_copy_s9s(value),
+            _ => return None,
+        };
+        Some(op)
+    }
+
+    /// Returns the [`Op`] to copy `value` into `result` if `value` in `0..10`.
+    ///
+    /// Otherwise returns `None`.
+    fn try_select_copy_ssn_op(result: Slot, value: Slot) -> Option<Op> {
+        let op = match u16::from(value) {
+            0 => Op::u64_copy_ss0(result),
+            1 => Op::u64_copy_ss1(result),
+            2 => Op::u64_copy_ss2(result),
+            3 => Op::u64_copy_ss3(result),
+            4 => Op::u64_copy_ss4(result),
+            5 => Op::u64_copy_ss5(result),
+            6 => Op::u64_copy_ss6(result),
+            7 => Op::u64_copy_ss7(result),
+            8 => Op::u64_copy_ss8(result),
+            9 => Op::u64_copy_ss9(result),
+            _ => return None,
         };
         Some(op)
     }
