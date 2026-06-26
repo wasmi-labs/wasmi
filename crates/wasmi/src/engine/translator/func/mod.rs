@@ -1,6 +1,7 @@
 #[macro_use]
 mod utils;
 mod encoder;
+mod fuse_copy;
 mod labels;
 mod layout;
 mod locals;
@@ -15,6 +16,7 @@ use self::stack::ImmediateOperand;
 
 use self::{
     encoder::{OpEncoder, OpEncoderAllocations, Pos},
+    fuse_copy::FusedCopy,
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
@@ -331,32 +333,6 @@ impl FuncTranslator {
         &self.engine
     }
 
-    /// Copy the top-most `len` operands to [`Operand::Temp`] values.
-    ///
-    /// Returns a [`SlotSpan`] to the copied operands.
-    ///
-    /// # Note
-    ///
-    /// - The top-most `len` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
-    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn move_operands_to_temp(
-        &mut self,
-        len: usize,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<BoundedSlotSpan, Error> {
-        debug_assert!(len > 0);
-        let mut copied_cells: u16 = 0;
-        for n in 0..len {
-            let operand = self.stack.operand_to_temp(n);
-            copied_cells = copied_cells
-                .checked_add(operand.temp_slots().len())
-                .ok_or(TranslationError::SlotAccessOutOfBounds)?;
-            self.copy_operand_to_temp(operand, fuel_pos)?;
-        }
-        let first = self.stack.peek(len - 1).temp_slots().head();
-        Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
-    }
-
     /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
     ///
     /// # Note
@@ -385,16 +361,8 @@ impl FuncTranslator {
         if len_temps == 0 {
             return Ok(());
         }
-        let mut result = params.temp_slots().head();
-        let start = params.len();
-        let end = params.len_regs();
-        for depth in (end..start).rev() {
-            let value = self.stack.peek(depth.into());
-            let ty = value.ty();
-            self.encode_copy_sx_op(result, value, fuel_pos)?;
-            // TODO: enhance with copy op-fusion and support for `copy_span_{asc,des}`.
-            result = result.next_n(required_cells_for_ty(ty));
-        }
+        let dst = params.temp_slots();
+        self.copy_operands_to_dst(dst.span(), params.len_temps(), params.len_regs(), fuel_pos)?;
         Ok(())
     }
 
@@ -411,6 +379,53 @@ impl FuncTranslator {
             debug_assert!(kind.matches_ty(value.ty()));
             self.encode_copy_rx_op(value, fuel_pos)?;
         }
+        Ok(())
+    }
+
+    /// Encodes `copy_op` or fuses it with `prev` if possible.
+    fn encode_copy_or_fuse_sx(
+        &mut self,
+        prev: &mut Option<FusedCopy>,
+        copy_op: Op,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let prev_fused = prev.take();
+        let Some(new) = FusedCopy::from_op(copy_op) else {
+            // Case: `copy_op` is not fusable => just encode it directly.
+            // Note: we need to flush `prev` to uphold order of emitted copy ops.
+            self.encode_fused_copy_op_if_any(prev_fused, fuel_pos)?;
+            self.instrs
+                .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
+            return Ok(());
+        };
+        let Some(prev_fused) = prev_fused else {
+            // Case: no previous fused => just memorize `copy_op` for later.
+            *prev = Some(new);
+            return Ok(());
+        };
+        if let Some(new_fused) = prev_fused.try_fuse(new) {
+            // Case: successfully fused => memorize fused op for later.
+            *prev = Some(new_fused);
+            return Ok(());
+        }
+        // Case: couldn't fuse => emit fused-so-far and start new fusion candidate.
+        self.instrs
+            .encode_op(prev_fused.into_op(), fuel_pos, FuelCostsProvider::base)?;
+        *prev = Some(new);
+        Ok(())
+    }
+
+    /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
+    fn encode_fused_copy_op_if_any(
+        &mut self,
+        fused_copy: Option<FusedCopy>,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let Some(copy_op) = fused_copy.map(FusedCopy::into_op) else {
+            return Ok(());
+        };
+        self.instrs
+            .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -718,6 +733,49 @@ impl FuncTranslator {
         let result = operand.temp_slots().head();
         self.encode_copy_sx_op(result, operand, fuel_pos)?;
         Ok(result)
+    }
+
+    /// Copies the top `len` operands on the stack to their respective stack slots.
+    ///
+    /// Returns a [`BoundedSlotSpan`] of the stack slots holding the copy results.
+    fn copy_operands_to_temp(
+        &mut self,
+        len: u16,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<BoundedSlotSpan, Error> {
+        if len == 0 {
+            return Ok(BoundedSlotSpan::new(self.stack.next_temp_slots(), 0));
+        }
+        let dst = self.stack.peek(usize::from(len) - 1).temp_slots().span();
+        self.copy_operands_to_dst(dst, len, 0, fuel_pos)
+    }
+
+    /// Skips the top `skip` operands and copies the remaining top `len` operands to `dst`.
+    ///
+    /// Returns `dst` extended with information about the number of copied cells.
+    fn copy_operands_to_dst(
+        &mut self,
+        dst: SlotSpan,
+        len: u16,
+        skip: u16,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<BoundedSlotSpan, Error> {
+        let mut len_cells: u16 = 0;
+        let mut prev = None;
+        for depth in (skip..len + skip).rev() {
+            let value = self.stack.peek(depth.into());
+            let result = dst.head().next_n(len_cells);
+            if let Some(copy_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
+                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
+            };
+            let copied_cells = required_cells_for_ty(value.ty());
+            len_cells = len_cells
+                .checked_add(copied_cells)
+                .ok_or(TranslationError::AllocatedTooManySlots)?;
+        }
+        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
+        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+        Ok(BoundedSlotSpan::new(dst, len_cells))
     }
 
     /// Copies the `operand` to its temporary [`Slot`] if it is an immediate.
@@ -1033,23 +1091,19 @@ impl FuncTranslator {
     /// Encodes a generic return operator.
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
-        let instr = match len_results {
+        let op = match len_results {
             0 => Op::Return {},
-            1 => self.encode_return_value(fuel_pos)?,
-            _ => {
-                let len_results = usize::from(len_results);
-                let results = self.move_operands_to_temp(len_results, fuel_pos)?;
-                Self::make_return_span(results)
-            }
+            1 => self.prepare_return_1_op(fuel_pos)?,
+            n => self.prepare_return_n_op(n, fuel_pos)?,
         };
-        let instr = self
+        let pos = self
             .instrs
-            .encode_op(instr, fuel_pos, FuelCostsProvider::base)?;
-        Ok(instr)
+            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        Ok(pos)
     }
 
-    /// Encodes a return operator that returns a single value.
-    fn encode_return_value(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
+    /// Prepares to encode a return operator returning a single value.
+    fn prepare_return_1_op(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
         let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
             ValType::V128 => {
                 let returned = BoundedSlotSpan::new(SlotSpan::new(slot), 2);
@@ -1089,6 +1143,20 @@ impl FuncTranslator {
             },
         };
         Ok(op)
+    }
+
+    /// Prepares to encode a return operator returning `n` (`n > 1`) values.
+    ///
+    /// This will attempt to copy the `n` values on top of the stack to the
+    /// stack slots required for returning to the caller.
+    fn prepare_return_n_op(
+        &mut self,
+        len: u16,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<Op, Error> {
+        debug_assert!(len > 1);
+        let span = self.copy_operands_to_temp(len, fuel_pos)?;
+        Ok(Self::make_return_span(span))
     }
 
     /// Translates the end of a Wasm `block` control frame.
@@ -1503,18 +1571,10 @@ impl FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         self.preserve_regs(fuel_pos)?;
         let fuel_pos = self.stack.fuel_pos();
-        let mut params_start = self.stack.next_temp_slots();
-        let mut params_len: u16 = 0;
+        let params = self.copy_operands_to_temp(ty.len_params(), fuel_pos)?;
         for _ in 0..ty.len_params() {
-            let operand = self.stack.pop();
-            let slots = operand.temp_slots();
-            params_start = slots.span();
-            params_len = params_len
-                .checked_add(slots.len())
-                .ok_or(TranslationError::AllocatedTooManySlots)?;
-            self.copy_operand_to_temp(operand, fuel_pos)?;
+            self.stack.pop();
         }
-        let params = BoundedSlotSpan::new(params_start, params_len);
         for result in ty.results() {
             self.stack.push_temp(*result, Allocation::None)?;
         }
