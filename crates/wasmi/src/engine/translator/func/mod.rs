@@ -1167,11 +1167,7 @@ impl FuncTranslator {
     ) -> Result<Op, Error> {
         debug_assert!(len > 1);
         let span = self.copy_operands_to_temp(len, fuel_pos)?;
-        let op = match u16::from(span.head()) {
-            0 => Op::Return {},
-            _ => Op::return_span(span),
-        };
-        Ok(op)
+        Ok(Self::make_return_span(span))
     }
 
     /// Translates the end of a Wasm `block` control frame.
