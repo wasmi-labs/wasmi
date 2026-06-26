@@ -550,15 +550,15 @@ impl FuncTranslator {
     ) -> Result<Option<Op>, Error> {
         let ty = value.ty();
         let op = match value.resolve(layout)? {
-            ResolvedOperand::Reg(ty) => Self::select_copy_sr_op(result, ty)?,
-            ResolvedOperand::Slot(value) => return Self::select_copy_ss_op(result, value, ty),
-            ResolvedOperand::Immediate(value) => Self::select_copy_si_op(result, value)?,
+            ResolvedOperand::Reg(ty) => Self::select_copy_sr_op(result, ty),
+            ResolvedOperand::Slot(value) => return Ok(Self::select_copy_ss_op(result, value, ty)),
+            ResolvedOperand::Immediate(value) => Self::select_copy_si_op(result, value),
         };
         Ok(Some(op))
     }
 
     /// Returns the [`Op`] to copy the register `value` into `result` for `ty`.
-    fn select_copy_sr_op(result: Slot, ty: ValType) -> Result<Op, Error> {
+    fn select_copy_sr_op(result: Slot, ty: ValType) -> Op {
         match ty {
             | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
                 Self::select_u64_copy_sr_op(result)
@@ -570,8 +570,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`Op`] to copy the register `value` of type `u64` into `result`.
-    fn select_u64_copy_sr_op(result: Slot) -> Result<Op, Error> {
-        let op = match u16::from(result) {
+    fn select_u64_copy_sr_op(result: Slot) -> Op {
+        match u16::from(result) {
             0 => Op::u64_copy_s0r(),
             1 => Op::u64_copy_s1r(),
             2 => Op::u64_copy_s2r(),
@@ -583,13 +583,12 @@ impl FuncTranslator {
             8 => Op::u64_copy_s8r(),
             9 => Op::u64_copy_s9r(),
             _ => Op::u64_copy_sr(result),
-        };
-        Ok(op)
+        }
     }
 
     /// Returns the [`Op`] to copy the register `value` of type `f32` into `result`.
-    fn select_f32_copy_sr_op(result: Slot) -> Result<Op, Error> {
-        let op = match u16::from(result) {
+    fn select_f32_copy_sr_op(result: Slot) -> Op {
+        match u16::from(result) {
             0 => Op::f32_copy_s0r(),
             1 => Op::f32_copy_s1r(),
             2 => Op::f32_copy_s2r(),
@@ -601,13 +600,12 @@ impl FuncTranslator {
             8 => Op::f32_copy_s8r(),
             9 => Op::f32_copy_s9r(),
             _ => Op::f32_copy_sr(result),
-        };
-        Ok(op)
+        }
     }
 
     /// Returns the [`Op`] to copy the register `value` of type `f64` into `result`.
-    fn select_f64_copy_sr_op(result: Slot) -> Result<Op, Error> {
-        let op = match u16::from(result) {
+    fn select_f64_copy_sr_op(result: Slot) -> Op {
+        match u16::from(result) {
             0 => Op::f64_copy_s0r(),
             1 => Op::f64_copy_s1r(),
             2 => Op::f64_copy_s2r(),
@@ -619,29 +617,28 @@ impl FuncTranslator {
             8 => Op::f64_copy_s8r(),
             9 => Op::f64_copy_s9r(),
             _ => Op::f64_copy_sr(result),
-        };
-        Ok(op)
+        }
     }
 
     /// Returns the [`Op`] to copy the [`Slot`] `value` into `result`.
     ///
     /// Returns `None` if the `copy` is a no-op.
-    fn select_copy_ss_op(result: Slot, value: Slot, ty: ValType) -> Result<Option<Op>, Error> {
+    fn select_copy_ss_op(result: Slot, value: Slot, ty: ValType) -> Option<Op> {
         if result == value {
-            return Ok(None);
+            return None;
         }
         let op = match ty {
             #[cfg(feature = "simd")]
             ValType::V128 => Op::v128_copy_ss(result, value),
             _ => Op::u64_copy_ss(result, value),
         };
-        Ok(Some(op))
+        Some(op)
     }
 
     /// Returns the [`Op`] to copy the immediate `value` into `result`.
-    fn select_copy_si_op(result: Slot, value: TypedRawVal) -> Result<Op, Error> {
+    fn select_copy_si_op(result: Slot, value: TypedRawVal) -> Op {
         let raw = value.raw();
-        let op = match value.ty() {
+        match value.ty() {
             | ValType::FuncRef | ValType::ExternRef | ValType::I32 | ValType::F32 => {
                 Op::u32_copy_si(result, u32::from(raw))
             }
@@ -650,8 +647,7 @@ impl FuncTranslator {
             | ValType::V128 => Op::v128_copy_si(result, V128::from(raw)),
             #[cfg(not(feature = "simd"))]
             | ValType::V128 => unreachable!(),
-        };
-        Ok(op)
+        }
     }
 
     /// Returns `true` if there is a need to copy branch parameters for the frame at `depth` with the current stack.
@@ -738,7 +734,7 @@ impl FuncTranslator {
             ResolvedOperand::Slot(value) => Location::Slot(value),
             ResolvedOperand::Immediate(value) => {
                 let result = operand.temp_slots().head();
-                let copy_instr = Self::select_copy_si_op(result, value)?;
+                let copy_instr = Self::select_copy_si_op(result, value);
                 let consume_fuel = self.stack.fuel_pos();
                 self.instrs
                     .encode_op(copy_instr, consume_fuel, FuelCostsProvider::base)?;
@@ -766,7 +762,7 @@ impl FuncTranslator {
                 | ValType::V128 => unreachable!(),
             },
             ResolvedOperand::Immediate(value) => {
-                Self::select_copy_si_op(result, TypedRawVal::new(ty, value))?
+                Self::select_copy_si_op(result, TypedRawVal::new(ty, value))
             }
         };
         let fuel_op = self.stack.fuel_pos();
@@ -850,7 +846,7 @@ impl FuncTranslator {
                     self.instrs.drop_staged();
                     fused_op
                 }
-                None => Self::select_copy_sr_op(result, operand.ty())?,
+                None => Self::select_copy_sr_op(result, operand.ty()),
             };
             self.instrs
                 .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
@@ -914,7 +910,7 @@ impl FuncTranslator {
     fn try_push_op_with_result_slot(
         &mut self,
         result_ty: ValType,
-        make_op: impl FnOnce(Slot) -> Result<Option<Op>, Error>,
+        make_op: impl FnOnce(Slot) -> Option<Op>,
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         let fuel_pos = self.stack.fuel_pos();
@@ -923,7 +919,7 @@ impl FuncTranslator {
             .push_temp(result_ty, Allocation::None)?
             .temp_slots()
             .head();
-        if let Some(op) = make_op(result)? {
+        if let Some(op) = make_op(result) {
             self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
         }
         Ok(())
@@ -1269,10 +1265,10 @@ impl FuncTranslator {
             let ty = preserved.ty();
             let result = preserved.temp_slots().head();
             let op = match preserved.in_reg() {
-                true => Self::select_copy_sr_op(result, ty)?,
+                true => Self::select_copy_sr_op(result, ty),
                 false => {
                     let value = self.layout.local_to_slot(preserved)?;
-                    Self::select_copy_ss_op(result, value, ty)?
+                    Self::select_copy_ss_op(result, value, ty)
                         .expect("local preservation must not yield no-op copies")
                 }
             };
@@ -1926,7 +1922,7 @@ impl FuncTranslator {
                                     Self::select_copy_ss_op(result, value, ty)
                                 }
                                 ResolvedOperand::Immediate(value) => {
-                                    Self::select_copy_si_op(result, value.into()).map(Some)
+                                    Some(Self::select_copy_si_op(result, value.into()))
                                 }
                             },
                             FuelCostsProvider::base,
