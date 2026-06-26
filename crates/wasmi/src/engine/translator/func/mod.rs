@@ -333,32 +333,6 @@ impl FuncTranslator {
         &self.engine
     }
 
-    /// Copy the top-most `len` operands to [`Operand::Temp`] values.
-    ///
-    /// Returns a [`SlotSpan`] to the copied operands.
-    ///
-    /// # Note
-    ///
-    /// - The top-most `len` operands on the [`Stack`] will be [`Operand::Temp`] upon completion.
-    /// - Does nothing if an [`Operand`] is already an [`Operand::Temp`].
-    fn move_operands_to_temp(
-        &mut self,
-        len: usize,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<BoundedSlotSpan, Error> {
-        debug_assert!(len > 0);
-        let mut copied_cells: u16 = 0;
-        for n in 0..len {
-            let operand = self.stack.operand_to_temp(n);
-            copied_cells = copied_cells
-                .checked_add(operand.temp_slots().len())
-                .ok_or(TranslationError::SlotAccessOutOfBounds)?;
-            self.copy_operand_to_temp(operand, fuel_pos)?;
-        }
-        let first = self.stack.peek(len - 1).temp_slots().head();
-        Ok(BoundedSlotSpan::new(SlotSpan::new(first), copied_cells))
-    }
-
     /// Emits copy operators to copy all operands to satisfy the [`BranchParams`].
     ///
     /// # Note
@@ -1097,23 +1071,19 @@ impl FuncTranslator {
     /// Encodes a generic return operator.
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
-        let instr = match len_results {
+        let op = match len_results {
             0 => Op::Return {},
-            1 => self.encode_return_value(fuel_pos)?,
-            _ => {
-                let len_results = usize::from(len_results);
-                let results = self.move_operands_to_temp(len_results, fuel_pos)?;
-                Self::make_return_span(results)
-            }
+            1 => self.prepare_return_1_op(fuel_pos)?,
+            n => self.prepare_return_n_op(n.into(), fuel_pos)?,
         };
-        let instr = self
+        let pos = self
             .instrs
-            .encode_op(instr, fuel_pos, FuelCostsProvider::base)?;
-        Ok(instr)
+            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        Ok(pos)
     }
 
-    /// Encodes a return operator that returns a single value.
-    fn encode_return_value(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
+    /// Prepares to encode a return operator returning a single value.
+    fn prepare_return_1_op(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
         let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
             ValType::V128 => {
                 let returned = BoundedSlotSpan::new(SlotSpan::new(slot), 2);
@@ -1151,6 +1121,45 @@ impl FuncTranslator {
                     Self::make_return_span(returned)
                 }
             },
+        };
+        Ok(op)
+    }
+
+    /// Prepares to encode a return operator returning `n` (`n > 1`) values.
+    ///
+    /// This will attemp to copy the `n` values on top of the stack to the
+    /// stack slots required for returning to teh caller.
+    fn prepare_return_n_op(
+        &mut self,
+        len: usize,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<Op, Error> {
+        let start = match len {
+            0 => self.stack.next_temp_slots(),
+            n => self.stack.peek(n - 1).temp_slots().span(),
+        };
+        let mut len_cells: u16 = 0;
+        let mut prev = None;
+        for depth in (0..len).rev() {
+            let param = self.stack.peek(depth);
+            let temp_slots = param.temp_slots();
+            len_cells = len_cells
+                .checked_add(temp_slots.len())
+                .ok_or(TranslationError::AllocatedTooManySlots)?;
+            let result = temp_slots.head();
+            let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? else {
+                continue;
+            };
+            self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
+        }
+        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
+        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+        let op = match u16::from(start.head()) {
+            0 => Op::Return {},
+            _ => {
+                let span = BoundedSlotSpan::new(start, len_cells);
+                Op::return_span(span)
+            }
         };
         Ok(op)
     }
