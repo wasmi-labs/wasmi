@@ -31,7 +31,6 @@ use crate::{
                 call_wasm_or_host,
                 exec_copy_span,
                 exec_copy_span_asc,
-                exec_copy_span_des,
                 exec_return,
                 extract_mem0,
                 fetch_data,
@@ -124,56 +123,6 @@ execution_handler! {
             out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
         }
         dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
-}
-
-execution_handler! {
-    fn copy_span_asc(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::CopySpanAsc {
-                results,
-                values,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        exec_copy_span_asc(sp, results, values, len);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
-}
-
-execution_handler! {
-    fn copy_span_des(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::CopySpanDes {
-                results,
-                values,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        exec_copy_span_des(sp, results, values, len);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
 
