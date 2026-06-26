@@ -153,3 +153,39 @@ fn host_tail_calls_1() {
     assert_eq!(*store.data(), 10);
     assert_eq!(test.call(&mut store, 5).unwrap(), 5 + 10);
 }
+
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn host_tail_call_restores_caller_registers() {
+    // Regression test: when a Wasm function `$b` performs a `return_call` to a host
+    // function, the caller-of-caller `$a` must observe _its own_ accumulator registers
+    // restored after the host function returns — not the registers left behind by `$b`.
+    //
+    // `$a` keeps `x + 1` live in an accumulator register across its call to `$b`,
+    // while `$b` clobbers that register before tail-calling the host function.
+    let wasm = r#"
+        (module
+            (import "host" "ret100" (func $ret100 (result i32)))
+            (func $b (param i32) (result i32)
+                (i32.mul (local.get 0) (local.get 0)) ;; clobbers the accumulator register
+                (drop)
+                (return_call $ret100)
+            )
+            (func (export "test") (param i32) (result i32)
+                (i32.add (local.get 0) (i32.const 1)) ;; register-live across the call to `$b`
+                (call $b (i32.const 7))               ;; clobbers the register, returns 100
+                (i32.add))                            ;; (x + 1) + 100
+        )
+    "#;
+    let engine = Engine::default();
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, ());
+    let mut linker = Linker::new(&engine);
+    linker
+        .func_wrap("host", "ret100", |_caller: Caller<()>| 100_i32)
+        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    let test = instance.get_typed_func::<i32, i32>(&store, "test").unwrap();
+    assert_eq!(test.call(&mut store, 1).unwrap(), (1 + 1) + 100);
+    assert_eq!(test.call(&mut store, 41).unwrap(), (41 + 1) + 100);
+}

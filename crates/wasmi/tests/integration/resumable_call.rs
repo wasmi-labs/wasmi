@@ -201,6 +201,42 @@ fn resumable_call_smoldot_02() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn resumable_call_restores_caller_registers() {
+    // Regression test: a resumable host call leaves the dispatch loop on yield, so the
+    // accumulator registers must be synced into the `Stack` to be restored on resume.
+    // Here `test` keeps `g + 1` live in an accumulator register across the host call and
+    // adds the host result after resuming; a missing register sync corrupts `g + 1`.
+    let (mut store, mut linker) = test_setup(0);
+    linker
+        .func_wrap(
+            "env",
+            "host_fn",
+            |_caller: Caller<'_, TestData>| -> Result<i32, Error> { Err(Error::i32_exit(100)) },
+        )
+        .unwrap();
+    let wasm = r#"
+        (module
+            (import "env" "host_fn" (func $host_fn (result i32)))
+            (global $g (mut i32) (i32.const 5))
+            (func (export "test") (result i32)
+                (i32.add (global.get $g) (i32.const 1)) ;; register-live across the host call
+                (call $host_fn)                          ;; resumable host trap, resumes with 42
+                (i32.add))                               ;; (g + 1) + 42 == 48
+        )
+    "#;
+    let module = Module::new(store.engine(), wasm).unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    let wasm_fn = instance.get_typed_func::<(), i32>(&store, "test").unwrap();
+    let invocation = wasm_fn
+        .call_resumable(&mut store, ())
+        .unwrap_resumable_host_trap();
+    invocation
+        .resume(&mut store, &[Val::I32(42)])
+        .assert_finished_with(|result| result == (5 + 1) + 42);
+}
+
+#[test]
 fn resumable_call_host() {
     let (mut store, _linker) = test_setup(0);
     let host_fn = Func::wrap(&mut store, || -> Result<(), Error> {
