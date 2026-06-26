@@ -1530,17 +1530,16 @@ impl FuncTranslator {
             // No need to encode copies if unreachable.
             return Ok(());
         }
-        if let Some(result) = regs.ireg {
-            self.instrs
-                .encode_op(Op::u64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
-        }
-        if let Some(result) = regs.freg32 {
-            self.instrs
-                .encode_op(Op::f32_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
-        }
-        if let Some(result) = regs.freg64 {
-            self.instrs
-                .encode_op(Op::f64_copy_sr(result), fuel_pos, FuelCostsProvider::base)?;
+        let fuel_costs = FuelCostsProvider::base;
+        let results_and_tys = [
+            regs.ireg.map(|s| (s, ValType::I64)),
+            regs.freg32.map(|s| (s, ValType::F32)),
+            regs.freg64.map(|s| (s, ValType::F64)),
+        ];
+        for reg in results_and_tys {
+            let Some((result, ty)) = reg else { continue };
+            let op = Self::select_copy_sr_op(result, ty);
+            self.instrs.encode_op(op, fuel_pos, fuel_costs)?;
         }
         Ok(())
     }
