@@ -763,23 +763,23 @@ impl FuncTranslator {
             return Ok(BoundedSlotSpan::new(self.stack.next_temp_slots(), 0));
         }
         let dst = self.stack.peek(usize::from(len) - 1).temp_slots().span();
-        self.copy_operands_to_dst(dst, len, fuel_pos)
+        self.copy_operands_to_dst(dst, len, 0, fuel_pos)
     }
 
-    /// Copies the top `len` operands on the stack to to `dst` slot span.
+    /// Skips the top `skip` operands and copies the remaining top `len` operands to `dst`.
     ///
-    /// Returns the `dst` slot span extended with the number of copied cells.
+    /// Returns `dst` extended with information about the number of copied cells.
     fn copy_operands_to_dst(
         &mut self,
         dst: SlotSpan,
         len: u16,
+        skip: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
-        let len = usize::from(len);
         let mut len_cells: u16 = 0;
         let mut prev = None;
-        for depth in (0..len).rev() {
-            let value = self.stack.peek(depth);
+        for depth in (skip..len + skip).rev() {
+            let value = self.stack.peek(depth.into());
             let result = dst.head().next_n(len_cells);
             if let Some(copy_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
                 self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
