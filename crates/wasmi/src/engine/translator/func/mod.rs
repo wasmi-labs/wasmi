@@ -751,6 +751,37 @@ impl FuncTranslator {
         Ok(result)
     }
 
+    /// Copies the top `n` operands on the stack to their respective stack slots.
+    ///
+    /// Returns a [`BoundedSlotSpan`] of the stack slots holding the copy results.
+    fn copy_operands_to_temp(
+        &mut self,
+        len: u16,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<BoundedSlotSpan, Error> {
+        let len = usize::from(len);
+        let start = match len {
+            0 => self.stack.next_temp_slots(),
+            n => self.stack.peek(n - 1).temp_slots().span(),
+        };
+        let mut len_cells: u16 = 0;
+        let mut prev = None;
+        for depth in (0..len).rev() {
+            let param = self.stack.peek(depth);
+            let temp_slots = param.temp_slots();
+            len_cells = len_cells
+                .checked_add(temp_slots.len())
+                .ok_or(TranslationError::AllocatedTooManySlots)?;
+            let result = temp_slots.head();
+            if let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? {
+                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
+            };
+        }
+        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
+        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+        Ok(BoundedSlotSpan::new(start, len_cells))
+    }
+
     /// Copies the `operand` to its temporary [`Slot`] if it is an immediate.
     ///
     /// Returns the temporary [`Slot`] of the `operand`.
@@ -1074,7 +1105,7 @@ impl FuncTranslator {
         let op = match len_results {
             0 => Op::Return {},
             1 => self.prepare_return_1_op(fuel_pos)?,
-            n => self.prepare_return_n_op(n.into(), fuel_pos)?,
+            n => self.prepare_return_n_op(n, fuel_pos)?,
         };
         let pos = self
             .instrs
@@ -1131,34 +1162,14 @@ impl FuncTranslator {
     /// stack slots required for returning to teh caller.
     fn prepare_return_n_op(
         &mut self,
-        len: usize,
+        len: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Op, Error> {
-        let start = match len {
-            0 => self.stack.next_temp_slots(),
-            n => self.stack.peek(n - 1).temp_slots().span(),
-        };
-        let mut len_cells: u16 = 0;
-        let mut prev = None;
-        for depth in (0..len).rev() {
-            let param = self.stack.peek(depth);
-            let temp_slots = param.temp_slots();
-            len_cells = len_cells
-                .checked_add(temp_slots.len())
-                .ok_or(TranslationError::AllocatedTooManySlots)?;
-            let result = temp_slots.head();
-            if let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? {
-                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
-            };
-        }
-        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
-        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
-        let op = match u16::from(start.head()) {
+        debug_assert!(len > 1);
+        let span = self.copy_operands_to_temp(len, fuel_pos)?;
+        let op = match u16::from(span.head()) {
             0 => Op::Return {},
-            _ => {
-                let span = BoundedSlotSpan::new(start, len_cells);
-                Op::return_span(span)
-            }
+            _ => Op::return_span(span),
         };
         Ok(op)
     }
