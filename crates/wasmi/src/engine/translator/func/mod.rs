@@ -1147,10 +1147,9 @@ impl FuncTranslator {
                 .checked_add(temp_slots.len())
                 .ok_or(TranslationError::AllocatedTooManySlots)?;
             let result = temp_slots.head();
-            let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? else {
-                continue;
+            if let Some(copy_op) = Self::select_copy_sx_op(result, param, &self.layout)? {
+                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
             };
-            self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
         }
         // The `prev` might still contain `Some` at this point, so we have to "flush" it.
         self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
