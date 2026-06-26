@@ -1,7 +1,6 @@
 #[macro_use]
 mod utils;
 mod encoder;
-mod fuse_copy;
 mod labels;
 mod layout;
 mod locals;
@@ -16,7 +15,6 @@ use self::stack::ImmediateOperand;
 
 use self::{
     encoder::{OpEncoder, OpEncoderAllocations, Pos},
-    fuse_copy::FusedCopy,
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
@@ -382,53 +380,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Encodes `copy_op` or fuses it with `prev` if possible.
-    fn encode_copy_or_fuse_sx(
-        &mut self,
-        prev: &mut Option<FusedCopy>,
-        copy_op: Op,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
-        let prev_fused = prev.take();
-        let Some(new) = FusedCopy::from_op(copy_op) else {
-            // Case: `copy_op` is not fusable => just encode it directly.
-            // Note: we need to flush `prev` to uphold order of emitted copy ops.
-            self.encode_fused_copy_op_if_any(prev_fused, fuel_pos)?;
-            self.instrs
-                .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
-            return Ok(());
-        };
-        let Some(prev_fused) = prev_fused else {
-            // Case: no previous fused => just memorize `copy_op` for later.
-            *prev = Some(new);
-            return Ok(());
-        };
-        if let Some(new_fused) = prev_fused.try_fuse(new) {
-            // Case: successfully fused => memorize fused op for later.
-            *prev = Some(new_fused);
-            return Ok(());
-        }
-        // Case: couldn't fuse => emit fused-so-far and start new fusion candidate.
-        self.instrs
-            .encode_op(prev_fused.into_op(), fuel_pos, FuelCostsProvider::base)?;
-        *prev = Some(new);
-        Ok(())
-    }
-
-    /// Encodes `copy_op` if any as lowered (more efficient) version if possible.
-    fn encode_fused_copy_op_if_any(
-        &mut self,
-        fused_copy: Option<FusedCopy>,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
-        let Some(copy_op) = fused_copy.map(FusedCopy::into_op) else {
-            return Ok(());
-        };
-        self.instrs
-            .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
-        Ok(())
-    }
-
     /// Encodes a single `copy_rx` operator.
     ///
     /// # Note
@@ -761,20 +712,18 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
         let mut len_cells: u16 = 0;
-        let mut prev = None;
         for depth in (skip..len + skip).rev() {
             let value = self.stack.peek(depth.into());
             let result = dst.head().next_n(len_cells);
             if let Some(copy_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
-                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
+                self.instrs
+                    .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
             };
             let copied_cells = required_cells_for_ty(value.ty());
             len_cells = len_cells
                 .checked_add(copied_cells)
                 .ok_or(TranslationError::AllocatedTooManySlots)?;
         }
-        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
-        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
         Ok(BoundedSlotSpan::new(dst, len_cells))
     }
 
