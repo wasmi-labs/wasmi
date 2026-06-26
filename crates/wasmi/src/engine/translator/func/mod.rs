@@ -361,20 +361,8 @@ impl FuncTranslator {
         if len_temps == 0 {
             return Ok(());
         }
-        let mut result = params.temp_slots().head();
-        let start = params.len();
-        let end = params.len_regs();
-        let mut prev = None;
-        for depth in (end..start).rev() {
-            let value = self.stack.peek(depth.into());
-            let ty = value.ty();
-            if let Some(copy_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
-                self.encode_copy_or_fuse_sx(&mut prev, copy_op, fuel_pos)?;
-            };
-            result = result.next_n(required_cells_for_ty(ty));
-        }
-        // The `prev` might still contain `Some` at this point, so we have to "flush" it.
-        self.encode_fused_copy_op_if_any(prev.take(), fuel_pos)?;
+        let dst = params.temp_slots();
+        self.copy_operands_to_dst(dst.span(), params.len_temps(), params.len_regs(), fuel_pos)?;
         Ok(())
     }
 
