@@ -1375,6 +1375,28 @@ impl_branch_table_exec_handler! {
 }
 
 handler_unary! {
+    // specialized copy_sNs operators
+    fn u64_copy_s0s(U64Copy_S0s) = identity::<u64>;
+    fn u64_copy_s1s(U64Copy_S1s) = identity::<u64>;
+    fn u64_copy_s2s(U64Copy_S2s) = identity::<u64>;
+    fn u64_copy_s3s(U64Copy_S3s) = identity::<u64>;
+    fn u64_copy_s4s(U64Copy_S4s) = identity::<u64>;
+    fn u64_copy_s5s(U64Copy_S5s) = identity::<u64>;
+    fn u64_copy_s6s(U64Copy_S6s) = identity::<u64>;
+    fn u64_copy_s7s(U64Copy_S7s) = identity::<u64>;
+    fn u64_copy_s8s(U64Copy_S8s) = identity::<u64>;
+    fn u64_copy_s9s(U64Copy_S9s) = identity::<u64>;
+    // specialized copy_ssN operators
+    fn u64_copy_ss0(U64Copy_Ss0) = identity::<u64>;
+    fn u64_copy_ss1(U64Copy_Ss1) = identity::<u64>;
+    fn u64_copy_ss2(U64Copy_Ss2) = identity::<u64>;
+    fn u64_copy_ss3(U64Copy_Ss3) = identity::<u64>;
+    fn u64_copy_ss4(U64Copy_Ss4) = identity::<u64>;
+    fn u64_copy_ss5(U64Copy_Ss5) = identity::<u64>;
+    fn u64_copy_ss6(U64Copy_Ss6) = identity::<u64>;
+    fn u64_copy_ss7(U64Copy_Ss7) = identity::<u64>;
+    fn u64_copy_ss8(U64Copy_Ss8) = identity::<u64>;
+    fn u64_copy_ss9(U64Copy_Ss9) = identity::<u64>;
     // specialized copy_sNr operators
     fn u64_copy_s0r(U64Copy_S0r) = identity::<u64>;
     fn u64_copy_s1r(U64Copy_S1r) = identity::<u64>;

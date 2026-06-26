@@ -260,6 +260,15 @@ where
     }
 }
 
+impl<const N: u16, T> GetValue<T> for Local<N>
+where
+    T: LoadFromCellsByValue,
+{
+    fn get_value(_src: Self, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> T {
+        <Slot as GetValue<T>>::get_value(Slot::from(N), sp, ireg, freg32, freg64)
+    }
+}
+
 /// Returns the value at `sp[src]`.
 #[inline]
 pub fn get_slot_value<L>(src: Slot, sp: Sp) -> L
